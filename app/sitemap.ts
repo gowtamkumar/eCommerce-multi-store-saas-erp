@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next';
 import dbConnect from '@/lib/mongodb';
 import Product from '@/models/Product';
 import Page from '@/models/Page';
+import { getTenantId } from '@/lib/tenant';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL
@@ -21,9 +22,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // Fetch dynamic data
     await dbConnect();
+    const tenantId = await getTenantId();
+
+    if (!tenantId) {
+        return routes;
+    }
 
     // Products
-    const products = await Product.find({ status: 'active' }).select('_id updatedAt').lean();
+    const products = await Product.find({ status: 'active', tenantId }).select('_id updatedAt').lean();
     const productRoutes = products.map((product: any) => ({
         url: `${baseUrl}/products/${product._id}`,
         lastModified: new Date(product.updatedAt),
@@ -32,7 +38,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
     // Pages
-    const pages = await Page.find({ status: 'published' }).select('slug updatedAt').lean();
+    const pages = await Page.find({ status: 'published', tenantId }).select('slug updatedAt').lean();
     const pageRoutes = pages.map((page: any) => ({
         url: `${baseUrl}/page/${page.slug}`,
         lastModified: new Date(page.updatedAt),

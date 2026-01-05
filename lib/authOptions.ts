@@ -19,7 +19,20 @@ export const authOptions: NextAuthOptions = {
 
         await dbConnect();
 
-        const user = await User.findOne({ username: credentials.username });
+        // Dynamically import to avoid circular dependency issues if any
+        const { getTenantId } = await import("./tenant");
+        // req is available if we pass it in route handler.
+        // Cast req to Request if needed or just pass it.
+        const tenantId = await getTenantId(req as any);
+
+        if (!tenantId) {
+          throw new Error("Tenant context missing during login");
+        }
+
+        const user = await User.findOne({
+          username: credentials.username,
+          tenantId
+        } as any);
 
         if (!user) {
           throw new Error("No user found with this username");

@@ -1,10 +1,24 @@
 import dbConnect from '@/lib/mongodb';
 import SiteSettings from '@/models/SiteSettings';
+import { getTenantId } from './tenant';
 
 export async function getSiteSettings() {
     try {
         await dbConnect();
-        let settings = await SiteSettings.findOne().lean();
+        const tenantId = await getTenantId();
+
+        if (!tenantId) {
+            // Fallback or explicit error - for now, fallback to default structure but maybe warn
+            return {
+                brandName: "LuxeAudio",
+                siteDescription: "Elevating your audio experience with premium sound and design.",
+                contactEmail: "support@luxeaudio.com",
+                socialLinks: { facebook: "", twitter: "", instagram: "", linkedin: "" },
+                marketing: { googleAnalyticsId: "", googleSiteVerification: "", facebookPixelId: "", facebookDomainVerification: "" }
+            };
+        }
+
+        let settings = await SiteSettings.findOne({ tenantId }).lean();
         if (!settings) {
             // Create default if not exists (though typically we might just return defaults without saving)
             // For now, let's just return a default object structure if DB is empty to avoid side effects in GET

@@ -9,12 +9,16 @@ import RelatedProducts from '@/components/RelatedProducts';
 import Reviews from '@/components/Reviews';
 import dbConnect from '@/lib/mongodb';
 import Product from '@/models/Product';
+import { getTenantId } from '@/lib/tenant';
 import { notFound } from 'next/navigation';
 
 async function getProduct(id: string) {
     try {
         await dbConnect();
-        const product = await Product.findById(id).lean();
+        const tenantId = await getTenantId();
+        if (!tenantId) return null;
+
+        const product = await Product.findOne({ _id: id, tenantId }).lean();
         return product ? JSON.parse(JSON.stringify(product)) : null;
     } catch (error) {
         return null;

@@ -11,15 +11,23 @@ import { getSiteSettings } from "@/lib/getSettings";
 
 import { Suspense } from "react";
 
+import { headers } from "next/headers";
+
 async function getProduct() {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const headerList = await headers();
+    const host = headerList.get("host");
+
     const res = await fetch(`${baseUrl}/api/products/latest`, {
       cache: "no-store",
+      headers: {
+        Host: host || "localhost:3000",
+      },
     });
 
     if (!res.ok) {
-      console.error("Failed to fetch product:", res.statusText);
+      // console.error("Failed to fetch product:", res.statusText);
       return null;
     }
 

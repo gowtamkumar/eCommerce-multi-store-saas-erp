@@ -8,11 +8,17 @@ export async function GET(req: Request) {
     await dbConnect();
     const tenantId = await getTenantId(req);
 
+
+
     if (!tenantId) {
-        return NextResponse.json({ error: "Tenant context missing" }, { status: 400 });
+      return NextResponse.json({ error: "Tenant context missing" }, { status: 400 });
     }
 
-    const products = await Product.find({ tenantId });
+    console.log("DEBUG_TENANT: Resolved tenantId in API:", tenantId);
+
+    const products = await Product.find({ tenantId: tenantId });
+    // console.log("DEBUG_TENANT: Found products count:", products.length);
+
     return NextResponse.json({ products });
   } catch (error) {
     return NextResponse.json(
@@ -28,7 +34,7 @@ export async function POST(req: Request) {
     const tenantId = await getTenantId(req);
 
     if (!tenantId) {
-        return NextResponse.json({ error: "Tenant context missing" }, { status: 400 });
+      return NextResponse.json({ error: "Tenant context missing" }, { status: 400 });
     }
 
     const body = await req.json();
