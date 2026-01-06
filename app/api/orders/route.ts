@@ -13,6 +13,7 @@ export async function POST(req: Request) {
     await dbConnect();
     const tenantId = await getTenantId(req);
 
+
     if (!tenantId) {
         return NextResponse.json({ error: "Tenant context missing" }, { status: 400 });
     }

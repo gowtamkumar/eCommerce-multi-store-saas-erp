@@ -48,7 +48,7 @@ export default function RegisterPage() {
             <UserPlus className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white font-display">Create Account</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">Register as a new admin</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">Sign up for a new account</p>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-6">

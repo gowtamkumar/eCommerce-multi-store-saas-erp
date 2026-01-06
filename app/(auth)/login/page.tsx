@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { getSession, signIn } from 'next-auth/react';
 import toast from 'react-hot-toast';
 
-export default function AdminLogin() {
+export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -62,8 +62,8 @@ export default function AdminLogin() {
                     <div className="w-16 h-16 bg-brand-100 dark:bg-brand-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-brand-600 dark:text-brand-400">
                         <Lock className="w-8 h-8" />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white font-display">Admin Login</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-2">Enter your credentials to access the dashboard</p>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white font-display">Login</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2">Sign in to your account</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
