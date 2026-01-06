@@ -11,28 +11,32 @@ import { getSiteSettings } from "@/lib/getSettings";
 
 import { Suspense } from "react";
 
-import { headers } from "next/headers";
 
 async function getProduct() {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-    const headerList = await headers();
-    const host = headerList.get("host");
+    const dbConnect = (await import('@/lib/mongodb')).default;
+    const { getTenantId } = await import('@/lib/tenant');
+    const Product = (await import('@/models/Product')).default;
 
-    const res = await fetch(`${baseUrl}/api/products/latest`, {
-      cache: "no-store",
-      headers: {
-        Host: host || "localhost:3000",
-      },
-    });
+    await dbConnect();
+    const tenantId = await getTenantId();
 
-    if (!res.ok) {
-      // console.error("Failed to fetch product:", res.statusText);
+    if (!tenantId) {
+      console.error("No tenant context for home page");
       return null;
     }
 
-    const product = await res.json();
-    return product;
+    // Fetch the most recently created product that is active and belongs to tenant
+    const product = await Product.findOne({ status: "active", tenantId } as any)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!product) {
+      console.log("No active product found for tenant:", tenantId);
+      return null;
+    }
+
+    return JSON.parse(JSON.stringify(product));
   } catch (error) {
     console.error("Failed to fetch product:", error);
     return null;

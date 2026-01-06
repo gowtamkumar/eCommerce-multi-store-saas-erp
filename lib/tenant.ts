@@ -3,28 +3,38 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./authOptions";
 import dbConnect from "./mongodb";
 
-export async function getTenantId(req?: Request): Promise<string | null> {
+// Helper to safely get headers
+function getHeader(req: any, key: string): string | null {
+  if (!req) return null;
+  
+  // 1. Standard Web Request (Response/Request objects)
+  if (typeof req.headers?.get === 'function') {
+    return req.headers.get(key);
+  }
+  
+  // 2. Node.js IncomingMessage or NextAuth object
+  if (req.headers && typeof req.headers === 'object') {
+    const value = req.headers[key] || req.headers[key.toLowerCase()];
+    if (Array.isArray(value)) {
+      return value[0];
+    }
+    return value || null;
+  }
+  
+  return null;
+}
+
+export async function getTenantId(req?: Request | any): Promise<string | null> {
   console.log("DEBUG_TENANT: Starting getTenantId");
   await dbConnect();
-
-  // 1. Check if user is authenticated (most reliable for protected routes)
-  try {
-    const session = await getServerSession(authOptions);
-    console.log("DEBUG_TENANT: Session found:", session?.user?.email, "Tenant:", session?.user?.tenantId);
-    if (session?.user?.tenantId) {
-      return session.user.tenantId;
-    }
-  } catch (err) {
-    console.error("DEBUG_TENANT: Session check failed", err);
-  }
 
   let host: string | null = null;
   let headerTenantId: string | null = null;
 
-  // Try to get headers from Request object or next/headers
+  // 1. Try to get headers from Request object or next/headers (Priority: Domain/Context)
   if (req) {
-    host = req.headers.get("host");
-    headerTenantId = req.headers.get("x-tenant-id");
+    host = getHeader(req, "host");
+    headerTenantId = getHeader(req, "x-tenant-id");
   } else {
     try {
       const { headers } = await import("next/headers");
@@ -90,6 +100,18 @@ export async function getTenantId(req?: Request): Promise<string | null> {
         }
       }
     }
+  }
+
+  // 4. Check if user is authenticated (Fallback for protected routes or if no domain context)
+  // This is now the fallback, so if I visit a store explicitly, I see the store, not my session tenant.
+  try {
+    const session = await getServerSession(authOptions);
+    console.log("DEBUG_TENANT: Session found:", session?.user?.email, "Tenant:", session?.user?.tenantId);
+    if (session?.user?.tenantId) {
+      return session.user.tenantId;
+    }
+  } catch (err) {
+    console.error("DEBUG_TENANT: Session check failed", err);
   }
 
   console.log("DEBUG_TENANT: No tenant identified, returning null.");
