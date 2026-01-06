@@ -20,12 +20,12 @@ const UserSchema: Schema = new Schema({
   username: { type: String, required: true },
   email: { type: String, required: true },
   password: { type: String, required: true },
-  role: { type: String, enum: [UserRole.ADMIN, UserRole.USER], default: UserRole.USER },
+  role: { type: String, enum: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER], default: UserRole.USER },
   phone: { type: String },
   address: { type: String },
   image: { type: String },
   status: { type: String, enum: [UserStatus.ACTIVE, UserStatus.BLOCKED], default: UserStatus.ACTIVE },
-  tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true },
+  tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: false },
 }, { timestamps: true });
 
 // Compound indices for tenant-scoped uniqueness

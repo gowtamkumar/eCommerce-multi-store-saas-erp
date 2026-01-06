@@ -34,11 +34,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ tenant });
     }
 
-    // If authenticated admin, maybe list all?
-    if (session?.user?.role === 'admin') {
-      // TODO: Add super-admin check if needed.
-      // For now, return all for debugging/admin panel usage.
-      const tenants = await Tenant.find();
+    // If authenticated super admin, list all tenants
+    if (session?.user?.role === 'super_admin') {
+      const tenants = await Tenant.find().sort({ createdAt: -1 });
       return NextResponse.json({ tenants });
     }
 

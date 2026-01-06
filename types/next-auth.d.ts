@@ -10,7 +10,7 @@ declare module "next-auth" {
     address: string;
     phone: string;
     image: string;
-    role: "admin" | "user";
+    role: "super_admin" | "admin" | "user";
     tenantId: string;
   }
 
@@ -23,7 +23,7 @@ declare module "next-auth" {
       address: string;
       phone: string;
       image: string;
-      role: "admin" | "user";
+      role: "super_admin" | "admin" | "user";
       tenantId: string;
     };
   }
@@ -32,7 +32,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
-    role: "admin" | "user";
+    role: "super_admin" | "admin" | "user";
     phone?: string;
     address?: string;
     image?: string;

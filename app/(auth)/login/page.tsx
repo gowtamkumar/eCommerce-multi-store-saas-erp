@@ -39,7 +39,9 @@ export default function Login() {
                 toast.success('Logged in successfully');
 
                 // Route based on user role
-                if (session.user.role === 'admin') {
+                if (session.user.role === 'super_admin') {
+                    router.push('/super-admin');
+                } else if (session.user.role === 'admin') {
                     router.push('/admin');
                 } else {
                     router.push('/');

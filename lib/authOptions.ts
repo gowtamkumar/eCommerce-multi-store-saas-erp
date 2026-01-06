@@ -19,23 +19,44 @@ export const authOptions: NextAuthOptions = {
 
         await dbConnect();
 
-        // Dynamically import to avoid circular dependency issues if any
         const { getTenantId } = await import("./tenant");
-        // req is available if we pass it in route handler.
-        // Cast req to Request if needed or just pass it.
         const tenantId = await getTenantId(req as any);
 
+        // If no tenantId, check if it's a Super Admin on the root domain
         if (!tenantId) {
-          throw new Error("Tenant context missing during login");
+          const user = await User.findOne({ 
+            username: credentials.username,
+            role: "super_admin" 
+          } as any);
+
+          if (!user) {
+            throw new Error("Access denied. Root login is only for Super Admins.");
+          }
+
+          const isPasswordMatch = await bcrypt.compare(credentials.password, user.password);
+          if (!isPasswordMatch) throw new Error("Incorrect password");
+
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            username: user.username || user.email,
+            role: user.role,
+            address: user.address || "",
+            phone: user.phone || "",
+            image: user.image || "",
+            tenantId: "", // Super Admin has no tenantId
+          };
         }
 
+        // Standard tenant user login
         const user = await User.findOne({
           username: credentials.username,
           tenantId
         } as any);
 
         if (!user) {
-          throw new Error("No user found with this username");
+          throw new Error("No user found with this username in this store.");
         }
 
         const isPasswordMatch = await bcrypt.compare(
