@@ -65,7 +65,7 @@ export default function MarketingNavbar() {
               Sign In
             </Link>
             <Link
-              href="/register"
+              href="/create-store"
               className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-brand-600 text-white font-semibold text-sm hover:bg-brand-700 transition-all hover:shadow-lg hover:shadow-brand-500/25 active:scale-95 group"
             >
               Get Started
@@ -111,7 +111,7 @@ export default function MarketingNavbar() {
                   Sign In
                 </Link>
                 <Link
-                  href="/register"
+                  href="/create-store"
                   className="flex justify-center items-center py-3 rounded-xl bg-brand-600 text-white font-semibold"
                 >
                   Get Started
