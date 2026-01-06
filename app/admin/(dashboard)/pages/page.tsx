@@ -1,11 +1,11 @@
 'use client';
 
 import RichEditor from '@/components/admin/RichEditor';
-import { Eye, Pencil, Plus, Save, Trash2, GripVertical, Type as RichTextIcon, Layout as LayoutIcon, HelpCircle, Users, ShoppingCart, Send } from 'lucide-react';
+import ConfirmModal from '@/components/ConfirmModal';
+import { Eye, GripVertical, HelpCircle, Layout as LayoutIcon, Pencil, Plus, Type as RichTextIcon, Save, Send, ShoppingCart, Trash2, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import ConfirmModal from '@/components/ConfirmModal';
 
 interface Page {
     _id: string;

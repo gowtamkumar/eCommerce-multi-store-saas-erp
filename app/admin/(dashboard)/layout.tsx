@@ -81,6 +81,7 @@ export default function AdminLayout({
         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
           <h1 className="text-2xl font-bold font-display text-slate-900 dark:text-white">
             Luxe<span className="text-brand-600">Admin</span>
+
           </h1>
           <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
             <X className="w-6 h-6" />
