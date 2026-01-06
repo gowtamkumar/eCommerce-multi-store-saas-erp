@@ -26,6 +26,7 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
+        logo: '',
         brandName: '',
         siteDescription: '',
         contactEmail: '',
@@ -55,6 +56,7 @@ export default function SettingsPage() {
             .then(data => {
                 if (data.success && data.data) {
                     setFormData({
+                        logo: data.data.logo || '',
                         brandName: data.data.brandName || '',
                         siteDescription: data.data.siteDescription || '',
                         contactEmail: data.data.contactEmail || '',
@@ -201,6 +203,22 @@ export default function SettingsPage() {
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-1.5 md:col-span-2">
+                                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Logo URL</label>
+                                                <div className="flex gap-4 items-center">
+                                                    {formData.logo && (
+                                                        <img src={formData.logo} alt="Logo" className="w-16 h-16 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-white" />
+                                                    )}
+                                                    <input
+                                                        type="text"
+                                                        value={formData.logo}
+                                                        onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                                                        className="flex-1 px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                        placeholder="https://example.com/logo.png"
+                                                    />
+                                                </div>
+                                            </div>
+
                                             <div className="space-y-1.5 md:col-span-2">
                                                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Brand Name</label>
                                                 <input

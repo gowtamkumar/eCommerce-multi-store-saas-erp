@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
 interface SiteSettings {
+  logo: string;
   brandName: string;
   siteDescription: string;
   contactEmail: string;

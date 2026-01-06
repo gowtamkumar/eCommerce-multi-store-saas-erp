@@ -1,6 +1,7 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface ISiteSettings extends Document {
+    logo: string;
     brandName: string;
     siteDescription: string;
     contactEmail: string;
@@ -32,6 +33,7 @@ export interface ISiteSettings extends Document {
 
 const SiteSettingsSchema: Schema = new Schema(
     {
+        logo: { type: String, default: "" },
         brandName: { type: String, default: "LuxeAudio" },
         siteDescription: { type: String, default: "Elevating your audio experience with premium sound and design." },
         contactEmail: { type: String, default: "support@luxeaudio.com" },
