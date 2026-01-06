@@ -73,7 +73,17 @@ export async function generateMetadata() {
   };
 }
 
+import SaaSLanding from "@/components/marketing/SaaSLanding";
+
 export default async function Home() {
+  const { getTenantId } = await import('@/lib/tenant');
+  const tenantId = await getTenantId();
+
+  // If no tenant is identified, we are on the root SaaS marketing domain
+  if (!tenantId) {
+    return <SaaSLanding />;
+  }
+
   const product = await getProduct();
 
   return (

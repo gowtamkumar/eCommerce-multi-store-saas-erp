@@ -10,9 +10,10 @@ export async function getSiteSettings() {
         if (!tenantId) {
             // Fallback or explicit error - for now, fallback to default structure but maybe warn
             return {
-                brandName: "LuxeAudio",
-                siteDescription: "Elevating your audio experience with premium sound and design.",
-                contactEmail: "support@luxeaudio.com",
+                logo: "",
+                brandName: "LuxeSaaS",
+                siteDescription: "The premium multi-tenant eCommerce platform.",
+                contactEmail: "support@luxesaas.com",
                 socialLinks: { facebook: "", twitter: "", instagram: "", linkedin: "" },
                 marketing: { googleAnalyticsId: "", googleSiteVerification: "", facebookPixelId: "", facebookDomainVerification: "" }
             };
@@ -23,6 +24,7 @@ export async function getSiteSettings() {
             // Create default if not exists (though typically we might just return defaults without saving)
             // For now, let's just return a default object structure if DB is empty to avoid side effects in GET
             return {
+                logo: "",
                 brandName: "LuxeAudio",
                 siteDescription: "Elevating your audio experience with premium sound and design.",
                 contactEmail: "support@luxeaudio.com",
@@ -34,6 +36,7 @@ export async function getSiteSettings() {
     } catch (error) {
         console.error("Failed to fetch site settings:", error);
         return {
+            logo: "",
             brandName: "LuxeAudio",
             siteDescription: "Elevating your audio experience with premium sound and design.",
             contactEmail: "support@luxeaudio.com",
