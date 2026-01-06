@@ -1,0 +1,16 @@
+[{
+  "_id": {
+    "$oid": "695cc90e97de3e646c50aec3"
+  },
+  "filename": "e154ba05-ab37-478b-bd5a-b2d30ebc9868-screenshot-from-2025-12-22-12-02-38.png",
+  "url": "/uploads/e154ba05-ab37-478b-bd5a-b2d30ebc9868-screenshot-from-2025-12-22-12-02-38.png",
+  "mimetype": "image/png",
+  "size": 83069,
+  "tenantId": {
+    "$oid": "695cae7e97de3e646c50aa8a"
+  },
+  "createdAt": {
+    "$date": "2026-01-06T08:34:22.128Z"
+  },
+  "__v": 0
+}]

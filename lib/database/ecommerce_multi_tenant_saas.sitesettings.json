@@ -1,0 +1,189 @@
+[{
+  "_id": {
+    "$oid": "692ff5083916bc3ce8cde71e"
+  },
+  "brandName": "LuxeAudio",
+  "siteDescription": "Premium Audio Equipment for Audiophiles",
+  "contactEmail": "admin@luxeaudio.com",
+  "contactPhone": "+1 (555) 123-4567",
+  "address": "123 Audio Street, Sound City, SC 90210",
+  "currency": "BDT",
+  "currencySymbol": "৳",
+  "socialLinks": {
+    "facebook": "https://facebook.com",
+    "twitter": "https://twitter.com",
+    "instagram": "https://instagram.com",
+    "linkedin": "https://linkedin.com"
+  },
+  "createdAt": {
+    "$date": "2025-12-03T08:30:00.196Z"
+  },
+  "updatedAt": {
+    "$date": "2025-12-24T05:39:28.928Z"
+  },
+  "__v": 0,
+  "marketing": {
+    "googleAnalyticsId": "",
+    "googleSiteVerification": "",
+    "facebookPixelId": "",
+    "facebookDomainVerification": ""
+  },
+  "supportedCurrencies": [
+    {
+      "code": "USD",
+      "symbol": "$",
+      "rate": 124,
+      "name": "USD",
+      "_id": {
+        "$oid": "69479b174d3a07ed9ad6017f"
+      }
+    },
+    {
+      "code": "BDT",
+      "symbol": "৳",
+      "rate": 1,
+      "name": "BDT",
+      "_id": {
+        "$oid": "69479b584d3a07ed9ad6018a"
+      }
+    },
+    {
+      "code": "RUPEE",
+      "symbol": "₹",
+      "rate": 1.37,
+      "name": "RUPEE",
+      "_id": {
+        "$oid": "6947ca1c9b90119ea1bdd123"
+      }
+    }
+  ],
+  "reviewSectionType": "reviews"
+},
+{
+  "_id": {
+    "$oid": "695caf8a97de3e646c50aaa1"
+  },
+  "brandName": "Poly store",
+  "siteDescription": "Elevating your audio experience with premium sound and design.",
+  "contactEmail": "support@luxeaudio.com",
+  "contactPhone": "+1 (555) 123-4567",
+  "whatsappPhone": "+1 (555) 123-4567",
+  "address": "123 Audio Street, Sound City, SC 90210",
+  "currency": "BDT",
+  "currencySymbol": "৳",
+  "socialLinks": {
+    "facebook": "https://www.facebook.com/poly-store",
+    "twitter": "https://www.facebook.com/poly-store",
+    "instagram": "https://www.facebook.com/poly-store",
+    "linkedin": "https://www.facebook.com/poly-store"
+  },
+  "marketing": {
+    "googleAnalyticsId": "654654",
+    "googleSiteVerification": "ddd",
+    "facebookPixelId": "34654",
+    "facebookDomainVerification": "dddd"
+  },
+  "tenantId": {
+    "$oid": "695cae7e97de3e646c50aa8a"
+  },
+  "supportedCurrencies": [
+    {
+      "code": "USD",
+      "symbol": "$",
+      "rate": 120,
+      "name": "USD",
+      "_id": {
+        "$oid": "695cc8b797de3e646c50ae8a"
+      }
+    },
+    {
+      "code": "BDT",
+      "symbol": "৳",
+      "rate": 1,
+      "name": "BDT",
+      "_id": {
+        "$oid": "695cc8b797de3e646c50ae8b"
+      }
+    }
+  ],
+  "createdAt": {
+    "$date": "2026-01-06T06:45:30.721Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-06T08:32:55.407Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "695cd4c524233efb52dd43e9"
+  },
+  "brandName": "LuxeAudio",
+  "siteDescription": "Elevating your audio experience with premium sound and design.",
+  "contactEmail": "support@luxeaudio.com",
+  "contactPhone": "+1 (555) 123-4567",
+  "whatsappPhone": "+1 (555) 123-4567",
+  "address": "123 Audio Street, Sound City, SC 90210",
+  "currency": "BDT",
+  "currencySymbol": "৳",
+  "socialLinks": {
+    "facebook": "",
+    "twitter": "",
+    "instagram": "",
+    "linkedin": ""
+  },
+  "marketing": {
+    "googleAnalyticsId": "",
+    "googleSiteVerification": "",
+    "facebookPixelId": "",
+    "facebookDomainVerification": ""
+  },
+  "tenantId": {
+    "$oid": "695cad9597de3e646c50aa81"
+  },
+  "supportedCurrencies": [],
+  "createdAt": {
+    "$date": "2026-01-06T09:24:21.291Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-06T09:24:21.291Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "695cda2f796a553e25928400"
+  },
+  "logo": "",
+  "brandName": "my shop",
+  "siteDescription": "Welcome to my shop! Premium products and excellent service.",
+  "contactEmail": "johndoe@gmail.com",
+  "contactPhone": "+1 (555) 123-4567",
+  "whatsappPhone": "+1 (555) 123-4567",
+  "address": "123 Audio Street, Sound City, SC 90210",
+  "currency": "BDT",
+  "currencySymbol": "৳",
+  "socialLinks": {
+    "facebook": "",
+    "twitter": "",
+    "instagram": "",
+    "linkedin": ""
+  },
+  "marketing": {
+    "googleAnalyticsId": "",
+    "googleSiteVerification": "",
+    "facebookPixelId": "",
+    "facebookDomainVerification": ""
+  },
+  "tenantId": {
+    "$oid": "695cda2f796a553e259283fc"
+  },
+  "supportedCurrencies": [],
+  "createdAt": {
+    "$date": "2026-01-06T09:47:27.951Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-06T09:47:27.951Z"
+  },
+  "__v": 0
+}]

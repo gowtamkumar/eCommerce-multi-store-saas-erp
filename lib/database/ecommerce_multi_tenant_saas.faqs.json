@@ -1,0 +1,20 @@
+[{
+  "_id": {
+    "$oid": "695cc7ab97de3e646c50ae53"
+  },
+  "question": "this is poly-store faq",
+  "answer": "asdfasdf",
+  "category": "testing",
+  "order": 0,
+  "status": "active",
+  "tenantId": {
+    "$oid": "695cae7e97de3e646c50aa8a"
+  },
+  "createdAt": {
+    "$date": "2026-01-06T08:28:27.790Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-06T08:28:27.790Z"
+  },
+  "__v": 0
+}]

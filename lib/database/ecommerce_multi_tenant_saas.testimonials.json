@@ -1,0 +1,21 @@
+[{
+  "_id": {
+    "$oid": "695cc7c797de3e646c50ae60"
+  },
+  "author": "goetam kuamr",
+  "role": "softwre defveloper",
+  "content": "asdfasdf",
+  "rating": 5,
+  "avatar": "bg-blue-100 text-blue-600",
+  "status": "active",
+  "tenantId": {
+    "$oid": "695cae7e97de3e646c50aa8a"
+  },
+  "createdAt": {
+    "$date": "2026-01-06T08:28:55.744Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-06T08:28:55.744Z"
+  },
+  "__v": 0
+}]

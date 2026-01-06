@@ -1,0 +1,56 @@
+[{
+  "_id": {
+    "$oid": "695cd19e24233efb52dd4199"
+  },
+  "orderId": {
+    "$oid": "695cd19424233efb52dd418f"
+  },
+  "transactionId": "TRAN_695cd19424233efb52dd418f_1767690644342",
+  "amount": 149,
+  "currency": "USD",
+  "method": "sslcommerz",
+  "status": "success",
+  "gatewayResponse": {
+    "tran_id": "TRAN_695cd19424233efb52dd418f_1767690644342",
+    "val_id": "260106151050ihQp3YjsS1fmdSm",
+    "amount": "103.15",
+    "card_type": "NAGAD-Nagad",
+    "store_amount": "100.57",
+    "card_no": "",
+    "bank_tran_id": "260106151050Zv2xbuPY5Z1ma8D",
+    "status": "VALID",
+    "tran_date": "2026-01-06 15:10:42",
+    "error": "",
+    "currency": "BDT",
+    "card_issuer": "Nagad",
+    "card_brand": "MOBILEBANKING",
+    "card_sub_brand": "Classic",
+    "card_issuer_country": "Bangladesh",
+    "card_issuer_country_code": "BD",
+    "store_id": "ecomm6648b03fa5d37",
+    "verify_sign": "36bfce0266e1beb73373ad62f019f7ac",
+    "verify_key": "amount,bank_tran_id,base_fair,card_brand,card_issuer,card_issuer_country,card_issuer_country_code,card_no,card_sub_brand,card_type,currency,currency_amount,currency_rate,currency_type,error,risk_level,risk_title,status,store_amount,store_id,tran_date,tran_id,val_id,value_a,value_b,value_c,value_d",
+    "verify_sign_sha2": "2d0c71dff7e812a5ac5584d760038d33c3cb2559d6f6ea0af4f1b9301af9480d",
+    "currency_type": "USD",
+    "currency_amount": "1.24",
+    "currency_rate": "83.1850",
+    "base_fair": "0.00",
+    "value_a": "",
+    "value_b": "",
+    "value_c": "",
+    "value_d": "",
+    "subscription_id": "",
+    "risk_level": "0",
+    "risk_title": "Safe"
+  },
+  "tenantId": {
+    "$oid": "695cae7e97de3e646c50aa8a"
+  },
+  "createdAt": {
+    "$date": "2026-01-06T09:10:54.946Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-06T09:10:54.946Z"
+  },
+  "__v": 0
+}]
