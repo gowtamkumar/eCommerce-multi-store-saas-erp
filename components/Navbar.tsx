@@ -33,7 +33,15 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
     { name: "wellness", link: '/template/wellness' },
     { name: "shoes", link: '/template/shoes' },
   ]
+  const handleLogout = async () => {
+    // Preserve current domain (subdomain or custom domain) when redirecting to login
+    // const currentDomain = typeof window !== 'undefined' ? window.location.origin : '';
 
+    // Sign out without automatic redirect
+    await signOut({ redirect: false });
+    // Manually redirect to preserve domain
+    // window.location.href = `${currentDomain}`;
+  };
   return (
     <>
       <nav className="fixed top-0 w-full z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 transition-all duration-300">
@@ -90,7 +98,7 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
               {/* Logout Button - Show only if logged in */}
               {session && (
                 <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={handleLogout}
                   className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative group"
                   title="Logout"
                 >
@@ -214,7 +222,7 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
                 <button
                   onClick={() => {
                     closeMobileMenu();
-                    signOut({ callbackUrl: "/" });
+                    handleLogout();
                   }}
                   className="flex items-center gap-3 text-base font-medium text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-lg transition-colors w-full"
                 >

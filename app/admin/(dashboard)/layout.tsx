@@ -48,7 +48,14 @@ export default function AdminLayout({
   ];
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/login' });
+    // Preserve current domain (subdomain or custom domain) when redirecting to login
+    const currentDomain = typeof window !== 'undefined' ? window.location.origin : '';
+
+    // Sign out without automatic redirect
+    await signOut({ redirect: false });
+
+    // Manually redirect to preserve domain
+    window.location.href = `${currentDomain}/login`;
   };
 
   return (

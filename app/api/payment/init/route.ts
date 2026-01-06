@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     // SSLCommerz Configuration
     const store_id = process.env.STORE_ID || "testbox";
-    const store_passwd = process.env.STORE_PASSWD || "qwerty";
+    const store_passwd = process.env.STORE_PASSWORD || "qwerty";
     const is_live = process.env.NODE_ENV === "production"; // Use environment for live mode
 
     const tran_id = `TRAN_${orderId}_${Date.now()}`;
