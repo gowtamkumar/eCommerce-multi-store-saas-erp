@@ -1,14 +1,15 @@
+import FAQ from '@/components/FAQ';
+import Footer from '@/components/Footer';
+import Navbar from '@/components/Navbar';
+import ProductGrid from '@/components/ProductGrid';
+import Reviews from '@/components/Reviews';
+import { getSiteSettings } from '@/lib/getSettings';
 import dbConnect from '@/lib/mongodb';
 import Page from '@/models/Page';
+import { ArrowRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { getSiteSettings } from '@/lib/getSettings';
-import FAQ from '@/components/FAQ';
-import Reviews from '@/components/Reviews';
-import { ArrowRight, Send } from 'lucide-react';
 
 async function getPage(slug: string) {
   await dbConnect();
@@ -102,6 +103,12 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
                         </div>
                       </div>
                     </div>
+                  </section>
+                )}
+
+                {section.type === 'products' && (
+                  <section className="container mx-auto px-4 py-20">
+                    <ProductGrid />
                   </section>
                 )}
               </div>

@@ -1,8 +1,8 @@
+import Footer from '@/components/Footer';
+import Navbar from '@/components/Navbar';
 import dbConnect from '@/lib/mongodb';
 import Page from '@/models/Page';
 import { notFound } from 'next/navigation';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 
 export default async function DynamicPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;

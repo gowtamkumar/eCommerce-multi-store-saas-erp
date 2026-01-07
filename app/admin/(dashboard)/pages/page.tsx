@@ -311,6 +311,13 @@ export default function PagesManager() {
                                                     </div>
                                                 </div>
                                             )}
+                                            {section.type === 'products' && (
+                                                <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl text-center">
+                                                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                                                        This section will automatically display your 6 latest active products in a grid layout.
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

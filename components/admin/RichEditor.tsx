@@ -19,9 +19,10 @@ import {
 interface RichEditorProps {
   content: string;
   onChange: (content: string) => void;
+  className?: string;
 }
 
-export default function RichEditor({ content, onChange }: RichEditorProps) {
+export default function RichEditor({ content, onChange, className }: RichEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -56,7 +57,7 @@ export default function RichEditor({ content, onChange }: RichEditorProps) {
   };
 
   return (
-    <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+    <div className={`border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden ${className}`}>
       {/* Toolbar */}
       <div className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-2 flex flex-wrap gap-1">
         <button
