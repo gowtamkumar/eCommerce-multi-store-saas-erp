@@ -1,6 +1,3 @@
-import dbConnect from "@/lib/mongodb";
-import User from "@/models/User";
-import bcrypt from "bcryptjs";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
@@ -17,68 +14,70 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Please enter an username and password");
         }
 
-        await dbConnect();
-
-        const { getTenantId } = await import("./tenant");
-        const tenantId = await getTenantId(req as any);
-
-        // If no tenantId, check if it's a Super Admin on the root domain
-        if (!tenantId) {
-          const user = await User.findOne({ 
-            username: credentials.username,
-            role: "super_admin" 
-          } as any);
-
-          if (!user) {
-            throw new Error("Access denied. Root login is only for Super Admins.");
-          }
-
-          const isPasswordMatch = await bcrypt.compare(credentials.password, user.password);
-          if (!isPasswordMatch) throw new Error("Incorrect password");
-
-          return {
-            id: user._id.toString(),
-            name: user.name,
-            email: user.email,
-            username: user.username || user.email,
-            role: user.role,
-            address: user.address || "",
-            phone: user.phone || "",
-            image: user.image || "",
-            tenantId: "", // Super Admin has no tenantId
-          };
-        }
-
-        // Standard tenant user login
-        const user = await User.findOne({
-          username: credentials.username,
-          tenantId
-        } as any);
-
-        if (!user) {
-          throw new Error("No user found with this username in this store.");
-        }
-
-        const isPasswordMatch = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordMatch) {
-          throw new Error("Incorrect password");
-        }
-
-        return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          username: user.username || user.email,
-          role: user.role,
-          address: user.address || "",
-          phone: user.phone || "",
-          image: user.image || "",
-          tenantId: user.tenantId.toString(),
+        // Construct full URL for the internal API call
+        // Note: In NextAuth logic on server, we might process request.
+        // We need headers to pass context (tenant)
+        
+        let headers: Record<string, string> = {
+            "Content-Type": "application/json"
         };
+        
+        // Try to forward headers if available in req setup
+        if (req?.headers) {
+             // If it's a Headers object
+             if (typeof req.headers.forEach === 'function') {
+                 req.headers.forEach((val: string, key: string) => {
+                     headers[key] = val;
+                 });
+             } else {
+                 // If standard object
+                 Object.assign(headers, req.headers);
+             }
+        } else {
+            // Fallback: Use next/headers if possible (usually works in App Router)
+             try {
+                 const { headers: nextHeaders } = await import("next/headers");
+                 const h = await nextHeaders();
+                 h.forEach((val, key) => {
+                     headers[key] = val;
+                 });
+             } catch (e) {
+                 // ignore
+             }
+        }
+
+        // Determine host for fetch
+        const host = headers["host"] || "localhost:3000";
+        const protocol = host.includes("localhost") ? "http" : "https";
+        const apiUrl = `${protocol}://${host}/api/auth/verify`;
+
+        try {
+            const res = await fetch(apiUrl, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify({
+                    username: credentials.username,
+                    password: credentials.password
+                }),
+                cache: 'no-store'
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || "Authentication failed");
+            }
+
+            if (data.success && data.user) {
+                return data.user;
+            }
+
+            throw new Error(data.error || "Authentication failed");
+
+        } catch (error: any) {
+            console.error("Authorize error:", error);
+            throw new Error(error.message);
+        }
       },
     }),
   ],

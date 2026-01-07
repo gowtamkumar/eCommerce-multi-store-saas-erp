@@ -1,7 +1,5 @@
-import Tenant from "@/models/Tenant";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./authOptions";
-import dbConnect from "./mongodb";
 
 // Helper to safely get headers
 function getHeader(req: any, key: string): string | null {
@@ -26,7 +24,6 @@ function getHeader(req: any, key: string): string | null {
 
 export async function getTenantId(req?: Request | any): Promise<string | null> {
   console.log("DEBUG_TENANT: Starting getTenantId");
-  await dbConnect();
 
   let host: string | null = null;
   let headerTenantId: string | null = null;
@@ -57,48 +54,44 @@ export async function getTenantId(req?: Request | any): Promise<string | null> {
   if (host) {
     // Remove port if present
     const hostname = host.split(":")[0];
+    const protocol = host.includes("localhost") ? "http" : "https";
 
-    // Check for custom domain
-    // Optimization: Cache this lookup if possible
-    console.log("DEBUG_TENANT: Looking up custom domain:", hostname);
-    const customDomainTenant = await Tenant.findOne({ customDomain: hostname });
-    if (customDomainTenant) {
-      console.log("DEBUG_TENANT: Found by Custom Domain", hostname);
-      return customDomainTenant._id.toString();
-    } else {
-      console.log("DEBUG_TENANT: Tenant not found for custom domain:", hostname);
-    }
+    // Lookup via API
+    try {
+        const apiUrl = `${protocol}://${host}/api/tenant/lookup`;
+        
+        // Optimistic check: if localhost, might be subdomain
+        const parts = hostname.split(".");
+        let queryParams = "";
+        
+        if (parts.length > 1) {
+            // Check custom domain or subdomain via API
+            // Note: We need to avoid infinite loops if this is called FROM the lookup API
+            // The lookup API should NOT call getTenantId if possible, or we need a header to separate
+            
+            // We'll pass both domain and subdomain (if applicable)
+            queryParams = `?domain=${hostname}`;
+            
+            const subdomain = parts[0];
+            if (subdomain !== 'www' && subdomain !== 'api') {
+                queryParams += `&subdomain=${subdomain}`;
+            }
 
-    // Check for subdomain
-    // Assuming localhost or domain.com structure.
-    // e.g., store1.saas.com -> store1
-    // e.g., store1.localhost -> store1
-    const parts = hostname.split(".");
+            const res = await fetch(`${apiUrl}${queryParams}`, {
+                cache: 'force-cache',
+                next: { revalidate: 60 } // Cache tenant lookup for 60s
+            });
 
-    // Logic: If on localhost, looks like [subdomain, localhost] (length 2)
-    // If on prod (saas.com), looks like [subdomain, saas, com] (length 3)
-    // If just localhost, length 1 (no subdomain)
-
-    // We want to extract the first part if it's a subdomain
-    if (parts.length > 1) {
-      // For localhost, we expect at least 2 parts (sub.localhost)
-      // For prod, we might expect 3 (sub.domain.com) OR we treat the root domain differently
-
-      // Simple heuristic: take the first part as subdomain
-      const subdomain = parts[0];
-
-      // Exclude common reserved subdomains or 'www'
-      if (subdomain !== 'www' && subdomain !== 'api') {
-        console.log("DEBUG_TENANT: Looking up subdomain:", subdomain);
-        const subdomainTenant = await Tenant.findOne({ subdomain });
-        if (subdomainTenant) {
-          console.log("DEBUG_TENANT: Found by Subdomain", subdomain, subdomainTenant._id);
-          console.log("DEBUG_TENANT: Returning tenantId from subdomain:", subdomainTenant._id.toString());
-          return subdomainTenant._id.toString();
-        } else {
-          console.log("DEBUG_TENANT: Tenant not found for subdomain", subdomain);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.tenantId) {
+                    console.log("DEBUG_TENANT: Found via API:", data.tenantId);
+                    return data.tenantId;
+                }
+            }
         }
-      }
+    } catch (err) {
+        console.error("DEBUG_TENANT: API lookup failed", err);
     }
   }
 
