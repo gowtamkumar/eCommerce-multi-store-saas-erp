@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { FileEntity } from '../entitis/file.entity';
+import { FileEntity } from '../entities/file.entity';
 import { CreateFileDto, FilterFileDto, UpdateFileDto } from '../dtos';
 import * as fs from 'fs';
 import * as PDFDocument from 'pdfkit';
@@ -13,7 +13,7 @@ export class FilesService {
   constructor(
     @InjectRepository(FileEntity)
     private readonly fileRepo: Repository<FileEntity>,
-  ) {}
+  ) { }
 
   getFiles(filterFile: FilterFileDto): Promise<FileEntity[]> {
     const { filename, originalname } = filterFile;

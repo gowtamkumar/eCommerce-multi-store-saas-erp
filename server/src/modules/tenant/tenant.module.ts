@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TenantController } from './tenant.controller';
+import { TenantLookupController } from './tenant-lookup.controller';
 import { TenantService } from './tenant.service';
 import { TenantEntity } from './entities/tenant.entity';
 import { UserEntity } from '../admin/user/entities/user.entity';
@@ -11,7 +12,7 @@ import { SettingsModule } from '../settings/settings.module';
         TypeOrmModule.forFeature([TenantEntity, UserEntity]),
         SettingsModule,
     ],
-    controllers: [TenantController],
+    controllers: [TenantController, TenantLookupController],
     providers: [TenantService],
     exports: [TenantService],
 })

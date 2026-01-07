@@ -1,26 +1,19 @@
-import { Expose } from 'class-transformer';
-import { UserRole } from '../../../../common/enums/user/user-role.enum';
-import { UserStatus } from '../../../../common/enums/user/user-status.enum';
+import { UserRole } from 'src/common/enums/user/user-role.enum';
+import { UserStatus } from 'src/common/enums/user/user-status.enum';
 
 export class UserDto {
-  @Expose()
-  id: string;
-
-  @Expose()
-  name: string;
-
-  @Expose()
-  email: string;
-
-  @Expose()
-  username: string;
-
-  @Expose()
-  isAdmin: boolean;
-
-  @Expose()
-  roles: UserRole[];
-
-  @Expose()
-  status: UserStatus;
+    id: string;
+    name: string;
+    email: string;
+    username: string;
+    phone?: string;
+    address?: string;
+    image?: string;
+    isAdmin: boolean;
+    isEmailVerified: boolean;
+    roles: UserRole[];
+    status: UserStatus;
+    tenantId: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
