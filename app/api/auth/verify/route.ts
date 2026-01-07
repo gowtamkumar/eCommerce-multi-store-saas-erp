@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       const user = await User.findOne({ 
         username: username,
         role: "super_admin" 
-      });
+      } as any);
 
       if (!user) {
         return NextResponse.json({ error: "Access denied. Root login is only for Super Admins." }, { status: 403 });
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     const user = await User.findOne({
       username: username,
       tenantId
-    });
+    } as any);
 
     if (!user) {
       return NextResponse.json({ error: "No user found with this username in this store." }, { status: 404 });
