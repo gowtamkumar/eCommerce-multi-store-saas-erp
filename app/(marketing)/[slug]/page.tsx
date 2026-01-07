@@ -3,29 +3,31 @@ import Navbar from "@/components/Navbar";
 import PaymentStatus from "@/components/PaymentStatus";
 import SectionRenderer from "@/components/SectionRenderer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
-import dbConnect from "@/lib/mongodb";
-import { getTenantId } from "@/lib/tenant";
-import Page from "@/models/Page";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 async function getPage(slug: string) {
     try {
-        await dbConnect();
-        const tenantId = await getTenantId();
+        const headersList = await headers();
+        const host = headersList.get("host");
+        const protocol = host?.includes("localhost") ? "http" : "https";
 
-        // Query based on tenantId if present, otherwise search without tenant context (SaaS page)
-        const query: any = { slug, status: 'published' };
-        if (tenantId) {
-            query.tenantId = tenantId;
-        } else {
-            // For SaaS pages, we might look for pages with no tenantId or a specific admin tenantId
-            // Assuming SaaS pages are marked differently or stored without tenantId
-            query.tenantId = { $exists: false };
-        }
+        if (!host) return null;
 
-        const page = await Page.findOne(query).lean();
-        return page ? JSON.parse(JSON.stringify(page)) : null;
+        const res = await fetch(`${protocol}://${host}/api/pages/slug/${slug}`, {
+            headers: {
+                host: host,
+                "x-tenant-id": headersList.get("x-tenant-id") || "",
+                cookie: headersList.get("cookie") || ""
+            },
+            cache: 'no-store'
+        });
+
+        if (!res.ok) return null;
+
+        const data = await res.json();
+        return data.success ? data.page : null;
     } catch (error) {
         console.error("Error fetching page:", error);
         return null;

@@ -2,6 +2,7 @@ import FAQ from "@/components/FAQ";
 import Features from "@/components/Features";
 import Footer from "@/components/Footer";
 import Hero from "@/components/Hero";
+import SaaSLanding from "@/components/marketing/SaaSLanding";
 import Navbar from "@/components/Navbar";
 import PaymentStatus from "@/components/PaymentStatus";
 import ProductDetails from "@/components/ProductDetails";
@@ -9,39 +10,31 @@ import Reviews from "@/components/Reviews";
 import SectionRenderer from "@/components/SectionRenderer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { getSiteSettings } from "@/lib/getSettings";
-import dbConnect from "@/lib/mongodb";
-import Page from "@/models/Page";
-
+import { headers } from "next/headers";
 import { Suspense } from "react";
 
-
-async function getProduct() {
+async function getHomeData() {
   try {
-    const dbConnect = (await import('@/lib/mongodb')).default;
-    const { getTenantId } = await import('@/lib/tenant');
-    const Product = (await import('@/models/Product')).default;
+    const headersList = await headers();
+    const host = headersList.get("host");
+    const protocol = host?.includes("localhost") ? "http" : "https";
 
-    await dbConnect();
-    const tenantId = await getTenantId();
+    if (!host) return null;
 
-    if (!tenantId) {
-      console.error("No tenant context for home page");
-      return null;
-    }
+    const res = await fetch(`${protocol}://${host}/api/home`, {
+      headers: {
+        host: host,
+        "x-tenant-id": headersList.get("x-tenant-id") || "",
+        cookie: headersList.get("cookie") || ""
+      },
+      cache: 'no-store'
+    });
 
-    // Fetch the most recently created product that is active and belongs to tenant
-    const product = await Product.findOne({ status: "active", tenantId } as any)
-      .sort({ createdAt: -1 })
-      .lean();
+    if (!res.ok) return null;
 
-    if (!product) {
-      console.log("No active product found for tenant:", tenantId);
-      return null;
-    }
-
-    return JSON.parse(JSON.stringify(product));
+    return await res.json();
   } catch (error) {
-    console.error("Failed to fetch product:", error);
+    console.error("Error fetching home data:", error);
     return null;
   }
 }
@@ -76,23 +69,21 @@ export async function generateMetadata() {
   };
 }
 
-import SaaSLanding from "@/components/marketing/SaaSLanding";
 
 export default async function Home() {
-  const { getTenantId } = await import('@/lib/tenant');
-  await dbConnect();
-  const tenantId = await getTenantId();
+  const data = await getHomeData();
 
-  // If no tenant is identified, we are on the root SaaS marketing domain
-  if (!tenantId) {
+  if (!data || !data.success) {
+    // Fallback if API fails? Or show error? 
+    // For now, if no data, maybe just return SaaS landing since maybe tenant check failed
     return <SaaSLanding />;
   }
 
-  const [product, settings, dynamicPage] = await Promise.all([
-    getProduct(),
-    getSiteSettings(),
-    Page.findOne({ tenantId, isHomePage: true }).lean()
-  ]);
+  if (data.isSaaS) {
+    return <SaaSLanding />;
+  }
+
+  const { product, settings, dynamicPage } = data;
 
   // If a custom home page is designed, render it
   if (dynamicPage && dynamicPage.sections && dynamicPage.sections.length > 0) {
@@ -140,7 +131,6 @@ export default async function Home() {
   // Single Product Mode (Default)
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-
       <Suspense fallback={null}>
         <PaymentStatus />
       </Suspense>

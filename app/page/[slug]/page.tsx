@@ -4,17 +4,37 @@ import Navbar from '@/components/Navbar';
 import ProductGrid from '@/components/ProductGrid';
 import Reviews from '@/components/Reviews';
 import { getSiteSettings } from '@/lib/getSettings';
-import dbConnect from '@/lib/mongodb';
-import Page from '@/models/Page';
 import { ArrowRight } from 'lucide-react';
+import { headers } from "next/headers";
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 async function getPage(slug: string) {
-  await dbConnect();
-  const page = await Page.findOne({ slug, status: 'published' }).lean();
-  return page ? JSON.parse(JSON.stringify(page)) : null;
+  try {
+    const headersList = await headers();
+    const host = headersList.get("host");
+    const protocol = host?.includes("localhost") ? "http" : "https";
+
+    if (!host) return null;
+
+    const res = await fetch(`${protocol}://${host}/api/pages/slug/${slug}`, {
+      headers: {
+        host: host,
+        "x-tenant-id": headersList.get("x-tenant-id") || "",
+        cookie: headersList.get("cookie") || ""
+      },
+      cache: 'no-store'
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return data.success ? data.page : null;
+  } catch (error) {
+    console.error("Error fetching page:", error);
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {

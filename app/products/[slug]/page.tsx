@@ -7,21 +7,32 @@ import PaymentStatus from '@/components/PaymentStatus';
 import ProductDetails from '@/components/ProductDetails';
 import RelatedProducts from '@/components/RelatedProducts';
 import Reviews from '@/components/Reviews';
-import dbConnect from '@/lib/mongodb';
-import { getTenantId } from '@/lib/tenant';
-import Product from '@/models/Product';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
 async function getProduct(slug: string) {
     try {
-        await dbConnect();
-        const tenantId = await getTenantId();
-        if (!tenantId) return null;
+        const headersList = await headers();
+        const host = headersList.get("host");
+        const protocol = host?.includes("localhost") ? "http" : "https";
 
-        const product = await Product.findOne({ slug, tenantId }).lean();
-        return product ? JSON.parse(JSON.stringify(product)) : null;
+        if (!host) return null;
+
+        const res = await fetch(`${protocol}://${host}/api/products/slug/${slug}`, {
+            headers: {
+                host: host,
+                "x-tenant-id": headersList.get("x-tenant-id") || "",
+                cookie: headersList.get("cookie") || ""
+            },
+            cache: 'no-store'
+        });
+
+        if (!res.ok) return null;
+
+        const data = await res.json();
+        return data.success ? data.product : null;
     } catch (error) {
+        console.error("Error fetching product:", error);
         return null;
     }
 }
