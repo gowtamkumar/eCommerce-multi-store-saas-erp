@@ -17,16 +17,19 @@ import CheckoutModal from "./CheckoutModal";
 import LucideIcon from './LucideIcon';
 
 interface HeroProps {
-  product: any;
+  product?: any;
+  title?: string;
+  description?: string;
 }
 
-const Hero = ({ product }: HeroProps) => {
+const Hero = ({ product, title, description }: HeroProps) => {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const { settings, selectedCurrency, formatPrice, convertPrice } = useSettings();
 
   const handleShare = async () => {
+    if (!product) return;
     const shareData = {
       title: product.name,
       text: product.tagline || product.description?.substring(0, 100),
@@ -48,7 +51,10 @@ const Hero = ({ product }: HeroProps) => {
 
 
 
-  if (!product) return null;
+  const displayTitle = title || product?.name;
+  const displayDescription = description || product?.description;
+
+  if (!displayTitle && !product) return null;
 
   return (
     <>
@@ -71,31 +77,30 @@ const Hero = ({ product }: HeroProps) => {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 dark:bg-brand-900/30 border border-brand-100 dark:border-brand-800 text-brand-600 dark:text-brand-300 text-sm font-medium">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
                 </span>
-                {product.releaseBadgeText || "New Release 2024"}
+                {product?.releaseBadgeText || "New Release 2024"}
               </div>
 
               <h1 className="text-5xl lg:text-7xl font-bold tracking-tight font-display text-balance">
-                {product.name} {product.tagline && <br />}
-                {product.tagline && <span className="text-gradient">{product.tagline}</span>}
+                {displayTitle} {(title ? "" : product?.tagline) && <br />}
+                {(title ? "" : product?.tagline) && <span className="text-gradient">{product.tagline}</span>}
               </h1>
 
-              <div className="text-lg text-slate-600 dark:text-slate-300 max-w-xl leading-relaxed prose prose-lg dark:prose-invert" dangerouslySetInnerHTML={{ __html: product.description }} />
+              <div className="text-lg text-slate-600 dark:text-slate-300 max-w-xl leading-relaxed prose prose-lg dark:prose-invert" dangerouslySetInnerHTML={{ __html: displayDescription }} />
 
               <div className="space-y-2">
-                {product.discountAmount > 0 ? (
+                {product?.discountAmount > 0 ? (
                   <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                       <span className="text-slate-400 line-through text-sm font-medium">
-                        {formatPrice(product.price)}
+                        {formatPrice(product?.price || 0)}
                       </span>
                       <span className="text-4xl font-bold text-slate-900 dark:text-white font-display">
-                        {formatPrice((product.price - product.discountAmount))}
+                        {formatPrice((product?.price || 0) - (product?.discountAmount || 0))}
                       </span>
                     </div>
                     <div className="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm font-bold animate-bounce-subtle">
-                      SAVE {formatPrice(product.discountAmount)}
+                      SAVE {formatPrice(product?.discountAmount || 0)}
                     </div>
                   </div>
                 ) : (
@@ -110,11 +115,11 @@ const Hero = ({ product }: HeroProps) => {
                   onClick={() => setIsCheckoutOpen(true)}
                   className="px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-full font-semibold transition-all shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 flex items-center gap-2 group"
                 >
-                  Buy Now - {formatPrice(product.price - (product.discountAmount || 0))}
+                  Buy Now - {formatPrice((product?.price || 0) - (product?.discountAmount || 0))}
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <button
-                  onClick={() => product.videoUrl ? setIsVideoOpen(true) : toast.error('No video available for this product')}
+                  onClick={() => product?.videoUrl ? setIsVideoOpen(true) : toast.error('No video available for this product')}
                   className="px-8 py-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-full font-semibold transition-all flex items-center gap-2"
                 >
                   <Play className="w-4 h-4 fill-current" />
@@ -140,7 +145,7 @@ const Hero = ({ product }: HeroProps) => {
 
               <div className="flex items-center gap-4 pt-4">
                 <div className="flex -space-x-3">
-                  {(product.socialProof?.avatars?.length > 0
+                  {(product?.socialProof?.avatars?.length > 0
                     ? product.socialProof.avatars
                     : [1, 2, 3, 4].map(i => `https://i.pravatar.cc/100?img=${i + 10}`)
                   ).map((avatar: string, i: number) => (
@@ -160,12 +165,12 @@ const Hero = ({ product }: HeroProps) => {
                 </div>
                 <div className="space-y-1">
                   <div className="flex text-yellow-400">
-                    {Array.from({ length: Math.min(5, Math.max(1, product.socialProof?.rating || 5)) }).map((_, i) => (
+                    {Array.from({ length: Math.min(5, Math.max(1, product?.socialProof?.rating || 5)) }).map((_, i) => (
                       <Star key={i} className="w-4 h-4 fill-current" />
                     ))}
                   </div>
                   <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                    Loved by {product.socialProof?.count?.toLocaleString() || '2,000'}+ {product.socialProof?.noun || 'customers'}
+                    Loved by {product?.socialProof?.count?.toLocaleString() || '2,000'}+ {product?.socialProof?.noun || 'customers'}
                   </p>
                 </div>
               </div>
@@ -182,10 +187,10 @@ const Hero = ({ product }: HeroProps) => {
                 <div className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800">
                   <Image
                     src={
-                      product.images[0] ||
+                      product?.images?.[0] ||
                       "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1000&auto=format&fit=crop"
                     }
-                    alt={product.name}
+                    alt={product?.name || "Product Image"}
                     fill
                     className="object-cover hover:scale-105 transition-transform duration-700"
                     priority
@@ -194,7 +199,7 @@ const Hero = ({ product }: HeroProps) => {
               </div>
 
               {/* Floating Elements - Dynamic Highlights */}
-              {product.heroHighlights && product.heroHighlights.length > 0 && (
+              {product?.heroHighlights && product.heroHighlights.length > 0 && (
                 <div className="absolute inset-0 pointer-events-none">
                   {product.heroHighlights.map((highlight: any, index: number) => {
                     const colorClasses = {
@@ -268,7 +273,7 @@ const Hero = ({ product }: HeroProps) => {
               >
                 <X className="w-6 h-6" />
               </button>
-              {product.videoUrl ? (
+              {product?.videoUrl ? (
                 product.videoUrl.includes('youtube.com') || product.videoUrl.includes('youtu.be') ? (
                   <iframe
                     src={`https://www.youtube.com/embed/${product.videoUrl.split('v=')[1] || product.videoUrl.split('/').pop()}?autoplay=1`}

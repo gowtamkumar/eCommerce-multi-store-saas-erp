@@ -6,8 +6,11 @@ import Navbar from "@/components/Navbar";
 import PaymentStatus from "@/components/PaymentStatus";
 import ProductDetails from "@/components/ProductDetails";
 import Reviews from "@/components/Reviews";
+import SectionRenderer from "@/components/SectionRenderer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { getSiteSettings } from "@/lib/getSettings";
+import dbConnect from "@/lib/mongodb";
+import Page from "@/models/Page";
 
 import { Suspense } from "react";
 
@@ -77,6 +80,7 @@ import SaaSLanding from "@/components/marketing/SaaSLanding";
 
 export default async function Home() {
   const { getTenantId } = await import('@/lib/tenant');
+  await dbConnect();
   const tenantId = await getTenantId();
 
   // If no tenant is identified, we are on the root SaaS marketing domain
@@ -84,10 +88,26 @@ export default async function Home() {
     return <SaaSLanding />;
   }
 
-  const [product, settings] = await Promise.all([
+  const [product, settings, dynamicPage] = await Promise.all([
     getProduct(),
-    getSiteSettings()
+    getSiteSettings(),
+    Page.findOne({ tenantId, isHomePage: true }).lean()
   ]);
+
+  // If a custom home page is designed, render it
+  if (dynamicPage && dynamicPage.sections && dynamicPage.sections.length > 0) {
+    return (
+      <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+        <Suspense fallback={null}>
+          <PaymentStatus />
+        </Suspense>
+        <Navbar />
+        <SectionRenderer sections={dynamicPage.sections} />
+        <WhatsAppWidget />
+        <Footer />
+      </main>
+    );
+  }
 
   // Multiple Product Mode: Show Grid
   if (settings.productMode === 'multiple') {

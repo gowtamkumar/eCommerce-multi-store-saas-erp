@@ -1,39 +1,47 @@
-import mongoose, { Document, Model, Schema } from 'mongoose';
+import mongoose, { Document, Model, Schema } from "mongoose";
+
+export interface ISection {
+  id: string;
+  type: 'hero' | 'features' | 'product-grid' | 'rich-text' | 'collection';
+  content: any;
+  settings?: any;
+}
 
 export interface IPage extends Document {
   title: string;
   slug: string;
-  content: string;
-  contentType: 'html' | 'markdown';
+  isHomePage: boolean;
+  sections: ISection[];
+  metaTitle?: string;
   metaDescription?: string;
   status: 'draft' | 'published';
-  sections?: Array<{
-    id: string;
-    type: string;
-    content: any;
-    order: number;
-  }>;
-  updatedAt: string;
-  createdAt: string;
   tenantId: mongoose.Types.ObjectId;
 }
 
-const PageSchema: Schema = new Schema({
-  title: { type: String, required: true },
-  slug: { type: String, required: true, unique: true },
-  content: { type: String },
-  contentType: { type: String, enum: ['html', 'markdown'], default: 'markdown' },
-  metaDescription: { type: String },
-  status: { type: String, enum: ['draft', 'published'], default: 'draft' },
-  sections: [{
-    id: { type: String },
-    type: { type: String, enum: ['hero', 'content', 'features', 'faq', 'cta', 'testimonials', 'products'] },
-    content: { type: Schema.Types.Mixed },
-    order: { type: Number, default: 0 }
-  }],
-  tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true },
-}, { timestamps: true });
+const PageSchema: Schema = new Schema(
+  {
+    title: { type: String, required: true },
+    slug: { type: String, default: "" },
+    isHomePage: { type: Boolean, default: false },
+    sections: [{ type: Schema.Types.Mixed }], // Storing flexible JSON for sections
+    metaTitle: { type: String },
+    metaDescription: { type: String },
+    status: { type: String, enum: ['draft', 'published'], default: 'published' },
+    tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true },
+  },
+  { timestamps: true }
+);
 
-const Page: Model<IPage> = mongoose.models.Page || mongoose.model<IPage>('Page', PageSchema);
+// Compound index to ensure slugs are unique per tenant
+PageSchema.index({ slug: 1, tenantId: 1 }, { unique: true });
+// Ensure only one home page per tenant
+PageSchema.index({ tenantId: 1, isHomePage: 1 }, { unique: true, partialFilterExpression: { isHomePage: true } });
+
+// In development, we might change the schema, so we delete the model from cache to force re-registration
+if (process.env.NODE_ENV === "development") {
+  delete mongoose.models.Page;
+}
+
+const Page: Model<IPage> = mongoose.models.Page || mongoose.model<IPage>("Page", PageSchema);
 
 export default Page;

@@ -1,33 +1,87 @@
-import Footer from '@/components/Footer';
-import Navbar from '@/components/Navbar';
-import dbConnect from '@/lib/mongodb';
-import Page from '@/models/Page';
-import { notFound } from 'next/navigation';
+import Footer from "@/components/Footer";
+import Navbar from "@/components/Navbar";
+import PaymentStatus from "@/components/PaymentStatus";
+import SectionRenderer from "@/components/SectionRenderer";
+import WhatsAppWidget from "@/components/WhatsAppWidget";
+import dbConnect from "@/lib/mongodb";
+import { getTenantId } from "@/lib/tenant";
+import Page from "@/models/Page";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+
+async function getPage(slug: string) {
+    try {
+        await dbConnect();
+        const tenantId = await getTenantId();
+
+        // Query based on tenantId if present, otherwise search without tenant context (SaaS page)
+        const query: any = { slug, status: 'published' };
+        if (tenantId) {
+            query.tenantId = tenantId;
+        } else {
+            // For SaaS pages, we might look for pages with no tenantId or a specific admin tenantId
+            // Assuming SaaS pages are marked differently or stored without tenantId
+            query.tenantId = { $exists: false };
+        }
+
+        const page = await Page.findOne(query).lean();
+        return page ? JSON.parse(JSON.stringify(page)) : null;
+    } catch (error) {
+        console.error("Error fetching page:", error);
+        return null;
+    }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    const page = await getPage(slug);
+
+    if (!page) return {};
+
+    return {
+        title: page.metaTitle || `${page.title}`,
+        description: page.metaDescription,
+    };
+}
 
 export default async function DynamicPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    await dbConnect();
-    const page = await Page.findOne({ slug, isPublished: true });
+
+    // Reserved slugs
+    if (['api', 'admin', 'login', 'products', 'checkout', 'orders'].includes(slug)) {
+        return notFound();
+    }
+
+    const page = await getPage(slug);
 
     if (!page) {
         notFound();
     }
 
     return (
-        <main className="min-h-screen bg-white dark:bg-slate-900">
+        <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+            <Suspense fallback={null}>
+                <PaymentStatus />
+            </Suspense>
             <Navbar />
-
-            <div className="pt-32 pb-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-4xl md:text-5xl font-bold font-display text-slate-900 dark:text-white mb-8">
-                    {page.title}
-                </h1>
-
-                <div
-                    className="prose prose-lg dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: page.content }}
-                />
+            <div className="pt-20">
+                {/* If the page has modern sections, use the renderer */}
+                {page.sections && page.sections.length > 0 ? (
+                    <SectionRenderer sections={page.sections} />
+                ) : (
+                    /* Fallback for legacy content-only pages */
+                    <div className="pt-32 pb-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 font-inter">
+                        <h1 className="text-4xl md:text-5xl font-bold font-display text-slate-900 dark:text-white mb-8">
+                            {page.title}
+                        </h1>
+                        <div
+                            className="prose prose-lg dark:prose-invert max-w-none"
+                            dangerouslySetInnerHTML={{ __html: page.content || '' }}
+                        />
+                    </div>
+                )}
             </div>
-
+            <WhatsAppWidget />
             <Footer />
         </main>
     );

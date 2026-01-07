@@ -17,6 +17,7 @@ interface Product {
   images: string[];
   features: string[];
   discountAmount?: number;
+  slug: string;
 }
 
 export default function ProductsPage() {
@@ -142,6 +143,7 @@ export default function ProductsPage() {
             <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
               <tr>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Name</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Slug</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Price</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Stock</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Status</th>
@@ -163,6 +165,11 @@ export default function ProductsPage() {
                 filteredProducts.map((product) => (
                   <tr key={product._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{product.name}</td>
+                    <td className="px-6 py-4">
+                      <code className="text-xs bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded text-slate-600 dark:text-slate-400">
+                        /{product.slug}
+                      </code>
+                    </td>
                     <td className="px-6 py-4">
                       {product.discountAmount !== undefined && product.discountAmount > 0 ? (
                         <div className="flex flex-col">

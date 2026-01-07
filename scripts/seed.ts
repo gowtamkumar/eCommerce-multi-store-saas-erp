@@ -48,12 +48,13 @@ const connectDB = async () => {
 import { OrderStatus } from "@/lib/enums/order-status";
 import { PaymentMethod } from "@/lib/enums/payment-method";
 import { PaymentStatus } from "@/lib/enums/payment-status";
-import Lead from "../models/Lead";
 import FAQ from "../models/FAQ";
+import Lead from "../models/Lead";
 import Order from "../models/Order";
 import Page from "../models/Page";
 import Product from "../models/Product";
 import SiteSettings from "../models/SiteSettings";
+import Tenant from "../models/Tenant";
 import Testimonial from "../models/Testimonial";
 import User from "../models/User";
 
@@ -69,13 +70,21 @@ const seed = async () => {
     await Testimonial.deleteMany({});
     await FAQ.deleteMany({});
     await Page.deleteMany({});
-    await SiteSettings.deleteMany({});
     await Lead.deleteMany({});
+    await Tenant.deleteMany({});
+
+    console.log("Seeding Tenant...");
+    const tenant = await Tenant.create({
+      storeName: "LuxeAudio Official",
+      subdomain: "luxeaudio",
+      planTier: "pro"
+    });
+    const tenantId = tenant._id;
 
     console.log("Seeding Users...");
     const hashedPassword = await bcrypt.hash("password123", 10);
 
-    const adminUser = await User.create({
+    const adminUser: any = await User.create({
       name: "Admin User",
       username: "admin",
       email: "admin@example.com",
@@ -85,9 +94,10 @@ const seed = async () => {
       phone: "123-456-7890",
       address: "123 Admin St, Admin City, AS 12345",
       status: "active",
-    });
+      tenantId
+    } as any);
 
-    const customerUser = await User.create({
+    const customerUser: any = await User.create({
       name: "John Doe",
       username: "johndoe",
       email: "john@example.com",
@@ -97,7 +107,8 @@ const seed = async () => {
       phone: "987-654-3210",
       address: "456 User Ln, User Town, US 67890",
       status: "active",
-    });
+      tenantId
+    } as any);
 
     const products = await Product.create([
       {
@@ -105,7 +116,7 @@ const seed = async () => {
         description:
           "Premium noise-cancelling headphones with 40h battery life and crystal clear sound.",
         price: 299,
-
+        slug: "luxeaudio-x1",
         images: [
           "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1000&auto=format&fit=crop",
         ],
@@ -119,13 +130,14 @@ const seed = async () => {
           rating: 4.9,
           avatars: [],
         },
+        tenantId
       },
       {
         name: "LuxeAudio Pro Earbuds",
         description:
           "True wireless earbuds with immersive sound and IPX7 water resistance.",
         price: 149,
-
+        slug: "luxeaudio-pro-earbuds",
         images: [
           "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?q=80&w=1000&auto=format&fit=crop",
         ],
@@ -133,13 +145,14 @@ const seed = async () => {
         stock: 50,
         status: "active",
         tagline: "Sound Freedom",
+        tenantId
       },
       {
         name: "LuxeAudio Home Speaker",
         description:
           "Smart home speaker with 360-degree sound and voice assistant support.",
         price: 199,
-
+        slug: "luxeaudio-home-speaker",
         images: [
           "https://images.unsplash.com/photo-1589003077984-894e133dabab?q=80&w=1000&auto=format&fit=crop",
         ],
@@ -147,8 +160,9 @@ const seed = async () => {
         stock: 30,
         status: "active",
         tagline: "Fill the Room",
+        tenantId
       },
-    ]);
+    ] as any);
 
     console.log("Seeding Orders...");
     // Order model requires single product per order
@@ -235,28 +249,40 @@ const seed = async () => {
       {
         title: "About Us",
         slug: "about",
-        content:
-          "<h1>About LuxeAudio</h1><p>We are passionate about delivering the best audio experience.</p>",
+        sections: [
+          {
+            type: "hero",
+            content: { headline: "About LuxeAudio", subline: "We are passionate about delivering the best audio experience." }
+          }
+        ],
         status: "published",
-        contentType: "html",
+        tenantId
       },
       {
         title: "Privacy Policy",
         slug: "privacy",
-        content:
-          "<h1>Privacy Policy</h1><p>Your privacy is important to us.</p>",
+        sections: [
+          {
+            type: "rich-text",
+            content: { html: "<h1>Privacy Policy</h1><p>Your privacy is important to us.</p>" }
+          }
+        ],
         status: "published",
-        contentType: "html",
+        tenantId
       },
       {
         title: "Terms of Service",
         slug: "terms",
-        content:
-          "<h1>Terms of Service</h1><p>Please read these terms carefully.</p>",
+        sections: [
+          {
+            type: "rich-text",
+            content: { html: "<h1>Terms of Service</h1><p>Please read these terms carefully.</p>" }
+          }
+        ],
         status: "published",
-        contentType: "html",
+        tenantId
       },
-    ]);
+    ] as any);
 
     console.log("Seeding Site Settings...");
     await SiteSettings.create({
@@ -272,7 +298,8 @@ const seed = async () => {
         instagram: "https://instagram.com",
         linkedin: "https://linkedin.com",
       },
-    });
+      tenantId
+    } as any);
 
     console.log("Database seeded successfully!");
     process.exit(0);
