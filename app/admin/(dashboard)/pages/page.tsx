@@ -12,6 +12,7 @@ interface Page {
     slug: string;
     status: "draft" | "published";
     isHomePage: boolean;
+    order: number;
     createdAt: string;
 }
 
@@ -22,6 +23,8 @@ export default function PagesList() {
         isOpen: false,
         id: "",
     });
+
+    const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
 
     useEffect(() => {
         fetchPages();
@@ -38,6 +41,35 @@ export default function PagesList() {
             console.error("Failed to fetch pages", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleOrderChange = async (id: string, newOrder: number) => {
+        setUpdatingOrder(id);
+        try {
+            // Optimistic update
+            const updatedPages = pages.map(p =>
+                p._id === id ? { ...p, order: newOrder } : p
+            );
+            setPages(updatedPages);
+
+            const res = await fetch(`/api/pages/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order: newOrder }),
+            });
+
+            if (!res.ok) {
+                toast.error("Failed to update order");
+                fetchPages(); // Revert on failure
+            } else {
+                toast.success("Order updated");
+            }
+        } catch (error) {
+            toast.error("Error updating order");
+            fetchPages();
+        } finally {
+            setUpdatingOrder(null);
         }
     };
 
@@ -88,6 +120,9 @@ export default function PagesList() {
                                 URL Slug
                             </th>
                             <th className="px-6 py-4 text-sm font-bold text-slate-700 dark:text-slate-200">
+                                Order
+                            </th>
+                            <th className="px-6 py-4 text-sm font-bold text-slate-700 dark:text-slate-200">
                                 Status
                             </th>
                             <th className="px-6 py-4 text-sm font-bold text-slate-700 dark:text-slate-200 text-right">
@@ -98,13 +133,13 @@ export default function PagesList() {
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                         {loading ? (
                             <tr>
-                                <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
                                     Loading pages...
                                 </td>
                             </tr>
                         ) : pages.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
                                     No pages found.
                                 </td>
                             </tr>
@@ -132,10 +167,21 @@ export default function PagesList() {
                                         </code>
                                     </td>
                                     <td className="px-6 py-4">
+                                        <input
+                                            type="number"
+                                            value={page.order || 0}
+                                            onChange={(e) => handleOrderChange(page._id, parseInt(e.target.value))}
+                                            className="w-16 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                        />
+                                        {updatingOrder === page._id && (
+                                            <span className="ml-2 text-xs text-brand-600 animate-pulse">Saving...</span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4">
                                         <span
                                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${page.status === "published"
-                                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                                    : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
                                                 }`}
                                         >
                                             {page.status}

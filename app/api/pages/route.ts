@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     const query: any = { tenantId }; // Scoped
     if (status) query.status = status;
     
-    const pages = await Page.find(query).sort({ createdAt: -1 });
+    const pages = await Page.find(query).sort({ order: 1, createdAt: -1 });
 
     return NextResponse.json({ success: true, pages });
   } catch (error) {

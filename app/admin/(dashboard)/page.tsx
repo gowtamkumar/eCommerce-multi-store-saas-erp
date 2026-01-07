@@ -2,7 +2,8 @@
 
 import { useSettings } from '@/contexts/SettingsContext';
 import { OrderStatus } from '@/lib/enums/order-status';
-import { Package, ShoppingBag, TrendingUp } from 'lucide-react';
+import { FileText, Package, ShoppingBag, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -10,6 +11,8 @@ interface DashboardStats {
   totalSales: number;
   activeOrders: number;
   totalProducts: number;
+  totalPages: number;
+  recentPages: any[];
   salesData: any[];
   monthlyGrowth: number | null;
 }
@@ -20,9 +23,12 @@ export default function AdminDashboard() {
     totalSales: 0,
     activeOrders: 0,
     totalProducts: 0,
+    totalPages: 0,
+    recentPages: [],
     salesData: [],
     monthlyGrowth: null,
   });
+  const [recentProducts, setRecentProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,20 +38,29 @@ export default function AdminDashboard() {
   const fetchDashboardStats = async () => {
     try {
       // Fetch all data in parallel
-      const [ordersRes, productsRes, paymentsRes] = await Promise.all([
+      const [ordersRes, productsRes, paymentsRes, pagesRes] = await Promise.all([
         fetch('/api/orders'),
         fetch('/api/products'),
         fetch('/api/payments'),
+        fetch('/api/pages'),
       ]);
 
-      const ordersData = await ordersRes.json();
-      const productsData = await productsRes.json();
-      const paymentsData = await paymentsRes.json();
+      const [ordersData, productsData, paymentsData, pagesData] = await Promise.all([
+        ordersRes.json(),
+        productsRes.json(),
+        paymentsRes.json(),
+        pagesRes.json(),
+      ]);
 
       // Calculate stats
       const activeOrders = ordersData.orders?.filter((o: any) => o.status === OrderStatus.PENDING).length || 0;
       const totalProducts = productsData.products?.length || 0;
       const totalSales = paymentsData.payments?.reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
+      const totalPages = pagesData.pages?.length || 0;
+      const recentPages = pagesData.pages?.slice(0, 5) || [];
+      const recentProducts = productsData.products?.slice(0, 5) || [];
+
+      setRecentProducts(recentProducts);
 
       // Calculate monthly growth
       const now = new Date();
@@ -92,6 +107,8 @@ export default function AdminDashboard() {
         totalSales,
         activeOrders,
         totalProducts,
+        totalPages,
+        recentPages,
         salesData,
         monthlyGrowth,
       });
@@ -111,7 +128,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-md">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -182,6 +199,25 @@ export default function AdminDashboard() {
             In your inventory
           </div>
         </div>
+
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-md">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Total Pages</p>
+              {loading ? (
+                <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
+              ) : (
+                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stats.totalPages}</h3>
+              )}
+            </div>
+            <div className="p-3 bg-brand-100 dark:bg-brand-900/30 rounded-xl">
+              <FileText className="w-6 h-6 text-brand-600 dark:text-brand-400" />
+            </div>
+          </div>
+          <div className="text-sm text-slate-500 dark:text-slate-400">
+            Created in Page Builder
+          </div>
+        </div>
       </div>
 
       {/* Sales Chart */}
@@ -233,6 +269,84 @@ export default function AdminDashboard() {
               </AreaChart>
             </ResponsiveContainer>
           )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Recent Products */}
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recent Products</h3>
+            <Link href="/admin/products" className="text-sm text-brand-600 hover:underline">View all</Link>
+          </div>
+          <div className="space-y-4">
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-12 bg-slate-100 dark:bg-slate-700/50 animate-pulse rounded-xl"></div>
+                ))}
+              </div>
+            ) : (
+              recentProducts.map((product: any) => (
+                <div key={product._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                      {product.images?.[0] && (
+                        <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-white">{product.name}</p>
+                      <p className="text-xs text-slate-500">{formatPrice(product.price)}</p>
+                    </div>
+                  </div>
+                  <div className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${product.status === 'active'
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30'
+                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800'
+                    }`}>
+                    {product.status}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Recent Pages */}
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recent Pages</h3>
+            <Link href="/admin/pages" className="text-sm text-brand-600 hover:underline">View all</Link>
+          </div>
+          <div className="space-y-4">
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-12 bg-slate-100 dark:bg-slate-700/50 animate-pulse rounded-xl"></div>
+                ))}
+              </div>
+            ) : (
+              stats.recentPages.map((page: any) => (
+                <div key={page._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-white">{page.title}</p>
+                      <p className="text-xs text-slate-500">/{page.isHomePage ? '' : page.slug}</p>
+                    </div>
+                  </div>
+                  <div className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${page.status === 'published'
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30'
+                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30'
+                    }`}>
+                    {page.status}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useSettings } from '@/contexts/SettingsContext';
 import { Facebook, Heart, Instagram, Linkedin, Twitter } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 const Footer = ({ settings: propSettings }: { settings?: any }) => {
   const { settings: contextSettings } = useSettings();
@@ -10,6 +11,24 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
   const brandName = settings?.brandName || "LuxeAudio";
   const description = settings?.siteDescription || "Elevating your audio experience with premium sound and design.";
   const social: any = settings?.socialLinks || {};
+
+  const [pages, setPages] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchPages();
+  }, []);
+
+  const fetchPages = async () => {
+    try {
+      const res = await fetch("/api/pages?status=published");
+      const data = await res.json();
+      if (data.success) {
+        setPages(data.pages);
+      }
+    } catch (error) {
+      console.error("Failed to fetch footer pages", error);
+    }
+  };
 
   return (
     <footer className="bg-slate-900 text-white py-16 border-t border-slate-800">
@@ -46,12 +65,18 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
             </div>
           </div>
           <div>
-            <h4 className="font-bold text-lg mb-6 text-white">Product</h4>
+            <h4 className="font-bold text-lg mb-6 text-white">Pages</h4>
             <ul className="space-y-4 text-slate-400">
-              <li><Link href="#features" className="hover:text-blue-400 transition-colors">Features</Link></li>
-              <li><Link href="#product" className="hover:text-blue-400 transition-colors">Specifications</Link></li>
-              <li><Link href="#reviews" className="hover:text-blue-400 transition-colors">Reviews</Link></li>
-              <li><Link href="#faq" className="hover:text-blue-400 transition-colors">FAQ</Link></li>
+              {pages.map((page) => (
+                <li key={page._id}>
+                  <Link
+                    href={page.isHomePage ? "/" : `/${page.slug}`}
+                    className="hover:text-blue-400 transition-colors"
+                  >
+                    {page.title}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
           <div>

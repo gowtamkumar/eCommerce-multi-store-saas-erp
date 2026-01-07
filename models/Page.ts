@@ -23,6 +23,7 @@ const PageSchema: Schema = new Schema(
     title: { type: String, required: true },
     slug: { type: String, default: "" },
     isHomePage: { type: Boolean, default: false },
+    order: { type: Number, default: 0 },
     sections: [{ type: Schema.Types.Mixed }], // Storing flexible JSON for sections
     metaTitle: { type: String },
     metaDescription: { type: String },

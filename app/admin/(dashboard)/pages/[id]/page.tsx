@@ -267,6 +267,82 @@ export default function PageBuilder({ params }: { params: Promise<{ id: string }
                                                 This will render your product collection in a grid.
                                             </div>
                                         )}
+
+                                        {section.type === "faq" && (
+                                            <div className="grid grid-cols-1 gap-4">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Section Title (Optional)"
+                                                    value={section?.content?.title || ""}
+                                                    onChange={(e) =>
+                                                        updateSectionContent(section.id, {
+                                                            title: e.target.value,
+                                                        })
+                                                    }
+                                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                                                />
+                                                <textarea
+                                                    placeholder="Description (Optional)"
+                                                    value={section.content?.description || ""}
+                                                    onChange={(e) =>
+                                                        updateSectionContent(section.id, {
+                                                            description: e.target.value,
+                                                        })
+                                                    }
+                                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {section.type === "cta" && (
+                                            <div className="grid grid-cols-1 gap-4">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Headline"
+                                                    value={section.content?.headline || ""}
+                                                    onChange={(e) =>
+                                                        updateSectionContent(section.id, {
+                                                            headline: e.target.value,
+                                                        })
+                                                    }
+                                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                                                />
+                                                <textarea
+                                                    placeholder="Subline text..."
+                                                    value={section.content?.subline || ""}
+                                                    onChange={(e) =>
+                                                        updateSectionContent(section.id, {
+                                                            subline: e.target.value,
+                                                        })
+                                                    }
+                                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                                                />
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Button Label"
+                                                        value={section.content?.buttonLabel || ""}
+                                                        onChange={(e) =>
+                                                            updateSectionContent(section.id, {
+                                                                buttonLabel: e.target.value,
+                                                            })
+                                                        }
+                                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Button Link (e.g. /products)"
+                                                        value={section.content?.buttonLink || ""}
+                                                        onChange={(e) =>
+                                                            updateSectionContent(section.id, {
+                                                                buttonLink: e.target.value,
+                                                            })
+                                                        }
+                                                        className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}

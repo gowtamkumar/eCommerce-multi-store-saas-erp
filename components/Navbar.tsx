@@ -4,7 +4,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { Lock, LogOut, Menu, User, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CurrencySwitcher from "./CurrencySwitcher";
 import Template from "./Template";
 
@@ -15,6 +15,24 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
   const brandName = settings?.brandName || "LuxeAudio";
 
   const { data: session } = useSession();
+  const [pages, setPages] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchPages();
+  }, []);
+
+  const fetchPages = async () => {
+    try {
+      const res = await fetch("/api/pages?status=published");
+      const data = await res.json();
+      if (data.success) {
+        // Filter out the home page as it's usually the logo link
+        setPages(data.pages);
+      }
+    } catch (error) {
+      console.error("Failed to fetch menu pages", error);
+    }
+  };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -64,13 +82,13 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
               )}
             </Link>
             <div className="hidden md:flex items-center space-x-10">
-              {["Features", "Product", "Reviews", "FAQ"].map((item) => (
+              {pages.map((page) => (
                 <Link
-                  key={item}
-                  href={`#${item.toLowerCase()}`}
+                  key={page._id}
+                  href={page.slug ? `/${page.slug}` : `/`}
                   className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative group"
                 >
-                  {item}
+                  {page.title}
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 dark:bg-blue-400 transition-all group-hover:w-full"></span>
                 </Link>
               ))}
@@ -165,14 +183,14 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
           {/* Mobile Menu Links */}
           <div className="flex-1 overflow-y-auto py-6">
             <div className="flex flex-col space-y-1 px-4">
-              {["Features", "Product", "Reviews", "FAQ"].map((item) => (
+              {pages.map((page) => (
                 <Link
-                  key={item}
-                  href={`#${item.toLowerCase()}`}
+                  key={page._id}
+                  href={`/${page.slug}`}
                   onClick={closeMobileMenu}
                   className="text-base font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-lg transition-colors"
                 >
-                  {item}
+                  {page.title}
                 </Link>
               ))}
 

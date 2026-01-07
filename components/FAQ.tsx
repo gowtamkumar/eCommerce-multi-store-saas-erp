@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, HelpCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface FAQ {
   _id: string;
@@ -13,7 +13,12 @@ interface FAQ {
   status: 'active' | 'inactive';
 }
 
-export default function FAQ() {
+interface FAQProps {
+  title?: string;
+  description?: string;
+}
+
+export default function FAQ({ title, description }: FAQProps) {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -80,10 +85,10 @@ export default function FAQ() {
             FAQ
           </div>
           <h2 className="text-4xl md:text-5xl font-bold font-display text-slate-900 dark:text-white mb-6">
-            Frequently Asked Questions
+            {title || "Frequently Asked Questions"}
           </h2>
           <p className="text-lg text-slate-600 dark:text-slate-400">
-            Find answers to common questions about our products and services
+            {description || "Find answers to common questions about our products and services"}
           </p>
         </motion.div>
 
