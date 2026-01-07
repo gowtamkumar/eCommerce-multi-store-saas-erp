@@ -10,6 +10,7 @@ import Reviews from '@/components/Reviews';
 import dbConnect from '@/lib/mongodb';
 import { getTenantId } from '@/lib/tenant';
 import Product from '@/models/Product';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
 async function getProduct(slug: string) {
@@ -36,13 +37,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         };
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const headersList = await headers();
+    const host = headersList.get('host') || 'localhost:3000';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const baseUrl = `${protocol}://${host}`;
     const productImage = product.images?.[0] || '';
     const description = product.description?.substring(0, 160) || product.tagline || 'Premium product';
 
     return {
         metadataBase: new URL(baseUrl),
-        title: `${product.name} | LuxeAudio`,
+        title: `${product.name}`,
         description,
         openGraph: {
             title: product.name,
