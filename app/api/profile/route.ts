@@ -1,6 +1,6 @@
+import { getTenantId } from "@/app/api/utils/getTenantId";
 import { authOptions } from '@/lib/authOptions';
 import dbConnect from '@/lib/mongodb';
-import { getTenantId } from '@/lib/tenant';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { getServerSession } from 'next-auth';

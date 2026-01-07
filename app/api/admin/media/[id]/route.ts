@@ -1,6 +1,6 @@
+import { getTenantId } from "@/app/api/utils/getTenantId";
 import { authOptions } from '@/lib/authOptions';
 import dbConnect from '@/lib/mongodb';
-import { getTenantId } from '@/lib/tenant';
 import Media from '@/models/Media';
 import { unlink } from 'fs/promises';
 import { getServerSession } from 'next-auth';

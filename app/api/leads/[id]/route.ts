@@ -1,6 +1,6 @@
+import { getTenantId } from "@/app/api/utils/getTenantId";
 import { LeadStatus } from '@/lib/enums/lead-status';
 import dbConnect from '@/lib/mongodb';
-import { getTenantId } from '@/lib/tenant';
 import Lead from '@/models/Lead';
 import { NextResponse } from 'next/server';
 

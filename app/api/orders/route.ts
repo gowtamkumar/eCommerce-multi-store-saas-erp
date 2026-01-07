@@ -1,7 +1,7 @@
+import { getTenantId } from "@/app/api/utils/getTenantId";
 import { OrderStatus } from "@/lib/enums/order-status";
 import { PaymentStatus } from "@/lib/enums/payment-status";
 import dbConnect from "@/lib/mongodb";
-import { getTenantId } from "@/lib/tenant";
 import Lead from "@/models/Lead";
 import Order from "@/models/Order";
 import Product from "@/models/Product";

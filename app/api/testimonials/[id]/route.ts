@@ -1,5 +1,5 @@
+import { getTenantId } from "@/app/api/utils/getTenantId";
 import dbConnect from '@/lib/mongodb';
-import { getTenantId } from '@/lib/tenant';
 import Testimonial from '@/models/Testimonial';
 import { NextResponse } from 'next/server';
 

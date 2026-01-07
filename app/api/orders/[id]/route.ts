@@ -2,10 +2,10 @@ import dbConnect from "@/lib/mongodb";
 import Order from "@/models/Order";
 import { NextResponse } from "next/server";
 
+import { getTenantId } from "@/app/api/utils/getTenantId";
 import { OrderStatus } from "@/lib/enums/order-status";
 import { PaymentMethod } from "@/lib/enums/payment-method";
 import { PaymentStatus } from "@/lib/enums/payment-status";
-import { getTenantId } from "@/lib/tenant";
 import Payment from "@/models/Payment";
 
 export async function PUT(
