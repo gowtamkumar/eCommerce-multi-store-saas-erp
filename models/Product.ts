@@ -6,6 +6,7 @@ export interface IProduct extends Document {
   description: string;
   price: number;
   discountAmount?: number;
+  slug: string;
   images: string[];
   features: string[];
   stock: number;
@@ -54,6 +55,7 @@ export interface IProduct extends Document {
 const ProductSchema: Schema = new Schema(
   {
     name: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
     description: { type: String, required: true },
     price: { type: Number, required: true },
     discountAmount: { type: Number, default: 0 },

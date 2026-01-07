@@ -47,7 +47,8 @@ export default function SettingsPage() {
             googleSiteVerification: '',
             facebookPixelId: '',
             facebookDomainVerification: '',
-        }
+        },
+        productMode: 'single' as 'single' | 'multiple'
     });
 
     useEffect(() => {
@@ -77,7 +78,8 @@ export default function SettingsPage() {
                             googleSiteVerification: data.data.marketing?.googleSiteVerification || '',
                             facebookPixelId: data.data.marketing?.facebookPixelId || '',
                             facebookDomainVerification: data.data.marketing?.facebookDomainVerification || '',
-                        }
+                        },
+                        productMode: data.data.productMode || 'single'
                     });
                 }
             })
@@ -292,6 +294,50 @@ export default function SettingsPage() {
                                                     className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                                                     placeholder="123 Store St, Sound City"
                                                 />
+                                            </div>
+                                            <div className="space-y-1.5 md:col-span-2">
+                                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Product Display Mode</label>
+                                                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                                    <div className="flex flex-col gap-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <input
+                                                                type="radio"
+                                                                id="mode-single"
+                                                                name="productMode"
+                                                                value="single"
+                                                                checked={formData.productMode === 'single'}
+                                                                onChange={(e) => setFormData({ ...formData, productMode: e.target.value as 'single' | 'multiple' })}
+                                                                className="w-4 h-4 text-brand-600 focus:ring-brand-500"
+                                                            />
+                                                            <label htmlFor="mode-single" className="text-sm font-medium text-slate-900 dark:text-white cursor-pointer">
+                                                                Single Product Focus (Default)
+                                                            </label>
+                                                        </div>
+                                                        <p className="text-xs text-slate-500 pl-7">
+                                                            Optimized for selling one main product. The homepage and product blocks will highlight this featured item.
+                                                        </p>
+
+                                                        <div className="w-full h-px bg-slate-200 dark:bg-slate-700 my-1" />
+
+                                                        <div className="flex items-center gap-3">
+                                                            <input
+                                                                type="radio"
+                                                                id="mode-multiple"
+                                                                name="productMode"
+                                                                value="multiple"
+                                                                checked={formData.productMode === 'multiple'}
+                                                                onChange={(e) => setFormData({ ...formData, productMode: e.target.value as 'single' | 'multiple' })}
+                                                                className="w-4 h-4 text-brand-600 focus:ring-brand-500"
+                                                            />
+                                                            <label htmlFor="mode-multiple" className="text-sm font-medium text-slate-900 dark:text-white cursor-pointer">
+                                                                Multiple Products Grid
+                                                            </label>
+                                                        </div>
+                                                        <p className="text-xs text-slate-500 pl-7">
+                                                            Displays a grid of your latest active products. Best for general e-commerce stores with multiple items.
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </motion.div>

@@ -24,6 +24,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   } | null>(null);
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
+    slug: initialData?.slug || '',
     description: initialData?.description || '',
     price: initialData?.price || 0,
     discountAmount: initialData?.discountAmount || 0,
@@ -57,6 +58,13 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     reviewSectionType: initialData?.reviewSectionType || 'testimonials'
   });
 
+  const generateSlug = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+  };
+
   const applyFormat = (command: string, value?: string) => {
     document.execCommand(command, false, value);
     if (editorRef.current) {
@@ -76,6 +84,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
 
     const payload = {
       ...formData,
+      slug: formData.slug || generateSlug(formData.name),
       images: formData.images.split(',').map((s: string) => s.trim()).filter(Boolean),
       features: formData.features.split(',').map((s: string) => s.trim()).filter(Boolean),
       tagline: formData.tagline || undefined,
@@ -130,8 +139,26 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
             type="text"
             required
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => {
+              const name = e.target.value;
+              if (!isEdit) {
+                setFormData({ ...formData, name, slug: generateSlug(name) });
+              } else {
+                setFormData({ ...formData, name });
+              }
+            }}
             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Slug (URL Friendly Name)</label>
+          <input
+            type="text"
+            required
+            value={formData.slug}
+            onChange={(e) => setFormData({ ...formData, slug: generateSlug(e.target.value) })}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-mono text-sm overflow-hidden text-ellipsis whitespace-nowrap"
           />
         </div>
 

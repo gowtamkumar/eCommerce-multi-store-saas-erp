@@ -62,6 +62,11 @@ const SiteSettingsSchema: Schema = new Schema(
             instagram: { type: String, default: "" },
             linkedin: { type: String, default: "" },
         },
+        productMode: { 
+            type: String, 
+            enum: ['single', 'multiple'], 
+            default: 'single' 
+        },
         marketing: {
             googleAnalyticsId: { type: String, default: "" },
             googleSiteVerification: { type: String, default: "" },

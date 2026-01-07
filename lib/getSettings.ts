@@ -15,6 +15,7 @@ export async function getSiteSettings() {
                 siteDescription: "The premium multi-tenant eCommerce platform.",
                 contactEmail: "support@luxesaas.com",
                 socialLinks: { facebook: "", twitter: "", instagram: "", linkedin: "" },
+                productMode: "single",
                 marketing: { googleAnalyticsId: "", googleSiteVerification: "", facebookPixelId: "", facebookDomainVerification: "" }
             };
         }
@@ -29,6 +30,7 @@ export async function getSiteSettings() {
                 siteDescription: "Elevating your audio experience with premium sound and design.",
                 contactEmail: "support@luxeaudio.com",
                 socialLinks: { facebook: "", twitter: "", instagram: "", linkedin: "" },
+                productMode: "single",
                 marketing: { googleAnalyticsId: "", googleSiteVerification: "", facebookPixelId: "", facebookDomainVerification: "" }
             };
         }
@@ -41,6 +43,7 @@ export async function getSiteSettings() {
             siteDescription: "Elevating your audio experience with premium sound and design.",
             contactEmail: "support@luxeaudio.com",
             socialLinks: { facebook: "", twitter: "", instagram: "", linkedin: "" },
+            productMode: "single",
             marketing: { googleAnalyticsId: "", googleSiteVerification: "", facebookPixelId: "", facebookDomainVerification: "" }
         };
     }

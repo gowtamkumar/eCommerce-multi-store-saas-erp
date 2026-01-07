@@ -14,6 +14,7 @@ interface Product {
     images: string[];
     tagline?: string;
     discountAmount?: number;
+    slug: string;
 }
 
 interface RelatedProductsProps {
@@ -76,7 +77,7 @@ export default function RelatedProducts({ currentProductId }: RelatedProductsPro
                             transition={{ delay: index * 0.1 }}
                             className="group"
                         >
-                            <Link href={`/products/${product._id}`} className="block">
+                            <Link href={`/products/${product.slug}`} className="block">
                                 <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-4">
                                     <Image
                                         src={product.images[0] || 'https://via.placeholder.com/400'}

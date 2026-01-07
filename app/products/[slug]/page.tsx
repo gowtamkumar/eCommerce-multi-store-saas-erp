@@ -8,26 +8,26 @@ import ProductDetails from '@/components/ProductDetails';
 import RelatedProducts from '@/components/RelatedProducts';
 import Reviews from '@/components/Reviews';
 import dbConnect from '@/lib/mongodb';
-import Product from '@/models/Product';
 import { getTenantId } from '@/lib/tenant';
+import Product from '@/models/Product';
 import { notFound } from 'next/navigation';
 
-async function getProduct(id: string) {
+async function getProduct(slug: string) {
     try {
         await dbConnect();
         const tenantId = await getTenantId();
         if (!tenantId) return null;
 
-        const product = await Product.findOne({ _id: id, tenantId }).lean();
+        const product = await Product.findOne({ slug, tenantId }).lean();
         return product ? JSON.parse(JSON.stringify(product)) : null;
     } catch (error) {
         return null;
     }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-    const product = await getProduct(id);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    const product = await getProduct(slug);
 
     if (!product) {
         return {
@@ -36,18 +36,19 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         };
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://luxeaudio.com';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const productImage = product.images?.[0] || '';
     const description = product.description?.substring(0, 160) || product.tagline || 'Premium product';
 
     return {
+        metadataBase: new URL(baseUrl),
         title: `${product.name} | LuxeAudio`,
         description,
         openGraph: {
             title: product.name,
             description,
-            type: 'product',
-            url: `${baseUrl}/products/${id}`,
+            type: 'website',
+            url: `${baseUrl}/products/${slug}`,
             images: productImage ? [
                 {
                     url: productImage,
@@ -66,9 +67,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     };
 }
 
-export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-    const product = await getProduct(id);
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+    const product = await getProduct(slug);
 
     if (!product) {
         notFound();
