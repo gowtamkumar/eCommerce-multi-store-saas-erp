@@ -1,8 +1,9 @@
 import { IsEnum, IsOptional } from 'class-validator';
 import { UserRole } from '../../../../common/enums/user/user-role.enum';
 import { UserStatus } from '../../../../common/enums/user/user-status.enum';
+import { PaginationDto } from '../../../../common/dto/pagination.dto';
 
-export class FilterUserDto {
+export class FilterUserDto extends PaginationDto {
   @IsOptional()
   name: string;
 

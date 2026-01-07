@@ -15,6 +15,8 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { AuthService } from '../services/auth.service';
 import { UserDto } from '../../user/dtos';
 
+import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
@@ -22,48 +24,31 @@ export class AuthController {
   @Post('/register')
   async register(
     @Body() registerCredentialDto: RegisterCredentialDto,
+    @TenantId() tenantId: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const authPayload = await this.authService.register(registerCredentialDto);
+    const authPayload = await this.authService.register(registerCredentialDto, tenantId);
     // set cookies token
     this.cookiesBuildTokenResponsive(res, authPayload.token);
 
     return {
       success: true,
       statusCode: 200,
-      message: `Registration successfull`,
+      message: `Registration successful`,
       data: authPayload,
     };
   }
 
-  @Post('/login')
-  async login(
-    @Body() loginCredentialDto: LoginCredentialDto,
-    @Res({ passthrough: true }) res: Response,
+  @Post('/verify')
+  async verify(
+    @Body() verifyAuthDto: any,
   ) {
-    const authPayload = await this.authService.login(loginCredentialDto);
-    // set cookies token
-    this.cookiesBuildTokenResponsive(res, authPayload.token);
-
+    const { userId } = verifyAuthDto;
+    await this.authService.verifyEmail(userId);
     return {
       success: true,
       statusCode: 200,
-      message: `Login successfull`,
-      data: authPayload,
-    };
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete('/logout')
-  logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    //revoke token
-    Object.entries(req.cookies).forEach(([key]) => res.clearCookie(key));
-
-    return {
-      success: true,
-      statusCode: 200,
-      message: `Logout successfull`,
-      data: null,
+      message: `Email verified successfully`,
     };
   }
 

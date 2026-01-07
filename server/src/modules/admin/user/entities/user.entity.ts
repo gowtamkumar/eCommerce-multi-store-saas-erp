@@ -4,12 +4,17 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  AfterInsert,
-  AfterUpdate,
-  AfterRemove,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
 } from 'typeorm';
+import { TenantEntity } from '../../../tenant/entities/tenant.entity';
 
 @Entity('users')
+@Index(['username', 'tenantId'], { unique: true })
+@Index(['email', 'tenantId'], { unique: true })
 export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -17,18 +22,30 @@ export class UserEntity {
   @Column()
   name: string;
 
-  @Column({ unique: true, nullable: true })
+  @Column({ nullable: true })
   email: string;
 
-  @Column({ unique: true })
+  @Column()
   username: string;
 
   @Column()
   password: string;
 
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ type: 'text', nullable: true })
+  address: string;
+
+  @Column({ nullable: true })
+  image: string;
+
   // system super admin
   @Column({ default: false })
   isAdmin: boolean;
+
+  @Column({ default: false })
+  isEmailVerified: boolean;
 
   @Column({
     type: 'enum',
@@ -41,24 +58,16 @@ export class UserEntity {
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.Active })
   status: UserStatus;
 
-  // @CreateDateColumn({ type: "timestamptz" })
-  // createdAt: Date;
+  @Column({ type: 'uuid', nullable: true })
+  tenantId: string;
 
-  // @UpdateDateColumn({ type: "timestamptz", onUpdate: "CURRENT_TIMESTAMP(6)"})
-  // updatedAt: Date;
+  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'tenantId' })
+  tenant: TenantEntity;
 
-  @AfterInsert()
-  logInsert() {
-    console.log(`Inserted User of id: ${this.id}`);
-  }
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
 
-  @AfterUpdate()
-  logUpdate() {
-    console.log(`Updated User of id: ${this.id}`);
-  }
-
-  @AfterRemove()
-  logRemove() {
-    console.log(`User Removed`);
-  }
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
 }

@@ -22,19 +22,40 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
-  ) {}
+  ) { }
 
-  getUsers(filterUserDto: FilterUserDto): Promise<UserEntity[]> {
+  async getUsers(filterUserDto: FilterUserDto, tenantId: string): Promise<{ users: UserEntity[], total: number }> {
     this.logger.log(`${this.getUsers.name} Service Called`);
-    const { name, username, status } = filterUserDto;
-    const newQuery: any = {};
+    const { name, username, status, page, limit, q } = filterUserDto;
+    const query = this.userRepo.createQueryBuilder('user')
+      .where('user.tenantId = :tenantId', { tenantId });
 
-    if (name) newQuery.name = name;
-    if (username) newQuery.username = username;
-    if (status) newQuery.status = status;
-    // logic for filter
+    if (name) {
+      query.andWhere('user.name ILIKE :name', { name: `%${name}%` });
+    }
+    if (username) {
+      query.andWhere('user.username = :username', { username });
+    }
+    if (status) {
+      query.andWhere('user.status = :status', { status });
+    }
+    if (q) {
+      query.andWhere('(user.name ILIKE :q OR user.email ILIKE :q)', { q: `%${q}%` });
+    }
+
+    const [users, total] = await query
+      .orderBy('user.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { users, total };
+  }
+
+  async findAllUsersCrossTenant(): Promise<UserEntity[]> {
+    this.logger.log(`${this.findAllUsersCrossTenant.name} Service Called`);
     return this.userRepo.find({
-      where: newQuery,
+      relations: ['tenant'],
     });
   }
 
@@ -54,21 +75,31 @@ export class UserService {
     return this.userRepo.findOne({ where: { id } });
   }
 
-  async findUserByUsername(username: string) {
+  async findUserByUsername(username: string, tenantId?: string) {
     this.logger.log(`${this.findUserByUsername.name} Service Called`);
-    return this.userRepo.findOne({ where: { username } });
+    const where: any = { username };
+    if (tenantId) where.tenantId = tenantId;
+    return this.userRepo.findOne({ where });
   }
 
-  async createUser(createUserDto: CreateUserDto): Promise<UserEntity> {
+  async findUserByEmail(email: string, tenantId?: string) {
+    this.logger.log(`${this.findUserByEmail.name} Service Called`);
+    const where: any = { email };
+    if (tenantId) where.tenantId = tenantId;
+    return this.userRepo.findOne({ where });
+  }
+
+  async createUser(createUserDto: any, tenantId?: string): Promise<UserEntity> {
     this.logger.log(`${this.createUser.name} Service Called`);
 
     const hashPassword = await bcrypt.hash(createUserDto.password, 10);
     const user = this.userRepo.create({
-      ...createUserDto,
+      ...(createUserDto as any),
       password: hashPassword,
-    });
+      tenantId,
+    } as any) as any as UserEntity;
     await this.userRepo.save(user);
-    delete user.password;
+    delete (user as any).password;
     return user;
   }
 
@@ -128,5 +159,11 @@ export class UserService {
 
   validateUser(user: UserEntity, password: string): Promise<boolean> {
     return bcrypt.compare(password, user.password);
+  }
+
+  async verifyUser(id: string): Promise<UserEntity> {
+    const user = await this.getUser(id);
+    user.isEmailVerified = true;
+    return this.userRepo.save(user);
   }
 }

@@ -1,0 +1,60 @@
+import { Controller, Get, Post, Body, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../admin/auth/guards/jwt-auth.guard';
+import { UserRole } from '../../common/enums/user/user-role.enum';
+import { UserService } from '../admin/user/services/user.service';
+import { RolesGuard } from '../admin/auth/guards/roles.guard';
+import { Roles } from '../admin/auth/decorators/roles.decorator';
+
+@Controller('super-admin')
+export class SuperAdminController {
+    constructor(private readonly userService: UserService) { }
+
+    @Post('/setup')
+    @ApiOperation({ summary: 'Initial Super Admin setup' })
+    @ApiResponse({ status: 201, description: 'Super Admin created successfully' })
+    async setup(@Body() body: any) {
+        const { name, email, password, username, setupKey } = body;
+
+        // Security check
+        const expectedKey = process.env.SUPER_ADMIN_SETUP_KEY || 'super-setup-2026';
+        if (setupKey !== expectedKey) {
+            throw new UnauthorizedException('Invalid setup key');
+        }
+
+        const superAdmin = await this.userService.createUser({
+            name,
+            email,
+            password,
+            username,
+            roles: [UserRole.SuperAdmin],
+            isAdmin: true,
+        });
+
+        return {
+            success: true,
+            message: 'Super Admin created successfully',
+            user: { name: superAdmin.name, username: superAdmin.username },
+        };
+    }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.SuperAdmin)
+    @Get('/health')
+    getHealth() {
+        return {
+            status: 'ok',
+            timestamp: new Date().toISOString(),
+            service: 'eCommerce Multi-Tenant SaaS Backend',
+        };
+    }
+
+    @Get('/users')
+    async getAllUsers() {
+        const users = await this.userService.findAllUsersCrossTenant();
+        return {
+            message: 'All users across all tenants',
+            data: users,
+        };
+    }
+}

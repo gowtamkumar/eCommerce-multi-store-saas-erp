@@ -18,29 +18,35 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) { }
 
-  async register(registerCredentialDto: RegisterCredentialDto) {
+  async register(registerCredentialDto: RegisterCredentialDto, tenantId: string) {
     this.logger.log(`${this.register.name} Service Called`);
 
-    const { username } = registerCredentialDto;
-    const find = await this.userService.findUserByUsername(username);
-
-    if (find) {
-      throw new ConflictException('Username already exist');
+    const { username, email } = registerCredentialDto;
+    const findByUsername = await this.userService.findUserByUsername(username, tenantId);
+    if (findByUsername) {
+      throw new ConflictException('Username already exists for this tenant');
     }
+
+    const findByEmail = await this.userService.findUserByEmail(email, tenantId);
+    if (findByEmail) {
+      throw new ConflictException('Email already exists for this tenant');
+    }
+
     const user = await this.userService.createUser(
-      registerCredentialDto as CreateUserDto,
+      registerCredentialDto,
+      tenantId,
     );
     const token = this.generatedSignedJwt(user);
 
     return { token, user };
   }
 
-  async login(loginCredentialsDto: LoginCredentialDto) {
+  async login(loginCredentialsDto: LoginCredentialDto, tenantId: string) {
     this.logger.log(`${this.login.name} Service Called`);
 
     const { username, password } = loginCredentialsDto;
 
-    const user = await this.userService.findUserByUsername(username);
+    const user = await this.userService.findUserByUsername(username, tenantId);
 
     const valid = user
       ? await this.userService.validateUser(user, password)
@@ -63,10 +69,20 @@ export class AuthService {
     return user;
   }
 
+  async verifyEmail(userId: string) {
+    return this.userService.verifyUser(userId);
+  }
+
   private generatedSignedJwt(user) {
     const jwtSignOptions: JwtSignOptions = {
       subject: user.id,
     };
-    return this.jwtService.sign({}, jwtSignOptions);
+    const payload = {
+      username: user.username,
+      sub: user.id,
+      tenantId: user.tenantId,
+      roles: user.roles
+    };
+    return this.jwtService.sign(payload, jwtSignOptions);
   }
 }

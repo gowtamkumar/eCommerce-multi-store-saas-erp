@@ -18,23 +18,32 @@ import {
 import { UpdateUserDto } from '../dtos/update-user.dto';
 import { UpdatePasswordDto } from '../dtos/update-password.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UserController {
   private readonly logger = new Logger(UserController.name);
 
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get('/')
-  async getUsers(@Query() filterUserDto: FilterUserDto) {
-    const users = await this.userService.getUsers(filterUserDto);
+  async getUsers(@Query() filterUserDto: FilterUserDto, @TenantId() tenantId: string) {
+    const { users, total } = await this.userService.getUsers(filterUserDto, tenantId);
 
     return {
       success: true,
       statusCode: 200,
-      message: `List of user`,
-      data: users,
+      message: `List of users`,
+      data: {
+        users,
+        pagination: {
+          total,
+          page: filterUserDto.page,
+          limit: filterUserDto.limit,
+          totalPages: Math.ceil(total / filterUserDto.limit),
+        },
+      },
     };
   }
 
@@ -51,8 +60,8 @@ export class UserController {
   }
 
   @Post('/')
-  async createUser(@Body() createUserDto: CreateUserDto) {
-    const user = await this.userService.createUser(createUserDto);
+  async createUser(@Body() createUserDto: CreateUserDto, @TenantId() tenantId: string) {
+    const user = await this.userService.createUser(createUserDto, tenantId);
 
     return {
       success: true,
