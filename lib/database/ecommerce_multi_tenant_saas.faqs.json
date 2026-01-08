@@ -1,20 +1,20 @@
 [{
   "_id": {
-    "$oid": "695cc7ab97de3e646c50ae53"
+    "$oid": "695e1721cdc5f659707471d4"
   },
-  "question": "this is poly-store faq",
+  "question": "test faq",
   "answer": "asdfasdf",
-  "category": "testing",
+  "category": "product",
   "order": 0,
   "status": "active",
   "tenantId": {
     "$oid": "695cae7e97de3e646c50aa8a"
   },
   "createdAt": {
-    "$date": "2026-01-06T08:28:27.790Z"
+    "$date": "2026-01-07T08:19:45.237Z"
   },
   "updatedAt": {
-    "$date": "2026-01-06T08:28:27.790Z"
+    "$date": "2026-01-07T08:19:45.237Z"
   },
   "__v": 0
 }]

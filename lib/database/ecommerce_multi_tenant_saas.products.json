@@ -48,7 +48,8 @@
   "__v": 0,
   "tenantId": {
     "$oid": "695cae7e97de3e646c50aa8a"
-  }
+  },
+  "slug": "luxeAudio-pro-earbuds"
 },
 {
   "_id": {
@@ -153,4 +154,79 @@
   "tenantId": {
     "$oid": "695cad9597de3e646c50aa81"
   }
+},
+{
+  "_id": {
+    "$oid": "695dfd5db4648b9bab6e2e1c"
+  },
+  "name": "Testing single proucts",
+  "description": "<pre>h ow ollehfdjskal;f jdsakl jkfdsafdsafdsa</pre>",
+  "price": 120,
+  "discountAmount": 20,
+  "images": [
+    "/uploads/38fea884-6f0b-4e56-b8ac-aa6a16cb5c43-screenshot-from-2025-12-30-10-21-04.png"
+  ],
+  "features": [
+    "Bluthoth"
+  ],
+  "stock": 10,
+  "status": "active",
+  "tagline": "Perfection",
+  "socialProof": {
+    "noun": "customers",
+    "count": 2000,
+    "rating": 4.8,
+    "avatars": [
+      "/uploads/38fea884-6f0b-4e56-b8ac-aa6a16cb5c43-screenshot-from-2025-12-30-10-21-04.png"
+    ]
+  },
+  "heroHighlights": [
+    {
+      "icon": "alarm-clock-minus",
+      "label": "lavel",
+      "value": "10",
+      "color": "blue",
+      "_id": {
+        "$oid": "695dfd5db4648b9bab6e2e1d"
+      }
+    }
+  ],
+  "specifications": [],
+  "keyBenefits": [
+    {
+      "icon": "star",
+      "title": "",
+      "description": "",
+      "color": "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+      "_id": {
+        "$oid": "695dfd5db4648b9bab6e2e1e"
+      }
+    }
+  ],
+  "videoUrl": "",
+  "releaseBadgeText": "New Release 2024",
+  "sections": {
+    "techSpecs": {
+      "heading": "Technical Specifications",
+      "subheading": "Engineered for Perfection",
+      "description": "Every component has been meticulously designed to deliver an unparalleled experience."
+    },
+    "features": {
+      "heading": "Features",
+      "subheading": "Why Choose Us?",
+      "description": "Packed with premium features to elevate your experience to new heights."
+    }
+  },
+  "reviewSectionType": "testimonials",
+  "tenantId": {
+    "$oid": "695dfc59b4648b9bab6e2d75"
+  },
+  "createdAt": {
+    "$date": "2026-01-07T06:29:49.787Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-07T06:39:50.100Z"
+  },
+  "__v": 0,
+  "slug": "testing-single-proucts"
 }]

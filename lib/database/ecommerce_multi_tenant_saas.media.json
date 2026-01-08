@@ -13,4 +13,20 @@
     "$date": "2026-01-06T08:34:22.128Z"
   },
   "__v": 0
+},
+{
+  "_id": {
+    "$oid": "695dfd32b4648b9bab6e2e14"
+  },
+  "filename": "38fea884-6f0b-4e56-b8ac-aa6a16cb5c43-screenshot-from-2025-12-30-10-21-04.png",
+  "url": "/uploads/38fea884-6f0b-4e56-b8ac-aa6a16cb5c43-screenshot-from-2025-12-30-10-21-04.png",
+  "mimetype": "image/png",
+  "size": 73227,
+  "tenantId": {
+    "$oid": "695dfc59b4648b9bab6e2d75"
+  },
+  "createdAt": {
+    "$date": "2026-01-07T06:29:06.797Z"
+  },
+  "__v": 0
 }]

@@ -123,4 +123,25 @@
     "$date": "2026-01-06T10:00:09.437Z"
   },
   "__v": 0
+},
+{
+  "_id": {
+    "$oid": "695dfc59b4648b9bab6e2d77"
+  },
+  "name": "Gowtam kumar",
+  "username": "gowtamstore",
+  "email": "gowtam22@gmail.com",
+  "password": "$2b$10$N77VBSBcIH716KGFrt/wM.I7gMN9MyJQRR9nKHlMPI6APgGLy0tFe",
+  "role": "admin",
+  "status": "active",
+  "tenantId": {
+    "$oid": "695dfc59b4648b9bab6e2d75"
+  },
+  "createdAt": {
+    "$date": "2026-01-07T06:25:29.569Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-07T06:25:29.569Z"
+  },
+  "__v": 0
 }]

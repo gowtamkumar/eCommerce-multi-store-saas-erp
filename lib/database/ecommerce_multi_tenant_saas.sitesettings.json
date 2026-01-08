@@ -110,9 +110,11 @@
     "$date": "2026-01-06T06:45:30.721Z"
   },
   "updatedAt": {
-    "$date": "2026-01-06T08:32:55.407Z"
+    "$date": "2026-01-07T08:16:22.554Z"
   },
-  "__v": 0
+  "__v": 0,
+  "logo": "",
+  "productMode": "single"
 },
 {
   "_id": {
@@ -184,6 +186,44 @@
   },
   "updatedAt": {
     "$date": "2026-01-06T09:47:27.951Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "695dfc59b4648b9bab6e2d79"
+  },
+  "logo": "",
+  "brandName": "gowtamstore",
+  "siteDescription": "Welcome to gowtamstore! Premium products and excellent service.",
+  "contactEmail": "gowtam22@gmail.com",
+  "contactPhone": "+1 (555) 123-4567",
+  "whatsappPhone": "+1 (555) 123-4567",
+  "address": "123 Audio Street, Sound City, SC 90210",
+  "currency": "BDT",
+  "currencySymbol": "$",
+  "socialLinks": {
+    "facebook": "",
+    "twitter": "",
+    "instagram": "",
+    "linkedin": ""
+  },
+  "productMode": "multiple",
+  "marketing": {
+    "googleAnalyticsId": "",
+    "googleSiteVerification": "",
+    "facebookPixelId": "",
+    "facebookDomainVerification": ""
+  },
+  "tenantId": {
+    "$oid": "695dfc59b4648b9bab6e2d75"
+  },
+  "supportedCurrencies": [],
+  "createdAt": {
+    "$date": "2026-01-07T06:25:29.575Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-07T06:58:39.263Z"
   },
   "__v": 0
 }]

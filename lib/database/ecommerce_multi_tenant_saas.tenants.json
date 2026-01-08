@@ -42,4 +42,19 @@
     "$date": "2026-01-06T09:47:27.852Z"
   },
   "__v": 0
+},
+{
+  "_id": {
+    "$oid": "695dfc59b4648b9bab6e2d75"
+  },
+  "storeName": "gowtamstore",
+  "subdomain": "gowtamstore",
+  "planTier": "basic",
+  "createdAt": {
+    "$date": "2026-01-07T06:25:29.469Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-07T06:25:29.469Z"
+  },
+  "__v": 0
 }]

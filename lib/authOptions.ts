@@ -14,69 +14,75 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Please enter an username and password");
         }
 
-        // Construct full URL for the internal API call
-        // Note: In NextAuth logic on server, we might process request.
-        // We need headers to pass context (tenant)
-        
-        let headers: Record<string, string> = {
-            "Content-Type": "application/json"
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
         };
-        
-        // Try to forward headers if available in req setup
-        if (req?.headers) {
-             // If it's a Headers object
-             if (typeof req.headers.forEach === 'function') {
-                 req.headers.forEach((val: string, key: string) => {
-                     headers[key] = val;
-                 });
-             } else {
-                 // If standard object
-                 Object.assign(headers, req.headers);
-             }
-        } else {
-            // Fallback: Use next/headers if possible (usually works in App Router)
-             try {
-                 const { headers: nextHeaders } = await import("next/headers");
-                 const h = await nextHeaders();
-                 h.forEach((val, key) => {
-                     headers[key] = val;
-                 });
-             } catch (e) {
-                 // ignore
-             }
+
+        // 1. Try to get headers from next/headers (most reliable for tenant detection in Next.js 13+)
+        try {
+          const { headers: nextHeaders } = await import("next/headers");
+          const h = await nextHeaders();
+          h.forEach((val, key) => {
+            headers[key] = val;
+          });
+          console.log("Headers from next/headers:", headers);
+        } catch (e: any) {
+          console.log(
+            "next/headers not available, falling back to req.headers"
+          );
+          // Fallback to req.headers if next/headers is not available
+          if (req?.headers) {
+            if (typeof req.headers.forEach === "function") {
+              req.headers.forEach((val: string, key: string) => {
+                headers[key] = val;
+              });
+            } else {
+              Object.assign(headers, req.headers);
+            }
+          }
+          console.log("Headers from fallback:", headers);
         }
 
-        // Determine host for fetch
+        // 2. Determine base URL for internal fetch
         const host = headers["host"] || "localhost:3000";
-        const protocol = host.includes("localhost") ? "http" : "https";
-        const apiUrl = `${protocol}://${host}/api/auth/verify`;
+        const proto =
+          headers["x-forwarded-proto"] ||
+          (host.includes("localhost") ? "http" : "https");
+        const apiUrl = `${proto}://${host}/api/auth/verify`;
+
+        console.log("Internal Auth API URL:", apiUrl);
 
         try {
-            const res = await fetch(apiUrl, {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify({
-                    username: credentials.username,
-                    password: credentials.password
-                }),
-                cache: 'no-store'
-            });
+          const res = await fetch(apiUrl, {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify({
+              username: credentials.username,
+              password: credentials.password,
+            }),
+            cache: "no-store",
+          });
 
-            const data = await res.json();
+          const data = await res.json();
 
-            if (!res.ok) {
-                throw new Error(data.error || "Authentication failed");
-            }
-
-            if (data.success && data.user) {
-                return data.user;
-            }
-
+          if (!res.ok) {
+            console.error(
+              "Auth verification API error:",
+              data.error || res.statusText,
+              "Status:",
+              res.status
+            );
             throw new Error(data.error || "Authentication failed");
+          }
 
+          if (data.success && data.user) {
+            return data.user;
+          }
+
+          throw new Error(data.error || "Authentication failed");
         } catch (error: any) {
-            console.error("Authorize error:", error);
-            throw new Error(error.message);
+          console.error("Authorize internal fetch error:", error.message);
+          throw new Error(error.message);
         }
       },
     }),
