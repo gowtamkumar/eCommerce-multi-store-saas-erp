@@ -1,14 +1,16 @@
 'use client';
 
-import { Search, Trash2, User as UserIcon, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useSession } from 'next-auth/react';
-import toast from 'react-hot-toast';
+import { fetchAPI } from '@/lib/api';
+
 import ConfirmModal from '@/components/ConfirmModal';
+import { useDebounce } from '@/hooks/useDebounce';
+import { ChevronLeft, ChevronRight, Loader2, Search, Trash2, User as UserIcon } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface User {
-    _id: string;
+    id: string;
     name: string;
     email: string;
     role: string;
@@ -59,14 +61,15 @@ export default function CustomersPage() {
                 limit: '20',
                 q: search
             });
-            const res = await fetch(`/api/users?${params}`);
-            const data = await res.json();
-            if (data.users) {
-                setUsers(data.users);
-                setPagination(data.pagination);
+            const res = await fetchAPI(`/users?${params}`);
+
+            if (res.data?.users) {
+                setUsers(res.data.users);
+                setPagination(res.data.pagination);
             }
         } catch (error) {
             console.error('Failed to fetch users', error);
+            toast.error('Failed to load users');
         } finally {
             setLoading(false);
         }
@@ -86,13 +89,9 @@ export default function CustomersPage() {
             isDangerous: true,
             onConfirm: async () => {
                 try {
-                    const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-                    if (res.ok) {
-                        setUsers(users.filter(u => u._id !== id));
-                        toast.success('User deleted successfully');
-                    } else {
-                        toast.error('Failed to delete user');
-                    }
+                    await fetchAPI(`/users/${id}`, { method: 'DELETE' });
+                    setUsers(users.filter(u => u.id !== id));
+                    toast.success('User deleted successfully');
                 } catch (error) {
                     toast.error('Error deleting user');
                 }
@@ -149,7 +148,7 @@ export default function CustomersPage() {
                                 </tr>
                             ) : (
                                 users.map((user) => (
-                                    <tr key={user._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                    <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400">
@@ -157,7 +156,7 @@ export default function CustomersPage() {
                                                 </div>
                                                 <div>
                                                     <p className="font-medium text-slate-900 dark:text-white">{user.name}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{user._id.slice(-6).toUpperCase()}</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{user.id.slice(-6).toUpperCase()}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -190,7 +189,7 @@ export default function CustomersPage() {
                                                     <button
                                                         disabled={loading}
 
-                                                        onClick={() => handleDelete(user._id)}
+                                                        onClick={() => handleDelete(user.id)}
                                                         className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                         title="Delete User"
                                                     >

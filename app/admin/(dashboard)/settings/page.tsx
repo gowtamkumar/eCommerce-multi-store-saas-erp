@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
+
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     Banknote,
@@ -52,38 +54,45 @@ export default function SettingsPage() {
     });
 
     useEffect(() => {
-        fetch('/api/settings')
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.data) {
+        const loadSettings = async () => {
+            try {
+                const res = await fetchAPI('/settings');
+                if (res.data) {
+                    const data = res.data;
                     setFormData({
-                        logo: data.data.logo || '',
-                        brandName: data.data.brandName || '',
-                        siteDescription: data.data.siteDescription || '',
-                        contactEmail: data.data.contactEmail || '',
-                        contactPhone: data.data.contactPhone || '',
-                        whatsappPhone: data.data.whatsappPhone || '',
-                        address: data.data.address || '',
-                        currency: data.data.currency || 'BDT',
-                        currencySymbol: data.data.currencySymbol || '৳',
-                        supportedCurrencies: data.data.supportedCurrencies || [],
+                        logo: data.logo || '',
+                        brandName: data.brandName || '',
+                        siteDescription: data.siteDescription || '',
+                        contactEmail: data.contactEmail || '',
+                        contactPhone: data.contactPhone || '',
+                        whatsappPhone: data.whatsappPhone || '',
+                        address: data.address || '',
+                        currency: data.currency || 'BDT',
+                        currencySymbol: data.currencySymbol || '৳',
+                        supportedCurrencies: data.supportedCurrencies || [],
                         socialLinks: {
-                            facebook: data.data.socialLinks?.facebook || '',
-                            twitter: data.data.socialLinks?.twitter || '',
-                            instagram: data.data.socialLinks?.instagram || '',
-                            linkedin: data.data.socialLinks?.linkedin || '',
+                            facebook: data.socialLinks?.facebook || '',
+                            twitter: data.socialLinks?.twitter || '',
+                            instagram: data.socialLinks?.instagram || '',
+                            linkedin: data.socialLinks?.linkedin || '',
                         },
                         marketing: {
-                            googleAnalyticsId: data.data.marketing?.googleAnalyticsId || '',
-                            googleSiteVerification: data.data.marketing?.googleSiteVerification || '',
-                            facebookPixelId: data.data.marketing?.facebookPixelId || '',
-                            facebookDomainVerification: data.data.marketing?.facebookDomainVerification || '',
+                            googleAnalyticsId: data.marketing?.googleAnalyticsId || '',
+                            googleSiteVerification: data.marketing?.googleSiteVerification || '',
+                            facebookPixelId: data.marketing?.facebookPixelId || '',
+                            facebookDomainVerification: data.marketing?.facebookDomainVerification || '',
                         },
-                        productMode: data.data.productMode || 'single'
+                        productMode: data.productMode || 'single'
                     });
                 }
-            })
-            .finally(() => setLoading(false));
+            } catch (error) {
+                console.error('Failed to load settings', error);
+                toast.error('Failed to load settings');
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadSettings();
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -96,17 +105,11 @@ export default function SettingsPage() {
         };
 
         try {
-            const res = await fetch('/api/settings', {
+            await fetchAPI('/settings', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedData),
             });
-
-            if (res.ok) {
-                toast.success('Settings saved successfully!');
-            } else {
-                toast.error('Failed to save settings');
-            }
+            toast.success('Settings saved successfully!');
         } catch (error) {
             toast.error('Error saving settings');
         } finally {

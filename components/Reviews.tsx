@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { Package, Quote, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -27,15 +28,13 @@ const Reviews = () => {
     setLoading(true);
     try {
       // First, fetch the configuration and reviews from public endpoint
-      const configRes = await fetch('/api/reviews/public');
-      const configData = await configRes.json();
+      const configData = await fetchAPI('/reviews/public');
 
       const type = configData.reviewSectionType || 'testimonials';
       setDisplayType(type);
 
       if (type === 'testimonials') {
-        const res = await fetch('/api/testimonials?status=active');
-        const data = await res.json();
+        const data = await fetchAPI('/testimonials?status=active');
         if (data.testimonials) {
           const mapped: DisplayItem[] = data.testimonials.map((t: any) => ({
             _id: t._id,

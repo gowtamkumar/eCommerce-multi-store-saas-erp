@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { Bold, Code, Eye, Italic, Link as LinkIcon, List, ListOrdered, Loader2, MessageSquare, Quote, Save, Star, Type, Underline, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
@@ -107,24 +108,20 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
 
 
     try {
-      const url = isEdit ? `/api/products/${initialData._id}` : '/api/products';
+      const url = isEdit ? `/products/${initialData._id}` : '/products';
       const method = isEdit ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      await fetchAPI(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
-        router.push('/admin/products');
-        router.refresh();
-        toast.success('Product saved successfully');
-      } else {
-        toast.error('Failed to save product');
-      }
+      router.push('/admin/products');
+      router.refresh();
+      toast.success('Product saved successfully');
     } catch (error) {
       toast.error('Error saving product');
+      console.error(error);
     } finally {
       setLoading(false);
     }

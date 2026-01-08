@@ -12,6 +12,7 @@ declare module "next-auth" {
     image: string;
     role: "super_admin" | "admin" | "user";
     tenantId: string;
+    accessToken?: string;
   }
 
   interface Session {
@@ -25,6 +26,7 @@ declare module "next-auth" {
       image: string;
       role: "super_admin" | "admin" | "user";
       tenantId: string;
+      accessToken?: string;
     };
   }
 }
@@ -37,5 +39,6 @@ declare module "next-auth/jwt" {
     address?: string;
     image?: string;
     tenantId?: string;
+    accessToken?: string;
   }
 }

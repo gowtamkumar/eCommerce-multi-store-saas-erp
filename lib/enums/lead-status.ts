@@ -1,5 +1,5 @@
 export enum LeadStatus {
-    NEW = "new",
-    READ = "read",
-    REPLIED = "replied"
+    NEW = 'new',
+    CONTACTED = 'contacted',
+    CONVERTED = 'converted',
 }

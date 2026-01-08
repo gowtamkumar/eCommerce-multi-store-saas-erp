@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { Loader2, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -7,7 +8,7 @@ import toast from 'react-hot-toast';
 
 interface TestimonialFormProps {
     initialData?: {
-        _id?: string;
+        id?: string;
         author: string;
         role: string;
         content: string;
@@ -44,16 +45,15 @@ export default function TestimonialForm({ initialData, isEdit }: TestimonialForm
         setLoading(true);
 
         try {
-            const url = isEdit ? `/api/testimonials/${initialData?._id}` : '/api/testimonials';
+            const url = isEdit ? `/testimonials/${initialData?.id}` : '/testimonials';
             const method = isEdit ? 'PUT' : 'POST';
 
-            const res = await fetch(url, {
+            const res = await fetchAPI(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             });
 
-            if (res.ok) {
+            if (res.success) {
                 router.push('/admin/testimonials');
                 router.refresh();
                 toast.success('Testimonial saved successfully');

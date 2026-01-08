@@ -1,15 +1,16 @@
 'use client';
 
 import { useSettings } from '@/contexts/SettingsContext';
+import { fetchAPI } from '@/lib/api';
 import { OrderStatus } from '@/lib/enums/order-status';
 import { PaymentStatus } from '@/lib/enums/payment-status';
-import { ArrowLeft, Calendar, CheckCircle, Clock, CreditCard, FileText, Mail, MapPin, Package, Phone, XCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, CreditCard, FileText, Mail, MapPin, Package, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 interface Order {
-  _id: string;
+  id: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -22,7 +23,7 @@ interface Order {
   paymentStatus: string;
   transactionId?: string;
   productId: {
-    _id: string;
+    id: string;
     name: string;
     price: number;
     images: string[];
@@ -47,10 +48,9 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
 
   const fetchOrder = async () => {
     try {
-      const res = await fetch(`/api/orders/${id}`);
-      const data = await res.json();
-      if (data.order) {
-        setOrder(data.order);
+      const res = await fetchAPI(`/orders/${id}`);
+      if (res.success && res.data) {
+        setOrder(res.data);
       }
     } catch (error) {
       console.error('Failed to fetch order', error);
@@ -63,15 +63,13 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   const handleStatusUpdate = async (updates: any) => {
     setUpdating(true);
     try {
-      const res = await fetch(`/api/orders/${id}`, {
+      const res = await fetchAPI(`/orders/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setOrder(data.order);
+      if (res.success && res.data) {
+        setOrder(res.data);
         toast.success('Order updated successfully');
       } else {
         toast.error('Failed to update order');
@@ -123,7 +121,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
         <div className="flex justify-between items-start mb-12">
           <div>
             <h1 className="text-4xl font-bold text-slate-900 mb-2 uppercase tracking-tight">Invoice</h1>
-            <p className="text-slate-500 font-mono">#{order._id?.slice(-8)?.toUpperCase()}</p>
+            <p className="text-slate-500 font-mono">#{order.id?.slice(-8)?.toUpperCase()}</p>
           </div>
           <div className="text-right">
             <h2 className="text-2xl font-bold text-brand-600">{settings?.brandName || 'Store'}</h2>
@@ -186,7 +184,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
             <tr className="border-b border-slate-100">
               <td className="py-6">
                 <p className="font-bold text-slate-900 text-lg mb-1">{order.productId?.name || 'Product'}</p>
-                <p className="text-sm text-slate-500">Item #{order.productId?._id?.slice(-6)?.toUpperCase()}</p>
+                <p className="text-sm text-slate-500">Item #{order.productId?.id?.slice(-6)?.toUpperCase()}</p>
               </td>
               <td className="py-6 text-center font-bold text-slate-900">{order.quantity}</td>
               <td className="py-6 text-right font-medium text-slate-600">
@@ -236,7 +234,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
             Back to Orders
           </Link>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display">
-            Order <span className="text-slate-400 font-mono text-2xl uppercase">#{order._id.slice(-8)}</span>
+            Order <span className="text-slate-400 font-mono text-2xl uppercase">#{order.id.slice(-8)}</span>
           </h1>
           <div className="flex items-center gap-4 mt-2">
             <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -292,7 +290,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     />
                   </div>
                   <div className="flex-1">
-                    <Link href={`/admin/products/${order.productId._id}/review`} className="text-lg font-bold text-slate-900 dark:text-white hover:text-brand-600 transition-colors">
+                    <Link href={`/admin/products/${order.productId.id}/review`} className="text-lg font-bold text-slate-900 dark:text-white hover:text-brand-600 transition-colors">
                       {order.productId.name}
                     </Link>
                     <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">

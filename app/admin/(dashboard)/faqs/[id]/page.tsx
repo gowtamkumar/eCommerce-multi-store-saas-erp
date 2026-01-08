@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import FAQForm from '@/components/admin/FAQForm';
+import { fetchAPI } from '@/lib/api';
+import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function EditFAQPage() {
     const params = useParams();
@@ -19,11 +20,10 @@ export default function EditFAQPage() {
 
     const fetchFAQ = async () => {
         try {
-            const response = await fetch(`/api/faqs/${faqId}`);
-            const data = await response.json();
+            const response = await fetchAPI(`/faqs/${faqId}`);
 
-            if (data.success) {
-                setFaq(data.data);
+            if (response.success) {
+                setFaq(response.data);
             }
         } catch (error) {
             console.error('Error fetching FAQ:', error);

@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, CreditCard, Store, Users } from 'lucide-react';
 import Link from 'next/link';
@@ -18,8 +19,7 @@ export default function SuperAdminOverview() {
     const fetchStats = async () => {
       try {
         // Fetch stats from combined API or separate ones
-        const res = await fetch('/api/tenants');
-        const data = await res.json();
+        const data = await fetchAPI('/tenants');
         if (data.tenants) {
           setStats(prev => ({ ...prev, totalTenants: data.tenants.length }));
         }

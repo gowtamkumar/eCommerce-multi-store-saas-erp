@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { ExternalLink, Filter, Search, Settings2, Store } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -11,8 +12,7 @@ export default function TenantManagement() {
   useEffect(() => {
     const fetchTenants = async () => {
       try {
-        const res = await fetch('/api/tenants');
-        const data = await res.json();
+        const data = await fetchAPI('/tenants');
         if (data.tenants) setTenants(data.tenants);
       } catch (err) {
         console.error(err);

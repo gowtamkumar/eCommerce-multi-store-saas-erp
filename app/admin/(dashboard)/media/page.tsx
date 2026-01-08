@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Upload, Trash2, Copy, Check, Image as ImageIcon, Loader2, Search, ChevronLeft, ChevronRight, HardDrive } from 'lucide-react';
-import Image from 'next/image';
-import { useDebounce } from '@/hooks/useDebounce';
-import toast from 'react-hot-toast';
+import { fetchAPI } from '@/lib/api';
+
+
 import ConfirmModal from '@/components/ConfirmModal';
+import { Check, ChevronLeft, ChevronRight, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2, Upload } from 'lucide-react';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 // If hook doesn't exist, I'll inline the debounce logic for now or use timeout
 
 interface MediaItem {
@@ -62,18 +64,50 @@ export default function MediaPage() {
         setLoading(true);
         try {
             const params = new URLSearchParams({
-                page: page.toString(),
-                limit: '20',
-                search: searchQuery
+                filename: searchQuery // NestJS service filters by filename or originalname
             });
-            const res = await fetch(`/api/admin/media?${params}`);
-            if (res.ok) {
-                const data = await res.json();
-                setMedia(data.media);
-                setPagination(data.pagination);
+            // Note: NestJS file service currently returns ALL matching files (no pagination)
+            const res = await fetchAPI(`/admin/media?${params}`);
+
+            if (res.data) {
+                const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3900';
+
+                const mappedMedia: MediaItem[] = res.data.map((f: any) => {
+                    // Extract timestamp from filename (timestamp_name.ext)
+                    let createdAt = new Date().toISOString();
+                    const parts = f.filename?.split('_');
+                    if (parts && parts.length > 1 && !isNaN(Number(parts[0]))) {
+                        createdAt = new Date(Number(parts[0])).toISOString();
+                    }
+
+                    return {
+                        _id: f.id,
+                        filename: f.originalname || f.filename,
+                        url: `${backendUrl}/uploads/${f.filename}`,
+                        mimetype: f.mimetype,
+                        size: f.size,
+                        createdAt: createdAt
+                    };
+                });
+
+                // Client-side pagination until backend supports it
+                const limit = 20;
+                const total = mappedMedia.length;
+                const totalPages = Math.ceil(total / limit);
+                const startIndex = (page - 1) * limit;
+                const paginatedMedia = mappedMedia.slice(startIndex, startIndex + limit);
+
+                setMedia(paginatedMedia);
+                setPagination({
+                    total,
+                    page,
+                    limit,
+                    totalPages: totalPages || 1
+                });
             }
         } catch (error) {
             console.error('Error fetching media:', error);
+            toast.error('Failed to load media library');
         } finally {
             setLoading(false);
         }
@@ -88,19 +122,15 @@ export default function MediaPage() {
 
         setUploading(true);
         try {
-            const res = await fetch('/api/admin/media', {
+            // fetchAPI handles FormData automatically (removes Content-Type)
+            await fetchAPI('/admin/media', {
                 method: 'POST',
                 body: formData,
             });
 
-            if (res.ok) {
-                // Refresh current page
-                fetchMedia(pagination.page, debouncedSearch);
-                toast.success('Image uploaded successfully');
-            } else {
-                console.error('Upload failed');
-                toast.error('Failed to upload image');
-            }
+            // Refresh current page
+            fetchMedia(pagination.page, debouncedSearch);
+            toast.success('Image uploaded successfully');
         } catch (error) {
             console.error('Error uploading:', error);
             toast.error('Error uploading image');
@@ -118,22 +148,18 @@ export default function MediaPage() {
             isDangerous: true,
             onConfirm: async () => {
                 try {
-                    const res = await fetch(`/api/admin/media/${id}`, {
+                    await fetchAPI(`/admin/media/${id}`, {
                         method: 'DELETE',
                     });
 
-                    if (res.ok) {
-                        setMedia(media.filter((item) => item._id !== id));
-                        toast.success('Image deleted successfully');
-                        // Optional: refetch if we want to update pagination counts strictly
-                        if (media.length === 1 && pagination.page > 1) {
-                            fetchMedia(pagination.page - 1, debouncedSearch);
-                        } else {
-                            fetchMedia(pagination.page, debouncedSearch);
-                        }
+                    setMedia(media.filter((item) => item._id !== id));
+                    toast.success('Image deleted successfully');
+
+                    // Optional: refetch if we want to update pagination counts strictly
+                    if (media.length === 1 && pagination.page > 1) {
+                        fetchMedia(pagination.page - 1, debouncedSearch);
                     } else {
-                        console.error('Delete failed');
-                        toast.error('Failed to delete image');
+                        fetchMedia(pagination.page, debouncedSearch);
                     }
                 } catch (error) {
                     console.error('Error deleting:', error);

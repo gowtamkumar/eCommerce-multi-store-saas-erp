@@ -77,7 +77,8 @@ const seed = async () => {
     const tenant = await Tenant.create({
       storeName: "LuxeAudio Official",
       subdomain: "luxeaudio",
-      planTier: "pro"
+      planTier: "pro",
+      _id: "677d28704043f1ae233d45c3"
     });
     const tenantId = tenant._id;
 
@@ -179,6 +180,8 @@ const seed = async () => {
         paymentStatus: PaymentStatus.PAID,
         paymentMethod: PaymentMethod.SSLCOMMERZ,
         transactionId: "TXN123456789",
+        tenantId,
+        unitPrice: products[0].price,
       },
       {
         customerName: customerUser.name,
@@ -191,6 +194,8 @@ const seed = async () => {
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
         paymentMethod: PaymentMethod.COD,
+        tenantId,
+        unitPrice: products[1].price,
       },
     ]);
 
@@ -201,18 +206,20 @@ const seed = async () => {
         role: "Music Producer",
         content:
           "The sound quality of the X1 headphones is absolutely phenomenal. I use them for mixing and casual listening.",
-        rating: 5,
         avatar: "https://randomuser.me/api/portraits/women/1.jpg",
+        rating: 5,
         status: "active",
+        tenantId
       },
       {
         author: "Mike Ross",
         role: "Audiophile",
         content:
           "Best purchase I made this year. The noise cancellation is top-tier.",
-        rating: 5,
         avatar: "https://randomuser.me/api/portraits/men/2.jpg",
+        rating: 5,
         status: "active",
+        tenantId
       },
     ]);
 
@@ -225,6 +232,7 @@ const seed = async () => {
         category: "Warranty",
         order: 1,
         status: "active",
+        tenantId
       },
       {
         question: "Do you ship internationally?",
@@ -233,6 +241,7 @@ const seed = async () => {
         category: "Shipping",
         order: 2,
         status: "active",
+        tenantId
       },
       {
         question: "What is the return policy?",
@@ -241,6 +250,7 @@ const seed = async () => {
         category: "Returns",
         order: 3,
         status: "active",
+        tenantId
       },
     ]);
 

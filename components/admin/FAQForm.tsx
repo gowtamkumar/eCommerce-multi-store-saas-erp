@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { fetchAPI } from '@/lib/api';
 import { motion } from 'framer-motion';
 import { Save, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 interface FAQFormProps {
@@ -33,25 +34,20 @@ export default function FAQForm({ faqId, initialData }: FAQFormProps) {
         setLoading(true);
 
         try {
-            const url = faqId ? `/api/faqs/${faqId}` : '/api/faqs';
+            const url = faqId ? `/faqs/${faqId}` : '/faqs';
             const method = faqId ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
+            const response = await fetchAPI(url, {
                 method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(formData),
             });
 
-            const data = await response.json();
-
-            if (data.success) {
+            if (response.success) {
                 router.push('/admin/faqs');
                 router.refresh();
                 toast.success('FAQ saved successfully');
             } else {
-                toast.error(data.error || 'Something went wrong');
+                toast.error(response.message || 'Something went wrong');
             }
         } catch (error) {
             console.error('Error saving FAQ:', error);

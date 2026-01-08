@@ -58,22 +58,21 @@ export async function getTenantId(req?: Request | any): Promise<string | null> {
 
     // Lookup via API
     try {
-        const apiUrl = `${protocol}://${host}/api/tenant/lookup`;
+        const nestApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
+        const apiUrl = `${nestApiUrl}/tenants`;
         
         // Optimistic check: if localhost, might be subdomain
         const parts = hostname.split(".");
         let queryParams = "";
         
         if (parts.length > 1) {
-            // Check custom domain or subdomain via API
-            // Note: We need to avoid infinite loops if this is called FROM the lookup API
-            // The lookup API should NOT call getTenantId if possible, or we need a header to separate
-            
             // We'll pass both domain and subdomain (if applicable)
-            queryParams = `?domain=${hostname}`;
+            queryParams = `?customDomain=${hostname}`;
             
             const subdomain = parts[0];
             if (subdomain !== 'www' && subdomain !== 'api') {
+                // If parts.length > 2, it's a subdomain of a domain
+                // For localhost testing, usually it's subdomain.localhost
                 queryParams += `&subdomain=${subdomain}`;
             }
 
@@ -84,9 +83,9 @@ export async function getTenantId(req?: Request | any): Promise<string | null> {
 
             if (res.ok) {
                 const data = await res.json();
-                if (data.success && data.tenantId) {
-                    console.log("DEBUG_TENANT: Found via API:", data.tenantId);
-                    return data.tenantId;
+                if (data.success && data.data?.id) {
+                    console.log("DEBUG_TENANT: Found via API:", data.data.id);
+                    return data.data.id;
                 }
             }
         }

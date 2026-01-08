@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { Loader2, Send } from 'lucide-react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -19,13 +20,12 @@ export default function ContactForm() {
         setLoading(true);
 
         try {
-            const res = await fetch('/api/leads', {
+            const res = await fetchAPI('/leads', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             });
 
-            if (res.ok) {
+            if (res.success) {
                 setSuccess(true);
                 setFormData({ name: '', email: '', subject: '', message: '' });
             } else {

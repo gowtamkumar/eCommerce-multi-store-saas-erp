@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { Camera, Loader2, Lock, Save, User } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -53,14 +54,12 @@ export default function ProfileForm() {
         setLoading(true);
 
         try {
-            const res = await fetch('/api/profile', {
+            const data = await fetchAPI('/profile', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             });
 
-            if (res.ok) {
-                const data = await res.json();
+            if (data.success) {
                 await update(data.user); // Update session
                 toast.success('Profile updated successfully');
             } else {
@@ -85,13 +84,12 @@ export default function ProfileForm() {
 
         setImageUploading(true);
         try {
-            const res = await fetch('/api/admin/media', {
+            const data = await fetchAPI('/admin/media', {
                 method: 'POST',
                 body: formData,
             });
 
-            if (res.ok) {
-                const data = await res.json();
+            if (data.success) {
                 setFormData(prev => ({ ...prev, image: data.url }));
             } else {
                 toast.error('Failed to upload image');
@@ -113,17 +111,15 @@ export default function ProfileForm() {
 
         setPasswordLoading(true);
         try {
-            const res = await fetch('/api/profile', {
+            const data = await fetchAPI('/profile', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     currentPassword: passwordData.currentPassword,
                     newPassword: passwordData.newPassword,
                 }),
             });
 
-            const data = await res.json();
-            if (res.ok) {
+            if (data.success) {
                 toast.success('Password changed successfully');
                 setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
             } else {

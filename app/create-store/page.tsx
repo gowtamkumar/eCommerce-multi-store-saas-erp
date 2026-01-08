@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, Globe, Layout, Loader2, Lock, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -42,15 +43,12 @@ export default function CreateStorePage() {
     setError('');
 
     try {
-      const res = await fetch('/api/onboard', {
+      const data = await fetchAPI('/onboard', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
+      if (data.success) {
         // Successful onboarding
         // Construct the admin URL for the new store
         const protocol = window.location.protocol;

@@ -1,6 +1,7 @@
 "use client";
 
 import ConfirmModal from "@/components/ConfirmModal";
+import { fetchAPI } from '@/lib/api';
 import { Eye, Home, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -32,10 +33,11 @@ export default function PagesList() {
 
     const fetchPages = async () => {
         try {
-            const res = await fetch("/api/pages");
-            const data = await res.json();
-            if (data.success) {
-                setPages(data.pages);
+            const res = await fetchAPI("/pages");
+            if (res.success) {
+                // The backend returns { statusCode: 200, data: [...], success: true }
+                // So res.data is the array of pages
+                setPages(res.data);
             }
         } catch (error) {
             console.error("Failed to fetch pages", error);
@@ -53,13 +55,12 @@ export default function PagesList() {
             );
             setPages(updatedPages);
 
-            const res = await fetch(`/api/pages/${id}`, {
+            const res = await fetchAPI(`/pages/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ order: newOrder }),
             });
 
-            if (!res.ok) {
+            if (!res.success) {
                 toast.error("Failed to update order");
                 fetchPages(); // Revert on failure
             } else {
@@ -75,10 +76,10 @@ export default function PagesList() {
 
     const handleDelete = async () => {
         try {
-            const res = await fetch(`/api/pages/${confirmModal.id}`, {
+            const res = await fetchAPI(`/pages/${confirmModal.id}`, {
                 method: "DELETE",
             });
-            if (res.ok) {
+            if (res.success) {
                 toast.success("Page deleted successfully");
                 fetchPages();
             } else {

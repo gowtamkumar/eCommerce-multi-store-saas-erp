@@ -1,9 +1,10 @@
 'use client';
 
+import ConfirmModal from '@/components/ConfirmModal';
+import { fetchAPI } from '@/lib/api';
 import { Pencil, Plus, Save, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import ConfirmModal from '@/components/ConfirmModal';
 
 interface FAQ {
     _id: string;
@@ -33,10 +34,9 @@ export default function FAQsPage() {
 
     const fetchFAQs = async () => {
         try {
-            const res = await fetch('/api/faqs');
-            const data = await res.json();
-            if (data.success) {
-                setFaqs(data.data);
+            const res = await fetchAPI('/faqs');
+            if (res.success && res.data) {
+                setFaqs(res.data.faqs);
             }
         } catch (error) {
             console.error('Failed to fetch FAQs', error);
@@ -48,16 +48,15 @@ export default function FAQsPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const url = currentFAQ._id ? `/api/faqs/${currentFAQ._id}` : '/api/faqs';
+            const url = currentFAQ._id ? `/faqs/${currentFAQ._id}` : '/faqs';
             const method = currentFAQ._id ? 'PUT' : 'POST';
 
-            const res = await fetch(url, {
+            const res = await fetchAPI(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(currentFAQ),
             });
 
-            if (res.ok) {
+            if (res.success) {
                 fetchFAQs();
                 setIsEditing(false);
                 setCurrentFAQ({});
@@ -65,6 +64,7 @@ export default function FAQsPage() {
             }
         } catch (error) {
             console.error('Failed to save FAQ', error);
+            toast.error('Failed to save FAQ');
         }
     };
 
@@ -76,8 +76,8 @@ export default function FAQsPage() {
             isDangerous: true,
             onConfirm: async () => {
                 try {
-                    const res = await fetch(`/api/faqs/${id}`, { method: 'DELETE' });
-                    if (res.ok) {
+                    const res = await fetchAPI(`/faqs/${id}`, { method: 'DELETE' });
+                    if (res.success) {
                         fetchFAQs();
                         toast.success('FAQ deleted successfully');
                     } else {

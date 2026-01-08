@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, HelpCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -30,8 +31,7 @@ export default function FAQ({ title, description }: FAQProps) {
 
   const fetchFAQs = async () => {
     try {
-      const response = await fetch('/api/faqs?status=active');
-      const data = await response.json();
+      const data = await fetchAPI('/faqs?status=active');
 
       if (data.success) {
         setFaqs(data.data);

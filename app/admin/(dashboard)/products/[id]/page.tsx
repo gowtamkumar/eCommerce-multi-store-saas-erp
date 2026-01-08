@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
+
 import ProductForm from '@/components/admin/ProductForm';
 import { use, useEffect, useState } from 'react';
 
@@ -11,10 +13,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     if (!id) return;
 
-    fetch(`/api/products/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.product) setProduct(data.product);
+    fetchAPI(`/products/${id}`)
+      .then((res) => {
+        if (res.data) setProduct(res.data);
       })
       .catch((error) => {
         console.error('Failed to fetch product:', error);

@@ -10,16 +10,11 @@ import { Suspense } from "react";
 async function getPage(slug: string) {
     try {
         const headersList = await headers();
-        const host = headersList.get("host");
-        const protocol = host?.includes("localhost") ? "http" : "https";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3900/api/v1';
 
-        if (!host) return null;
-
-        const res = await fetch(`${protocol}://${host}/api/pages/slug/${slug}`, {
+        const res = await fetch(`${apiUrl}/pages/slug/${slug}`, {
             headers: {
-                host: host,
-                "x-tenant-id": headersList.get("x-tenant-id") || "",
-                cookie: headersList.get("cookie") || ""
+                'x-tenant-id': headersList.get('x-tenant-id') || '',
             },
             cache: 'no-store'
         });
@@ -27,9 +22,9 @@ async function getPage(slug: string) {
         if (!res.ok) return null;
 
         const data = await res.json();
-        return data.success ? data.page : null;
+        return data.success ? data.data : null;
     } catch (error) {
-        console.error("Error fetching page:", error);
+        console.error('Error fetching page:', error);
         return null;
     }
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { Search, Shield, Store, User as UserIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -11,8 +12,7 @@ export default function GlobalUsersPage() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch('/api/super-admin/users');
-        const data = await res.json();
+        const data = await fetchAPI('/super-admin/users');
         if (data.users) setUsers(data.users);
       } catch (err) {
         console.error(err);
@@ -94,7 +94,7 @@ export default function GlobalUsersPage() {
                         <UserIcon className="w-4 h-4 text-slate-400" />
                       )}
                       <span className={`text-xs font-bold uppercase ${user.role === 'super_admin' ? 'text-rose-500' :
-                          user.role === 'admin' ? 'text-indigo-500' : 'text-slate-500'
+                        user.role === 'admin' ? 'text-indigo-500' : 'text-slate-500'
                         }`}>
                         {user.role}
                       </span>

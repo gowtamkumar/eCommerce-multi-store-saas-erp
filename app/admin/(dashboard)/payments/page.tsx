@@ -2,17 +2,18 @@
 
 import { useSettings } from '@/contexts/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
+import { fetchAPI } from '@/lib/api';
 import { ChevronLeft, ChevronRight, Loader2, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Payment {
-  _id: string;
+  id: string;
   transactionId: string;
   amount: number;
   status: string;
   method: string;
   createdAt: string;
-  orderId: {
+  order: {
     customerName: string;
   };
 }
@@ -50,11 +51,17 @@ export default function PaymentsPage() {
         limit: '20',
         search: search
       });
-      const res = await fetch(`/api/payments?${params}`);
-      const data = await res.json();
-      if (data.payments) {
-        setPayments(data.payments);
-        setPagination(data.pagination);
+      const res = await fetchAPI(`/payments?${params}`);
+
+      if (res.success && Array.isArray(res.data)) {
+        setPayments(res.data);
+        // Backend doesn't support pagination yet, so we mock it based on result length
+        setPagination({
+          total: res.data.length,
+          page: 1,
+          limit: res.data.length,
+          totalPages: 1
+        });
       }
     } catch (error) {
       console.error('Failed to fetch payments', error);
@@ -121,14 +128,14 @@ export default function PaymentsPage() {
                 </tr>
               ) : (
                 payments.map((payment) => (
-                  <tr key={payment._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <tr key={payment.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="px-6 py-4 text-slate-500 text-sm">{new Date(payment.createdAt).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-slate-500 font-mono text-xs">{payment.transactionId}</td>
-                    <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{payment.orderId?.customerName || 'Unknown'}</td>
+                    <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{payment.order?.customerName || 'Unknown'}</td>
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">{formatPrice(payment.amount || 0)}</td>
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300 capitalize">{payment.method}</td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${payment.status === 'success'
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${payment.status === 'SUCCESS'
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                         : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                         }`}>

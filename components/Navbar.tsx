@@ -1,6 +1,7 @@
 "use client";
 
 import { useSettings } from "@/contexts/SettingsContext";
+import { fetchAPI } from "@/lib/api";
 import { Lock, LogOut, Menu, User, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
@@ -23,11 +24,10 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
 
   const fetchPages = async () => {
     try {
-      const res = await fetch("/api/pages?status=published");
-      const data = await res.json();
-      if (data.success) {
-        // Filter out the home page as it's usually the logo link
-        setPages(data.pages);
+      const res = await fetchAPI("/pages?status=published");
+      if (res.success) {
+        // The backend returns { statusCode: 200, data: [...], success: true }
+        setPages(res.data);
       }
     } catch (error) {
       console.error("Failed to fetch menu pages", error);
@@ -84,8 +84,8 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
             <div className="hidden md:flex items-center space-x-10">
               {pages.map((page) => (
                 <Link
-                  key={page._id}
-                  href={page.slug ? `/${page.slug}` : `/`}
+                  key={page.id}
+                  href={page.isHomePage ? "/" : `/${page.slug}`}
                   className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors relative group"
                 >
                   {page.title}
@@ -185,8 +185,8 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
             <div className="flex flex-col space-y-1 px-4">
               {pages.map((page) => (
                 <Link
-                  key={page._id}
-                  href={`/${page.slug}`}
+                  key={page.id}
+                  href={page.isHomePage ? "/" : `/${page.slug}`}
                   onClick={closeMobileMenu}
                   className="text-base font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-lg transition-colors"
                 >

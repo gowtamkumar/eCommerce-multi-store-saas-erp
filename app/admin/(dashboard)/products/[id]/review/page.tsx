@@ -1,64 +1,14 @@
 'use client';
 
 import { useSettings } from '@/contexts/SettingsContext';
+import { fetchAPI } from '@/lib/api';
 import { ArrowLeft, Calendar, Coins, Edit, Package, Tag } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
 
 interface Product {
-    _id: string;
-    name: string;
-    description: string;
-    price: number;
-    discountAmount?: number;
-    currency: string;
-    stock: number;
-    status: string;
-    images: string[];
-    features: string[];
-    createdAt: string;
-    updatedAt: string;
-    tagline?: string;
-    socialProof?: {
-        noun: string;
-        count: number;
-        rating: number;
-        avatars: string[];
-    };
-    heroHighlights?: Array<{
-        icon: string;
-        label: string;
-        value: string;
-        color: string;
-    }>;
-    specifications?: Array<{
-        label: string;
-        value: string;
-    }>;
-    keyBenefits?: Array<{
-        icon: string;
-        title: string;
-        description: string;
-    }>;
-    videoUrl?: string;
-    releaseBadgeText?: string;
-    sections?: {
-        techSpecs?: {
-            heading: string;
-            subheading: string;
-            description: string;
-        };
-        features?: {
-            heading: string;
-            subheading: string;
-            description: string;
-        };
-    };
-}
-
-interface Product {
-    _id: string;
+    id: string;
     name: string;
     description: string;
     price: number;
@@ -109,7 +59,7 @@ interface Product {
 }
 
 interface Review {
-    _id: string;
+    id: string;
     customerName: string;
     customerEmail: string;
     rating: number;
@@ -132,18 +82,15 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
         const fetchData = async () => {
             try {
                 const [productRes, reviewsRes] = await Promise.all([
-                    fetch(`/api/products/${id}`),
-                    fetch(`/api/products/${id}/reviews`)
+                    fetchAPI(`/products/${id}`),
+                    fetchAPI(`/products/${id}/reviews`)
                 ]);
 
-                const productData = await productRes.json();
-                const reviewsData = await reviewsRes.json();
-
-                if (productData.product) {
-                    setProduct(productData.product);
+                if (productRes.success && productRes.data) {
+                    setProduct(productRes.data);
                 }
-                if (reviewsData.reviews) {
-                    setReviews(reviewsData.reviews);
+                if (reviewsRes.success && reviewsRes.data) {
+                    setReviews(reviewsRes.data);
                 }
             } catch (error) {
                 console.error('Failed to fetch product data:', error);
@@ -159,19 +106,18 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
     const handleReviewAction = async (reviewId: string, action: 'approved' | 'rejected' | 'delete') => {
         try {
             if (action === 'delete') {
-                const res = await fetch(`/api/reviews/${reviewId}`, { method: 'DELETE' });
-                if (res.ok) {
-                    setReviews(reviews.filter(r => r._id !== reviewId));
+                const res = await fetchAPI(`/reviews/${reviewId}`, { method: 'DELETE' });
+                if (res.success) {
+                    setReviews(reviews.filter(r => r.id !== reviewId));
                     import('react-hot-toast').then(t => t.default.success('Review deleted'));
                 }
             } else {
-                const res = await fetch(`/api/reviews/${reviewId}`, {
+                const res = await fetchAPI(`/reviews/${reviewId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: action }),
                 });
-                if (res.ok) {
-                    setReviews(reviews.map(r => r._id === reviewId ? { ...r, status: action } : r));
+                if (res.success) {
+                    setReviews(reviews.map(r => r.id === reviewId ? { ...r, status: action } : r));
                     import('react-hot-toast').then(t => t.default.success(`Review ${action}`));
                 }
             }
@@ -226,7 +172,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                 </div>
                 <div className="flex gap-3">
                     <Link
-                        href={`/admin/products/${product._id}`}
+                        href={`/admin/products/${product.id}`}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-50 transition-colors"
                     >
                         <Edit className="w-4 h-4" />
@@ -359,7 +305,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                     ) : (
                         <div className="divide-y divide-slate-100 dark:divide-slate-700">
                             {reviews.map((review) => (
-                                <div key={review._id} className="p-6 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                                <div key={review.id} className="p-6 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3 mb-2">
@@ -393,13 +339,13 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                                             {review.status === 'pending' && (
                                                 <>
                                                     <button
-                                                        onClick={() => handleReviewAction(review._id, 'approved')}
+                                                        onClick={() => handleReviewAction(review.id, 'approved')}
                                                         className="px-3 py-1.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-xs font-bold hover:bg-green-200 transition-colors"
                                                     >
                                                         Approve
                                                     </button>
                                                     <button
-                                                        onClick={() => handleReviewAction(review._id, 'rejected')}
+                                                        onClick={() => handleReviewAction(review.id, 'rejected')}
                                                         className="px-3 py-1.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-lg text-xs font-bold hover:bg-red-200 transition-colors"
                                                     >
                                                         Reject
@@ -408,7 +354,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                                             )}
                                             {review.status === 'approved' && (
                                                 <button
-                                                    onClick={() => handleReviewAction(review._id, 'rejected')}
+                                                    onClick={() => handleReviewAction(review.id, 'rejected')}
                                                     className="px-3 py-1.5 bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors"
                                                 >
                                                     Reject
@@ -416,14 +362,14 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                                             )}
                                             {review.status === 'rejected' && (
                                                 <button
-                                                    onClick={() => handleReviewAction(review._id, 'approved')}
+                                                    onClick={() => handleReviewAction(review.id, 'approved')}
                                                     className="px-3 py-1.5 bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors"
                                                 >
                                                     Approve
                                                 </button>
                                             )}
                                             <button
-                                                onClick={() => handleReviewAction(review._id, 'delete')}
+                                                onClick={() => handleReviewAction(review.id, 'delete')}
                                                 className="p-1.5 text-slate-400 hover:text-red-600 transition-colors"
                                                 title="Delete permanently"
                                             >

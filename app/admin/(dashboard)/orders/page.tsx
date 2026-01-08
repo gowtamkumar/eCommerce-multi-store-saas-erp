@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
+
 import { useSettings } from '@/contexts/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { OrderStatus } from '@/lib/enums/order-status';
@@ -66,14 +68,15 @@ export default function OrdersPage() {
         limit: '20',
         search: search
       });
-      const res = await fetch(`/api/orders?${params}`);
-      const data = await res.json();
-      if (data.orders) {
-        setOrders(data.orders);
-        setPagination(data.pagination);
+      const res = await fetchAPI(`/orders?${params}`);
+
+      if (res.data?.orders) {
+        setOrders(res.data.orders);
+        setPagination(res.data.pagination);
       }
     } catch (error) {
       console.error('Failed to fetch orders', error);
+      toast.error('Failed to load orders');
     } finally {
       setLoading(false);
     }
@@ -87,21 +90,16 @@ export default function OrdersPage() {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      const res = await fetch(`/api/orders/${id}`, {
+      await fetchAPI(`/orders/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (res.ok) {
-        setOrders(orders.map(o => o._id === id ? { ...o, status: newStatus } : o));
-        if (selectedOrder && selectedOrder._id === id) {
-          setSelectedOrder({ ...selectedOrder, status: newStatus });
-        }
-        toast.success('Order status updated');
-      } else {
-        toast.error('Failed to update status');
+      setOrders(orders.map(o => o._id === id ? { ...o, status: newStatus } : o));
+      if (selectedOrder && selectedOrder._id === id) {
+        setSelectedOrder({ ...selectedOrder, status: newStatus });
       }
+      toast.success('Order status updated');
     } catch (error) {
       toast.error('Error updating status');
     }
@@ -110,21 +108,16 @@ export default function OrdersPage() {
 
   const handlePaymentUpdate = async (id: string, paymentStatus: string, transactionId?: string) => {
     try {
-      const res = await fetch(`/api/orders/${id}`, {
+      await fetchAPI(`/orders/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paymentStatus, transactionId }),
       });
 
-      if (res.ok) {
-        setOrders(orders.map(o => o._id === id ? { ...o, paymentStatus, transactionId } : o));
-        if (selectedOrder && selectedOrder._id === id) {
-          setSelectedOrder({ ...selectedOrder, paymentStatus, transactionId });
-        }
-        toast.success('Payment details updated successfully');
-      } else {
-        toast.error('Failed to update payment details');
+      setOrders(orders.map(o => o._id === id ? { ...o, paymentStatus, transactionId } : o));
+      if (selectedOrder && selectedOrder._id === id) {
+        setSelectedOrder({ ...selectedOrder, paymentStatus, transactionId });
       }
+      toast.success('Payment details updated successfully');
     } catch (error) {
       toast.error('Error updating payment details');
     }

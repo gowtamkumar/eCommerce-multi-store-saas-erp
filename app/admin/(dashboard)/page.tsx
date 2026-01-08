@@ -1,6 +1,7 @@
 'use client';
 
 import { useSettings } from '@/contexts/SettingsContext';
+import { fetchAPI } from '@/lib/api';
 import { OrderStatus } from '@/lib/enums/order-status';
 import { FileText, Package, ShoppingBag, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
@@ -38,27 +39,20 @@ export default function AdminDashboard() {
   const fetchDashboardStats = async () => {
     try {
       // Fetch all data in parallel
-      const [ordersRes, productsRes, paymentsRes, pagesRes] = await Promise.all([
-        fetch('/api/orders'),
-        fetch('/api/products'),
-        fetch('/api/payments'),
-        fetch('/api/pages'),
-      ]);
-
       const [ordersData, productsData, paymentsData, pagesData] = await Promise.all([
-        ordersRes.json(),
-        productsRes.json(),
-        paymentsRes.json(),
-        pagesRes.json(),
+        fetchAPI('/orders'),
+        fetchAPI('/products'),
+        fetchAPI('/payments'),
+        fetchAPI('/pages'),
       ]);
 
       // Calculate stats
-      const activeOrders = ordersData.orders?.filter((o: any) => o.status === OrderStatus.PENDING).length || 0;
-      const totalProducts = productsData.products?.length || 0;
-      const totalSales = paymentsData.payments?.reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
-      const totalPages = pagesData.pages?.length || 0;
-      const recentPages = pagesData.pages?.slice(0, 5) || [];
-      const recentProducts = productsData.products?.slice(0, 5) || [];
+      const activeOrders = ordersData.data?.filter((o: any) => o.status === OrderStatus.PENDING).length || 0;
+      const totalProducts = productsData.data?.length || 0;
+      const totalSales = paymentsData.data?.reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
+      const totalPages = pagesData.data?.length || 0;
+      const recentPages = pagesData.data?.slice(0, 5) || [];
+      const recentProducts = productsData.data?.slice(0, 5) || [];
 
       setRecentProducts(recentProducts);
 
@@ -70,12 +64,12 @@ export default function AdminDashboard() {
       const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
       const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
-      const currentMonthSales = paymentsData.payments?.filter((p: any) => {
+      const currentMonthSales = paymentsData.data?.filter((p: any) => {
         const date = new Date(p.createdAt);
         return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
       }).reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
 
-      const previousMonthSales = paymentsData.payments?.filter((p: any) => {
+      const previousMonthSales = paymentsData.data?.filter((p: any) => {
         const date = new Date(p.createdAt);
         return date.getMonth() === previousMonth && date.getFullYear() === previousYear;
       }).reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
@@ -95,7 +89,7 @@ export default function AdminDashboard() {
       }).reverse();
 
       const salesData = last7Days.map(date => {
-        const daySales = paymentsData.payments?.filter((p: any) => p.createdAt.startsWith(date))
+        const daySales = paymentsData.data?.filter((p: any) => p.createdAt.startsWith(date))
           .reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
         return {
           name: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -288,7 +282,7 @@ export default function AdminDashboard() {
               </div>
             ) : (
               recentProducts.map((product: any) => (
-                <div key={product._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <div key={product.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden">
                       {product.images?.[0] && (
@@ -327,7 +321,7 @@ export default function AdminDashboard() {
               </div>
             ) : (
               stats.recentPages.map((page: any) => (
-                <div key={page._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <div key={page.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center">
                       <FileText className="w-5 h-5 text-brand-600 dark:text-brand-400" />

@@ -1,12 +1,13 @@
 'use client';
 
+import ConfirmModal from '@/components/ConfirmModal';
+import { fetchAPI } from '@/lib/api';
 import { Pencil, Plus, Save, Star, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import ConfirmModal from '@/components/ConfirmModal';
 
 interface Testimonial {
-    _id: string;
+    id: string;
     author: string;
     role: string;
     content: string;
@@ -34,10 +35,9 @@ export default function TestimonialsPage() {
 
     const fetchTestimonials = async () => {
         try {
-            const res = await fetch('/api/testimonials');
-            const data = await res.json();
-            if (data.testimonials) {
-                setTestimonials(data.testimonials);
+            const res = await fetchAPI('/testimonials');
+            if (res.success && res.data) {
+                setTestimonials(res.data.testimonials);
             }
         } catch (error) {
             console.error('Failed to fetch testimonials', error);
@@ -49,18 +49,16 @@ export default function TestimonialsPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const url = currentTestimonial._id ? `/api/testimonials/${currentTestimonial._id}` : '/api/testimonials';
-            const method = currentTestimonial._id ? 'PUT' : 'POST';
+            const url = currentTestimonial.id ? `/testimonials/${currentTestimonial.id}` : '/testimonials';
+            const method = currentTestimonial.id ? 'PUT' : 'POST';
 
-            const res = await fetch(url, {
+            const res = await fetchAPI(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(currentTestimonial),
             });
 
-            if (res.ok) {
+            if (res.success) {
                 fetchTestimonials();
-                setIsEditing(false);
                 setIsEditing(false);
                 setCurrentTestimonial({});
                 toast.success('Testimonial saved successfully');
@@ -79,8 +77,8 @@ export default function TestimonialsPage() {
             isDangerous: true,
             onConfirm: async () => {
                 try {
-                    const res = await fetch(`/api/testimonials/${id}`, { method: 'DELETE' });
-                    if (res.ok) {
+                    const res = await fetchAPI(`/testimonials/${id}`, { method: 'DELETE' });
+                    if (res.success) {
                         fetchTestimonials();
                         toast.success('Testimonial deleted successfully');
                     } else {
@@ -186,7 +184,7 @@ export default function TestimonialsPage() {
                 {loading ? (
                     <p className="text-center text-slate-500 col-span-2">Loading Testimonials...</p>
                 ) : testimonials.map((testimonial) => (
-                    <div key={testimonial._id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 relative">
+                    <div key={testimonial.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 relative">
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-3">
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${testimonial.avatar}`}>
@@ -205,7 +203,7 @@ export default function TestimonialsPage() {
                                     <Pencil className="w-4 h-4" />
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(testimonial._id)}
+                                    onClick={() => handleDelete(testimonial.id)}
                                     className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                 >
                                     <Trash2 className="w-4 h-4" />

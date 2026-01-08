@@ -1,7 +1,8 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { LeadStatus } from '@/lib/enums/lead-status';
-import { ChevronLeft, ChevronRight, Loader2, MessageSquare, Search, Filter, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Filter, Loader2, MessageSquare, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -46,11 +47,10 @@ export default function LeadList() {
                 search: search,
                 status: status
             });
-            const res = await fetch(`/api/leads?${params}`);
-            const data = await res.json();
-            if (data.success) {
-                setMessages(data.data);
-                setPagination(data.pagination);
+            const res = await fetchAPI(`/leads?${params}`);
+            if (res.success && res.data) {
+                setMessages(res.data.leads);
+                setPagination(res.data.pagination);
             }
         } catch (error) {
             console.error('Failed to fetch messages', error);
@@ -68,19 +68,18 @@ export default function LeadList() {
     const handleStatusUpdate = async (id: string, newStatus: string) => {
         setUpdatingStatus(id);
         try {
-            const res = await fetch(`/api/leads/${id}`, {
+            const res = await fetchAPI(`/leads/${id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
             });
-            const data = await res.json();
-            if (data.success) {
+
+            if (res.success) {
                 toast.success('Status updated');
                 setMessages((prev: any) =>
-                    prev.map((m: any) => (m._id === id ? { ...m, status: newStatus } : m))
+                    prev.map((m: any) => (m.id === id ? { ...m, status: newStatus } : m))
                 );
             } else {
-                toast.error(data.error || 'Update failed');
+                toast.error('Update failed');
             }
         } catch (error) {
             toast.error('Failed to update status');
@@ -97,11 +96,10 @@ export default function LeadList() {
                 search: debouncedSearch,
                 status: statusFilter
             });
-            const res = await fetch(`/api/leads?${params}`);
-            const data = await res.json();
+            const res = await fetchAPI(`/leads?${params}`);
 
-            if (data.success) {
-                const leads = data.data;
+            if (res.success && res.data) {
+                const leads = res.data.leads;
                 const headers = ['Date', 'Name', 'Email', 'Phone', 'Subject', 'Message', 'Status'];
                 const csvContent = [
                     headers.join(','),
@@ -137,9 +135,9 @@ export default function LeadList() {
         switch (status) {
             case LeadStatus.NEW:
                 return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-            case LeadStatus.READ:
+            case LeadStatus.CONTACTED:
                 return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
-            case LeadStatus.REPLIED:
+            case LeadStatus.CONVERTED:
                 return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
             default:
                 return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
@@ -231,7 +229,7 @@ export default function LeadList() {
                                 </tr>
                             ) : (
                                 messages.map((msg: any) => (
-                                    <tr key={msg._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                    <tr key={msg.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                         <td className="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                             {new Date(msg.createdAt).toLocaleDateString()}
                                         </td>
@@ -248,8 +246,8 @@ export default function LeadList() {
                                             <div className="flex items-center gap-2">
                                                 <select
                                                     value={msg.status}
-                                                    onChange={(e) => handleStatusUpdate(msg._id, e.target.value)}
-                                                    disabled={updatingStatus === msg._id}
+                                                    onChange={(e) => handleStatusUpdate(msg.id, e.target.value)}
+                                                    disabled={updatingStatus === msg.id}
                                                     className={`px-2.5 py-1 rounded-full text-xs font-semibold border-none cursor-pointer focus:ring-2 focus:ring-brand-500 outline-none transition-all appearance-none ${getStatusColor(msg.status)}`}
                                                 >
                                                     {Object.values(LeadStatus).map((status) => (
@@ -258,7 +256,7 @@ export default function LeadList() {
                                                         </option>
                                                     ))}
                                                 </select>
-                                                {updatingStatus === msg._id && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+                                                {updatingStatus === msg.id && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
                                             </div>
                                         </td>
                                     </tr>

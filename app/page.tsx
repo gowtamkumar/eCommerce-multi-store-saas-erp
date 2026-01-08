@@ -9,30 +9,27 @@ import ProductDetails from "@/components/ProductDetails";
 import Reviews from "@/components/Reviews";
 import SectionRenderer from "@/components/SectionRenderer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
+import { fetchAPI } from "@/lib/api";
 import { getSiteSettings } from "@/lib/getSettings";
-import { headers } from "next/headers";
+import { getTenantId } from "@/lib/tenant";
 import { Suspense } from "react";
 
 async function getHomeData() {
   try {
-    const headersList = await headers();
-    const host = headersList.get("host");
-    const protocol = host?.includes("localhost") ? "http" : "https";
+    const tenantId = await getTenantId();
 
-    if (!host) return null;
+    // If no tenant found -> SaaS Landing
+    if (!tenantId) {
+      return { isSaaS: true, success: true };
+    }
 
-    const res = await fetch(`${protocol}://${host}/api/home`, {
+    return await fetchAPI('/home', {
       headers: {
-        host: host,
-        "x-tenant-id": headersList.get("x-tenant-id") || "",
-        cookie: headersList.get("cookie") || ""
+        "x-tenant-id": tenantId,
       },
       cache: 'no-store'
     });
 
-    if (!res.ok) return null;
-
-    return await res.json();
   } catch (error) {
     console.error("Error fetching home data:", error);
     return null;

@@ -1,8 +1,9 @@
 'use client';
 
 import { useSettings } from '@/contexts/SettingsContext';
-import { useDownloadInvoice } from '@/lib/handleDownloadInvoice';
+import { fetchAPI } from '@/lib/api';
 import { PaymentMethod } from '@/lib/enums/payment-method';
+import { useDownloadInvoice } from '@/lib/handleDownloadInvoice';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, CreditCard, Download, Loader2, ShieldCheck, Truck, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -52,15 +53,12 @@ const CheckoutModal = ({ isOpen, onClose, product }: CheckoutModalProps) => {
 
     try {
       // 1. Create Order
-      const orderRes = await fetch('/api/orders', {
+      const orderJson = await fetchAPI('/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
       });
 
-      const orderJson = await orderRes.json();
-
-      if (!orderRes.ok) {
+      if (!orderJson.success) {
         // Display the specific error message from the API
         toast.error(orderJson.error || 'Failed to create order');
         setLoading(false);
@@ -69,13 +67,10 @@ const CheckoutModal = ({ isOpen, onClose, product }: CheckoutModalProps) => {
 
       if (paymentMethod === PaymentMethod.SSLCOMMERZ) {
         // 2. Initiate Payment
-        const paymentRes = await fetch('/api/payment/init', {
+        const paymentJson = await fetchAPI('/payment/init', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: orderJson.order._id }),
+          body: JSON.stringify({ orderId: orderJson.data.id }),
         });
-
-        const paymentJson = await paymentRes.json();
 
 
 

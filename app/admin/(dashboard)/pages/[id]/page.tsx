@@ -1,6 +1,7 @@
 "use client";
 
 import RichEditor from "@/components/admin/RichEditor";
+import { fetchAPI } from "@/lib/api";
 import {
     ArrowLeft,
     CheckCircle2,
@@ -27,7 +28,7 @@ interface Section {
 }
 
 interface PageData {
-    _id?: string;
+    id?: string;
     title: string;
     slug: string;
     isHomePage: boolean;
@@ -71,10 +72,9 @@ export default function PageBuilder({ params }: { params: Promise<{ id: string }
 
     const fetchPage = async () => {
         try {
-            const res = await fetch(`/api/pages/${resolvedParams.id}`);
-            const json = await res.json();
-            if (json.success) {
-                setData(json.page);
+            const res = await fetchAPI(`/pages/${resolvedParams.id}`);
+            if (res.success) {
+                setData(res.data);
             } else {
                 toast.error("Page not found");
                 router.push("/admin/pages");
@@ -89,21 +89,19 @@ export default function PageBuilder({ params }: { params: Promise<{ id: string }
     const handleSave = async () => {
         setSaving(true);
         try {
-            const url = isNew ? "/api/pages" : `/api/pages/${resolvedParams.id}`;
+            const url = isNew ? "/pages" : `/pages/${resolvedParams.id}`;
             const method = isNew ? "POST" : "PUT";
-            const res = await fetch(url, {
+            const res = await fetchAPI(url, {
                 method,
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
-            const json = await res.json();
-            if (json.success) {
+            if (res.success) {
                 toast.success("Page saved successfully");
                 if (isNew) {
-                    router.push(`/admin/pages/${json.page._id}`);
+                    router.push(`/admin/pages/${res.data.id}`);
                 }
             } else {
-                toast.error(json.error || "Failed to save page");
+                toast.error(res.message || "Failed to save page");
             }
         } catch (error) {
             toast.error("Error saving page");

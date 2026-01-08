@@ -1,6 +1,7 @@
 'use client';
 
 import TestimonialForm from '@/components/admin/TestimonialForm';
+import { fetchAPI } from '@/lib/api';
 import { use, useEffect, useState } from 'react';
 
 export default function EditTestimonialPage({ params }: { params: Promise<{ id: string }> }) {
@@ -11,10 +12,9 @@ export default function EditTestimonialPage({ params }: { params: Promise<{ id: 
     useEffect(() => {
         if (!id) return;
 
-        fetch(`/api/testimonials/${id}`)
-            .then((res) => res.json())
-            .then((data) => {
-                if (data.testimonial) setTestimonial(data.testimonial);
+        fetchAPI(`/testimonials/${id}`)
+            .then((res) => {
+                if (res.success && res.data) setTestimonial(res.data);
             })
             .catch((error) => {
                 console.error('Failed to fetch testimonial:', error);

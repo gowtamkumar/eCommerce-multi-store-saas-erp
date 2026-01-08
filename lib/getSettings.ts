@@ -1,50 +1,62 @@
-import dbConnect from '@/lib/mongodb';
-import SiteSettings from '@/models/SiteSettings';
 import { getTenantId } from './tenant';
+
+export const DEFAULT_SETTINGS = {
+    logo: "",
+    brandName: "LuxeAudio",
+    siteDescription: "Elevating your audio experience with premium sound and design.",
+    contactEmail: "support@luxeaudio.com",
+    contactPhone: "+1 (555) 000-0000",
+    whatsappPhone: "+1 (555) 000-0000",
+    address: "123 Audio Street, Sound City, SC 90210",
+    currency: "BDT",
+    currencySymbol: "৳",
+    supportedCurrencies: [
+        { code: 'BDT', symbol: '৳', rate: 1, name: 'Bangladeshi Taka' },
+        { code: 'USD', symbol: '$', rate: 120, name: 'US Dollar' }
+    ],
+    socialLinks: { facebook: "", twitter: "", instagram: "", linkedin: "" },
+    productMode: "single",
+    marketing: { googleAnalyticsId: "", googleSiteVerification: "", facebookPixelId: "", facebookDomainVerification: "" }
+};
 
 export async function getSiteSettings() {
     try {
-        await dbConnect();
         const tenantId = await getTenantId();
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3900/api/v1';
 
         if (!tenantId) {
-            // Fallback or explicit error - for now, fallback to default structure but maybe warn
             return {
-                logo: "",
+                ...DEFAULT_SETTINGS,
                 brandName: "LuxeSaaS",
                 siteDescription: "The premium multi-tenant eCommerce platform.",
                 contactEmail: "support@luxesaas.com",
-                socialLinks: { facebook: "", twitter: "", instagram: "", linkedin: "" },
-                productMode: "single",
-                marketing: { googleAnalyticsId: "", googleSiteVerification: "", facebookPixelId: "", facebookDomainVerification: "" }
             };
         }
 
-        let settings = await SiteSettings.findOne({ tenantId }).lean();
-        if (!settings) {
-            // Create default if not exists (though typically we might just return defaults without saving)
-            // For now, let's just return a default object structure if DB is empty to avoid side effects in GET
+        const res = await fetch(`${apiUrl}/settings`, {
+            headers: {
+                'x-tenant-id': tenantId
+            },
+            cache: 'no-store'
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            const settings = data.success ? data.data : data;
+            
+            // Merge with defaults to ensure all fields exist
             return {
-                logo: "",
-                brandName: "LuxeAudio",
-                siteDescription: "Elevating your audio experience with premium sound and design.",
-                contactEmail: "support@luxeaudio.com",
-                socialLinks: { facebook: "", twitter: "", instagram: "", linkedin: "" },
-                productMode: "single",
-                marketing: { googleAnalyticsId: "", googleSiteVerification: "", facebookPixelId: "", facebookDomainVerification: "" }
+                ...DEFAULT_SETTINGS,
+                ...settings,
+                // Deep merge objects if necessary, but surface level spread often sufficient for these nested objects
+                socialLinks: { ...DEFAULT_SETTINGS.socialLinks, ...settings?.socialLinks },
+                marketing: { ...DEFAULT_SETTINGS.marketing, ...settings?.marketing }
             };
         }
-        return JSON.parse(JSON.stringify(settings));
+
+        return DEFAULT_SETTINGS;
     } catch (error) {
         console.error("Failed to fetch site settings:", error);
-        return {
-            logo: "",
-            brandName: "LuxeAudio",
-            siteDescription: "Elevating your audio experience with premium sound and design.",
-            contactEmail: "support@luxeaudio.com",
-            socialLinks: { facebook: "", twitter: "", instagram: "", linkedin: "" },
-            productMode: "single",
-            marketing: { googleAnalyticsId: "", googleSiteVerification: "", facebookPixelId: "", facebookDomainVerification: "" }
-        };
+        return DEFAULT_SETTINGS;
     }
 }

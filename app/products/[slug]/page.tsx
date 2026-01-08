@@ -10,27 +10,20 @@ import Reviews from '@/components/Reviews';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
+import { fetchAPI } from "@/lib/api";
+import { resolveTenantId } from "@/lib/server-utils";
+
 async function getProduct(slug: string) {
     try {
-        const headersList = await headers();
-        const host = headersList.get("host");
-        const protocol = host?.includes("localhost") ? "http" : "https";
+        const tenantId = await resolveTenantId();
+        if (!tenantId) return null;
 
-        if (!host) return null;
-
-        const res = await fetch(`${protocol}://${host}/api/products/slug/${slug}`, {
-            headers: {
-                host: host,
-                "x-tenant-id": headersList.get("x-tenant-id") || "",
-                cookie: headersList.get("cookie") || ""
-            },
+        const res = await fetchAPI(`/products/${slug}`, {
+            headers: { "x-tenant-id": tenantId },
             cache: 'no-store'
         });
 
-        if (!res.ok) return null;
-
-        const data = await res.json();
-        return data.success ? data.product : null;
+        return res ? res : null;
     } catch (error) {
         console.error("Error fetching product:", error);
         return null;
@@ -98,7 +91,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <Features product={product} />
             <ProductDetails product={product} />
             <Reviews />
-            <RelatedProducts currentProductId={product._id} />
+            <RelatedProducts currentProductId={product.id} />
             <FAQ />
             <Footer />
         </main>

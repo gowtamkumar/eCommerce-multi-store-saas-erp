@@ -1,9 +1,11 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { Loader2, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', username: '' });
@@ -19,22 +21,17 @@ export default function RegisterPage() {
 
 
     try {
-      const res = await fetch('/api/auth/register', {
+      // Direct call to NestJS Auth endpoint
+      await fetchAPI('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
-      console.log("data", data);
-
-      if (res.ok) {
-        router.push('/login');
-      } else {
-        setError(data.error || 'Registration failed');
-      }
-    } catch (err) {
-      setError('Something went wrong');
+      router.push('/login');
+      toast.success('Registration successful. Please login.');
+    } catch (err: any) {
+      setError(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }

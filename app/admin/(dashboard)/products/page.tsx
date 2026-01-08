@@ -1,5 +1,7 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
+
 import ConfirmModal from '@/components/ConfirmModal';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
@@ -53,14 +55,15 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/products');
-      const data = await res.json();
-      if (data.products) {
-        setProducts(data.products);
-        setFilteredProducts(data.products);
+      const res = await fetchAPI('/products');
+      // NestJS returns { data: { products: [] } }
+      if (res.data?.products) {
+        setProducts(res.data.products);
+        setFilteredProducts(res.data.products);
       }
     } catch (error) {
       console.error('Failed to fetch products', error);
+      toast.error('Failed to load products');
     } finally {
       setLoading(false);
     }
@@ -74,13 +77,9 @@ export default function ProductsPage() {
       isDangerous: true,
       onConfirm: async () => {
         try {
-          const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-          if (res.ok) {
-            setProducts(products.filter((p) => p._id !== id));
-            toast.success('Product deleted successfully');
-          } else {
-            toast.error('Failed to delete product');
-          }
+          await fetchAPI(`/products/${id}`, { method: 'DELETE' });
+          setProducts(products.filter((p) => p._id !== id));
+          toast.success('Product deleted successfully');
         } catch (error) {
           toast.error('Error deleting product');
         }
@@ -90,21 +89,16 @@ export default function ProductsPage() {
 
   const handleStatusUpdate = async (id: string, newStatus: string) => {
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      await fetchAPI(`/products/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
 
-      if (res.ok) {
-        // Update local state
-        setProducts(products.map(p =>
-          p._id === id ? { ...p, status: newStatus } : p
-        ));
-        toast.success('Product status updated');
-      } else {
-        toast.error('Failed to update product status');
-      }
+      // Update local state
+      setProducts(products.map(p =>
+        p._id === id ? { ...p, status: newStatus } : p
+      ));
+      toast.success('Product status updated');
     } catch (error) {
       toast.error('Error updating product status');
     }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useSettings } from '@/contexts/SettingsContext';
+import { fetchAPI } from '@/lib/api';
 import { Facebook, Heart, Instagram, Linkedin, Twitter } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -20,10 +21,9 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
 
   const fetchPages = async () => {
     try {
-      const res = await fetch("/api/pages?status=published");
-      const data = await res.json();
-      if (data.success) {
-        setPages(data.pages);
+      const res = await fetchAPI("/pages?status=published");
+      if (res.success) {
+        setPages(res.data);
       }
     } catch (error) {
       console.error("Failed to fetch footer pages", error);
@@ -68,7 +68,7 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
             <h4 className="font-bold text-lg mb-6 text-white">Pages</h4>
             <ul className="space-y-4 text-slate-400">
               {pages.map((page) => (
-                <li key={page._id}>
+                <li key={page.id}>
                   <Link
                     href={page.isHomePage ? "/" : `/${page.slug}`}
                     className="hover:text-blue-400 transition-colors"

@@ -43,19 +43,24 @@ export const authOptions: NextAuthOptions = {
           console.log("Headers from fallback:", headers);
         }
 
-        // 2. Determine base URL for internal fetch
         const host = headers["host"] || "localhost:3000";
-        const proto =
-          headers["x-forwarded-proto"] ||
-          (host.includes("localhost") ? "http" : "https");
-        const apiUrl = `${proto}://${host}/api/auth/verify`;
+        // const proto = headers["x-forwarded-proto"] || (host.includes("localhost") ? "http" : "https");
+        
+        // Use local NestJS instance for server-side auth
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
+        const loginUrl = `${apiUrl}/admin/login`; // Assuming universal login endpoint
+
+        console.log("External Auth API URL:", loginUrl);
 
         console.log("Internal Auth API URL:", apiUrl);
 
         try {
-          const res = await fetch(apiUrl, {
+          const res = await fetch(loginUrl, {
             method: "POST",
-            headers: headers,
+            headers: {
+                 ...headers,
+                 "Content-Type": "application/json"
+            },
             body: JSON.stringify({
               username: credentials.username,
               password: credentials.password,
@@ -75,8 +80,11 @@ export const authOptions: NextAuthOptions = {
             throw new Error(data.error || "Authentication failed");
           }
 
-          if (data.success && data.user) {
-            return data.user;
+          if (data.success && data.data && data.data.user) {
+            const user = data.data.user;
+            // Inject accessToken into user object
+            user.accessToken = data.data.token;
+            return user;
           }
 
           throw new Error(data.error || "Authentication failed");
@@ -100,6 +108,7 @@ export const authOptions: NextAuthOptions = {
         token.address = user.address;
         token.image = user.image;
         token.tenantId = user.tenantId;
+        token.accessToken = user.accessToken;
       }
       if (trigger === "update" && session) {
         return { ...token, ...session };
@@ -114,6 +123,7 @@ export const authOptions: NextAuthOptions = {
         session.user.address = token.address || "";
         session.user.image = token.image || "";
         session.user.tenantId = token.tenantId || "";
+        session.user.accessToken = token.accessToken;
       }
       return session;
     },
