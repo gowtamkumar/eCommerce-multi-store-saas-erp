@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { fetchAPI } from "./api";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -45,30 +46,28 @@ export const authOptions: NextAuthOptions = {
 
         const host = headers["host"] || "localhost:3000";
         // const proto = headers["x-forwarded-proto"] || (host.includes("localhost") ? "http" : "https");
-        
+
         // Use local NestJS instance for server-side auth
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
-        const loginUrl = `${apiUrl}/admin/login`; // Assuming universal login endpoint
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
+        const loginUrl = `/admin/login`; // Assuming universal login endpoint
 
         console.log("External Auth API URL:", loginUrl);
 
         console.log("Internal Auth API URL:", apiUrl);
 
         try {
-          const res = await fetch(loginUrl, {
+          const res = await fetchAPI(loginUrl, {
             method: "POST",
-            headers: {
-                 ...headers,
-                 "Content-Type": "application/json"
-            },
             body: JSON.stringify({
               username: credentials.username,
               password: credentials.password,
             }),
-            cache: "no-store",
           });
 
           const data = await res.json();
+
+          console.log("data", data);
 
           if (!res.ok) {
             console.error(
