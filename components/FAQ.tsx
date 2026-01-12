@@ -52,10 +52,10 @@ export default function FAQ({ title, description }: FAQProps) {
   }
 
 
-  const categories = ['all', ...Array.from(new Set(faqs.faqs?.map((faq: any) => faq.category)))];
+  const categories = ['all', ...Array.from(new Set(faqs?.faqs?.map((faq: any) => faq.category)))];
   const filteredFAQs = selectedCategory === 'all'
-    ? faqs
-    : faqs.filter((faq: any) => faq.category === selectedCategory);
+    ? faqs?.faqs
+    : faqs?.faqs?.filter((faq: any) => faq.category === selectedCategory);
 
   if (loading) {
     return (
@@ -126,7 +126,7 @@ export default function FAQ({ title, description }: FAQProps) {
 
         {/* FAQ Accordion */}
         <div className="max-w-4xl mx-auto space-y-4">
-          {filteredFAQs.map((faq: any, index: number) => (
+          {(filteredFAQs || [])?.map((faq: any, index: number) => (
             <motion.div
               key={faq._id}
               initial={{ opacity: 0, y: 20 }}

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -22,6 +22,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { TestimonialModule } from './modules/testimonial/testimonial.module';
+import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { TestimonialModule } from './modules/testimonial/testimonial.module';
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
-      serveRoot: '/uploads', 
+      serveRoot: '/uploads',
     }),
     AdminModule,
     DatabaseModule,
@@ -66,5 +67,16 @@ import { TestimonialModule } from './modules/testimonial/testimonial.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(TenantContextMiddleware)
+      .exclude(
+        'tenant/lookup',
+        'tenants',
+        'auth/(.*)',
+      )
+      .forRoutes('*');
+  }
+}
 

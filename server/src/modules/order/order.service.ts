@@ -71,7 +71,7 @@ export class OrderService {
         });
 
         // Find or create lead/user
-        let user = await this.userRepository.findOne({
+        const user = await this.userRepository.findOne({
             where: { email: customerEmail, tenantId },
         });
 
