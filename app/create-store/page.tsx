@@ -10,7 +10,6 @@ export default function CreateStorePage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
 
   const [formData, setFormData] = useState({
     storeName: '',
@@ -48,7 +47,10 @@ export default function CreateStorePage() {
         body: JSON.stringify(formData),
       });
 
-      if (data.success) {
+      console.log('data', data);
+
+
+      if (data.success && data.subdomain) {
         // Successful onboarding
         // Construct the admin URL for the new store
         const protocol = window.location.protocol;
@@ -68,7 +70,7 @@ export default function CreateStorePage() {
       } else {
         setError(data.error || 'Something went wrong');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to connect to server');
     } finally {
       setLoading(false);

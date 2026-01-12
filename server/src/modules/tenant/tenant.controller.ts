@@ -7,7 +7,7 @@ import { TenantService } from './tenant.service'
 @ApiTags('Tenants')
 @Controller('tenants')
 export class TenantController {
-  constructor(private readonly tenantService: TenantService) {}
+  constructor(private readonly tenantService: TenantService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new tenant with admin user' })

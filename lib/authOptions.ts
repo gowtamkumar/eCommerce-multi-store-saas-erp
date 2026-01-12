@@ -27,7 +27,7 @@ export const authOptions: NextAuthOptions = {
             headers[key] = val;
           });
           console.log("Headers from next/headers:", headers);
-        } catch (e: any) {
+        } catch (error) {
           console.log(
             "next/headers not available, falling back to req.headers"
           );
@@ -44,40 +44,21 @@ export const authOptions: NextAuthOptions = {
           console.log("Headers from fallback:", headers);
         }
 
-        const host = headers["host"] || "localhost:3000";
+        // const host = headers["host"] || "localhost:3000";
         // const proto = headers["x-forwarded-proto"] || (host.includes("localhost") ? "http" : "https");
 
-        // Use local NestJS instance for server-side auth
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
-        const loginUrl = `/admin/login`; // Assuming universal login endpoint
-
-        console.log("External Auth API URL:", loginUrl);
-
-        console.log("Internal Auth API URL:", apiUrl);
 
         try {
-          const res = await fetchAPI(loginUrl, {
+          const data = await fetchAPI('/admin/login', {
             method: "POST",
+            headers,
             body: JSON.stringify({
               username: credentials.username,
               password: credentials.password,
             }),
           });
 
-          const data = await res.json();
-
           console.log("data", data);
-
-          if (!res.ok) {
-            console.error(
-              "Auth verification API error:",
-              data.error || res.statusText,
-              "Status:",
-              res.status
-            );
-            throw new Error(data.error || "Authentication failed");
-          }
 
           if (data.success && data.data && data.data.user) {
             const user = data.data.user;
@@ -86,10 +67,11 @@ export const authOptions: NextAuthOptions = {
             return user;
           }
 
-          throw new Error(data.error || "Authentication failed");
-        } catch (error: any) {
-          console.error("Authorize internal fetch error:", error.message);
-          throw new Error(error.message);
+          throw new Error(data.message || "Authentication failed");
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+          console.error("Authorize internal fetch error:", errorMessage);
+          throw new Error(errorMessage);
         }
       },
     }),
