@@ -17,6 +17,7 @@ export default function SuperAdminLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data: session, status }: any = useSession();
 
+
   useEffect(() => {
     if (status === 'unauthenticated' || (status === 'authenticated' && session?.user?.role !== 'SuperAdmin')) {
       router.push('/login');

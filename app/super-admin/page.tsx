@@ -20,8 +20,8 @@ export default function SuperAdminOverview() {
       try {
         // Fetch stats from combined API or separate ones
         const data = await fetchAPI('/tenants');
-        if (data.tenants) {
-          setStats(prev => ({ ...prev, totalTenants: data.tenants.length }));
+        if (data.data) {
+          setStats(prev => ({ ...prev, totalTenants: data.data.length }));
         }
       } catch (err) {
         console.error(err);

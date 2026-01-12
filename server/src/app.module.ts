@@ -78,6 +78,8 @@ export class AppModule implements NestModule {
         'onboard',
         'admin/login',
         'auth/(.*)',
+        'super-admin',
+        'super-admin/(.*)',
       )
       .forRoutes('*');
   }

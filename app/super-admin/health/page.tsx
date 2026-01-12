@@ -13,7 +13,7 @@ export default function PlatformHealthPage() {
     const fetchHealth = async () => {
       try {
         const result = await fetchAPI('/super-admin/health');
-        setData(result);
+        setData(result.data);
       } catch (err) {
         console.error(err);
       } finally {

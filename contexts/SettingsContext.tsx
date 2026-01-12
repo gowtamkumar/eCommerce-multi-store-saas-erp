@@ -101,6 +101,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const formatPrice = (amount: number) => {
     const converted = convertPrice(amount);
+    if (typeof converted !== 'number' || isNaN(converted)) {
+      return `${selectedCurrency.symbol}0.00`;
+    }
     return `${selectedCurrency.symbol}${converted.toFixed(2)}`;
   };
 

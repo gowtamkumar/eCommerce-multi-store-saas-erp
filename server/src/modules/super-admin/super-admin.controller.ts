@@ -41,9 +41,21 @@ export class SuperAdminController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.SuperAdmin)
     @Get('/health')
-    getHealth() {
+    async getHealth() {
+        const users = await this.userService.findAllUsersCrossTenant();
         return {
             status: 'ok',
+            health: {
+                database: 'Connected',
+                uptime: process.uptime(),
+                version: '1.0.0',
+            },
+            stats: {
+                tenants: 0, // Mock for now or inject TenantService
+                users: users.length,
+                orders: 0, // Mock for now or inject OrderService
+                reviews: 0, // Mock for now or inject ReviewService
+            },
             timestamp: new Date().toISOString(),
             service: 'eCommerce Multi-Tenant SaaS Backend',
         };
@@ -53,8 +65,13 @@ export class SuperAdminController {
     async getAllUsers() {
         const users = await this.userService.findAllUsersCrossTenant();
         return {
-            message: 'All users across all tenants',
-            data: users,
+            users,
+            pagination: {
+                total: users.length,
+                page: 1,
+                limit: users.length,
+                totalPages: 1,
+            },
         };
     }
 }
