@@ -38,7 +38,7 @@ export default async function ProductGrid() {
   }
 
   // Single Product Mode
-  if (settings.productMode === 'single') {
+  if (settings?.productMode === 'single') {
     const product = products[0];
     return (
       <div className="py-12 container mx-auto px-4">
@@ -71,11 +71,11 @@ export default async function ProductGrid() {
 
               <div className="flex items-center gap-6 mb-10">
                 <span className="text-4xl font-bold text-slate-900 dark:text-white">
-                  ${product.price.toFixed(2)}
+                  ${(product.price)}
                 </span>
                 {product.discountAmount > 0 && (
                   <span className="text-xl text-slate-400 line-through">
-                    ${(product.price + product.discountAmount).toFixed(2)}
+                    ${(+product.price + +product.discountAmount)}
                   </span>
                 )}
               </div>

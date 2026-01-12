@@ -81,7 +81,10 @@ export default async function Home() {
     return <SaaSLanding />;
   }
 
-  const { product, dynamicPage } = data;
+  const homeData = data.data;
+  const products = homeData?.products || [];
+  const product = products[0];
+  const dynamicPage = homeData?.page;
 
 
 
