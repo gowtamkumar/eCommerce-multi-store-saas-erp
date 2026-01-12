@@ -5,10 +5,18 @@ import { UserRole } from '../../common/enums/user/user-role.enum';
 import { UserService } from '../admin/user/services/user.service';
 import { RolesGuard } from '../admin/auth/guards/roles.guard';
 import { Roles } from '../admin/auth/decorators/roles.decorator';
+import { TenantService } from '../tenant/tenant.service';
+import { OrderService } from '../order/order.service';
+import { ReviewService } from '../review/review.service';
 
 @Controller('super-admin')
 export class SuperAdminController {
-    constructor(private readonly userService: UserService) { }
+    constructor(
+        private readonly userService: UserService,
+        private readonly tenantService: TenantService,
+        private readonly orderService: OrderService,
+        private readonly reviewService: ReviewService,
+    ) { }
 
     @Post('/setup')
     @ApiOperation({ summary: 'Initial Super Admin setup' })
@@ -42,7 +50,13 @@ export class SuperAdminController {
     @Roles(UserRole.SuperAdmin)
     @Get('/health')
     async getHealth() {
-        const users = await this.userService.findAllUsersCrossTenant();
+        const [users, tenants, orders, reviews] = await Promise.all([
+            this.userService.findAllUsersCrossTenant(),
+            this.tenantService.findAll(),
+            this.orderService.findAllOrders(),
+            this.reviewService.findAllReviews(),
+        ]);
+
         return {
             status: 'ok',
             health: {
@@ -51,10 +65,10 @@ export class SuperAdminController {
                 version: '1.0.0',
             },
             stats: {
-                tenants: 0, // Mock for now or inject TenantService
+                tenants: tenants.length,
                 users: users.length,
-                orders: 0, // Mock for now or inject OrderService
-                reviews: 0, // Mock for now or inject ReviewService
+                orders: orders.length,
+                reviews: reviews.length,
             },
             timestamp: new Date().toISOString(),
             service: 'eCommerce Multi-Tenant SaaS Backend',

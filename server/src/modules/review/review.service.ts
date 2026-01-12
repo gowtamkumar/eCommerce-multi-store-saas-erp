@@ -66,4 +66,10 @@ export class ReviewService {
         await this.reviewRepository.remove(review);
         return { success: true };
     }
+
+    async findAllReviews() {
+        return await this.reviewRepository.find({
+            order: { createdAt: 'DESC' },
+        });
+    }
 }

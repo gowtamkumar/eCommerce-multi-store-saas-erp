@@ -182,4 +182,10 @@ export class OrderService {
             order: { createdAt: 'DESC' },
         });
     }
+
+    async findAllOrders() {
+        return await this.orderRepository.find({
+            order: { createdAt: 'DESC' },
+        });
+    }
 }
