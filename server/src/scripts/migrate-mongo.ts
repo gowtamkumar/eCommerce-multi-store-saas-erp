@@ -140,7 +140,7 @@ async function migrate() {
     try {
       const tid = mongoIdToUuid(u.tenantId) || DEFAULT_TENANT_ID;
       await ensureTenantExists(tid);
-      
+
       const user = new UserEntity();
       user.id = mongoIdToUuid(u._id);
       user.name = u.name;
@@ -148,7 +148,7 @@ async function migrate() {
       user.username = u.username;
       user.password = u.password;
       user.tenantId = tid;
-      
+
       // Map role
       const roleMap: any = {
         'admin': UserRole.Admin,
@@ -156,15 +156,15 @@ async function migrate() {
         'super_admin': UserRole.SuperAdmin,
         'super-admin': UserRole.SuperAdmin
       };
-      user.roles = [roleMap[u.role] || UserRole.User];
-      
+      user.role = roleMap[u.role] || UserRole.User;
+
       // Map status
       const statusMap: any = {
         'active': UserStatus.Active,
         'inactive': UserStatus.Inactive
       };
       user.status = statusMap[u.status] || UserStatus.Active;
-      
+
       user.createdAt = parseMongoDate(u.createdAt);
       user.updatedAt = parseMongoDate(u.updatedAt);
       await userRepo.save(user);

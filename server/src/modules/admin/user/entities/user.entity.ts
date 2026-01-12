@@ -50,10 +50,9 @@ export class UserEntity {
   @Column({
     type: 'enum',
     enum: UserRole,
-    array: true,
-    default: [UserRole.User],
+    default: UserRole.User,
   })
-  roles: UserRole[];
+  role: UserRole;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.Active })
   status: UserStatus;

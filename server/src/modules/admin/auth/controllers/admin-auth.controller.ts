@@ -23,16 +23,24 @@ export class AdminAuthController {
         @TenantId() tenantId: string,
         @Res({ passthrough: true }) res: Response,
     ) {
-        const authPayload = await this.authService.login(loginCredentialDto, tenantId);
-        // set cookies token
-        this.cookiesBuildTokenResponsive(res, authPayload.token);
+        try {
+            console.log("loginCredentialDto", loginCredentialDto);
+            console.log("tenantId", tenantId);
 
-        return {
-            success: true,
-            statusCode: 200,
-            message: `Admin Login successful`,
-            data: authPayload,
-        };
+            const authPayload = await this.authService.login(loginCredentialDto, tenantId);
+            // set cookies token
+            this.cookiesBuildTokenResponsive(res, authPayload.token);
+
+            return {
+                success: true,
+                statusCode: 200,
+                message: `Admin Login successful`,
+                data: authPayload,
+            };
+        } catch (error) {
+            console.error("Login Error:", error);
+            throw error;
+        }
     }
 
     @UseGuards(JwtAuthGuard)

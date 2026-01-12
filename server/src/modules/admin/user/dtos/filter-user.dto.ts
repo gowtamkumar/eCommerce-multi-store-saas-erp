@@ -15,7 +15,7 @@ export class FilterUserDto extends PaginationDto {
 
   @IsEnum(UserRole)
   @IsOptional()
-  roles: UserRole;
+  role: UserRole;
 
   @IsEnum(UserStatus)
   @IsOptional()

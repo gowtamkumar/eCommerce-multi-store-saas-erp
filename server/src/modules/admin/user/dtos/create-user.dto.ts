@@ -33,7 +33,6 @@ export class CreateUserDto {
   @IsDefined()
   password: string;
 
-  @IsEnum(UserRole, { each: true })
-  @IsOptional()
-  roles: UserRole[];
+  @IsNotEmpty()
+  role: UserRole;
 }

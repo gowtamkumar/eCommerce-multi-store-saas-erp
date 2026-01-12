@@ -27,6 +27,8 @@ export default function Login() {
                 redirect: false,
             });
 
+            console.log("login response", res);
+
             if (res?.error) {
                 setError(res.error);
             }
@@ -34,14 +36,14 @@ export default function Login() {
             // Fetch the session after successful login
             const session = await getSession();
 
-
+            console.log("session", session);
             if (session?.user) {
                 toast.success('Logged in successfully');
 
                 // Route based on user role
-                if (session.user.role === 'super_admin') {
+                if (session.user.role === 'SuperAdmin') {
                     router.push('/super-admin');
-                } else if (session.user.role === 'admin') {
+                } else if (session.user.role === 'Admin') {
                     router.push('/admin');
                 } else {
                     router.push('/');

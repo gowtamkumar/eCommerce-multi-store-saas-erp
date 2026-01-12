@@ -11,7 +11,7 @@ export class UserDto {
     image?: string;
     isAdmin: boolean;
     isEmailVerified: boolean;
-    roles: UserRole[];
+    role: UserRole;
     status: UserStatus;
     tenantId: string;
     createdAt: Date;

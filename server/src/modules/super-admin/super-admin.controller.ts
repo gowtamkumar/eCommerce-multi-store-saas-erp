@@ -27,7 +27,7 @@ export class SuperAdminController {
             email,
             password,
             username,
-            roles: [UserRole.SuperAdmin],
+            role: UserRole.SuperAdmin,
             isAdmin: true,
         });
 

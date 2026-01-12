@@ -73,7 +73,8 @@ export class AppModule implements NestModule {
       .apply(TenantContextMiddleware)
       .exclude(
         'tenant/lookup',
-        'tenants(.*)',
+        'tenants',
+        'tenants/(.*)',
         'onboard',
         'admin/login',
         'auth/(.*)',

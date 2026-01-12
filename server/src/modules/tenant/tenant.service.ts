@@ -16,7 +16,7 @@ export class TenantService {
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
     private readonly settingsService: SettingsService,
-  ) {}
+  ) { }
 
   async create(createTenantDto: CreateTenantDto) {
     const { storeName, subdomain, planTier, adminName, adminUsername, adminEmail, adminPassword } =
@@ -48,7 +48,7 @@ export class TenantService {
       username: adminUsername,
       email: adminEmail,
       password: hashedPassword,
-      roles: [UserRole.Admin],
+      role: UserRole.Admin,
       tenantId: savedTenant.id,
       isAdmin: false,
     })

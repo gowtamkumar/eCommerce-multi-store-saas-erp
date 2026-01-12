@@ -11,7 +11,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials, req) {
-        console.log("[Auth] Authorize called with credentials:", JSON.stringify({ ...credentials, password: '***' }));
+        console.log("[Auth] Authorize called with credentials:", JSON.stringify(credentials));
         if (!credentials?.username || !credentials?.password) {
           throw new Error("Please enter an username and password");
         }
@@ -45,6 +45,13 @@ export const authOptions: NextAuthOptions = {
           console.log("Headers from fallback:", headers);
         }
 
+        // Clean up headers to avoid conflicts with fetchAPI's JSON handling
+        // We MUST remove 'content-type' (lowercase) because the incoming request likely has
+        // 'application/x-www-form-urlencoded' which overrides our 'Content-Type: application/json'
+        // when passed to fetch, causing the backend to parse the body incorrectly.
+        if (headers['content-type']) delete headers['content-type'];
+        if (headers['content-length']) delete headers['content-length'];
+
         // Server-side Tenant ID Resolution
         if (!headers['x-tenant-id'] && headers['host']) {
           const host = headers['host'];
@@ -56,15 +63,9 @@ export const authOptions: NextAuthOptions = {
           if (parts.length > 1) {
             const subdomain = parts[0];
             // Standard subdomain logic (ignoring www/api/localhost if not subdomained)
-            if (subdomain !== 'www' && subdomain !== 'api' && !host.includes('localhost:3000') && !host.includes('127.0.0.1:3000')) {
-              // Determine if it is a localhost subdomain or prod
-              if (host.includes('localhost')) {
-                // e.g. store.localhost:3000
-                queryParams += `&subdomain=${subdomain}`;
-              } else {
-                // Production subdomain logic might differ if not using custom domains
-                queryParams += `&subdomain=${subdomain}`;
-              }
+            // Fix: Strict check for localhost:3000 to allow subdomains like store.localhost:3000
+            if (subdomain !== 'www' && subdomain !== 'api' && host !== 'localhost:3000' && host !== '127.0.0.1:3000') {
+              queryParams += `&subdomain=${subdomain}`;
 
               try {
                 console.log(`[Auth] Fetching tenant info: /tenants${queryParams}`);
@@ -92,7 +93,6 @@ export const authOptions: NextAuthOptions = {
         } else {
           console.log(`[Auth] existing headers: x-tenant-id=${headers['x-tenant-id']}, host=${headers['host']}`);
         }
-
 
         try {
           console.log(`[Auth] Attempting login to /admin/login with headers:`, JSON.stringify(headers));
@@ -134,6 +134,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.phone = user.phone;
         token.address = user.address;
+        token.role = user.role;
         token.image = user.image;
         token.tenantId = user.tenantId;
         token.accessToken = user.accessToken;

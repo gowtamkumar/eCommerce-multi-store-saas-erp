@@ -25,8 +25,9 @@ export class UpdateUserDto {
   @Length(5, 20)
   username: string;
 
-  @IsEnum(UserRole, { each: true })
-  roles: UserRole[];
+  @IsEnum(UserRole)
+  @IsOptional()
+  role: UserRole;
 
   @IsEnum(UserStatus)
   status: UserStatus;
