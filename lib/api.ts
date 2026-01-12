@@ -47,6 +47,8 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   // If tenant ID not provided in headers, try to resolve it
   if (!headers["x-tenant-id"]) {
     const resolvedId = await getResolvedTenantId();
+    console.log("resolvedId", resolvedId);
+
     if (resolvedId) {
       headers["x-tenant-id"] = resolvedId;
     }

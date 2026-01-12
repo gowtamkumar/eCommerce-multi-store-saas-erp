@@ -3,6 +3,7 @@
 import { fetchAPI } from '@/lib/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, HelpCircle } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 interface FAQ {
@@ -20,7 +21,7 @@ interface FAQProps {
 }
 
 export default function FAQ({ title, description }: FAQProps) {
-  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [faqs, setFaqs] = useState({} as any);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -43,10 +44,18 @@ export default function FAQ({ title, description }: FAQProps) {
     }
   };
 
-  const categories = ['all', ...Array.from(new Set(faqs.map((faq) => faq.category)))];
+  console.log("faqs", faqs);
+
+
+  if (faqs?.faqs?.length === 0) {
+    return null;
+  }
+
+
+  const categories = ['all', ...Array.from(new Set(faqs.faqs?.map((faq: any) => faq.category)))];
   const filteredFAQs = selectedCategory === 'all'
     ? faqs
-    : faqs.filter((faq) => faq.category === selectedCategory);
+    : faqs.filter((faq: any) => faq.category === selectedCategory);
 
   if (loading) {
     return (
@@ -60,9 +69,6 @@ export default function FAQ({ title, description }: FAQProps) {
     );
   }
 
-  if (faqs.length === 0) {
-    return null;
-  }
 
   return (
     <section id='faq' className="py-24 bg-slate-50 dark:bg-slate-900 relative overflow-hidden">
@@ -100,7 +106,7 @@ export default function FAQ({ title, description }: FAQProps) {
             viewport={{ once: true }}
             className="flex flex-wrap justify-center gap-3 mb-12"
           >
-            {categories.map((category) => (
+            {categories.map((category: any) => (
               <button
                 key={category}
                 onClick={() => {
@@ -120,7 +126,7 @@ export default function FAQ({ title, description }: FAQProps) {
 
         {/* FAQ Accordion */}
         <div className="max-w-4xl mx-auto space-y-4">
-          {filteredFAQs.map((faq, index) => (
+          {filteredFAQs.map((faq: any, index: number) => (
             <motion.div
               key={faq._id}
               initial={{ opacity: 0, y: 20 }}
@@ -174,12 +180,12 @@ export default function FAQ({ title, description }: FAQProps) {
           <p className="text-slate-600 dark:text-slate-400 mb-4">
             Still have questions?
           </p>
-          <a
+          <Link
             href="/contact"
             className="inline-flex items-center gap-2 px-8 py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-brand-600/30 hover:shadow-xl hover:shadow-brand-600/40 hover:-translate-y-0.5"
           >
             Contact Us
-          </a>
+          </Link>
         </motion.div>
       </div>
     </section>

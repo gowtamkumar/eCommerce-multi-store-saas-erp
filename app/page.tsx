@@ -69,6 +69,9 @@ export async function generateMetadata() {
 
 export default async function Home() {
   const data = await getHomeData();
+  const settings = await getSiteSettings();
+  console.log("settings", settings);
+
 
   if (!data || !data.success) {
     // Fallback if API fails? Or show error? 
@@ -80,7 +83,7 @@ export default async function Home() {
     return <SaaSLanding />;
   }
 
-  const { product, settings, dynamicPage } = data;
+  const { product, dynamicPage } = data;
 
   // If a custom home page is designed, render it
   if (dynamicPage && dynamicPage.sections && dynamicPage.sections.length > 0) {
@@ -109,10 +112,10 @@ export default async function Home() {
         <div className="container mx-auto px-4 pt-24 pb-12">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h1 className="text-4xl md:text-6xl font-bold font-display text-slate-900 dark:text-white mb-6">
-              {settings.brandName} Collection
+              {settings?.brandName} Collection
             </h1>
             <p className="text-xl text-slate-600 dark:text-slate-400">
-              {settings.siteDescription}
+              {settings?.siteDescription}
             </p>
           </div>
           <ProductGrid />
