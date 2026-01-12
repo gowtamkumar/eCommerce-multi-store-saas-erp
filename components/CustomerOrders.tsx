@@ -76,7 +76,7 @@ const CustomerOrders = () => {
 
         setSubmittingReview(true);
         try {
-            const res = await fetch(`/api/products/${reviewingOrder.productId._id}/reviews`, {
+            const res = await fetch(`/api/products/${reviewingOrder.productId.id}/reviews`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -130,7 +130,7 @@ const CustomerOrders = () => {
                 <div className="space-y-4">
                     {orders.map((order) => (
                         <div
-                            key={order._id}
+                            key={order.id}
                             className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50 hover:border-brand-200 dark:hover:border-brand-800 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-all"
                         >
                             <div className="flex items-center gap-4">
@@ -211,7 +211,7 @@ const CustomerOrders = () => {
                                     Order Details
                                 </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">
-                                    #{selectedOrder._id.slice(-8).toUpperCase()}
+                                    #{selectedOrder.id.slice(-8).toUpperCase()}
                                 </p>
                             </div>
                             <div

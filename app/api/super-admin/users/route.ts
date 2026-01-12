@@ -7,12 +7,12 @@ import { NextResponse } from "next/server";
 export async function GET() {
     try {
         const session = await getServerSession(authOptions);
-        if (session?.user?.role !== 'super_admin') {
+        if (session?.user?.role !== 'SuperAdmin') {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         await dbConnect();
-        
+
         // Fetch users and populate tenant info if possible
         // We'll use a lean query and then potentially manually link or use populate if ref is set
         const users = await User.find()

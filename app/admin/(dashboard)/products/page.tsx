@@ -78,7 +78,7 @@ export default function ProductsPage() {
       onConfirm: async () => {
         try {
           await fetchAPI(`/products/${id}`, { method: 'DELETE' });
-          setProducts(products.filter((p) => p._id !== id));
+          setProducts(products.filter((p) => p.id !== id));
           toast.success('Product deleted successfully');
         } catch (error) {
           toast.error('Error deleting product');
@@ -96,7 +96,7 @@ export default function ProductsPage() {
 
       // Update local state
       setProducts(products.map(p =>
-        p._id === id ? { ...p, status: newStatus } : p
+        p.id === id ? { ...p, status: newStatus } : p
       ));
       toast.success('Product status updated');
     } catch (error) {
@@ -157,7 +157,7 @@ export default function ProductsPage() {
                 </tr>
               ) : (
                 filteredProducts.map((product) => (
-                  <tr key={product._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <tr key={product.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{product.name}</td>
                     <td className="px-6 py-4">
                       <code className="text-xs bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded text-slate-600 dark:text-slate-400">
@@ -184,7 +184,7 @@ export default function ProductsPage() {
                     <td className="px-6 py-4">
                       <select
                         value={product.status}
-                        onChange={(e) => handleStatusUpdate(product._id, e.target.value)}
+                        onChange={(e) => handleStatusUpdate(product.id, e.target.value)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors outline-none cursor-pointer ${product.status === 'active'
                           ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                           : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
@@ -197,21 +197,21 @@ export default function ProductsPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          href={`/admin/products/${product._id}/review`}
+                          href={`/admin/products/${product.id}/review`}
                           className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
                         <Link
-                          href={`/admin/products/${product._id}`}
+                          href={`/admin/products/${product.id}`}
                           className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                           title="Edit Product"
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
                         <button
-                          onClick={() => handleDelete(product._id)}
+                          onClick={() => handleDelete(product.id)}
                           className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                           title="Delete Product"
                         >

@@ -19,11 +19,14 @@ export class JwtAuthGuard extends AuthGuard(AuthStrategy.JwtAuth) {
   }
 
   handleRequest(err: any, user: any, info: any) {
+    console.log("[JwtAuthGuard] handleRequest", { err, user, info });
     // You can throw an exception based on either "info" or "err" arguments
     if (info instanceof JsonWebTokenError) {
+      console.error("[JwtAuthGuard] JsonWebTokenError:", info.message);
       throw new UnauthorizedException('Invalid Token!');
     }
     if (err || info || !user) {
+      console.error("[JwtAuthGuard] Auth failed:", err || info);
       throw err || new UnauthorizedException(`${info}`);
     }
     return user;

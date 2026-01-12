@@ -18,7 +18,7 @@ export default function SuperAdminLayout({
   const { data: session, status }: any = useSession();
 
   useEffect(() => {
-    if (status === 'unauthenticated' || (status === 'authenticated' && session?.user?.role !== 'super_admin')) {
+    if (status === 'unauthenticated' || (status === 'authenticated' && session?.user?.role !== 'SuperAdmin')) {
       router.push('/login');
     }
   }, [status, session, router]);
@@ -31,7 +31,7 @@ export default function SuperAdminLayout({
     );
   }
 
-  if (!session || session.user.role !== 'super_admin') {
+  if (!session || session.user.role !== 'SuperAdmin') {
     return null;
   }
 

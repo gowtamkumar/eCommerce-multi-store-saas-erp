@@ -72,7 +72,7 @@ export default function GlobalUsersPage() {
                   <td colSpan={5} className="px-6 py-10 text-center text-slate-500">No users found.</td>
                 </tr>
               ) : filteredUsers.map((user: any) => (
-                <tr key={user._id} className="hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors">
+                <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600">
@@ -86,14 +86,14 @@ export default function GlobalUsersPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      {user.role === 'super_admin' ? (
+                      {user.role === 'SuperAdmin' ? (
                         <Shield className="w-4 h-4 text-rose-500" />
                       ) : user.role === 'admin' ? (
                         <Shield className="w-4 h-4 text-indigo-500" />
                       ) : (
                         <UserIcon className="w-4 h-4 text-slate-400" />
                       )}
-                      <span className={`text-xs font-bold uppercase ${user.role === 'super_admin' ? 'text-rose-500' :
+                      <span className={`text-xs font-bold uppercase ${user.role === 'SuperAdmin' ? 'text-rose-500' :
                         user.role === 'admin' ? 'text-indigo-500' : 'text-slate-500'
                         }`}>
                         {user.role}

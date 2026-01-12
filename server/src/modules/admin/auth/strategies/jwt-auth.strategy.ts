@@ -21,20 +21,19 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: AccessTokenPayload): Promise<UserDto> {
+    console.log("[JwtStrategy] Validate called with payload:", JSON.stringify(payload));
     const { sub: userId } = payload
-    const user = await this.userService.getUser(userId)
-    if (!user) {
-      throw new UnauthorizedException('Token not valid')
+    try {
+      const user = await this.userService.getUser(userId)
+      if (!user) {
+        console.error(`[JwtStrategy] User not found for ID: ${userId}`);
+        throw new UnauthorizedException('Token not valid - User not found')
+      }
+      return user
+    } catch (error) {
+      console.error(`[JwtStrategy] Error validating user:`, error);
+      throw new UnauthorizedException('Token not valid - Validation error');
     }
-    //  need more condition for user inactive
-    //  need more condition for user blocked
-    // example
-    // if (user.status == UserStatus.Inactive) {
-    //   throw new DisabledUserException(ErrorType.InactiveUser);
-    // }
-    // if (user.status == UserStatus.Blocked) {
-    //   throw new DisabledUserException(ErrorType.BlockedUser);
-    // }
-    return user
+
   }
 }

@@ -12,14 +12,14 @@ export async function GET(req: Request) {
     if (domain) {
       const customDomainTenant = await Tenant.findOne({ customDomain: domain });
       if (customDomainTenant) {
-        return NextResponse.json({ success: true, tenantId: customDomainTenant._id.toString() });
+        return NextResponse.json({ success: true, tenantId: customDomainTenant.id.toString() });
       }
     }
 
     if (subdomain) {
       const subdomainTenant = await Tenant.findOne({ subdomain });
       if (subdomainTenant) {
-        return NextResponse.json({ success: true, tenantId: subdomainTenant._id.toString() });
+        return NextResponse.json({ success: true, tenantId: subdomainTenant.id.toString() });
       }
     }
 

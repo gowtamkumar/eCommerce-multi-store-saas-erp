@@ -16,17 +16,17 @@ export async function POST(req: Request) {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        
+
         const superAdmin = (await User.create({
             name,
             email,
             username,
             password: hashedPassword,
-            role: UserRole.SUPER_ADMIN,
+            role: UserRole.SuperAdmin,
         } as any)) as any;
 
-        return NextResponse.json({ 
-            success: true, 
+        return NextResponse.json({
+            success: true,
             message: "Super Admin created successfully. Please delete this API route for security.",
             user: { name: superAdmin.name, username: superAdmin.username }
         });

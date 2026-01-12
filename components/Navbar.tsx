@@ -106,7 +106,7 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
               >
                 <User className="w-5 h-5 text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
               </Link>
-              {session?.user?.role === "admin" ? (
+              {session?.user?.role === "Admin" ? (
                 <Link
                   href="/admin"
                   className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative group"
@@ -230,7 +230,7 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
             {/* Divider */}
             <div className="my-6 border-t border-slate-200 dark:border-slate-800" />
             {/* Admin Link */}
-            {session?.user?.role === "admin" ? (
+            {session?.user?.role === "Admin" ? (
               <div className="px-4">
                 <Link
                   href="/admin"

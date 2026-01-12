@@ -128,7 +128,7 @@ export default function FAQ({ title, description }: FAQProps) {
         <div className="max-w-4xl mx-auto space-y-4">
           {(filteredFAQs || [])?.map((faq: any, index: number) => (
             <motion.div
-              key={faq._id}
+              key={faq.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}

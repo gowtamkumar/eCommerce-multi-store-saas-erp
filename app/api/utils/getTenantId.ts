@@ -3,7 +3,7 @@ import Tenant from "@/models/Tenant";
 
 export async function getTenantId(req: Request): Promise<string | null> {
     await dbConnect();
-    
+
     // 1. Check header x-tenant-id
     const headerTenantId = req.headers.get("x-tenant-id");
     if (headerTenantId) return headerTenantId;
@@ -13,21 +13,21 @@ export async function getTenantId(req: Request): Promise<string | null> {
     if (!host) return null;
 
     const hostname = host.split(":")[0];
-    
+
     // Custom Domain
     // Optimization: In a real app, cache this
     const customDomainTenant = await Tenant.findOne({ customDomain: hostname });
-    if (customDomainTenant) return customDomainTenant._id.toString();
+    if (customDomainTenant) return customDomainTenant.id.toString();
 
     // Subdomain
     const parts = hostname.split(".");
     if (parts.length > 1) {
         const subdomain = parts[0];
-         if (subdomain !== 'www' && subdomain !== 'api') {
+        if (subdomain !== 'www' && subdomain !== 'api') {
             const subdomainTenant = await Tenant.findOne({ subdomain });
-            if (subdomainTenant) return subdomainTenant._id.toString();
-         }
+            if (subdomainTenant) return subdomainTenant.id.toString();
+        }
     }
-    
+
     return null;
 }

@@ -51,7 +51,7 @@ export default function PagesList() {
         try {
             // Optimistic update
             const updatedPages = pages.map(p =>
-                p._id === id ? { ...p, order: newOrder } : p
+                p.id === id ? { ...p, order: newOrder } : p
             );
             setPages(updatedPages);
 
@@ -147,7 +147,7 @@ export default function PagesList() {
                         ) : (
                             pages.map((page) => (
                                 <tr
-                                    key={page._id}
+                                    key={page.id}
                                     className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group"
                                 >
                                     <td className="px-6 py-4">
@@ -171,10 +171,10 @@ export default function PagesList() {
                                         <input
                                             type="number"
                                             value={page.order || 0}
-                                            onChange={(e) => handleOrderChange(page._id, parseInt(e.target.value))}
+                                            onChange={(e) => handleOrderChange(page.id, parseInt(e.target.value))}
                                             className="w-16 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                                         />
-                                        {updatingOrder === page._id && (
+                                        {updatingOrder === page.id && (
                                             <span className="ml-2 text-xs text-brand-600 animate-pulse">Saving...</span>
                                         )}
                                     </td>
@@ -199,7 +199,7 @@ export default function PagesList() {
                                                 <Eye className="w-5 h-5" />
                                             </Link>
                                             <Link
-                                                href={`/admin/pages/${page._id}`}
+                                                href={`/admin/pages/${page.id}`}
                                                 className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"
                                                 title="Edit Design"
                                             >
@@ -207,7 +207,7 @@ export default function PagesList() {
                                             </Link>
                                             <button
                                                 onClick={() =>
-                                                    setConfirmModal({ isOpen: true, id: page._id })
+                                                    setConfirmModal({ isOpen: true, id: page.id })
                                                 }
                                                 className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
                                                 title="Delete"

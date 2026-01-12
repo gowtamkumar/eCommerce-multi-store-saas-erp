@@ -31,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Products
     const products = await Product.find({ status: 'active', tenantId }).select('_id updatedAt').lean();
     const productRoutes = products.map((product: any) => ({
-        url: `${baseUrl}/products/${product._id}`,
+        url: `${baseUrl}/products/${product.id}`,
         lastModified: new Date(product.updatedAt),
         changeFrequency: 'weekly' as const,
         priority: 0.8,

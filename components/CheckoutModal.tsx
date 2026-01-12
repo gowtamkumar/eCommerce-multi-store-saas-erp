@@ -41,7 +41,7 @@ const CheckoutModal = ({ isOpen, onClose, product }: CheckoutModalProps) => {
       customerPhone: formData.get('phone'),
       address: formData.get('address'),
       orderNotes: formData.get('notes'),
-      productId: product?._id,
+      productId: product?.id,
       quantity: quantity,
       paymentMethod,
       totalAmount,

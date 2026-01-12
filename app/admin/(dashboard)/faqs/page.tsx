@@ -48,8 +48,8 @@ export default function FAQsPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const url = currentFAQ._id ? `/faqs/${currentFAQ._id}` : '/faqs';
-            const method = currentFAQ._id ? 'PUT' : 'POST';
+            const url = currentFAQ.id ? `/faqs/${currentFAQ.id}` : '/faqs';
+            const method = currentFAQ.id ? 'PUT' : 'POST';
 
             const res = await fetchAPI(url, {
                 method,
@@ -180,7 +180,7 @@ export default function FAQsPage() {
                 {loading ? (
                     <p className="text-center text-slate-500">Loading FAQs...</p>
                 ) : faqs.map((faq) => (
-                    <div key={faq._id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex justify-between items-start">
+                    <div key={faq.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex justify-between items-start">
                         <div>
                             <h3 className="font-bold text-slate-900 dark:text-white mb-2">{faq.question}</h3>
                             <p className="text-slate-600 dark:text-slate-400 text-sm mb-2">{faq.answer}</p>
@@ -201,7 +201,7 @@ export default function FAQsPage() {
                                 <Pencil className="w-4 h-4" />
                             </button>
                             <button
-                                onClick={() => handleDelete(faq._id)}
+                                onClick={() => handleDelete(faq.id)}
                                 className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             >
                                 <Trash2 className="w-4 h-4" />

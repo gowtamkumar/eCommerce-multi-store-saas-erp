@@ -61,7 +61,7 @@ export default function CustomersPage() {
                 limit: '20',
                 q: search
             });
-            const res = await fetchAPI(`/users?${params}`);
+            const res = await fetchAPI(`/users`);
 
             if (res.data?.users) {
                 setUsers(res.data.users);

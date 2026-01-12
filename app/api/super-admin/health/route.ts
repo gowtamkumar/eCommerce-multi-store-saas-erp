@@ -11,12 +11,12 @@ import { NextResponse } from "next/server";
 export async function GET() {
     try {
         const session = await getServerSession(authOptions);
-        if (session?.user?.role !== 'super_admin') {
+        if (session?.user?.role !== 'SuperAdmin') {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         await dbConnect();
-        
+
         const [tenantCount, userCount, productCount, orderCount, reviewCount] = await Promise.all([
             Tenant.countDocuments(),
             User.countDocuments(),

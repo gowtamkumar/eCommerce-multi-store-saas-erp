@@ -36,19 +36,32 @@ export default function Login() {
             // Fetch the session after successful login
             const session = await getSession();
 
-            console.log("session", session);
+            console.log("Full Session object:", session);
+
             if (session?.user) {
-                toast.success('Logged in successfully');
+                const userRole = session.user.role;
+                console.log("User Role from session:", userRole);
+
+                toast.success(`Logged in as ${userRole || 'User'}`);
+
+                // Refresh router to update server components with new session
+                router.refresh();
 
                 // Route based on user role
-                if (session.user.role === 'SuperAdmin') {
+                if (userRole === 'SuperAdmin') {
+                    console.log("Redirecting to /super-admin");
                     router.push('/super-admin');
-                } else if (session.user.role === 'Admin') {
+                } else if (userRole === 'Admin') {
+                    console.log("Redirecting to /admin");
                     router.push('/admin');
                 } else {
+                    console.log("Redirecting to / (home)");
                     router.push('/');
                 }
-                router.refresh();
+            } else {
+                console.error("Session missing user after login success");
+                // fallback reload?
+                window.location.reload();
             }
 
 

@@ -37,7 +37,7 @@ const Reviews = () => {
         const data = await fetchAPI('/testimonials?status=active');
         if (data.testimonials) {
           const mapped: DisplayItem[] = data.testimonials.map((t: any) => ({
-            _id: t._id,
+            _id: t.id,
             author: t.author,
             rating: t.rating,
             content: t.content,
@@ -51,7 +51,7 @@ const Reviews = () => {
       } else {
         if (configData.reviews) {
           const mapped: DisplayItem[] = configData.reviews.map((r: any) => ({
-            _id: r._id,
+            _id: r.id,
             author: r.customerName,
             rating: r.rating,
             content: r.comment,
@@ -109,7 +109,7 @@ const Reviews = () => {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {items.map((item) => (
-            <div key={item._id} className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 dark:border-slate-700 hover:-translate-y-1 group">
+            <div key={item.id} className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 dark:border-slate-700 hover:-translate-y-1 group">
               <div className="flex items-center gap-4 mb-6">
                 <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-lg ${item.avatar && item.avatar.startsWith('bg-')
                   ? item.avatar

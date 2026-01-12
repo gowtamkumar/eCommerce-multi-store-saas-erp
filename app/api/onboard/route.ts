@@ -38,12 +38,12 @@ export async function POST(req: Request) {
             username,
             password: hashedPassword,
             role: UserRole.ADMIN,
-            tenantId: tenant._id,
+            tenantId: tenant.id,
         } as any);
 
         // 5. Initialize Site Settings
         await SiteSettings.create({
-            tenantId: tenant._id,
+            tenantId: tenant.id,
             brandName: storeName,
             siteDescription: `Welcome to ${storeName}! Premium products and excellent service.`,
             contactEmail: email,

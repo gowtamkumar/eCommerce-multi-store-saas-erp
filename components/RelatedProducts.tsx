@@ -70,7 +70,7 @@ export default function RelatedProducts({ currentProductId }: RelatedProductsPro
                 <div className="grid md:grid-cols-3 gap-8">
                     {products.map((product, index) => (
                         <motion.div
-                            key={product._id}
+                            key={product.id}
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}

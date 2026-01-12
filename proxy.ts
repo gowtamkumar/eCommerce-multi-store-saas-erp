@@ -26,7 +26,7 @@ export default withAuth(
     );
 
     // Admin pages - require admin role
-    if (isAdminRoute && token?.role !== "admin") {
+    if (isAdminRoute && token?.role !== "Admin") {
       return NextResponse.redirect(new URL("/", req.url));
     }
 
@@ -44,7 +44,7 @@ export default withAuth(
       req.nextUrl.pathname.startsWith(route)
     );
 
-    if (isAdminOnlyRoute && token?.role !== "admin") {
+    if (isAdminOnlyRoute && token?.role !== "Admin") {
       return NextResponse.json(
         { error: "Forbidden. Admin access required." },
         { status: 403 }

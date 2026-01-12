@@ -95,8 +95,8 @@ export default function OrdersPage() {
         body: JSON.stringify({ status: newStatus }),
       });
 
-      setOrders(orders.map(o => o._id === id ? { ...o, status: newStatus } : o));
-      if (selectedOrder && selectedOrder._id === id) {
+      setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o));
+      if (selectedOrder && selectedOrder.id === id) {
         setSelectedOrder({ ...selectedOrder, status: newStatus });
       }
       toast.success('Order status updated');
@@ -113,8 +113,8 @@ export default function OrdersPage() {
         body: JSON.stringify({ paymentStatus, transactionId }),
       });
 
-      setOrders(orders.map(o => o._id === id ? { ...o, paymentStatus, transactionId } : o));
-      if (selectedOrder && selectedOrder._id === id) {
+      setOrders(orders.map(o => o.id === id ? { ...o, paymentStatus, transactionId } : o));
+      if (selectedOrder && selectedOrder.id === id) {
         setSelectedOrder({ ...selectedOrder, paymentStatus, transactionId });
       }
       toast.success('Payment details updated successfully');
@@ -187,8 +187,8 @@ export default function OrdersPage() {
                 </tr>
               ) : (
                 orders.map((order) => (
-                  <tr key={order._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                    <td className="px-6 py-4 text-slate-500 font-mono text-xs">{order._id.slice(-6).toUpperCase()}</td>
+                  <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <td className="px-6 py-4 text-slate-500 font-mono text-xs">{order.id.slice(-6).toUpperCase()}</td>
                     <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{order.customerName}</td>
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
                       {formatPrice((order.unitPrice || order.productId?.price) || 0)}
@@ -218,7 +218,7 @@ export default function OrdersPage() {
                     <td className="px-6 py-4">
                       <select
                         value={order.status}
-                        onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer ${getStatusColor(order.status)}`}
                       >
                         <option value={OrderStatus.PENDING}>Pending</option>
@@ -228,7 +228,7 @@ export default function OrdersPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Link
-                        href={`/admin/orders/${order._id}`}
+                        href={`/admin/orders/${order.id}`}
                         className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors inline-block"
                         title="View Details"
                       >
@@ -276,7 +276,7 @@ export default function OrdersPage() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b border-slate-200 dark:border-slate-700">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Order Details</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Order ID: {selectedOrder._id}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Order ID: {selectedOrder.id}</p>
             </div>
             <div className="p-6 space-y-6">
               {/* Customer Information */}
@@ -385,7 +385,7 @@ export default function OrdersPage() {
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Payment Status</label>
                     <select
                       value={selectedOrder.paymentStatus || 'pending'}
-                      onChange={(e) => handlePaymentUpdate(selectedOrder._id, e.target.value, selectedOrder.transactionId)}
+                      onChange={(e) => handlePaymentUpdate(selectedOrder.id, e.target.value, selectedOrder.transactionId)}
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
                     >
                       <option value="pending">Pending</option>
@@ -404,7 +404,7 @@ export default function OrdersPage() {
                         className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
                       />
                       <button
-                        onClick={() => handlePaymentUpdate(selectedOrder._id, selectedOrder.paymentStatus || 'pending', selectedOrder.transactionId)}
+                        onClick={() => handlePaymentUpdate(selectedOrder.id, selectedOrder.paymentStatus || 'pending', selectedOrder.transactionId)}
                         className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium transition-colors"
                       >
                         Save

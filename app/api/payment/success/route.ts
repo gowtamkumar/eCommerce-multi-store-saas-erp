@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       // Create Payment Record
       const Payment = (await import('@/models/Payment')).default;
       await Payment.create({
-        orderId: order._id,
+        orderId: order.id,
         transactionId: tran_id as string,
         amount: order.totalAmount,
         currency: order.currency,
@@ -48,11 +48,11 @@ export async function POST(req: Request) {
       // Redirect to Tenant Domain
       const Tenant = (await import('@/models/Tenant')).default;
       const tenant = await Tenant.findById(order.tenantId);
-      
+
       console.log('Payment Success - TenantId:', order.tenantId, 'Tenant:', tenant?.subdomain || tenant?.customDomain);
-      
+
       let returnUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      
+
       if (tenant) {
         if (tenant.customDomain) {
           const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
@@ -64,10 +64,10 @@ export async function POST(req: Request) {
           returnUrl = `${protocol}://${tenant.subdomain}.${rootDomain}`;
         }
       }
-      
+
       console.log('Payment Success - Redirecting to:', returnUrl);
 
-      return NextResponse.redirect(`${returnUrl}/?status=success&orderId=${order._id}`);
+      return NextResponse.redirect(`${returnUrl}/?status=success&orderId=${order.id}`);
     } else {
       return NextResponse.redirect(`${fallbackUrl}/?status=fail`);
     }

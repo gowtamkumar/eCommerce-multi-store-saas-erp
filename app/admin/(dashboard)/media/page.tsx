@@ -152,7 +152,7 @@ export default function MediaPage() {
                         method: 'DELETE',
                     });
 
-                    setMedia(media.filter((item) => item._id !== id));
+                    setMedia(media.filter((item) => item.id !== id));
                     toast.success('Image deleted successfully');
 
                     // Optional: refetch if we want to update pagination counts strictly
@@ -275,7 +275,7 @@ export default function MediaPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {media.map((item) => (
                         <div
-                            key={item._id}
+                            key={item.id}
                             className="group relative bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300"
                         >
                             <div className="aspect-square relative bg-slate-100 dark:bg-slate-900 overflow-hidden">
@@ -288,10 +288,10 @@ export default function MediaPage() {
                                 />
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-3">
                                     <button
-                                        onClick={() => copyToClipboard(item.url, item._id)}
+                                        onClick={() => copyToClipboard(item.url, item.id)}
                                         className="flex items-center gap-2 px-3 py-1.5 bg-white text-slate-900 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors transform translate-y-2 group-hover:translate-y-0"
                                     >
-                                        {copiedId === item._id ? (
+                                        {copiedId === item.id ? (
                                             <>
                                                 <Check className="w-3 h-3 text-green-600" /> Copied!
                                             </>
@@ -302,7 +302,7 @@ export default function MediaPage() {
                                         )}
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(item._id)}
+                                        onClick={() => handleDelete(item.id)}
                                         className="flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-bold hover:bg-red-600 transition-colors transform translate-y-2 group-hover:translate-y-0 delay-75"
                                     >
                                         <Trash2 className="w-3 h-3" /> Delete

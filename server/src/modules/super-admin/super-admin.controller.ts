@@ -17,7 +17,7 @@ export class SuperAdminController {
         const { name, email, password, username, setupKey } = body;
 
         // Security check
-        const expectedKey = process.env.SUPER_ADMIN_SETUP_KEY || 'super-setup-2026';
+        const expectedKey = process.env.SuperAdmin_SETUP_KEY || 'super-setup-2026';
         if (setupKey !== expectedKey) {
             throw new UnauthorizedException('Invalid setup key');
         }

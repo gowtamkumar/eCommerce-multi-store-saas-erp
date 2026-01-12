@@ -112,7 +112,7 @@ export default async function ProductGrid() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {products.map((product: any) => (
           <Link
-            key={product._id}
+            key={product.id}
             href={`/products/${product.slug}`}
             className="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
           >

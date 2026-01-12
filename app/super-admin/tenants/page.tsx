@@ -74,7 +74,7 @@ export default function TenantManagement() {
                   <td colSpan={5} className="px-6 py-10 text-center text-slate-500">No stores found.</td>
                 </tr>
               ) : filteredTenants.map((tenant: any) => (
-                <tr key={tenant._id} className="hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors">
+                <tr key={tenant.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center text-slate-500">

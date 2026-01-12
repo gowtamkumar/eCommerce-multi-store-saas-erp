@@ -12,7 +12,7 @@ export async function GET(req: Request) {
     // NOTE: In a real multi-tenant app, you might not want to expose this publicly 
     // without strict super-admin checks. Assuming role='admin' implies super-admin or tenant-admin.
     // For now, we'll assume only authenticated users can see their own tenant, 
-    // OR if "admin" role is global, they can see all. Usually 'admin' is scoped to tenant.
+    // OR if Admin role is global, they can see all. Usually 'admin' is scoped to tenant.
     // For this bootstrap implementation, let's allow fetching tenant details based on domain query.
 
     await dbConnect();
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
     }
 
     // If authenticated super admin, list all tenants
-    if (session?.user?.role === 'super_admin') {
+    if (session?.user?.role === 'SuperAdmin') {
       const tenants = await Tenant.find().sort({ createdAt: -1 });
       return NextResponse.json({ tenants });
     }

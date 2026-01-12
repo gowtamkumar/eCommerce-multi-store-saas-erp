@@ -18,9 +18,9 @@ export async function POST(req: Request) {
 
     // If no tenantId, check if it's a Super Admin on the root domain
     if (!tenantId) {
-      const user = await User.findOne({ 
+      const user = await User.findOne({
         username: username,
-        role: "super_admin" 
+        role: "SuperAdmin"
       } as any);
 
       if (!user) {
@@ -29,21 +29,21 @@ export async function POST(req: Request) {
 
       const isPasswordMatch = await bcrypt.compare(password, user.password);
       if (!isPasswordMatch) {
-         return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
+        return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
       }
 
       return NextResponse.json({
         success: true,
         user: {
-            id: user._id.toString(),
-            name: user.name,
-            email: user.email,
-            username: user.username || user.email,
-            role: user.role,
-            address: user.address || "",
-            phone: user.phone || "",
-            image: user.image || "",
-            tenantId: "", // Super Admin has no tenantId
+          id: user.id.toString(),
+          name: user.name,
+          email: user.email,
+          username: user.username || user.email,
+          role: user.role,
+          address: user.address || "",
+          phone: user.phone || "",
+          image: user.image || "",
+          tenantId: "", // Super Admin has no tenantId
         }
       });
     }
@@ -67,15 +67,15 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       user: {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          username: user.username || user.email,
-          role: user.role,
-          address: user.address || "",
-          phone: user.phone || "",
-          image: user.image || "",
-          tenantId: user.tenantId.toString(),
+        id: user.id.toString(),
+        name: user.name,
+        email: user.email,
+        username: user.username || user.email,
+        role: user.role,
+        address: user.address || "",
+        phone: user.phone || "",
+        image: user.image || "",
+        tenantId: user.tenantId.toString(),
       }
     });
 
