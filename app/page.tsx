@@ -70,8 +70,6 @@ export async function generateMetadata() {
 export default async function Home() {
   const data = await getHomeData();
   const settings = await getSiteSettings();
-  console.log("settings", settings);
-
 
   if (!data || !data.success) {
     // Fallback if API fails? Or show error? 
@@ -84,6 +82,9 @@ export default async function Home() {
   }
 
   const { product, dynamicPage } = data;
+
+
+
 
   // If a custom home page is designed, render it
   if (dynamicPage && dynamicPage.sections && dynamicPage.sections.length > 0) {
@@ -103,6 +104,7 @@ export default async function Home() {
   // Multiple Product Mode: Show Grid
   if (settings.productMode === 'multiple') {
     const ProductGrid = (await import('@/components/ProductGrid')).default;
+
     return (
       <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
         <Suspense fallback={null}>

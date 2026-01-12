@@ -1,27 +1,26 @@
 import { getSiteSettings } from '@/lib/getSettings';
 import { ArrowRight, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
+import { fetchAPI } from '@/lib/api';
+import { resolveTenantId } from '@/lib/server-utils';
 
 async function getProducts() {
   try {
-    const dbConnect = (await import('@/lib/mongodb')).default;
-    const { getTenantId } = await import('@/lib/tenant');
-    const Product = (await import('@/models/Product')).default;
-
-    await dbConnect();
-    const tenantId = await getTenantId();
+    const tenantId = await resolveTenantId();
 
     if (!tenantId) {
       console.error("No tenant context for products grid");
       return [];
     }
 
-    const products = await Product.find({ status: "active", tenantId } as any)
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .lean();
+    const res = await fetchAPI('/products?limit=6&status=active', {
+      headers: {
+        "x-tenant-id": tenantId,
+      },
+      next: { revalidate: 60 } // Optional: Cache for 60 seconds
+    });
 
-    return JSON.parse(JSON.stringify(products));
+    return res.data?.products || [];
   } catch (error) {
     console.error("Failed to fetch products:", error);
     return [];

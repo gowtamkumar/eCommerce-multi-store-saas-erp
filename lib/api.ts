@@ -71,6 +71,7 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
       // Ignore session errors
     }
   }
+  console.log("`${API_URL}${endpoint}`", `${API_URL}${endpoint}`);
 
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,

@@ -1,5 +1,6 @@
 'use client';
 
+import { fetchAPI } from '@/lib/api';
 import { createContext, useContext, useEffect, useState } from 'react';
 
 interface SiteSettings {
@@ -45,8 +46,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('/api/settings');
-      const data = await res.json();
+      const data = await fetchAPI('/settings');
+
       if (data.success) {
         setSettings(data.data);
 
