@@ -2,59 +2,14 @@ export const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
 import { getSession } from "next-auth/react";
 
-let cachedTenantId: string | null = null;
-let tenantLookupPromise: Promise<string | null> | null = null;
-
-async function getResolvedTenantId() {
-  if (cachedTenantId) return cachedTenantId;
-  if (tenantLookupPromise) return tenantLookupPromise;
-
-  // On client side, we can resolve via hostname
-  if (typeof window !== "undefined") {
-    const hostname = window.location.hostname;
-    // Don't lookup for localhost directly without subdomain unless it's a known tenant
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return null;
-    }
-
-    tenantLookupPromise = (async () => {
-      try {
-        const parts = hostname.split(".");
-        let queryParams = `?customDomain=${hostname}`;
-        if (parts.length > 1) {
-          const subdomain = parts[0];
-          if (subdomain !== "www" && subdomain !== "api") {
-            queryParams += `&subdomain=${subdomain}`;
-          }
-        }
-
-        const res = await fetch(`${API_URL}/tenants${queryParams}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.data?.id) {
-            cachedTenantId = data.data.id;
-            return cachedTenantId;
-          }
-        }
-      } catch (e) {
-        console.error("Failed to resolve tenant client-side", e);
-      } finally {
-        tenantLookupPromise = null;
-      }
-      return null;
-    })();
-
-    return tenantLookupPromise;
-  }
-  return null;
-}
+import { getTenantId } from "./tenant";
 
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const headers: any = { ...options.headers };
 
   // If tenant ID not provided in headers, try to resolve it
   if (!headers["x-tenant-id"]) {
-    const resolvedId = await getResolvedTenantId();
+    const resolvedId = await getTenantId();
     console.log("resolvedId", resolvedId);
 
     if (resolvedId) {

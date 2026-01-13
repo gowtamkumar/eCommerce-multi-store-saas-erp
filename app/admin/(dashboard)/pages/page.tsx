@@ -50,7 +50,7 @@ export default function PagesList() {
         setUpdatingOrder(id);
         try {
             // Optimistic update
-            const updatedPages = pages.map(p =>
+            const updatedPages = pages.map((p: any) =>
                 p.id === id ? { ...p, order: newOrder } : p
             );
             setPages(updatedPages);
@@ -145,7 +145,7 @@ export default function PagesList() {
                                 </td>
                             </tr>
                         ) : (
-                            pages.map((page) => (
+                            pages.map((page: any) => (
                                 <tr
                                     key={page.id}
                                     className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group"

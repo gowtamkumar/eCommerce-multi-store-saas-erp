@@ -1,5 +1,5 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "./authOptions";
+let cachedTenantId: string | null = null;
+let tenantLookupPromise: Promise<string | null> | null = null;
 
 // Helper to safely get headers
 function getHeader(req: any, key: string): string | null {
@@ -23,12 +23,55 @@ function getHeader(req: any, key: string): string | null {
 }
 
 export async function getTenantId(req?: Request | any): Promise<string | null> {
-  console.log("DEBUG_TENANT: Starting getTenantId");
+  // 0. Check cache
+  if (cachedTenantId) return cachedTenantId;
 
   let host: string | null = null;
   let headerTenantId: string | null = null;
 
-  // 1. Try to get headers from Request object or next/headers (Priority: Domain/Context)
+  // 1. Client-side resolution
+  if (typeof window !== 'undefined') {
+    if (tenantLookupPromise) return tenantLookupPromise;
+
+    const hostname = window.location.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return null;
+    }
+
+    tenantLookupPromise = (async () => {
+      try {
+        const nestApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
+        const parts = hostname.split(".");
+        let queryParams = `?customDomain=${hostname}`;
+        
+        if (parts.length > 1) {
+          const subdomain = parts[0];
+          if (subdomain !== "www" && subdomain !== "api") {
+            queryParams += `&subdomain=${subdomain}`;
+          }
+        }
+
+        const res = await fetch(`${nestApiUrl}/tenants${queryParams}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data?.id) {
+            cachedTenantId = data.data.id;
+            return cachedTenantId;
+          }
+        }
+      } catch (e) {
+        console.error("DEBUG_TENANT: Client-side lookup failed", e);
+      } finally {
+        tenantLookupPromise = null;
+      }
+      return null;
+    })();
+
+    return tenantLookupPromise;
+  }
+
+  // 2. Server-side resolution
+  // 2a. Try to get headers from Request object or next/headers
   if (req) {
     host = getHeader(req, "host");
     headerTenantId = getHeader(req, "x-tenant-id");
@@ -43,69 +86,57 @@ export async function getTenantId(req?: Request | any): Promise<string | null> {
     }
   }
 
-  console.log("DEBUG_TENANT: Host:", host, "HeaderTenantId:", headerTenantId);
-
-  // 2. Check x-tenant-id header (useful for testing or admin overrides)
+  // 2b. Check x-tenant-id header
   if (headerTenantId) {
+    cachedTenantId = headerTenantId;
     return headerTenantId;
   }
 
-  // 3. Check hostname/subdomain (for public routes)
+  // 2c. Check hostname/subdomain
   if (host) {
-    // Remove port if present
     const hostname = host.split(":")[0];
-    const protocol = host.includes("localhost") ? "http" : "https";
-
-    // Lookup via API
     try {
         const nestApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
-        const apiUrl = `${nestApiUrl}/tenants`;
-        
-        // Optimistic check: if localhost, might be subdomain
         const parts = hostname.split(".");
         let queryParams = "";
         
         if (parts.length > 1) {
-            // We'll pass both domain and subdomain (if applicable)
             queryParams = `?customDomain=${hostname}`;
-            
             const subdomain = parts[0];
             if (subdomain !== 'www' && subdomain !== 'api') {
-                // If parts.length > 2, it's a subdomain of a domain
-                // For localhost testing, usually it's subdomain.localhost
                 queryParams += `&subdomain=${subdomain}`;
             }
 
-            const res = await fetch(`${apiUrl}${queryParams}`, {
+            const res = await fetch(`${nestApiUrl}/tenants${queryParams}`, {
                 cache: 'force-cache',
-                next: { revalidate: 60 } // Cache tenant lookup for 60s
+                next: { revalidate: 60 }
             });
 
             if (res.ok) {
                 const data = await res.json();
                 if (data.success && data.data?.id) {
-                    console.log("DEBUG_TENANT: Found via API:", data.data.id);
+                    cachedTenantId = data.data.id;
                     return data.data.id;
                 }
             }
         }
     } catch (err) {
-        console.error("DEBUG_TENANT: API lookup failed", err);
+        console.error("DEBUG_TENANT: Server-side API lookup failed", err);
     }
   }
 
-  // 4. Check if user is authenticated (Fallback for protected routes or if no domain context)
-  // This is now the fallback, so if I visit a store explicitly, I see the store, not my session tenant.
+  // 2d. Check session (Fallback)
   try {
+    const { getServerSession } = await import("next-auth");
+    const { authOptions } = await import("./authOptions");
     const session = await getServerSession(authOptions);
-    console.log("DEBUG_TENANT: Session found:", session?.user?.email, "Tenant:", session?.user?.tenantId);
     if (session?.user?.tenantId) {
+      cachedTenantId = session.user.tenantId;
       return session.user.tenantId;
     }
   } catch (err) {
-    console.error("DEBUG_TENANT: Session check failed", err);
+    // console.error("DEBUG_TENANT: Session check failed", err);
   }
 
-  console.log("DEBUG_TENANT: No tenant identified, returning null.");
   return null;
 }

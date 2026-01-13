@@ -5,7 +5,6 @@ import ProductGrid from '@/components/ProductGrid';
 import Reviews from '@/components/Reviews';
 import { fetchAPI } from '@/lib/api';
 import { getSiteSettings } from '@/lib/getSettings';
-import { getTenantId } from '@/lib/tenant';
 import { ArrowRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
@@ -13,14 +12,7 @@ import remarkGfm from 'remark-gfm';
 
 async function getPage(slug: string) {
   try {
-    const tenantId = await getTenantId();
-
-    const data = await fetchAPI(`/pages/slug/${slug}`, {
-      headers: {
-        "x-tenant-id": tenantId || "",
-      },
-      cache: 'no-store'
-    });
+    const data = await fetchAPI(`/pages/slug/${slug}`);
 
     return data.success ? data.data : null;
   } catch (error) {

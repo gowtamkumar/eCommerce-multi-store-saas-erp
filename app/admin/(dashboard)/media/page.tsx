@@ -152,7 +152,7 @@ export default function MediaPage() {
                         method: 'DELETE',
                     });
 
-                    setMedia(media.filter((item) => item.id !== id));
+                    setMedia(media.filter((item: any) => item.id !== id));
                     toast.success('Image deleted successfully');
 
                     // Optional: refetch if we want to update pagination counts strictly
@@ -273,7 +273,7 @@ export default function MediaPage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {media.map((item) => (
+                    {media.map((item: any) => (
                         <div
                             key={item.id}
                             className="group relative bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300"

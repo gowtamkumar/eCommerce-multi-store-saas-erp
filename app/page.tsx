@@ -11,30 +11,8 @@ import SectionRenderer from "@/components/SectionRenderer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { fetchAPI } from "@/lib/api";
 import { getSiteSettings } from "@/lib/getSettings";
-import { getTenantId } from "@/lib/tenant";
 import { Suspense } from "react";
 
-async function getHomeData() {
-  try {
-    const tenantId = await getTenantId();
-
-    // If no tenant found -> SaaS Landing
-    if (!tenantId) {
-      return { isSaaS: true, success: true };
-    }
-
-    return await fetchAPI('/home', {
-      headers: {
-        "x-tenant-id": tenantId,
-      },
-      cache: 'no-store'
-    });
-
-  } catch (error) {
-    console.error("Error fetching home data:", error);
-    return null;
-  }
-}
 
 export async function generateMetadata() {
   const settings = await getSiteSettings();
@@ -68,12 +46,10 @@ export async function generateMetadata() {
 
 
 export default async function Home() {
-  const data = await getHomeData();
+  const data = await fetchAPI('/home');
   const settings = await getSiteSettings();
 
   if (!data || !data.success) {
-    // Fallback if API fails? Or show error? 
-    // For now, if no data, maybe just return SaaS landing since maybe tenant check failed
     return <SaaSLanding />;
   }
 

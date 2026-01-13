@@ -4,21 +4,12 @@ import PaymentStatus from "@/components/PaymentStatus";
 import SectionRenderer from "@/components/SectionRenderer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { fetchAPI } from "@/lib/api";
-import { getTenantId } from "@/lib/tenant";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 async function getPage(slug: string) {
     try {
-        const tenantId = await getTenantId();
-
-        const data = await fetchAPI(`/pages/slug/${slug}`, {
-            headers: {
-                'x-tenant-id': tenantId || '',
-            },
-            cache: 'no-store'
-        });
-
+        const data = await fetchAPI(`/pages/slug/${slug}`);
         return data.success ? data.data : null;
     } catch (error) {
         console.error('Error fetching page:', error);

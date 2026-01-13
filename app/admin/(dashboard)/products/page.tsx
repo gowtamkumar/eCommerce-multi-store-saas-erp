@@ -78,7 +78,7 @@ export default function ProductsPage() {
       onConfirm: async () => {
         try {
           await fetchAPI(`/products/${id}`, { method: 'DELETE' });
-          setProducts(products.filter((p) => p.id !== id));
+          setProducts(products.filter((p: any) => p.id !== id));
           toast.success('Product deleted successfully');
         } catch (error) {
           toast.error('Error deleting product');
@@ -95,7 +95,7 @@ export default function ProductsPage() {
       });
 
       // Update local state
-      setProducts(products.map(p =>
+      setProducts(products.map((p: any) =>
         p.id === id ? { ...p, status: newStatus } : p
       ));
       toast.success('Product status updated');
@@ -156,7 +156,7 @@ export default function ProductsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((product) => (
+                filteredProducts.map((product: any) => (
                   <tr key={product.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{product.name}</td>
                     <td className="px-6 py-4">

@@ -13,7 +13,6 @@ export default function TenantManagement() {
     const fetchTenants = async () => {
       try {
         const data = await fetchAPI('/tenants');
-        console.log("tenants", data);
         if (data.data) setTenants(data.data);
       } catch (err) {
         console.error(err);

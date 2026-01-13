@@ -1,8 +1,8 @@
+import { fetchAPI } from '@/lib/api';
 import { getSiteSettings } from '@/lib/getSettings';
+import { resolveTenantId } from '@/lib/server-utils';
 import { ArrowRight, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
-import { fetchAPI } from '@/lib/api';
-import { resolveTenantId } from '@/lib/server-utils';
 
 async function getProducts() {
   try {
@@ -13,12 +13,7 @@ async function getProducts() {
       return [];
     }
 
-    const res = await fetchAPI('/products?limit=6&status=active', {
-      headers: {
-        "x-tenant-id": tenantId,
-      },
-      next: { revalidate: 60 } // Optional: Cache for 60 seconds
-    });
+    const res = await fetchAPI('/products?limit=6&status=active');
 
     return res.data?.products || [];
   } catch (error) {
@@ -149,7 +144,7 @@ export default async function ProductGrid() {
                     </span>
                   )}
                   <span className="text-lg font-bold text-brand-600 dark:text-brand-400">
-                    ${product.price.toFixed(2)}
+                    ${product.price}
                   </span>
                 </div>
                 <span className="text-sm font-medium text-brand-600 dark:text-brand-400 group-hover:underline">

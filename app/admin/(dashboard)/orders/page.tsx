@@ -95,7 +95,7 @@ export default function OrdersPage() {
         body: JSON.stringify({ status: newStatus }),
       });
 
-      setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o));
+      setOrders(orders.map((o: any) => o.id === id ? { ...o, status: newStatus } : o));
       if (selectedOrder && selectedOrder.id === id) {
         setSelectedOrder({ ...selectedOrder, status: newStatus });
       }
@@ -113,7 +113,7 @@ export default function OrdersPage() {
         body: JSON.stringify({ paymentStatus, transactionId }),
       });
 
-      setOrders(orders.map(o => o.id === id ? { ...o, paymentStatus, transactionId } : o));
+      setOrders(orders.map((o: any) => o.id === id ? { ...o, paymentStatus, transactionId } : o));
       if (selectedOrder && selectedOrder.id === id) {
         setSelectedOrder({ ...selectedOrder, paymentStatus, transactionId });
       }
@@ -186,7 +186,7 @@ export default function OrdersPage() {
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => (
+                orders.map((order: any) => (
                   <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="px-6 py-4 text-slate-500 font-mono text-xs">{order.id.slice(-6).toUpperCase()}</td>
                     <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{order.customerName}</td>

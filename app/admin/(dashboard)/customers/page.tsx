@@ -56,11 +56,11 @@ export default function CustomersPage() {
     const fetchUsers = async (page: number, search: string) => {
         setLoading(true);
         try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: '20',
-                q: search
-            });
+            // const params = new URLSearchParams({
+            //     page: page.toString(),
+            //     limit: '20',
+            //     q: search
+            // });
             const res = await fetchAPI(`/users`);
 
             if (res.data?.users) {

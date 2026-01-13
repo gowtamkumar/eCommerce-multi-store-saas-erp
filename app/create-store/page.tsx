@@ -3,7 +3,6 @@
 import { fetchAPI } from '@/lib/api';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, Globe, Layout, Loader2, Lock, User } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function CreateStorePage() {
@@ -46,8 +45,6 @@ export default function CreateStorePage() {
         method: 'POST',
         body: JSON.stringify(formData),
       });
-
-      console.log('data', data);
 
 
       if (data.success && data.subdomain) {

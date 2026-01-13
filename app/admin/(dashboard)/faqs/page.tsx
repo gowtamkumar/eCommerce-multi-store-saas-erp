@@ -19,7 +19,7 @@ export default function FAQsPage() {
     const [faqs, setFaqs] = useState<FAQ[]>([]);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [currentFAQ, setCurrentFAQ] = useState<Partial<FAQ>>({});
+    const [currentFAQ, setCurrentFAQ] = useState({} as any);
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
         title: '',
@@ -179,7 +179,7 @@ export default function FAQsPage() {
             <div className="grid gap-4">
                 {loading ? (
                     <p className="text-center text-slate-500">Loading FAQs...</p>
-                ) : faqs.map((faq) => (
+                ) : faqs.map((faq: any) => (
                     <div key={faq.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex justify-between items-start">
                         <div>
                             <h3 className="font-bold text-slate-900 dark:text-white mb-2">{faq.question}</h3>

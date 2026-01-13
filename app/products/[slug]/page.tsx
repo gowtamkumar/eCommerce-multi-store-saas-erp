@@ -11,17 +11,19 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
 import { fetchAPI } from "@/lib/api";
-import { resolveTenantId } from "@/lib/server-utils";
 
 async function getProduct(slug: string) {
     try {
-        const tenantId = await resolveTenantId();
-        if (!tenantId) return null;
+        // const tenantId = await resolveTenantId();
+        // if (!tenantId) return null;
 
-        const res = await fetchAPI(`/products/${slug}`, {
-            headers: { "x-tenant-id": tenantId },
-            cache: 'no-store'
-        });
+        // const res = await fetchAPI(`/products/${slug}`, {
+        //     headers: { "x-tenant-id": tenantId },
+        //     cache: 'no-store'
+        // });
+
+
+        const res = await fetchAPI(`/products/${slug}`);
 
         return res ? res : null;
     } catch (error) {

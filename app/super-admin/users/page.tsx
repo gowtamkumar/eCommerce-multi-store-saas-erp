@@ -13,7 +13,6 @@ export default function GlobalUsersPage() {
     const fetchUsers = async () => {
       try {
         const data = await fetchAPI('/super-admin/users');
-        console.log("data", data);
         if (data.data?.users) setUsers(data.data.users);
       } catch (err) {
         console.error(err);

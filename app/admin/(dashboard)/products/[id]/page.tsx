@@ -13,16 +13,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     if (!id) return;
 
-    fetchAPI(`/products/${id}`)
-      .then((res) => {
-        if (res.data) setProduct(res.data);
-      })
-      .catch((error) => {
-        console.error('Failed to fetch product:', error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    const fetchData = async () => {
+      const resData = await fetchAPI(`/products/${id}`)
+      if (resData.data) {
+        setProduct(resData.data);
+      }
+      setLoading(false)
+    }
+    fetchData()
   }, [id]);
 
   if (loading) {

@@ -11,17 +11,13 @@ export default function EditTestimonialPage({ params }: { params: Promise<{ id: 
 
     useEffect(() => {
         if (!id) return;
+        const fetchData = async () => {
+            const resData = await fetchAPI(`/testimonials/${id}`)
+            if (resData.success && resData.data) setTestimonial(resData.data);
+            setLoading(false)
+        }
+        fetchData()
 
-        fetchAPI(`/testimonials/${id}`)
-            .then((res) => {
-                if (res.success && res.data) setTestimonial(res.data);
-            })
-            .catch((error) => {
-                console.error('Failed to fetch testimonial:', error);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
     }, [id]);
 
     if (loading) {
