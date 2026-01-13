@@ -22,7 +22,7 @@ function getHeader(req: any, key: string): string | null {
   return null;
 }
 
-export async function getTenantId(req?: Request | any): Promise<string | null> {
+export async function getTenantId(req?: Request | any, allowSessionFallback = false): Promise<string | null> {
   const isClient = typeof window !== 'undefined';
 
   // 0. Check cache (CLIENT ONLY)
@@ -36,7 +36,7 @@ export async function getTenantId(req?: Request | any): Promise<string | null> {
     if (tenantLookupPromise) return tenantLookupPromise;
 
     const hostname = window.location.hostname;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".luxesaas.com")) {
       return null;
     }
 
@@ -96,6 +96,12 @@ export async function getTenantId(req?: Request | any): Promise<string | null> {
   // 2c. Check hostname/subdomain
   if (host) {
     const hostname = host.split(":")[0];
+    
+    // Explicitly check for SaaS root domains on server
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith("luxesaas.com")) {
+        return null;
+    }
+
     try {
         const nestApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
         const parts = hostname.split(".");
@@ -125,16 +131,18 @@ export async function getTenantId(req?: Request | any): Promise<string | null> {
     }
   }
 
-  // 2d. Check session (Fallback)
-  try {
-    const { getServerSession } = await import("next-auth");
-    const { authOptions } = await import("./authOptions");
-    const session = await getServerSession(authOptions);
-    if (session?.user?.tenantId) {
-      return session.user.tenantId;
+  // 2d. Check session (Fallback) - DISABLED by default for root domain safety
+  if (allowSessionFallback) {
+    try {
+        const { getServerSession } = await import("next-auth");
+        const { authOptions } = await import("./authOptions");
+        const session = await getServerSession(authOptions);
+        if (session?.user?.tenantId) {
+            return session.user.tenantId;
+        }
+    } catch (err) {
+        // console.error("DEBUG_TENANT: Session check failed", err);
     }
-  } catch (err) {
-    // console.error("DEBUG_TENANT: Session check failed", err);
   }
 
   return null;

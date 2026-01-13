@@ -47,7 +47,7 @@ export async function generateMetadata() {
 
 
 export default async function Home() {
-  const tenantId = await getTenantId();
+  const tenantId = await getTenantId(null, false);
   const settings = await getSiteSettings();
 
   // If no tenant is resolved, show the SaaS landing page
@@ -55,20 +55,27 @@ export default async function Home() {
     return <SaaSLanding />;
   }
 
-  const data = await fetchAPI('/home');
+  let homeData: any = null;
+  let products: any[] = [];
+  let product: any = null;
+  let dynamicPage: any = null;
 
-  if (!data || !data.success) {
+  // Wrap API calls in try-catch to avoid crashing on tenant mismatch or local dev issues
+  try {
+    const data = await fetchAPI('/home');
+
+    if (!data || !data.success || data.isSaaS) {
+      return <SaaSLanding />;
+    }
+
+    homeData = data.data;
+    products = homeData?.products || [];
+    product = products[0];
+    dynamicPage = homeData?.page;
+  } catch (error) {
+    console.error("Home page error:", error);
     return <SaaSLanding />;
   }
-
-  if (data.isSaaS) {
-    return <SaaSLanding />;
-  }
-
-  const homeData = data.data;
-  const products = homeData?.products || [];
-  const product = products[0];
-  const dynamicPage = homeData?.page;
 
 
 
