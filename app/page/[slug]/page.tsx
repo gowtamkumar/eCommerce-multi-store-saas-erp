@@ -3,29 +3,25 @@ import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
 import ProductGrid from '@/components/ProductGrid';
 import Reviews from '@/components/Reviews';
+import { fetchAPI } from '@/lib/api';
 import { getSiteSettings } from '@/lib/getSettings';
+import { getTenantId } from '@/lib/tenant';
 import { ArrowRight } from 'lucide-react';
-import { headers } from "next/headers";
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 async function getPage(slug: string) {
   try {
-    const headersList = await headers();
-    const tenantId = headersList.get("x-tenant-id") || "";
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3900/api/v1';
+    const tenantId = await getTenantId();
 
-    const res = await fetch(`${apiUrl}/pages/slug/${slug}`, {
+    const data = await fetchAPI(`/pages/slug/${slug}`, {
       headers: {
-        "x-tenant-id": tenantId,
+        "x-tenant-id": tenantId || "",
       },
       cache: 'no-store'
     });
 
-    if (!res.ok) return null;
-
-    const data = await res.json();
     return data.success ? data.data : null;
   } catch (error) {
     console.error("Error fetching page:", error);

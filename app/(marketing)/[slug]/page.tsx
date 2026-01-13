@@ -3,25 +3,22 @@ import Navbar from "@/components/Navbar";
 import PaymentStatus from "@/components/PaymentStatus";
 import SectionRenderer from "@/components/SectionRenderer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
-import { headers } from "next/headers";
+import { fetchAPI } from "@/lib/api";
+import { getTenantId } from "@/lib/tenant";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 async function getPage(slug: string) {
     try {
-        const headersList = await headers();
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3900/api/v1';
+        const tenantId = await getTenantId();
 
-        const res = await fetch(`${apiUrl}/pages/slug/${slug}`, {
+        const data = await fetchAPI(`/pages/slug/${slug}`, {
             headers: {
-                'x-tenant-id': headersList.get('x-tenant-id') || '',
+                'x-tenant-id': tenantId || '',
             },
             cache: 'no-store'
         });
 
-        if (!res.ok) return null;
-
-        const data = await res.json();
         return data.success ? data.data : null;
     } catch (error) {
         console.error('Error fetching page:', error);
