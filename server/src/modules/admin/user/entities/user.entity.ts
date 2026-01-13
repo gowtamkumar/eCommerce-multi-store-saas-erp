@@ -47,6 +47,9 @@ export class UserEntity {
   @Column({ default: false })
   isEmailVerified: boolean;
 
+  @Column({ nullable: true })
+  emailVerificationToken: string;
+
   @Column({
     type: 'enum',
     enum: UserRole,

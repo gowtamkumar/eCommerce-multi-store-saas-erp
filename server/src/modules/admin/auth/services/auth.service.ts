@@ -9,6 +9,8 @@ import { CreateUserDto } from '../../user/dtos/create-user.dto';
 import { UserDto } from '../../user/dtos/user.dto';
 import { UserService } from '../../user/services/user.service';
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos';
+import { MailService } from '../../../mail/mail.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -16,6 +18,7 @@ export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) { }
 
   async register(registerCredentialDto: RegisterCredentialDto, tenantId: string) {
@@ -32,10 +35,15 @@ export class AuthService {
       throw new ConflictException('Email already exists for this tenant');
     }
 
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
     const user = await this.userService.createUser(
-      registerCredentialDto,
+      { ...registerCredentialDto, emailVerificationToken: verificationToken },
       tenantId,
     );
+
+    await this.mailService.sendVerificationEmail(user.email, verificationToken, tenantId);
+
     const token = this.generatedSignedJwt(user);
 
     return { token, user };
@@ -69,8 +77,8 @@ export class AuthService {
     return user;
   }
 
-  async verifyEmail(userId: string) {
-    return this.userService.verifyUser(userId);
+  async verifyEmail(token: string) {
+    return this.userService.verifyUserByToken(token);
   }
 
   private generatedSignedJwt(user) {

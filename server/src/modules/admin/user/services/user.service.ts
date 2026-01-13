@@ -166,4 +166,14 @@ export class UserService {
     user.isEmailVerified = true;
     return this.userRepo.save(user);
   }
+
+  async verifyUserByToken(token: string): Promise<UserEntity> {
+    const user = await this.userRepo.findOne({ where: { emailVerificationToken: token } });
+    if (!user) {
+      throw new NotFoundException('Invalid or expired verification token');
+    }
+    user.isEmailVerified = true;
+    user.emailVerificationToken = null;
+    return this.userRepo.save(user);
+  }
 }

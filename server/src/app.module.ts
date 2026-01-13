@@ -23,6 +23,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { TestimonialModule } from './modules/testimonial/testimonial.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { TestimonialModule } from './modules/testimonial/testimonial.module';
     HomeModule,
     ProfileModule,
     SuperAdminModule,
+    MailModule,
   ],
   controllers: [],
   providers: [

@@ -41,10 +41,10 @@ export class AuthController {
 
   @Post('/verify')
   async verify(
-    @Body() verifyAuthDto: any,
+    @Body() body: { token: string },
   ) {
-    const { userId } = verifyAuthDto;
-    await this.authService.verifyEmail(userId);
+    const { token } = body;
+    await this.authService.verifyEmail(token);
     return {
       success: true,
       statusCode: 200,
