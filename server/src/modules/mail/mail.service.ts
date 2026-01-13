@@ -1,13 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as nodemailer from 'nodemailer';
+import { TenantEntity } from '../tenant/entities/tenant.entity';
 
 @Injectable()
 export class MailService {
     private transporter: nodemailer.Transporter;
     private readonly logger = new Logger(MailService.name);
 
-    constructor(private configService: ConfigService) {
+    constructor(
+        private configService: ConfigService,
+        @InjectRepository(TenantEntity)
+        private tenantRepo: Repository<TenantEntity>,
+    ) {
         this.transporter = nodemailer.createTransport({
             host: this.configService.get<string>('SMTP_HOST'),
             port: this.configService.get<number>('SMTP_PORT'),
@@ -20,9 +27,7 @@ export class MailService {
     }
 
     async sendVerificationEmail(email: string, token: string, tenantId: string) {
-        // In a real multi-tenant app, you'd fetch the tenant's custom domain or use a base app URL
-        // For now, we'll use a placeholder or config-based URL
-        const baseUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
+        const baseUrl = await this.getTenantBaseUrl(tenantId);
         const verificationLink = `${baseUrl}/verify-email?token=${token}`;
 
         const mailOptions = {
@@ -45,8 +50,8 @@ export class MailService {
         }
     }
 
-    async sendResetPasswordEmail(email: string, token: string) {
-        const baseUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
+    async sendResetPasswordEmail(email: string, token: string, tenantId: string) {
+        const baseUrl = await this.getTenantBaseUrl(tenantId);
         const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
         const mailOptions = {
@@ -68,6 +73,29 @@ export class MailService {
             this.logger.log(`Password reset email sent to ${email}`);
         } catch (error) {
             this.logger.error(`Failed to send password reset email to ${email}`, error.stack);
+        }
+    }
+
+    private async getTenantBaseUrl(tenantId: string): Promise<string> {
+        const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
+
+        if (!tenantId) return appUrl;
+
+        const tenant = await this.tenantRepo.findOne({ where: { id: tenantId } });
+        if (!tenant) return appUrl;
+
+        if (tenant.customDomain) {
+            const protocol = appUrl.startsWith('https') ? 'https' : 'http';
+            return `${protocol}://${tenant.customDomain}`;
+        }
+
+        try {
+            const url = new URL(appUrl);
+            url.hostname = `${tenant.subdomain}.${url.hostname}`;
+            // Remove trailing slash if present
+            return url.toString().replace(/\/$/, '');
+        } catch (e) {
+            return appUrl;
         }
     }
 }

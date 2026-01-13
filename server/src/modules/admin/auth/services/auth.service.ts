@@ -89,7 +89,7 @@ export class AuthService {
     const resetExpires = new Date(Date.now() + 3600000); // 1 hour
 
     await this.userService.updateResetToken(user.id, resetToken, resetExpires);
-    await this.mailService.sendResetPasswordEmail(user.email, resetToken);
+    await this.mailService.sendResetPasswordEmail(user.email, resetToken, tenantId);
   }
 
   async resetPassword(token: string, newPassword: string) {
