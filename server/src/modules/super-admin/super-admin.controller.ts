@@ -1,13 +1,13 @@
-import { Controller, Get, Post, Body, UseGuards, UnauthorizedException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../admin/auth/guards/jwt-auth.guard';
+import { Body, Controller, Get, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '../../common/enums/user/user-role.enum';
-import { UserService } from '../admin/user/services/user.service';
-import { RolesGuard } from '../admin/auth/guards/roles.guard';
 import { Roles } from '../admin/auth/decorators/roles.decorator';
-import { TenantService } from '../tenant/tenant.service';
+import { JwtAuthGuard } from '../admin/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../admin/auth/guards/roles.guard';
+import { UserService } from '../admin/user/services/user.service';
 import { OrderService } from '../order/order.service';
 import { ReviewService } from '../review/review.service';
+import { TenantService } from '../tenant/tenant.service';
 
 @Controller('super-admin')
 export class SuperAdminController {
@@ -58,33 +58,52 @@ export class SuperAdminController {
         ]);
 
         return {
-            status: 'ok',
-            health: {
-                database: 'Connected',
-                uptime: process.uptime(),
-                version: '1.0.0',
-            },
-            stats: {
-                tenants: tenants.length,
-                users: users.length,
-                orders: orders.length,
-                reviews: reviews.length,
-            },
-            timestamp: new Date().toISOString(),
-            service: 'eCommerce Multi-Tenant SaaS Backend',
+            success: true,
+            data: {
+                status: 'ok',
+                health: {
+                    database: 'Connected',
+                    uptime: process.uptime(),
+                    version: '1.0.0',
+                },
+                stats: {
+                    tenants: tenants.length,
+                    users: users.length,
+                    orders: orders.length,
+                    reviews: reviews.length,
+                },
+                timestamp: new Date().toISOString(),
+                service: 'eCommerce Multi-Tenant SaaS Backend',
+            }
         };
     }
 
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.SuperAdmin)
+    @Get('/tenants')
+    @ApiOperation({ summary: 'Get all tenants (SuperAdmin only)' })
+    async getAllTenants() {
+        return {
+            success: true,
+            data: await this.tenantService.findAll(),
+        };
+    }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.SuperAdmin)
     @Get('/users')
     async getAllUsers() {
         const users = await this.userService.findAllUsersCrossTenant();
         return {
-            users,
-            pagination: {
-                total: users.length,
-                page: 1,
-                limit: users.length,
-                totalPages: 1,
+            success: true,
+            data: {
+                users,
+                pagination: {
+                    total: users.length,
+                    page: 1,
+                    limit: users.length,
+                    totalPages: 1,
+                },
             },
         };
     }

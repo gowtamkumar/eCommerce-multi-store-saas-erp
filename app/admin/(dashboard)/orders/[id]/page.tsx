@@ -241,8 +241,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
               <Calendar className="w-4 h-4" />
               {new Date(order.createdAt).toLocaleString()}
             </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusStyles(order.status)}`}>
-              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusStyles(order.status || 'PENDING')}`}>
+              {(order.status || 'PENDING').charAt(0).toUpperCase() + (order.status || 'PENDING').slice(1).toLowerCase()}
             </span>
           </div>
         </div>
@@ -256,10 +256,10 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
             Print Order
           </button>
           <select
-            value={order.status}
+            value={order.status || OrderStatus.PENDING}
             onChange={(e) => handleStatusUpdate({ status: e.target.value })}
             disabled={updating}
-            className={`px-4 py-2.5 rounded-xl font-bold text-sm cursor-pointer border-none outline-none ring-2 ring-slate-100 dark:ring-slate-700 transition-all ${getStatusStyles(order.status)}`}
+            className={`px-4 py-2.5 rounded-xl font-bold text-sm cursor-pointer border-none outline-none ring-2 ring-slate-100 dark:ring-slate-700 transition-all ${getStatusStyles(order.status || OrderStatus.PENDING)}`}
           >
             <option value={OrderStatus.PENDING}>Mark as Pending</option>
             <option value={OrderStatus.COMPLETED}>Mark as Completed</option>

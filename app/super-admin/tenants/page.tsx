@@ -3,7 +3,7 @@ import { fetchAPI } from "@/lib/api";
 
 async function getTenants() {
   try {
-    const res = await fetchAPI('/tenants');
+    const res = await fetchAPI('/super-admin/tenants');
     return res.data || [];
   } catch (error) {
     console.error("Error fetching tenants:", error);
