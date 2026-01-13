@@ -6,6 +6,7 @@ import { join } from 'path';
 import { GlobalExceptionFilter } from './common/exception/exception-filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 import { DatabaseModule } from './database/database.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { FaqModule } from './modules/faq/faq.module';
@@ -22,7 +23,6 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { TestimonialModule } from './modules/testimonial/testimonial.module';
-import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 
 @Module({
   imports: [
@@ -80,6 +80,10 @@ export class AppModule implements NestModule {
         'auth/(.*)',
         'super-admin',
         'super-admin/(.*)',
+        'settings',
+        'home',
+        'products',
+        'products/(.*)',
       )
       .forRoutes('*');
   }

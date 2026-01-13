@@ -5,6 +5,8 @@ import ProductList from "@/components/ProductList";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { fetchAPI } from "@/lib/api";
 import { getSiteSettings } from "@/lib/getSettings";
+import { getTenantId } from "@/lib/tenant";
+import Link from "next/link";
 import { Suspense } from "react";
 
 export async function generateMetadata() {
@@ -30,8 +32,23 @@ async function getProductsData() {
 }
 
 export default async function ProductsPage() {
-  const { products, total } = await getProductsData();
+  const tenantId = await getTenantId();
   const settings = await getSiteSettings();
+
+  // Redirect or show message if no tenant (though normally /products shouldn't be accessible on SaaS root if we want it strictly for tenants)
+  if (!tenantId) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Store Not Found</h1>
+          <p className="text-slate-600">Please check the URL or contact support.</p>
+          <Link href="/" className="mt-6 inline-block px-6 py-2 bg-brand-600 text-white rounded-lg">Go Home</Link>
+        </div>
+      </main>
+    );
+  }
+
+  const { products, total } = await getProductsData();
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">

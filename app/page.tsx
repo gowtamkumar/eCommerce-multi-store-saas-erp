@@ -11,6 +11,7 @@ import SectionRenderer from "@/components/SectionRenderer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import { fetchAPI } from "@/lib/api";
 import { getSiteSettings } from "@/lib/getSettings";
+import { getTenantId } from "@/lib/tenant";
 import { Suspense } from "react";
 
 
@@ -46,8 +47,15 @@ export async function generateMetadata() {
 
 
 export default async function Home() {
-  const data = await fetchAPI('/home');
+  const tenantId = await getTenantId();
   const settings = await getSiteSettings();
+
+  // If no tenant is resolved, show the SaaS landing page
+  if (!tenantId) {
+    return <SaaSLanding />;
+  }
+
+  const data = await fetchAPI('/home');
 
   if (!data || !data.success) {
     return <SaaSLanding />;
