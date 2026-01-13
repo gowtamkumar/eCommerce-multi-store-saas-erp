@@ -42,8 +42,32 @@ export class MailService {
             this.logger.log(`Verification email sent to ${email}`);
         } catch (error) {
             this.logger.error(`Failed to send verification email to ${email}`, error.stack);
-            // Don't throw here to avoid breaking the registration flow, 
-            // but in a production app you might want to handle this more robustly.
+        }
+    }
+
+    async sendResetPasswordEmail(email: string, token: string) {
+        const baseUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
+        const resetLink = `${baseUrl}/reset-password?token=${token}`;
+
+        const mailOptions = {
+            from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),
+            to: email,
+            subject: 'Reset Your Password',
+            html: `
+        <h1>Password Reset Request</h1>
+        <p>You are receiving this email because you (or someone else) have requested the reset of the password for your account.</p>
+        <p>Please click on the following link to complete the process:</p>
+        <a href="${resetLink}">${resetLink}</a>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+      `,
+        };
+
+        try {
+            await this.transporter.sendMail(mailOptions);
+            this.logger.log(`Password reset email sent to ${email}`);
+        } catch (error) {
+            this.logger.error(`Failed to send password reset email to ${email}`, error.stack);
         }
     }
 }

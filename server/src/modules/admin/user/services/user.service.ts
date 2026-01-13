@@ -176,4 +176,26 @@ export class UserService {
     user.emailVerificationToken = null;
     return this.userRepo.save(user);
   }
+
+  async updateResetToken(userId: string, token: string, expires: Date) {
+    const user = await this.getUser(userId);
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = expires;
+    return this.userRepo.save(user);
+  }
+
+  async resetUserPasswordByToken(token: string, password: string): Promise<UserEntity> {
+    const user = await this.userRepo.findOne({
+      where: { resetPasswordToken: token },
+    });
+
+    if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+      throw new NotFoundException('Invalid or expired reset token');
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    return this.userRepo.save(user);
+  }
 }

@@ -7,6 +7,8 @@ import { UserEntity } from '../admin/user/entities/user.entity'
 import { SettingsService } from '../settings/settings.service'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantEntity } from './entities/tenant.entity'
+import { MailService } from '../mail/mail.service'
+import * as crypto from 'crypto'
 
 @Injectable()
 export class TenantService {
@@ -16,6 +18,7 @@ export class TenantService {
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
     private readonly settingsService: SettingsService,
+    private readonly mailService: MailService,
   ) { }
 
   async create(createTenantDto: CreateTenantDto) {
@@ -43,6 +46,7 @@ export class TenantService {
     // Create admin user for this tenant
     const hashedPassword = await bcrypt.hash(adminPassword, 10)
 
+    const verificationToken = crypto.randomBytes(32).toString('hex')
     const adminUser = this.userRepository.create({
       name: adminName,
       username: adminUsername,
@@ -51,9 +55,13 @@ export class TenantService {
       role: UserRole.Admin,
       tenantId: savedTenant.id,
       isAdmin: false,
+      emailVerificationToken: verificationToken,
     })
 
     const savedUser = await this.userRepository.save(adminUser)
+
+    // Send verification email
+    await this.mailService.sendVerificationEmail(adminEmail, verificationToken, savedTenant.id)
 
     // Initialize Site Settings
     await this.settingsService.update(savedTenant.id, {

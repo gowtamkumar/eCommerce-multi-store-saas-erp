@@ -77,6 +77,26 @@ export class AuthService {
     return user;
   }
 
+  async forgotPassword(email: string, tenantId: string) {
+    this.logger.log(`${this.forgotPassword.name} Service Called`);
+    const user = await this.userService.findUserByEmail(email, tenantId);
+    if (!user) {
+      // For security, don't reveal if user exists or not
+      return;
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 3600000); // 1 hour
+
+    await this.userService.updateResetToken(user.id, resetToken, resetExpires);
+    await this.mailService.sendResetPasswordEmail(user.email, resetToken);
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    this.logger.log(`${this.resetPassword.name} Service Called`);
+    return this.userService.resetUserPasswordByToken(token, newPassword);
+  }
+
   async verifyEmail(token: string) {
     return this.userService.verifyUserByToken(token);
   }

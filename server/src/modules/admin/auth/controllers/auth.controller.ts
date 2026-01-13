@@ -52,6 +52,33 @@ export class AuthController {
     };
   }
 
+  @Post('/forgot-password')
+  async forgotPassword(
+    @Body() body: { email: string },
+    @TenantId() tenantId: string,
+  ) {
+    const { email } = body;
+    await this.authService.forgotPassword(email, tenantId);
+    return {
+      success: true,
+      statusCode: 200,
+      message: `If an account is associated with this email, you will receive a reset link shortly.`,
+    };
+  }
+
+  @Post('/reset-password')
+  async resetPassword(
+    @Body() body: { token: string; password: string },
+  ) {
+    const { token, password } = body;
+    await this.authService.resetPassword(token, password);
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Password reset successful. You can now login.`,
+    };
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('/me')
   getMe(@CurrentUser() user: UserDto) {

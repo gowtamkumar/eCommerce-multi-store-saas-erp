@@ -50,6 +50,12 @@ export class UserEntity {
   @Column({ nullable: true })
   emailVerificationToken: string;
 
+  @Column({ nullable: true })
+  resetPasswordToken: string;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  resetPasswordExpires: Date;
+
   @Column({
     type: 'enum',
     enum: UserRole,
