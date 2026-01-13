@@ -1,9 +1,7 @@
-import { Controller, Post, Body, Get, Query, Req, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { PaymentService } from './payment.service';
-import { InitPaymentDto } from './dto/payment.dto';
+import { Controller, Get } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
-import { Request, Response } from 'express';
+import { PaymentService } from './payment.service';
 
 @ApiTags('Payment')
 @Controller('payments')
@@ -12,7 +10,10 @@ export class PaymentController {
 
     @Get()
     @ApiOperation({ summary: 'Get all payments (Admin)' })
-    async findAll() {
-        return await this.paymentService.findAll();
+    async findAll(@TenantId() tenantId: string) {
+        return {
+            success: true,
+            data: await this.paymentService.findAll(tenantId),
+        };
     }
 }

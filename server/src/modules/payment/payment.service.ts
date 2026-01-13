@@ -1,12 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
-import { OrderEntity } from '../order/entities/order.entity';
-import { PaymentEntity } from './entities/payment.entity';
 import { OrderStatus } from '../../common/enums/order-status.enum';
 import { PaymentStatus } from '../../common/enums/payment-status.enum';
+import { OrderEntity } from '../order/entities/order.entity';
 import { InitPaymentDto } from './dto/payment.dto';
+import { PaymentEntity } from './entities/payment.entity';
 
 @Injectable()
 export class PaymentService {
@@ -146,8 +146,9 @@ export class PaymentService {
         return { cancelled: true };
     }
 
-    async findAll() {
+    async findAll(tenantId: string) {
         return await this.paymentRepository.find({
+            where: { tenantId },
             order: { createdAt: 'DESC' },
             relations: ['order'],
         });

@@ -18,7 +18,10 @@ export class PageController {
   @Get()
   @ApiOperation({ summary: 'Get all pages' })
   async findAll(@TenantId() tenantId: string) {
-    return await this.pageService.findAll(tenantId)
+    return {
+      success: true,
+      data: await this.pageService.findAll(tenantId),
+    }
   }
 
   @Get('home')
