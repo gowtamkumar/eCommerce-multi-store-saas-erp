@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as nodemailer from 'nodemailer';
 import { TenantEntity } from '../tenant/entities/tenant.entity';
+import { SiteSettingsEntity } from '../settings/entities/site-settings.entity';
 
 @Injectable()
 export class MailService {
@@ -14,6 +15,8 @@ export class MailService {
         private configService: ConfigService,
         @InjectRepository(TenantEntity)
         private tenantRepo: Repository<TenantEntity>,
+        @InjectRepository(SiteSettingsEntity)
+        private settingsRepo: Repository<SiteSettingsEntity>,
     ) {
         this.transporter = nodemailer.createTransport({
             host: this.configService.get<string>('SMTP_HOST'),
@@ -26,12 +29,34 @@ export class MailService {
         });
     }
 
+    private async getTransporter(tenantId: string) {
+        if (!tenantId) return { transporter: this.transporter, from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com') };
+
+        const settings = await this.settingsRepo.findOne({ where: { tenantId } });
+        if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
+            const tenantTransporter = nodemailer.createTransport({
+                host: settings.smtp.host,
+                port: settings.smtp.port,
+                secure: settings.smtp.secure,
+                auth: {
+                    user: settings.smtp.user,
+                    pass: settings.smtp.pass,
+                },
+            });
+            return { transporter: tenantTransporter, from: settings.smtp.from };
+        }
+
+        return { transporter: this.transporter, from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com') };
+    }
+
     async sendVerificationEmail(email: string, token: string, tenantId: string) {
         const baseUrl = await this.getTenantBaseUrl(tenantId);
         const verificationLink = `${baseUrl}/verify-email?token=${token}`;
 
+        const { transporter, from } = await this.getTransporter(tenantId);
+
         const mailOptions = {
-            from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),
+            from: from,
             to: email,
             subject: 'Verify Your Email',
             html: `
@@ -43,7 +68,7 @@ export class MailService {
         };
 
         try {
-            await this.transporter.sendMail(mailOptions);
+            await transporter.sendMail(mailOptions);
             this.logger.log(`Verification email sent to ${email}`);
         } catch (error) {
             this.logger.error(`Failed to send verification email to ${email}`, error.stack);
@@ -54,8 +79,10 @@ export class MailService {
         const baseUrl = await this.getTenantBaseUrl(tenantId);
         const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
+        const { transporter, from } = await this.getTransporter(tenantId);
+
         const mailOptions = {
-            from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),
+            from: from,
             to: email,
             subject: 'Reset Your Password',
             html: `
@@ -69,7 +96,7 @@ export class MailService {
         };
 
         try {
-            await this.transporter.sendMail(mailOptions);
+            await transporter.sendMail(mailOptions);
             this.logger.log(`Password reset email sent to ${email}`);
         } catch (error) {
             this.logger.error(`Failed to send password reset email to ${email}`, error.stack);

@@ -1,5 +1,7 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { JwtAuthGuard } from '../admin/auth/guards/jwt-auth.guard'
+import { TenantId } from '../../common/decorators/tenant-id.decorator'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantLookupDto } from './dto/tenant-lookup.dto'
 import { TenantService } from './tenant.service'
@@ -35,5 +37,29 @@ export class TenantController {
     // Apply manual check or require login for listing
     // For simplicity and mirroring original logic:
     return await this.tenantService.findAll()
+  }
+
+  // @UseGuards(JwtAuthGuard)
+  @Get('info')
+  @ApiOperation({ summary: 'Get current tenant info' })
+  async getTenantInfo(@TenantId() tenantId: string) {
+    return await this.tenantService.findOne(tenantId)
+  }
+
+  // @UseGuards(JwtAuthGuard)
+  @Put('custom-domain')
+  @ApiOperation({ summary: 'Update custom domain' })
+  async updateCustomDomain(
+    @TenantId() tenantId: string,
+    @Body() body: { customDomain: string },
+  ) {
+    return await this.tenantService.updateCustomDomain(tenantId, body.customDomain)
+  }
+
+  // @UseGuards(JwtAuthGuard)
+  @Post('custom-domain/verify')
+  @ApiOperation({ summary: 'Verify custom domain' })
+  async verifyCustomDomain(@TenantId() tenantId: string) {
+    return await this.tenantService.verifyCustomDomain(tenantId)
   }
 }

@@ -79,6 +79,16 @@ export class SiteSettingsEntity {
         facebookDomainVerification: string;
     };
 
+    @Column({ type: 'jsonb', nullable: true })
+    smtp: {
+        host: string;
+        port: number;
+        secure: boolean;
+        user: string;
+        pass: string;
+        from: string;
+    };
+
     @Column({ type: 'uuid', unique: true })
     tenantId: string;
 

@@ -23,6 +23,16 @@ export class TenantEntity {
 
     @Column({
         type: 'enum',
+        enum: ['pending', 'verified', 'active'],
+        default: 'pending',
+    })
+    customDomainStatus: string;
+
+    @Column({ type: 'timestamptz', nullable: true })
+    customDomainVerifiedAt: Date;
+
+    @Column({
+        type: 'enum',
         enum: ['basic', 'pro', 'enterprise'],
         default: 'basic',
     })

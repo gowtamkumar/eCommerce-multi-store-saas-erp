@@ -129,4 +129,20 @@ export class TenantService {
     }
     return domain
   }
+
+  async updateCustomDomain(id: string, customDomain: string) {
+    const tenant = await this.findOne(id)
+    tenant.customDomain = customDomain
+    tenant.customDomainStatus = 'pending'
+    tenant.customDomainVerifiedAt = null
+    return await this.tenantRepository.save(tenant)
+  }
+
+  async verifyCustomDomain(id: string) {
+    const tenant = await this.findOne(id)
+    // Mock verification: in a real app, you'd check DNS records here
+    tenant.customDomainStatus = 'active'
+    tenant.customDomainVerifiedAt = new Date()
+    return await this.tenantRepository.save(tenant)
+  }
 }

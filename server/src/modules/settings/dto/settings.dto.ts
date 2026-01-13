@@ -61,4 +61,9 @@ export class UpdateSiteSettingsDto {
     @IsObject()
     @IsOptional()
     marketing?: any;
+
+    @ApiProperty({ required: false })
+    @IsObject()
+    @IsOptional()
+    smtp?: any;
 }
