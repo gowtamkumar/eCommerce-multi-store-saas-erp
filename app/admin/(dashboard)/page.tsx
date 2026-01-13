@@ -70,12 +70,12 @@ export default function AdminDashboard() {
       const currentMonthSales = paymentsData.data?.filter((p: any) => {
         const date = new Date(p.createdAt);
         return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-      }).reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
+      }).reduce((sum: number, p: any) => sum + (+p.amount || 0), 0) || 0;
 
       const previousMonthSales = paymentsData.data?.filter((p: any) => {
         const date = new Date(p.createdAt);
         return date.getMonth() === previousMonth && date.getFullYear() === previousYear;
-      }).reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
+      }).reduce((sum: number, p: any) => sum + (+p.amount || 0), 0) || 0;
 
       let monthlyGrowth: number | null = null;
       if (previousMonthSales > 0) {
@@ -93,7 +93,7 @@ export default function AdminDashboard() {
 
       const salesData = last7Days.map(date => {
         const daySales = paymentsData.data?.filter((p: any) => p.createdAt.startsWith(date))
-          .reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
+          .reduce((sum: number, p: any) => sum + (+p.amount || 0), 0) || 0;
         return {
           name: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           sales: daySales,

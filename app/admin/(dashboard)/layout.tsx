@@ -22,6 +22,9 @@ export default function AdminLayout({
   const brandName = settings?.brandName || "LuxeAudio";
   const logo = settings?.logo;
 
+  console.log("session", session);
+
+
 
   useEffect(() => {
     if (status === 'unauthenticated' && session?.user?.role !== 'Admin') {

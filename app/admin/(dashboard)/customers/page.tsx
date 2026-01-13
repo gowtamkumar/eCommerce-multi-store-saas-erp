@@ -5,7 +5,6 @@ import { fetchAPI } from '@/lib/api';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ChevronLeft, ChevronRight, Loader2, Search, Trash2, User as UserIcon } from 'lucide-react';
-import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -44,8 +43,6 @@ export default function CustomersPage() {
         onConfirm: () => { },
         isDangerous: false,
     });
-
-    const session = useSession();
 
     const debouncedSearch = useDebounce(searchQuery, 500);
 

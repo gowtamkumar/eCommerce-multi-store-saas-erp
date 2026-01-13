@@ -20,7 +20,7 @@ import { UpdatePasswordDto } from '../dtos/update-password.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
 
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UserController {
   private readonly logger = new Logger(UserController.name);
