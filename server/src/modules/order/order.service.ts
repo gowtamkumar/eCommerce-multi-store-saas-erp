@@ -15,6 +15,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderStatus } from '../../common/enums/order-status.enum';
 import { PaymentStatus } from '../../common/enums/payment-status.enum';
 import { LeadStatus } from '../../common/enums/lead-status.enum';
+import { PaymentEntity } from '../payment/entities/payment.entity';
 
 @Injectable()
 export class OrderService {
@@ -29,6 +30,8 @@ export class OrderService {
         private leadRepository: Repository<LeadEntity>,
         @InjectRepository(SiteSettingsEntity)
         private settingsRepository: Repository<SiteSettingsEntity>,
+        @InjectRepository(PaymentEntity)
+        private paymentRepository: Repository<PaymentEntity>,
     ) { }
 
     async create(createOrderDto: CreateOrderDto, tenantId: string) {
@@ -171,6 +174,35 @@ export class OrderService {
 
     async update(id: string, updateOrderDto: UpdateOrderDto, tenantId: string) {
         const order = await this.findOne(id, tenantId);
+
+        // Check if payment status is changing to PAID
+        if (
+            updateOrderDto.paymentStatus === PaymentStatus.PAID &&
+            order.paymentStatus !== PaymentStatus.PAID
+        ) {
+            // Create payment record for manual update (e.g. COD)
+            const transactionId = updateOrderDto.transactionId || order.transactionId || `MANUAL_COD_${Date.now()}`;
+
+            // Check if payment already exists
+            const existingPayment = await this.paymentRepository.findOne({
+                where: { transactionId, tenantId },
+            });
+
+            if (!existingPayment) {
+                const payment = this.paymentRepository.create({
+                    orderId: order.id,
+                    transactionId,
+                    amount: order.totalAmount,
+                    currency: order.currency,
+                    method: order.paymentMethod || 'Manual',
+                    status: 'SUCCESS',
+                    gatewayResponse: { note: 'Manual update from admin dashboard' },
+                    tenantId,
+                });
+                await this.paymentRepository.save(payment);
+            }
+        }
+
         Object.assign(order, updateOrderDto);
         return await this.orderRepository.save(order);
     }

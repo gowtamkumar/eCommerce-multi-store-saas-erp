@@ -19,7 +19,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const { settings, formatPrice, selectedCurrency } = useSettings();
+  const { formatPrice, selectedCurrency } = useSettings();
   const [stats, setStats] = useState<DashboardStats>({
     totalSales: 0,
     activeOrders: 0,
@@ -46,11 +46,13 @@ export default function AdminDashboard() {
         fetchAPI('/pages'),
       ]);
 
+
       // Calculate stats
       const activeOrders = ordersData.data.orders
         ?.filter((o: any) => o.status === OrderStatus.PENDING).length || 0;
+
       const totalProducts = productsData.data.products?.length || 0;
-      const totalSales = paymentsData.data?.reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
+      const totalSales = paymentsData.data?.reduce((sum: number, p: any) => sum + (+p.amount || 0), 0) || 0;
       const totalPages = pagesData.data?.length || 0;
       const recentPages = pagesData.data?.slice(0, 5) || [];
       const recentProducts = productsData.data.products?.slice(0, 5) || [];
@@ -113,8 +115,6 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
-
-  console.log("stats", stats);
 
 
   return (

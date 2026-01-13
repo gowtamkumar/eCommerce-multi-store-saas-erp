@@ -45,7 +45,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState({} as any);
   const [pagination, setPagination] = useState<Pagination>({
     total: 0,
     page: 1,
@@ -96,7 +96,9 @@ export default function OrdersPage() {
       });
 
       setOrders(orders.map((o: any) => o.id === id ? { ...o, status: newStatus } : o));
-      if (selectedOrder && selectedOrder.id === id) {
+      console.log("|asdfasdf");
+
+      if (selectedOrder && selectedOrder?.id === id) {
         setSelectedOrder({ ...selectedOrder, status: newStatus });
       }
       toast.success('Order status updated');
@@ -105,23 +107,6 @@ export default function OrdersPage() {
     }
   };
 
-
-  const handlePaymentUpdate = async (id: string, paymentStatus: string, transactionId?: string) => {
-    try {
-      await fetchAPI(`/orders/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ paymentStatus, transactionId }),
-      });
-
-      setOrders(orders.map((o: any) => o.id === id ? { ...o, paymentStatus, transactionId } : o));
-      if (selectedOrder && selectedOrder.id === id) {
-        setSelectedOrder({ ...selectedOrder, paymentStatus, transactionId });
-      }
-      toast.success('Payment details updated successfully');
-    } catch (error) {
-      toast.error('Error updating payment details');
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -270,161 +255,6 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* Order Details Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedOrder(null)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Order Details</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Order ID: {selectedOrder.id}</p>
-            </div>
-            <div className="p-6 space-y-6">
-              {/* Customer Information */}
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Customer Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Name</p>
-                    <p className="text-slate-900 dark:text-white font-medium">{selectedOrder.customerName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Email</p>
-                    <p className="text-slate-900 dark:text-white font-medium">{selectedOrder.customerEmail || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Phone</p>
-                    <p className="text-slate-900 dark:text-white font-medium">{selectedOrder.customerPhone || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Payment Method</p>
-                    <p className="text-slate-900 dark:text-white font-medium capitalize">{selectedOrder.paymentMethod}</p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Shipping Address</p>
-                  <p className="text-slate-900 dark:text-white font-medium">{selectedOrder.address || 'N/A'}</p>
-                </div>
-                {selectedOrder.orderNotes && (
-                  <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-700">
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Order Notes</p>
-                    <p className="text-slate-900 dark:text-white italic">"{selectedOrder.orderNotes}"</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Order Items */}
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Product Details</h3>
-                <div className="space-y-2">
-                  {selectedOrder.productId ? (
-                    <div className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                      {selectedOrder.productId.images?.[0] && (
-                        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                          <img
-                            src={selectedOrder.productId.images[0]}
-                            alt={selectedOrder.productId.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <p className="font-medium text-slate-900 dark:text-white">{selectedOrder.productId.name}</p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                          {selectedOrder.quantity} x {settings?.currencySymbol || '$'}{(selectedOrder.unitPrice || selectedOrder.productId.price || 0).toFixed(2)}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-slate-900 dark:text-white">
-                          {settings?.currencySymbol || '$'}{((selectedOrder.unitPrice || selectedOrder.productId.price || 0) * selectedOrder.quantity).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-slate-500">Product information unavailable (Product may have been deleted)</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Order Summary */}
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-slate-600 dark:text-slate-400">Subtotal</p>
-                  <p className="text-slate-900 dark:text-white font-medium">
-                    {settings?.currencySymbol || '$'}{((selectedOrder.unitPrice || selectedOrder.productId?.price || 0) * selectedOrder.quantity).toFixed(2)}
-                  </p>
-                </div>
-                {(selectedOrder.discountAmount || 0) > 0 && (
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="text-slate-600 dark:text-slate-400">Discount</p>
-                    <p className="text-red-500 font-medium">
-                      -{settings?.currencySymbol || '$'}{((selectedOrder.discountAmount || 0) * selectedOrder.quantity).toFixed(2)}
-                    </p>
-                  </div>
-                )}
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-slate-600 dark:text-slate-400">Status</p>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(selectedOrder.status)}`}>
-                    {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center mb-2">
-                  <p className="text-slate-600 dark:text-slate-400">Order Date</p>
-                  <p className="text-slate-900 dark:text-white font-medium">{new Date(selectedOrder.createdAt).toLocaleString()}</p>
-                </div>
-                <div className="flex justify-between items-center text-lg font-bold border-t border-slate-200 dark:border-slate-700 pt-2 mt-2">
-                  <p className="text-slate-900 dark:text-white">Total Amount</p>
-                  <p className="text-green-600 dark:text-green-400">{settings?.currencySymbol || '$'}{selectedOrder.totalAmount.toFixed(2)}</p>
-                </div>
-              </div>
-
-              {/* Payment Management (COD) */}
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Payment Management</h3>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Payment Status</label>
-                    <select
-                      value={selectedOrder.paymentStatus || 'pending'}
-                      onChange={(e) => handlePaymentUpdate(selectedOrder.id, e.target.value, selectedOrder.transactionId)}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="paid">Paid</option>
-                      <option value="failed">Failed</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Transaction ID / Note</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={selectedOrder.transactionId || ''}
-                        onChange={(e) => setSelectedOrder({ ...selectedOrder, transactionId: e.target.value })}
-                        placeholder="Enter transaction ID or note"
-                        className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
-                      />
-                      <button
-                        onClick={() => handlePaymentUpdate(selectedOrder.id, selectedOrder.paymentStatus || 'pending', selectedOrder.transactionId)}
-                        className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium transition-colors"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="p-6 border-t border-slate-200 dark:border-slate-700">
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="w-full px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-xl font-medium transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

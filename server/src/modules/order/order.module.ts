@@ -8,6 +8,8 @@ import { UserEntity } from '../admin/user/entities/user.entity';
 import { LeadEntity } from '../lead/entities/lead.entity';
 import { SiteSettingsEntity } from '../settings/entities/site-settings.entity';
 
+import { PaymentEntity } from '../payment/entities/payment.entity';
+
 @Module({
     imports: [
         TypeOrmModule.forFeature([
@@ -16,6 +18,7 @@ import { SiteSettingsEntity } from '../settings/entities/site-settings.entity';
             UserEntity,
             LeadEntity,
             SiteSettingsEntity,
+            PaymentEntity,
         ]),
     ],
     controllers: [OrderController],
