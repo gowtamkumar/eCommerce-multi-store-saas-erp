@@ -19,6 +19,7 @@ import {
     X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 type TabType = 'general' | 'domain' | 'email' | 'currencies' | 'social' | 'marketing';
@@ -60,6 +61,15 @@ export default function SettingsPage() {
         },
         productMode: 'single' as 'single' | 'multiple'
     });
+
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const tab = searchParams.get('tab') as TabType;
+        if (tab && ['general', 'domain', 'email', 'currencies', 'social', 'marketing'].includes(tab)) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         const loadSettings = async () => {

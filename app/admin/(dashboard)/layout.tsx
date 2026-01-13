@@ -2,7 +2,7 @@
 
 import { useSettings } from '@/contexts/SettingsContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CreditCard, FileText, HelpCircle, LayoutDashboard, LogOut, Menu, MessageSquare, MessageSquareQuote, Package, Settings, ShoppingBag, User, Users, X } from 'lucide-react';
+import { Banknote, ChevronDown, CreditCard, FileText, Globe, HelpCircle, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, MessageSquareQuote, Package, Settings, Share2, ShoppingBag, TrendingUp, User, Users, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -17,6 +17,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(pathname?.startsWith('/admin/settings'));
   const { data: session, status }: any = useSession();
 
   const brandName = settings?.brandName || "LuxeAudio";
@@ -31,6 +32,12 @@ export default function AdminLayout({
       router.push('/login');
     }
   }, [status, router]);
+
+  useEffect(() => {
+    if (pathname?.startsWith('/admin/settings')) {
+      setIsSettingsOpen(true);
+    }
+  }, [pathname]);
 
   if (status === 'loading') {
     return (
@@ -54,6 +61,15 @@ export default function AdminLayout({
     { icon: FileText, label: 'Pages', href: '/admin/pages' },
     { icon: MessageSquare, label: 'Lead', href: '/admin/leads' },
     { icon: User, label: 'Media', href: '/admin/media' },
+  ];
+
+  const settingsItems = [
+    { icon: Globe, label: 'General Info', tab: 'general' },
+    { icon: Globe, label: 'Custom Domain', tab: 'domain' },
+    { icon: Mail, label: 'Email Settings', tab: 'email' },
+    { icon: Banknote, label: 'Localization', tab: 'currencies' },
+    { icon: Share2, label: 'Social Links', tab: 'social' },
+    { icon: TrendingUp, label: 'Marketing & SEO', tab: 'marketing' },
   ];
 
   const handleLogout = async () => {
@@ -122,8 +138,7 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-1">
           <Link href="/admin/faqs" className="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors font-medium">
             <HelpCircle className="w-5 h-5" />
             FAQs
@@ -132,10 +147,54 @@ export default function AdminLayout({
             <MessageSquareQuote className="w-5 h-5" />
             Testimonials
           </Link>
-          <Link href="/admin/settings" className="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors font-medium">
-            <Settings className="w-5 h-5" />
-            Setting
-          </Link>
+
+          {/* Collapsible Settings */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all font-medium ${pathname?.startsWith('/admin/settings')
+                  ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+            >
+              <div className="flex items-center gap-3">
+                <Settings className="w-5 h-5" />
+                Settings
+              </div>
+              <ChevronDown className={`w-4 h-4 transition-transform ${isSettingsOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {isSettingsOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden pl-4 space-y-1"
+                >
+                  {settingsItems.map((item, index) => {
+                    const isActive = pathname === '/admin/settings';
+                    return (
+                      <Link
+                        key={index}
+                        href={`/admin/settings?tab=${item.tab}`}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm ${isActive
+                            ? 'text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-900/10 font-medium'
+                            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                      >
+                        <item.icon className="w-4 h-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all font-medium"
