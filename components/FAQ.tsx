@@ -44,9 +44,6 @@ export default function FAQ({ title, description }: FAQProps) {
     }
   };
 
-  console.log("faqs", faqs);
-
-
   if (faqs?.faqs?.length === 0) {
     return null;
   }

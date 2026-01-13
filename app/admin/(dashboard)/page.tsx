@@ -47,12 +47,13 @@ export default function AdminDashboard() {
       ]);
 
       // Calculate stats
-      const activeOrders = ordersData.data?.filter((o: any) => o.status === OrderStatus.PENDING).length || 0;
-      const totalProducts = productsData.data?.length || 0;
-      const totalSales = paymentsData.data?.reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
-      const totalPages = pagesData.data?.length || 0;
-      const recentPages = pagesData.data?.slice(0, 5) || [];
-      const recentProducts = productsData.data?.slice(0, 5) || [];
+      const activeOrders = ordersData.data.orders
+        ?.filter((o: any) => o.status === OrderStatus.PENDING).length || 0;
+      const totalProducts = productsData.data.products?.length || 0;
+      const totalSales = paymentsData.data.payments?.reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
+      const totalPages = pagesData.data.pages?.length || 0;
+      const recentPages = pagesData.data.pages?.slice(0, 5) || [];
+      const recentProducts = productsData.data.products?.slice(0, 5) || [];
 
       setRecentProducts(recentProducts);
 
@@ -64,12 +65,12 @@ export default function AdminDashboard() {
       const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
       const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
-      const currentMonthSales = paymentsData.data?.filter((p: any) => {
+      const currentMonthSales = paymentsData.data.payments?.filter((p: any) => {
         const date = new Date(p.createdAt);
         return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
       }).reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
 
-      const previousMonthSales = paymentsData.data?.filter((p: any) => {
+      const previousMonthSales = paymentsData.data.payments?.filter((p: any) => {
         const date = new Date(p.createdAt);
         return date.getMonth() === previousMonth && date.getFullYear() === previousYear;
       }).reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
