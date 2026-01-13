@@ -99,6 +99,8 @@ export default function CustomersPage() {
         });
     };
 
+    console.log("users", users);
+
     return (
         <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display mb-8">Customers</h1>
@@ -165,7 +167,7 @@ export default function CustomersPage() {
                                             {user.phone && <p className="text-xs text-slate-500 dark:text-slate-400">{user.phone}</p>}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.role === 'admin'
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.role === 'Admin'
                                                 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                                                 : user.role === 'lead'
                                                     ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
@@ -175,7 +177,7 @@ export default function CustomersPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.status === 'active'
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.status === 'Active'
                                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                                                 : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                                 }`}>

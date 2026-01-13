@@ -22,7 +22,8 @@ interface Order {
   paymentMethod: string;
   paymentStatus: string;
   transactionId?: string;
-  productId: {
+  productId: string;
+  product: {
     id: string;
     name: string;
     price: number;
@@ -183,15 +184,15 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
           <tbody>
             <tr className="border-b border-slate-100">
               <td className="py-6">
-                <p className="font-bold text-slate-900 text-lg mb-1">{order.productId?.name || 'Product'}</p>
-                <p className="text-sm text-slate-500">Item #{order.productId?.id?.slice(-6)?.toUpperCase()}</p>
+                <p className="font-bold text-slate-900 text-lg mb-1">{order.product?.name || 'Product'}</p>
+                <p className="text-sm text-slate-500">Item #{order.product?.id?.slice(-6)?.toUpperCase()}</p>
               </td>
               <td className="py-6 text-center font-bold text-slate-900">{order.quantity}</td>
               <td className="py-6 text-right font-medium text-slate-600">
-                {formatPrice(order.unitPrice || order.productId?.price || 0)}
+                {formatPrice(order.unitPrice || order.product?.price || 0)}
               </td>
               <td className="py-6 text-right font-bold text-slate-900">
-                {formatPrice((order.unitPrice || order.productId?.price || 0) * order.quantity)}
+                {formatPrice((order.unitPrice || order.product?.price || 0) * order.quantity)}
               </td>
             </tr>
           </tbody>
@@ -201,7 +202,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
           <div className="w-80 space-y-4">
             <div className="flex justify-between text-sm text-slate-500 italic">
               <span>Subtotal</span>
-              <span className="font-medium text-slate-900">{formatPrice((order.unitPrice || order.productId?.price || 0) * order.quantity)}</span>
+              <span className="font-medium text-slate-900">{formatPrice((order.unitPrice || order.product?.price || 0) * order.quantity)}</span>
             </div>
             {(order.discountAmount || 0) > 0 && (
               <div className="flex justify-between text-sm text-red-500">
@@ -280,23 +281,23 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
               </h2>
             </div>
             <div className="p-6">
-              {order.productId ? (
+              {order.product ? (
                 <div className="flex items-center gap-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl">
                   <div className="w-24 h-24 bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm flex-shrink-0 relative">
                     <img
-                      src={order.productId.images?.[0]}
-                      alt={order.productId.name}
+                      src={order.product.images?.[0]}
+                      alt={order.product.name}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="flex-1">
-                    <Link href={`/admin/products/${order.productId.id}/review`} className="text-lg font-bold text-slate-900 dark:text-white hover:text-brand-600 transition-colors">
-                      {order.productId.name}
+                    <Link href={`/admin/products/${order.product.id}/review`} className="text-lg font-bold text-slate-900 dark:text-white hover:text-brand-600 transition-colors">
+                      {order.product.name}
                     </Link>
                     <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
                       <span>Quantity: {order.quantity}</span>
                       <span>•</span>
-                      <span>Unit Price: {formatPrice(order.unitPrice || order.productId.price)}</span>
+                      <span>Unit Price: {formatPrice(order.unitPrice || order.product.price)}</span>
                     </div>
                     {(order.discountAmount || 0) > 0 && (
                       <p className="text-sm text-red-500 font-medium mt-1">
@@ -306,7 +307,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                   </div>
                   <div className="text-right">
                     <p className="text-xl font-bold text-brand-600">
-                      {formatPrice((+(order.unitPrice || order.productId.price) - (+(order.discountAmount || 0))) * order.quantity)}
+                      {formatPrice((+(order.unitPrice || order.product.price) - (+(order.discountAmount || 0))) * order.quantity)}
                     </p>
                   </div>
                 </div>
@@ -322,7 +323,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
               <div className="space-y-2 max-w-sm ml-auto">
                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
                   <span>Subtotal</span>
-                  <span>{formatPrice((order.unitPrice || order.productId?.price || 0) * order.quantity)}</span>
+                  <span>{formatPrice((order.unitPrice || order.product?.price || 0) * order.quantity)}</span>
                 </div>
                 {(order.discountAmount || 0) > 0 && (
                   <div className="flex justify-between text-red-500">
