@@ -1,6 +1,8 @@
 'use client';
 
+import Price from '@/components/Price';
 import { useSettings } from '@/contexts/SettingsContext';
+import { fetchAPI } from '@/lib/api';
 import { motion } from 'framer-motion';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
@@ -8,6 +10,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 interface Product {
+    id: string;
     _id: string;
     name: string;
     price: number;
@@ -30,10 +33,9 @@ export default function RelatedProducts({ currentProductId }: RelatedProductsPro
         const fetchProducts = async () => {
             try {
                 // Fetch products excluding the current one, limit to 3
-                const res = await fetch(`/api/products?exclude=${currentProductId}&limit=3&status=active`);
-                const data = await res.json();
-                if (data.success) {
-                    setProducts(data.data);
+                const data = await fetchAPI(`/products?exclude=${currentProductId}&limit=3&status=active`);
+                if (data.success && data.data?.products) {
+                    setProducts(data.data.products);
                 }
             } catch (error) {
                 console.error('Error fetching related products:', error);
@@ -104,14 +106,12 @@ export default function RelatedProducts({ currentProductId }: RelatedProductsPro
                                     </p>
                                 )}
                                 <div className="flex items-center gap-3 mt-2">
-                                    <span className="text-lg font-bold text-slate-900 dark:text-white">
-                                        {settings?.currencySymbol || '$'}{(product.price - (product.discountAmount || 0)).toLocaleString()}
-                                    </span>
-                                    {product.discountAmount !== undefined && product.discountAmount > 0 && (
-                                        <span className="text-sm text-slate-400 line-through">
-                                            {settings?.currencySymbol || '$'}{product.price.toLocaleString()}
-                                        </span>
-                                    )}
+                                    <Price
+                                        amount={product.price}
+                                        className="text-slate-900 dark:text-white"
+                                        showOriginal={product.discountAmount !== undefined && product.discountAmount > 0}
+                                        originalAmount={product.price + (product.discountAmount || 0)}
+                                    />
                                 </div>
                             </Link>
                         </motion.div>

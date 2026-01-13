@@ -23,14 +23,16 @@ function getHeader(req: any, key: string): string | null {
 }
 
 export async function getTenantId(req?: Request | any): Promise<string | null> {
-  // 0. Check cache
-  if (cachedTenantId) return cachedTenantId;
+  const isClient = typeof window !== 'undefined';
+
+  // 0. Check cache (CLIENT ONLY)
+  if (isClient && cachedTenantId) return cachedTenantId;
 
   let host: string | null = null;
   let headerTenantId: string | null = null;
 
   // 1. Client-side resolution
-  if (typeof window !== 'undefined') {
+  if (isClient) {
     if (tenantLookupPromise) return tenantLookupPromise;
 
     const hostname = window.location.hostname;
@@ -70,7 +72,7 @@ export async function getTenantId(req?: Request | any): Promise<string | null> {
     return tenantLookupPromise;
   }
 
-  // 2. Server-side resolution
+  // 2. Server-side resolution (ALWAYS per-request)
   // 2a. Try to get headers from Request object or next/headers
   if (req) {
     host = getHeader(req, "host");
@@ -88,7 +90,6 @@ export async function getTenantId(req?: Request | any): Promise<string | null> {
 
   // 2b. Check x-tenant-id header
   if (headerTenantId) {
-    cachedTenantId = headerTenantId;
     return headerTenantId;
   }
 
@@ -115,7 +116,6 @@ export async function getTenantId(req?: Request | any): Promise<string | null> {
             if (res.ok) {
                 const data = await res.json();
                 if (data.success && data.data?.id) {
-                    cachedTenantId = data.data.id;
                     return data.data.id;
                 }
             }
@@ -131,7 +131,6 @@ export async function getTenantId(req?: Request | any): Promise<string | null> {
     const { authOptions } = await import("./authOptions");
     const session = await getServerSession(authOptions);
     if (session?.user?.tenantId) {
-      cachedTenantId = session.user.tenantId;
       return session.user.tenantId;
     }
   } catch (err) {

@@ -39,10 +39,20 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
-export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedCurrency, setSelectedCurrency] = useState({ code: 'USD', symbol: '$', rate: 1 });
+export function SettingsProvider({
+  children,
+  initialSettings
+}: {
+  children: React.ReactNode,
+  initialSettings?: SiteSettings | null
+}) {
+  const [settings, setSettings] = useState<SiteSettings | null>(initialSettings || null);
+  const [loading, setLoading] = useState(!initialSettings);
+  const [selectedCurrency, setSelectedCurrency] = useState<{
+    code: string;
+    symbol: string;
+    rate: number
+  }>({ code: 'USD', symbol: '$', rate: 1 });
 
   const fetchSettings = async () => {
     try {
@@ -54,13 +64,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         // Initialize currency from localStorage or default
         const savedCurrency = localStorage.getItem('selectedCurrency');
         if (savedCurrency) {
-          const parsed = JSON.parse(savedCurrency);
-          const exists = data.data.supportedCurrencies?.find((c: any) => c.code === parsed.code);
-          if (exists) {
-            setSelectedCurrency(exists);
-          } else {
-            const base = data.data.supportedCurrencies?.find((c: any) => c.code === data.data.currency);
-            setSelectedCurrency(base || { code: data.data.currency, symbol: data.data.currencySymbol, rate: 1 });
+          try {
+            const parsed = JSON.parse(savedCurrency);
+            const exists = data.data.supportedCurrencies?.find((c: any) => c.code === parsed.code);
+            if (exists) {
+              setSelectedCurrency(exists);
+            } else {
+              const base = data.data.supportedCurrencies?.find((c: any) => c.code === data.data.currency);
+              setSelectedCurrency(base || { code: data.data.currency, symbol: data.data.currencySymbol, rate: 1 });
+            }
+          } catch (e) {
+            console.error('Failed to parse saved currency:', e);
           }
         } else {
           const base = data.data.supportedCurrencies?.find((c: any) => c.code === data.data.currency);
@@ -75,8 +89,22 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (!initialSettings) {
+      fetchSettings();
+    } else {
+      // Even if we have initial settings, we should check for local currency preference
+      const savedCurrency = localStorage.getItem('selectedCurrency');
+      if (savedCurrency) {
+        try {
+          const parsed = JSON.parse(savedCurrency);
+          const exists = initialSettings.supportedCurrencies?.find((c: any) => c.code === parsed.code);
+          if (exists) {
+            setSelectedCurrency(exists);
+          }
+        } catch (e) { }
+      }
+    }
+  }, [initialSettings]);
 
   const setCurrency = (code: string) => {
     if (!settings?.supportedCurrencies) return;

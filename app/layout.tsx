@@ -32,7 +32,7 @@ export default async function RootLayout({
       </head>
       <body className={`${inter.className} ${outfit.variable} antialiased`}>
         <AuthProvider>
-          <SettingsProvider>
+          <SettingsProvider initialSettings={settings}>
             <ToasterProvider />
             {children}
           </SettingsProvider>

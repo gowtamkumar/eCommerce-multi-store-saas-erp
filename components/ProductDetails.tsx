@@ -1,5 +1,6 @@
 'use client';
 
+import Price from "@/components/Price";
 import { useSettings } from "@/contexts/SettingsContext";
 import { motion } from 'framer-motion';
 import { Activity, Battery, Bluetooth, Mic, Shield, Wifi } from 'lucide-react';
@@ -12,6 +13,7 @@ interface ProductDetailsProps {
 const ProductDetails = ({ product }: { product: any }) => {
   const { selectedCurrency, formatPrice, convertPrice } = useSettings();
   if (!product) return null;
+
 
   // Helper to get icon component
   const getIcon = (iconName: string) => {
@@ -64,7 +66,9 @@ const ProductDetails = ({ product }: { product: any }) => {
               </div>
               <div className="text-left">
                 <p className="text-green-700 dark:text-green-400 font-bold">Special Offer</p>
-                <p className="text-green-600 dark:text-green-500 text-sm">Save {formatPrice(product.discountAmount)} for a limited time.</p>
+                <div className="text-green-600 dark:text-green-500 text-sm">
+                  Save <Price amount={product.discountAmount} className="font-bold" /> for a limited time.
+                </div>
               </div>
             </div>
           )}
@@ -118,7 +122,7 @@ const ProductDetails = ({ product }: { product: any }) => {
 
           <div className="relative order-1 lg:order-2 h-[600px] rounded-3xl overflow-hidden bg-slate-100 dark:bg-slate-800 group">
             <Image
-              src={product.images[0] || "https://images.unsplash.com/photo-1546435770-a3e426bf472b?q=80&w=1000&auto=format&fit=crop"}
+              src={product?.images?.[0] || "https://images.unsplash.com/photo-1546435770-a3e426bf472b?q=80&w=1000&auto=format&fit=crop"}
               alt={product.name}
               fill
               className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -134,15 +138,17 @@ const ProductDetails = ({ product }: { product: any }) => {
                         <div className="px-3 py-1 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 text-sm font-bold">
                           Special Offer
                         </div>
-                        <span className="text-white/80 line-through text-sm">
-                          {formatPrice(product.price)}
-                        </span>
+                        <Price
+                          amount={product.price}
+                          className="text-white/80 line-through text-sm font-normal"
+                        />
                       </div>
                       <div className="text-right">
                         <p className="text-white/80 text-sm mb-1">Current Price</p>
-                        <p className="text-white text-xl font-bold">
-                          {formatPrice(product.price - (product.discountAmount || 0))}
-                        </p>
+                        <Price
+                          amount={product.price - (product.discountAmount || 0)}
+                          className="text-white text-xl font-bold"
+                        />
                       </div>
                     </>
                   )}

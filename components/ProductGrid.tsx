@@ -1,17 +1,11 @@
+import Price from '@/components/Price';
 import { fetchAPI } from '@/lib/api';
 import { getSiteSettings } from '@/lib/getSettings';
-import { resolveTenantId } from '@/lib/server-utils';
 import { ArrowRight, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 
 async function getProducts() {
   try {
-    const tenantId = await resolveTenantId();
-
-    if (!tenantId) {
-      console.error("No tenant context for products grid");
-      return [];
-    }
 
     const res = await fetchAPI('/products?limit=6&status=active');
 
@@ -65,14 +59,12 @@ export default async function ProductGrid() {
               </p>
 
               <div className="flex items-center gap-6 mb-10">
-                <span className="text-4xl font-bold text-slate-900 dark:text-white">
-                  ${(product.price)}
-                </span>
-                {product.discountAmount > 0 && (
-                  <span className="text-xl text-slate-400 line-through">
-                    ${(+product.price + +product.discountAmount)}
-                  </span>
-                )}
+                <Price
+                  amount={product.price}
+                  className="text-4xl text-slate-900 dark:text-white"
+                  showOriginal={product.discountAmount > 0}
+                  originalAmount={+product.price + +product.discountAmount}
+                />
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -138,14 +130,12 @@ export default async function ProductGrid() {
               </p>
               <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-700">
                 <div className="flex flex-col">
-                  {product.discountAmount > 0 && (
-                    <span className="text-sm text-slate-400 line-through">
-                      ${(product.price + product.discountAmount).toFixed(2)}
-                    </span>
-                  )}
-                  <span className="text-lg font-bold text-brand-600 dark:text-brand-400">
-                    ${product.price}
-                  </span>
+                  <Price
+                    amount={product.price}
+                    className="text-brand-600 dark:text-brand-400"
+                    showOriginal={product.discountAmount > 0}
+                    originalAmount={+product.price + +product.discountAmount}
+                  />
                 </div>
                 <span className="text-sm font-medium text-brand-600 dark:text-brand-400 group-hover:underline">
                   View Details &rarr;

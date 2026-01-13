@@ -5,11 +5,11 @@ import Hero from '@/components/Hero';
 import Navbar from '@/components/Navbar';
 import PaymentStatus from '@/components/PaymentStatus';
 import ProductDetails from '@/components/ProductDetails';
-import RelatedProducts from '@/components/RelatedProducts';
 import Reviews from '@/components/Reviews';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
+import RelatedProducts from '@/components/RelatedProducts';
 import { fetchAPI } from "@/lib/api";
 
 async function getProduct(slug: string) {
@@ -17,15 +17,15 @@ async function getProduct(slug: string) {
         // const tenantId = await resolveTenantId();
         // if (!tenantId) return null;
 
-        // const res = await fetchAPI(`/products/${slug}`, {
+        // const res = await fetchAPI(`/products/slug/${slug}`, {
         //     headers: { "x-tenant-id": tenantId },
         //     cache: 'no-store'
         // });
 
 
-        const res = await fetchAPI(`/products/${slug}`);
+        const res = await fetchAPI(`/products/slug/${slug}`);
 
-        return res ? res : null;
+        return res.success ? res.data : null;
     } catch (error) {
         console.error("Error fetching product:", error);
         return null;
