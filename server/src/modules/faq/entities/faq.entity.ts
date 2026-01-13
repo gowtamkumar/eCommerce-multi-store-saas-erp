@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { FaqStatus } from '../../../common/enums/faq-status.enum';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
+import { ProductEntity } from '../../product/entities/product.entity';
 
 @Entity('faqs')
 export class FaqEntity {
@@ -40,6 +41,13 @@ export class FaqEntity {
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenantId' })
     tenant: TenantEntity;
+
+    @Column({ type: 'uuid', nullable: true })
+    productId: string;
+
+    @ManyToOne(() => ProductEntity, (product) => product.faqs, { onDelete: 'CASCADE', nullable: true })
+    @JoinColumn({ name: 'productId' })
+    product: ProductEntity;
 
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;

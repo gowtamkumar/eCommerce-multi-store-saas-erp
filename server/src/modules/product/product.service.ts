@@ -8,12 +8,15 @@ import { Repository, Like } from 'typeorm';
 import { ProductEntity } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { FaqEntity } from '../faq/entities/faq.entity';
 
 @Injectable()
 export class ProductService {
     constructor(
         @InjectRepository(ProductEntity)
         private productRepository: Repository<ProductEntity>,
+        @InjectRepository(FaqEntity)
+        private faqRepository: Repository<FaqEntity>,
     ) { }
 
     async create(createProductDto: CreateProductDto, tenantId: string) {
@@ -26,12 +29,25 @@ export class ProductService {
             throw new ConflictException('Product with this slug already exists');
         }
 
+        const { faqs, ...productData } = createProductDto;
+
         const product = this.productRepository.create({
-            ...createProductDto,
+            ...productData,
             tenantId,
         });
 
-        return await this.productRepository.save(product);
+        const savedProduct = await this.productRepository.save(product);
+
+        if (faqs && faqs.length > 0) {
+            const faqEntities = faqs.map(faq => this.faqRepository.create({
+                ...faq,
+                productId: savedProduct.id,
+                tenantId,
+            }));
+            await this.faqRepository.save(faqEntities);
+        }
+
+        return await this.findOne(savedProduct.id, tenantId);
     }
 
     async findAll(filterDto: any, tenantId: string) {
@@ -67,6 +83,7 @@ export class ProductService {
     async findOne(id: string, tenantId: string) {
         const product = await this.productRepository.findOne({
             where: { id, tenantId },
+            relations: ['faqs'],
         });
 
         if (!product) {
@@ -79,6 +96,7 @@ export class ProductService {
     async findBySlug(slug: string, tenantId: string) {
         const product = await this.productRepository.findOne({
             where: { slug, tenantId },
+            relations: ['faqs'],
         });
 
         if (!product) {
@@ -102,8 +120,27 @@ export class ProductService {
             }
         }
 
-        Object.assign(product, updateProductDto);
-        return await this.productRepository.save(product);
+        const { faqs, ...productData } = updateProductDto;
+        Object.assign(product, productData);
+        await this.productRepository.save(product);
+
+        if (faqs) {
+            // Simple sync: delete existing and recreate
+            // In a production app, you might want to update existing to preserve IDs, 
+            // but for this implementation, complete replacement is safer and easier to manage for the UI.
+            await this.faqRepository.delete({ productId: product.id, tenantId });
+
+            if (faqs.length > 0) {
+                const faqEntities = faqs.map(faq => this.faqRepository.create({
+                    ...faq,
+                    productId: product.id,
+                    tenantId,
+                }));
+                await this.faqRepository.save(faqEntities);
+            }
+        }
+
+        return await this.findOne(id, tenantId);
     }
 
     async remove(id: string, tenantId: string) {

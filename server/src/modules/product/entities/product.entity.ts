@@ -9,6 +9,8 @@ import {
 } from 'typeorm';
 import { ProductStatus } from '../../../common/enums/product-status.enum';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
+import { OneToMany } from 'typeorm';
+import { FaqEntity } from '../../faq/entities/faq.entity';
 
 @Entity('products')
 export class ProductEntity {
@@ -105,6 +107,9 @@ export class ProductEntity {
         default: 'testimonials',
     })
     reviewSectionType: string;
+
+    @OneToMany(() => FaqEntity, (faq) => faq.product)
+    faqs: FaqEntity[];
 
     @Column({ type: 'uuid' })
     tenantId: string;

@@ -76,6 +76,21 @@ class KeyBenefitDto {
     color?: string;
 }
 
+class ProductFaqDto {
+    @ApiProperty()
+    @IsString()
+    question: string;
+
+    @ApiProperty()
+    @IsString()
+    answer: string;
+
+    @ApiProperty({ required: false })
+    @IsNumber()
+    @IsOptional()
+    order?: number;
+}
+
 export class CreateProductDto {
     @ApiProperty()
     @IsString()
@@ -167,4 +182,11 @@ export class CreateProductDto {
     @IsString()
     @IsOptional()
     reviewSectionType?: string;
+
+    @ApiProperty({ required: false, type: [ProductFaqDto] })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => ProductFaqDto)
+    @IsOptional()
+    faqs?: ProductFaqDto[];
 }

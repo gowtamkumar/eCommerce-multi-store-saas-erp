@@ -1,7 +1,7 @@
 'use client';
 
 import { fetchAPI } from '@/lib/api';
-import { Bold, Code, Eye, Italic, Link as LinkIcon, List, ListOrdered, Loader2, MessageSquare, Quote, Save, Star, Type, Underline, X } from 'lucide-react';
+import { Bold, Code, Eye, HelpCircle, Italic, Link as LinkIcon, List, ListOrdered, Loader2, MessageSquare, Plus, Quote, Save, Star, Type, Underline, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -56,7 +56,8 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
         description: initialData?.sections?.features?.description || 'Packed with premium features to elevate your experience to new heights.',
       }
     },
-    reviewSectionType: initialData?.reviewSectionType || 'testimonials'
+    reviewSectionType: initialData?.reviewSectionType || 'testimonials',
+    faqs: initialData?.faqs || []
   });
 
   const generateSlug = (text: string) => {
@@ -101,6 +102,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       discountAmount: formData.discountAmount,
       sections: formData.sections,
       reviewSectionType: formData.reviewSectionType,
+      faqs: formData.faqs,
     };
 
     console.log("payload", payload);
@@ -660,6 +662,84 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                   className="w-full px-4 py-3 border-2 border-dashed border-slate-200 dark:border-slate-700/50 rounded-xl text-slate-500 dark:text-slate-400 hover:border-brand-500 hover:text-brand-600 transition-all font-semibold text-sm"
                 >
                   + Add Benefit Card
+                </button>
+              </div>
+            </div>
+
+            {/* FAQs Section */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-slate-400" /> Product FAQs
+              </label>
+              <div className="space-y-4">
+                {formData.faqs.map((faq: any, index: number) => (
+                  <div key={index} className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-xs font-bold uppercase text-slate-400">FAQ #{index + 1}</h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newFaqs = formData.faqs.filter((_: any, i: number) => i !== index);
+                          setFormData({ ...formData, faqs: newFaqs });
+                        }}
+                        className="text-red-500 hover:text-red-700 p-1"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={faq.question}
+                        onChange={(e) => {
+                          const newFaqs = [...formData.faqs];
+                          newFaqs[index].question = e.target.value;
+                          setFormData({ ...formData, faqs: newFaqs });
+                        }}
+                        placeholder="Question (e.g., Is it waterproof?)"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
+                      />
+                      <textarea
+                        value={faq.answer}
+                        onChange={(e) => {
+                          const newFaqs = [...formData.faqs];
+                          newFaqs[index].answer = e.target.value;
+                          setFormData({ ...formData, faqs: newFaqs });
+                        }}
+                        placeholder="Answer"
+                        rows={2}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm resize-none"
+                      />
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-slate-500">Order:</label>
+                        <input
+                          type="number"
+                          value={faq.order || 0}
+                          onChange={(e) => {
+                            const newFaqs = [...formData.faqs];
+                            newFaqs[index].order = Number(e.target.value);
+                            setFormData({ ...formData, faqs: newFaqs });
+                          }}
+                          className="w-16 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({
+                      ...formData,
+                      faqs: [
+                        ...formData.faqs,
+                        { question: '', answer: '', order: formData.faqs.length }
+                      ]
+                    });
+                  }}
+                  className="w-full px-4 py-3 border-2 border-dashed border-slate-200 dark:border-slate-700/50 rounded-xl text-slate-500 dark:text-slate-400 hover:border-brand-500 hover:text-brand-600 transition-all font-semibold text-sm flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Product FAQ
                 </button>
               </div>
             </div>
