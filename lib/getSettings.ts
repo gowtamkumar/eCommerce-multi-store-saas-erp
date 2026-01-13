@@ -37,7 +37,8 @@ export async function getSiteSettings() {
             headers: {
                 'x-tenant-id': tenantId
             },
-            cache: 'no-store'
+            // Removed cache: 'no-store' to allow Next.js deduplication and caching
+            next: { revalidate: 60 } // Cache settings for 60 seconds
         });
 
         if (res.ok) {

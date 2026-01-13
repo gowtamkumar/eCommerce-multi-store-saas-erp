@@ -3,40 +3,48 @@ export const API_URL =
 import { getSession } from "next-auth/react";
 
 let cachedTenantId: string | null = null;
+let tenantLookupPromise: Promise<string | null> | null = null;
 
 async function getResolvedTenantId() {
   if (cachedTenantId) return cachedTenantId;
+  if (tenantLookupPromise) return tenantLookupPromise;
 
   // On client side, we can resolve via hostname
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
     // Don't lookup for localhost directly without subdomain unless it's a known tenant
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-      // For local dev, we might still want a default or rely on headers
       return null;
     }
 
-    try {
-      const parts = hostname.split(".");
-      let queryParams = `?customDomain=${hostname}`;
-      if (parts.length > 1) {
-        const subdomain = parts[0];
-        if (subdomain !== "www" && subdomain !== "api") {
-          queryParams += `&subdomain=${subdomain}`;
+    tenantLookupPromise = (async () => {
+      try {
+        const parts = hostname.split(".");
+        let queryParams = `?customDomain=${hostname}`;
+        if (parts.length > 1) {
+          const subdomain = parts[0];
+          if (subdomain !== "www" && subdomain !== "api") {
+            queryParams += `&subdomain=${subdomain}`;
+          }
         }
-      }
 
-      const res = await fetch(`${API_URL}/tenants${queryParams}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.data?.id) {
-          cachedTenantId = data.data.id;
-          return cachedTenantId;
+        const res = await fetch(`${API_URL}/tenants${queryParams}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data?.id) {
+            cachedTenantId = data.data.id;
+            return cachedTenantId;
+          }
         }
+      } catch (e) {
+        console.error("Failed to resolve tenant client-side", e);
+      } finally {
+        tenantLookupPromise = null;
       }
-    } catch (e) {
-      console.error("Failed to resolve tenant client-side", e);
-    }
+      return null;
+    })();
+
+    return tenantLookupPromise;
   }
   return null;
 }

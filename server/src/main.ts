@@ -1,10 +1,10 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
-import getLogLevels from './lib/logger';
 import { json } from 'express';
 import { rateLimit } from 'express-rate-limit';
+import { AppModule } from './app.module';
+import getLogLevels from './lib/logger';
 import { SwaggerConfig } from './lib/swagger';
 
 async function bootstrap() {
@@ -35,7 +35,7 @@ async function bootstrap() {
   app.use(
     rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 100, // limit each IP to 100 requests per windowMs
+      max: 1000, // limit each IP to 1000 requests per windowMs (increased from 100)
       message: 'Too many requests from this IP, please try again later',
     }),
   );
