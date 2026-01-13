@@ -8,7 +8,7 @@ import { OrderService } from '../order/order.service';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
 
 @Controller('profile')
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class ProfileController {
     constructor(
         private readonly userService: UserService,

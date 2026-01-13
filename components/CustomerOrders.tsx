@@ -1,6 +1,7 @@
 "use client";
 
 import { useSettings } from "@/contexts/SettingsContext";
+import { fetchAPI } from "@/lib/api";
 import { OrderStatus } from "@/lib/enums/order-status";
 
 import { Eye, Package, ShoppingBag, Star } from "lucide-react";
@@ -9,7 +10,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 interface Order {
-    _id: string;
+    id: string;
     totalAmount: number;
     status: string;
     createdAt: string;
@@ -20,7 +21,7 @@ interface Order {
     currencyRate?: number;
     quantity: number;
     productId: {
-        _id: string;
+        id: string;
         name: string;
         images: string[];
         price: number;
@@ -41,16 +42,28 @@ const CustomerOrders = () => {
     const { data: session } = useSession();
     const { settings, formatPrice } = useSettings();
 
+
     useEffect(() => {
-        fetchOrders();
-    }, []);
+        if (session?.user?.id) {
+            fetchOrders();
+        }
+    }, [session?.user?.id]);
 
     const fetchOrders = async () => {
         try {
-            const res = await fetch("/api/profile/orders");
-            const data = await res.json();
-            if (data.orders) {
-                setOrders(data.orders);
+            if (!session?.user?.id) {
+                console.log("No user ID in session");
+                setLoading(false);
+                return;
+            }
+
+            const res = await fetchAPI(`/orders/user/${session.user.id}`);
+
+            console.log("res", res);
+
+            // fetchAPI returns the data directly (unwrapped)
+            if (res.data && Array.isArray(res.data)) {
+                setOrders(res.data);
             }
         } catch (error) {
             console.error("Failed to fetch orders", error);
@@ -76,9 +89,8 @@ const CustomerOrders = () => {
 
         setSubmittingReview(true);
         try {
-            const res = await fetch(`/api/products/${reviewingOrder.productId.id}/reviews`, {
+            await fetchAPI(`/products/${reviewingOrder.productId.id}/reviews`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     rating,
                     comment,
@@ -87,17 +99,13 @@ const CustomerOrders = () => {
                 }),
             });
 
-            if (res.ok) {
-                toast.success("Review submitted for moderation!");
-                setIsReviewModalOpen(false);
-                setRating(5);
-                setComment("");
-            } else {
-                toast.error("Failed to submit review");
-            }
+            toast.success("Review submitted for moderation!");
+            setIsReviewModalOpen(false);
+            setRating(5);
+            setComment("");
         } catch (error) {
             console.error("Review submission error:", error);
-            toast.error("An error occurred");
+            toast.error("Failed to submit review");
         } finally {
             setSubmittingReview(false);
         }

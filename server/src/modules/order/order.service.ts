@@ -172,6 +172,16 @@ export class OrderService {
         return order;
     }
 
+    async findByUserId(userId: string, tenantId: string) {
+        const orders = await this.orderRepository.find({
+            where: { userId, tenantId },
+            relations: ['product'],
+            order: { createdAt: 'DESC' },
+        });
+
+        return orders;
+    }
+
     async update(id: string, updateOrderDto: UpdateOrderDto, tenantId: string) {
         const order = await this.findOne(id, tenantId);
 

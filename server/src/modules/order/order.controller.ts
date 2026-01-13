@@ -63,6 +63,18 @@ export class OrderController {
         return await this.orderService.findOne(id, tenantId);
     }
 
+    @Get('user/:userId')
+    @ApiOperation({ summary: 'Get orders by user ID' })
+    @ApiResponse({ status: 200, description: 'Returns user orders' })
+    async getUserOrders(
+        @Param('userId') userId: string,
+        @TenantId() tenantId: string,
+    ) {
+        console.log("tenantId", tenantId);
+        console.log("userId", userId);
+        return await this.orderService.findByUserId(userId, tenantId);
+    }
+
     @Put(':id')
     @ApiOperation({ summary: 'Update order status' })
     @ApiResponse({ status: 200, description: 'Order updated successfully' })
