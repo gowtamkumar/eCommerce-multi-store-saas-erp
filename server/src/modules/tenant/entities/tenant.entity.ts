@@ -38,6 +38,13 @@ export class TenantEntity {
     })
     planTier: string;
 
+    @Column({
+        type: 'enum',
+        enum: ['active', 'suspended', 'archived'],
+        default: 'active',
+    })
+    status: string;
+
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
 

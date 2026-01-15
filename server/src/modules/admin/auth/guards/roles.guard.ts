@@ -21,3 +21,9 @@ export class RolesGuard implements CanActivate {
         return requiredRoles.includes(user.role);
     }
 }
+
+
+// Pseudo-code for Guard
+// if (tenant.status === 'suspended') {
+//   throw new ForbiddenException('This store has been suspended. Please contact support.');
+// }
