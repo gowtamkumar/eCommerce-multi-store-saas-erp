@@ -238,6 +238,15 @@ export default function PageBuilderEditor({ pageId, initialData }: PageBuilderEd
           <h3 className="text-lg font-bold mb-4">Page Settings</h3>
           <div className="space-y-4">
             <div>
+              <label className="block text-sm font-medium mb-2">Title</label>
+              <input
+                type="text"
+                value={pageData.title}
+                onChange={(e) => setPageData({ ...pageData, title: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+              />
+            </div>
+            <div>
               <label className="block text-sm font-medium mb-2">Slug</label>
               <input
                 type="text"
@@ -267,6 +276,24 @@ export default function PageBuilderEditor({ pageId, initialData }: PageBuilderEd
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Meta Title</label>
+              <input
+                type="text"
+                value={pageData.metaTitle}
+                onChange={(e) => setPageData({ ...pageData, metaTitle: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Meta Description</label>
+              <textarea
+                value={pageData.metaDescription}
+                onChange={(e) => setPageData({ ...pageData, metaDescription: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+              />
             </div>
           </div>
         </div>

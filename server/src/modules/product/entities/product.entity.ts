@@ -35,7 +35,7 @@ export class ProductEntity {
     @Column({ type: 'simple-array' })
     images: string[];
 
-    @Column({ type: 'simple-array' })
+    @Column({ type: 'simple-array', nullable: true })
     features: string[];
 
     @Column({ type: 'int', default: 0 })
