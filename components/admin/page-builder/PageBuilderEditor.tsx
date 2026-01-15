@@ -6,13 +6,14 @@ import { defaultSectionStyles, PageBuilderSection, SectionType } from '@/types/p
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ArrowLeft, Eye, Save } from 'lucide-react';
+import { ArrowLeft, Eye, LayoutTemplate, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import SectionEditor from './SectionEditor';
 import SectionLibrary from './SectionLibrary';
+import TemplateSelector from './TemplateSelector';
 
 interface PageBuilderEditorProps {
   pageId: string;
@@ -54,6 +55,7 @@ export default function PageBuilderEditor({ pageId, initialData }: PageBuilderEd
   const [sections, setSections] = useState<PageBuilderSection[]>(initialData.sections || []);
   const [pageData, setPageData] = useState(initialData);
   const [saving, setSaving] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -143,6 +145,11 @@ export default function PageBuilderEditor({ pageId, initialData }: PageBuilderEd
     window.open(previewUrl, '_blank');
   };
 
+  const handleTemplateSelect = (newSections: PageBuilderSection[]) => {
+    setSections(newSections);
+    toast.success('Template applied successfully!');
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Header */}
@@ -171,6 +178,13 @@ export default function PageBuilderEditor({ pageId, initialData }: PageBuilderEd
             </div>
 
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowTemplateSelector(true)}
+                className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <LayoutTemplate className="w-4 h-4" />
+                Templates
+              </button>
               <button
                 onClick={handlePreview}
                 className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center gap-2"
@@ -209,6 +223,13 @@ export default function PageBuilderEditor({ pageId, initialData }: PageBuilderEd
               <p className="text-slate-500 dark:text-slate-400">
                 Add your first section from the library on the left
               </p>
+              <button
+                onClick={() => setShowTemplateSelector(true)}
+                className="mt-6 px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md hover:border-brand-500 transition-all text-slate-900 dark:text-white font-medium flex items-center gap-2 mx-auto"
+              >
+                <LayoutTemplate className="w-4 h-4" />
+                Choose a Template
+              </button>
             </div>
           ) : (
             <div className="max-w-5xl mx-auto">
@@ -298,6 +319,11 @@ export default function PageBuilderEditor({ pageId, initialData }: PageBuilderEd
           </div>
         </div>
       </div>
+      <TemplateSelector
+        isOpen={showTemplateSelector}
+        onClose={() => setShowTemplateSelector(false)}
+        onSelect={handleTemplateSelect}
+      />
     </div>
   );
 }
