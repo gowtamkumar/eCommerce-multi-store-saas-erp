@@ -4,6 +4,7 @@ import { PageBuilderSection } from '@/types/page-builder';
 import { ChevronDown, ChevronUp, Copy, GripVertical, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import RichEditor from '../RichEditor';
+import FAQEditor from './FAQEditor';
 import ProductGridEditor from './ProductGridEditor';
 import StylePanel from './StylePanel';
 
@@ -142,22 +143,10 @@ export default function SectionEditor({ section, onUpdate, onDelete, onDuplicate
 
             {/* FAQ Section */}
             {section.type === 'faq' && (
-              <>
-                <input
-                  type="text"
-                  placeholder="Section Title (Optional)"
-                  value={section?.content?.title || ''}
-                  onChange={(e) => updateContent('title', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                />
-                <textarea
-                  placeholder="Description (Optional)"
-                  value={section.content?.description || ''}
-                  onChange={(e) => updateContent('description', e.target.value)}
-                  rows={2}
-                  className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                />
-              </>
+              <FAQEditor
+                content={section.content}
+                onUpdate={updateContent}
+              />
             )}
 
             {/* CTA Section */}
@@ -166,13 +155,13 @@ export default function SectionEditor({ section, onUpdate, onDelete, onDuplicate
                 <input
                   type="text"
                   placeholder="Headline"
-                  value={section.content.headline || ''}
+                  value={section.content?.headline || ''}
                   onChange={(e) => updateContent('headline', e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
                 <textarea
                   placeholder="Description"
-                  value={section.content.subline || ''}
+                  value={section.content?.subline || ''}
                   onChange={(e) => updateContent('subline', e.target.value)}
                   rows={2}
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
@@ -181,14 +170,14 @@ export default function SectionEditor({ section, onUpdate, onDelete, onDuplicate
                   <input
                     type="text"
                     placeholder="Button Text"
-                    value={section.content.buttonLabel || ''}
+                    value={section.content?.buttonLabel || ''}
                     onChange={(e) => updateContent('buttonLabel', e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   />
                   <input
                     type="text"
                     placeholder="Button Link"
-                    value={section.content.buttonLink || ''}
+                    value={section.content?.buttonLink || ''}
                     onChange={(e) => updateContent('buttonLink', e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   />

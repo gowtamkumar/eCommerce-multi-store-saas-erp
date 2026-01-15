@@ -18,17 +18,25 @@ interface FAQ {
 interface FAQProps {
   title?: string;
   description?: string;
+  faqs?: Array<{ question: string; answer: string; category?: string }>;
 }
 
-export default function FAQ({ title, description }: FAQProps) {
+export default function FAQ({ title, description, faqs: customFaqs }: FAQProps) {
   const [faqs, setFaqs] = useState({} as any);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   useEffect(() => {
-    fetchFAQs();
-  }, []);
+    if (customFaqs && customFaqs.length > 0) {
+      // Use custom FAQs from page builder
+      setFaqs({ faqs: customFaqs });
+      setLoading(false);
+    } else {
+      // Fetch from API
+      fetchFAQs();
+    }
+  }, [customFaqs]);
 
   const fetchFAQs = async () => {
     try {

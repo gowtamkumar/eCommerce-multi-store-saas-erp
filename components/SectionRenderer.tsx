@@ -45,6 +45,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
                 <FAQ
                   title={section.content?.title}
                   description={section.content?.description}
+                  faqs={section.content?.faqs}
                 />
               );
             case "cta":
