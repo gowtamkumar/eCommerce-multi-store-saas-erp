@@ -60,7 +60,7 @@ export class AdminMediaController {
         @UploadedFile(
             new ParseFilePipe({
                 validators: [
-                    new FileTypeValidator({ fileType: '.(png|jpeg|jpg|gif|svg|webp)' }),
+                    new FileTypeValidator({ fileType: 'image/(png|jpeg|jpg|gif|svg|webp)' }),
                     new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5MB
                 ],
             }),

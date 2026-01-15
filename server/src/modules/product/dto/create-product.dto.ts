@@ -104,6 +104,11 @@ export class CreateProductDto {
     @IsString()
     description: string;
 
+    @ApiProperty({ required: false })
+    @IsString()
+    @IsOptional()
+    shortDescription?: string;
+
     @ApiProperty()
     @IsNumber()
     @Min(0)
