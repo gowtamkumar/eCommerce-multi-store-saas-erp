@@ -1,5 +1,6 @@
 "use client";
 
+import { useSettings } from '@/contexts/SettingsContext';
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -10,6 +11,7 @@ import {
   X
 } from "lucide-react";
 import Image from "next/image";
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import CheckoutModal from "./CheckoutModal";
 import LucideIcon from './LucideIcon';
@@ -22,9 +24,36 @@ interface HeroProps {
 }
 
 const Hero = ({ product, title, description, isBuilderSection = false }: HeroProps) => {
-  // ... (state hooks remain same, lines 26-50)
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const { settings, selectedCurrency, formatPrice, convertPrice } = useSettings();
 
-  // ... (displayTitle logic etc, lines 54-57)
+  const handleShare = async () => {
+    if (!product) return;
+    const shareData = {
+      title: product.name,
+      text: product.tagline || product.description?.substring(0, 100),
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
+
+
+
+  const displayTitle = title || product?.name;
+  const displayDescription = description || product?.description;
 
   if (!displayTitle && !product) return null;
 
@@ -38,8 +67,9 @@ const Hero = ({ product, title, description, isBuilderSection = false }: HeroPro
 
   return (
     <>
+
       <section className={sectionClasses}>
-        {/* Background Elements - Only if not builder section */}
+        {/* Background Elements */}
         {!isBuilderSection && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-brand-500/10 blur-3xl" />
@@ -128,7 +158,7 @@ const Hero = ({ product, title, description, isBuilderSection = false }: HeroPro
                 <div className="flex -space-x-3">
                   {(product?.socialProof?.avatars?.length > 0
                     ? product.socialProof.avatars
-                    : [1, 2, 3, 4].map(i => `https://i.pravatar.cc/100?img=${i + 10}`)
+                    : [1, 2, 3, 4].map((i: number) => `https://i.pravatar.cc/100?img=${i + 10}`)
                   ).map((avatar: string, i: number) => (
                     <div
                       key={i}
@@ -183,7 +213,7 @@ const Hero = ({ product, title, description, isBuilderSection = false }: HeroPro
               {product?.heroHighlights && product.heroHighlights.length > 0 && (
                 <div className="absolute inset-0 pointer-events-none">
                   {product.heroHighlights.map((highlight: any, index: number) => {
-                    const colorClasses = {
+                    const colorClasses: Record<string, string> = {
                       green: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
                       blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
                       purple: "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
@@ -205,7 +235,7 @@ const Hero = ({ product, title, description, isBuilderSection = false }: HeroPro
                         transition={{ delay: 1 + index * 0.2, duration: 0.8 }}
                         className={`${position} glass p-4 rounded-2xl shadow-lg z-20 hidden md:block border border-white/20 dark:border-slate-700/50 hover:scale-105 pointer-events-auto transition-transform duration-300`}
                       >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${colorClasses[highlight.color as keyof typeof colorClasses] || colorClasses.blue}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${colorClasses[highlight.color] || colorClasses.blue}`}>
                           <LucideIcon name={highlight.icon} className="w-6 h-6" />
                         </div>
                         <div>

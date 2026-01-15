@@ -41,7 +41,6 @@ export default function CTA({
 
       <div className={containerClasses}>
         <motion.div
-          // ... rest of content remains same
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -64,6 +63,6 @@ export default function CTA({
           </div>
         </motion.div>
       </div>
-    </section>
+    </Wrapper>
   );
 }

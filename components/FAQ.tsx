@@ -23,12 +23,56 @@ interface FAQProps {
 }
 
 export default function FAQ({ title, description, faqs: customFaqs, isBuilderSection = false }: FAQProps) {
-  // ... (state hooks remain same)
+  const [faqs, setFaqs] = useState({} as any);
+  const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // ... (useEffect and fetchFAQs remain same)
+  useEffect(() => {
+    if (customFaqs && customFaqs.length > 0) {
+      // Use custom FAQs from page builder
+      setFaqs({ faqs: customFaqs });
+      setLoading(false);
+    } else {
+      // Fetch from API
+      fetchFAQs();
+    }
+  }, [customFaqs]);
+
+  const fetchFAQs = async () => {
+    try {
+      const data = await fetchAPI('/faqs?status=active');
+
+      if (data.success) {
+        setFaqs(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching FAQs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (faqs?.faqs?.length === 0) {
     return null;
+  }
+
+
+  const categories = ['all', ...Array.from(new Set(faqs?.faqs?.map((faq: any) => faq.category)))];
+  const filteredFAQs = selectedCategory === 'all'
+    ? faqs?.faqs
+    : faqs?.faqs?.filter((faq: any) => faq.category === selectedCategory);
+
+  if (loading) {
+    return (
+      <section className="py-24 bg-slate-50 dark:bg-slate-900">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   const Wrapper = isBuilderSection ? 'div' : 'section';
@@ -161,6 +205,6 @@ export default function FAQ({ title, description, faqs: customFaqs, isBuilderSec
           </Link>
         </motion.div>
       </div>
-    </section>
+    </Wrapper>
   );
 }
