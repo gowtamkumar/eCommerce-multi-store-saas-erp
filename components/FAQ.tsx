@@ -145,7 +145,7 @@ export default function FAQ({ title, description, faqs: customFaqs, isBuilderSec
         <div className="max-w-4xl mx-auto space-y-4">
           {(filteredFAQs || [])?.map((faq: any, index: number) => (
             <motion.div
-              key={faq.id}
+              key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}

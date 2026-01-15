@@ -98,93 +98,97 @@ const Hero = ({ product, title, description, isBuilderSection = false }: HeroPro
               </h1>
 
               <div className="text-lg text-slate-600 dark:text-slate-300 max-w-xl leading-relaxed prose prose-lg dark:prose-invert" dangerouslySetInnerHTML={{ __html: displayDescription }} />
-
-              <div className="space-y-2">
-                {product?.discountAmount > 0 ? (
-                  <div className="flex items-center gap-4">
-                    <div className="flex flex-col">
-                      <span className="text-slate-400 line-through text-sm font-medium">
+              {
+                product?.price && <>
+                  <div className="space-y-2">
+                    {product?.discountAmount > 0 ? (
+                      <div className="flex items-center gap-4">
+                        <div className="flex flex-col">
+                          <span className="text-slate-400 line-through text-sm font-medium">
+                            {formatPrice(product?.price || 0)}
+                          </span>
+                          <span className="text-4xl font-bold text-slate-900 dark:text-white font-display">
+                            {formatPrice((product?.price || 0) - (product?.discountAmount || 0))}
+                          </span>
+                        </div>
+                        <div className="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm font-bold animate-bounce-subtle">
+                          SAVE {formatPrice(product?.discountAmount || 0)}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-4xl font-bold text-slate-900 dark:text-white font-display">
                         {formatPrice(product?.price || 0)}
                       </span>
-                      <span className="text-4xl font-bold text-slate-900 dark:text-white font-display">
-                        {formatPrice((product?.price || 0) - (product?.discountAmount || 0))}
-                      </span>
-                    </div>
-                    <div className="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-sm font-bold animate-bounce-subtle">
-                      SAVE {formatPrice(product?.discountAmount || 0)}
-                    </div>
+                    )}
                   </div>
-                ) : (
-                  <span className="text-4xl font-bold text-slate-900 dark:text-white font-display">
-                    {formatPrice(product?.price || 0)}
-                  </span>
-                )}
-              </div>
 
-              <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={() => setIsCheckoutOpen(true)}
-                  className="px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-full font-semibold transition-all shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 flex items-center gap-2 group"
-                >
-                  Buy Now - {formatPrice((product?.price || 0) - (product?.discountAmount || 0))}
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-                <button
-                  onClick={() => product?.videoUrl ? setIsVideoOpen(true) : toast.error('No video available for this product')}
-                  className="px-8 py-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-full font-semibold transition-all flex items-center gap-2"
-                >
-                  <Play className="w-4 h-4 fill-current" />
-                  Watch Demo
-                </button>
-                <button
-                  onClick={handleShare}
-                  className="p-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-full font-semibold transition-all flex items-center gap-2 relative"
-                  title="Share Product"
-                >
-                  {copied ? (
-                    <Check className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <Share2 className="w-5 h-5" />
-                  )}
-                  {copied && (
-                    <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 text-white text-[10px] rounded shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-1">
-                      Link Copied!
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              <div className="flex items-center gap-4 pt-4">
-                <div className="flex -space-x-3">
-                  {(product?.socialProof?.avatars?.length > 0
-                    ? product.socialProof.avatars
-                    : [1, 2, 3, 4].map((i: number) => `https://i.pravatar.cc/100?img=${i + 10}`)
-                  ).map((avatar: string, i: number) => (
-                    <div
-                      key={i}
-                      className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 overflow-hidden"
+                  <div className="flex flex-wrap gap-4">
+                    <button
+                      onClick={() => setIsCheckoutOpen(true)}
+                      className="px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-full font-semibold transition-all shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 flex items-center gap-2 group"
                     >
-                      <Image
-                        src={avatar}
-                        alt="User"
-                        width={40}
-                        height={40}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-1">
-                  <div className="flex text-yellow-400">
-                    {Array.from({ length: Math.min(5, Math.max(1, product?.socialProof?.rating || 5)) }).map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-current" />
-                    ))}
+                      Buy Now - {formatPrice((product?.price || 0) - (product?.discountAmount || 0))}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                    <button
+                      onClick={() => product?.videoUrl ? setIsVideoOpen(true) : toast.error('No video available for this product')}
+                      className="px-8 py-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-full font-semibold transition-all flex items-center gap-2"
+                    >
+                      <Play className="w-4 h-4 fill-current" />
+                      Watch Demo
+                    </button>
+                    <button
+                      onClick={handleShare}
+                      className="p-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-full font-semibold transition-all flex items-center gap-2 relative"
+                      title="Share Product"
+                    >
+                      {copied ? (
+                        <Check className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <Share2 className="w-5 h-5" />
+                      )}
+                      {copied && (
+                        <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 text-white text-[10px] rounded shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-1">
+                          Link Copied!
+                        </span>
+                      )}
+                    </button>
                   </div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                    Loved by {product?.socialProof?.count?.toLocaleString() || '2,000'}+ {product?.socialProof?.noun || 'customers'}
-                  </p>
-                </div>
-              </div>
+
+                  <div className="flex items-center gap-4 pt-4">
+                    <div className="flex -space-x-3">
+                      {(product?.socialProof?.avatars?.length > 0
+                        ? product.socialProof.avatars
+                        : [1, 2, 3, 4].map((i: number) => `https://i.pravatar.cc/100?img=${i + 10}`)
+                      ).map((avatar: string, i: number) => (
+                        <div
+                          key={i}
+                          className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 overflow-hidden"
+                        >
+                          <Image
+                            src={avatar}
+                            alt="User"
+                            width={40}
+                            height={40}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex text-yellow-400">
+                        {Array.from({ length: Math.min(5, Math.max(1, product?.socialProof?.rating || 5)) }).map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-current" />
+                        ))}
+                      </div>
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                        Loved by {product?.socialProof?.count?.toLocaleString() || '2,000'}+ {product?.socialProof?.noun || 'customers'}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              }
+
             </motion.div>
 
             <motion.div
