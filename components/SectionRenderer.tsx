@@ -31,7 +31,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
                 />
               );
             case "product-grid":
-              return <ProductGrid />;
+              return <ProductGrid productIds={section.content?.productIds} />;
             case "features":
               return <Features product={section.content?.product} />;
             case "rich-text":

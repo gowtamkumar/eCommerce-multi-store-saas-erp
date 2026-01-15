@@ -4,6 +4,7 @@ import { PageBuilderSection } from '@/types/page-builder';
 import { ChevronDown, ChevronUp, Copy, GripVertical, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import RichEditor from '../RichEditor';
+import ProductGridEditor from './ProductGridEditor';
 import StylePanel from './StylePanel';
 
 interface SectionEditorProps {
@@ -133,9 +134,10 @@ export default function SectionEditor({ section, onUpdate, onDelete, onDuplicate
 
             {/* Product Grid */}
             {section.type === 'product-grid' && (
-              <div className="text-center py-8 text-slate-500 text-sm bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                This will display your product collection automatically
-              </div>
+              <ProductGridEditor
+                content={section.content}
+                onUpdate={updateContent}
+              />
             )}
 
             {/* FAQ Section */}
@@ -144,13 +146,13 @@ export default function SectionEditor({ section, onUpdate, onDelete, onDuplicate
                 <input
                   type="text"
                   placeholder="Section Title (Optional)"
-                  value={section.content.title || ''}
+                  value={section?.content?.title || ''}
                   onChange={(e) => updateContent('title', e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
                 <textarea
                   placeholder="Description (Optional)"
-                  value={section.content.description || ''}
+                  value={section.content?.description || ''}
                   onChange={(e) => updateContent('description', e.target.value)}
                   rows={2}
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
