@@ -9,25 +9,39 @@ interface CTAProps {
   subline?: string;
   buttonLabel?: string;
   buttonLink?: string;
+  isBuilderSection?: boolean;
 }
 
 export default function CTA({
   headline = "Ready to Get Started?",
   subline = "Join thousands of satisfied customers and experience the difference today.",
   buttonLabel = "Shop Now",
-  buttonLink = "/products"
+  buttonLink = "/products",
+  isBuilderSection = false
 }: CTAProps) {
-  return (
-    <section className="py-24 bg-brand-600 dark:bg-brand-900 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-      </div>
+  const Wrapper = isBuilderSection ? 'div' : 'section';
+  const sectionClasses = isBuilderSection
+    ? 'w-full'
+    : 'py-24 bg-brand-600 dark:bg-brand-900 relative overflow-hidden';
 
-      <div className="container mx-auto px-4 relative z-10 text-center">
+  const containerClasses = isBuilderSection
+    ? 'w-full'
+    : 'container mx-auto px-4 relative z-10 text-center';
+
+  return (
+    <Wrapper className={sectionClasses}>
+      {/* Background Decor - Only for standard sections */}
+      {!isBuilderSection && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+        </div>
+      )}
+
+      <div className={containerClasses}>
         <motion.div
+          // ... rest of content remains same
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}

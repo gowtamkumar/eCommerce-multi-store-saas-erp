@@ -4,7 +4,8 @@ import SectionRenderer from '@/components/SectionRenderer';
 import { fetchAPI } from '@/lib/api';
 import { getSiteSettings } from '@/lib/getSettings';
 import { notFound } from 'next/navigation';
-import ReactMarkdown from 'remark-gfm';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 async function getPage(slug: string) {
   try {

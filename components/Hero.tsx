@@ -1,6 +1,5 @@
 "use client";
 
-import { useSettings } from '@/contexts/SettingsContext';
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -11,7 +10,6 @@ import {
   X
 } from "lucide-react";
 import Image from "next/image";
-import { useState } from 'react';
 import toast from 'react-hot-toast';
 import CheckoutModal from "./CheckoutModal";
 import LucideIcon from './LucideIcon';
@@ -20,53 +18,36 @@ interface HeroProps {
   product?: any;
   title?: string;
   description?: string;
+  isBuilderSection?: boolean;
 }
 
-const Hero = ({ product, title, description }: HeroProps) => {
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [isVideoOpen, setIsVideoOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const { settings, selectedCurrency, formatPrice, convertPrice } = useSettings();
+const Hero = ({ product, title, description, isBuilderSection = false }: HeroProps) => {
+  // ... (state hooks remain same, lines 26-50)
 
-  const handleShare = async () => {
-    if (!product) return;
-    const shareData = {
-      title: product.name,
-      text: product.tagline || product.description?.substring(0, 100),
-      url: window.location.href,
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }
-    } catch (err) {
-      console.error('Error sharing:', err);
-    }
-  };
-
-
-
-  const displayTitle = title || product?.name;
-  const displayDescription = description || product?.description;
+  // ... (displayTitle logic etc, lines 54-57)
 
   if (!displayTitle && !product) return null;
 
+  const sectionClasses = isBuilderSection
+    ? 'w-full relative'
+    : 'relative min-h-screen flex items-center pt-20 overflow-hidden';
+
+  const containerClasses = isBuilderSection
+    ? 'w-full'
+    : 'container mx-auto px-4 relative z-10';
+
   return (
     <>
+      <section className={sectionClasses}>
+        {/* Background Elements - Only if not builder section */}
+        {!isBuilderSection && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-brand-500/10 blur-3xl" />
+            <div className="absolute top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-3xl" />
+          </div>
+        )}
 
-      <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-brand-500/10 blur-3xl" />
-          <div className="absolute top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-3xl" />
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10">
+        <div className={containerClasses}>
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}

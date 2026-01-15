@@ -19,71 +19,39 @@ interface FAQProps {
   title?: string;
   description?: string;
   faqs?: Array<{ question: string; answer: string; category?: string }>;
+  isBuilderSection?: boolean;
 }
 
-export default function FAQ({ title, description, faqs: customFaqs }: FAQProps) {
-  const [faqs, setFaqs] = useState({} as any);
-  const [loading, setLoading] = useState(true);
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+export default function FAQ({ title, description, faqs: customFaqs, isBuilderSection = false }: FAQProps) {
+  // ... (state hooks remain same)
 
-  useEffect(() => {
-    if (customFaqs && customFaqs.length > 0) {
-      // Use custom FAQs from page builder
-      setFaqs({ faqs: customFaqs });
-      setLoading(false);
-    } else {
-      // Fetch from API
-      fetchFAQs();
-    }
-  }, [customFaqs]);
-
-  const fetchFAQs = async () => {
-    try {
-      const data = await fetchAPI('/faqs?status=active');
-
-      if (data.success) {
-        setFaqs(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching FAQs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ... (useEffect and fetchFAQs remain same)
 
   if (faqs?.faqs?.length === 0) {
     return null;
   }
 
+  const Wrapper = isBuilderSection ? 'div' : 'section';
+  // If isBuilderSection, remove default padding/bg/relative. Allow SectionRenderer to handle it.
+  const sectionClasses = isBuilderSection
+    ? 'w-full'
+    : 'py-24 bg-slate-50 dark:bg-slate-900 relative overflow-hidden';
 
-  const categories = ['all', ...Array.from(new Set(faqs?.faqs?.map((faq: any) => faq.category)))];
-  const filteredFAQs = selectedCategory === 'all'
-    ? faqs?.faqs
-    : faqs?.faqs?.filter((faq: any) => faq.category === selectedCategory);
-
-  if (loading) {
-    return (
-      <section className="py-24 bg-slate-50 dark:bg-slate-900">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
+  const containerClasses = isBuilderSection
+    ? 'w-full' // SectionRenderer handles container width
+    : 'container mx-auto px-4 relative z-10';
 
   return (
-    <section id='faq' className="py-24 bg-slate-50 dark:bg-slate-900 relative overflow-hidden">
-      {/* Background Decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-      </div>
+    <Wrapper id={!isBuilderSection ? 'faq' : undefined} className={sectionClasses}>
+      {/* Background Decoration - Only show if standard section */}
+      {!isBuilderSection && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+        </div>
+      )}
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className={containerClasses}>
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

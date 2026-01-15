@@ -28,15 +28,16 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
                   product={section.content?.product}
                   title={section.content?.headline}
                   description={section.content?.subline}
+                  isBuilderSection={true}
                 />
               );
             case "product-grid":
-              return <ProductGrid productIds={section.content?.productIds} />;
+              return <ProductGrid productIds={section.content?.productIds} isBuilderSection={true} />;
             case "features":
-              return <Features product={section.content?.product} />;
+              return <Features product={section.content?.product} isBuilderSection={true} />;
             case "rich-text":
               return (
-                <div className="container mx-auto px-4 prose dark:prose-invert max-w-4xl">
+                <div className="prose dark:prose-invert max-w-none">
                   <div dangerouslySetInnerHTML={{ __html: section.content?.html || '' }} />
                 </div>
               );
@@ -46,6 +47,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
                   title={section.content?.title}
                   description={section.content?.description}
                   faqs={section.content?.faqs}
+                  isBuilderSection={true}
                 />
               );
             case "cta":
@@ -55,6 +57,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
                   subline={section.content?.subline}
                   buttonLabel={section.content?.buttonLabel}
                   buttonLink={section.content?.buttonLink}
+                  isBuilderSection={true}
                 />
               );
             default:
