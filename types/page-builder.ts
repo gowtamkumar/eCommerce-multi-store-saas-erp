@@ -8,12 +8,12 @@ export interface SectionStyles {
   width: 'full' | 'container' | 'narrow' | 'custom';
   customWidth?: string;
   alignment: 'left' | 'center' | 'right';
-  
+
   // Colors
   backgroundColor?: string;
   textColor?: string;
   borderColor?: string;
-  
+
   // Spacing (in pixels)
   paddingTop: number;
   paddingBottom: number;
@@ -21,12 +21,12 @@ export interface SectionStyles {
   paddingRight: number;
   marginTop: number;
   marginBottom: number;
-  
+
   // Border
   borderWidth: number;
   borderRadius: number;
   borderStyle: 'none' | 'solid' | 'dashed' | 'dotted';
-  
+
   // Effects
   boxShadow: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   opacity: number;
@@ -55,7 +55,7 @@ export type SectionType = 'hero' | 'rich-text' | 'product-grid' | 'faq' | 'cta' 
 export interface PageBuilderSection {
   id: string;
   type: SectionType;
-  content: Record<string, any>;
+  content: Record<string, unknown>;
   styles: SectionStyles;
   order: number;
   isExpanded: boolean;
@@ -79,5 +79,5 @@ export interface SectionTemplate {
   label: string;
   icon: string;
   description: string;
-  defaultContent: Record<string, any>;
+  defaultContent: Record<string, unknown>;
 }

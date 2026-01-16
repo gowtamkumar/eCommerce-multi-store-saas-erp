@@ -1,30 +1,23 @@
-import FAQ from '@/components/FAQ';
-import Features from '@/components/Features';
 import Footer from '@/components/Footer';
-import Hero from '@/components/Hero';
 import Navbar from '@/components/Navbar';
 import PaymentStatus from '@/components/PaymentStatus';
-import ProductDetails from '@/components/ProductDetails';
-import Reviews from '@/components/Reviews';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
+import FAQ from '@/components/FAQ';
+import Features from '@/components/Features';
+import Hero from '@/components/Hero';
+import ProductDetails from '@/components/ProductDetails';
 import RelatedProducts from '@/components/RelatedProducts';
+import Reviews from '@/components/Reviews';
+import PageRenderer from '@/components/website/builder/PageRenderer';
 import { fetchAPI } from "@/lib/api";
 
 async function getProduct(slug: string) {
     try {
-        // const tenantId = await resolveTenantId();
-        // if (!tenantId) return null;
-
-        // const res = await fetchAPI(`/products/slug/${slug}`, {
-        //     headers: { "x-tenant-id": tenantId },
-        //     cache: 'no-store'
-        // });
-
-
-        const res = await fetchAPI(`/products/slug/${slug}`);
-
+        const res = await fetchAPI(`/products/slug/${slug}`, {
+            cache: 'no-store' // Ensure fresh data for builder updates
+        });
         return res.success ? res.data : null;
     } catch (error) {
         console.error("Error fetching product:", error);
@@ -85,17 +78,33 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         notFound();
     }
 
+    // Check if product uses the new builder system
+    const hasBuilderSections = product.sections && product.sections.length > 0;
+
     return (
         <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
             <PaymentStatus />
             <Navbar />
-            <Hero product={product} />
-            <Features product={product} />
-            <ProductDetails product={product} />
-            <Reviews />
-            <RelatedProducts currentProductId={product.id} />
-            <FAQ />
-            <Footer />
+
+            {hasBuilderSections ? (
+                // Dynamic Builder Layout
+                <div className="flex flex-col">
+                    <PageRenderer sections={product.sections} product={product} />
+                    <RelatedProducts currentProductId={product.id} />
+                    <Footer />
+                </div>
+            ) : (
+                // Legacy Static Layout
+                <>
+                    <Hero product={product} />
+                    <Features product={product} />
+                    <ProductDetails product={product} />
+                    <Reviews />
+                    <RelatedProducts currentProductId={product.id} />
+                    <FAQ />
+                    <Footer />
+                </>
+            )}
         </main>
     );
 }

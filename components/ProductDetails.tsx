@@ -45,7 +45,7 @@ const ProductDetails = ({ product }: { product: any }) => {
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-20">
           <h2 className="text-brand-600 dark:text-brand-400 font-semibold tracking-wide uppercase text-sm mb-3">
-            {product.sections?.techSpecs?.heading || "Technical Specifications"}
+            {product.sections?.techSpecs?.heading || "Specifications"}
           </h2>
           <h3 className="text-3xl md:text-5xl font-bold font-display text-slate-900 dark:text-white mb-6">
             {product.sections?.techSpecs?.subheading ? (

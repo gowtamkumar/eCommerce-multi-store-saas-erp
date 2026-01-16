@@ -21,9 +21,11 @@ interface HeroProps {
   title?: string;
   description?: string;
   isBuilderSection?: boolean;
+  highlights?: any[];
+  badgeText?: string;
 }
 
-const Hero = ({ product, title, description, isBuilderSection = false }: HeroProps) => {
+const Hero = ({ product, title, description, isBuilderSection = false, highlights, badgeText }: HeroProps) => {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -89,7 +91,7 @@ const Hero = ({ product, title, description, isBuilderSection = false }: HeroPro
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
                 </span>
-                {product?.releaseBadgeText || "New Release 2024"}
+                {badgeText || product?.releaseBadgeText || "New Release 2024"}
               </div>
 
               <h1 className="text-5xl lg:text-7xl font-bold tracking-tight font-display text-balance">
@@ -214,9 +216,10 @@ const Hero = ({ product, title, description, isBuilderSection = false }: HeroPro
               </div>
 
               {/* Floating Elements - Dynamic Highlights */}
-              {product?.heroHighlights && product.heroHighlights.length > 0 && (
+              {/* Use highlights prop if available, otherwise check product.heroHighlights */}
+              {(highlights || (product?.heroHighlights && product.heroHighlights.length > 0)) && (
                 <div className="absolute inset-0 pointer-events-none">
-                  {product.heroHighlights.map((highlight: any, index: number) => {
+                  {(highlights || product.heroHighlights).map((highlight: any, index: number) => {
                     const colorClasses: Record<string, string> = {
                       green: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
                       blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",

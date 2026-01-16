@@ -91,18 +91,13 @@ export class ProductEntity {
     releaseBadgeText: string;
 
     @Column({ type: 'jsonb', nullable: true })
-    sections: {
-        techSpecs?: {
-            heading: string;
-            subheading: string;
-            description: string;
-        };
-        features?: {
-            heading: string;
-            subheading: string;
-            description: string;
-        };
-    };
+    sections: Array<{
+        id: string;
+        type: string;
+        content: any;
+        settings?: any;
+        order?: number;
+    }>;
 
     @Column({
         type: 'enum',
