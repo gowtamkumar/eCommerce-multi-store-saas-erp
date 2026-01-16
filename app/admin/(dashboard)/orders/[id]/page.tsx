@@ -192,8 +192,8 @@ export default function OrderDetailsPage({
                 <span className="text-slate-500 italic">Payment Status</span>
                 <span
                   className={`font-bold uppercase ${order.paymentStatus === PaymentStatus.PAID
-                      ? "text-green-600"
-                      : "text-yellow-600"
+                    ? "text-green-600"
+                    : "text-yellow-600"
                     }`}
                 >
                   {order.paymentStatus}
@@ -553,8 +553,8 @@ export default function OrderDetailsPage({
                 </div>
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${order.paymentStatus === PaymentStatus.PAID
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30"
-                      : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30"
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30"
+                    : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30"
                     }`}
                 >
                   {order.paymentStatus}
