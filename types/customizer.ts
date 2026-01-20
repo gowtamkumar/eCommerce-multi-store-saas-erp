@@ -3,12 +3,15 @@
  */
 
 export type SectionType = 
-  | 'hero-banner' 
-  | 'featured-collection' 
+  | 'banner' 
   | 'product-slider' 
-  | 'rich-text' 
-  | 'image-with-text' 
-  | 'newsletter';
+  | 'category-grid' 
+  | 'offer-banner' 
+  | 'review-slider' 
+  | 'text-block' 
+  | 'image-block' 
+  | 'button' 
+  | 'faq-section';
 
 export interface SectionStyles {
   paddingTop: number;
@@ -21,7 +24,7 @@ export interface CustomizerSection {
   id: string;
   type: SectionType;
   settings: Record<string, any>;
-  styles: SectionStyles;
+  styles?: SectionStyles;
   disabled?: boolean;
 }
 

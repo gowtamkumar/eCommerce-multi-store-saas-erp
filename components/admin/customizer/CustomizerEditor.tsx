@@ -1,9 +1,12 @@
 "use client";
 
+import { fetchAPI } from '@/lib/api';
 import { CustomizerSection, PageData } from '@/types/customizer';
 import { ArrowLeft, Eye, Layout, Monitor, Save, Settings, Smartphone } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { toast } from 'react-hot-toast';
+import PageSettings from './PageSettings';
 import Preview from './Preview';
 import SettingsPanel from './SettingsPanel';
 import Sidebar from './Sidebar';
@@ -22,8 +25,25 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
 
   const handleSave = async () => {
     setIsSaving(true);
-    // TODO: Implement save logic
-    setTimeout(() => setIsSaving(false), 1000);
+    try {
+      await fetchAPI(`/pages/${pageId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          title: data.title,
+          slug: data.slug,
+          sections: data.content.sections,
+          metaTitle: data.metaTitle,
+          metaDescription: data.metaDescription,
+          status: data.status,
+        }),
+      });
+      toast.success('Page saved successfully');
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast.error(error.message || 'Failed to save page');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const selectedSection = data.content.sections.find(s => s.id === selectedSectionId);
@@ -102,7 +122,10 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
                 onUpdate={(sections: CustomizerSection[]) => setData({ ...data, content: { ...data.content, sections } })}
               />
             ) : (
-              <div className="p-6 text-slate-500 text-sm text-center">Global theme settings coming soon</div>
+              <PageSettings
+                data={data}
+                onUpdate={(updatedData) => setData(updatedData)}
+              />
             )}
           </div>
         </aside>

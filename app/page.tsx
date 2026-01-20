@@ -97,14 +97,15 @@ export default async function Home() {
 
 
   // If a custom home page is designed, render it
-  if (dynamicPage && dynamicPage.sections && dynamicPage.sections.length > 0 && settings.productMode === 'multiple') {
+  const sections = dynamicPage?.content?.sections || dynamicPage?.sections;
+  if (sections && sections.length > 0 && settings.productMode === 'multiple') {
     return (
       <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
         <Suspense fallback={null}>
           <PaymentStatus />
         </Suspense>
         <Navbar />
-        <SectionRenderer sections={dynamicPage.sections} />
+        <SectionRenderer sections={sections} />
         <WhatsAppWidget />
         <Footer />
       </main>

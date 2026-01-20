@@ -1,7 +1,7 @@
 "use client";
 
 import { CustomizerSection, SectionType } from '@/types/customizer';
-import { Grid, GripVertical, ImageIcon, Layout, Mail, Plus, Sliders, Trash2, Type } from 'lucide-react';
+import { Grid, GripVertical, HelpCircle, ImageIcon, Layout, MessageSquare, MousePointer2, Plus, Sliders, Tag, Trash2, Type } from 'lucide-react';
 
 interface SidebarProps {
   sections: CustomizerSection[];
@@ -11,12 +11,15 @@ interface SidebarProps {
 }
 
 const SECTION_ICONS: Record<SectionType, any> = {
-  'hero-banner': Layout,
-  'featured-collection': Grid,
+  'banner': Layout,
   'product-slider': Sliders,
-  'rich-text': Type,
-  'image-with-text': ImageIcon,
-  'newsletter': Mail,
+  'category-grid': Grid,
+  'offer-banner': Tag,
+  'review-slider': MessageSquare,
+  'text-block': Type,
+  'image-block': ImageIcon,
+  'button': MousePointer2,
+  'faq-section': HelpCircle,
 };
 
 export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: SidebarProps) {

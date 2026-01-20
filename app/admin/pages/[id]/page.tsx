@@ -30,18 +30,28 @@ export default function CustomizerPage({ params }: { params: Promise<{ id: strin
     try {
       const res = await fetchAPI(`/pages/${resolvedParams.id}`);
       if (res.success) {
-        // Adapt old data structure if needed
-        const content = res.data.content || { sections: [] };
-        // If old sections existed but were not in 'content', migrate them
-        if (res.data.sections && !res.data.content) {
-          content.sections = res.data.sections.map((s: any) => ({
-            id: s.id,
-            type: s.type === 'hero' ? 'hero-banner' : s.type, // Map old types
-            settings: s.content || {},
-            styles: s.styles || { paddingTop: 40, paddingBottom: 40 },
-          }));
-        }
-        setData({ ...res.data, content });
+        const page = res.data;
+        // The entity has 'sections' column, but Customizer expects data.content.sections
+        const sections = page.sections || [];
+
+        const adaptedSections = sections.map((s: any) => ({
+          id: s.id,
+          type: s.type === 'hero' ? 'hero-banner' : s.type, // Migration support
+          settings: s.settings || s.content || {}, // Handle renamed content field
+          styles: s.styles || { paddingTop: 40, paddingBottom: 40 },
+          disabled: s.disabled || false,
+        }));
+
+        setData({
+          id: page.id,
+          title: page.title || "",
+          slug: page.slug || "",
+          isHomePage: page.isHomePage || false,
+          status: page.status || "published",
+          metaTitle: page.metaTitle || "",
+          metaDescription: page.metaDescription || "",
+          content: { sections: adaptedSections }
+        });
       } else {
         toast.error("Page not found");
       }

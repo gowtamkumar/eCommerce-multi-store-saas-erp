@@ -1,7 +1,7 @@
 "use client";
 
 import { CustomizerSection } from '@/types/customizer';
-import { Image as ImageIcon, Palette, Settings2, Type, X } from 'lucide-react';
+import { Palette, Settings2, Type, X } from 'lucide-react';
 
 interface SettingsPanelProps {
   section: CustomizerSection;
@@ -20,7 +20,7 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
   const updateStyle = (key: string, value: any) => {
     onUpdate({
       ...section,
-      styles: { ...section.styles, [key]: value },
+      styles: { ...(section.styles || { paddingTop: 40, paddingBottom: 40 }), [key]: value },
     });
   };
 
@@ -51,70 +51,58 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Content</h3>
           </div>
 
-          {section.type === 'hero-banner' && (
+          {section.type === 'banner' && (
             <>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Headline</label>
                 <input
                   type="text"
-                  value={section.settings.headline || ''}
+                  value={section.settings?.headline || ''}
                   onChange={(e) => updateSetting('headline', e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                  placeholder="The primary title"
+                  placeholder="e.g. Summer Collection 2026"
                 />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Subline</label>
                 <textarea
-                  value={section.settings.subline || ''}
+                  value={section.settings?.subline || ''}
                   onChange={(e) => updateSetting('subline', e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                  placeholder="Short description"
+                  placeholder="Short description under headline"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase text-center block mb-2">Banner Image</label>
-                <div className="aspect-video bg-slate-100 dark:bg-slate-800 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-brand-500 transition-all p-4 group">
-                  <div className="p-3 bg-white dark:bg-slate-900 rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                    <ImageIcon className="w-5 h-5 text-slate-400 group-hover:text-brand-600" />
-                  </div>
-                  <p className="text-[10px] font-bold text-slate-500">Select Image</p>
-                </div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Button Text</label>
+                <input
+                  type="text"
+                  value={section.settings?.buttonText || ''}
+                  onChange={(e) => updateSetting('buttonText', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                  placeholder="e.g. Shop Now"
+                />
               </div>
             </>
           )}
 
-          {section.type === 'featured-collection' && (
+          {section.type === 'product-slider' && (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Collection Title</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Section Headline</label>
                 <input
                   type="text"
-                  value={section.settings.title || ''}
-                  onChange={(e) => updateSetting('title', e.target.value)}
+                  value={section.settings?.headline || ''}
+                  onChange={(e) => updateSetting('headline', e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                  placeholder="e.g. Best Sellers"
+                  placeholder="e.g. Trending Products"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Select Collection</label>
-                <select
-                  value={section.settings.collectionId || ''}
-                  onChange={(e) => updateSetting('collectionId', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                >
-                  <option value="">Select a collection</option>
-                  <option value="all">All Products</option>
-                  <option value="new">New Arrivals</option>
-                  <option value="summer">Summer Collection</option>
-                </select>
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Products Count</label>
                 <input
                   type="number"
-                  value={section.settings.count || 4}
+                  value={section.settings?.count || 4}
                   onChange={(e) => updateSetting('count', parseInt(e.target.value))}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                 />
@@ -122,84 +110,158 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
             </div>
           )}
 
-          {section.type === 'product-slider' && (
+          {section.type === 'category-grid' && (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Headline</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Grid Title</label>
                 <input
                   type="text"
-                  value={section.settings.headline || ''}
-                  onChange={(e) => updateSetting('headline', e.target.value)}
+                  value={section.settings?.title || ''}
+                  onChange={(e) => updateSetting('title', e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                  placeholder="e.g. Featured Products"
+                  placeholder="e.g. Shop by Category"
                 />
               </div>
-              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Auto-play Slider</span>
-                  <span className="text-[9px] text-slate-400">Scroll products automatically</span>
-                </div>
-                <button
-                  onClick={() => updateSetting('autoplay', !section.settings.autoplay)}
-                  className={`w-10 h-5 rounded-full relative transition-colors ${section.settings.autoplay ? 'bg-brand-600' : 'bg-slate-300'}`}
-                >
-                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${section.settings.autoplay ? 'left-6' : 'left-1'}`} />
-                </button>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Categories Count</label>
+                <input
+                  type="number"
+                  value={section.settings?.count || 6}
+                  onChange={(e) => updateSetting('count', parseInt(e.target.value))}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                />
               </div>
             </div>
           )}
 
-          {section.type === 'image-with-text' && (
+          {section.type === 'offer-banner' && (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Headline</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Main Title</label>
                 <input
                   type="text"
-                  value={section.settings.headline || ''}
+                  value={section.settings?.headline || ''}
                   onChange={(e) => updateSetting('headline', e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                  placeholder="e.g. Our Heritage"
+                  placeholder="e.g. FLASH SALE: 50% OFF"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Description</label>
-                <textarea
-                  value={section.settings.subline || ''}
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Offer Details</label>
+                <input
+                  type="text"
+                  value={section.settings?.subline || ''}
                   onChange={(e) => updateSetting('subline', e.target.value)}
-                  rows={4}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                  placeholder="Tell your story"
+                  placeholder="e.g. Limited time offer"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Image Alignment</label>
-                <div className="grid grid-cols-2 gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <button
-                    onClick={() => updateSetting('layout', 'left')}
-                    className={`py-1 text-[10px] font-bold rounded ${section.settings.layout !== 'right' ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600' : 'text-slate-500'}`}
-                  >
-                    Image Left
-                  </button>
-                  <button
-                    onClick={() => updateSetting('layout', 'right')}
-                    className={`py-1 text-[10px] font-bold rounded ${section.settings.layout === 'right' ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600' : 'text-slate-500'}`}
-                  >
-                    Image Right
-                  </button>
-                </div>
               </div>
             </div>
           )}
 
-          {section.type === 'rich-text' && (
+          {section.type === 'review-slider' && (
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase">HTML Content</label>
-              <textarea
-                value={section.settings.html || ''}
-                onChange={(e) => updateSetting('html', e.target.value)}
-                rows={10}
-                className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                placeholder="<p>Your content here</p>"
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Slider Headline</label>
+              <input
+                type="text"
+                value={section.settings?.title || ''}
+                onChange={(e) => updateSetting('title', e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                placeholder="e.g. Customer Stories"
+              />
+            </div>
+          )}
+
+          {section.type === 'text-block' && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Block Title</label>
+                <input
+                  type="text"
+                  value={section.settings?.headline || ''}
+                  onChange={(e) => updateSetting('headline', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Content (HTML)</label>
+                <textarea
+                  value={section.settings?.html || ''}
+                  onChange={(e) => updateSetting('html', e.target.value)}
+                  rows={8}
+                  className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                />
+              </div>
+            </div>
+          )}
+
+          {section.type === 'image-block' && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Block Headline</label>
+                <input
+                  type="text"
+                  value={section.settings?.headline || ''}
+                  onChange={(e) => updateSetting('headline', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Sub-headline</label>
+                <textarea
+                  value={section.settings?.subline || ''}
+                  onChange={(e) => updateSetting('subline', e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Layout</label>
+                <select
+                  value={section.settings?.layout || 'left'}
+                  onChange={(e) => updateSetting('layout', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                >
+                  <option value="left">Image Left</option>
+                  <option value="right">Image Right</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {section.type === 'button' && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Button Label</label>
+                <input
+                  type="text"
+                  value={section.settings?.text || ''}
+                  onChange={(e) => updateSetting('text', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Link URL</label>
+                <input
+                  type="text"
+                  value={section.settings?.link || ''}
+                  onChange={(e) => updateSetting('link', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                  placeholder="/shop or https://..."
+                />
+              </div>
+            </div>
+          )}
+
+          {section.type === 'faq-section' && (
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Section Title</label>
+              <input
+                type="text"
+                value={section.settings?.title || ''}
+                onChange={(e) => updateSetting('title', e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                placeholder="e.g. Frequently Asked Questions"
               />
             </div>
           )}
@@ -218,11 +280,11 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
               <div className="flex items-center gap-2">
                 <input
                   type="range" min="0" max="200" step="10"
-                  value={section.styles.paddingTop}
+                  value={section.styles?.paddingTop || 0}
                   onChange={(e) => updateStyle('paddingTop', parseInt(e.target.value))}
                   className="flex-1 accent-brand-600"
                 />
-                <span className="text-[10px] font-bold text-slate-500 w-8">{section.styles.paddingTop}px</span>
+                <span className="text-[10px] font-bold text-slate-500 w-8">{section.styles?.paddingTop || 0}px</span>
               </div>
             </div>
             <div className="space-y-1.5">
@@ -230,11 +292,11 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
               <div className="flex items-center gap-2">
                 <input
                   type="range" min="0" max="200" step="10"
-                  value={section.styles.paddingBottom}
+                  value={section.styles?.paddingBottom || 0}
                   onChange={(e) => updateStyle('paddingBottom', parseInt(e.target.value))}
                   className="flex-1 accent-brand-600"
                 />
-                <span className="text-[10px] font-bold text-slate-500 w-8">{section.styles.paddingBottom}px</span>
+                <span className="text-[10px] font-bold text-slate-500 w-8">{section.styles?.paddingBottom || 0}px</span>
               </div>
             </div>
           </div>
@@ -245,11 +307,11 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
               <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
                 <input
                   type="color"
-                  value={section.styles.backgroundColor || '#ffffff'}
+                  value={section.styles?.backgroundColor || '#ffffff'}
                   onChange={(e) => updateStyle('backgroundColor', e.target.value)}
                   className="w-8 h-8 rounded border-none bg-transparent"
                 />
-                <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles.backgroundColor || '#ffffff'}</span>
+                <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.backgroundColor || '#ffffff'}</span>
               </div>
             </div>
             <div className="space-y-2">
@@ -257,11 +319,11 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
               <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
                 <input
                   type="color"
-                  value={section.styles.textColor || '#000000'}
+                  value={section.styles?.textColor || '#000000'}
                   onChange={(e) => updateStyle('textColor', e.target.value)}
                   className="w-8 h-8 rounded border-none bg-transparent"
                 />
-                <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles.textColor || '#000000'}</span>
+                <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.textColor || '#000000'}</span>
               </div>
             </div>
           </div>

@@ -51,8 +51,8 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
             <Navbar />
             <div className="pt-20">
                 {/* If the page has modern sections, use the renderer */}
-                {page.sections && page.sections.length > 0 ? (
-                    <SectionRenderer sections={page.sections} />
+                {(page.content?.sections && page.content.sections.length > 0) || (page.sections && page.sections.length > 0) ? (
+                    <SectionRenderer sections={page.content?.sections || page.sections} />
                 ) : (
                     /* Fallback for legacy content-only pages */
                     <div className="pt-32 pb-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 font-inter">
@@ -61,7 +61,7 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
                         </h1>
                         <div
                             className="prose prose-lg dark:prose-invert max-w-none"
-                            dangerouslySetInnerHTML={{ __html: page.content || '' }}
+                            dangerouslySetInnerHTML={{ __html: typeof page.content === 'string' ? page.content : '' }}
                         />
                     </div>
                 )}

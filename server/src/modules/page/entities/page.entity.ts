@@ -1,12 +1,12 @@
 import {
-    Entity,
     Column,
-    PrimaryGeneratedColumn,
     CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
-    JoinColumn,
+    Entity,
     Index,
+    JoinColumn,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
@@ -31,9 +31,10 @@ export class PageEntity {
     @Column({ type: 'jsonb', nullable: true })
     sections: Array<{
         id: string;
-        type: 'hero' | 'features' | 'product-grid' | 'rich-text' | 'collection';
-        content: any;
+        type: 'banner' | 'product-slider' | 'category-grid' | 'offer-banner' | 'review-slider' | 'text-block' | 'image-block' | 'button' | 'faq-section' | string;
         settings?: any;
+        styles?: any;
+        disabled?: boolean;
     }>;
 
     @Column({ type: 'varchar', length: 255, nullable: true })
