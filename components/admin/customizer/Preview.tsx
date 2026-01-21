@@ -1,7 +1,8 @@
 "use client";
 
+import CategoryGrid from '@/components/CategoryGrid';
 import ProductSlider from '@/components/ProductSlider';
-import { CategoryItem, CustomizerSection, FAQItem, ReviewItem } from '@/types/customizer';
+import { CustomizerSection, FAQItem, ReviewItem } from '@/types/customizer';
 import { MousePointer2, Plus, Star, Tag } from 'lucide-react';
 
 interface PreviewProps {
@@ -118,37 +119,11 @@ function SectionRenderer({ section }: { section: CustomizerSection }) {
 
     case 'category-grid':
       return (
-        <section style={styles} className="px-10 py-16">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-3">{settings?.title || 'Explore Collections'}</h2>
-              <p className="text-slate-500 font-medium">Carefully curated selections</p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-              {(settings?.items || []).length > 0 ? (
-                settings.items.map((item: CategoryItem) => (
-                  <div key={item.id} className="relative aspect-[4/5] rounded-[2.5rem] bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center group overflow-hidden border border-slate-200 dark:border-slate-700">
-                    {item.image ? (
-                      <img src={item.image} alt={item.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center grayscale group-hover:grayscale-0 group-hover:scale-120 transition-all duration-700">
-                        <span className="text-7xl opacity-40 group-hover:opacity-100 transition-opacity">📦</span>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
-                      <h3 className="text-2xl font-bold text-white mb-2">{item.label}</h3>
-                      <button className="text-white text-xs font-bold uppercase tracking-widest hover:underline text-left">Shop Now →</button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-full py-12 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2.5rem]">
-                  Add items to your grid in the settings panel
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
+        <CategoryGrid
+          title={settings?.title}
+          count={settings?.count}
+          styles={styles}
+        />
       );
 
     case 'offer-banner':

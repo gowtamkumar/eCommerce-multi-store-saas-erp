@@ -1,6 +1,6 @@
 "use client";
 
-import { CategoryItem, CustomizerSection, FAQItem, ReviewItem } from '@/types/customizer';
+import { CustomizerSection, FAQItem, ReviewItem } from '@/types/customizer';
 import { ChevronDown, ChevronUp, Palette, Plus, Settings2, Trash2, Type, X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -149,37 +149,30 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
           {section.type === 'category-grid' && (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Grid Title</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Section Title</label>
                 <input
                   type="text"
                   value={settings?.title || ''}
                   onChange={(e) => updateSetting('title', e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="e.g. Explore Collections"
                 />
               </div>
-              <div className="space-y-4">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Categories</label>
-                {((section.settings as any).items || []).map((item: CategoryItem) => (
-                  <div key={item.id} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-800/50 shadow-sm">
-                    <button onClick={() => toggleExpand(item.id)} className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800">
-                      <span className="text-sm font-bold truncate">{item.label || 'Unnamed Category'}</span>
-                      {expandedItems.includes(item.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                    {expandedItems.includes(item.id) && (
-                      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                        <input type="text" placeholder="Label" value={item.label} onChange={(e) => updateArrayItem('items', item.id, { label: e.target.value })} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
-                        <input type="text" placeholder="Image URL" value={item.image} onChange={(e) => updateArrayItem('items', item.id, { image: e.target.value })} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
-                        <input type="text" placeholder="Link (e.g. /shop)" value={item.link} onChange={(e) => updateArrayItem('items', item.id, { link: e.target.value })} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
-                        <button onClick={() => removeArrayItem('items', item.id)} className="w-full py-1.5 text-[10px] font-bold text-red-500 flex items-center justify-center gap-1 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg">
-                          <Trash2 className="w-3 h-3" /> Remove Category
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <button onClick={() => addArrayItem('items', { label: 'New Category', image: '', link: '#' })} className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-bold text-slate-500 hover:border-brand-500 hover:text-brand-600 transition-all flex items-center justify-center gap-2">
-                  <Plus className="w-4 h-4" /> Add Category
-                </button>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Categories Count</label>
+                <input
+                  type="number"
+                  value={settings?.count || 6}
+                  onChange={(e) => updateSetting('count', parseInt(e.target.value))}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  min="1"
+                  max="12"
+                />
+              </div>
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  Categories are automatically fetched from your database
+                </p>
               </div>
             </div>
           )}

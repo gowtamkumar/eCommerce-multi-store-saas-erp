@@ -1,6 +1,7 @@
-import { CategoryItem, CustomizerSection, FAQItem, ReviewItem } from "@/types/customizer";
+import { CustomizerSection, FAQItem, ReviewItem } from "@/types/customizer";
 import { MousePointer2, Plus, Star, Tag } from "lucide-react";
 import React from "react";
+import CategoryGrid from "./CategoryGrid";
 import ProductSlider from "./ProductSlider";
 
 interface SectionRendererProps {
@@ -71,39 +72,11 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
 
             case "category-grid":
               return (
-                <div style={styles} className="px-4 md:px-10 py-16 md:py-24">
-                  <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16 space-y-4">
-                      <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">{settings?.title || 'Explore Collections'}</h2>
-                      <div className="w-24 h-1.5 bg-brand-600 mx-auto rounded-full" />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                      {(settings?.items || []).length > 0 ? (
-                        settings.items.map((item: CategoryItem) => (
-                          <div key={item.id} className="relative aspect-[4/5] rounded-[3rem] bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center group overflow-hidden border border-slate-200 dark:border-slate-700 transition-all hover:-translate-y-2">
-                            {item.image ? (
-                              <img src={item.image} alt={item.label} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000">
-                                <span className="text-8xl opacity-30 group-hover:opacity-100 transition-opacity">📦</span>
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-10">
-                              <h3 className="text-3xl font-black text-white mb-3 uppercase tracking-tight">{item.label}</h3>
-                              <button className="text-white text-sm font-bold uppercase tracking-[0.2em] hover:text-brand-400 transition-colors text-left flex items-center gap-2">
-                                Shop Collection <Plus className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="col-span-full py-16 text-center text-slate-400 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[3rem]">
-                          Add categories in the customizer settings panel
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <CategoryGrid
+                  title={settings?.title}
+                  count={settings?.count}
+                  styles={styles}
+                />
               );
 
             case "offer-banner":
