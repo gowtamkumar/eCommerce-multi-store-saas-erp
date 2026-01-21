@@ -26,19 +26,37 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await fetchAPI(`/pages/${pageId}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          title: data.title,
-          slug: data.slug,
-          isHomePage: data.isHomePage,
-          sections: data.content.sections,
-          metaTitle: data.metaTitle,
-          metaDescription: data.metaDescription,
-          status: data.status,
-        }),
-      });
-      toast.success('Page saved successfully');
+      const isNewPage = pageId === 'new';
+      const payload = {
+        title: data.title,
+        slug: data.slug,
+        isHomePage: data.isHomePage,
+        sections: data.content.sections,
+        metaTitle: data.metaTitle,
+        metaDescription: data.metaDescription,
+        status: data.status,
+      };
+
+      if (isNewPage) {
+        // Create new page with POST /pages
+        const response = await fetchAPI('/pages', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        toast.success('Page created successfully');
+
+        // Navigate to the newly created page to enable further editing
+        if (response?.id) {
+          window.location.href = `/admin/pages/${response.id}`;
+        }
+      } else {
+        // Update existing page with PUT /pages/:id
+        await fetchAPI(`/pages/${pageId}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+        toast.success('Page saved successfully');
+      }
     } catch (error: any) {
       console.error('Save error:', error);
       toast.error(error.message || 'Failed to save page');

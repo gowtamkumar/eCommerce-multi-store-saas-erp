@@ -148,7 +148,8 @@ export class OrderService {
 
         const queryBuilder = this.orderRepository
             .createQueryBuilder('order')
-            .leftJoinAndSelect('order.product', 'product')
+            .leftJoinAndSelect('order.items', 'items')
+            .leftJoinAndSelect('items.product', 'product')
             .where('order.tenantId = :tenantId', { tenantId });
 
         if (status) {
