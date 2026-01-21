@@ -1,17 +1,18 @@
 "use client";
 
+import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { fetchAPI } from "@/lib/api";
-import { Lock, LogOut, Menu, User, X } from "lucide-react";
+import { Lock, LogOut, Menu, ShoppingBag, User, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import CurrencySwitcher from "./CurrencySwitcher";
-import Template from "./Template";
 
 const Navbar = ({ settings: propSettings }: { settings?: any }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { settings: contextSettings } = useSettings();
+  const { totalItems } = useCart();
   const settings = propSettings || contextSettings;
   const brandName = settings?.brandName || "LuxeAudio";
 
@@ -86,13 +87,26 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 dark:bg-blue-400 transition-all group-hover:w-full"></span>
                 </Link>
               ))}
-
-              <Template />
             </div>
             <div className="flex items-center gap-4">
               <div className="hidden md:block">
                 <CurrencySwitcher />
               </div>
+              <Link
+                href="/cart"
+                className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative group"
+                title="Cart"
+              >
+                <div className="relative">
+                  <ShoppingBag className="w-5 h-5 text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                  {/* Badge */}
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full">
+                      {totalItems}
+                    </span>
+                  )}
+                </div>
+              </Link>
               <Link
                 href="/profile"
                 className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative group"

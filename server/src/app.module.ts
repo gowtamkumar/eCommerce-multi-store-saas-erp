@@ -9,6 +9,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 import { DatabaseModule } from './database/database.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { CartModule } from './modules/cart/cart.module';
 import { CategoryModule } from './modules/category/category.module';
 import { FaqModule } from './modules/faq/faq.module';
 import { FileModule } from './modules/file/file.module';
@@ -25,6 +26,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { TestimonialModule } from './modules/testimonial/testimonial.module';
+import { WishlistModule } from './modules/wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -54,6 +56,8 @@ import { TestimonialModule } from './modules/testimonial/testimonial.module';
     SuperAdminModule,
     MailModule,
     CategoryModule,
+    CartModule,
+    WishlistModule,
   ],
   controllers: [],
   providers: [

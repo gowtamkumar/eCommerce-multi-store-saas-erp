@@ -11,6 +11,7 @@ const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 
 import AuthProvider from "@/components/AuthProvider";
 import ToasterProvider from "@/components/ToasterProvider";
+import { CartProvider } from "@/contexts/CartContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 
 import { getSiteSettings } from "@/lib/getSettings";
@@ -33,8 +34,10 @@ export default async function RootLayout({
       <body className={`${inter.className} ${outfit.variable} antialiased`}>
         <AuthProvider>
           <SettingsProvider initialSettings={settings}>
-            <ToasterProvider />
-            {children}
+            <CartProvider>
+              <ToasterProvider />
+              {children}
+            </CartProvider>
           </SettingsProvider>
         </AuthProvider>
 

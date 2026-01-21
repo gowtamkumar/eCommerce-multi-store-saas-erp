@@ -1,9 +1,10 @@
 'use client';
 
 import Price from "@/components/Price";
+import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { motion } from 'framer-motion';
-import { Activity, Battery, Bluetooth, Mic, Shield, Wifi } from 'lucide-react';
+import { Activity, Battery, Bluetooth, Mic, Shield, ShoppingBag, Wifi } from 'lucide-react';
 import Image from 'next/image';
 
 interface ProductDetailsProps {
@@ -12,6 +13,7 @@ interface ProductDetailsProps {
 
 const ProductDetails = ({ product }: { product: any }) => {
   const { selectedCurrency, formatPrice, convertPrice } = useSettings();
+  const { addToCart } = useCart();
   if (!product) return null;
 
 
@@ -170,6 +172,15 @@ const ProductDetails = ({ product }: { product: any }) => {
                     </>
                   )}
                 </div>
+
+                {/* Add to Cart Button */}
+                <button
+                  onClick={() => addToCart(product.id, 1)}
+                  className="w-full mt-6 py-3 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-100 transition-colors flex items-center justify-center gap-2"
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                  Add to Cart
+                </button>
               </div>
             </div>
           </div>
