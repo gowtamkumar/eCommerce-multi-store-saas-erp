@@ -1,16 +1,18 @@
 import {
-    Entity,
     Column,
-    PrimaryGeneratedColumn,
     CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
+    Entity,
     JoinColumn,
+    ManyToOne,
+    OneToMany,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 import { ProductStatus } from '../../../common/enums/product-status.enum';
-import { TenantEntity } from '../../tenant/entities/tenant.entity';
-import { OneToMany } from 'typeorm';
 import { FaqEntity } from '../../faq/entities/faq.entity';
+import { TenantEntity } from '../../tenant/entities/tenant.entity';
+import { ProductAttributeEntity } from './attribute.entity';
+import { ProductVariantEntity } from './variant.entity';
 
 @Entity('products')
 export class ProductEntity {
@@ -108,6 +110,12 @@ export class ProductEntity {
 
     @OneToMany(() => FaqEntity, (faq) => faq.product)
     faqs: FaqEntity[];
+
+    @OneToMany(() => ProductAttributeEntity, (attr) => attr.product)
+    attributes: ProductAttributeEntity[];
+
+    @OneToMany(() => ProductVariantEntity, (variant) => variant.product)
+    variants: ProductVariantEntity[];
 
     @Column({ type: 'uuid' })
     tenantId: string;

@@ -1,14 +1,16 @@
 import {
+    ConflictException,
     Injectable,
     NotFoundException,
-    ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
-import { ProductEntity } from './entities/product.entity';
+import { Repository } from 'typeorm';
+import { FaqEntity } from '../faq/entities/faq.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { FaqEntity } from '../faq/entities/faq.entity';
+import { ProductAttributeEntity } from './entities/attribute.entity';
+import { ProductEntity } from './entities/product.entity';
+import { ProductVariantEntity } from './entities/variant.entity';
 
 @Injectable()
 export class ProductService {
@@ -17,6 +19,10 @@ export class ProductService {
         private productRepository: Repository<ProductEntity>,
         @InjectRepository(FaqEntity)
         private faqRepository: Repository<FaqEntity>,
+        @InjectRepository(ProductAttributeEntity)
+        private attributeRepository: Repository<ProductAttributeEntity>,
+        @InjectRepository(ProductVariantEntity)
+        private variantRepository: Repository<ProductVariantEntity>,
     ) { }
 
     async create(createProductDto: CreateProductDto, tenantId: string) {
@@ -29,7 +35,7 @@ export class ProductService {
             throw new ConflictException('Product with this slug already exists');
         }
 
-        const { faqs, ...productData } = createProductDto;
+        const { faqs, attributes, variants, ...productData } = createProductDto;
 
         const product = this.productRepository.create({
             ...productData,
@@ -38,6 +44,7 @@ export class ProductService {
 
         const savedProduct = await this.productRepository.save(product);
 
+        // Save FAQs
         if (faqs && faqs.length > 0) {
             const faqEntities = faqs.map(faq => this.faqRepository.create({
                 ...faq,
@@ -45,6 +52,26 @@ export class ProductService {
                 tenantId,
             }));
             await this.faqRepository.save(faqEntities);
+        }
+
+        // Save Attributes
+        if (attributes && attributes.length > 0) {
+            const attributeEntities = attributes.map(attr => this.attributeRepository.create({
+                ...attr,
+                productId: savedProduct.id,
+                tenantId,
+            }));
+            await this.attributeRepository.save(attributeEntities);
+        }
+
+        // Save Variants
+        if (variants && variants.length > 0) {
+            const variantEntities = variants.map(variant => this.variantRepository.create({
+                ...variant,
+                productId: savedProduct.id,
+                tenantId,
+            }));
+            await this.variantRepository.save(variantEntities);
         }
 
         return await this.findOne(savedProduct.id, tenantId);
@@ -83,7 +110,7 @@ export class ProductService {
     async findOne(id: string, tenantId: string) {
         const product = await this.productRepository.findOne({
             where: { id, tenantId },
-            relations: ['faqs'],
+            relations: ['faqs', 'attributes', 'variants'],
         });
 
         if (!product) {
@@ -120,16 +147,13 @@ export class ProductService {
             }
         }
 
-        const { faqs, ...productData } = updateProductDto;
+        const { faqs, attributes, variants, ...productData } = updateProductDto;
         Object.assign(product, productData);
         await this.productRepository.save(product);
 
+        // Sync FAQs
         if (faqs) {
-            // Simple sync: delete existing and recreate
-            // In a production app, you might want to update existing to preserve IDs, 
-            // but for this implementation, complete replacement is safer and easier to manage for the UI.
             await this.faqRepository.delete({ productId: product.id, tenantId });
-
             if (faqs.length > 0) {
                 const faqEntities = faqs.map(faq => this.faqRepository.create({
                     ...faq,
@@ -137,6 +161,32 @@ export class ProductService {
                     tenantId,
                 }));
                 await this.faqRepository.save(faqEntities);
+            }
+        }
+
+        // Sync Attributes
+        if (attributes) {
+            await this.attributeRepository.delete({ productId: product.id, tenantId });
+            if (attributes.length > 0) {
+                const attributeEntities = attributes.map(attr => this.attributeRepository.create({
+                    ...attr,
+                    productId: product.id,
+                    tenantId,
+                }));
+                await this.attributeRepository.save(attributeEntities);
+            }
+        }
+
+        // Sync Variants
+        if (variants) {
+            await this.variantRepository.delete({ productId: product.id, tenantId });
+            if (variants.length > 0) {
+                const variantEntities = variants.map(variant => this.variantRepository.create({
+                    ...variant,
+                    productId: product.id,
+                    tenantId,
+                }));
+                await this.variantRepository.save(variantEntities);
             }
         }
 
@@ -149,7 +199,24 @@ export class ProductService {
         return { success: true, message: 'Product deleted successfully' };
     }
 
-    async decrementStock(productId: string, quantity: number, tenantId: string) {
+    async decrementStock(productId: string, quantity: number, tenantId: string, variantId?: string) {
+        if (variantId) {
+            const variant = await this.variantRepository.findOne({
+                where: { id: variantId, productId, tenantId },
+            });
+
+            if (!variant) {
+                throw new NotFoundException('Product variant not found');
+            }
+
+            if (variant.stock < quantity) {
+                throw new ConflictException('Insufficient variant stock');
+            }
+
+            variant.stock -= quantity;
+            return await this.variantRepository.save(variant);
+        }
+
         const product = await this.findOne(productId, tenantId);
 
         if (product.stock < quantity) {

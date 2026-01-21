@@ -20,6 +20,8 @@ interface Product {
   features: string[];
   discountAmount?: number;
   slug: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function ProductsPage() {
@@ -141,6 +143,8 @@ export default function ProductsPage() {
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Price</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Stock</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Status</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Added</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Updated</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
@@ -193,6 +197,12 @@ export default function ProductsPage() {
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                       </select>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+                      {new Date(product.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+                      {new Date(product.updatedAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">

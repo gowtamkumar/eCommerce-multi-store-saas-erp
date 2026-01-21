@@ -1,14 +1,15 @@
-import {
-    IsString,
-    IsNumber,
-    IsArray,
-    IsOptional,
-    IsEnum,
-    ValidateNested,
-    Min,
-} from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+    IsArray,
+    IsEnum,
+    IsNumber,
+    IsObject,
+    IsOptional,
+    IsString,
+    Min,
+    ValidateNested,
+} from 'class-validator';
 import { ProductStatus } from '../../../common/enums/product-status.enum';
 
 class SocialProofDto {
@@ -89,6 +90,42 @@ class ProductFaqDto {
     @IsNumber()
     @IsOptional()
     order?: number;
+}
+
+class ProductAttributeDto {
+    @ApiProperty()
+    @IsString()
+    name: string;
+
+    @ApiProperty()
+    @IsArray()
+    @IsString({ each: true })
+    values: string[];
+}
+
+class ProductVariantDto {
+    @ApiProperty()
+    @IsString()
+    sku: string;
+
+    @ApiProperty({ required: false })
+    @IsNumber()
+    @IsOptional()
+    price?: number;
+
+    @ApiProperty()
+    @IsNumber()
+    @Min(0)
+    stock: number;
+
+    @ApiProperty({ required: false })
+    @IsArray()
+    @IsOptional()
+    images?: string[];
+
+    @ApiProperty()
+    @IsObject()
+    combination: Record<string, string>;
 }
 
 export class CreateProductDto {
@@ -194,4 +231,18 @@ export class CreateProductDto {
     @Type(() => ProductFaqDto)
     @IsOptional()
     faqs?: ProductFaqDto[];
+
+    @ApiProperty({ required: false, type: [ProductAttributeDto] })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => ProductAttributeDto)
+    @IsOptional()
+    attributes?: ProductAttributeDto[];
+
+    @ApiProperty({ required: false, type: [ProductVariantDto] })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => ProductVariantDto)
+    @IsOptional()
+    variants?: ProductVariantDto[];
 }

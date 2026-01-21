@@ -1,104 +1,19 @@
 'use client';
 
 import { fetchAPI } from '@/lib/api';
-import { Bold, Code, Eye, HelpCircle, Italic, Link as LinkIcon, List, ListOrdered, Loader2, MessageSquare, Plus, Quote, Save, Star, Type, Underline, X } from 'lucide-react';
+import { ProductAttribute, ProductVariant } from '@/types/product';
+import { Loader2, MessageSquare, Quote, Save, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
-import LucideIcon from '../LucideIcon';
-import IconPicker from './IconPicker';
-import ProductBuilder from './builder/ProductBuilder';
-import { Section } from './builder/types';
-import { generateId } from './builder/utils';
+import ProductVariants from './ProductVariants';
 
 interface ProductFormProps {
   initialData?: any;
   isEdit?: boolean;
 }
 
-const migrateSections = (initialData: any): Section[] => {
-  if (initialData?.sections && Array.isArray(initialData.sections) && initialData.sections.length > 0) {
-    return initialData.sections;
-  }
-
-  // Auto-Migration: Convert legacy fields to sections if no sections exist
-  const migrated: Section[] = [];
-
-  // 1. Hero Configuration
-  if (initialData?.tagline || initialData?.releaseBadgeText || (initialData?.heroHighlights && initialData.heroHighlights.length > 0)) {
-    migrated.push({
-      id: generateId(),
-      type: 'hero',
-      content: {
-        tagline: initialData.tagline,
-        badgeText: initialData.releaseBadgeText,
-        highlights: initialData.heroHighlights || []
-      },
-      order: migrated.length
-    });
-  }
-
-  // 2. Description
-  if (initialData?.description) {
-    migrated.push({
-      id: generateId(),
-      type: 'description',
-      content: { html: initialData.description },
-      order: migrated.length
-    });
-  }
-
-  // 3. Benefits
-  if (initialData?.keyBenefits && initialData.keyBenefits.length > 0) {
-    migrated.push({
-      id: generateId(),
-      type: 'benefits',
-      content: { heading: 'Key Benefits', items: initialData.keyBenefits },
-      order: migrated.length
-    });
-  }
-
-  // 4. Tech Specs
-  if (initialData?.specifications && initialData.specifications.length > 0) {
-    migrated.push({
-      id: generateId(),
-      type: 'techSpecs',
-      content: {
-        heading: 'Specifications',
-        items: initialData.specifications
-      },
-      order: migrated.length
-    });
-  }
-
-  // 5. Features
-  if (initialData?.features) {
-    // Only if text features exist
-    // Note: Old 'features' was comma-separated string, converting to simple bullets if possible or separate section
-  }
-
-  // 6. Social Proof
-  if (initialData?.socialProof) {
-    migrated.push({
-      id: generateId(),
-      type: 'socialProof',
-      content: initialData.socialProof,
-      order: migrated.length
-    });
-  }
-
-  // 7. FAQs
-  if (initialData?.faqs && initialData.faqs.length > 0) {
-    migrated.push({
-      id: generateId(),
-      type: 'faq',
-      content: { title: 'Frequently Asked Questions', items: initialData.faqs },
-      order: migrated.length
-    });
-  }
-
-  return migrated;
-};
+// Removed legacy migrateSections
 
 export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   const router = useRouter();
@@ -112,8 +27,10 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     discountAmount: initialData?.discountAmount || 0,
     stock: initialData?.stock || 0,
     images: initialData?.images?.join(',') || '',
-    sections: migrateSections(initialData),
+    sections: initialData?.sections || [],
     reviewSectionType: initialData?.reviewSectionType || 'testimonials',
+    attributes: initialData?.attributes || [] as ProductAttribute[],
+    variants: initialData?.variants || [] as ProductVariant[],
   });
 
   const generateSlug = (text: string) => {
@@ -139,6 +56,8 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       images: formData.images.split(',').map((s: string) => s.trim()).filter(Boolean),
       sections: formData.sections,
       reviewSectionType: formData.reviewSectionType,
+      attributes: formData.attributes,
+      variants: formData.variants,
     };
 
     console.log("payload", payload);
@@ -256,14 +175,14 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
           />
         </div>
 
-        {/* Page Builder */}
+        {/* Variants Section */}
         <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Page Content</h3>
-          <p className="text-sm text-slate-500 mb-6">Drag and drop sections to build your product page layout.</p>
-
-          <ProductBuilder
-            sections={formData.sections}
-            onChange={(newSections) => setFormData({ ...formData, sections: newSections })}
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Product Variants</h3>
+          <ProductVariants
+            attributes={formData.attributes}
+            variants={formData.variants}
+            basePrice={formData.price}
+            onChange={(attributes, variants) => setFormData({ ...formData, attributes, variants })}
           />
         </div>
 
