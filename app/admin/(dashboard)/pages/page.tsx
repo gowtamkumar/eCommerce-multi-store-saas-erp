@@ -1,6 +1,6 @@
 "use client";
 
-import ConfirmModal from "@/components/ConfirmModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { fetchAPI } from '@/lib/api';
 import { Eye, Home, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";

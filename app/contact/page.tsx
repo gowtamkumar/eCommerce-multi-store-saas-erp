@@ -1,6 +1,6 @@
-import ContactForm from '@/components/ContactForm';
-import Footer from '@/components/Footer';
-import Navbar from '@/components/Navbar';
+import ContactForm from '@/components/forms/ContactForm';
+import Footer from '@/components/layout/Footer';
+import Navbar from '@/components/layout/Navbar';
 import { getSiteSettings } from '@/lib/getSettings';
 import { Mail, MapPin, Phone } from 'lucide-react';
 

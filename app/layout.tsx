@@ -9,12 +9,12 @@ const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 //   description: "Premium audio equipment for the discerning listener.",
 // };
 
-import AuthProvider from "@/components/AuthProvider";
-import ToasterProvider from "@/components/ToasterProvider";
+import AuthProvider from "@/components/providers/AuthProvider";
+import ToasterProvider from "@/components/providers/ToasterProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 
-import CartDrawer from "@/components/CartDrawer";
+import CartDrawer from "@/components/store/CartDrawer";
 import { getSiteSettings } from "@/lib/getSettings";
 import Script from "next/script";
 

@@ -1,6 +1,6 @@
 'use client';
 
-import Price from "@/components/Price";
+import Price from "@/components/ui/Price";
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { motion } from 'framer-motion';

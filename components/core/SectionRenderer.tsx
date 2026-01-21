@@ -1,8 +1,8 @@
 import { CustomizerSection, FAQItem, ReviewItem } from "@/types/customizer";
 import { MousePointer2, Plus, Star, Tag } from "lucide-react";
 import React from "react";
-import CategoryGrid from "./CategoryGrid";
-import ProductSlider from "./ProductSlider";
+import CategoryGrid from "../store/CategoryGrid";
+import ProductSlider from "../store/ProductSlider";
 
 interface SectionRendererProps {
   sections: CustomizerSection[];

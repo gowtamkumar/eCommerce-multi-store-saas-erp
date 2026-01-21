@@ -2,7 +2,7 @@
 
 import { fetchAPI } from '@/lib/api';
 
-import ConfirmModal from '@/components/ConfirmModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ChevronLeft, ChevronRight, Loader2, Search, Trash2, User as UserIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';

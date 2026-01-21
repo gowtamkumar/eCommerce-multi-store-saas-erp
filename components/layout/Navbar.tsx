@@ -8,7 +8,7 @@ import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import CurrencySwitcher from "./CurrencySwitcher";
+import CurrencySwitcher from "../store/CurrencySwitcher";
 
 const Navbar = ({ settings: propSettings }: { settings?: any }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -119,8 +119,8 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
   return (
     <>
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled
-          ? 'bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-lg'
-          : 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl'
+        ? 'bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-lg'
+        : 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl'
         } border-b border-slate-200 dark:border-slate-800`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">

@@ -1,6 +1,6 @@
 'use client';
 
-import Price from '@/components/Price';
+import Price from '@/components/ui/Price';
 import { useSettings } from '@/contexts/SettingsContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpDown, Grid, List as ListIcon, Search, X } from 'lucide-react';

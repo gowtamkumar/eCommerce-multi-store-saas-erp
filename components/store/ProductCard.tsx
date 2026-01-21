@@ -1,6 +1,6 @@
 "use client";
 
-import Price from "@/components/Price";
+import Price from "@/components/ui/Price";
 import { useCart } from "@/contexts/CartContext";
 import { motion } from "framer-motion";
 import { Eye, ShoppingBag } from "lucide-react";

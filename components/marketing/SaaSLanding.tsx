@@ -1,4 +1,4 @@
-import Footer from '@/components/Footer';
+import Footer from '@/components/layout/Footer';
 import { BarChart3, Globe, Shield, Target, Users, Zap } from 'lucide-react';
 import MarketingHero from './MarketingHero';
 import MarketingNavbar from './MarketingNavbar';

@@ -1,6 +1,6 @@
 "use client";
 
-import Price from "@/components/Price";
+import Price from "@/components/ui/Price";
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { fetchAPI } from "@/lib/api";
@@ -15,9 +15,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
-import WhatsAppWidget from "@/components/WhatsAppWidget";
+import Footer from "@/components/layout/Footer";
+import Navbar from "@/components/layout/Navbar";
+import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
 
 export default function CheckoutPage() {
   const { cart, items, updateQuantity, removeItem, clearCart, loading: cartLoading } = useCart();

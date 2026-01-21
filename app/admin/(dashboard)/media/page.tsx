@@ -3,7 +3,7 @@
 import { fetchAPI } from '@/lib/api';
 
 
-import ConfirmModal from '@/components/ConfirmModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { Check, ChevronLeft, ChevronRight, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';

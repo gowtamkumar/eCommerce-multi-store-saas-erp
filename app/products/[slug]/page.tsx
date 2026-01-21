@@ -1,13 +1,13 @@
-import Footer from '@/components/Footer';
-import Navbar from '@/components/Navbar';
-import PaymentStatus from '@/components/PaymentStatus';
+import Footer from '@/components/layout/Footer';
+import Navbar from '@/components/layout/Navbar';
+import PaymentStatus from '@/components/store/PaymentStatus';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
-import FAQ from '@/components/FAQ';
-import ProductDetails from '@/components/ProductDetails';
-import RelatedProducts from '@/components/RelatedProducts';
-import Reviews from '@/components/Reviews';
+import FAQ from '@/components/core/FAQ';
+import ProductDetails from '@/components/store/ProductDetails';
+import RelatedProducts from '@/components/store/RelatedProducts';
+import Reviews from '@/components/store/Reviews';
 import { fetchAPI } from "@/lib/api";
 
 async function getProduct(slug: string) {

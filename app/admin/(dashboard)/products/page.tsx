@@ -2,7 +2,7 @@
 
 import { fetchAPI } from '@/lib/api';
 
-import ConfirmModal from '@/components/ConfirmModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
 import Link from 'next/link';

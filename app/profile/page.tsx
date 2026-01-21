@@ -1,7 +1,7 @@
-import Footer from '@/components/Footer';
-import Navbar from '@/components/Navbar';
-import ProfileForm from '@/components/ProfileForm';
-import CustomerOrders from '@/components/CustomerOrders';
+import Footer from '@/components/layout/Footer';
+import Navbar from '@/components/layout/Navbar';
+import ProfileForm from '@/components/forms/ProfileForm';
+import CustomerOrders from '@/components/store/CustomerOrders';
 import { authOptions } from '@/lib/authOptions';
 import { getSiteSettings } from '@/lib/getSettings';
 import { getServerSession } from 'next-auth';

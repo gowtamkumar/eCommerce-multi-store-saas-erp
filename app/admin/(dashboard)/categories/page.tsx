@@ -1,6 +1,6 @@
 'use client';
 
-import ConfirmModal from '@/components/ConfirmModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { fetchAPI } from '@/lib/api';
 import { Edit, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';

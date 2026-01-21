@@ -1,8 +1,8 @@
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
-import PaymentStatus from "@/components/PaymentStatus";
-import ProductList from "@/components/ProductList";
-import WhatsAppWidget from "@/components/WhatsAppWidget";
+import Footer from "@/components/layout/Footer";
+import Navbar from "@/components/layout/Navbar";
+import PaymentStatus from "@/components/store/PaymentStatus";
+import ProductList from "@/components/store/ProductList";
+import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
 import { fetchAPI } from "@/lib/api";
 import { getSiteSettings } from "@/lib/getSettings";
 import { getTenantId } from "@/lib/tenant";

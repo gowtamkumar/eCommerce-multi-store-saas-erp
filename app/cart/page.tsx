@@ -1,6 +1,6 @@
 "use client";
 
-import Price from "@/components/Price";
+import Price from "@/components/ui/Price";
 import { useCart } from "@/contexts/CartContext";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";

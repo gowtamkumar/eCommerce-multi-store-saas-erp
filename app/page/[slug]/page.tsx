@@ -1,6 +1,6 @@
-import Footer from '@/components/Footer';
-import Navbar from '@/components/Navbar';
-import SectionRenderer from '@/components/SectionRenderer';
+import Footer from '@/components/layout/Footer';
+import Navbar from '@/components/layout/Navbar';
+import SectionRenderer from '@/components/core/SectionRenderer';
 import { fetchAPI } from '@/lib/api';
 import { getSiteSettings } from '@/lib/getSettings';
 import { notFound } from 'next/navigation';

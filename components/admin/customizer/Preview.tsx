@@ -1,7 +1,7 @@
 "use client";
 
-import CategoryGrid from '@/components/CategoryGrid';
-import ProductSlider from '@/components/ProductSlider';
+import CategoryGrid from '@/components/store/CategoryGrid';
+import ProductSlider from '@/components/store/ProductSlider';
 import { CustomizerSection, FAQItem, ReviewItem } from '@/types/customizer';
 import { MousePointer2, Plus, Star, Tag } from 'lucide-react';
 
