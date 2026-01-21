@@ -80,10 +80,15 @@ export class ProductService {
     async findAll(filterDto: any, tenantId: string) {
         const { page, limit, q, status } = filterDto;
         const query = this.productRepository.createQueryBuilder('product')
+            .leftJoinAndSelect('product.category', 'category')
             .where('product.tenantId = :tenantId', { tenantId });
 
         if (status) {
             query.andWhere('product.status = :status', { status });
+        }
+
+        if (filterDto.categoryId) {
+            query.andWhere('product.categoryId = :categoryId', { categoryId: filterDto.categoryId });
         }
 
         if (q) {
@@ -110,7 +115,7 @@ export class ProductService {
     async findOne(id: string, tenantId: string) {
         const product = await this.productRepository.findOne({
             where: { id, tenantId },
-            relations: ['faqs', 'attributes', 'variants'],
+            relations: ['faqs', 'attributes', 'variants', 'category'],
         });
 
         if (!product) {
@@ -123,7 +128,7 @@ export class ProductService {
     async findBySlug(slug: string, tenantId: string) {
         const product = await this.productRepository.findOne({
             where: { slug, tenantId },
-            relations: ['faqs'],
+            relations: ['faqs', 'category'],
         });
 
         if (!product) {

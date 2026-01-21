@@ -2,7 +2,8 @@
 
 import { ProductAttribute, ProductVariant } from '@/types/product';
 import { DollarSign, Layers, Package, Plus, Tag, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface ProductVariantsProps {
   attributes: ProductAttribute[];
@@ -16,6 +17,12 @@ export default function ProductVariants({ attributes, variants, basePrice, onCha
   const [localVariants, setLocalVariants] = useState<ProductVariant[]>(variants);
   const [showGenerator, setShowGenerator] = useState(false);
 
+  // Sync with props when they change from parent (initial load)
+  useEffect(() => {
+    setLocalAttributes(attributes);
+    setLocalVariants(variants);
+  }, [attributes, variants]);
+
   // Helper to generate cartesian product of attributes
   const generateCombinations = (attrs: ProductAttribute[]) => {
     if (attrs.length === 0) return [];
@@ -27,6 +34,7 @@ export default function ProductVariants({ attributes, variants, basePrice, onCha
     let result: Record<string, string>[] = [{}];
 
     for (const attr of filteredAttrs) {
+      if (!attr.name) continue;
       const temp: Record<string, string>[] = [];
       for (const item of result) {
         for (const value of attr.values) {
@@ -36,7 +44,7 @@ export default function ProductVariants({ attributes, variants, basePrice, onCha
       result = temp;
     }
 
-    return result;
+    return result[0] && Object.keys(result[0]).length === 0 ? [] : result;
   };
 
   const handleAddField = () => {
@@ -62,11 +70,23 @@ export default function ProductVariants({ attributes, variants, basePrice, onCha
 
   const generateVariants = () => {
     const combinations = generateCombinations(localAttributes);
-    const newVariants: ProductVariant[] = combinations.map((combo, index) => {
+    if (combinations.length === 0) {
+      toast.error('Please add values to your options first');
+      return;
+    }
+    const newVariants: ProductVariant[] = combinations.map((combo) => {
+      // Try to find existing variant with this exact combination to preserve data
+      const existing = localVariants.find(v =>
+        Object.entries(combo).every(([k, val]) => v.combination[k] === val) &&
+        Object.keys(v.combination).length === Object.keys(combo).length
+      );
+
+      if (existing) return existing;
+
       const sku = `SKU-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
       return {
         sku,
-        price: undefined, // uses base price by default
+        price: undefined,
         stock: 0,
         combination: combo,
       };
@@ -118,11 +138,18 @@ export default function ProductVariants({ attributes, variants, basePrice, onCha
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Values (comma separated)</label>
                 <input
                   type="text"
-                  value={attr.values.join(', ')}
-                  onChange={(e) => handleAttributeChange(idx, attr.name, e.target.value)}
+                  defaultValue={attr.values.join(', ')}
+                  onBlur={(e) => handleAttributeChange(idx, attr.name, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAttributeChange(idx, attr.name, (e.target as HTMLInputElement).value);
+                    }
+                  }}
                   placeholder="Red, Blue, Green..."
                   className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                 />
+                <p className="text-[10px] text-slate-400 mt-1">Press Enter or click away to save values</p>
               </div>
               <button
                 type="button"

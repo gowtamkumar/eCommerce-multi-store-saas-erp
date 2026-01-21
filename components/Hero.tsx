@@ -7,14 +7,12 @@ import {
   Check,
   Play,
   Share2,
-  Star,
   X
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import CheckoutModal from "./CheckoutModal";
-import LucideIcon from './LucideIcon';
 
 interface HeroProps {
   product?: any;
@@ -95,8 +93,7 @@ const Hero = ({ product, title, description, isBuilderSection = false, highlight
               </div>
 
               <h1 className="text-5xl lg:text-7xl font-bold tracking-tight font-display text-balance">
-                {displayTitle} {(title ? "" : product?.tagline) && <br />}
-                {(title ? "" : product?.tagline) && <span className="text-gradient">{product.tagline}</span>}
+                {displayTitle}
               </h1>
 
               <div className="text-lg text-slate-600 dark:text-slate-300 max-w-xl leading-relaxed prose prose-lg dark:prose-invert" dangerouslySetInnerHTML={{ __html: displayDescription }} />
@@ -157,37 +154,6 @@ const Hero = ({ product, title, description, isBuilderSection = false, highlight
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-4 pt-4">
-                    <div className="flex -space-x-3">
-                      {(product?.socialProof?.avatars?.length > 0
-                        ? product.socialProof.avatars
-                        : [1, 2, 3, 4].map((i: number) => `https://i.pravatar.cc/100?img=${i + 10}`)
-                      ).map((avatar: string, i: number) => (
-                        <div
-                          key={i}
-                          className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 overflow-hidden"
-                        >
-                          <Image
-                            src={avatar}
-                            alt="User"
-                            width={40}
-                            height={40}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex text-yellow-400">
-                        {Array.from({ length: Math.min(5, Math.max(1, product?.socialProof?.rating || 5)) }).map((_, i) => (
-                          <Star key={i} className="w-4 h-4 fill-current" />
-                        ))}
-                      </div>
-                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                        Loved by {product?.socialProof?.count?.toLocaleString() || '2,000'}+ {product?.socialProof?.noun || 'customers'}
-                      </p>
-                    </div>
-                  </div>
                 </>
               }
 
@@ -215,49 +181,6 @@ const Hero = ({ product, title, description, isBuilderSection = false, highlight
                 </div>
               </div>
 
-              {/* Floating Elements - Dynamic Highlights */}
-              {/* Use highlights prop if available, otherwise check product.heroHighlights */}
-              {(highlights || (product?.heroHighlights && product.heroHighlights.length > 0)) && (
-                <div className="absolute inset-0 pointer-events-none">
-                  {(highlights || product.heroHighlights).map((highlight: any, index: number) => {
-                    const colorClasses: Record<string, string> = {
-                      green: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
-                      blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
-                      purple: "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
-                      orange: "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400",
-                      red: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
-                      brand: "bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400",
-                    };
-
-                    const isLeft = index % 2 === 0;
-                    const position = isLeft
-                      ? "absolute top-1/4 -left-12 lg:-left-20 flex items-center gap-4"
-                      : "absolute bottom-1/4 -right-12 lg:-right-20 flex flex-row-reverse items-center gap-4 text-right";
-
-                    return (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: isLeft ? -20 : 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 1 + index * 0.2, duration: 0.8 }}
-                        className={`${position} glass p-4 rounded-2xl shadow-lg z-20 hidden md:block border border-white/20 dark:border-slate-700/50 hover:scale-105 pointer-events-auto transition-transform duration-300`}
-                      >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${colorClasses[highlight.color] || colorClasses.blue}`}>
-                          <LucideIcon name={highlight.icon} className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            {highlight.label}
-                          </p>
-                          <p className="font-bold text-slate-900 dark:text-white">
-                            {highlight.value}
-                          </p>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              )}
             </motion.div>
           </div>
         </div>

@@ -9,10 +9,12 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
 import { DatabaseModule } from './database/database.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { CategoryModule } from './modules/category/category.module';
 import { FaqModule } from './modules/faq/faq.module';
 import { FileModule } from './modules/file/file.module';
 import { HomeModule } from './modules/home/home.module';
 import { LeadModule } from './modules/lead/lead.module';
+import { MailModule } from './modules/mail/mail.module';
 import { OrderModule } from './modules/order/order.module';
 import { PageModule } from './modules/page/page.module';
 import { PaymentModule } from './modules/payment/payment.module';
@@ -23,7 +25,6 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { TestimonialModule } from './modules/testimonial/testimonial.module';
-import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { MailModule } from './modules/mail/mail.module';
     ProfileModule,
     SuperAdminModule,
     MailModule,
+    CategoryModule,
   ],
   controllers: [],
   providers: [

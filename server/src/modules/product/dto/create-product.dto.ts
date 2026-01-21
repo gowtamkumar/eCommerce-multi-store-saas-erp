@@ -3,79 +3,16 @@ import { Type } from 'class-transformer';
 import {
     IsArray,
     IsEnum,
+    IsNotEmpty,
     IsNumber,
     IsObject,
     IsOptional,
     IsString,
+    IsUUID,
     Min,
     ValidateNested,
 } from 'class-validator';
 import { ProductStatus } from '../../../common/enums/product-status.enum';
-
-class SocialProofDto {
-    @ApiProperty()
-    @IsString()
-    noun: string;
-
-    @ApiProperty()
-    @IsNumber()
-    count: number;
-
-    @ApiProperty()
-    @IsNumber()
-    rating: number;
-
-    @ApiProperty()
-    @IsArray()
-    avatars: string[];
-}
-
-class HeroHighlightDto {
-    @ApiProperty()
-    @IsString()
-    icon: string;
-
-    @ApiProperty()
-    @IsString()
-    label: string;
-
-    @ApiProperty()
-    @IsString()
-    value: string;
-
-    @ApiProperty()
-    @IsString()
-    color: string;
-}
-
-class SpecificationDto {
-    @ApiProperty()
-    @IsString()
-    label: string;
-
-    @ApiProperty()
-    @IsString()
-    value: string;
-}
-
-class KeyBenefitDto {
-    @ApiProperty()
-    @IsString()
-    icon: string;
-
-    @ApiProperty()
-    @IsString()
-    title: string;
-
-    @ApiProperty()
-    @IsString()
-    description: string;
-
-    @ApiProperty({ required: false })
-    @IsString()
-    @IsOptional()
-    color?: string;
-}
 
 class ProductFaqDto {
     @ApiProperty()
@@ -131,14 +68,17 @@ class ProductVariantDto {
 export class CreateProductDto {
     @ApiProperty()
     @IsString()
+    @IsNotEmpty()
     name: string;
 
     @ApiProperty()
     @IsString()
+    @IsNotEmpty()
     slug: string;
 
     @ApiProperty()
     @IsString()
+    @IsNotEmpty()
     description: string;
 
     @ApiProperty({ required: false })
@@ -159,11 +99,14 @@ export class CreateProductDto {
 
     @ApiProperty()
     @IsArray()
+    @IsString({ each: true })
     images: string[];
 
-    @ApiProperty()
+    @ApiProperty({ required: false })
     @IsArray()
-    features: string[];
+    @IsString({ each: true })
+    @IsOptional()
+    features?: string[];
 
     @ApiProperty()
     @IsNumber()
@@ -175,50 +118,9 @@ export class CreateProductDto {
     status: ProductStatus;
 
     @ApiProperty({ required: false })
-    @IsString()
+    @IsUUID()
     @IsOptional()
-    tagline?: string;
-
-    @ApiProperty({ required: false })
-    @ValidateNested()
-    @Type(() => SocialProofDto)
-    @IsOptional()
-    socialProof?: SocialProofDto;
-
-    @ApiProperty({ required: false })
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => HeroHighlightDto)
-    @IsOptional()
-    heroHighlights?: HeroHighlightDto[];
-
-    @ApiProperty({ required: false })
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => SpecificationDto)
-    @IsOptional()
-    specifications?: SpecificationDto[];
-
-    @ApiProperty({ required: false })
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => KeyBenefitDto)
-    @IsOptional()
-    keyBenefits?: KeyBenefitDto[];
-
-    @ApiProperty({ required: false })
-    @IsString()
-    @IsOptional()
-    videoUrl?: string;
-
-    @ApiProperty({ required: false })
-    @IsString()
-    @IsOptional()
-    releaseBadgeText?: string;
-
-    @ApiProperty({ required: false })
-    @IsOptional()
-    sections?: any;
+    categoryId?: string;
 
     @ApiProperty({ required: false })
     @IsString()

@@ -2,7 +2,7 @@
 
 import { useSettings } from '@/contexts/SettingsContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Banknote, ChevronDown, CreditCard, FileText, Globe, HelpCircle, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, MessageSquareQuote, Package, Settings, Share2, ShoppingBag, TrendingUp, User, Users, X } from 'lucide-react';
+import { Banknote, ChevronDown, CreditCard, FileText, Globe, HelpCircle, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, MessageSquareQuote, Package, Settings, Share2, ShoppingBag, Tag, TrendingUp, User, Users, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -56,6 +56,7 @@ export default function AdminLayout({
     { icon: Menu, label: 'Navbar', href: '/admin/pages' },
     { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
     { icon: Package, label: 'Products', href: '/admin/products' },
+    { icon: Tag, label: 'Categories', href: '/admin/categories' },
     { icon: Users, label: 'Customers', href: '/admin/customers' },
     { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
     { icon: FileText, label: 'Pages', href: '/admin/pages' },
@@ -153,8 +154,8 @@ export default function AdminLayout({
             <button
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
               className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all font-medium ${pathname?.startsWith('/admin/settings')
-                  ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -181,8 +182,8 @@ export default function AdminLayout({
                         href={`/admin/settings?tab=${item.tab}`}
                         onClick={() => setIsMobileMenuOpen(false)}
                         className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm ${isActive
-                            ? 'text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-900/10 font-medium'
-                            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
+                          ? 'text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-900/10 font-medium'
+                          : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
                           }`}
                       >
                         <item.icon className="w-4 h-4" />

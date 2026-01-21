@@ -13,8 +13,16 @@ export interface ProductVariant {
   combination: Record<string, string>;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+}
+
 export interface Product {
-  id?: string;
+  id: string;
   name: string;
   slug: string;
   description: string;
@@ -25,11 +33,12 @@ export interface Product {
   features?: string[];
   stock: number;
   status: 'active' | 'inactive';
-  tagline?: string;
+  categoryId?: string;
+  category?: Category;
+  reviewSectionType?: 'testimonials' | 'reviews';
+  faqs?: Array<{ question: string; answer: string; order?: number }>;
   attributes?: ProductAttribute[];
   variants?: ProductVariant[];
-  sections?: any[];
-  reviewSectionType?: 'testimonials' | 'reviews';
   createdAt?: string;
   updatedAt?: string;
 }

@@ -9,6 +9,7 @@ import {
     UpdateDateColumn,
 } from 'typeorm';
 import { ProductStatus } from '../../../common/enums/product-status.enum';
+import { CategoryEntity } from '../../category/entities/category.entity';
 import { FaqEntity } from '../../faq/entities/faq.entity';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { ProductAttributeEntity } from './attribute.entity';
@@ -53,53 +54,12 @@ export class ProductEntity {
     })
     status: ProductStatus;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
-    tagline: string;
+    @Column({ type: 'uuid', nullable: true })
+    categoryId: string;
 
-    @Column({ type: 'jsonb', nullable: true })
-    socialProof: {
-        noun: string;
-        count: number;
-        rating: number;
-        avatars: string[];
-    };
-
-    @Column({ type: 'jsonb', nullable: true })
-    heroHighlights: Array<{
-        icon: string;
-        label: string;
-        value: string;
-        color: string;
-    }>;
-
-    @Column({ type: 'jsonb', nullable: true })
-    specifications: Array<{
-        label: string;
-        value: string;
-    }>;
-
-    @Column({ type: 'jsonb', nullable: true })
-    keyBenefits: Array<{
-        icon: string;
-        title: string;
-        description: string;
-        color?: string;
-    }>;
-
-    @Column({ type: 'varchar', length: 500, nullable: true })
-    videoUrl: string;
-
-    @Column({ type: 'varchar', length: 100, nullable: true })
-    releaseBadgeText: string;
-
-    @Column({ type: 'jsonb', nullable: true })
-    sections: Array<{
-        id: string;
-        type: string;
-        content: any;
-        settings?: any;
-        order?: number;
-    }>;
+    @ManyToOne(() => CategoryEntity, (category) => category.products, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'categoryId' })
+    category: CategoryEntity;
 
     @Column({
         type: 'enum',

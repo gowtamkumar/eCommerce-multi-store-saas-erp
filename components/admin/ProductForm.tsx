@@ -1,37 +1,45 @@
 'use client';
 
 import { fetchAPI } from '@/lib/api';
-import { ProductAttribute, ProductVariant } from '@/types/product';
-import { Loader2, MessageSquare, Quote, Save, Star } from 'lucide-react';
+import { Category, ProductAttribute, ProductVariant } from '@/types/product';
+import { Image as ImageIcon, Layout, Loader2, MessageSquare, Quote, Save, Star, Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import ProductVariants from './ProductVariants';
+import RichEditor from './RichEditor';
 
 interface ProductFormProps {
   initialData?: any;
   isEdit?: boolean;
 }
 
-// Removed legacy migrateSections
-
 export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     slug: initialData?.slug || '',
+    description: initialData?.description || '',
     shortDescription: initialData?.shortDescription || '',
     price: initialData?.price || 0,
     discountAmount: initialData?.discountAmount || 0,
     stock: initialData?.stock || 0,
     images: initialData?.images?.join(',') || '',
-    sections: initialData?.sections || [],
+    status: initialData?.status || 'active',
+    categoryId: initialData?.categoryId || '',
     reviewSectionType: initialData?.reviewSectionType || 'testimonials',
     attributes: initialData?.attributes || [] as ProductAttribute[],
     variants: initialData?.variants || [] as ProductVariant[],
   });
+
+  useEffect(() => {
+    fetchAPI('/categories').then(res => {
+      if (res.success) setCategories(res.data);
+    });
+  }, []);
 
   const generateSlug = (text: string) => {
     return text
@@ -39,8 +47,6 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
   };
-
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,15 +58,9 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       discountAmount: +formData.discountAmount,
       stock: +formData.stock,
       slug: formData.slug || generateSlug(formData.name),
-      shortDescription: formData.shortDescription,
       images: formData.images.split(',').map((s: string) => s.trim()).filter(Boolean),
-      sections: formData.sections,
-      reviewSectionType: formData.reviewSectionType,
-      attributes: formData.attributes,
-      variants: formData.variants,
+      categoryId: formData.categoryId || null,
     };
-
-    console.log("payload", payload);
 
     try {
       const url = isEdit ? `/products/${initialData.id}` : '/products';
@@ -83,169 +83,220 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8 max-w-4xl">
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Product Name</label>
-          <input
-            type="text"
-            required
-            value={formData.name}
-            onChange={(e) => {
-              const name = e.target.value;
-              if (!isEdit) {
-                setFormData({ ...formData, name, slug: generateSlug(name) });
-              } else {
-                setFormData({ ...formData, name });
-              }
-            }}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Slug (URL Friendly Name)</label>
-          <input
-            type="text"
-            required
-            value={formData.slug}
-            onChange={(e) => setFormData({ ...formData, slug: generateSlug(e.target.value) })}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-mono text-sm overflow-hidden text-ellipsis whitespace-nowrap"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Short Description (SEO / Listings)</label>
-          <textarea
-            value={formData.shortDescription}
-            onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"
-            rows={2}
-            placeholder="Brief overview of the product..."
-          />
-        </div>
-
-        <div className="grid grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Price</label>
-            <input
-              type="number"
-              required
-              min="0"
-              step="0.01"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Discount Amount</label>
-            <input
-              type="number"
-              required
-              min="0"
-              step="0.01"
-              value={formData.discountAmount}
-              onChange={(e) => setFormData({ ...formData, discountAmount: Number(e.target.value) })}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Stock</label>
-            <input
-              type="number"
-              required
-              min="0"
-              value={formData.stock}
-              onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Images (Comma separated URLs)</label>
-          <input
-            type="text"
-            required
-            value={formData.images}
-            onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-            placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-          />
-        </div>
-
-        {/* Variants Section */}
-        <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Product Variants</h3>
-          <ProductVariants
-            attributes={formData.attributes}
-            variants={formData.variants}
-            basePrice={formData.price}
-            onChange={(attributes, variants) => setFormData({ ...formData, attributes, variants })}
-          />
-        </div>
-
-        {/* Review Section Toggle */}
-        <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-6">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-slate-400" /> Review Section Mode
-          </label>
-          <div className="flex gap-4">
-            <label className="flex-1 cursor-pointer group">
-              <input
-                type="radio"
-                name="reviewSectionType"
-                value="testimonials"
-                checked={formData.reviewSectionType === 'testimonials'}
-                onChange={() => setFormData({ ...formData, reviewSectionType: 'testimonials' })}
-                className="sr-only"
-              />
-              <div className={`p-4 rounded-xl border transition-all flex flex-col items-center gap-2 ${formData.reviewSectionType === 'testimonials'
-                ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-500 text-brand-600'
-                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-brand-200'
-                }`}>
-                <Quote className="w-5 h-5" />
-                <span className="font-semibold text-sm">Testimonials</span>
+    <form onSubmit={handleSubmit} className="max-w-[1200px]">
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Main Content Column */}
+        <div className="flex-1 space-y-8">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+              <Layout className="w-5 h-5 text-brand-500" /> General Information
+            </h3>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Product Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Premium Wireless Headphones"
+                  value={formData.name}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    if (!isEdit) {
+                      setFormData({ ...formData, name, slug: generateSlug(name) });
+                    } else {
+                      setFormData({ ...formData, name });
+                    }
+                  }}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                />
               </div>
-            </label>
-            <label className="flex-1 cursor-pointer group">
-              <input
-                type="radio"
-                name="reviewSectionType"
-                value="reviews"
-                checked={formData.reviewSectionType === 'reviews'}
-                onChange={() => setFormData({ ...formData, reviewSectionType: 'reviews' })}
-                className="sr-only"
-              />
-              <div className={`p-4 rounded-xl border transition-all flex flex-col items-center gap-2 ${formData.reviewSectionType === 'reviews'
-                ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-500 text-brand-600'
-                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-brand-200'
-                }`}>
-                <Star className="w-5 h-5" />
-                <span className="font-semibold text-sm">Product Reviews</span>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Slug (URL)</label>
+                <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/50">
+                  <span className="text-slate-400 text-sm">/products/</span>
+                  <input
+                    type="text"
+                    required
+                    value={formData.slug}
+                    onChange={(e) => setFormData({ ...formData, slug: generateSlug(e.target.value) })}
+                    className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white text-sm font-mono"
+                  />
+                </div>
               </div>
-            </label>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Short Description</label>
+                <textarea
+                  value={formData.shortDescription}
+                  onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"
+                  rows={2}
+                  placeholder="A brief summary for listings..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Full Description</label>
+                <RichEditor
+                  content={formData.description}
+                  onChange={(content) => setFormData({ ...formData, description: content })}
+                  className="bg-white dark:bg-slate-900"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Inventory & Variants</h3>
+            <ProductVariants
+              attributes={formData.attributes}
+              variants={formData.variants}
+              basePrice={formData.price}
+              onChange={(attributes, variants) => setFormData({ ...formData, attributes, variants })}
+            />
           </div>
         </div>
 
-        <div className="border-t border-slate-200 dark:border-slate-700 pt-6 flex justify-end">
+        {/* Sidebar Column */}
+        <div className="w-full lg:w-[350px] space-y-8">
+          {/* Status & Category */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <Layout className="w-4 h-4" /> Visibility
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+              >
+                <option value="active">Active (Visible)</option>
+                <option value="inactive">Inactive (Hidden)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <Tag className="w-4 h-4" /> Category
+              </label>
+              <select
+                value={formData.categoryId}
+                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+              >
+                <option value="">No Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Pricing */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 space-y-6">
+            <h4 className="font-bold text-slate-900 dark:text-white">Pricing</h4>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Base Price</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                  className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Discount Amount</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.discountAmount}
+                  onChange={(e) => setFormData({ ...formData, discountAmount: Number(e.target.value) })}
+                  className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all font-mono"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Stock Quantity</label>
+              <input
+                type="number"
+                required
+                min="0"
+                value={formData.stock}
+                onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Images */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" /> Media URLs
+            </label>
+            <textarea
+              required
+              value={formData.images}
+              onChange={(e) => setFormData({ ...formData, images: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none text-xs font-mono"
+              rows={4}
+              placeholder="Comma separated URLs..."
+            />
+          </div>
+
+          {/* Review Logic */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" /> Review Mode
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, reviewSectionType: 'testimonials' })}
+                className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${formData.reviewSectionType === 'testimonials'
+                  ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-500 text-brand-600'
+                  : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-brand-200'
+                  }`}
+              >
+                <Quote className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase">Testimonials</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, reviewSectionType: 'reviews' })}
+                className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${formData.reviewSectionType === 'reviews'
+                  ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-500 text-brand-600'
+                  : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-brand-200'
+                  }`}
+              >
+                <Star className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase">Reviews</span>
+              </button>
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="px-8 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-brand-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-bold transition-all shadow-xl shadow-brand-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
             {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Saving...
-              </>
+              <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              <>
-                <Save className="w-5 h-5" />
-                Save Product
-              </>
+              <Save className="w-5 h-5" />
             )}
+            {isEdit ? 'Update Product' : 'Create Product'}
           </button>
         </div>
       </div>
