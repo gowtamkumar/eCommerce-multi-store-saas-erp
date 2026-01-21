@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { OrderController } from './order.controller';
-import { OrderService } from './order.service';
-import { OrderEntity } from './entities/order.entity';
-import { ProductEntity } from '../product/entities/product.entity';
 import { UserEntity } from '../admin/user/entities/user.entity';
 import { LeadEntity } from '../lead/entities/lead.entity';
+import { ProductEntity } from '../product/entities/product.entity';
 import { SiteSettingsEntity } from '../settings/entities/site-settings.entity';
+import { OrderEntity } from './entities/order.entity';
+import { OrderController } from './order.controller';
+import { OrderService } from './order.service';
 
 import { PaymentEntity } from '../payment/entities/payment.entity';
+import { OrderItemEntity } from './entities/order-item.entity';
 
 @Module({
     imports: [
@@ -19,6 +20,7 @@ import { PaymentEntity } from '../payment/entities/payment.entity';
             LeadEntity,
             SiteSettingsEntity,
             PaymentEntity,
+            OrderItemEntity,
         ]),
     ],
     controllers: [OrderController],

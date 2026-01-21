@@ -1,10 +1,8 @@
 "use client";
 
 import { fetchAPI } from "@/lib/api";
-import { Plus } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import Price from "./Price";
+import ProductCard from "./ProductCard";
 
 interface ProductSliderProps {
   headline?: string;
@@ -64,42 +62,9 @@ export default function ProductSlider({ headline, count = 4, collectionId, style
         ) : products.length > 0 ? (
           <div className="flex gap-6 md:gap-10 overflow-x-auto pb-8 scrollbar-hide">
             {products.map((product) => (
-              <Link
-                key={product.id}
-                href={`/products/${product.slug}`}
-                className="min-w-[280px] md:min-w-[320px] flex-1 group cursor-pointer"
-              >
-                <div className="aspect-square bg-white dark:bg-slate-800 rounded-[2.5rem] mb-6 flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm group-hover:shadow-2xl transition-all duration-500 relative overflow-hidden">
-                  {product.images?.[0] ? (
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                  ) : (
-                    <span className="text-6xl transform group-hover:scale-110 transition-transform duration-700">📦</span>
-                  )}
-                  <div className="absolute bottom-6 right-6 bg-brand-600 text-white p-3 rounded-full opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 shadow-xl">
-                    <Plus className="w-6 h-6" />
-                  </div>
-                </div>
-                <div className="px-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                    {product.category?.name || 'Premium Item'}
-                  </p>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-brand-600 transition-colors truncate">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-center gap-3">
-                    <Price
-                      amount={product.price}
-                      className="text-2xl font-black text-brand-600"
-                      showOriginal={product.discountAmount > 0}
-                      originalAmount={+product.price + +product.discountAmount}
-                    />
-                  </div>
-                </div>
-              </Link>
+              <div key={product.id} className="min-w-[280px] md:min-w-[320px] flex-1 h-[450px]">
+                <ProductCard product={product} />
+              </div>
             ))}
           </div>
         ) : (

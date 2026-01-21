@@ -38,18 +38,21 @@ export class CartService {
         const { productId, variantId, quantity } = createCartItemDto;
 
         // Check if item already exists in cart
-        let cartItem = cart.items.find(
-            (item) => item.productId === productId && item.variantId === variantId,
-        );
+        // Handle variantId being undefined or null comparison
+        let cartItem = cart.items.find((item) => {
+            const sameProduct = item.productId === productId;
+            const sameVariant = (item.variantId || null) === (variantId || null);
+            return sameProduct && sameVariant;
+        });
 
         if (cartItem) {
-            cartItem.quantity += Number(quantity);
+            cartItem.quantity = Number(cartItem.quantity) + Number(quantity);
             await this.cartItemRepository.save(cartItem);
         } else {
             cartItem = this.cartItemRepository.create({
                 cartId: cart.id,
                 productId,
-                variantId,
+                variantId: variantId || null,
                 quantity: Number(quantity),
                 tenantId,
             });

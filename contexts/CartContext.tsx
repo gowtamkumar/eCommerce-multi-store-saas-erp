@@ -3,6 +3,7 @@
 import * as cartApi from "@/lib/cart";
 import { Cart, CartItem } from "@/lib/cart";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -25,12 +26,14 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
+  const router = useRouter();
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const openCart = () => setIsCartOpen(true);
   const closeCart = () => setIsCartOpen(false);
+
 
   const refreshCart = async () => {
     if (!session?.user) {
@@ -40,7 +43,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       const data = await cartApi.getCart();
-      setCart(data);
+      // Support both wrapped and unwrapped responses
+      setCart((data as any).data || data);
     } catch (error) {
       console.error("Failed to fetch cart", error);
     } finally {
@@ -50,21 +54,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshCart();
-  }, [session?.user?.id]); // Refresh when user changes
+  }, [session?.user?.id]);
 
   const addToCart = async (productId: string, quantity: number, variantId?: string) => {
     if (!session?.user) {
       toast.error("Please login to add items to cart");
+      router.push('/login');
       return;
     }
     try {
+      setLoading(true);
       await cartApi.addToCart(productId, quantity, variantId);
       await refreshCart();
       toast.success("Added to cart");
       setIsCartOpen(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Add to cart error", error);
-      toast.error("Failed to add to cart");
+      toast.error(error.message || "Failed to add to cart");
+    } finally {
+      setLoading(false);
     }
   };
 
