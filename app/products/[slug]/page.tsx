@@ -10,7 +10,7 @@ import Hero from '@/components/Hero';
 import ProductDetails from '@/components/ProductDetails';
 import RelatedProducts from '@/components/RelatedProducts';
 import Reviews from '@/components/Reviews';
-import PageRenderer from '@/components/website/builder/PageRenderer';
+import SectionRenderer from '@/components/SectionRenderer';
 import { fetchAPI } from "@/lib/api";
 
 async function getProduct(slug: string) {
@@ -89,7 +89,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {hasBuilderSections ? (
                 // Dynamic Builder Layout
                 <div className="flex flex-col">
-                    <PageRenderer sections={product.sections} product={product} />
+                    <SectionRenderer sections={product.sections} />
                     <RelatedProducts currentProductId={product.id} />
                     <Footer />
                 </div>

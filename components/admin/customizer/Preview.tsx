@@ -1,5 +1,6 @@
 "use client";
 
+import ProductSlider from '@/components/ProductSlider';
 import { CategoryItem, CustomizerSection, FAQItem, ReviewItem } from '@/types/customizer';
 import { MousePointer2, Plus, Star, Tag } from 'lucide-react';
 
@@ -107,39 +108,12 @@ function SectionRenderer({ section }: { section: CustomizerSection }) {
 
     case 'product-slider':
       return (
-        <section style={styles} className="px-10 py-16 bg-slate-50 dark:bg-slate-900/50 overflow-hidden">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex items-center justify-between mb-10">
-              <div className="space-y-1">
-                <h2 className="text-3xl font-bold">{settings?.headline || 'Trending Products'}</h2>
-                <div className="w-20 h-1 bg-brand-500 rounded-full" />
-              </div>
-              <div className="flex gap-2">
-                <button className="w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm">←</button>
-                <button className="w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm">→</button>
-              </div>
-            </div>
-            <div className="flex gap-8 overflow-x-auto pb-4 scrollbar-hide">
-              {[...Array(settings?.count || 4)].map((_, i) => (
-                <div key={i} className="min-w-[280px] flex-1 group">
-                  <div className="aspect-square bg-white dark:bg-slate-800 rounded-[2rem] mb-6 flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm group-hover:shadow-xl transition-all relative overflow-hidden">
-                    <span className="text-5xl transform group-hover:scale-110 transition-transform duration-500">👟</span>
-                    <div className="absolute bottom-4 right-4 bg-brand-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Plus className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="px-2">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Luxury Item</p>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1 group-hover:text-brand-600 transition-colors truncate">Product {i + 1}</h3>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xl font-black text-brand-600">$99.00</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <ProductSlider
+          headline={settings?.headline}
+          count={settings?.count}
+          collectionId={settings?.collectionId}
+          styles={styles}
+        />
       );
 
     case 'category-grid':
