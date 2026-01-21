@@ -1,21 +1,22 @@
 import {
+    BadRequestException,
     Injectable,
     NotFoundException,
-    BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
-import { OrderEntity } from './entities/order.entity';
-import { ProductEntity } from '../product/entities/product.entity';
+import { Repository } from 'typeorm';
+import { LeadStatus } from '../../common/enums/lead-status.enum';
+import { OrderStatus } from '../../common/enums/order-status.enum';
+import { PaymentStatus } from '../../common/enums/payment-status.enum';
 import { UserEntity } from '../admin/user/entities/user.entity';
 import { LeadEntity } from '../lead/entities/lead.entity';
+import { PaymentEntity } from '../payment/entities/payment.entity';
+import { ProductEntity } from '../product/entities/product.entity';
 import { SiteSettingsEntity } from '../settings/entities/site-settings.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
-import { OrderStatus } from '../../common/enums/order-status.enum';
-import { PaymentStatus } from '../../common/enums/payment-status.enum';
-import { LeadStatus } from '../../common/enums/lead-status.enum';
-import { PaymentEntity } from '../payment/entities/payment.entity';
+import { OrderItemEntity } from './entities/order-item.entity';
+import { OrderEntity } from './entities/order.entity';
 
 @Injectable()
 export class OrderService {
@@ -40,32 +41,15 @@ export class OrderService {
             customerEmail,
             customerPhone,
             address,
-            productId,
-            quantity,
+            items,
             paymentMethod,
             orderNotes,
             currency,
             currencyRate,
         } = createOrderDto;
 
-        // Validate quantity
-        if (quantity <= 0) {
-            throw new BadRequestException('Invalid quantity');
-        }
-
-        // Get product and check stock
-        const product = await this.productRepository.findOne({
-            where: { id: productId, tenantId },
-        });
-
-        if (!product) {
-            throw new NotFoundException('Product not found');
-        }
-
-        if (product.stock < quantity) {
-            throw new BadRequestException(
-                `Insufficient stock. Only ${product.stock} items available.`,
-            );
+        if (!items || items.length === 0) {
+            throw new BadRequestException('Order must contain at least one item');
         }
 
         // Get settings for currency
@@ -92,22 +76,14 @@ export class OrderService {
             });
         }
 
-        // Calculate order totals
-        const unitPrice = product.price;
-        const discountAmount = product.discountAmount || 0;
-        const totalAmount = (unitPrice - discountAmount) * quantity;
-
-        // Create order
+        // Create initial order
         const order = this.orderRepository.create({
             customerName,
             customerEmail,
             customerPhone,
             address,
-            productId,
-            quantity,
-            unitPrice,
-            discountAmount,
-            totalAmount,
+            items: [],
+            totalAmount: 0, // Will be calculated
             currency: currency || settings?.currency || 'USD',
             currencyRate: currencyRate || 1,
             paymentMethod,
@@ -118,11 +94,50 @@ export class OrderService {
             tenantId,
         });
 
-        const savedOrder = await this.orderRepository.save(order);
+        let totalOrderAmount = 0;
+        const processedItems: OrderItemEntity[] = [];
 
-        // Decrement stock
-        product.stock -= quantity;
-        await this.productRepository.save(product);
+        // Process each item
+        for (const itemDto of items) {
+            const product = await this.productRepository.findOne({
+                where: { id: itemDto.productId, tenantId },
+            });
+
+            if (!product) {
+                throw new NotFoundException(`Product with ID ${itemDto.productId} not found`);
+            }
+
+            if (product.stock < itemDto.quantity) {
+                throw new BadRequestException(
+                    `Insufficient stock for ${product.name}. Only ${product.stock} items available.`,
+                );
+            }
+
+            const unitPrice = product.price;
+            const discountAmount = product.discountAmount || 0;
+            const itemTotal = (unitPrice - discountAmount) * itemDto.quantity;
+
+            const orderItem = new OrderItemEntity();
+            orderItem.product = product;
+            orderItem.quantity = itemDto.quantity;
+            orderItem.unitPrice = unitPrice;
+            orderItem.discountAmount = discountAmount;
+            orderItem.totalAmount = itemTotal;
+            orderItem.tenantId = tenantId;
+
+            processedItems.push(orderItem);
+            totalOrderAmount += itemTotal;
+
+            // Decrement stock IMMEDIATELY (Simpler than transaction for now, but strictly should be transactional)
+            // Ideally we wrap all this in a transaction.
+            product.stock -= itemDto.quantity;
+            await this.productRepository.save(product);
+        }
+
+        order.totalAmount = totalOrderAmount;
+        order.items = processedItems;
+
+        const savedOrder = await this.orderRepository.save(order);
 
         return { success: true, order: savedOrder };
     }
@@ -162,7 +177,7 @@ export class OrderService {
     async findOne(id: string, tenantId: string) {
         const order = await this.orderRepository.findOne({
             where: { id, tenantId },
-            relations: ['product'],
+            relations: ['items', 'items.product'],
         });
 
         if (!order) {
@@ -175,7 +190,7 @@ export class OrderService {
     async findByUserId(userId: string, tenantId: string) {
         const orders = await this.orderRepository.find({
             where: { userId, tenantId },
-            relations: ['product'],
+            relations: ['items', 'items.product'],
             order: { createdAt: 'DESC' },
         });
 

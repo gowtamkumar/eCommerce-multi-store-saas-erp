@@ -12,7 +12,7 @@ import CurrencySwitcher from "./CurrencySwitcher";
 const Navbar = ({ settings: propSettings }: { settings?: any }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { settings: contextSettings } = useSettings();
-  const { totalItems } = useCart();
+  const { totalItems, openCart } = useCart();
   const settings = propSettings || contextSettings;
   const brandName = settings?.brandName || "LuxeAudio";
 
@@ -92,10 +92,11 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
               <div className="hidden md:block">
                 <CurrencySwitcher />
               </div>
-              <Link
-                href="/cart"
+              <button
+                onClick={openCart}
                 className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative group"
                 title="Cart"
+                aria-label="Open cart"
               >
                 <div className="relative">
                   <ShoppingBag className="w-5 h-5 text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
@@ -106,7 +107,7 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
                     </span>
                   )}
                 </div>
-              </Link>
+              </button>
               <Link
                 href="/profile"
                 className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative group"

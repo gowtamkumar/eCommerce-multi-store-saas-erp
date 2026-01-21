@@ -41,12 +41,11 @@ const CheckoutModal = ({ isOpen, onClose, product }: CheckoutModalProps) => {
       customerPhone: formData.get('phone'),
       address: formData.get('address'),
       orderNotes: formData.get('notes'),
-      productId: product?.id,
-      quantity: quantity,
+      items: [{
+        productId: product?.id,
+        quantity: quantity
+      }],
       paymentMethod,
-      totalAmount,
-      unitPrice: product.price,
-      discountAmount: product.discountAmount || 0,
       currency: selectedCurrency.code,
       currencyRate: selectedCurrency.rate,
     };

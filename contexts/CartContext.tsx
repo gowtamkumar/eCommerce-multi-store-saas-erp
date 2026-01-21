@@ -16,14 +16,21 @@ interface CartContextType {
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
   refreshCart: () => Promise<void>;
+  isCartOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider = ({ children }: { children: React.ReactNode }) => {
+export function CartProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const [cart, setCart] = useState<Cart | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const openCart = () => setIsCartOpen(true);
+  const closeCart = () => setIsCartOpen(false);
 
   const refreshCart = async () => {
     if (!session?.user) {
@@ -54,6 +61,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       await cartApi.addToCart(productId, quantity, variantId);
       await refreshCart();
       toast.success("Added to cart");
+      setIsCartOpen(true);
     } catch (error) {
       console.error("Add to cart error", error);
       toast.error("Failed to add to cart");
@@ -99,14 +107,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     <CartContext.Provider
       value={{
         cart,
-        items,
+        items: cart?.items || [],
         totalItems,
         loading,
+        refreshCart,
         addToCart,
         updateQuantity,
         removeItem,
         clearCart,
-        refreshCart,
+        isCartOpen,
+        openCart,
+        closeCart,
       }}
     >
       {children}

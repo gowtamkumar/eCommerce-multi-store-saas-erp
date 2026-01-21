@@ -1,17 +1,18 @@
 import {
-    Entity,
     Column,
-    PrimaryGeneratedColumn,
     CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
+    Entity,
     JoinColumn,
+    ManyToOne,
+    OneToMany,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 import { OrderStatus } from '../../../common/enums/order-status.enum';
 import { PaymentMethod } from '../../../common/enums/payment-method.enum';
 import { PaymentStatus } from '../../../common/enums/payment-status.enum';
-import { ProductEntity } from '../../product/entities/product.entity';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
+import { OrderItemEntity } from './order-item.entity';
 
 @Entity('orders')
 export class OrderEntity {
@@ -30,21 +31,8 @@ export class OrderEntity {
     @Column({ type: 'text' })
     address: string;
 
-    @Column({ type: 'uuid' })
-    productId: string;
-
-    @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'productId' })
-    product: ProductEntity;
-
-    @Column({ type: 'int', default: 1 })
-    quantity: number;
-
-    @Column({ type: 'decimal', precision: 10, scale: 2 })
-    unitPrice: number;
-
-    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-    discountAmount: number;
+    @OneToMany(() => OrderItemEntity, (item) => item.order, { cascade: true })
+    items: OrderItemEntity[];
 
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     totalAmount: number;

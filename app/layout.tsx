@@ -14,6 +14,7 @@ import ToasterProvider from "@/components/ToasterProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 
+import CartDrawer from "@/components/CartDrawer";
 import { getSiteSettings } from "@/lib/getSettings";
 import Script from "next/script";
 
@@ -36,6 +37,7 @@ export default async function RootLayout({
           <SettingsProvider initialSettings={settings}>
             <CartProvider>
               <ToasterProvider />
+              <CartDrawer />
               {children}
             </CartProvider>
           </SettingsProvider>

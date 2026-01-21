@@ -23,7 +23,7 @@ export class PaymentService {
 
         const order = await this.orderRepository.findOne({
             where: { id: orderId, tenantId },
-            relations: ['product'],
+            relations: ['items', 'items.product'],
         });
 
         if (!order) {
@@ -52,7 +52,7 @@ export class PaymentService {
             cancel_url: `${app_url}/api/v1/payment/cancel?tran_id=${tran_id}`,
             ipn_url: `${app_url}/api/v1/payment/ipn`,
             shipping_method: 'Courier',
-            product_name: order.product?.name || 'Product',
+            product_name: order.items?.map(i => i.product?.name).join(', ').substring(0, 250) || 'Order Items',
             product_category: 'General',
             product_profile: 'general',
             cus_name: order.customerName,
