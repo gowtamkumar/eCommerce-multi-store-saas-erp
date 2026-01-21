@@ -6,10 +6,12 @@ import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function CartPage() {
   const { cart, items, updateQuantity, removeItem, loading } = useCart();
   const { data: session } = useSession();
+  const router = useRouter();
 
   if (loading && items.length === 0) {
     return (
@@ -136,7 +138,7 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <button className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors">
+              <button onClick={() => router.push('/checkout')} className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors">
                 Proceed to Checkout
               </button>
             </div>
