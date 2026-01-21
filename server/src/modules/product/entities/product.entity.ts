@@ -4,16 +4,12 @@ import {
     Entity,
     JoinColumn,
     ManyToOne,
-    OneToMany,
     PrimaryGeneratedColumn,
-    UpdateDateColumn,
+    UpdateDateColumn
 } from 'typeorm';
 import { ProductStatus } from '../../../common/enums/product-status.enum';
 import { CategoryEntity } from '../../category/entities/category.entity';
-import { FaqEntity } from '../../faq/entities/faq.entity';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
-import { ProductAttributeEntity } from './attribute.entity';
-import { ProductVariantEntity } from './variant.entity';
 
 @Entity('products')
 export class ProductEntity {
@@ -60,22 +56,6 @@ export class ProductEntity {
     @ManyToOne(() => CategoryEntity, (category) => category.products, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'categoryId' })
     category: CategoryEntity;
-
-    @Column({
-        type: 'enum',
-        enum: ['testimonials', 'reviews'],
-        default: 'testimonials',
-    })
-    reviewSectionType: string;
-
-    @OneToMany(() => FaqEntity, (faq) => faq.product)
-    faqs: FaqEntity[];
-
-    @OneToMany(() => ProductAttributeEntity, (attr) => attr.product)
-    attributes: ProductAttributeEntity[];
-
-    @OneToMany(() => ProductVariantEntity, (variant) => variant.product)
-    variants: ProductVariantEntity[];
 
     @Column({ type: 'uuid' })
     tenantId: string;

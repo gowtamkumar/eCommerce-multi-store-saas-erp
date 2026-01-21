@@ -1,7 +1,5 @@
 import FAQ from "@/components/FAQ";
-import Features from "@/components/Features";
 import Footer from "@/components/Footer";
-import Hero from "@/components/Hero";
 import SaaSLanding from "@/components/marketing/SaaSLanding";
 import Navbar from "@/components/Navbar";
 import PaymentStatus from "@/components/PaymentStatus";
@@ -84,8 +82,6 @@ export default async function Home() {
           <PaymentStatus />
         </Suspense>
         <Navbar />
-        <Hero product={product} />
-        <Features product={product} />
         <ProductDetails product={product} />
         <Reviews />
         <FAQ />
