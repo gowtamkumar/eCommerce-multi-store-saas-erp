@@ -32,7 +32,7 @@ export class ProductVariantEntity {
     @Column({ type: 'uuid' })
     productId: string;
 
-    @ManyToOne(() => ProductEntity, (product) => product.variants, { onDelete: 'CASCADE' })
+    @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'productId' })
     product: ProductEntity;
 

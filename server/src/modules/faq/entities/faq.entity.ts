@@ -1,15 +1,15 @@
 import {
-    Entity,
     Column,
-    PrimaryGeneratedColumn,
     CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
+    Entity,
     JoinColumn,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 import { FaqStatus } from '../../../common/enums/faq-status.enum';
-import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { ProductEntity } from '../../product/entities/product.entity';
+import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
 @Entity('faqs')
 export class FaqEntity {
@@ -45,7 +45,7 @@ export class FaqEntity {
     @Column({ type: 'uuid', nullable: true })
     productId: string;
 
-    @ManyToOne(() => ProductEntity, (product) => product.faqs, { onDelete: 'CASCADE', nullable: true })
+    @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE', nullable: true })
     @JoinColumn({ name: 'productId' })
     product: ProductEntity;
 

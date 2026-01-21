@@ -6,6 +6,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { motion } from 'framer-motion';
 import { Minus, Plus, Share2, ShieldCheck, ShoppingBag, TruckIcon } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -109,24 +110,54 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
 
           {/* Product Info Section */}
           <div className="lg:sticky lg:top-24 space-y-6">
-            {/* Breadcrumb / Category */}
-            {product.category && (
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span>Home</span>
-                <span>/</span>
-                <span>Products</span>
-                <span>/</span>
-                <span className="text-brand-600 font-medium">{product.category.name || 'Category'}</span>
-              </div>
-            )}
+            {/* Enhanced Breadcrumb Navigation */}
+            <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
+              <Link href="/" className="text-slate-500 hover:text-brand-600 transition-colors">
+                Home
+              </Link>
+              <span className="text-slate-300">/</span>
+              <Link href="/products" className="text-slate-500 hover:text-brand-600 transition-colors">
+                Products
+              </Link>
+              {product.category && (
+                <>
+                  <span className="text-slate-300">/</span>
+                  <Link
+                    href={`/products?category=${product.category.slug || product.category.id}`}
+                    className="text-slate-500 hover:text-brand-600 transition-colors"
+                  >
+                    {product.category.name}
+                  </Link>
+                </>
+              )}
+              <span className="text-slate-300">/</span>
+              <span className="text-slate-700 dark:text-slate-300 font-medium">{product.name}</span>
+            </nav>
 
-            {/* Product Name */}
+            {/* Product Name with Stock Badge */}
             <div>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white mb-3 font-display">
-                {product.name}
-              </h1>
+              <div className="flex items-start gap-3 mb-3">
+                <h1 className="flex-1 text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white font-display leading-tight">
+                  {product.name}
+                </h1>
+                {product.stock !== undefined && (
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${product.stock > 10
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+                    : product.stock > 0
+                      ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+                    }`}>
+                    <span className={`w-2 h-2 rounded-full ${product.stock > 10 ? 'bg-green-500' : product.stock > 0 ? 'bg-orange-500' : 'bg-red-500'
+                      }`} />
+                    {product.stock > 10 ? 'In Stock' : product.stock > 0 ? `Low Stock (${product.stock})` : 'Out of Stock'}
+                  </span>
+                )}
+              </div>
               {product.tagline && (
-                <p className="text-lg text-slate-600 dark:text-slate-400">{product.tagline}</p>
+                <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">{product.tagline}</p>
+              )}
+              {product.shortDescription && (
+                <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">{product.shortDescription}</p>
               )}
             </div>
 
