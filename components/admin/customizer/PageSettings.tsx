@@ -9,8 +9,15 @@ interface PageSettingsProps {
 }
 
 export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
-  const handleChange = (key: keyof PageData, value: string) => {
-    onUpdate({ ...data, [key]: value });
+  const handleChange = (key: keyof PageData, value: any) => {
+    let updated = { ...data, [key]: value };
+
+    // If setting as home page, force slug to /
+    if (key === 'isHomePage' && value === true) {
+      updated.slug = '/';
+    }
+
+    onUpdate(updated);
   };
 
   return (
@@ -32,6 +39,34 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
               className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
               placeholder="e.g. Home Page"
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 uppercase">Status</label>
+            <select
+              value={data.status}
+              onChange={(e) => handleChange('status', e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all appearance-none cursor-pointer"
+            >
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+            </select>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Home Page</label>
+              <p className="text-[10px] text-slate-400">Set this page as your store's home page</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleChange('isHomePage', !data.isHomePage)}
+              className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${data.isHomePage ? 'bg-brand-600' : 'bg-slate-200 dark:bg-slate-700'}`}
+            >
+              <span
+                className={`pointer-events-none block h-3.5 w-3.5 rounded-full bg-white shadow-lg ring-0 transition-transform ${data.isHomePage ? 'translate-x-5' : 'translate-x-1'}`}
+              />
+            </button>
           </div>
 
           <div className="space-y-1.5">

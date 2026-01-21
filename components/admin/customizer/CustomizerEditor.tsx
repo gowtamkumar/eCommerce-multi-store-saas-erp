@@ -31,6 +31,7 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
         body: JSON.stringify({
           title: data.title,
           slug: data.slug,
+          isHomePage: data.isHomePage,
           sections: data.content.sections,
           metaTitle: data.metaTitle,
           metaDescription: data.metaDescription,
