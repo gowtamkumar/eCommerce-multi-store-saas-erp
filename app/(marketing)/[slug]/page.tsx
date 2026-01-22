@@ -9,7 +9,7 @@ import { Suspense } from "react";
 
 async function getPage(slug: string) {
     try {
-        const data = await fetchAPI(`/pages/slug/${slug}`);
+        const data = await fetchAPI(`/pages/slug/${slug}`, { silent404: true } as any);
         return data.success ? data.data : null;
     } catch (error) {
         console.error('Error fetching page:', error);

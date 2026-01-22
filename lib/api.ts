@@ -53,6 +53,10 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!res.ok) {
+    if (res.status === 404 && (options as any).silent404) {
+      return { success: false, data: null, message: "Not found" };
+    }
+
     const error = await res
       .json()
       .catch(() => ({ message: "An error occurred" }));

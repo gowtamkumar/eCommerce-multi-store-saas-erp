@@ -36,7 +36,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 
   const refreshCart = async () => {
-    if (!session?.user) {
+    if (!session?.user?.accessToken) {
       setCart(null);
       return;
     }
