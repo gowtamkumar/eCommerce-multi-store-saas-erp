@@ -78,7 +78,10 @@ export class ProductService {
     }
 
     async findAll(filterDto: any, tenantId: string) {
-        const { page, limit, q, status } = filterDto;
+        const page = Math.max(1, parseInt(filterDto.page) || 1);
+        const limit = Math.max(1, parseInt(filterDto.limit) || 10);
+        const { q, status, categoryId } = filterDto;
+
         const query = this.productRepository.createQueryBuilder('product')
             .leftJoinAndSelect('product.category', 'category')
             .where('product.tenantId = :tenantId', { tenantId });

@@ -10,6 +10,10 @@ import {
 import { ProductStatus } from '../../../common/enums/product-status.enum';
 import { CategoryEntity } from '../../category/entities/category.entity';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
+import { FaqEntity } from '../../faq/entities/faq.entity';
+import { ProductAttributeEntity } from './attribute.entity';
+import { ProductVariantEntity } from './variant.entity';
+import { OneToMany } from 'typeorm';
 
 @Entity('products')
 export class ProductEntity {
@@ -56,6 +60,15 @@ export class ProductEntity {
     @ManyToOne(() => CategoryEntity, (category) => category.products, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'categoryId' })
     category: CategoryEntity;
+
+    @OneToMany(() => FaqEntity, (faq) => faq.product)
+    faqs: FaqEntity[];
+
+    @OneToMany(() => ProductAttributeEntity, (attribute) => attribute.product)
+    attributes: ProductAttributeEntity[];
+
+    @OneToMany(() => ProductVariantEntity, (variant) => variant.product)
+    variants: ProductVariantEntity[];
 
     @Column({ type: 'uuid' })
     tenantId: string;

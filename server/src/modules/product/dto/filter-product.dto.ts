@@ -9,5 +9,5 @@ export class FilterProductDto extends PaginationDto {
 
     @IsOptional()
     @IsString()
-    category?: string;
+    categoryId?: string;
 }
