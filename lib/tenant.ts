@@ -64,8 +64,6 @@ export async function getTenantId(
         console.log("queryParams", queryParams);
 
         const res = await fetch(`${nestApiUrl}/tenants${queryParams}`);
-        console.log("res", await res.json());
-
         if (res.ok) {
           const data = await res.json();
           console.log("tenants", data);
