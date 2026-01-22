@@ -65,6 +65,7 @@ export default withAuth(
     return NextResponse.next();
   },
   {
+    secret: process.env.NEXTAUTH_SECRET,
     callbacks: {
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname;
@@ -107,10 +108,13 @@ export default withAuth(
         return true;
       },
     },
+    pages: {
+      signIn: "/login",
+    },
   }
 );
 
 // Specify which routes to protect
 export const config = {
-  matcher: ["/admin/:path*", "/profile/:path*"],
+  matcher: ["/admin", "/admin/:path*", "/profile", "/profile/:path*"],
 };

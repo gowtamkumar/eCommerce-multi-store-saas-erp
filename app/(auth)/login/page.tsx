@@ -27,8 +27,6 @@ export default function Login() {
                 redirect: false,
             });
 
-            console.log("login response", res);
-
             if (res?.error) {
                 setError(res.error);
             }
@@ -44,7 +42,6 @@ export default function Login() {
 
                 toast.success(`Logged in as ${userRole || 'User'}`);
 
-                // Route based on user role
                 if (userRole === 'SuperAdmin') {
                     console.log("Redirecting to /super-admin");
                     router.push('/super-admin');
@@ -52,12 +49,12 @@ export default function Login() {
                     console.log("Redirecting to /admin");
                     router.push('/admin');
                 } else {
-                    console.log("Redirecting to / (home)");
+                    console.log("User role is:", userRole, "Redirecting to / (home)");
                     router.push('/');
                 }
             } else {
-                console.error("Session missing user after login success");
-                // fallback reload?
+                console.error("Session missing user after login success. Session content:", JSON.stringify(session));
+                // fallback reload
                 window.location.reload();
             }
 

@@ -27,7 +27,14 @@ export default function AdminLayout({
 
 
 
-  // Authentication is now handled by middleware.ts
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/login');
+    } else if (status === 'authenticated' && session?.user?.role !== 'Admin') {
+      console.warn("User is not an admin, redirecting to home");
+      router.replace('/');
+    }
+  }, [status, session, router]);
 
   useEffect(() => {
     if (pathname?.startsWith('/admin/settings')) {
