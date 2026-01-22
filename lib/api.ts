@@ -7,12 +7,10 @@ import { getTenantId } from "./tenant";
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const headers: any = { ...options.headers };
 
-  console.log("headers", headers);
 
   // If tenant ID not provided in headers, try to resolve it
   if (!headers["x-tenant-id"]) {
     const resolvedId = await getTenantId();
-    console.log("resolvedId", resolvedId);
 
     if (resolvedId) {
       headers["x-tenant-id"] = resolvedId;
@@ -48,7 +46,6 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
       console.error("fetchAPI: Session injection failed", e);
     }
   }
-  console.log("`${API_URL}${endpoint}`", `${API_URL}${endpoint}`);
 
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
@@ -67,7 +64,7 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
         // Only sign out if we are not already on the login page to avoid loops
         if (!window.location.pathname.includes("/login")) {
           console.warn("Session expired (401), signing out...");
-          await signOut({ callbackUrl: "/login" });
+          await signOut({ callbackUrl: `${window.location.origin}/login` });
           return; // Stop execution after sign out
         }
       }

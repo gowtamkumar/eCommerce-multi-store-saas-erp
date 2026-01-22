@@ -20,10 +20,10 @@ export default function AdminLayout({
   const [isSettingsOpen, setIsSettingsOpen] = useState(pathname?.startsWith('/admin/settings'));
   const { data: session, status }: any = useSession();
 
-  const brandName = settings?.brandName || "LuxeAudio";
-  const logo = settings?.logo;
+  const brandName = settings?.brandName || "Brand name";
+  const logo = settings?.logo || "";
 
-  console.log("session", session);
+  console.log("session layout", session);
 
 
 
@@ -74,14 +74,7 @@ export default function AdminLayout({
   ];
 
   const handleLogout = async () => {
-    // Preserve current domain (subdomain or custom domain) when redirecting to login
-    const currentDomain = typeof window !== 'undefined' ? window.location.origin : '';
-
-    // Sign out without automatic redirect
-    await signOut({ redirect: false });
-
-    // Manually redirect to preserve domain
-    window.location.href = `${currentDomain}/login`;
+    await signOut({ callbackUrl: `${window.location.origin}/login` });
   };
 
   return (

@@ -156,6 +156,13 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${new URL(url, baseUrl).origin}${url}`;
+      // Allows callback URLs on the same origin (including subdomains)
+      else if (new URL(url).origin === new URL(baseUrl).origin || url.includes('localhost')) return url;
+      return baseUrl;
+    },
   },
   pages: {
     signIn: "/login",

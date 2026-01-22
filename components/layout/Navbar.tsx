@@ -99,7 +99,7 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
   };
 
   const handleLogout = async () => {
-    await signOut({ redirect: false });
+    await signOut({ callbackUrl: `${window.location.origin}/login` });
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
