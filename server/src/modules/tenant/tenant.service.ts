@@ -1,14 +1,14 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
+import * as crypto from 'crypto'
 import { Repository } from 'typeorm'
 import { UserRole } from '../../common/enums/user/user-role.enum'
 import { UserEntity } from '../admin/user/entities/user.entity'
+import { MailService } from '../mail/mail.service'
 import { SettingsService } from '../settings/settings.service'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantEntity } from './entities/tenant.entity'
-import { MailService } from '../mail/mail.service'
-import * as crypto from 'crypto'
 
 @Injectable()
 export class TenantService {
@@ -19,7 +19,7 @@ export class TenantService {
     private userRepository: Repository<UserEntity>,
     private readonly settingsService: SettingsService,
     private readonly mailService: MailService,
-  ) { }
+  ) {}
 
   async create(createTenantDto: CreateTenantDto) {
     const { storeName, subdomain, planTier, adminName, adminUsername, adminEmail, adminPassword } =
@@ -107,6 +107,7 @@ export class TenantService {
     const tenant = await this.tenantRepository.findOne({
       where: { customDomain },
     })
+
     // if (!tenant) {
     //   throw new NotFoundException('Tenant not found')
     // }
@@ -123,6 +124,8 @@ export class TenantService {
     if (subdomain) {
       domain = await this.findBySubdomain(subdomain)
     }
+
+    console.log('lookup domain', domain)
 
     if (!domain) {
       throw new NotFoundException('Subdomain or custom domain required')

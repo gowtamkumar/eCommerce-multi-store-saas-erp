@@ -1,32 +1,32 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
-import { GlobalExceptionFilter } from './common/exception/exception-filter';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor';
-import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
-import { DatabaseModule } from './database/database.module';
-import { AdminModule } from './modules/admin/admin.module';
-import { CartModule } from './modules/cart/cart.module';
-import { CategoryModule } from './modules/category/category.module';
-import { FaqModule } from './modules/faq/faq.module';
-import { FileModule } from './modules/file/file.module';
-import { HomeModule } from './modules/home/home.module';
-import { LeadModule } from './modules/lead/lead.module';
-import { MailModule } from './modules/mail/mail.module';
-import { OrderModule } from './modules/order/order.module';
-import { PageModule } from './modules/page/page.module';
-import { PaymentModule } from './modules/payment/payment.module';
-import { ProductModule } from './modules/product/product.module';
-import { ProfileModule } from './modules/profile/profile.module';
-import { ReviewModule } from './modules/review/review.module';
-import { SettingsModule } from './modules/settings/settings.module';
-import { SuperAdminModule } from './modules/super-admin/super-admin.module';
-import { TenantModule } from './modules/tenant/tenant.module';
-import { TestimonialModule } from './modules/testimonial/testimonial.module';
-import { WishlistModule } from './modules/wishlist/wishlist.module';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
+import { ServeStaticModule } from '@nestjs/serve-static'
+import { join } from 'path'
+import { GlobalExceptionFilter } from './common/exception/exception-filter'
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
+import { TransformInterceptor } from './common/interceptors/transform.interceptor'
+import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware'
+import { DatabaseModule } from './database/database.module'
+import { AdminModule } from './modules/admin/admin.module'
+import { CartModule } from './modules/cart/cart.module'
+import { CategoryModule } from './modules/category/category.module'
+import { FaqModule } from './modules/faq/faq.module'
+import { FileModule } from './modules/file/file.module'
+import { HomeModule } from './modules/home/home.module'
+import { LeadModule } from './modules/lead/lead.module'
+import { MailModule } from './modules/mail/mail.module'
+import { OrderModule } from './modules/order/order.module'
+import { PageModule } from './modules/page/page.module'
+import { PaymentModule } from './modules/payment/payment.module'
+import { ProductModule } from './modules/product/product.module'
+import { ProfileModule } from './modules/profile/profile.module'
+import { ReviewModule } from './modules/review/review.module'
+import { SettingsModule } from './modules/settings/settings.module'
+import { SuperAdminModule } from './modules/super-admin/super-admin.module'
+import { TenantModule } from './modules/tenant/tenant.module'
+import { TestimonialModule } from './modules/testimonial/testimonial.module'
+import { WishlistModule } from './modules/wishlist/wishlist.module'
 
 @Module({
   imports: [
@@ -90,10 +90,13 @@ export class AppModule implements NestModule {
         'super-admin/(.*)',
         'settings',
         'home',
+        'categories',
+        'categories/(.*)',
+        'pages',
+        'pages/(.*)',
         'products',
         'products/(.*)',
       )
-      .forRoutes('*');
+      .forRoutes('*')
   }
 }
-

@@ -1,6 +1,5 @@
-import { Body, Controller, Get, Post, Put, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Post, Put, Query } from '@nestjs/common'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { JwtAuthGuard } from '../admin/auth/guards/jwt-auth.guard'
 import { TenantId } from '../../common/decorators/tenant-id.decorator'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantLookupDto } from './dto/tenant-lookup.dto'
@@ -9,7 +8,7 @@ import { TenantService } from './tenant.service'
 @ApiTags('Tenants')
 @Controller('tenants')
 export class TenantController {
-  constructor(private readonly tenantService: TenantService) { }
+  constructor(private readonly tenantService: TenantService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new tenant with admin user' })
@@ -29,8 +28,6 @@ export class TenantController {
   ) {
     if (query.subdomain || query.customDomain) {
       const findDomain = await this.tenantService.lookup(query.subdomain, query.customDomain)
-      console.log('findDomain', findDomain)
-
       return findDomain
     }
 
@@ -49,10 +46,7 @@ export class TenantController {
   // @UseGuards(JwtAuthGuard)
   @Put('custom-domain')
   @ApiOperation({ summary: 'Update custom domain' })
-  async updateCustomDomain(
-    @TenantId() tenantId: string,
-    @Body() body: { customDomain: string },
-  ) {
+  async updateCustomDomain(@TenantId() tenantId: string, @Body() body: { customDomain: string }) {
     return await this.tenantService.updateCustomDomain(tenantId, body.customDomain)
   }
 
