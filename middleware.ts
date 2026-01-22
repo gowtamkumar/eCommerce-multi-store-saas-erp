@@ -27,7 +27,7 @@ export default withAuth(
 
     // Admin pages - require admin role
     if (isAdminRoute && token?.role !== "Admin") {
-      return NextResponse.redirect(new URL("/", req.url));
+      return NextResponse.redirect(new URL("/login", req.url));
     }
 
     // Sensitive API routes - require authentication for all methods

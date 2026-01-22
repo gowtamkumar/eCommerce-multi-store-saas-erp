@@ -27,11 +27,7 @@ export default function AdminLayout({
 
 
 
-  useEffect(() => {
-    if (status === 'unauthenticated' && session?.user?.role !== 'Admin') {
-      router.push('/login');
-    }
-  }, [status, router]);
+  // Authentication is now handled by middleware.ts
 
   useEffect(() => {
     if (pathname?.startsWith('/admin/settings')) {

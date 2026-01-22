@@ -44,9 +44,6 @@ export default function Login() {
 
                 toast.success(`Logged in as ${userRole || 'User'}`);
 
-                // Refresh router to update server components with new session
-                router.refresh();
-
                 // Route based on user role
                 if (userRole === 'SuperAdmin') {
                     console.log("Redirecting to /super-admin");
