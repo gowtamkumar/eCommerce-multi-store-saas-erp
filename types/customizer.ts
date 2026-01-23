@@ -2,15 +2,15 @@
  * Shopify-like Customizer Type Definitions
  */
 
-export type SectionType = 
-  | 'banner' 
-  | 'product-slider' 
-  | 'category-grid' 
-  | 'offer-banner' 
-  | 'review-slider' 
-  | 'text-block' 
-  | 'image-block' 
-  | 'button' 
+export type SectionType =
+  | 'banner'
+  | 'product-slider'
+  | 'category-grid'
+  | 'offer-banner'
+  | 'review-slider'
+  | 'text-block'
+  | 'image-block'
+  | 'button'
   | 'faq-section';
 
 export interface SectionStyles {
@@ -108,16 +108,16 @@ export interface FAQSectionSettings {
   items: FAQItem[];
 }
 
-export type SectionSettings = 
-  | BannerSettings 
-  | ProductSliderSettings 
-  | CategoryGridSettings 
-  | OfferBannerSettings 
-  | ReviewSliderSettings 
-  | TextBlockSettings 
-  | ImageBlockSettings 
-  | ButtonSettings 
-  | FAQSectionSettings 
+export type SectionSettings =
+  | BannerSettings
+  | ProductSliderSettings
+  | CategoryGridSettings
+  | OfferBannerSettings
+  | ReviewSliderSettings
+  | TextBlockSettings
+  | ImageBlockSettings
+  | ButtonSettings
+  | FAQSectionSettings
   | Record<string, any>;
 
 export interface CustomizerSection {

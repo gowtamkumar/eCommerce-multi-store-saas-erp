@@ -3,6 +3,7 @@ import { MousePointer2, Plus, Star, Tag } from "lucide-react";
 import React from "react";
 import CategoryGrid from "../store/CategoryGrid";
 import ProductSlider from "../store/ProductSlider";
+import Link from "next/link";
 
 interface SectionRendererProps {
   sections: CustomizerSection[];
@@ -21,6 +22,8 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
           backgroundColor: section.styles?.backgroundColor,
           color: section.styles?.textColor,
         };
+
+        console.log("section.settings", section);
 
         const renderContent = () => {
           switch (section.type) {
@@ -45,15 +48,19 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
                       {settings?.subline || 'Discover the latest trends in luxury fashion and accessories.'}
                     </p>
                     <div className="flex flex-wrap gap-4">
-                      {settings?.primaryButtonText && (
-                        <button className="px-8 py-3 bg-white text-brand-600 font-bold rounded-lg shadow-xl hover:scale-105 transition-transform">
+                      {settings?.primaryButtonLink && (
+                        <Link
+                          href={settings.primaryButtonLink}
+                          className="px-8 py-3 bg-white text-brand-600 font-bold rounded-lg shadow-xl hover:scale-105 transition-transform">
                           {settings.primaryButtonText}
-                        </button>
+                        </Link>
                       )}
-                      {settings?.secondaryButtonText && (
-                        <button className="px-8 py-3 bg-white/10 text-white border border-white/30 backdrop-blur-md font-bold rounded-lg hover:bg-white/20 transition-all">
+                      {settings?.secondaryButtonLink && (
+                        <Link
+                          href={settings.secondaryButtonLink}
+                          className="px-8 py-3 bg-white/10 text-white border border-white/30 backdrop-blur-md font-bold rounded-lg hover:bg-white/20 transition-all">
                           {settings.secondaryButtonText}
-                        </button>
+                        </Link>
                       )}
                     </div>
                   </div>

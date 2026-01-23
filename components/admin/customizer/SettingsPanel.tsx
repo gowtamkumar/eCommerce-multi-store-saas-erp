@@ -111,11 +111,29 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                   />
                 </div>
                 <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Primary BTN Link</label>
+                  <input
+                    type="text"
+                    value={settings?.primaryButtonLink || ''}
+                    onChange={(e) => updateSetting('primaryButtonLink', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Secondary BTN</label>
                   <input
                     type="text"
                     value={settings?.secondaryButtonText || ''}
                     onChange={(e) => updateSetting('secondaryButtonText', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Secondary BTN Link</label>
+                  <input
+                    type="text"
+                    value={settings?.secondaryButtonLink || ''}
+                    onChange={(e) => updateSetting('secondaryButtonLink', e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   />
                 </div>

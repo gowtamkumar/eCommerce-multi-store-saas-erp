@@ -9,7 +9,7 @@ export class PageService {
   constructor(
     @InjectRepository(PageEntity)
     private pageRepository: Repository<PageEntity>,
-  ) {}
+  ) { }
 
   async create(dto: CreatePageDto, tenantId: string) {
     // Check slug uniqueness within tenant
@@ -46,6 +46,7 @@ export class PageService {
 
   async findHomePage(tenantId: string) {
     const page = await this.pageRepository.findOne({ where: { isHomePage: true, tenantId } })
+    console.log("findHomePage", page.sections);
 
     if (!page) throw new NotFoundException('Home page not found')
     return page

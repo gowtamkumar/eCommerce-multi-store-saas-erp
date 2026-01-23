@@ -39,6 +39,9 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
 
     const page = await getPage(slug);
 
+    console.log("page", page);
+
+
     if (!page) {
         notFound();
     }

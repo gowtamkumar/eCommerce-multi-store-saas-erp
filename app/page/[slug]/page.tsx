@@ -22,6 +22,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const page = await getPage(slug);
 
+
+
+
   if (!page) {
     return {
       title: 'Page Not Found',
@@ -38,7 +41,6 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const page = await getPage(slug);
   const settings = await getSiteSettings();
-
   if (!page) {
     notFound();
   }
