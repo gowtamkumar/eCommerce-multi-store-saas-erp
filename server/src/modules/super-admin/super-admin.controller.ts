@@ -128,44 +128,42 @@ export class SuperAdminController {
     @Get('/tenants/analytics')
     @ApiOperation({ summary: 'Get per-tenant granular analytics' })
     async getTenantAnalytics() {
-        const [tenants, users, products, orders, pages, traffic] = await Promise.all([
-            this.tenantService.findAll(),
-            this.userService.findAllUsersCrossTenant(),
-            this.productService.findAllProductsCrossTenant(),
-            this.orderService.findAllOrders(),
-            this.pageService.findAllPagesCrossTenant(),
-            this.trafficService.getTrafficStats(30), // Last 30 days
-        ]);
+        try {
+            const tenants = await this.tenantService.findAll();
+            const traffic = await this.trafficService.getTrafficStats(30);
 
-        const analytics = tenants.map(tenant => {
-            const tenantUsers = users.filter(u => u.tenantId === tenant.id);
-            const tenantProducts = products.filter(p => p.tenantId === tenant.id);
-            const tenantOrders = orders.filter(o => o.tenantId === tenant.id);
-            const tenantPages = pages.filter(p => p.tenantId === tenant.id);
-            const tenantTraffic = traffic.filter(t => t.tenantId === tenant.id);
+            const analytics = await Promise.all(tenants.map(async (tenant) => {
+                const [users, products, orders, pages] = await Promise.all([
+                    this.userService.countByTenant(tenant.id),
+                    this.productService.countByTenant(tenant.id),
+                    this.orderService.countByTenant(tenant.id),
+                    this.pageService.countByTenant(tenant.id),
+                ]);
 
-            const totalTraffic = tenantTraffic.reduce((acc, t) => acc + t.requestCount, 0);
+                const tenantTraffic = traffic.filter(t => t.tenantId === tenant.id);
+                const totalTraffic = tenantTraffic.reduce((acc, t) => acc + t.requestCount, 0);
 
-            return {
-                id: tenant.id,
-                storeName: tenant.storeName,
-                subdomain: tenant.subdomain,
-                planTier: tenant.planTier,
-                status: tenant.status,
-                stats: {
-                    users: tenantUsers.length,
-                    products: tenantProducts.length,
-                    orders: tenantOrders.length,
-                    pages: tenantPages.length,
-                    traffic: totalTraffic,
-                }
-            };
-        });
+                return {
+                    id: tenant.id,
+                    storeName: tenant.storeName,
+                    subdomain: tenant.subdomain,
+                    planTier: tenant.planTier,
+                    status: tenant.status,
+                    stats: {
+                        users,
+                        products,
+                        orders,
+                        pages,
+                        traffic: totalTraffic,
+                    }
+                };
+            }));
 
-        return {
-            success: true,
-            data: analytics,
-        };
+            return { success: true, data: analytics };
+        } catch (error) {
+            console.error('[SuperAdmin] Error fetching tenant analytics:', error);
+            throw error;
+        }
     }
 
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -173,36 +171,35 @@ export class SuperAdminController {
     @Get('/tenants/:id/analytics')
     @ApiOperation({ summary: 'Get detailed historical analytics for a specific tenant' })
     async getDetailedTenantAnalytics(@Param('id') id: string) {
-        const [users, products, orders, pages, pageTraffic] = await Promise.all([
-            this.userService.findAllUsersCrossTenant(), // Can be filtered in service but for now filter here
-            this.productService.findAllProductsCrossTenant(),
-            this.orderService.findAllOrders(),
-            this.pageService.findAllPagesCrossTenant(),
-            this.trafficService.getPageTrafficStats(id, 30),
-        ]);
+        try {
+            const [users, products, orders, pages, pageTraffic] = await Promise.all([
+                this.userService.countByTenant(id),
+                this.productService.countByTenant(id),
+                this.orderService.countByTenant(id),
+                this.pageService.countByTenant(id),
+                this.trafficService.getPageTrafficStats(id, 30),
+            ]);
 
-        const tenantUsers = users.filter(u => u.tenantId === id);
-        const tenantProducts = products.filter(p => p.tenantId === id);
-        const tenantOrders = orders.filter(o => o.tenantId === id);
-        const tenantPages = pages.filter(p => p.tenantId === id);
-
-        return {
-            success: true,
-            data: {
-                counts: {
-                    users: tenantUsers.length,
-                    products: tenantProducts.length,
-                    orders: tenantOrders.length,
-                    pages: tenantPages.length,
-                },
-                topPages: pageTraffic.map(pt => ({
-                    path: pt.path,
-                    hits: pt.requestCount,
-                    lastUpdated: pt.lastUpdated
-                })),
-                // Add more historical growth data here if needed
-            }
-        };
+            return {
+                success: true,
+                data: {
+                    counts: {
+                        users,
+                        products,
+                        orders,
+                        pages,
+                    },
+                    topPages: pageTraffic.map(pt => ({
+                        path: pt.path,
+                        hits: pt.requestCount,
+                        lastUpdated: pt.lastUpdated
+                    })),
+                }
+            };
+        } catch (error) {
+            console.error(`[SuperAdmin] Error fetching detailed analytics for tenant ${id}:`, error);
+            throw error;
+        }
     }
 
     @UseGuards(JwtAuthGuard, RolesGuard)

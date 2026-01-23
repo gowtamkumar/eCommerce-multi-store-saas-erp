@@ -246,4 +246,8 @@ export class OrderService {
             order: { createdAt: 'DESC' },
         });
     }
+
+    async countByTenant(tenantId: string) {
+        return await this.orderRepository.count({ where: { tenantId } });
+    }
 }

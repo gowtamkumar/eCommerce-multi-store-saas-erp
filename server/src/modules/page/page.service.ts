@@ -76,4 +76,8 @@ export class PageService {
   async findAllPagesCrossTenant() {
     return await this.pageRepository.find()
   }
+
+  async countByTenant(tenantId: string) {
+    return await this.pageRepository.count({ where: { tenantId } });
+  }
 }

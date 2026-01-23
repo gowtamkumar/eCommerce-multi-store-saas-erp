@@ -198,4 +198,8 @@ export class UserService {
     user.resetPasswordExpires = null;
     return this.userRepo.save(user);
   }
+
+  async countByTenant(tenantId: string) {
+    return await this.userRepo.count({ where: { tenantId } });
+  }
 }

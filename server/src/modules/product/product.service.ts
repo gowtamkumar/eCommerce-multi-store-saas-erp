@@ -238,4 +238,8 @@ export class ProductService {
     async findAllProductsCrossTenant() {
         return await this.productRepository.find();
     }
+
+    async countByTenant(tenantId: string) {
+        return await this.productRepository.count({ where: { tenantId } });
+    }
 }

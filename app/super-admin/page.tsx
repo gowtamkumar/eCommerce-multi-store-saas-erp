@@ -1,12 +1,25 @@
 import SuperAdminDashboard from "@/components/super-admin/SuperAdminDashboard";
-import { fetchAPI } from "@/lib/api";
+
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
 
 async function getSuperAdminDashboardData() {
+  const session = await getServerSession(authOptions);
+  const token = session?.user?.accessToken;
+
   try {
     const [healthRes, trafficRes, analyticsRes] = await Promise.all([
-      fetchAPI('/super-admin/health'),
-      fetchAPI('/super-admin/traffic?days=7'),
-      fetchAPI('/super-admin/tenants/analytics')
+      fetch(`${API_URL}/super-admin/health`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(res => res.json()),
+      fetch(`${API_URL}/super-admin/traffic?days=7`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(res => res.json()),
+      fetch(`${API_URL}/super-admin/tenants/analytics`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(res => res.json())
     ]);
 
     return {
