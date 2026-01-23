@@ -41,15 +41,14 @@ export class PageService {
   async findBySlug(slug: string, tenantId: string) {
     const page = await this.pageRepository.findOne({ where: { slug, tenantId } })
     if (!page) throw new NotFoundException('Page not found')
-    return page
+    return JSON.parse(JSON.stringify(page));
   }
 
   async findHomePage(tenantId: string) {
     const page = await this.pageRepository.findOne({ where: { isHomePage: true, tenantId } })
-    console.log("findHomePage", page.sections);
-
     if (!page) throw new NotFoundException('Home page not found')
-    return page
+
+    return JSON.parse(JSON.stringify(page));
   }
 
   async update(id: string, dto: UpdatePageDto, tenantId: string) {

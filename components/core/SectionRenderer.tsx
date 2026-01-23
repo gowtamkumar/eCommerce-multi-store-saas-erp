@@ -23,8 +23,6 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
           color: section.styles?.textColor,
         };
 
-        console.log("section.settings", section);
-
         const renderContent = () => {
           switch (section.type) {
             case "banner":
@@ -48,18 +46,18 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
                       {settings?.subline || 'Discover the latest trends in luxury fashion and accessories.'}
                     </p>
                     <div className="flex flex-wrap gap-4">
-                      {settings?.primaryButtonLink && (
+                      {(settings?.primaryButtonText || settings?.primaryButtonLink) && (
                         <Link
-                          href={settings.primaryButtonLink}
+                          href={settings.primaryButtonLink || "#"}
                           className="px-8 py-3 bg-white text-brand-600 font-bold rounded-lg shadow-xl hover:scale-105 transition-transform">
-                          {settings.primaryButtonText}
+                          {settings.primaryButtonText || "Shop Now"}
                         </Link>
                       )}
-                      {settings?.secondaryButtonLink && (
+                      {(settings?.secondaryButtonText || settings?.secondaryButtonLink) && (
                         <Link
-                          href={settings.secondaryButtonLink}
+                          href={settings.secondaryButtonLink || "#"}
                           className="px-8 py-3 bg-white/10 text-white border border-white/30 backdrop-blur-md font-bold rounded-lg hover:bg-white/20 transition-all">
-                          {settings.secondaryButtonText}
+                          {settings.secondaryButtonText || "Learn More"}
                         </Link>
                       )}
                     </div>

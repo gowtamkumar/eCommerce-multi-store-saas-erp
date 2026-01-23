@@ -7,7 +7,7 @@ import { PageService } from './page.service'
 @ApiTags('Pages')
 @Controller('pages')
 export class PageController {
-  constructor(private readonly pageService: PageService) {}
+  constructor(private readonly pageService: PageService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create page' })

@@ -94,7 +94,7 @@ export default async function Home() {
 
   // If a custom home page is designed, render it
   const sections = dynamicPage?.content?.sections || dynamicPage?.sections;
-  console.log("sections", sections);
+  console.log("section home s", sections);
   if (sections && sections.length > 0 && settings.productMode === 'multiple') {
     return (
       <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
