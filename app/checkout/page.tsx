@@ -12,7 +12,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 import Footer from "@/components/layout/Footer";
@@ -22,7 +22,7 @@ import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
 export default function CheckoutPage() {
   const { cart, items, updateQuantity, removeItem, clearCart, loading: cartLoading } = useCart();
   const { selectedCurrency, formatPrice } = useSettings();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const { downloadInvoice } = useDownloadInvoice();
   const router = useRouter();
 
@@ -30,6 +30,33 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'sslcommerz'>('cod');
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [lastOrder, setLastOrder] = useState<any>(null);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    notes: ''
+  });
+
+  // Update form data when session loads
+  useEffect(() => {
+    if (session?.user) {
+      setFormData(prev => ({
+        ...prev,
+        name: session.user?.name || '',
+        email: session.user?.email || '',
+        phone: session.user?.phone || '',
+        address: session.user?.address || '',
+      }));
+    }
+  }, [session]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const subtotal = items.reduce((acc, item) => {
     return acc + (item.product?.price || 0) * item.quantity;
@@ -41,14 +68,12 @@ export default function CheckoutPage() {
 
     setLoading(true);
 
-    const formData = new FormData(e.target as HTMLFormElement);
-
     const orderData = {
-      customerName: formData.get('name'),
-      customerEmail: formData.get('email'),
-      customerPhone: formData.get('phone'),
-      address: formData.get('address'),
-      orderNotes: formData.get('notes'),
+      customerName: formData.name,
+      customerEmail: formData.email,
+      customerPhone: formData.phone,
+      address: formData.address,
+      orderNotes: formData.notes,
       items: items.map(item => ({
         productId: item.productId,
         quantity: item.quantity
@@ -209,7 +234,8 @@ export default function CheckoutPage() {
                       <input
                         name="name"
                         required
-                        defaultValue={session?.user?.name || ''}
+                        value={formData.name}
+                        onChange={handleInputChange}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                         placeholder="John Doe"
                       />
@@ -220,7 +246,8 @@ export default function CheckoutPage() {
                         name="email"
                         type="email"
                         required
-                        defaultValue={session?.user?.email || ''}
+                        value={formData.email}
+                        onChange={handleInputChange}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                         placeholder="john@example.com"
                       />
@@ -231,7 +258,8 @@ export default function CheckoutPage() {
                         name="phone"
                         type="tel"
                         required
-                        defaultValue={session?.user?.phone || ''}
+                        value={formData.phone}
+                        onChange={handleInputChange}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                         placeholder="+1 (555) 000-0000"
                       />
@@ -241,7 +269,8 @@ export default function CheckoutPage() {
                       <input
                         name="address"
                         required
-                        defaultValue={session?.user?.address || ''}
+                        value={formData.address}
+                        onChange={handleInputChange}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                         placeholder="123 Main St, City, Country"
                       />
@@ -253,6 +282,8 @@ export default function CheckoutPage() {
                     <textarea
                       name="notes"
                       rows={3}
+                      value={formData.notes}
+                      onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                       placeholder="Special instructions for delivery..."
                     />
@@ -316,6 +347,9 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex-1">
                         <h4 className="text-sm font-medium text-slate-900 dark:text-white line-clamp-2">{item.product?.name}</h4>
+                        {item.variant && (
+                          <p className="text-sm text-slate-500 mt-0.5">{item.variant.name}</p>
+                        )}
                         <div className="flex justify-between items-center mt-1">
                           <span className="text-xs text-slate-500">Qty: {item.quantity}</span>
                           <Price amount={(item.product?.price || 0) * item.quantity} className="text-sm font-bold" />
