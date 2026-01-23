@@ -89,19 +89,19 @@ export default function PlatformHealthPage() {
           <div className="p-8 grid grid-cols-2 gap-8">
             <div>
               <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Tenants</p>
-              <p className="text-3xl font-bold text-indigo-600">{data?.stats?.tenants}</p>
+              <p className="text-3xl font-bold text-indigo-600">{data?.stats?.totalTenants}</p>
             </div>
             <div>
               <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Users</p>
-              <p className="text-3xl font-bold text-indigo-600">{data?.stats?.users}</p>
+              <p className="text-3xl font-bold text-indigo-600">{data?.stats?.totalUsers}</p>
             </div>
             <div>
               <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Orders (Global)</p>
-              <p className="text-3xl font-bold text-indigo-600">{data?.stats?.orders}</p>
+              <p className="text-3xl font-bold text-indigo-600">{data?.stats?.totalOrders}</p>
             </div>
             <div>
-              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Reviews</p>
-              <p className="text-3xl font-bold text-indigo-600">{data?.stats?.reviews}</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Requests (Last 24h)</p>
+              <p className="text-3xl font-bold text-indigo-600">{data?.stats?.totalRequestsLast24h}</p>
             </div>
           </div>
         </div>
