@@ -17,6 +17,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderItemEntity } from './entities/order-item.entity';
 import { OrderEntity } from './entities/order.entity';
+import { CartService } from '../cart/cart.service';
 
 @Injectable()
 export class OrderService {
@@ -33,6 +34,7 @@ export class OrderService {
         private settingsRepository: Repository<SiteSettingsEntity>,
         @InjectRepository(PaymentEntity)
         private paymentRepository: Repository<PaymentEntity>,
+        private cartService: CartService,
     ) { }
 
     async create(createOrderDto: CreateOrderDto, tenantId: string) {
@@ -138,6 +140,11 @@ export class OrderService {
         order.items = processedItems;
 
         const savedOrder = await this.orderRepository.save(order);
+
+        // Clear cart if user exists
+        if (user && user.id) {
+            await this.cartService.clearCart(user.id, tenantId);
+        }
 
         return { success: true, order: savedOrder };
     }

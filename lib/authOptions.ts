@@ -56,7 +56,6 @@ export const authOptions: NextAuthOptions = {
         if (!headers['x-tenant-id'] && headers['host']) {
           const host = headers['host'];
           console.log(`[Auth] Resolving tenant for host: ${host}`);
-
           const parts = host.split('.');
           let queryParams = `?customDomain=${host}`;
 
@@ -95,7 +94,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          console.log(`[Auth] Attempting login to /admin/login with headers:`, JSON.stringify(headers));
           const data = await fetchAPI('/admin/login', {
             method: "POST",
             headers,
@@ -105,11 +103,8 @@ export const authOptions: NextAuthOptions = {
             }),
           });
 
-          console.log("data", data);
-
           if (data.success && data.data && data.data.user) {
             const user = data.data.user;
-            // Inject accessToken into user object
             user.accessToken = data.data.token;
             return user;
           }
