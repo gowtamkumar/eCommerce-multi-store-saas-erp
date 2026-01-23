@@ -131,7 +131,7 @@ export class ProductService {
     async findBySlug(slug: string, tenantId: string) {
         const product = await this.productRepository.findOne({
             where: { slug, tenantId },
-            relations: ['faqs', 'category'],
+            relations: ['faqs', 'category', 'attributes', 'variants'],
         });
 
         if (!product) {
