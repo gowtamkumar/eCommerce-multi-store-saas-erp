@@ -4,6 +4,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 
+// Force dynamic rendering for multi-tenant environment
+export const dynamic = 'force-dynamic';
+
 // export const metadata: Metadata = {
 //   title: "LuxeAudio | Experience Sound Like Never Before",
 //   description: "Premium audio equipment for the discerning listener.",

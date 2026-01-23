@@ -1,27 +1,15 @@
 import TenantAnalytics from "@/components/super-admin/TenantAnalytics";
 import { notFound } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+import { fetchSuperAdminAPI } from "@/lib/supperAdminApi";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
 
 async function getTenantAnalyticsData(id: string) {
-    const session = await getServerSession(authOptions);
-    const token = session?.user?.accessToken;
 
-    if (!token) {
-        console.warn("[SuperAdmin] No access token found in session");
-        return null;
-    }
 
     try {
         const [analyticsRes, tenantRes] = await Promise.all([
-            fetch(`${API_URL}/super-admin/tenants/${id}/analytics`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            }).then(res => res.json()),
-            fetch(`${API_URL}/super-admin/tenants`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            }).then(res => res.json())
+            fetchSuperAdminAPI(`/super-admin/tenants/${id}/analytics`),
+            fetchSuperAdminAPI(`/super-admin/tenants`)
         ]);
 
         if (!analyticsRes.success || !tenantRes.success) {

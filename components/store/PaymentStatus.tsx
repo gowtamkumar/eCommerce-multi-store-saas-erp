@@ -6,9 +6,9 @@ import { OrderStatus } from '@/lib/enums/order-status';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Download, Loader2, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
-const PaymentStatus = () => {
+const PaymentStatusContent = () => {
   const { settings } = useSettings();
   const { downloadInvoice } = useDownloadInvoice();
   const searchParams = useSearchParams();
@@ -137,6 +137,14 @@ const PaymentStatus = () => {
         </>
       )}
     </AnimatePresence>
+  );
+};
+
+const PaymentStatus = () => {
+  return (
+    <Suspense fallback={null}>
+      <PaymentStatusContent />
+    </Suspense>
   );
 };
 

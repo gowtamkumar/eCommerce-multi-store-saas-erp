@@ -1,9 +1,9 @@
 import UserList from "@/components/super-admin/UserList";
-import { fetchAPI } from "@/lib/api";
+import { fetchSuperAdminAPI } from "@/lib/supperAdminApi";
 
 async function getUsers() {
   try {
-    const res = await fetchAPI('/super-admin/users');
+    const res = await fetchSuperAdminAPI('/super-admin/users');
     return res.users || res.data?.users || [];
   } catch (error) {
     console.error("Error fetching global users:", error);

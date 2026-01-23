@@ -1,6 +1,7 @@
 'use client';
 
 import { fetchAPI } from '@/lib/api';
+export const dynamic = 'force-dynamic';
 
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -18,13 +19,21 @@ import {
     TrendingUp,
     X
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 type TabType = 'general' | 'domain' | 'email' | 'currencies' | 'social' | 'marketing';
 
 export default function SettingsPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><Loader2 className="w-8 h-8 animate-spin text-brand-600" /></div>}>
+            <SettingsContent />
+        </Suspense>
+    );
+}
+
+function SettingsContent() {
     const [activeTab, setActiveTab] = useState<TabType>('general');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);

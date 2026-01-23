@@ -12,6 +12,8 @@ import { LoginCredentialDto, RegisterCredentialDto } from '../dtos';
 import { MailService } from '../../../mail/mail.service';
 import * as crypto from 'crypto';
 
+import { TenantService } from '../../../tenant/tenant.service';
+
 @Injectable()
 export class AuthService {
   private logger = new Logger(AuthService.name);
@@ -19,6 +21,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
+    private readonly tenantService: TenantService,
   ) { }
 
   async register(registerCredentialDto: RegisterCredentialDto, tenantId: string) {
@@ -51,6 +54,12 @@ export class AuthService {
 
   async login(loginCredentialsDto: LoginCredentialDto, tenantId: string) {
     this.logger.log(`${this.login.name} Service Called`);
+
+    // Check if tenant is suspended
+    const tenant = await this.tenantService.findOne(tenantId);
+    if (tenant && tenant.status === 'suspended') {
+      throw new UnauthorizedException('Store is suspended. Please contact support.');
+    }
 
     const { username, password } = loginCredentialsDto;
 

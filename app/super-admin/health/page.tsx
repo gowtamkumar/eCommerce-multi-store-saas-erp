@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
+import { fetchSuperAdminAPI } from '@/lib/supperAdminApi';
 import { motion } from 'framer-motion';
 import { Activity, Clock, Database, HardDrive, ShieldCheck, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -12,7 +12,7 @@ export default function PlatformHealthPage() {
   useEffect(() => {
     const fetchHealth = async () => {
       try {
-        const result = await fetchAPI('/super-admin/health');
+        const result = await fetchSuperAdminAPI('/super-admin/health');
         setData(result.data);
       } catch (err) {
         console.error(err);

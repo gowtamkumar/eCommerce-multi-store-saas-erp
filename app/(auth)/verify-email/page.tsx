@@ -1,6 +1,7 @@
 'use client';
 
 import { fetchAPI } from '@/lib/api';
+export const dynamic = 'force-dynamic';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';

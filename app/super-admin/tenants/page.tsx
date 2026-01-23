@@ -1,9 +1,9 @@
 import TenantList from "@/components/super-admin/TenantList";
-import { fetchAPI } from "@/lib/api";
+import { fetchSuperAdminAPI } from "@/lib/supperAdminApi";
 
 async function getTenants() {
   try {
-    const res = await fetchAPI('/super-admin/tenants');
+    const res = await fetchSuperAdminAPI('/super-admin/tenants');
     return res.data || [];
   } catch (error) {
     console.error("Error fetching tenants:", error);

@@ -1,6 +1,7 @@
 'use client';
 
 import { fetchAPI } from '@/lib/api';
+export const dynamic = 'force-dynamic';
 
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useSettings } from '@/contexts/SettingsContext';

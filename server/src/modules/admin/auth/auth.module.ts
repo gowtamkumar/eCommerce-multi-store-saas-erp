@@ -2,6 +2,7 @@ import { Inject, Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { UserModule } from '../user/user.module'
+import { TenantModule } from '../../tenant/tenant.module'
 import { AuthController } from './controllers/auth.controller'
 import { AdminAuthController } from './controllers/admin-auth.controller'
 import { AuthService } from './services/auth.service'
@@ -13,6 +14,7 @@ import { MailModule } from '../../mail/mail.module'
 @Module({
   imports: [
     UserModule,
+    TenantModule,
     MailModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
