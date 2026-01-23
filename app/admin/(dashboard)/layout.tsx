@@ -2,7 +2,7 @@
 
 import { useSettings } from '@/contexts/SettingsContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Banknote, ChevronDown, CreditCard, FileText, Globe, HelpCircle, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, MessageSquareQuote, Package, Settings, Share2, ShoppingBag, Tag, TrendingUp, User, Users, X } from 'lucide-react';
+import { Banknote, BarChart3, ChevronDown, CreditCard, FileText, Globe, HelpCircle, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, MessageSquareQuote, Package, Settings, Share2, ShoppingBag, Tag, TrendingUp, User, Users, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -56,6 +56,7 @@ export default function AdminLayout({
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
+    { icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
     { icon: Menu, label: 'Navbar', href: '/admin/pages' },
     { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
     { icon: Package, label: 'Products', href: '/admin/products' },
