@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Raw } from 'typeorm';
 import { TenantTrafficEntity } from './entities/tenant-traffic.entity';
 import { PageTrafficEntity } from './entities/page-traffic.entity';
 
@@ -63,12 +63,21 @@ export class TrafficService {
         });
     }
 
-    async getPageTrafficStats(tenantId: string, days: number = 30) {
+    async getPageTrafficStats(tenantId: string, days: number = 30, excludePrefixes: string[] = []) {
         const sinceDate = new Date();
         sinceDate.setDate(sinceDate.getDate() - days);
 
+        const where: any = { tenantId };
+
+        if (excludePrefixes.length > 0) {
+            where.path = Raw(alias => {
+                const conditions = excludePrefixes.map(prefix => `${alias} NOT LIKE '${prefix}%'`).join(' AND ');
+                return conditions;
+            });
+        }
+
         return await this.pageTrafficRepository.find({
-            where: { tenantId },
+            where,
             order: { requestCount: 'DESC' },
             take: 20
         });

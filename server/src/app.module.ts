@@ -28,6 +28,7 @@ import { SuperAdminModule } from './modules/super-admin/super-admin.module'
 import { TenantModule } from './modules/tenant/tenant.module'
 import { TestimonialModule } from './modules/testimonial/testimonial.module'
 import { WishlistModule } from './modules/wishlist/wishlist.module'
+import { TrackingModule } from './modules/tracking/tracking.module'
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module'
     CategoryModule,
     CartModule,
     WishlistModule,
+    TrackingModule,
   ],
   controllers: [],
   providers: [

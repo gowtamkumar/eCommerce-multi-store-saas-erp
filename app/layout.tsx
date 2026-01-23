@@ -15,6 +15,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 
 import CartDrawer from "@/components/store/CartDrawer";
+import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 import { getSiteSettings } from "@/lib/getSettings";
 import Script from "next/script";
 
@@ -37,6 +38,7 @@ export default async function RootLayout({
           <SettingsProvider initialSettings={settings}>
             <CartProvider>
               <ToasterProvider />
+              <AnalyticsTracker />
               <CartDrawer />
               {children}
             </CartProvider>

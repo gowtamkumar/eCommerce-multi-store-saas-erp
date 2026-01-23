@@ -30,7 +30,8 @@ export class AnalyticsController {
             this.productService.countByTenant(tenantId),
             this.orderService.countByTenant(tenantId),
             this.pageService.countByTenant(tenantId),
-            this.trafficService.getPageTrafficStats(tenantId, 30),
+            // Filter out API and Admin routes for Tenant Admin view
+            this.trafficService.getPageTrafficStats(tenantId, 30, ['/api', '/admin', '/super-admin']),
         ]);
 
         return {
