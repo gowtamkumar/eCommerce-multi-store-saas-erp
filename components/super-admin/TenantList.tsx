@@ -1,10 +1,11 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Ban, CheckCircle2, ExternalLink, Filter, Search, Settings2, ShieldCheck, Store, Terminal } from 'lucide-react';
+import { Ban, BarChart3, CheckCircle2, ExternalLink, Filter, Search, Settings2, ShieldCheck, Store, Terminal } from 'lucide-react';
 import { useState } from 'react';
 import { fetchAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 interface Tenant {
   id: string;
@@ -150,8 +151,8 @@ export default function TenantList({ initialTenants }: TenantListProps) {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${tenant.status === 'active'
-                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
-                            : 'bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400'
+                          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
+                          : 'bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400'
                           }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${tenant.status === 'active' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                           {tenant.status}
@@ -183,6 +184,13 @@ export default function TenantList({ initialTenants }: TenantListProps) {
                               <CheckCircle2 className="w-5 h-5" />
                             </button>
                           )}
+                          <Link
+                            href={`/super-admin/tenants/${tenant.id}/analytics`}
+                            className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
+                            title="Detailed Analytics"
+                          >
+                            <BarChart3 className="w-5 h-5" />
+                          </Link>
                           <a
                             href={`http://${tenant.subdomain}.localhost:3000`}
                             target="_blank"

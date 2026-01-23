@@ -8,6 +8,8 @@ import { UserService } from '../admin/user/services/user.service';
 import { OrderService } from '../order/order.service';
 import { ReviewService } from '../review/review.service';
 import { TenantService } from '../tenant/tenant.service';
+import { ProductService } from '../product/product.service';
+import { PageService } from '../page/page.service';
 
 import { TrafficService } from './traffic.service';
 
@@ -19,6 +21,8 @@ export class SuperAdminController {
         private readonly orderService: OrderService,
         private readonly reviewService: ReviewService,
         private readonly trafficService: TrafficService,
+        private readonly productService: ProductService,
+        private readonly pageService: PageService,
     ) { }
 
     @Post('/setup')
@@ -116,6 +120,88 @@ export class SuperAdminController {
         return {
             success: true,
             data: await this.tenantService.findAll(),
+        };
+    }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.SuperAdmin)
+    @Get('/tenants/analytics')
+    @ApiOperation({ summary: 'Get per-tenant granular analytics' })
+    async getTenantAnalytics() {
+        const [tenants, users, products, orders, pages, traffic] = await Promise.all([
+            this.tenantService.findAll(),
+            this.userService.findAllUsersCrossTenant(),
+            this.productService.findAllProductsCrossTenant(),
+            this.orderService.findAllOrders(),
+            this.pageService.findAllPagesCrossTenant(),
+            this.trafficService.getTrafficStats(30), // Last 30 days
+        ]);
+
+        const analytics = tenants.map(tenant => {
+            const tenantUsers = users.filter(u => u.tenantId === tenant.id);
+            const tenantProducts = products.filter(p => p.tenantId === tenant.id);
+            const tenantOrders = orders.filter(o => o.tenantId === tenant.id);
+            const tenantPages = pages.filter(p => p.tenantId === tenant.id);
+            const tenantTraffic = traffic.filter(t => t.tenantId === tenant.id);
+
+            const totalTraffic = tenantTraffic.reduce((acc, t) => acc + t.requestCount, 0);
+
+            return {
+                id: tenant.id,
+                storeName: tenant.storeName,
+                subdomain: tenant.subdomain,
+                planTier: tenant.planTier,
+                status: tenant.status,
+                stats: {
+                    users: tenantUsers.length,
+                    products: tenantProducts.length,
+                    orders: tenantOrders.length,
+                    pages: tenantPages.length,
+                    traffic: totalTraffic,
+                }
+            };
+        });
+
+        return {
+            success: true,
+            data: analytics,
+        };
+    }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.SuperAdmin)
+    @Get('/tenants/:id/analytics')
+    @ApiOperation({ summary: 'Get detailed historical analytics for a specific tenant' })
+    async getDetailedTenantAnalytics(@Param('id') id: string) {
+        const [users, products, orders, pages, pageTraffic] = await Promise.all([
+            this.userService.findAllUsersCrossTenant(), // Can be filtered in service but for now filter here
+            this.productService.findAllProductsCrossTenant(),
+            this.orderService.findAllOrders(),
+            this.pageService.findAllPagesCrossTenant(),
+            this.trafficService.getPageTrafficStats(id, 30),
+        ]);
+
+        const tenantUsers = users.filter(u => u.tenantId === id);
+        const tenantProducts = products.filter(p => p.tenantId === id);
+        const tenantOrders = orders.filter(o => o.tenantId === id);
+        const tenantPages = pages.filter(p => p.tenantId === id);
+
+        return {
+            success: true,
+            data: {
+                counts: {
+                    users: tenantUsers.length,
+                    products: tenantProducts.length,
+                    orders: tenantOrders.length,
+                    pages: tenantPages.length,
+                },
+                topPages: pageTraffic.map(pt => ({
+                    path: pt.path,
+                    hits: pt.requestCount,
+                    lastUpdated: pt.lastUpdated
+                })),
+                // Add more historical growth data here if needed
+            }
         };
     }
 

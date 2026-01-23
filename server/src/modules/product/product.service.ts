@@ -234,4 +234,8 @@ export class ProductService {
         product.stock -= quantity;
         return await this.productRepository.save(product);
     }
+
+    async findAllProductsCrossTenant() {
+        return await this.productRepository.find();
+    }
 }

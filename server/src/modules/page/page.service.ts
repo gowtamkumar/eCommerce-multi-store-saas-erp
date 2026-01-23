@@ -72,4 +72,8 @@ export class PageService {
     await this.pageRepository.remove(page)
     return { success: true }
   }
+
+  async findAllPagesCrossTenant() {
+    return await this.pageRepository.find()
+  }
 }

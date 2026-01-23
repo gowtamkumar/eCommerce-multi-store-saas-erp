@@ -22,12 +22,28 @@ interface TrafficData {
   lastUpdated: string;
 }
 
+interface TenantAnalytics {
+  id: string;
+  storeName: string;
+  subdomain: string;
+  planTier: string;
+  status: string;
+  stats: {
+    users: number;
+    products: number;
+    orders: number;
+    pages: number;
+    traffic: number;
+  }
+}
+
 interface SuperAdminDashboardProps {
   stats: Stats;
   traffic: TrafficData[];
+  tenantAnalytics: TenantAnalytics[];
 }
 
-export default function SuperAdminDashboard({ stats, traffic }: SuperAdminDashboardProps) {
+export default function SuperAdminDashboard({ stats, traffic, tenantAnalytics }: SuperAdminDashboardProps) {
   const cards = [
     { label: 'Total Stores', value: stats.totalTenants, icon: Store, color: 'bg-indigo-500', trend: '+12%' },
     { label: 'Merchant Accounts', value: stats.totalUsers, icon: Users, color: 'bg-emerald-500', trend: '+5%' },
@@ -148,6 +164,57 @@ export default function SuperAdminDashboard({ stats, traffic }: SuperAdminDashbo
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Per-Tenant Detailed Stats */}
+      <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
+        <div className="p-8 border-b border-slate-100 dark:border-slate-700">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partition Health & Activity</h2>
+          <p className="text-sm text-slate-500">Granular performance metrics per merchant tenant (Last 30 Days Traffic)</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-900/50">
+                <th className="px-8 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Merchant</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Users</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Traffic</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Orders</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Products</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Pages</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+              {tenantAnalytics.map((tenant) => (
+                <tr key={tenant.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                  <td className="px-8 py-5">
+                    <Link href={`/super-admin/tenants/${tenant.id}/analytics`} className="group">
+                      <p className="font-black text-slate-900 dark:text-white leading-tight group-hover:text-indigo-600 transition-colors">{tenant.storeName}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{tenant.subdomain}</p>
+                    </Link>
+                  </td>
+                  <td className="px-6 py-5">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">{tenant.stats.users}</span>
+                  </td>
+                  <td className="px-6 py-5 text-center">
+                    <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg font-bold text-xs">
+                      {tenant.stats.traffic.toLocaleString()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5 text-center">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">{tenant.stats.orders}</span>
+                  </td>
+                  <td className="px-6 py-5 text-center">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">{tenant.stats.products}</span>
+                  </td>
+                  <td className="px-6 py-5 text-center">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">{tenant.stats.pages}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

@@ -3,9 +3,10 @@ import { fetchAPI } from "@/lib/api";
 
 async function getSuperAdminDashboardData() {
   try {
-    const [healthRes, trafficRes] = await Promise.all([
+    const [healthRes, trafficRes, analyticsRes] = await Promise.all([
       fetchAPI('/super-admin/health'),
-      fetchAPI('/super-admin/traffic?days=7')
+      fetchAPI('/super-admin/traffic?days=7'),
+      fetchAPI('/super-admin/tenants/analytics')
     ]);
 
     return {
@@ -18,7 +19,8 @@ async function getSuperAdminDashboardData() {
         plans: healthRes.data?.stats?.plans || {},
         statuses: healthRes.data?.stats?.statuses || {},
       },
-      traffic: trafficRes.data || []
+      traffic: trafficRes.data || [],
+      tenantAnalytics: analyticsRes.data || []
     };
   } catch (error) {
     console.error("Error fetching super admin dashboard data:", error);
@@ -32,7 +34,8 @@ async function getSuperAdminDashboardData() {
         plans: {},
         statuses: {},
       },
-      traffic: []
+      traffic: [],
+      tenantAnalytics: []
     };
   }
 }
@@ -41,6 +44,10 @@ export default async function SuperAdminOverviewPage() {
   const data = await getSuperAdminDashboardData();
 
   return (
-    <SuperAdminDashboard stats={data.stats} traffic={data.traffic} />
+    <SuperAdminDashboard
+      stats={data.stats}
+      traffic={data.traffic}
+      tenantAnalytics={data.tenantAnalytics}
+    />
   );
 }
