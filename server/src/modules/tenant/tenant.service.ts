@@ -19,7 +19,7 @@ export class TenantService {
     private userRepository: Repository<UserEntity>,
     private readonly settingsService: SettingsService,
     private readonly mailService: MailService,
-  ) {}
+  ) { }
 
   async create(createTenantDto: CreateTenantDto) {
     const { storeName, subdomain, planTier, adminName, adminUsername, adminEmail, adminPassword } =
@@ -146,6 +146,18 @@ export class TenantService {
     // Mock verification: in a real app, you'd check DNS records here
     tenant.customDomainStatus = 'active'
     tenant.customDomainVerifiedAt = new Date()
+    return await this.tenantRepository.save(tenant)
+  }
+
+  async updateStatus(id: string, status: string) {
+    const tenant = await this.findOne(id)
+    tenant.status = status
+    return await this.tenantRepository.save(tenant)
+  }
+
+  async updatePlanTier(id: string, planTier: string) {
+    const tenant = await this.findOne(id)
+    tenant.planTier = planTier
     return await this.tenantRepository.save(tenant)
   }
 }

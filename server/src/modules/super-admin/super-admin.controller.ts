@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '../../common/enums/user/user-role.enum';
 import { Roles } from '../admin/auth/decorators/roles.decorator';
@@ -9,6 +9,8 @@ import { OrderService } from '../order/order.service';
 import { ReviewService } from '../review/review.service';
 import { TenantService } from '../tenant/tenant.service';
 
+import { TrafficService } from './traffic.service';
+
 @Controller('super-admin')
 export class SuperAdminController {
     constructor(
@@ -16,6 +18,7 @@ export class SuperAdminController {
         private readonly tenantService: TenantService,
         private readonly orderService: OrderService,
         private readonly reviewService: ReviewService,
+        private readonly trafficService: TrafficService,
     ) { }
 
     @Post('/setup')
@@ -50,12 +53,25 @@ export class SuperAdminController {
     @Roles(UserRole.SuperAdmin)
     @Get('/health')
     async getHealth() {
-        const [users, tenants, orders, reviews] = await Promise.all([
+        const [users, tenants, orders, reviews, traffic] = await Promise.all([
             this.userService.findAllUsersCrossTenant(),
             this.tenantService.findAll(),
             this.orderService.findAllOrders(),
             this.reviewService.findAllReviews(),
+            this.trafficService.getTrafficStats(1), // Last 24h
         ]);
+
+        const totalRequestsLast24h = traffic.reduce((acc, t) => acc + t.requestCount, 0);
+
+        const planStats = tenants.reduce((acc, t) => {
+            acc[t.planTier] = (acc[t.planTier] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const statusStats = tenants.reduce((acc, t) => {
+            acc[t.status] = (acc[t.status] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
 
         return {
             success: true,
@@ -67,14 +83,28 @@ export class SuperAdminController {
                     version: '1.0.0',
                 },
                 stats: {
-                    tenants: tenants.length,
-                    users: users.length,
-                    orders: orders.length,
-                    reviews: reviews.length,
+                    totalTenants: tenants.length,
+                    totalUsers: users.length,
+                    totalOrders: orders.length,
+                    totalReviews: reviews.length,
+                    totalRequestsLast24h,
+                    plans: planStats,
+                    statuses: statusStats,
                 },
                 timestamp: new Date().toISOString(),
                 service: 'eCommerce Multi-Tenant SaaS Backend',
             }
+        };
+    }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.SuperAdmin)
+    @Get('/traffic')
+    @ApiOperation({ summary: 'Get traffic stats for last 7 days' })
+    async getTraffic(@Query('days') days?: number) {
+        return {
+            success: true,
+            data: await this.trafficService.getTrafficStats(days || 7),
         };
     }
 
@@ -105,6 +135,32 @@ export class SuperAdminController {
                     totalPages: 1,
                 },
             },
+        };
+    }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.SuperAdmin)
+    @Patch('/tenants/:id/status')
+    @ApiOperation({ summary: 'Update tenant status (Suspend/Activate)' })
+    async updateTenantStatus(@Param('id') id: string, @Body('status') status: string) {
+        const tenant = await this.tenantService.updateStatus(id, status);
+        return {
+            success: true,
+            message: `Tenant status updated to ${status}`,
+            data: tenant,
+        };
+    }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.SuperAdmin)
+    @Patch('/tenants/:id/plan')
+    @ApiOperation({ summary: 'Update tenant plan tier' })
+    async updateTenantPlan(@Param('id') id: string, @Body('planTier') planTier: string) {
+        const tenant = await this.tenantService.updatePlanTier(id, planTier);
+        return {
+            success: true,
+            message: `Tenant plan updated to ${planTier}`,
+            data: tenant,
         };
     }
 }
