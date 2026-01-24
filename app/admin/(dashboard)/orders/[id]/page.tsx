@@ -30,6 +30,11 @@ interface OrderItem {
     price: number;
     images: string[];
   } | null;
+  variant: {
+    id: string;
+    sku: string;
+    combination: Record<string, string>;
+  } | null;
 }
 
 interface Order {
@@ -241,9 +246,21 @@ export default function OrderDetailsPage({
                   <p className="font-bold text-slate-900 text-lg mb-1">
                     {item.product?.name || "Product"}
                   </p>
-                  <p className="text-sm text-slate-500">
-                    Item #{item.product?.id?.slice(-6)?.toUpperCase() || "N/A"}
-                  </p>
+                  <div className="flex flex-col gap-1 text-sm text-slate-500">
+                    <p>ID: #{item.product?.id?.slice(-6)?.toUpperCase() || "N/A"}</p>
+                    {item.variant && (
+                      <div className="flex flex-col gap-0.5 mt-1 border-l-2 border-brand-200 pl-2">
+                        <p className="text-xs font-bold text-brand-600 uppercase">
+                          SKU: {item.variant.sku}
+                        </p>
+                        <p className="text-[10px] italic">
+                          {item.variant.combination && Object.entries(item.variant.combination)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join(", ")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td className="py-6 text-center font-bold text-slate-900">
                   {item.quantity}
@@ -395,7 +412,21 @@ export default function OrderDetailsPage({
                     ) : (
                       <span className="text-slate-500 italic">Deleted Product</span>
                     )}
-                    <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
+
+                    {item.variant && (
+                      <div className="mt-1 flex flex-col gap-0.5">
+                        <p className="text-[10px] font-black text-brand-600 uppercase tracking-widest">
+                          SKU: {item.variant.sku}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                          {item.variant.combination && Object.entries(item.variant.combination)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join(", ")}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
                       <span>Quantity: {item.quantity}</span>
                       <span>•</span>
                       <span>

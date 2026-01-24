@@ -17,6 +17,11 @@ export class OrderItemDto {
     @IsString()
     productId: string;
 
+    @ApiProperty({ required: false })
+    @IsString()
+    @IsOptional()
+    variantId?: string;
+
     @ApiProperty()
     @IsNumber()
     @Min(1)

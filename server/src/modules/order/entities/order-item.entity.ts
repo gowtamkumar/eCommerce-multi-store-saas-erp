@@ -8,6 +8,7 @@ import {
     UpdateDateColumn,
 } from 'typeorm';
 import { ProductEntity } from '../../product/entities/product.entity';
+import { ProductVariantEntity } from '../../product/entities/variant.entity';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { OrderEntity } from './order.entity';
 
@@ -29,6 +30,13 @@ export class OrderItemEntity {
     @ManyToOne(() => ProductEntity)
     @JoinColumn({ name: 'productId' })
     product: ProductEntity;
+
+    @Column({ type: 'uuid', nullable: true })
+    variantId: string;
+
+    @ManyToOne(() => ProductVariantEntity)
+    @JoinColumn({ name: 'variantId' })
+    variant: ProductVariantEntity;
 
     @Column({ type: 'int' })
     quantity: number;

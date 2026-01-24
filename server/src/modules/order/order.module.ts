@@ -8,9 +8,10 @@ import { OrderEntity } from './entities/order.entity';
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 
-import { PaymentEntity } from '../payment/entities/payment.entity';
-import { OrderItemEntity } from './entities/order-item.entity';
 import { CartModule } from '../cart/cart.module';
+import { PaymentEntity } from '../payment/entities/payment.entity';
+import { ProductVariantEntity } from '../product/entities/variant.entity';
+import { OrderItemEntity } from './entities/order-item.entity';
 
 @Module({
     imports: [
@@ -22,6 +23,7 @@ import { CartModule } from '../cart/cart.module';
             SiteSettingsEntity,
             PaymentEntity,
             OrderItemEntity,
+            ProductVariantEntity,
         ]),
         CartModule,
     ],

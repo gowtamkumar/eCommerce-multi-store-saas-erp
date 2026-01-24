@@ -21,6 +21,11 @@ interface OrderItem {
         images: string[];
         price: number;
     } | null;
+    variant: {
+        id: string;
+        sku: string;
+        combination: Record<string, string>;
+    } | null;
 }
 
 interface Order {
@@ -166,9 +171,16 @@ const CustomerOrders = () => {
                                                 ? `${firstItem?.product?.name || 'Multiple Products'} (+${itemCount - 1} more)`
                                                 : (firstItem?.product?.name || "Product Unavailable")}
                                         </h4>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                                            {new Date(order.createdAt).toLocaleDateString()}
-                                        </p>
+                                        <div className="flex flex-col gap-0.5 mt-0.5">
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                {new Date(order.createdAt).toLocaleDateString()}
+                                            </p>
+                                            {itemCount === 1 && firstItem?.variant && (
+                                                <p className="text-[10px] font-bold text-brand-600 uppercase">
+                                                    SKU: {firstItem.variant.sku}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -247,7 +259,19 @@ const CustomerOrders = () => {
                                             <h4 className="font-bold text-slate-900 dark:text-white text-base">
                                                 {item.product?.name}
                                             </h4>
-                                            <p className="text-slate-500 dark:text-slate-400 text-xs">
+                                            {item.variant && (
+                                                <div className="mt-0.5 flex flex-col gap-0.5">
+                                                    <p className="text-[10px] font-bold text-brand-600 uppercase">
+                                                        SKU: {item.variant.sku}
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 italic">
+                                                        {Object.entries(item.variant.combination)
+                                                            .map(([key, value]) => `${key}: ${value}`)
+                                                            .join(", ")}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
                                                 Qty: {item.quantity} x {formatPrice(item.unitPrice)}
                                             </p>
                                         </div>
