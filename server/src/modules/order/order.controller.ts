@@ -1,18 +1,18 @@
 import {
+    Body,
     Controller,
     Get,
-    Post,
-    Body,
     Param,
+    Post,
     Put,
     Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { OrderService } from './order.service';
-import { FilterOrderDto } from './dto/filter-order.dto';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { FilterOrderDto } from './dto/filter-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
+import { OrderService } from './order.service';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -60,7 +60,12 @@ export class OrderController {
     @ApiOperation({ summary: 'Get order by ID' })
     @ApiResponse({ status: 200, description: 'Returns order' })
     async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-        return await this.orderService.findOne(id, tenantId);
+        const order = await this.orderService.findOne(id, tenantId);
+        return {
+            success: true,
+            statusCode: 200,
+            data: order,
+        };
     }
 
     @Get('user/:userId')
@@ -70,9 +75,12 @@ export class OrderController {
         @Param('userId') userId: string,
         @TenantId() tenantId: string,
     ) {
-        console.log("tenantId", tenantId);
-        console.log("userId", userId);
-        return await this.orderService.findByUserId(userId, tenantId);
+        const orders = await this.orderService.findByUserId(userId, tenantId);
+        return {
+            success: true,
+            statusCode: 200,
+            data: orders,
+        };
     }
 
     @Put(':id')
@@ -83,6 +91,11 @@ export class OrderController {
         @Body() updateOrderDto: UpdateOrderDto,
         @TenantId() tenantId: string,
     ) {
-        return await this.orderService.update(id, updateOrderDto, tenantId);
+        const order = await this.orderService.update(id, updateOrderDto, tenantId);
+        return {
+            success: true,
+            statusCode: 200,
+            data: order,
+        };
     }
 }

@@ -18,27 +18,32 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-interface Order {
+interface OrderItem {
   id: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  address: string;
-  unitPrice?: number;
-  discountAmount?: number;
+  quantity: number;
+  unitPrice: number;
+  discountAmount: number;
   totalAmount: number;
-  status: string;
-  paymentMethod: string;
-  paymentStatus: string;
-  transactionId?: string;
-  productId: string;
   product: {
     id: string;
     name: string;
     price: number;
     images: string[];
   } | null;
-  quantity: number;
+}
+
+interface Order {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  address: string;
+  totalAmount: number;
+  status: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  transactionId?: string;
+  items: OrderItem[];
   createdAt: string;
   orderNotes?: string;
 }
@@ -95,14 +100,6 @@ export default function OrderDetailsPage({
     }
   };
 
-  // const getStatusIcon = (status: string) => {
-  //   switch (status) {
-  //     case OrderStatus.COMPLETED: return <CheckCircle className="w-5 h-5 text-green-500" />;
-  //     case OrderStatus.CANCELLED: return <XCircle className="w-5 h-5 text-red-500" />;
-  //     default: return <Clock className="w-5 h-5 text-yellow-500" />;
-  //   }
-  // };
-
   const getStatusStyles = (status: string) => {
     switch (status) {
       case OrderStatus.COMPLETED:
@@ -134,6 +131,9 @@ export default function OrderDetailsPage({
       </div>
     );
   }
+
+  const subtotal = (order.items || []).reduce((acc, item) => acc + (Number(item.unitPrice) * item.quantity), 0);
+  const totalDiscount = (order.items || []).reduce((acc, item) => acc + (Number(item.discountAmount) * item.quantity), 0);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -235,28 +235,27 @@ export default function OrderDetailsPage({
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b border-slate-100">
-              <td className="py-6">
-                <p className="font-bold text-slate-900 text-lg mb-1">
-                  {order.product?.name || "Product"}
-                </p>
-                <p className="text-sm text-slate-500">
-                  Item #{order.product?.id?.slice(-6)?.toUpperCase()}
-                </p>
-              </td>
-              <td className="py-6 text-center font-bold text-slate-900">
-                {order.quantity}
-              </td>
-              <td className="py-6 text-right font-medium text-slate-600">
-                {formatPrice(order.unitPrice || order.product?.price || 0)}
-              </td>
-              <td className="py-6 text-right font-bold text-slate-900">
-                {formatPrice(
-                  (order.unitPrice || order.product?.price || 0) *
-                  order.quantity
-                )}
-              </td>
-            </tr>
+            {(order.items || []).map((item) => (
+              <tr key={item.id} className="border-b border-slate-100">
+                <td className="py-6">
+                  <p className="font-bold text-slate-900 text-lg mb-1">
+                    {item.product?.name || "Product"}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    Item #{item.product?.id?.slice(-6)?.toUpperCase() || "N/A"}
+                  </p>
+                </td>
+                <td className="py-6 text-center font-bold text-slate-900">
+                  {item.quantity}
+                </td>
+                <td className="py-6 text-right font-medium text-slate-600">
+                  {formatPrice(item.unitPrice)}
+                </td>
+                <td className="py-6 text-right font-bold text-slate-900">
+                  {formatPrice(item.totalAmount)}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
 
@@ -265,17 +264,14 @@ export default function OrderDetailsPage({
             <div className="flex justify-between text-sm text-slate-500 italic">
               <span>Subtotal</span>
               <span className="font-medium text-slate-900">
-                {formatPrice(
-                  (order.unitPrice || order.product?.price || 0) *
-                  order.quantity
-                )}
+                {formatPrice(subtotal)}
               </span>
             </div>
-            {(order.discountAmount || 0) > 0 && (
+            {totalDiscount > 0 && (
               <div className="flex justify-between text-sm text-red-500">
                 <span>Total Discount</span>
                 <span className="font-medium">
-                  -{formatPrice((order.discountAmount || 0) * order.quantity)}
+                  -{formatPrice(totalDiscount)}
                 </span>
               </div>
             )}
@@ -372,52 +368,58 @@ export default function OrderDetailsPage({
                 Order Items
               </h2>
             </div>
-            <div className="p-6">
-              {order.product ? (
-                <div className="flex items-center gap-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl">
-                  <div className="w-24 h-24 bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm flex-shrink-0 relative">
-                    <img
-                      src={order.product.images?.[0]}
-                      alt={order.product.name}
-                      className="w-full h-full object-cover"
-                    />
+            <div className="p-6 space-y-4">
+              {(order.items || []).map((item) => (
+                <div key={item.id} className="flex items-center gap-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl">
+                  <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm flex-shrink-0 relative border border-slate-100 dark:border-slate-700">
+                    {item.product?.images?.[0] ? (
+                      <img
+                        src={item.product.images[0]}
+                        alt={item.product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
+                        <Package className="w-8 h-8" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1">
-                    <Link
-                      href={`/admin/products/${order.product.id}/review`}
-                      className="text-lg font-bold text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
-                    >
-                      {order.product.name}
-                    </Link>
+                    {item.product ? (
+                      <Link
+                        href={`/admin/products/${item.product.id}`}
+                        className="text-base font-bold text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                      >
+                        {item.product.name}
+                      </Link>
+                    ) : (
+                      <span className="text-slate-500 italic">Deleted Product</span>
+                    )}
                     <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
-                      <span>Quantity: {order.quantity}</span>
+                      <span>Quantity: {item.quantity}</span>
                       <span>•</span>
                       <span>
-                        Unit Price:{" "}
-                        {formatPrice(order.unitPrice || order.product.price)}
+                        Unit: {formatPrice(item.unitPrice)}
                       </span>
                     </div>
-                    {(order.discountAmount || 0) > 0 && (
-                      <p className="text-sm text-red-500 font-medium mt-1">
-                        Discount: -{formatPrice(order.discountAmount || 0)} per
-                        unit
+                    {Number(item.discountAmount) > 0 && (
+                      <p className="text-xs text-red-500 font-medium mt-1">
+                        Discount: -{formatPrice(item.discountAmount)} unit
                       </p>
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-brand-600">
-                      {formatPrice(
-                        (+(order.unitPrice || order.product.price) -
-                          +(order.discountAmount || 0)) *
-                        order.quantity
-                      )}
+                    <p className="text-lg font-bold text-brand-600">
+                      {formatPrice(item.totalAmount)}
                     </p>
                   </div>
                 </div>
-              ) : (
+              ))}
+
+              {(!order.items || order.items.length === 0) && (
                 <div className="p-8 text-center bg-slate-50 dark:bg-slate-900/50 rounded-2xl">
                   <Package className="w-12 h-12 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-500">Product data unavailable</p>
+                  <p className="text-slate-500">No items in this order</p>
                 </div>
               )}
             </div>
@@ -426,26 +428,16 @@ export default function OrderDetailsPage({
               <div className="space-y-2 max-w-sm ml-auto">
                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
                   <span>Subtotal</span>
-                  <span>
-                    {formatPrice(
-                      (order.unitPrice || order.product?.price || 0) *
-                      order.quantity
-                    )}
-                  </span>
+                  <span>{formatPrice(subtotal)}</span>
                 </div>
-                {(order.discountAmount || 0) > 0 && (
+                {totalDiscount > 0 && (
                   <div className="flex justify-between text-red-500">
                     <span>Total Discount</span>
-                    <span>
-                      -
-                      {formatPrice(
-                        (order.discountAmount || 0) * order.quantity
-                      )}
-                    </span>
+                    <span>-{formatPrice(totalDiscount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-xl font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-200 dark:border-slate-700">
-                  <span>Total Paid</span>
+                  <span>Payable Amount</span>
                   <span className="text-green-600">
                     {formatPrice(order.totalAmount)}
                   </span>
@@ -546,7 +538,7 @@ export default function OrderDetailsPage({
                     <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">
                       Method
                     </p>
-                    <p className="font-medium text-slate-900 dark:text-white uppercase">
+                    <p className="font-medium text-slate-900 dark:text-white uppercase text-sm">
                       {order.paymentMethod}
                     </p>
                   </div>
@@ -588,7 +580,7 @@ export default function OrderDetailsPage({
                       type="text"
                       value={order.transactionId || ""}
                       onChange={(e) =>
-                        setOrder({ ...order, transactionId: e.target.value })
+                        setOrder({ ...order, transactionId: e.target.value } as any)
                       }
                       placeholder="Enter ID"
                       className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all"

@@ -12,24 +12,17 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 interface Order {
-  _id: string;
+  id: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
   address: string;
-  unitPrice?: number;
-  discountAmount?: number;
   totalAmount: number;
   status: string;
   paymentMethod: string;
   paymentStatus: string;
   transactionId?: string;
-  productId: {
-    name: string;
-    price: number;
-    images: string[];
-  } | null;
-  quantity: number;
+  items: any[];
   createdAt: string;
   orderNotes?: string;
 }
@@ -174,15 +167,22 @@ export default function OrdersPage() {
                 orders.map((order: any) => (
                   <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="px-6 py-4 text-slate-500 font-mono text-xs">{order.id.slice(-6).toUpperCase()}</td>
-                    <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{order.customerName}</td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
-                      {formatPrice((order.unitPrice || order.productId?.price) || 0)}
+                    <td className="px-6 py-4">
+                      <div className="text-slate-900 dark:text-white font-medium">{order.customerName}</div>
+                      <div className="text-xs text-slate-500 truncate max-w-[200px]">
+                        {order.items?.length > 1
+                          ? `${order.items[0]?.product?.name} + ${order.items.length - 1} more`
+                          : order.items?.[0]?.product?.name || 'No Items'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300 text-sm">
+                      {formatPrice(order.items?.[0]?.unitPrice || 0)}
                     </td>
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-semibold">{formatPrice(order.totalAmount || 0)}</td>
                     <td className="px-6 py-4">
-                      {order.discountAmount ? (
+                      {order.items?.some((i: any) => Number(i.discountAmount) > 0) ? (
                         <span className="text-red-500 text-sm">
-                          -{formatPrice((order.discountAmount * order.quantity) || 0)}
+                          -{formatPrice(order.items.reduce((acc: number, item: any) => acc + (Number(item.discountAmount) * item.quantity), 0))}
                         </span>
                       ) : (
                         <span className="text-slate-400 text-sm">-</span>
