@@ -93,6 +93,19 @@ These are **NON-NEGOTIABLE**:
 
 ---
 
+### 👑 Enginnering (YOU)
+
+- logs
+  - App logs Winston / Pino
+  - Job logs BullMQ events
+  - Audit logs Database
+  - Monitoring ELK / Grafana
+- caching system
+- background taks
+- SMTP setup (Gmail / SES / SendGrid)
+
+---
+
 👉 **This is enough to SELL** 💰
 
 ---
