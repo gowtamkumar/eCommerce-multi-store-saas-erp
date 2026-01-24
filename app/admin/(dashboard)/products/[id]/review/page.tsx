@@ -10,51 +10,17 @@ import { use, useEffect, useState } from 'react';
 interface Product {
     id: string;
     name: string;
-    description: string;
     price: number;
     discountAmount?: number;
     currency: string;
     stock: number;
     status: string;
     images: string[];
-    features: string[];
-    createdAt: string;
-    updatedAt: string;
-    tagline?: string;
     socialProof?: {
         noun: string;
         count: number;
         rating: number;
         avatars: string[];
-    };
-    heroHighlights?: Array<{
-        icon: string;
-        label: string;
-        value: string;
-        color: string;
-    }>;
-    specifications?: Array<{
-        label: string;
-        value: string;
-    }>;
-    keyBenefits?: Array<{
-        icon: string;
-        title: string;
-        description: string;
-    }>;
-    videoUrl?: string;
-    releaseBadgeText?: string;
-    sections?: {
-        techSpecs?: {
-            heading: string;
-            subheading: string;
-            description: string;
-        };
-        features?: {
-            heading: string;
-            subheading: string;
-            description: string;
-        };
     };
 }
 
