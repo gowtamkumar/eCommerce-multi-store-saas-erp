@@ -1,4 +1,7 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { SubscriptionBillingCycle } from '../../../common/enums/subscription/billing-cycle.enum'
+import { SubscriptionStatus } from '../../../common/enums/subscription/subscription-status.enum'
+import { SubscriptionPlanEntity } from '../../subscription-plan/entities/subscription-plan.entity'
 
 @Entity('tenants')
 export class TenantEntity {
@@ -26,13 +29,6 @@ export class TenantEntity {
 
   @Column({
     type: 'enum',
-    enum: ['basic', 'pro', 'enterprise'],
-    default: 'basic',
-  })
-  planTier: string
-
-  @Column({
-    type: 'enum',
     enum: ['active', 'suspended', 'archived'],
     default: 'active',
   })
@@ -46,4 +42,31 @@ export class TenantEntity {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date
+
+  @Column({ nullable: true })
+  subscriptionPlanId: string
+
+  @ManyToOne(() => SubscriptionPlanEntity, (plan) => plan.tenants)
+  @JoinColumn({ name: 'subscriptionPlanId' })
+  subscriptionPlan: SubscriptionPlanEntity
+
+  @Column({
+    type: 'enum',
+    enum: SubscriptionBillingCycle,
+    default: SubscriptionBillingCycle.Monthly,
+  })
+  subscriptionBillingCycle: SubscriptionBillingCycle
+
+  @Column({
+    type: 'enum',
+    enum: SubscriptionStatus,
+    default: SubscriptionStatus.Active,
+  })
+  subscriptionStatus: SubscriptionStatus
+
+  @Column({ type: 'timestamptz', nullable: true })
+  subscriptionStartsAt: Date
+
+  @Column({ type: 'timestamptz', nullable: true })
+  subscriptionEndsAt: Date
 }

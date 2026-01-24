@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Activity, Globe, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, Users, X } from 'lucide-react';
+import { Activity, Globe, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, Users, X, Layers } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -41,6 +41,7 @@ export default function SuperAdminLayout({
     { icon: Globe, label: 'Tenants (Stores)', href: '/super-admin/tenants' },
     { icon: Users, label: 'Global Users', href: '/super-admin/users' },
     { icon: Activity, label: 'Platform Health', href: '/super-admin/health' },
+    { icon: Layers, label: 'Subscription Plans', href: '/super-admin/plans' },
     { icon: Settings, label: 'Global Settings', href: '/super-admin/settings' },
   ];
 

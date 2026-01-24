@@ -15,7 +15,7 @@ export class OnboardController {
         const createTenantDto: CreateTenantDto = {
             storeName: body.storeName,
             subdomain: body.subdomain,
-            planTier: body.planTier || 'basic',
+            planId: body.planId,
             adminName: body.name,
             adminUsername: body.username,
             adminEmail: body.email,

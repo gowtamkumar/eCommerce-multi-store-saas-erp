@@ -1,23 +1,53 @@
 'use client';
 
 import { fetchAPI } from '@/lib/api';
-import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, Globe, Layout, Loader2, Lock, User } from 'lucide-react';
-import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, ArrowRight, CheckCircle2, Globe, Layout, Loader2, Lock, User, Layers } from 'lucide-react';
+import { useState, useEffect } from 'react';
+
+interface SubscriptionPlan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  features: string[];
+}
 
 export default function CreateStorePage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [fetchingPlans, setFetchingPlans] = useState(true);
 
   const [formData, setFormData] = useState({
     storeName: '',
     subdomain: '',
+    planId: '',
     name: '',
     email: '',
     username: '',
     password: '',
   });
+
+  useEffect(() => {
+    async function getPlans() {
+      try {
+        const res = await fetchAPI('/plans');
+        if (res.success) {
+          setPlans(res.data);
+          if (res.data.length > 0) {
+            setFormData(prev => ({ ...prev, planId: res.data[0].id }));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch plans', err);
+      } finally {
+        setFetchingPlans(false);
+      }
+    }
+    getPlans();
+  }, []);
 
   const handleSubdomainChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
@@ -27,6 +57,10 @@ export default function CreateStorePage() {
   const nextStep = () => {
     if (step === 1 && (!formData.storeName || !formData.subdomain)) {
       setError('Please fill in both fields');
+      return;
+    }
+    if (step === 2 && !formData.planId) {
+      setError('Please select a subscription plan');
       return;
     }
     setError('');
@@ -49,19 +83,11 @@ export default function CreateStorePage() {
 
       if (data.success && data.subdomain) {
         // Successful onboarding
-        // Construct the admin URL for the new store
         const protocol = window.location.protocol;
         const hostname = window.location.hostname;
         const port = window.location.port ? `:${window.location.port}` : '';
-
-        // If on localhost, hostname is 'localhost'
-        // If on prod, hostname is 'domain.com'
-        // We want: subdomain.hostname:port/admin/login
-        // Note: For localhost, it will be subdomain.localhost:port
-
         const adminUrl = `${protocol}//${data.subdomain}.${hostname}${port}/admin/login`;
 
-        // Show success or redirect immediately
         alert("Store created successfully! Redirecting to your admin dashboard...");
         window.location.href = adminUrl;
       } else {
@@ -74,14 +100,25 @@ export default function CreateStorePage() {
     }
   };
 
+  const renderStepInfo = () => {
+    switch (step) {
+      case 1: return { title: 'Configure Your Store', subtitle: 'Step 1 of 3 • Digital identity' };
+      case 2: return { title: 'Choose Your Plan', subtitle: 'Step 2 of 3 • Scaling your business' };
+      case 3: return { title: 'Create Admin Account', subtitle: 'Step 3 of 3 • Account security' };
+      default: return { title: '', subtitle: '' };
+    }
+  };
+
+  const stepInfo = renderStepInfo();
+
   return (
     <div className="w-full">
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold font-display text-slate-900 dark:text-white mb-2">
-          {step === 1 ? 'Configure Your Store' : 'Create Admin Account'}
+        <h1 className="text-4xl font-bold font-display text-slate-900 dark:text-white mb-2Transition transition-all">
+          {stepInfo.title}
         </h1>
         <p className="text-slate-500 dark:text-slate-400">
-          Step {step} of 2 • {step === 1 ? 'Digital identity' : 'Account security'}
+          {stepInfo.subtitle}
         </p>
       </div>
 
@@ -99,7 +136,7 @@ export default function CreateStorePage() {
                   'Instant setup',
                   'Custom subdomain',
                   'Secure payments',
-                  'Admin dashboard'
+                  'Dynamic scaling'
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-sm font-medium opacity-90">
                     <CheckCircle2 className="w-4 h-4" />
@@ -122,141 +159,212 @@ export default function CreateStorePage() {
                 </div>
               )}
 
-              {step === 1 ? (
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="space-y-6"
-                >
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Store Name</label>
-                    <div className="relative">
-                      <Layout className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                      <input
-                        type="text"
-                        required
-                        value={formData.storeName}
-                        onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
-                        className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                        placeholder="My Awesome Shop"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Store URL (Subdomain)</label>
-                    <div className="relative">
-                      <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                      <input
-                        type="text"
-                        required
-                        value={formData.subdomain}
-                        onChange={handleSubdomainChange}
-                        className="w-full pl-12 pr-32 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                        placeholder="myshop"
-                      />
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">
-                        .luxesaas.com
-                      </div>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-400">Only letters, numbers, and hyphens allowed.</p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl transition-all shadow-xl shadow-brand-500/25 flex justify-center items-center gap-2 group"
+              <AnimatePresence mode="wait">
+                {step === 1 && (
+                  <motion.div
+                    key="step1"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-6"
                   >
-                    Proceed to Security
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </button>
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="space-y-6"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Store Name</label>
                       <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <Layout className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <input
                           type="text"
                           required
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          value={formData.storeName}
+                          onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
                           className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                          placeholder="John Doe"
+                          placeholder="My Awesome Shop"
                         />
                       </div>
                     </div>
+
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Username</label>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Store URL (Subdomain)</label>
                       <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <input
                           type="text"
                           required
-                          value={formData.username}
-                          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                          className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                          placeholder="johndoe"
+                          value={formData.subdomain}
+                          onChange={handleSubdomainChange}
+                          className="w-full pl-12 pr-32 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                          placeholder="myshop"
                         />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">
+                          .luxesaas.com
+                        </div>
                       </div>
+                      <p className="mt-2 text-xs text-slate-400">Only letters, numbers, and hyphens allowed.</p>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
-                    <div className="relative">
-                      <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                      <input
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                        placeholder="john@example.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                      <input
-                        type="password"
-                        required
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4">
                     <button
                       type="button"
-                      onClick={prevStep}
-                      className="flex-1 py-4 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                      onClick={nextStep}
+                      className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl transition-all shadow-xl shadow-brand-500/25 flex justify-center items-center gap-2 group"
                     >
-                      Back
+                      Choose Plan
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-[2] py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl transition-all shadow-xl shadow-brand-500/25 flex justify-center items-center gap-2 disabled:opacity-70"
-                    >
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Launch My Store'}
-                      {!loading && <CheckCircle2 className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
+                  </motion.div>
+                )}
+
+                {step === 2 && (
+                  <motion.div
+                    key="step2"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-6"
+                  >
+                    <div className="grid grid-cols-1 gap-4">
+                      {fetchingPlans ? (
+                        <div className="py-10 text-center flex flex-col items-center gap-2">
+                          <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
+                          <p className="text-sm font-medium text-slate-500">Retrieving available plans...</p>
+                        </div>
+                      ) : (
+                        plans.map((plan) => (
+                          <div
+                            key={plan.id}
+                            onClick={() => setFormData({ ...formData, planId: plan.id })}
+                            className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${formData.planId === plan.id
+                              ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-900/20'
+                              : 'border-slate-100 dark:border-slate-700 hover:border-brand-200'}`}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex gap-4">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.planId === plan.id ? 'bg-brand-600 text-white' : 'bg-slate-100 dark:bg-slate-900 text-slate-400'}`}>
+                                  <Layers className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <h3 className="font-bold text-slate-900 dark:text-white">{plan.name}</h3>
+                                  <p className="text-xs text-slate-500 mt-1">{plan.description}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-lg font-black text-brand-600">${plan.price}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">per month</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="flex gap-4">
+                      <button
+                        type="button"
+                        onClick={prevStep}
+                        className="flex-1 py-4 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={nextStep}
+                        className="flex-[2] py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl transition-all shadow-xl shadow-brand-500/25 flex justify-center items-center gap-2 group"
+                      >
+                        Setup Account
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {step === 3 && (
+                  <motion.div
+                    key="step3"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-6"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
+                        <div className="relative">
+                          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                          <input
+                            type="text"
+                            required
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                            placeholder="John Doe"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Username</label>
+                        <div className="relative">
+                          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                          <input
+                            type="text"
+                            required
+                            value={formData.username}
+                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                            className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                            placeholder="johndoe"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
+                      <div className="relative">
+                        <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                          type="email"
+                          required
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                          placeholder="john@example.com"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Password</label>
+                      <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <input
+                          type="password"
+                          required
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                          placeholder="••••••••"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <button
+                        type="button"
+                        onClick={prevStep}
+                        className="flex-1 py-4 bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="flex-[2] py-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-2xl transition-all shadow-xl shadow-brand-500/25 flex justify-center items-center gap-2 disabled:opacity-70"
+                      >
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Launch My Store'}
+                        {!loading && <CheckCircle2 className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </form>
           </div>
         </div>

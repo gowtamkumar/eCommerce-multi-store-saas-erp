@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsEnum, IsNotEmpty, MinLength } from 'class-validator';
+import { IsString, IsEmail, IsEnum, IsNotEmpty, MinLength, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateTenantDto {
@@ -12,13 +12,10 @@ export class CreateTenantDto {
     @IsNotEmpty()
     subdomain: string;
 
-    @ApiProperty({
-        example: 'basic',
-        enum: ['basic', 'pro', 'enterprise'],
-        description: 'Subscription plan tier',
-    })
-    @IsEnum(['basic', 'pro', 'enterprise'])
-    planTier: string;
+    @ApiProperty({ example: 'uuid-of-plan', description: 'Subscription Plan ID' })
+    @IsString()
+    @IsOptional()
+    planId?: string;
 
     // Admin user details for the new tenant
     @ApiProperty({ example: 'Admin User', description: 'Admin name' })

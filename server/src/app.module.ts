@@ -29,6 +29,7 @@ import { TenantModule } from './modules/tenant/tenant.module'
 import { TestimonialModule } from './modules/testimonial/testimonial.module'
 import { WishlistModule } from './modules/wishlist/wishlist.module'
 import { TrackingModule } from './modules/tracking/tracking.module'
+import { SubscriptionPlanModule } from './modules/subscription-plan/subscription-plan.module'
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { TrackingModule } from './modules/tracking/tracking.module'
     CartModule,
     WishlistModule,
     TrackingModule,
+    SubscriptionPlanModule,
   ],
   controllers: [],
   providers: [

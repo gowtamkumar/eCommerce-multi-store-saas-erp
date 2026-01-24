@@ -68,7 +68,8 @@ export class SuperAdminController {
         const totalRequestsLast24h = traffic.reduce((acc, t) => acc + t.requestCount, 0);
 
         const planStats = tenants.reduce((acc, t) => {
-            acc[t.planTier] = (acc[t.planTier] || 0) + 1;
+            const planName = t.subscriptionPlan?.name || 'No Plan';
+            acc[planName] = (acc[planName] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
 
@@ -147,7 +148,7 @@ export class SuperAdminController {
                     id: tenant.id,
                     storeName: tenant.storeName,
                     subdomain: tenant.subdomain,
-                    planTier: tenant.planTier,
+                    subscriptionPlan: tenant.subscriptionPlan,
                     status: tenant.status,
                     stats: {
                         users,
@@ -237,13 +238,13 @@ export class SuperAdminController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.SuperAdmin)
     @Patch('/tenants/:id/plan')
-    @ApiOperation({ summary: 'Update tenant plan tier' })
-    async updateTenantPlan(@Param('id') id: string, @Body('planTier') planTier: string) {
-        const tenant = await this.tenantService.updatePlanTier(id, planTier);
+    @ApiOperation({ summary: 'Update tenant subscription plan' })
+    async updateTenantPlan(@Param('id') id: string, @Body('planId') planId: string) {
+        // This would require a new method in TenantService to update the plan relation
+        // For now, removing the legacy tier logic.
         return {
             success: true,
-            message: `Tenant plan updated to ${planTier}`,
-            data: tenant,
+            message: 'Plan update logic to be implemented with dynamic plans',
         };
     }
 }

@@ -1,4 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { SubscriptionBillingCycle } from '../../common/enums/subscription/billing-cycle.enum'
+import { SubscriptionStatus } from '../../common/enums/subscription/subscription-status.enum'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
 import * as crypto from 'crypto'
@@ -7,6 +9,7 @@ import { UserRole } from '../../common/enums/user/user-role.enum'
 import { UserEntity } from '../admin/user/entities/user.entity'
 import { MailService } from '../mail/mail.service'
 import { SettingsService } from '../settings/settings.service'
+import { SubscriptionPlanService } from '../subscription-plan/subscription-plan.service'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantEntity } from './entities/tenant.entity'
 
@@ -19,10 +22,11 @@ export class TenantService {
     private userRepository: Repository<UserEntity>,
     private readonly settingsService: SettingsService,
     private readonly mailService: MailService,
+    private readonly subscriptionPlanService: SubscriptionPlanService,
   ) { }
 
   async create(createTenantDto: CreateTenantDto) {
-    const { storeName, subdomain, planTier, adminName, adminUsername, adminEmail, adminPassword } =
+    const { storeName, subdomain, planId, adminName, adminUsername, adminEmail, adminPassword } =
       createTenantDto
 
     // Check if subdomain already exists
@@ -34,11 +38,24 @@ export class TenantService {
       throw new ConflictException('Subdomain already exists')
     }
 
+    let subscriptionPlan = null;
+    if (planId) {
+      subscriptionPlan = await this.subscriptionPlanService.findOne(planId);
+    }
+
     // Create tenant
+    const now = new Date();
+    const endsAt = new Date();
+    endsAt.setMonth(now.getMonth() + 1); // Default to 1 month from now
+
     const tenant = this.tenantRepository.create({
       storeName,
       subdomain,
-      planTier,
+      subscriptionPlan,
+      subscriptionStatus: SubscriptionStatus.Active,
+      subscriptionBillingCycle: SubscriptionBillingCycle.Monthly,
+      subscriptionStartsAt: now,
+      subscriptionEndsAt: endsAt,
     })
 
     const savedTenant = await this.tenantRepository.save(tenant)
@@ -152,12 +169,6 @@ export class TenantService {
   async updateStatus(id: string, status: string) {
     const tenant = await this.findOne(id)
     tenant.status = status
-    return await this.tenantRepository.save(tenant)
-  }
-
-  async updatePlanTier(id: string, planTier: string) {
-    const tenant = await this.findOne(id)
-    tenant.planTier = planTier
     return await this.tenantRepository.save(tenant)
   }
 }

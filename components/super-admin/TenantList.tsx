@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Ban, BarChart3, CheckCircle2, ExternalLink, Filter, Search, Settings2, ShieldCheck, Store, Terminal } from 'lucide-react';
+import { Ban, BarChart3, CheckCircle2, ExternalLink, Filter, Search, Settings2, ShieldCheck, Store, Terminal, Layers } from 'lucide-react';
 import { useState } from 'react';
 import { fetchAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
@@ -12,8 +12,12 @@ interface Tenant {
   storeName: string;
   subdomain: string;
   customDomain?: string;
-  planTier: string;
   status: string;
+  subscriptionPlan?: { name: string };
+  subscriptionBillingCycle?: string;
+  subscriptionStatus?: string;
+  subscriptionStartsAt?: string;
+  subscriptionEndsAt?: string;
   createdAt: string;
 }
 
@@ -99,9 +103,10 @@ export default function TenantList({ initialTenants }: TenantListProps) {
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-900/50">
                 <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Merchant Details</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Subscription</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Created</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Subscription Plan</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Sub Status</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Store Status</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Expiry Date</th>
                 <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Cluster Actions</th>
               </tr>
             </thead>
@@ -138,16 +143,25 @@ export default function TenantList({ initialTenants }: TenantListProps) {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <select
-                          value={tenant.planTier}
-                          disabled={loadingId === tenant.id}
-                          onChange={(e) => handleUpdatePlan(tenant.id, e.target.value)}
-                          className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
-                        >
-                          <option value="basic">Basic Partition</option>
-                          <option value="pro">Pro Partition</option>
-                          <option value="enterprise">Enterprise Cluster</option>
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-indigo-500" />
+                          <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                            {(tenant as any).subscriptionPlan?.name || 'Legacy Tier'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${tenant.subscriptionStatus === 'ACTIVE'
+                            ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
+                            : 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'
+                            }`}>
+                            {tenant.subscriptionStatus || 'ACTIVE'}
+                          </span>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter ml-1">
+                            {tenant.subscriptionBillingCycle || 'MONTHLY'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${tenant.status === 'active'
@@ -160,7 +174,9 @@ export default function TenantList({ initialTenants }: TenantListProps) {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                          {new Date(tenant.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {tenant.subscriptionEndsAt
+                            ? new Date(tenant.subscriptionEndsAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                            : 'N/A'}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
