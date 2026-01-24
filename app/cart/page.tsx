@@ -42,9 +42,7 @@ export default function CartPage() {
     );
   }
 
-  const subtotal = items.reduce((acc, item) => {
-    return acc + (item.product?.price || 0) * item.quantity;
-  }, 0);
+  const summary = cart?.summary || { subtotal: 0, offer_discount: 0, coupon_discount: 0, payable: 0 };
 
   return (
     <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-900">
@@ -54,11 +52,11 @@ export default function CartPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             {items.map((item) => (
-              <div key={item.id} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm flex gap-6">
+              <div key={item.cart_item_id} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm flex gap-6">
                 <div className="relative w-24 h-24 flex-shrink-0 bg-slate-100 dark:bg-slate-700 rounded-xl overflow-hidden">
-                  {item.product?.images?.[0] ? (
+                  {item.product?.image ? (
                     <Image
-                      src={item.product.images[0]}
+                      src={item.product.image}
                       alt={item.product.name}
                       fill
                       className="object-cover"
@@ -78,17 +76,17 @@ export default function CartPage() {
                       </h3>
                       {item.variant && (
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                          Variant: {item.variant.name}
+                          {item.variant.attributes.map(attr => `${attr.name}: ${attr.value}`).join(', ')}
                         </p>
                       )}
                     </div>
-                    <Price amount={(item.product?.price || 0) * item.quantity} className="text-lg font-bold text-slate-900 dark:text-white" />
+                    <Price amount={item.line_total} className="text-lg font-bold text-slate-900 dark:text-white" />
                   </div>
 
                   <div className="flex justify-between items-center mt-4">
                     <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg p-1">
                       <button
-                        onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                        onClick={() => updateQuantity(item.cart_item_id, Math.max(1, item.quantity - 1))}
                         className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition-colors"
                         disabled={item.quantity <= 1}
                       >
@@ -96,7 +94,7 @@ export default function CartPage() {
                       </button>
                       <span className="text-sm font-semibold w-6 text-center text-slate-900 dark:text-white">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.cart_item_id, item.quantity + 1)}
                         className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition-colors"
                       >
                         <Plus className="w-4 h-4" />
@@ -104,7 +102,7 @@ export default function CartPage() {
                     </div>
 
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => removeItem(item.cart_item_id)}
                       className="text-red-500 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       title="Remove item"
                     >
@@ -123,8 +121,14 @@ export default function CartPage() {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
                   <span>Subtotal</span>
-                  <Price amount={subtotal} />
+                  <Price amount={summary.subtotal} />
                 </div>
+                {summary.offer_discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount</span>
+                    <span>-<Price amount={summary.offer_discount} /></span>
+                  </div>
+                )}
                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
                   <span>Shipping</span>
                   <span>Calculated at checkout</span>
@@ -134,7 +138,7 @@ export default function CartPage() {
               <div className="border-t border-slate-100 dark:border-slate-700 pt-4 mb-8">
                 <div className="flex justify-between text-lg font-bold text-slate-900 dark:text-white">
                   <span>Total</span>
-                  <Price amount={subtotal} />
+                  <Price amount={summary.payable} />
                 </div>
               </div>
 

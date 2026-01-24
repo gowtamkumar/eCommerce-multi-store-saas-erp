@@ -1,32 +1,44 @@
 import { fetchAPI } from "./api";
 
 export interface CartItem {
-  id: string;
-  productId: string;
-  variantId?: string;
+  cart_item_id: string;
+  product: {
+    id: string;
+    name: string;
+    image: string | null;
+  };
+  variant: {
+    id: string;
+    sku: string;
+    attributes: Array<{ name: string; value: string }>;
+  } | null;
+  pricing: {
+    base_price: number;
+    discount: number;
+    final_price: number;
+  };
   quantity: number;
-  product?: {
-    id: string;
-    name: string;
-    price: number;
-    images: string[];
-    slug: string;
-  };
-  variant?: {
-    id: string;
-    name: string;
-  };
+  line_total: number;
+  stock_status: 'IN_STOCK' | 'OUT_OF_STOCK';
+}
+
+export interface CartSummary {
+  subtotal: number;
+  offer_discount: number;
+  coupon_discount: number;
+  payable: number;
 }
 
 export interface Cart {
-  id: string;
+  cart_id: string;
+  currency: string;
   items: CartItem[];
-  userId: string;
+  summary: CartSummary;
 }
 
 export const getCart = async (): Promise<Cart> => {
   const res = await fetchAPI("/cart");
-  return res || { items: [] }; // Handle potential null response if no cart exists yet
+  return res || { items: [], summary: { subtotal: 0, offer_discount: 0, coupon_discount: 0, payable: 0 } };
 };
 
 export const addToCart = async (productId: string, quantity: number, variantId?: string) => {

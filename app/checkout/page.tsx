@@ -27,7 +27,7 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'sslcommerz'>('cod');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'sslcommerz'>(PaymentMethod.COD as any);
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [lastOrder, setLastOrder] = useState<any>(null);
 
@@ -58,9 +58,7 @@ export default function CheckoutPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const subtotal = items.reduce((acc, item) => {
-    return acc + (item.product?.price || 0) * item.quantity;
-  }, 0);
+  const summary = cart?.summary || { subtotal: 0, offer_discount: 0, coupon_discount: 0, payable: 0 };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +73,8 @@ export default function CheckoutPage() {
       address: formData.address,
       orderNotes: formData.notes,
       items: items.map(item => ({
-        productId: item.productId,
+        productId: item.product.id,
+        variantId: item.variant?.id,
         quantity: item.quantity
       })),
       paymentMethod,
@@ -98,7 +97,7 @@ export default function CheckoutPage() {
 
       const order = orderJson.order;
 
-      if (paymentMethod === PaymentMethod.SSLCOMMERZ) {
+      if (paymentMethod === (PaymentMethod.SSLCOMMERZ as any)) {
         // 2. Initiate Payment
         const paymentJson = await fetchAPI('/payment/init', {
           method: 'POST',
@@ -106,9 +105,6 @@ export default function CheckoutPage() {
         });
 
         if (paymentJson.gatewayUrl) {
-          // Verify if we need to clear cart before redirecting? 
-          // Usually better to clear after success, but here we redirect.
-          // Let's clear locally as "Checkout in progress".
           await clearCart();
           window.location.href = paymentJson.gatewayUrl;
           return;
@@ -125,7 +121,7 @@ export default function CheckoutPage() {
       console.error('Checkout error:', error);
       toast.error('Something went wrong. Please try again.');
     } finally {
-      if (paymentMethod !== PaymentMethod.SSLCOMMERZ) {
+      if (paymentMethod !== (PaymentMethod.SSLCOMMERZ as any)) {
         setLoading(false);
       }
     }
@@ -334,11 +330,11 @@ export default function CheckoutPage() {
 
                 <div className="flex flex-col gap-4 mb-6 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                   {items.map((item) => (
-                    <div key={item.id} className="flex gap-4">
+                    <div key={item.cart_item_id} className="flex gap-4">
                       <div className="relative w-16 h-16 flex-shrink-0 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden">
-                        {item.product?.images?.[0] && (
+                        {item.product?.image && (
                           <Image
-                            src={item.product.images[0]}
+                            src={item.product.image}
                             alt={item.product.name}
                             fill
                             className="object-cover"
@@ -348,11 +344,13 @@ export default function CheckoutPage() {
                       <div className="flex-1">
                         <h4 className="text-sm font-medium text-slate-900 dark:text-white line-clamp-2">{item.product?.name}</h4>
                         {item.variant && (
-                          <p className="text-sm text-slate-500 mt-0.5">{item.variant.name}</p>
+                          <p className="text-sm text-slate-500 mt-0.5">
+                            {item.variant.attributes.map(attr => attr.value).join(', ')}
+                          </p>
                         )}
                         <div className="flex justify-between items-center mt-1">
                           <span className="text-xs text-slate-500">Qty: {item.quantity}</span>
-                          <Price amount={(item.product?.price || 0) * item.quantity} className="text-sm font-bold" />
+                          <Price amount={item.line_total} className="text-sm font-bold" />
                         </div>
                       </div>
                     </div>
@@ -362,15 +360,21 @@ export default function CheckoutPage() {
                 <div className="border-t border-slate-100 dark:border-slate-700 pt-4 space-y-3 mb-6">
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Subtotal</span>
-                    <Price amount={subtotal} />
+                    <Price amount={summary.subtotal} />
                   </div>
+                  {summary.offer_discount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount</span>
+                      <span>-<Price amount={summary.offer_discount} /></span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Shipping</span>
                     <span>Free</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-700">
                     <span>Total</span>
-                    <Price amount={subtotal} />
+                    <Price amount={summary.payable} />
                   </div>
                 </div>
 

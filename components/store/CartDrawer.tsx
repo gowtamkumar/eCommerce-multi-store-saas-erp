@@ -12,9 +12,7 @@ const CartDrawer = () => {
   const { isCartOpen, closeCart, cart, items, updateQuantity, removeItem } = useCart();
   const { formatPrice } = useSettings();
 
-  const subtotal = items.reduce((acc, item) => {
-    return acc + (item.product?.price || 0) * item.quantity;
-  }, 0);
+  const summary = cart?.summary || { subtotal: 0, offer_discount: 0, coupon_discount: 0, payable: 0 };
 
   return (
     <AnimatePresence>
@@ -71,11 +69,11 @@ const CartDrawer = () => {
                 </div>
               ) : (
                 items.map((item) => (
-                  <div key={item.id} className="flex gap-4">
+                  <div key={item.cart_item_id} className="flex gap-4">
                     <div className="relative w-20 h-20 flex-shrink-0 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-                      {item.product?.images?.[0] ? (
+                      {item.product?.image ? (
                         <Image
-                          src={item.product.images[0]}
+                          src={item.product.image}
                           alt={item.product.name}
                           fill
                           className="object-cover"
@@ -93,7 +91,7 @@ const CartDrawer = () => {
                             {item.product?.name}
                           </h4>
                           <button
-                            onClick={() => removeItem(item.id)}
+                            onClick={() => removeItem(item.cart_item_id)}
                             className="text-slate-400 hover:text-red-500 transition-colors"
                             aria-label="Remove item"
                           >
@@ -101,13 +99,15 @@ const CartDrawer = () => {
                           </button>
                         </div>
                         {item.variant && (
-                          <p className="text-sm text-slate-500 mt-0.5">{item.variant.name}</p>
+                          <p className="text-sm text-slate-500 mt-0.5">
+                            {item.variant.attributes.map(attr => attr.value).join(', ')}
+                          </p>
                         )}
                       </div>
                       <div className="flex justify-between items-end">
                         <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700">
                           <button
-                            onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                            onClick={() => updateQuantity(item.cart_item_id, Math.max(1, item.quantity - 1))}
                             disabled={item.quantity <= 1}
                             className="w-6 h-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50 transition-colors"
                           >
@@ -117,14 +117,14 @@ const CartDrawer = () => {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.cart_item_id, item.quantity + 1)}
                             className="w-6 h-6 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
                         </div>
                         <Price
-                          amount={(item.product?.price || 0) * item.quantity}
+                          amount={item.line_total}
                           className="font-bold text-slate-900 dark:text-white"
                         />
                       </div>
@@ -139,7 +139,7 @@ const CartDrawer = () => {
               <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-4">
                 <div className="flex justify-between items-center text-lg font-bold text-slate-900 dark:text-white">
                   <span>Subtotal</span>
-                  <Price amount={subtotal} />
+                  <Price amount={summary.payable} />
                 </div>
                 <p className="text-xs text-slate-500 text-center">
                   Shipping and taxes calculated at checkout.
