@@ -2,7 +2,7 @@
 
 import { fetchAPI } from '@/lib/api';
 import { Category, ProductAttribute, ProductVariant } from '@/types/product';
-import { Image as ImageIcon, Layout, Loader2, MessageSquare, Quote, Save, Star, Tag } from 'lucide-react';
+import { Image as ImageIcon, Layout, Loader2, MessageSquare, Save, Star, Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -30,7 +30,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     images: initialData?.images?.join(',') || '',
     status: initialData?.status || 'active',
     categoryId: initialData?.categoryId || '',
-    reviewSectionType: initialData?.reviewSectionType || 'testimonials',
+    isReview: true,
     attributes: initialData?.attributes || [] as ProductAttribute[],
     variants: initialData?.variants || [] as ProductVariant[],
   });
@@ -261,21 +261,11 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
               <MessageSquare className="w-4 h-4" /> Review Mode
             </label>
             <div className="grid grid-cols-2 gap-3">
+
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, reviewSectionType: 'testimonials' })}
-                className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${formData.reviewSectionType === 'testimonials'
-                  ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-500 text-brand-600'
-                  : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-brand-200'
-                  }`}
-              >
-                <Quote className="w-4 h-4" />
-                <span className="text-[10px] font-bold uppercase">Testimonials</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, reviewSectionType: 'reviews' })}
-                className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${formData.reviewSectionType === 'reviews'
+                onClick={() => setFormData({ ...formData, isReview: !formData.isReview })}
+                className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${formData.isReview === true
                   ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-500 text-brand-600'
                   : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-brand-200'
                   }`}

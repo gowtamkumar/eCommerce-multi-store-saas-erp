@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { HomeController } from './home.controller';
-import { HomeService } from './home.service';
-import { ProductModule } from '../product/product.module';
-import { TestimonialModule } from '../testimonial/testimonial.module';
 import { FaqModule } from '../faq/faq.module';
 import { PageModule } from '../page/page.module';
+import { ProductModule } from '../product/product.module';
+import { HomeController } from './home.controller';
+import { HomeService } from './home.service';
 
 @Module({
     imports: [
         ProductModule,
-        TestimonialModule,
         FaqModule,
         PageModule,
     ],

@@ -20,13 +20,8 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
   const [displayReviews, setDisplayReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  console.log("displayReviews", displayReviews);
-
-
   useEffect(() => {
     async function loadData() {
-      const limit = settings.count || 6; // Define limit once
-
       if (settings.source === 'database') {
         setLoading(true);
         try {
@@ -46,7 +41,7 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
     }
 
     loadData();
-  }, [settings.source, settings.databaseSource, settings.reviews]); // Re-run when settings change
+  }, [settings.source, settings.reviews]); // Re-run when settings change
 
   return (
     <div style={styles} className="px-4 md:px-10 py-16 md:py-24 bg-slate-950 border-y border-white/5 overflow-hidden">

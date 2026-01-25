@@ -16,7 +16,7 @@ This document outlines the database schema for the Ecommerce Landing project, bu
 | **[SiteSettings](#sitesettings)** | Global application and marketing settings. |
 | **[Page](#page)** | Dynamic landing page content and sections. |
 | **[FAQ](#faq)** | Frequently Asked Questions. |
-| **[Testimonial](#testimonial)** | User testimonials. |
+
 | **[Media](#media)** | Uploaded media file metadata. |
 
 ---
@@ -166,16 +166,7 @@ Frequently Asked Questions.
 - **`tenantId`**: `ObjectId` (Ref: `Tenant`, Required)
 - **Timestamps**: `createdAt`, `updatedAt`
 
-### Testimonial
-User testimonials and feedback.
-- **`author`**: `String` (Required)
-- **`role`**: `String` (Required)
-- **`content`**: `String` (Required)
-- **`rating`**: `Number` (Required, 1-5)
-- **`avatar`**: `String` (Default: placeholder class)
-- **`status`**: `String` (Enum: `active`, `inactive`; Default: `active`)
-- **`tenantId`**: `ObjectId` (Ref: `Tenant`, Required)
-- **Timestamps**: `createdAt`, `updatedAt`
+
 
 ### Media
 Metadata for uploaded files.

@@ -12,13 +12,11 @@ interface DisplayItem {
   subtitle: string;
   avatar?: string;
   createdAt: string;
-  type: 'testimonial' | 'review';
 }
 
 const Reviews = () => {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [displayType, setDisplayType] = useState<'testimonials' | 'reviews'>('testimonials');
 
   useEffect(() => {
     fetchData();
@@ -27,41 +25,9 @@ const Reviews = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // First, fetch the configuration and reviews from public endpoint
+      // Fetch reviews from public endpoint
       const configData = await fetchAPI('/reviews/public');
-
-      const type = configData.reviewSectionType || 'testimonials';
-      setDisplayType(type);
-
-      if (type === 'testimonials') {
-        const data = await fetchAPI('/testimonials?status=active');
-        if (data.testimonials) {
-          const mapped: DisplayItem[] = data.testimonials.map((t: any) => ({
-            _id: t.id,
-            author: t.author,
-            rating: t.rating,
-            content: t.content,
-            subtitle: t.role || 'Customer',
-            avatar: t.avatar,
-            createdAt: t.createdAt,
-            type: 'testimonial'
-          }));
-          setItems(mapped);
-        }
-      } else {
-        if (configData.reviews) {
-          const mapped: DisplayItem[] = configData.reviews.map((r: any) => ({
-            _id: r.id,
-            author: r.customerName,
-            rating: r.rating,
-            content: r.comment,
-            subtitle: r.productId?.name ? `Purchased ${r.productId.name}` : 'Verified Purchase',
-            createdAt: r.createdAt,
-            type: 'review'
-          }));
-          setItems(mapped);
-        }
-      }
+      setItems(configData.data);
     } catch (error) {
       console.error(`Failed to fetch reviews:`, error);
     } finally {
@@ -95,15 +61,13 @@ const Reviews = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
           <h2 className="text-brand-600 dark:text-brand-400 font-semibold tracking-wide uppercase text-sm mb-3">
-            {displayType === 'testimonials' ? 'Testimonials' : 'Product Reviews'}
+            Product Reviews
           </h2>
           <h2 className="text-4xl md:text-5xl font-bold font-display text-slate-900 dark:text-white mb-6">
             Loved by Thousands
           </h2>
           <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            {displayType === 'testimonials'
-              ? "Don't just take our word for it. Hear what our confirmed customers have to say about their experience."
-              : "Read what our customers are saying about our premium audio products."}
+            Read what our customers are saying about our premium audio products.
           </p>
         </div>
 
@@ -122,7 +86,7 @@ const Reviews = () => {
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                      Verified {item.type === 'testimonial' ? 'Customer' : 'Purchase'}
+                      Verified Purchase
                     </span>
                     {item.createdAt && (
                       <span className="text-xs text-slate-400">• {new Date(item.createdAt).toLocaleDateString()}</span>
@@ -152,7 +116,7 @@ const Reviews = () => {
 
               <div className="pt-6 border-t border-slate-50 dark:border-slate-700/50 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1">
-                  {item.type === 'review' && <Package className="w-3 h-3" />}
+                  <Package className="w-3 h-3" />
                   {item.subtitle}
                 </span>
                 <span className="flex items-center gap-1 hover:text-brand-600 transition-colors cursor-pointer">
