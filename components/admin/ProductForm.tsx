@@ -30,11 +30,12 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     images: initialData?.images?.join(',') || '',
     status: initialData?.status || 'active',
     categoryId: initialData?.categoryId || '',
-    isReview: true,
+    isReview: initialData?.isReview,
     attributes: initialData?.attributes || [] as ProductAttribute[],
     variants: initialData?.variants || [] as ProductVariant[],
     faqs: initialData?.faqs || [],
   });
+
 
   useEffect(() => {
     fetchAPI('/categories').then(res => {
@@ -66,7 +67,19 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
         answer: f.answer,
         order: f.order
       })),
+      variants: formData.variants.map((v: any) => {
+        const p = parseFloat(v.price);
+        const s = parseInt(v.stock);
+        return {
+          ...v,
+          price: !isNaN(p) ? p : 0,
+          stock: !isNaN(s) ? s : 0,
+        };
+      }),
     };
+
+
+
 
     try {
       const url = isEdit ? `/products/${initialData.id}` : '/products';
@@ -87,6 +100,9 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       setLoading(false);
     }
   };
+
+  console.log("formData", formData.isReview);
+
 
   return (
     <form onSubmit={handleSubmit} className="max-w-[1200px]">
@@ -275,7 +291,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, isReview: !formData.isReview })}
-                className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${formData.isReview === true
+                className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${formData.isReview
                   ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-500 text-brand-600'
                   : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-brand-200'
                   }`}

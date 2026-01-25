@@ -10,6 +10,7 @@ interface DisplayItem {
   comment: string;
   createdAt: string;
   avatar: string;
+
 }
 
 const Reviews = ({ reviews }: { reviews: DisplayItem[] }) => {
@@ -51,7 +52,7 @@ const Reviews = ({ reviews }: { reviews: DisplayItem[] }) => {
             Loved by Thousands
           </h2>
           <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Read what our customers are saying about our premium audio products.
+            Read what our customers are saying about our premium products.
           </p>
         </div>
 

@@ -194,16 +194,42 @@ export class ProductService {
 
     // Sync Variants
     if (variants) {
-      await this.variantRepository.delete({ productId: product.id, tenantId })
-      if (variants.length > 0) {
-        const variantEntities = variants.map((variant) =>
-          this.variantRepository.create({
-            ...variant,
-            productId: product.id,
-            tenantId,
-          }),
-        )
-        await this.variantRepository.save(variantEntities)
+      // 1. Fetch existing variants to know what to delete
+      const existingVariants = await this.variantRepository.find({
+        where: { productId: product.id, tenantId },
+      })
+      const existingVariantIds = existingVariants.map((v) => v.id)
+      
+      // 2. Identify incoming IDs (to exclude from deletion)
+      const incomingVariantIds = variants
+        .filter((v: any) => v.id)
+        .map((v: any) => v.id)
+
+      // 3. Upsert (Update existing + Insert new)
+      // We map variants to entities. If ID exists, TypeORM updates; if not, it inserts.
+      const variantEntities = variants.map((variant) =>
+        this.variantRepository.create({
+          ...variant,
+          productId: product.id,
+          tenantId,
+        }),
+      )
+      await this.variantRepository.save(variantEntities)
+
+      // 4. Delete removed variants
+      const toDeleteIds = existingVariantIds.filter(
+        (id) => !incomingVariantIds.includes(id),
+      )
+
+      if (toDeleteIds.length > 0) {
+        try {
+          await this.variantRepository.delete(toDeleteIds)
+        } catch (error) {
+          // If deletion fails (e.g. FK constraint), we log it but don't crash
+          console.warn(
+            `Failed to delete variants ${toDeleteIds.join(', ')}: ${error.message}`,
+          )
+        }
       }
     }
 

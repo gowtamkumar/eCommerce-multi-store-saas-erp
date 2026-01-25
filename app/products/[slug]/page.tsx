@@ -84,7 +84,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <Navbar />
             <ProductDetails product={product} />
             {
-                product.reviews && product.reviews.length > 0 && (
+                product.reviews && product.reviews.length && product.isReview && (
                     <Reviews reviews={product.reviews} />
                 )
             }
