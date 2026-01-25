@@ -108,7 +108,6 @@ Visitor → Domain → Cloudflare
 
 - Extract `Host` header
 - Match against:
-
   - `subdomain.yoursaas.com`
   - `customdomain.com`
 
@@ -247,3 +246,42 @@ Customer → Checkout
 ## 18. Summary
 
 This design prioritizes **performance, isolation, and scalability**, similar to Shopify-style SaaS. It is production-ready, interview-ready, and can scale from MVP to enterprise with minimal rework.
+
+🧠 FINAL MASTER LIST (SHORT + COMPLETE)
+✅ Core (Must Do)
+
+Requirements
+
+Architecture
+
+Database
+
+Auth & RBAC
+
+Business logic
+
+Background jobs
+
+Logging & audit
+
+Deployment & monitoring
+
+🚀 Advanced (Enterprise+)
+
+Config management
+
+Transactions
+
+API standards
+
+Caching strategy
+
+Rate limiting
+
+Search & reporting
+
+Failure handling
+
+Compliance
+
+Scaling strategy
