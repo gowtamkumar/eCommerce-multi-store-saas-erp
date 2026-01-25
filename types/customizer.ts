@@ -72,6 +72,8 @@ export interface ReviewItem {
 
 export interface ReviewSliderSettings {
   title?: string;
+  source?: 'manual' | 'database';
+  count?: number;
   reviews: ReviewItem[];
 }
 
