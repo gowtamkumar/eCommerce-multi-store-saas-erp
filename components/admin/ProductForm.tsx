@@ -2,7 +2,7 @@
 
 import { fetchAPI } from '@/lib/api';
 import { Category, ProductAttribute, ProductVariant } from '@/types/product';
-import { Image as ImageIcon, Layout, Loader2, MessageSquare, Plus, Save, Star, Tag, Trash2 } from 'lucide-react';
+import { Image as ImageIcon, Layout, Loader2, MessageSquare, Plus, Save, Tag, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -24,9 +24,9 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     slug: initialData?.slug || '',
     description: initialData?.description || '',
     shortDescription: initialData?.shortDescription || '',
-    price: initialData?.price || 0,
-    discountAmount: initialData?.discountAmount || 0,
-    stock: initialData?.stock || 0,
+    price: initialData?.price?.toString() || '0',
+    discountAmount: initialData?.discountAmount?.toString() || '0',
+    stock: initialData?.stock?.toString() || '0',
     images: initialData?.images?.join(',') || '',
     status: initialData?.status || 'active',
     categoryId: initialData?.categoryId || '',
@@ -55,12 +55,17 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
 
     const payload = {
       ...formData,
-      price: +formData.price,
-      discountAmount: +formData.discountAmount,
-      stock: +formData.stock,
+      price: parseFloat(formData.price),
+      discountAmount: parseFloat(formData.discountAmount),
+      stock: parseInt(formData.stock),
       slug: formData.slug || generateSlug(formData.name),
       images: formData.images.split(',').map((s: string) => s.trim()).filter(Boolean),
       categoryId: formData.categoryId || null,
+      faqs: formData.faqs.map((f: any) => ({
+        question: f.question,
+        answer: f.answer,
+        order: f.order
+      })),
     };
 
     try {
@@ -153,7 +158,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
             <ProductVariants
               attributes={formData.attributes}
               variants={formData.variants}
-              basePrice={formData.price}
+              basePrice={parseFloat(formData.price)}
               onChange={(attributes, variants) => setFormData({ ...formData, attributes, variants })}
             />
           </div>
@@ -214,7 +219,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                   min="0"
                   step="0.01"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all"
                 />
               </div>
@@ -228,7 +233,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                   min="0"
                   step="0.01"
                   value={formData.discountAmount}
-                  onChange={(e) => setFormData({ ...formData, discountAmount: Number(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, discountAmount: e.target.value })}
                   className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all font-mono"
                 />
               </div>
@@ -240,7 +245,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                 required
                 min="0"
                 value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all"
               />
             </div>
@@ -261,7 +266,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
             />
           </div>
 
-          {/* Review Logic */}
+          {/* Review Logic - Currently disabled as backend support was removed
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
               <MessageSquare className="w-4 h-4" /> Review Mode
@@ -280,6 +285,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
               </button>
             </div>
           </div>
+          */}
 
           <button
             type="submit"

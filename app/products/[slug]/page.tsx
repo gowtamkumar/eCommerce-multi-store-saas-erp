@@ -85,7 +85,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <ProductDetails product={product} />
             <Reviews />
             <RelatedProducts currentProductId={product.id} />
-            <FAQ />
+            <FAQ faqs={product.faqs} />
             <Footer />
         </main>
     );

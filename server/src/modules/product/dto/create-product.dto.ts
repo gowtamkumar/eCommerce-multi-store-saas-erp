@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
     IsArray,
+    IsBoolean,
     IsEnum,
     IsNotEmpty,
     IsNumber,
@@ -103,6 +104,11 @@ export class CreateProductDto {
     images: string[];
 
     @ApiProperty({ required: false })
+    @IsBoolean()
+    @IsOptional()
+    isReview?: boolean;
+
+    @ApiProperty({ required: false })
     @IsArray()
     @IsString({ each: true })
     @IsOptional()
@@ -121,11 +127,6 @@ export class CreateProductDto {
     @IsUUID()
     @IsOptional()
     categoryId?: string;
-
-    @ApiProperty({ required: false })
-    @IsString()
-    @IsOptional()
-    reviewSectionType?: string;
 
     @ApiProperty({ required: false, type: [ProductFaqDto] })
     @IsArray()

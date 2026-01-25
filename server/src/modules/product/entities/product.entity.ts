@@ -36,6 +36,9 @@ export class ProductEntity {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number
 
+  @Column({ type: 'boolean', default: true })
+  isReview: boolean
+
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   discountAmount: number
 
