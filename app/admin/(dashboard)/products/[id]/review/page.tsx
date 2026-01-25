@@ -56,6 +56,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                     setProduct(productRes.data);
                 }
                 if (reviewsRes.success && reviewsRes.data) {
+
                     setReviews(reviewsRes.data);
                 }
             } catch (error) {
@@ -120,7 +121,6 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
         );
     }
 
-    const { Stars } = require('lucide-react'); // Fallback for stars icon in loop if needed or just use rating number
 
     return (
         <div className="max-w-7xl mx-auto pb-20">
