@@ -2,7 +2,7 @@
 
 import { fetchAPI } from '@/lib/api';
 import { Category, ProductAttribute, ProductVariant } from '@/types/product';
-import { Image as ImageIcon, Layout, Loader2, MessageSquare, Plus, Save, Tag, Trash2 } from 'lucide-react';
+import { Image as ImageIcon, Layout, Loader2, MessageSquare, Plus, Save, Star, Tag, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -266,7 +266,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
             />
           </div>
 
-          {/* Review Logic - Currently disabled as backend support was removed
+          Review Logic - Currently disabled as backend support was removed
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
               <MessageSquare className="w-4 h-4" /> Review Mode
@@ -285,7 +285,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
               </button>
             </div>
           </div>
-          */}
+
 
           <button
             type="submit"

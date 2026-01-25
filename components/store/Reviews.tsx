@@ -1,51 +1,23 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
-import { Package, Quote, Star } from 'lucide-react';
+import { Quote, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface DisplayItem {
   _id: string;
-  author: string;
+  customerName: string;
   rating: number;
-  content: string;
-  subtitle: string;
-  avatar?: string;
+  comment: string;
   createdAt: string;
+  avatar: string;
 }
 
-const Reviews = () => {
-  const [items, setItems] = useState<DisplayItem[]>([]);
+const Reviews = ({ reviews }: { reviews: DisplayItem[] }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
+    setLoading(false);
   }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Fetch reviews from public endpoint
-      const configData = await fetchAPI('/reviews/public');
-
-      if (configData.data) {
-        const mapped: DisplayItem[] = configData.reviews.map((r: any) => ({
-          _id: r.id,
-          author: r.customerName,
-          rating: r.rating,
-          content: r.comment,
-          subtitle: r.productId?.name ? `Purchased ${r.productId.name}` : 'Verified Purchase',
-          createdAt: r.createdAt,
-        }));
-
-        setItems(mapped);
-      }
-    } catch (error) {
-      console.error(`Failed to fetch reviews:`, error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -59,7 +31,7 @@ const Reviews = () => {
     );
   }
 
-  if (items.length === 0) {
+  if (reviews?.length === 0) {
     return null;
   }
 
@@ -84,17 +56,17 @@ const Reviews = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {items.map((item) => (
-            <div key={item._id} className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 dark:border-slate-700 hover:-translate-y-1 group">
+          {reviews?.map((item, idx) => (
+            <div key={idx} className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 dark:border-slate-700 hover:-translate-y-1 group">
               <div className="flex items-center gap-4 mb-6">
                 <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-lg ${item.avatar && item.avatar.startsWith('bg-')
                   ? item.avatar
                   : 'bg-gradient-to-br from-brand-500 to-indigo-600'
                   }`}>
-                  {item.author[0].toUpperCase()}
+                  {item.customerName[0].toUpperCase()}
                 </div>
                 <div>
-                  <h4 className="font-bold text-lg text-slate-900 dark:text-white leading-tight">{item.author}</h4>
+                  <h4 className="font-bold text-lg text-slate-900 dark:text-white leading-tight">{item.customerName}</h4>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-green-500"></span>
@@ -122,18 +94,8 @@ const Reviews = () => {
               <div className="relative">
                 <Quote className="absolute -top-2 -left-2 w-8 h-8 text-brand-100 dark:text-brand-900/30 rotate-180" />
                 <p className="text-slate-600 dark:text-slate-300 leading-relaxed mb-6 pl-4 relative z-10">
-                  "{item.content}"
+                  "{item.comment}"
                 </p>
-              </div>
-
-              <div className="pt-6 border-t border-slate-50 dark:border-slate-700/50 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                <span className="flex items-center gap-1">
-                  <Package className="w-3 h-3" />
-                  {item.subtitle}
-                </span>
-                <span className="flex items-center gap-1 hover:text-brand-600 transition-colors cursor-pointer">
-                  Helpful?
-                </span>
               </div>
             </div>
           ))}

@@ -31,8 +31,8 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
           if (data.data) {
             let mapped = data.data.map((r: any) => ({
               id: r._id || r.id,
-              customerName: r.customerName,
-              comment: r.comment,
+              author: r.customerName,
+              text: r.comment,
               rating: r.rating,
               avatar: r.avatar
             }));

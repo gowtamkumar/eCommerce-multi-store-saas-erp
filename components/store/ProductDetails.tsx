@@ -32,7 +32,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<
-    "description" | "specs" | "shipping" | "reviews"
+    "description" | "specs" | "shipping"
   >("description");
   const [selectedAttributes, setSelectedAttributes] = useState<
     Record<string, string>
@@ -483,7 +483,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
             {/* Tabs Section */}
             <div className="border-t border-slate-100 dark:border-slate-800 pt-12">
               <div className="flex gap-2 mb-8 bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl w-fit">
-                {["description", "specs", "shipping", "reviews"].map((tab) => (
+                {["description", "specs", "shipping"].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab as any)}
@@ -577,66 +577,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                       </div>
                     </div>
                   )}
-                  {activeTab === "reviews" && (
-                    <div className="space-y-6">
-                      {product.reviews && product.reviews.length > 0 ? (
-                        <div className="space-y-4">
-                          {product.reviews.map((review: any, index: number) => (
-                            <div
-                              key={review.id || index}
-                              className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800"
-                            >
-                              <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center">
-                                    <span className="text-sm font-bold text-brand-600">
-                                      {review.customerName?.[0]?.toUpperCase() || "U"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <h4 className="font-bold text-slate-900 dark:text-white">
-                                      {review.customerName || "Anonymous"}
-                                    </h4>
-                                    <div className="flex items-center gap-2">
-                                      <div className="flex gap-1">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                          <Star
-                                            key={star}
-                                            className={`w-4 h-4 ${star <= review.rating
-                                                ? "text-orange-400 fill-orange-400"
-                                                : "text-slate-300 dark:text-slate-600"
-                                              }`}
-                                          />
-                                        ))}
-                                      </div>
-                                      <span className="text-xs text-slate-500">
-                                        {new Date(review.createdAt).toLocaleDateString()}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                                {review.comment}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-12">
-                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                            <Star className="w-8 h-8 text-slate-400" />
-                          </div>
-                          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                            No Reviews Yet
-                          </h3>
-                          <p className="text-slate-600 dark:text-slate-400">
-                            Be the first to review this product!
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+
                 </motion.div>
               </AnimatePresence>
             </div>
