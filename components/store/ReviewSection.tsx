@@ -28,7 +28,20 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
           // Fetch Product Reviews
           // We use the public reviews endpoint which aggregates them, or we could fetch latest
           const data = await fetchAPI('/reviews/public');
-          setDisplayReviews(data.data || []);
+          if (data.data) {
+            let mapped = data.data.map((r: any) => ({
+              id: r._id || r.id,
+              customerName: r.customerName,
+              comment: r.comment,
+              rating: r.rating,
+              avatar: r.avatar
+            }));
+            // Apply count limit
+            const limit = settings.count || 6;
+            mapped = mapped.slice(0, limit);
+
+            setDisplayReviews(mapped);
+          }
         } catch (error) {
           console.error("Failed to load reviews:", error);
         } finally {
@@ -41,7 +54,7 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
     }
 
     loadData();
-  }, [settings.source, settings.reviews]); // Re-run when settings change
+  }, [settings.source, settings.reviews, settings.count]); // Re-run when settings change
 
   return (
     <div style={styles} className="px-4 md:px-10 py-16 md:py-24 bg-slate-950 border-y border-white/5 overflow-hidden">
@@ -81,17 +94,17 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
                       <Star key={i} className={`w-5 h-5 ${i < (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-white/10'}`} />
                     ))}
                   </div>
-                  <blockquote className="text-2xl text-white/90 mb-10 italic leading-snug">"{review.comment}"</blockquote>
+                  <blockquote className="text-2xl text-white/90 mb-10 italic leading-snug">"{review.text}"</blockquote>
                   <div className="flex items-center gap-5">
                     <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-3xl overflow-hidden">
                       {review.avatar && !review.avatar.startsWith('bg-') ? (
-                        <img src={review.avatar} alt={review.customerName} className="w-full h-full object-cover" />
+                        <img src={review.avatar} alt={review.author} className="w-full h-full object-cover" />
                       ) : (
                         <span>👤</span>
                       )}
                     </div>
                     <div>
-                      <p className="text-xl font-black text-brand-500 uppercase tracking-tight">{review.customerName}</p>
+                      <p className="text-xl font-black text-brand-500 uppercase tracking-tight">{review.author}</p>
                       <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-bold">
                         {settings.source === 'database' ? 'Verified Purchase' : 'Verified Client'}
                       </p>

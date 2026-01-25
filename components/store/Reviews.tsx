@@ -27,7 +27,19 @@ const Reviews = () => {
     try {
       // Fetch reviews from public endpoint
       const configData = await fetchAPI('/reviews/public');
-      setItems(configData.data);
+
+      if (configData.data) {
+        const mapped: DisplayItem[] = configData.reviews.map((r: any) => ({
+          _id: r.id,
+          author: r.customerName,
+          rating: r.rating,
+          content: r.comment,
+          subtitle: r.productId?.name ? `Purchased ${r.productId.name}` : 'Verified Purchase',
+          createdAt: r.createdAt,
+        }));
+
+        setItems(mapped);
+      }
     } catch (error) {
       console.error(`Failed to fetch reviews:`, error);
     } finally {
