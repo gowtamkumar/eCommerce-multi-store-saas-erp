@@ -3,8 +3,8 @@ import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { join } from 'path'
-import { TenantStatusGuard } from './common/guards/tenant-status.guard'
 import { GlobalExceptionFilter } from './common/exception/exception-filter'
+import { TenantStatusGuard } from './common/guards/tenant-status.guard'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor'
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware'
@@ -24,12 +24,11 @@ import { ProductModule } from './modules/product/product.module'
 import { ProfileModule } from './modules/profile/profile.module'
 import { ReviewModule } from './modules/review/review.module'
 import { SettingsModule } from './modules/settings/settings.module'
+import { SubscriptionPlanModule } from './modules/subscription-plan/subscription-plan.module'
 import { SuperAdminModule } from './modules/super-admin/super-admin.module'
 import { TenantModule } from './modules/tenant/tenant.module'
-import { TestimonialModule } from './modules/testimonial/testimonial.module'
-import { WishlistModule } from './modules/wishlist/wishlist.module'
 import { TrackingModule } from './modules/tracking/tracking.module'
-import { SubscriptionPlanModule } from './modules/subscription-plan/subscription-plan.module'
+import { WishlistModule } from './modules/wishlist/wishlist.module'
 
 @Module({
   imports: [
@@ -49,7 +48,6 @@ import { SubscriptionPlanModule } from './modules/subscription-plan/subscription
     OrderModule,
     FaqModule,
     ReviewModule,
-    TestimonialModule,
     LeadModule,
     PageModule,
     SettingsModule,

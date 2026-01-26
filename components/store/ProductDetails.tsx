@@ -1,14 +1,26 @@
-'use client';
+"use client";
 
 import Price from "@/components/ui/Price";
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
-import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Heart, Maximize2, Minus, Plus, Share2, ShieldCheck, ShoppingBag, Star, TruckIcon, X } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Check,
+  Heart,
+  Maximize2,
+  Minus,
+  Plus,
+  Share2,
+  ShieldCheck,
+  ShoppingBag,
+  Star,
+  TruckIcon,
+  X,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 interface ProductDetailsProps {
   product: any;
@@ -19,11 +31,16 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
   const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'shipping'>('description');
-  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState<
+    "description" | "specs" | "shipping"
+  >("description");
+  const [selectedAttributes, setSelectedAttributes] = useState<
+    Record<string, string>
+  >({});
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isStickyVisible, setIsStickyVisible] = useState(false);
+  const [averageRating, setAverageRating] = useState(0);
 
   // Initialize attributes
   useEffect(() => {
@@ -35,6 +52,16 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
         }
       });
       setSelectedAttributes(initialAttrs);
+    }
+    if (product.reviews && product.reviews.length > 0) {
+      const totalRating = product.reviews.reduce(
+        (sum: number, review: any) => sum + review.rating,
+        0,
+      );
+      const avgRating = totalRating / product.reviews.length;
+      setAverageRating(avgRating);
+    } else {
+      setAverageRating(0);
     }
   }, [product]);
 
@@ -59,17 +86,22 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
         setIsStickyVisible(false);
       }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   if (!product) return null;
 
-  const currentPrice = selectedVariant?.price ? Number(selectedVariant.price) : product.price;
+  const currentPrice = selectedVariant?.price
+    ? Number(selectedVariant.price)
+    : product.price;
   const currentStock = selectedVariant ? selectedVariant.stock : product.stock;
-  const currentImages = (selectedVariant?.images && selectedVariant.images.length > 0)
-    ? selectedVariant.images
-    : (product.images && product.images.length > 0 ? product.images : ["https://placeholder.com/600"]);
+  const currentImages =
+    selectedVariant?.images && selectedVariant.images.length > 0
+      ? selectedVariant.images
+      : product.images && product.images.length > 0
+        ? product.images
+        : ["https://placeholder.com/600"];
 
   const images = currentImages;
 
@@ -82,24 +114,28 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
       try {
         await navigator.share({
           title: product.name,
-          text: product.tagline || product.shortDescription || product.description?.substring(0, 100),
+          text:
+            product.tagline ||
+            product.shortDescription ||
+            product.description?.substring(0, 100),
           url: window.location.href,
         });
       } catch (err) {
-        console.error('Error sharing:', err);
+        console.error("Error sharing:", err);
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied to clipboard!');
+      toast.success("Link copied to clipboard!");
     }
   };
 
-  const discountPercent = product.discountAmount > 0
-    ? Math.round((product.discountAmount / product.price) * 100)
-    : 0;
+  const discountPercent =
+    product.discountAmount > 0
+      ? Math.round((product.discountAmount / product.price) * 100)
+      : 0;
 
   const handleAttributeChange = (name: string, value: string) => {
-    setSelectedAttributes(prev => ({ ...prev, [name]: value }));
+    setSelectedAttributes((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -111,7 +147,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
             <div className="relative">
               {/* Main Image */}
               <motion.div
-                key={selectedImage + (selectedVariant?.id || 'base')}
+                key={selectedImage + (selectedVariant?.id || "base")}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="relative aspect-square rounded-[2rem] overflow-hidden bg-slate-100 dark:bg-slate-900 group cursor-zoom-in"
@@ -144,8 +180,8 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                     key={idx}
                     onClick={() => setSelectedImage(idx)}
                     className={`relative w-24 h-24 flex-shrink-0 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${selectedImage === idx
-                      ? 'border-brand-600 ring-4 ring-brand-500/10'
-                      : 'border-transparent hover:border-slate-300 dark:hover:border-slate-700'
+                      ? "border-brand-600 ring-4 ring-brand-500/10"
+                      : "border-transparent hover:border-slate-300 dark:hover:border-slate-700"
                       }`}
                   >
                     <Image
@@ -164,14 +200,32 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
           <div className="space-y-8">
             <div>
               {/* Breadcrumb */}
-              <nav className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-6" aria-label="Breadcrumb">
-                <Link href="/" className="hover:text-brand-600 transition-colors">Home</Link>
+              <nav
+                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-6"
+                aria-label="Breadcrumb"
+              >
+                <Link
+                  href="/"
+                  className="hover:text-brand-600 transition-colors"
+                >
+                  Home
+                </Link>
                 <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                <Link href="/products" className="hover:text-brand-600 transition-colors">Products</Link>
+                <Link
+                  href="/products"
+                  className="hover:text-brand-600 transition-colors"
+                >
+                  Products
+                </Link>
                 {product.category && (
                   <>
                     <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                    <Link href={`/products?category=${product.category.slug || product.category.id}`} className="hover:text-brand-600 transition-colors">{product.category.name}</Link>
+                    <Link
+                      href={`/products?category=${product.category.slug || product.category.id}`}
+                      className="hover:text-brand-600 transition-colors"
+                    >
+                      {product.category.name}
+                    </Link>
                   </>
                 )}
               </nav>
@@ -190,23 +244,36 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
                   <div className="flex -space-x-1">
                     {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} className="w-3 h-3 text-orange-400 fill-orange-400" />
+                      <Star
+                        key={s}
+                        className={`w-3 h-3 ${s <= Math.floor(averageRating)
+                          ? 'text-orange-400 fill-orange-400'
+                          : s - 0.5 <= averageRating
+                            ? 'text-orange-400 fill-orange-400/50'
+                            : 'text-slate-300 dark:text-slate-600'
+                          }`}
+                      />
                     ))}
                   </div>
-                  <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase leading-none mt-0.5">4.9 / 5.0</span>
+                  <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase leading-none mt-0.5">
+                    {averageRating > 0 ? `${averageRating.toFixed(1)} / 5.0` : 'No reviews yet'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">24 People currently viewing</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                    {product.reviews?.length} Reviews
+                  </span>
                 </div>
               </div>
 
+
               {product.tagline && (
                 <p className="text-xl text-slate-600 dark:text-slate-400 font-medium leading-relaxed italic border-l-4 border-brand-500 pl-4 mb-8">
-                  "{product.tagline}"
+                  {product.tagline}
                 </p>
               )}
             </div>
@@ -237,19 +304,29 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 </div>
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-3 h-3 text-brand-500" />
-                  <p className="text-[10px] uppercase tracking-widest font-black text-slate-500">Tax inclusive & Secure checkout</p>
+                  <p className="text-[10px] uppercase tracking-widest font-black text-slate-500">
+                    Tax inclusive & Secure checkout
+                  </p>
                 </div>
               </div>
 
               <div className="flex flex-col items-end">
-                <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider ${currentStock > 10
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                  : currentStock > 0
-                    ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
-                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                  }`}>
-                  <span className={`w-2 h-2 rounded-full animate-pulse ${currentStock > 10 ? 'bg-green-500' : currentStock > 0 ? 'bg-orange-500' : 'bg-red-500'}`} />
-                  {currentStock > 10 ? 'Available' : currentStock > 0 ? `Only ${currentStock} Left` : 'Sold Out'}
+                <span
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider ${currentStock > 10
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                    : currentStock > 0
+                      ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
+                      : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                    }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full animate-pulse ${currentStock > 10 ? "bg-green-500" : currentStock > 0 ? "bg-orange-500" : "bg-red-500"}`}
+                  />
+                  {currentStock > 10
+                    ? "Available"
+                    : currentStock > 0
+                      ? `Only ${currentStock} Left`
+                      : "Sold Out"}
                 </span>
               </div>
             </div>
@@ -260,24 +337,31 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 {product.attributes.map((attr: any) => (
                   <div key={attr.id} className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-500">{attr.name}</span>
-                      <span className="text-sm font-bold text-slate-900 dark:text-white">{selectedAttributes[attr.name]}</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-500">
+                        {attr.name}
+                      </span>
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">
+                        {selectedAttributes[attr.name]}
+                      </span>
                     </div>
                     <div className="flex flex-wrap gap-3">
                       {attr.values.map((val: string) => {
-                        const isSelected = selectedAttributes[attr.name] === val;
-                        const isColor = attr.name.toLowerCase() === 'color';
+                        const isSelected =
+                          selectedAttributes[attr.name] === val;
+                        const isColor = attr.name.toLowerCase() === "color";
 
                         return (
                           <button
                             key={val}
-                            onClick={() => handleAttributeChange(attr.name, val)}
+                            onClick={() =>
+                              handleAttributeChange(attr.name, val)
+                            }
                             className={`relative overflow-hidden transition-all duration-300 ${isColor
-                              ? 'w-10 h-10 rounded-full border-2 p-1'
-                              : 'px-6 py-2 rounded-xl border-2 font-bold text-sm'
+                              ? "w-10 h-10 rounded-full border-2 p-1"
+                              : "px-6 py-2 rounded-xl border-2 font-bold text-sm"
                               } ${isSelected
-                                ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20 text-brand-600'
-                                : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400'
+                                ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20 text-brand-600"
+                                : "border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400"
                               }`}
                           >
                             {isColor ? (
@@ -290,7 +374,9 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                             )}
                             {isSelected && (
                               <div className="absolute top-0 right-0 p-0.5">
-                                <Check className={`w-3 h-3 ${isColor ? 'text-white drop-shadow-md' : 'text-brand-600'}`} />
+                                <Check
+                                  className={`w-3 h-3 ${isColor ? "text-white drop-shadow-md" : "text-brand-600"}`}
+                                />
                               </div>
                             )}
                           </button>
@@ -311,9 +397,13 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 >
                   <Minus className="w-5 h-5" />
                 </button>
-                <span className="w-12 text-center font-black text-lg">{quantity}</span>
+                <span className="w-12 text-center font-black text-lg">
+                  {quantity}
+                </span>
                 <button
-                  onClick={() => setQuantity(Math.min(currentStock || 999, quantity + 1))}
+                  onClick={() =>
+                    setQuantity(Math.min(currentStock || 999, quantity + 1))
+                  }
                   className="p-3 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all"
                 >
                   <Plus className="w-5 h-5" />
@@ -326,7 +416,11 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 className="flex-1 py-4 bg-brand-600 hover:bg-brand-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-black rounded-2xl transition-all shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 flex items-center justify-center gap-3 transform hover:-translate-y-1 active:scale-95"
               >
                 <ShoppingBag className="w-6 h-6" />
-                {currentStock <= 0 ? 'Out of Stock' : (selectedVariant ? 'Add to Cart' : 'Select Options')}
+                {currentStock <= 0
+                  ? "Out of Stock"
+                  : selectedVariant
+                    ? "Add to Cart"
+                    : "Select Options"}
               </button>
 
               <button
@@ -341,11 +435,16 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
             {product.features && product.features.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {product.features.map((feature: string, idx: number) => (
-                  <div key={idx} className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
+                  <div
+                    key={idx}
+                    className="flex items-center gap-3 p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl"
+                  >
                     <div className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center shrink-0">
                       <Check className="w-4 h-4 text-brand-600" />
                     </div>
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{feature}</span>
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                      {feature}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -358,8 +457,12 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                   <ShieldCheck className="w-7 h-7 text-green-600" />
                 </div>
                 <div className="space-y-0.5">
-                  <p className="text-[10px] uppercase tracking-widest font-black text-slate-400">Security</p>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">100% Protected</p>
+                  <p className="text-[10px] uppercase tracking-widest font-black text-slate-400">
+                    Security
+                  </p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">
+                    100% Protected
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl group hover:border-brand-500/30 transition-all duration-500">
@@ -367,8 +470,12 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                   <TruckIcon className="w-7 h-7 text-blue-600" />
                 </div>
                 <div className="space-y-0.5">
-                  <p className="text-[10px] uppercase tracking-widest font-black text-slate-400">Shipping</p>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">Global Delivery</p>
+                  <p className="text-[10px] uppercase tracking-widest font-black text-slate-400">
+                    Shipping
+                  </p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">
+                    Global Delivery
+                  </p>
                 </div>
               </div>
             </div>
@@ -376,13 +483,13 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
             {/* Tabs Section */}
             <div className="border-t border-slate-100 dark:border-slate-800 pt-12">
               <div className="flex gap-2 mb-8 bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl w-fit">
-                {['description', 'specs', 'shipping'].map((tab) => (
+                {["description", "specs", "shipping"].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab as any)}
                     className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${activeTab === tab
-                      ? 'bg-white dark:bg-slate-800 text-brand-600 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? "bg-white dark:bg-slate-800 text-brand-600 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
                       }`}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -398,46 +505,79 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                   exit={{ opacity: 0, y: -10 }}
                   className="prose prose-slate dark:prose-invert max-w-none px-2"
                 >
-                  {activeTab === 'description' && (
-                    <div dangerouslySetInnerHTML={{ __html: product.description || 'No description available.' }} />
+                  {activeTab === "description" && (
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html:
+                          product.description || "No description available.",
+                      }}
+                    />
                   )}
-                  {activeTab === 'specs' && (
+                  {activeTab === "specs" && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {product.attributes?.map((attr: any) => (
-                        <div key={attr.id} className="flex justify-between py-4 px-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
-                          <span className="text-xs uppercase tracking-widest font-black text-slate-400">{attr.name}</span>
-                          <span className="text-sm font-bold">{attr.values.join(', ')}</span>
+                        <div
+                          key={attr.id}
+                          className="flex justify-between py-4 px-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800"
+                        >
+                          <span className="text-xs uppercase tracking-widest font-black text-slate-400">
+                            {attr.name}
+                          </span>
+                          <span className="text-sm font-bold">
+                            {attr.values.join(", ")}
+                          </span>
                         </div>
                       ))}
                       {product.specifications?.map((spec: any, idx: number) => (
-                        <div key={idx} className="flex justify-between py-4 px-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
-                          <span className="text-xs uppercase tracking-widest font-black text-slate-400">{spec.label}</span>
-                          <span className="text-sm font-bold">{spec.value}</span>
+                        <div
+                          key={idx}
+                          className="flex justify-between py-4 px-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800"
+                        >
+                          <span className="text-xs uppercase tracking-widest font-black text-slate-400">
+                            {spec.label}
+                          </span>
+                          <span className="text-sm font-bold">
+                            {spec.value}
+                          </span>
                         </div>
                       ))}
-                      {(!product.attributes?.length && !product.specifications?.length) && (
-                        <p className="text-slate-500">No specifications available.</p>
-                      )}
+                      {!product.attributes?.length &&
+                        !product.specifications?.length && (
+                          <p className="text-slate-500">
+                            No specifications available.
+                          </p>
+                        )}
                     </div>
                   )}
-                  {activeTab === 'shipping' && (
+                  {activeTab === "shipping" && (
                     <div className="grid gap-6">
                       <div className="flex gap-4 p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
                         <TruckIcon className="w-8 h-8 text-brand-600 shrink-0" />
                         <div>
-                          <h4 className="font-black text-slate-900 dark:text-white mb-2">Fast Delivery</h4>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">Standard: 5-7 business days. Express: 2-3 business days.</p>
+                          <h4 className="font-black text-slate-900 dark:text-white mb-2">
+                            Fast Delivery
+                          </h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                            Standard: 5-7 business days. Express: 2-3 business
+                            days.
+                          </p>
                         </div>
                       </div>
                       <div className="flex gap-4 p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
                         <ShieldCheck className="w-8 h-8 text-green-600 shrink-0" />
                         <div>
-                          <h4 className="font-black text-slate-900 dark:text-white mb-2">Hassle-Free Returns</h4>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">30-day money-back guarantee. Return shipping is on us!</p>
+                          <h4 className="font-black text-slate-900 dark:text-white mb-2">
+                            Hassle-Free Returns
+                          </h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                            30-day money-back guarantee. Return shipping is on
+                            us!
+                          </p>
                         </div>
                       </div>
                     </div>
                   )}
+
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -470,12 +610,15 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
               />
             </div>
 
-            <div className="mt-8 flex gap-4 overflow-x-auto max-w-full pb-4 scrollbar-none" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="mt-8 flex gap-4 overflow-x-auto max-w-full pb-4 scrollbar-none"
+              onClick={(e) => e.stopPropagation()}
+            >
               {images.map((img: string, i: number) => (
                 <button
                   key={i}
                   onClick={() => setSelectedImage(i)}
-                  className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${selectedImage === i ? 'border-brand-500 scale-110' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                  className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${selectedImage === i ? "border-brand-500 scale-110" : "border-transparent opacity-50 hover:opacity-100"}`}
                 >
                   <Image src={img} alt="thumb" fill className="object-cover" />
                 </button>
@@ -496,8 +639,13 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
           >
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-4 flex items-center justify-between gap-4 shadow-2xl shadow-black/20">
               <div className="flex flex-col pl-4">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Price</span>
-                <Price amount={currentPrice * quantity} className="text-xl font-black text-slate-900 dark:text-white" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Total Price
+                </span>
+                <Price
+                  amount={currentPrice * quantity}
+                  className="text-xl font-black text-slate-900 dark:text-white"
+                />
               </div>
               <button
                 onClick={handleAddToCart}
@@ -505,7 +653,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 className="px-8 py-3.5 bg-brand-600 hover:bg-brand-700 disabled:bg-slate-300 text-white font-black rounded-full shadow-lg shadow-brand-500/30 transition-all flex items-center gap-2"
               >
                 <ShoppingBag className="w-5 h-5" />
-                {currentStock <= 0 ? 'Out' : 'Add'}
+                {currentStock <= 0 ? "Out" : "Add"}
               </button>
             </div>
           </motion.div>

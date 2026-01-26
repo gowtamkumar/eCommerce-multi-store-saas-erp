@@ -2,7 +2,7 @@
 
 import { useSettings } from '@/contexts/SettingsContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Banknote, BarChart3, ChevronDown, CreditCard, FileText, Globe, HelpCircle, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, MessageSquareQuote, Package, Settings, Share2, ShoppingBag, Tag, TrendingUp, User, Users, X } from 'lucide-react';
+import { Banknote, BarChart3, ChevronDown, CreditCard, FileText, Globe, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, Settings, Share2, ShoppingBag, Tag, TrendingUp, User, Users, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -137,15 +137,6 @@ export default function AdminLayout({
         </nav>
 
         <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-1">
-          <Link href="/admin/faqs" className="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors font-medium">
-            <HelpCircle className="w-5 h-5" />
-            FAQs
-          </Link>
-          <Link href="/admin/testimonials" className="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors font-medium">
-            <MessageSquareQuote className="w-5 h-5" />
-            Testimonials
-          </Link>
-
           {/* Collapsible Settings */}
           <div className="space-y-1">
             <button

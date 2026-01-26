@@ -1,9 +1,10 @@
-import { CustomizerSection, FAQItem, ReviewItem } from "@/types/customizer";
-import { MousePointer2, Plus, Star, Tag } from "lucide-react";
+import { CustomizerSection, FAQItem } from "@/types/customizer";
+import { MousePointer2, Plus, Tag } from "lucide-react";
+import Link from "next/link";
 import React from "react";
 import CategoryGrid from "../store/CategoryGrid";
 import ProductSlider from "../store/ProductSlider";
-import Link from "next/link";
+import ReviewSection from "../store/ReviewSection";
 
 interface SectionRendererProps {
   sections: CustomizerSection[];
@@ -110,36 +111,10 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
 
             case "review-slider":
               return (
-                <div style={styles} className="px-4 md:px-10 py-16 md:py-24 bg-slate-950 border-y border-white/5 overflow-hidden">
-                  <div className="max-w-7xl mx-auto">
-                    <h2 className="text-center text-white text-3xl font-black mb-16 uppercase tracking-widest">{settings?.title || 'Client Feedback'}</h2>
-                    <div className="flex gap-8 overflow-x-auto pb-8 scrollbar-hide">
-                      {(settings?.reviews || []).length > 0 ? (
-                        settings.reviews.map((review: ReviewItem) => (
-                          <div key={review.id} className="min-w-[400px] md:min-w-[500px] bg-white/5 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shrink-0">
-                            <div className="flex gap-1 mb-8">
-                              {[...Array(5)].map((_, i) => (
-                                <Star key={i} className={`w-5 h-5 ${i < (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-white/10'}`} />
-                              ))}
-                            </div>
-                            <blockquote className="text-2xl text-white/90 mb-10 italic leading-snug">"{review.text}"</blockquote>
-                            <div className="flex items-center gap-5">
-                              <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-3xl">👤</div>
-                              <div>
-                                <p className="text-xl font-black text-brand-500 uppercase tracking-tight">{review.author}</p>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-bold">Verified Luxury Client</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="w-full py-20 text-center text-white/10 border-4 border-dashed border-white/5 rounded-[3rem]">
-                          Add social proof in the customizer settings panel
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <ReviewSection
+                  settings={settings}
+                  styles={styles}
+                />
               );
 
             case "text-block":

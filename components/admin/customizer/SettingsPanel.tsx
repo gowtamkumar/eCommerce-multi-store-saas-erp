@@ -229,30 +229,64 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
               </div>
-              <div className="space-y-4">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Reviews</label>
-                {((section.settings as any).reviews || []).map((review: ReviewItem) => (
-                  <div key={review.id} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-800/50 shadow-sm">
-                    <button onClick={() => toggleExpand(review.id)} className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800">
-                      <span className="text-sm font-bold truncate">{review.author || 'Anonymous'}</span>
-                      {expandedItems.includes(review.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                    {expandedItems.includes(review.id) && (
-                      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                        <input type="text" placeholder="Author Name" value={review.author} onChange={(e) => updateArrayItem('reviews', review.id, { author: e.target.value })} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
-                        <textarea placeholder="Review Text" value={review.text} onChange={(e) => updateArrayItem('reviews', review.id, { text: e.target.value })} rows={3} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
-                        <input type="number" placeholder="Rating (1-5)" min="1" max="5" value={review.rating} onChange={(e) => updateArrayItem('reviews', review.id, { rating: parseInt(e.target.value) })} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
-                        <button onClick={() => removeArrayItem('reviews', review.id)} className="w-full py-1.5 text-[10px] font-bold text-red-500 flex items-center justify-center gap-1 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg">
-                          <Trash2 className="w-3 h-3" /> Remove Review
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <button onClick={() => addArrayItem('reviews', { author: 'Alexander Wright', text: 'Amazing quality!', rating: 5 })} className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-bold text-slate-500 hover:border-brand-500 hover:text-brand-600 transition-all flex items-center justify-center gap-2">
-                  <Plus className="w-4 h-4" /> Add Review
-                </button>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Content Source</label>
+                <select
+                  value={settings?.source || 'manual'}
+                  onChange={(e) => updateSetting('source', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="manual">Manual Entry</option>
+                  <option value="database">Database</option>
+                </select>
               </div>
+
+              {settings?.source === 'database' ? (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Reviews Count</label>
+                    <input
+                      type="number"
+                      value={settings?.count || 6}
+                      onChange={(e) => updateSetting('count', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      min="1"
+                      max="12"
+                    />
+                  </div>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-xs text-blue-600 dark:text-blue-400">
+                      Reviews are automatically fetched from your database.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Reviews</label>
+                  {((section.settings as any).reviews || []).map((review: ReviewItem) => (
+                    <div key={review.id} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-800/50 shadow-sm">
+                      <button onClick={() => toggleExpand(review.id)} className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <span className="text-sm font-bold truncate">{review.author || 'Anonymous'}</span>
+                        {expandedItems.includes(review.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                      {expandedItems.includes(review.id) && (
+                        <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                          <input type="text" placeholder="Author Name" value={review.author} onChange={(e) => updateArrayItem('reviews', review.id, { author: e.target.value })} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
+                          <textarea placeholder="Review Text" value={review.text} onChange={(e) => updateArrayItem('reviews', review.id, { text: e.target.value })} rows={3} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
+                          <input type="number" placeholder="Rating (1-5)" min="1" max="5" value={review.rating} onChange={(e) => updateArrayItem('reviews', review.id, { rating: parseInt(e.target.value) })} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
+                          <button onClick={() => removeArrayItem('reviews', review.id)} className="w-full py-1.5 text-[10px] font-bold text-red-500 flex items-center justify-center gap-1 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg">
+                            <Trash2 className="w-3 h-3" /> Remove Review
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <button onClick={() => addArrayItem('reviews', { author: 'Alexander Wright', text: 'Amazing quality!', rating: 5 })} className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-bold text-slate-500 hover:border-brand-500 hover:text-brand-600 transition-all flex items-center justify-center gap-2">
+                    <Plus className="w-4 h-4" /> Add Review
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

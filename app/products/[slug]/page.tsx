@@ -83,9 +83,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <PaymentStatus />
             <Navbar />
             <ProductDetails product={product} />
-            <Reviews />
+            {
+                product.reviews && product.reviews.length && product.isReview && (
+                    <Reviews reviews={product.reviews} />
+                )
+            }
             <RelatedProducts currentProductId={product.id} />
-            <FAQ />
+            <FAQ faqs={product.faqs} />
             <Footer />
         </main>
     );

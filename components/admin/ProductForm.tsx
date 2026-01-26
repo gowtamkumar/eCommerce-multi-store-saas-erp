@@ -2,7 +2,7 @@
 
 import { fetchAPI } from '@/lib/api';
 import { Category, ProductAttribute, ProductVariant } from '@/types/product';
-import { Image as ImageIcon, Layout, Loader2, MessageSquare, Quote, Save, Star, Tag } from 'lucide-react';
+import { Image as ImageIcon, Layout, Loader2, MessageSquare, Plus, Save, Star, Tag, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -24,16 +24,18 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     slug: initialData?.slug || '',
     description: initialData?.description || '',
     shortDescription: initialData?.shortDescription || '',
-    price: initialData?.price || 0,
-    discountAmount: initialData?.discountAmount || 0,
-    stock: initialData?.stock || 0,
+    price: initialData?.price?.toString() || '0',
+    discountAmount: initialData?.discountAmount?.toString() || '0',
+    stock: initialData?.stock?.toString() || '0',
     images: initialData?.images?.join(',') || '',
     status: initialData?.status || 'active',
     categoryId: initialData?.categoryId || '',
-    reviewSectionType: initialData?.reviewSectionType || 'testimonials',
+    isReview: initialData?.isReview,
     attributes: initialData?.attributes || [] as ProductAttribute[],
     variants: initialData?.variants || [] as ProductVariant[],
+    faqs: initialData?.faqs || [],
   });
+
 
   useEffect(() => {
     fetchAPI('/categories').then(res => {
@@ -54,13 +56,30 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
 
     const payload = {
       ...formData,
-      price: +formData.price,
-      discountAmount: +formData.discountAmount,
-      stock: +formData.stock,
+      price: parseFloat(formData.price),
+      discountAmount: parseFloat(formData.discountAmount),
+      stock: parseInt(formData.stock),
       slug: formData.slug || generateSlug(formData.name),
       images: formData.images.split(',').map((s: string) => s.trim()).filter(Boolean),
       categoryId: formData.categoryId || null,
+      faqs: formData.faqs.map((f: any) => ({
+        question: f.question,
+        answer: f.answer,
+        order: f.order
+      })),
+      variants: formData.variants.map((v: any) => {
+        const p = parseFloat(v.price);
+        const s = parseInt(v.stock);
+        return {
+          ...v,
+          price: !isNaN(p) ? p : 0,
+          stock: !isNaN(s) ? s : 0,
+        };
+      }),
     };
+
+
+
 
     try {
       const url = isEdit ? `/products/${initialData.id}` : '/products';
@@ -81,6 +100,9 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       setLoading(false);
     }
   };
+
+  console.log("formData", formData.isReview);
+
 
   return (
     <form onSubmit={handleSubmit} className="max-w-[1200px]">
@@ -152,10 +174,15 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
             <ProductVariants
               attributes={formData.attributes}
               variants={formData.variants}
-              basePrice={formData.price}
+              basePrice={parseFloat(formData.price)}
               onChange={(attributes, variants) => setFormData({ ...formData, attributes, variants })}
             />
           </div>
+
+          <ProductFAQs
+            faqs={formData.faqs}
+            onChange={(faqs) => setFormData({ ...formData, faqs })}
+          />
         </div>
 
         {/* Sidebar Column */}
@@ -208,7 +235,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                   min="0"
                   step="0.01"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all"
                 />
               </div>
@@ -222,7 +249,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                   min="0"
                   step="0.01"
                   value={formData.discountAmount}
-                  onChange={(e) => setFormData({ ...formData, discountAmount: Number(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, discountAmount: e.target.value })}
                   className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all font-mono"
                 />
               </div>
@@ -234,7 +261,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                 required
                 min="0"
                 value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all"
               />
             </div>
@@ -255,7 +282,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
             />
           </div>
 
-          {/* Review Logic */}
+          Review Logic - Currently disabled as backend support was removed
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
               <MessageSquare className="w-4 h-4" /> Review Mode
@@ -263,19 +290,8 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, reviewSectionType: 'testimonials' })}
-                className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${formData.reviewSectionType === 'testimonials'
-                  ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-500 text-brand-600'
-                  : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-brand-200'
-                  }`}
-              >
-                <Quote className="w-4 h-4" />
-                <span className="text-[10px] font-bold uppercase">Testimonials</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, reviewSectionType: 'reviews' })}
-                className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${formData.reviewSectionType === 'reviews'
+                onClick={() => setFormData({ ...formData, isReview: !formData.isReview })}
+                className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${formData.isReview
                   ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-500 text-brand-600'
                   : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-brand-200'
                   }`}
@@ -285,6 +301,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
               </button>
             </div>
           </div>
+
 
           <button
             type="submit"
@@ -301,5 +318,75 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
         </div>
       </div>
     </form>
+  );
+}
+
+function ProductFAQs({ faqs, onChange }: { faqs: any[], onChange: (faqs: any[]) => void }) {
+  const addFaq = () => {
+    onChange([...faqs, { question: '', answer: '', order: faqs.length }]);
+  };
+
+  const removeFaq = (index: number) => {
+    onChange(faqs.filter((_, i) => i !== index));
+  };
+
+  const updateFaq = (index: number, field: string, value: string) => {
+    const newFaqs = [...faqs];
+    newFaqs[index] = { ...newFaqs[index], [field]: value };
+    onChange(newFaqs);
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-brand-500" /> Product FAQs
+        </h3>
+        <button
+          type="button"
+          onClick={addFaq}
+          className="text-sm font-bold text-brand-600 dark:text-brand-400 hover:text-brand-700 flex items-center gap-1"
+        >
+          <Plus className="w-4 h-4" /> Add Question
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {faqs.length === 0 ? (
+          <div className="text-center py-8 bg-slate-50 dark:bg-slate-900/50 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 text-sm">
+            No FAQs added yet.
+          </div>
+        ) : (
+          faqs.map((faq, index) => (
+            <div key={index} className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 relative group">
+              <button
+                type="button"
+                onClick={() => removeFaq(index)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors"
+                title="Remove FAQ"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <div className="space-y-3 pr-8">
+                <input
+                  type="text"
+                  placeholder="Question"
+                  value={faq.question}
+                  onChange={(e) => updateFaq(index, 'question', e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                />
+                <textarea
+                  placeholder="Answer"
+                  value={faq.answer}
+                  onChange={(e) => updateFaq(index, 'answer', e.target.value)}
+                  rows={2}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none"
+                />
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   );
 }

@@ -2,8 +2,9 @@
 
 import CategoryGrid from '@/components/store/CategoryGrid';
 import ProductSlider from '@/components/store/ProductSlider';
-import { CustomizerSection, FAQItem, ReviewItem } from '@/types/customizer';
-import { MousePointer2, Plus, Star, Tag } from 'lucide-react';
+import ReviewSection from '@/components/store/ReviewSection';
+import { CustomizerSection, FAQItem } from '@/types/customizer';
+import { MousePointer2, Plus, Tag } from 'lucide-react';
 
 interface PreviewProps {
   sections: CustomizerSection[];
@@ -151,36 +152,10 @@ function SectionRenderer({ section }: { section: CustomizerSection }) {
 
     case 'review-slider':
       return (
-        <section style={styles} className="px-10 py-16 bg-slate-900 border-y border-white/5">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-center text-white text-2xl font-bold mb-12">{settings?.title || 'Happy Customers'}</h2>
-            <div className="flex gap-8 overflow-x-auto pb-4 scrollbar-hide">
-              {(settings?.reviews || []).length > 0 ? (
-                settings.reviews.map((review: ReviewItem) => (
-                  <div key={review.id} className="min-w-[400px] flex-1 bg-white/5 backdrop-blur-sm p-8 rounded-[2rem] border border-white/10 shrink-0">
-                    <div className="flex gap-1 mb-6">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-white/20'}`} />
-                      ))}
-                    </div>
-                    <p className="text-lg text-white/90 mb-8 italic leading-relaxed">"{review.text}"</p>
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-xl">👤</div>
-                      <div>
-                        <p className="font-bold text-white">{review.author}</p>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Verified Purchase</p>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="w-full py-12 text-center text-white/20 border-2 border-dashed border-white/5 rounded-[2rem]">
-                  Add reviews to your slider
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
+        <ReviewSection
+          settings={settings}
+          styles={styles}
+        />
       );
 
     case 'text-block':

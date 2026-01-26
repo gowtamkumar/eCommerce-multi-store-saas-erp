@@ -35,7 +35,6 @@ export interface Product {
   status: 'active' | 'inactive';
   categoryId?: string;
   category?: Category;
-  reviewSectionType?: 'testimonials' | 'reviews';
   faqs?: Array<{ question: string; answer: string; order?: number }>;
   attributes?: ProductAttribute[];
   variants?: ProductVariant[];
