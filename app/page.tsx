@@ -83,7 +83,7 @@ export default async function Home() {
         </Suspense>
         <Navbar />
         <ProductDetails product={product} />
-        <Reviews />
+        {/* <Reviews /> */}
         <FAQ />
         <Footer />
         <WhatsAppWidget />

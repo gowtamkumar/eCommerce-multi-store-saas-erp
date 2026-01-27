@@ -57,7 +57,7 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
   }, [settings.source, settings.reviews, settings.count]); // Re-run when settings change
 
   return (
-    <div style={styles} className="px-4 md:px-10 py-16 md:py-24 bg-slate-950 border-y border-white/5 overflow-hidden">
+    <section style={styles} className="px-4 md:px-10 py-16 md:py-24 bg-slate-950 border-y border-white/5 overflow-hidden">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-center text-white text-3xl font-black mb-16 uppercase tracking-widest">
           {settings?.title || 'Client Feedback'}
@@ -123,6 +123,6 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,8 +1,14 @@
 "use client";
 
+import BannerSlider from '@/components/store/BannerSlider';
+import BuilderButton from '@/components/store/BuilderButton';
 import CategoryGrid from '@/components/store/CategoryGrid';
+import FAQSection from '@/components/store/FAQSection';
+import ImageBlock from '@/components/store/ImageBlock';
+import OfferBanner from '@/components/store/OfferBanner';
 import ProductSlider from '@/components/store/ProductSlider';
 import ReviewSection from '@/components/store/ReviewSection';
+import TextBlock from '@/components/store/TextBlock';
 import { CustomizerSection, FAQItem } from '@/types/customizer';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, MousePointer2, Plus, Tag } from 'lucide-react';
@@ -75,128 +81,7 @@ function SectionRenderer({ section }: { section: CustomizerSection }) {
 
   switch (section.type) {
     case 'banner':
-      // eslint-disable-next-line
-      const [currentSlide, setCurrentSlide] = useState(0);
-      const slides = settings?.slides?.length > 0 ? settings.slides : [{
-        id: 'default',
-        headline: settings?.headline || 'Summer Collection 2026',
-        subline: settings?.subline || 'Discover the latest trends in luxury fashion and accessories.',
-        backgroundImage: settings?.backgroundImage,
-        primaryButtonText: settings?.primaryButtonText,
-        primaryButtonLink: settings?.primaryButtonLink,
-        secondaryButtonText: settings?.secondaryButtonText,
-        secondaryButtonLink: settings?.secondaryButtonLink,
-      }];
-
-      // Auto-play
-      useEffect(() => {
-        if (slides.length <= 1) return;
-        const timer = setInterval(() => {
-          setCurrentSlide((prev) => (prev + 1) % slides.length);
-        }, 5000);
-        return () => clearInterval(timer);
-      }, [slides.length]);
-
-      const nextSlide = (e: any) => {
-        e.stopPropagation();
-        setCurrentSlide((prev) => (prev + 1) % slides.length);
-      };
-
-      const prevSlide = (e: any) => {
-        e.stopPropagation();
-        setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-      };
-
-      const currentContent = slides[currentSlide];
-
-      return (
-        <section
-          style={{
-            ...styles,
-            height: '500px' // fixed height for slider
-          }}
-          className="relative group overflow-hidden bg-slate-100 dark:bg-slate-800"
-        >
-          <AnimatePresence mode='wait'>
-            <motion.div
-              key={currentSlide}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.7 }}
-              className="absolute inset-0 w-full h-full bg-cover bg-center"
-              style={{
-                backgroundImage: currentContent?.backgroundImage ? `url(${currentContent.backgroundImage})` : undefined,
-              }}
-            >
-              <div className="absolute inset-0 bg-black/40 z-0" />
-            </motion.div>
-          </AnimatePresence>
-
-          <div className="relative z-10 h-full flex items-center justify-center px-10 text-left w-full">
-            <AnimatePresence mode='wait'>
-              <motion.div
-                key={`content-${currentSlide}`}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -20, opacity: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="max-w-4xl w-full"
-              >
-                <span className="inline-block px-3 py-1 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full mb-4">New Season</span>
-                <h1 className="text-5xl font-extrabold text-white mb-4 leading-tight drop-shadow-lg">
-                  {currentContent?.headline || 'Summer Collection 2026'}
-                </h1>
-                <p className="text-xl text-white/90 max-w-xl mb-8 leading-relaxed font-medium">
-                  {currentContent?.subline || 'Discover the latest trends in luxury fashion and accessories.'}
-                </p>
-                <div className="flex gap-4">
-                  {currentContent?.primaryButtonText && (
-                    <button className="px-8 py-3 bg-white text-brand-600 font-bold rounded-lg shadow-xl hover:scale-105 transition-transform">
-                      {currentContent.primaryButtonText}
-                    </button>
-                  )}
-                  {currentContent?.secondaryButtonText && (
-                    <button className="px-8 py-3 bg-white/10 text-white border border-white/30 backdrop-blur-md font-bold rounded-lg hover:bg-white/20 transition-all">
-                      {currentContent.secondaryButtonText}
-                    </button>
-                  )}
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Navigation Controls */}
-          {slides.length > 1 && (
-            <>
-              <button
-                onClick={prevSlide}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100 z-20"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button
-                onClick={nextSlide}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100 z-20"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-
-              {/* Dots */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                {slides.map((_: any, idx: number) => (
-                  <button
-                    key={idx}
-                    onClick={(e) => { e.stopPropagation(); setCurrentSlide(idx); }}
-                    className={`w-2 h-2 rounded-full transition-all ${currentSlide === idx ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/80'}`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-
-        </section>
-      );
+      return <BannerSlider settings={settings} styles={styles} />
 
     case 'product-slider':
       return (
@@ -219,25 +104,7 @@ function SectionRenderer({ section }: { section: CustomizerSection }) {
 
     case 'offer-banner':
       return (
-        <section style={{ ...styles, backgroundColor: settings?.backgroundColor || styles.backgroundColor || '#6366f1' }} className="px-10 py-8 relative overflow-hidden text-white">
-          <div className="absolute top-0 right-0 w-64 h-full bg-white/10 skew-x-12 transform translate-x-32" />
-          <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
-                <Tag className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-center md:text-left">
-                <h2 className="text-2xl font-black uppercase tracking-tighter">{settings?.headline || 'FLASH SALE'}</h2>
-                <p className="text-white/80 font-bold uppercase tracking-widest text-[10px]">{settings?.subline || 'Limited time offer'}</p>
-              </div>
-            </div>
-            {settings?.buttonText && (
-              <button className="px-10 py-4 bg-white text-brand-600 font-black rounded-xl shadow-2xl hover:scale-105 transition-transform uppercase tracking-widest text-sm">
-                {settings.buttonText}
-              </button>
-            )}
-          </div>
-        </section>
+        <OfferBanner buttonText={settings?.buttonText} headline={settings?.headline} subline={settings?.subline} backgroundColor={settings?.backgroundColor} styles={styles} />
       );
 
     case 'review-slider':
@@ -248,94 +115,25 @@ function SectionRenderer({ section }: { section: CustomizerSection }) {
         />
       );
 
-    case 'text-block':
+    case "text-block":
       return (
-        <section style={styles} className={`px-10 py-16 flex ${settings?.alignment === 'left' ? 'justify-start text-left' : settings?.alignment === 'right' ? 'justify-end text-right' : 'justify-center text-center'}`}>
-          <div className="max-w-3xl w-full prose dark:prose-invert prose-brand lg:prose-xl">
-            {settings?.html ? (
-              <div dangerouslySetInnerHTML={{ __html: settings.html }} />
-            ) : (
-              <div className="space-y-6">
-                <h2 className="text-4xl font-black tracking-tight uppercase">{settings?.headline || 'Our Craft'}</h2>
-                <p className="text-xl opacity-70 leading-relaxed font-medium">
-                  Add meaningful content about your store here.
-                </p>
-                <div className={`w-24 h-1 bg-brand-600 rounded-full ${settings?.alignment === 'left' ? 'mr-auto' : settings?.alignment === 'right' ? 'ml-auto' : 'mx-auto'}`} />
-              </div>
-            )}
-          </div>
-        </section>
+        <TextBlock alignment={settings?.alignment} html={settings?.html} headline={settings?.headline} styles={styles} />
       );
 
-    case 'image-block':
+    case "image-block":
       return (
-        <section style={styles} className={`px-10 py-20 flex flex-col md:flex-row items-center gap-16 ${settings?.layout === 'right' ? 'md:flex-row-reverse' : ''}`}>
-          <div className="flex-1 w-full relative group">
-            <div className="aspect-[4/5] bg-slate-100 dark:bg-slate-800 rounded-[3rem] border-8 border-white dark:border-slate-800 shadow-2xl flex items-center justify-center overflow-hidden">
-              {settings?.image ? (
-                <img src={settings.image} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-8xl">🖼️</span>
-              )}
-            </div>
-          </div>
-          <div className="flex-1 text-left space-y-8">
-            <div className="space-y-4">
-              <h2 className="text-5xl font-black leading-[1.1]">{settings?.headline || 'Uncompromised Design'}</h2>
-              <div className="w-16 h-2 bg-brand-600 rounded-full" />
-            </div>
-            <p className="text-xl opacity-70 leading-relaxed font-medium">
-              {settings?.subline || 'Use this area to feature a specific collection or tell your brand story.'}
-            </p>
-            {settings?.buttonText && <button className="px-10 py-4 bg-brand-600 text-white font-black rounded-xl shadow-xl">{settings.buttonText}</button>}
-          </div>
-        </section>
+        <ImageBlock image={settings?.image} headline={settings?.headline} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} />
       );
 
-    case 'button':
+    case "button":
       return (
-        <section style={styles} className="px-10 py-8 flex justify-center">
-          <button className={`
-            font-black rounded-2xl transition-all uppercase tracking-[0.2em] flex items-center gap-3
-            ${settings?.variant === 'outline' ? 'border-2 border-brand-600 text-brand-600 bg-transparent' : 'bg-brand-600 text-white shadow-xl'}
-            ${settings?.size === 'sm' ? 'px-6 py-2.5 text-[10px]' : settings?.size === 'lg' ? 'px-16 py-6 text-base' : 'px-12 py-5 text-sm'}
-          `}>
-            <span>{settings?.text || 'Shop Collection'}</span>
-            <MousePointer2 className="w-4 h-4" />
-          </button>
-        </section>
+        <BuilderButton variant={settings?.variant} size={settings?.size} text={settings?.text} styles={styles} />
       );
 
-    case 'faq-section':
+    case "faq-section":
       return (
-        <section style={styles} className="px-10 py-16 bg-slate-50 dark:bg-slate-900/30">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-black mb-4 uppercase tracking-tight">{settings?.title || 'FAQ'}</h2>
-            </div>
-            <div className="space-y-4">
-              {(settings?.items || []).length > 0 ? (
-                settings.items.map((faq: FAQItem) => (
-                  <div key={faq.id} className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between group">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold">{faq.question}</h3>
-                      <p className="text-slate-500 mt-2 text-sm leading-relaxed hidden group-hover:block transition-all">{faq.answer}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-brand-600 transition-transform group-hover:rotate-45">
-                      <Plus className="w-5 h-5" />
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="py-12 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
-                  Add questions to your FAQ in the settings panel
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
+        <FAQSection items={settings?.items} headline={settings?.headline} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} />
       );
-
     default:
       return (
         <div style={styles} className="flex flex-col items-center justify-center min-h-[200px] bg-slate-50 dark:bg-slate-800/50 border border-dashed border-slate-200 dark:border-slate-700">

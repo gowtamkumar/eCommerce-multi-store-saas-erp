@@ -47,7 +47,7 @@ export default function BannerSlider({ settings, styles }: any) {
 
 
   return (
-    <div
+    <section
       style={{
         ...styles,
         height: '600px' // fixed height for slider
@@ -135,6 +135,6 @@ export default function BannerSlider({ settings, styles }: any) {
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }
