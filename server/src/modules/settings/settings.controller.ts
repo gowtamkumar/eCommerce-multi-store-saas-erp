@@ -12,8 +12,6 @@ export class SettingsController {
   @Get()
   @ApiOperation({ summary: 'Get site settings' })
   async getSettings(@TenantId() tenantId: string) {
-    console.log('getSettings tenantId', tenantId)
-
     return await this.settingsService.findByTenant(tenantId)
   }
 

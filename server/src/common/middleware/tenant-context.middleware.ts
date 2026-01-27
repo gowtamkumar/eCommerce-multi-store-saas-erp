@@ -15,10 +15,7 @@ declare global {
 export class TenantContextMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     // Extract tenantId from header
-    console.log("req.headers", req.headers['x-tenant-id']);
     const tenantId = req.headers['x-tenant-id'] as string
-    console.log("tenantId", tenantId);
-
     if (!tenantId) {
       throw new BadRequestException('Tenant context missing')
     }

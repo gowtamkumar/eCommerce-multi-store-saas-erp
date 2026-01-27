@@ -1,10 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
-import { UserService } from '../../user/services/user.service'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { UserDto } from '../../user/dtos/user.dto'
+import { UserService } from '../../user/services/user.service'
 import { AccessTokenPayload } from '../dtos'
-import { ConfigService } from '@nestjs/config'
 
 @Injectable()
 export class JwtAuthStrategy extends PassportStrategy(Strategy) {
@@ -21,7 +21,6 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: AccessTokenPayload): Promise<UserDto> {
-    console.log("[JwtStrategy] Validate called with payload:", JSON.stringify(payload));
     const { sub: userId } = payload
     try {
       const user = await this.userService.getUser(userId)

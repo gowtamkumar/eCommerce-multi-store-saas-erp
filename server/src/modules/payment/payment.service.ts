@@ -48,11 +48,7 @@ export class PaymentService {
 
         // Update order with transaction ID
         order.transactionId = tran_id;
-        await this.orderRepository.save(order);
-
-
-        console.log("app_url", app_url);
-        
+        await this.orderRepository.save(order);        
 
         const initData: any = {
             store_id,
@@ -136,9 +132,7 @@ export class PaymentService {
             status: 'SUCCESS',
             gatewayResponse,
             tenantId: order.tenantId,
-        });
-        console.log("payment success", payment);
-        
+        });        
         await this.paymentRepository.save(payment);
 
         return { success: true };

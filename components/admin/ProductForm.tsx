@@ -101,9 +101,6 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     }
   };
 
-  console.log("formData", formData.isReview);
-
-
   return (
     <form onSubmit={handleSubmit} className="max-w-[1200px]">
       <div className="flex flex-col lg:flex-row gap-8">

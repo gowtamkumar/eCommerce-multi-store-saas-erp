@@ -104,8 +104,6 @@ export default function CheckoutPage() {
           body: JSON.stringify({ orderId: order.id, callbackUrl: `${window.location.origin}/api/payment` }),
         });
 
-        console.log("paymentJson", paymentJson);
-
         if (paymentJson.data.gatewayUrl) {
           await clearCart();
           window.location.href = paymentJson.data.gatewayUrl;

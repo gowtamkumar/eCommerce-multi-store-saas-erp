@@ -6,10 +6,7 @@ export async function POST(request: NextRequest) {
     const data: any = {};
     formData.forEach((value, key) => (data[key] = value));
 
-    const tran_id = request.nextUrl.searchParams.get("tran_id");
-
-    console.log("PAYMENT CANCEL PAYLOAD:", data);
-    console.log("Transaction ID:", tran_id);
+    const tran_id = request.nextUrl.searchParams.get("tran_id")
 
     // Call Backend API
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";

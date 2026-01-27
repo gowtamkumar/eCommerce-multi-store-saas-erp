@@ -1,7 +1,7 @@
+import SectionRenderer from "@/components/core/SectionRenderer";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import PaymentStatus from "@/components/store/PaymentStatus";
-import SectionRenderer from "@/components/core/SectionRenderer";
 import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
 import { fetchAPI } from "@/lib/api";
 import { notFound } from "next/navigation";
@@ -38,9 +38,6 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
     }
 
     const page = await getPage(slug);
-
-    console.log("page", page);
-
 
     if (!page) {
         notFound();

@@ -1,10 +1,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { FileEntity } from '../entities/file.entity';
-import { CreateFileDto, FilterFileDto, UpdateFileDto } from '../dtos';
 import * as fs from 'fs';
 import * as PDFDocument from 'pdfkit';
+import { Repository } from 'typeorm';
+import { CreateFileDto, FilterFileDto, UpdateFileDto } from '../dtos';
+import { FileEntity } from '../entities/file.entity';
 
 @Injectable()
 export class FilesService {
@@ -41,8 +41,6 @@ export class FilesService {
   async createFile(createFile: CreateFileDto) {
     this.logger.log(`${this.createFile.name} service Called`);
 
-    console.log(createFile);
-
     const fileCreate = this.fileRepo.create(createFile);
     return this.fileRepo.save(fileCreate);
   }
@@ -58,8 +56,6 @@ export class FilesService {
     pdf.pipe(fs.createWriteStream(filePath));
     pdf.text('Hello, World! kkkd dkjasdklfa sd kljlkj lk j kljlkjkl');
     pdf.end();
-
-    console.log('dd');
 
     const result = this.fileRepo.create({
       pdfFile: filename,

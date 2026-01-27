@@ -63,7 +63,6 @@ const CustomerOrders = () => {
     const fetchOrders = async () => {
         try {
             if (!session?.user?.id) {
-                console.log("No user ID in session");
                 setLoading(false);
                 return;
             }

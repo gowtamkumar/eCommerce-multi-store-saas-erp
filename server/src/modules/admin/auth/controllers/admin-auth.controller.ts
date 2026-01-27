@@ -8,10 +8,10 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
 import { LoginCredentialDto } from '../dtos';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { AuthService } from '../services/auth.service';
-import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
 
 @Controller('admin')
 export class AdminAuthController {
@@ -24,8 +24,6 @@ export class AdminAuthController {
         @Res({ passthrough: true }) res: Response,
     ) {
         try {
-            console.log("loginCredentialDto", loginCredentialDto);
-            console.log("tenantId", tenantId);
 
             const authPayload = await this.authService.login(loginCredentialDto, tenantId);
             // set cookies token

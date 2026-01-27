@@ -7,17 +7,11 @@ export async function POST(request: NextRequest) {
     formData.forEach((value, key) => (data[key] = value));
 
     const tran_id = request.nextUrl.searchParams.get("tran_id");
-
-    console.log("PAYMENT SUCCESS PAYLOAD:", data);
-    console.log("Transaction ID:", tran_id);
-
     // Call Backend API
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
     
     // We assume backend expects query param tran_id and body with gateway response
     const tenantId = data.value_b;
-    console.log("Tenant ID from callback:", tenantId);
-
     const res = await fetch(`${backendUrl}/payment/success?tran_id=${tran_id}`, {
       method: "POST",
       headers: {
