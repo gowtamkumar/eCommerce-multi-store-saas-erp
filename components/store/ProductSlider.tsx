@@ -43,10 +43,10 @@ export default function ProductSlider({ headline, count = 4, collectionId, style
             <h2 className="text-3xl md:text-4xl font-black tracking-tight">{headline || 'Trending Products'}</h2>
             <div className="w-20 h-1.5 bg-brand-500 rounded-full" />
           </div>
-          <div className="hidden md:flex gap-3">
+          {/* <div className="hidden md:flex gap-3">
             <button className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm">←</button>
             <button className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm">→</button>
-          </div>
+          </div> */}
         </div>
 
         {loading ? (

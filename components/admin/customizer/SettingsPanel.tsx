@@ -80,64 +80,152 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
 
           {section.type === 'banner' && (
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Headline</label>
-                <input
-                  type="text"
-                  value={settings?.headline || ''}
-                  onChange={(e) => updateSetting('headline', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  placeholder="e.g. Summer Collection 2026"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Background Image URL</label>
-                <input
-                  type="text"
-                  value={settings?.backgroundImage || ''}
-                  onChange={(e) => updateSetting('backgroundImage', e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  placeholder="https://images.unsplash.com/..."
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Primary BTN</label>
-                  <input
-                    type="text"
-                    value={settings?.primaryButtonText || ''}
-                    onChange={(e) => updateSetting('primaryButtonText', e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  />
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Banner Slides</label>
+
+              {/* Migration Helper: If old fields exist but no slides, add them as first slide */}
+              {(!settings?.slides || settings.slides.length === 0) && (settings?.headline || settings?.backgroundImage) && (
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-4">
+                  <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-2">
+                    Legacy banner data detected. Click to migrate to slider format.
+                  </p>
+                  <button
+                    onClick={() => {
+                      const initialSlide = {
+                        id: `slide-${Date.now()}`,
+                        headline: settings.headline,
+                        subline: settings.subline,
+                        backgroundImage: settings.backgroundImage,
+                        primaryButtonText: settings.primaryButtonText,
+                        primaryButtonLink: settings.primaryButtonLink,
+                        secondaryButtonText: settings.secondaryButtonText,
+                        secondaryButtonLink: settings.secondaryButtonLink
+                      };
+                      updateSetting('slides', [initialSlide]);
+                      // clear old keys to keep it clean, or keep them for fallback?
+                      // keeping them doesn't hurt, but 'slides' will take precedence in renderer
+                    }}
+                    className="px-3 py-1.5 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 text-xs font-bold rounded-md"
+                  >
+                    Migrate Data
+                  </button>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Primary BTN Link</label>
-                  <input
-                    type="text"
-                    value={settings?.primaryButtonLink || ''}
-                    onChange={(e) => updateSetting('primaryButtonLink', e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  />
+              )}
+
+              {/* Slides List */}
+              {((settings?.slides as any[]) || []).map((slide: any, index: number) => (
+                <div key={slide.id || index} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-800/50 shadow-sm">
+                  <button
+                    onClick={() => toggleExpand(slide.id)}
+                    className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                        {index + 1}
+                      </span>
+                      <span className="text-sm font-bold truncate">{slide.headline || 'New Slide'}</span>
+                    </div>
+                    {expandedItems.includes(slide.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+
+                  {expandedItems.includes(slide.id) && (
+                    <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Headline</label>
+                        <input
+                          type="text"
+                          value={slide.headline || ''}
+                          onChange={(e) => updateArrayItem('slides', slide.id, { headline: e.target.value })}
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                          placeholder="Headline"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Subline</label>
+                        <textarea
+                          value={slide.subline || ''}
+                          onChange={(e) => updateArrayItem('slides', slide.id, { subline: e.target.value })}
+                          rows={2}
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                          placeholder="Subtext description..."
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Image URL</label>
+                        <input
+                          type="text"
+                          value={slide.backgroundImage || ''}
+                          onChange={(e) => updateArrayItem('slides', slide.id, { backgroundImage: e.target.value })}
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                          placeholder="https://..."
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">Primary Btn</label>
+                          <input
+                            type="text"
+                            value={slide.primaryButtonText || ''}
+                            onChange={(e) => updateArrayItem('slides', slide.id, { primaryButtonText: e.target.value })}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                            placeholder="Text"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">Link</label>
+                          <input
+                            type="text"
+                            value={slide.primaryButtonLink || ''}
+                            onChange={(e) => updateArrayItem('slides', slide.id, { primaryButtonLink: e.target.value })}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                            placeholder="/shop"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">Secondary Btn</label>
+                          <input
+                            type="text"
+                            value={slide.secondaryButtonText || ''}
+                            onChange={(e) => updateArrayItem('slides', slide.id, { secondaryButtonText: e.target.value })}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                            placeholder="Text"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">Link</label>
+                          <input
+                            type="text"
+                            value={slide.secondaryButtonLink || ''}
+                            onChange={(e) => updateArrayItem('slides', slide.id, { secondaryButtonLink: e.target.value })}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                            placeholder="/about"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => removeArrayItem('slides', slide.id)}
+                        className="w-full py-1.5 text-[10px] font-bold text-red-500 flex items-center justify-center gap-1 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"
+                      >
+                        <Trash2 className="w-3 h-3" /> Remove Slide
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Secondary BTN</label>
-                  <input
-                    type="text"
-                    value={settings?.secondaryButtonText || ''}
-                    onChange={(e) => updateSetting('secondaryButtonText', e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Secondary BTN Link</label>
-                  <input
-                    type="text"
-                    value={settings?.secondaryButtonLink || ''}
-                    onChange={(e) => updateSetting('secondaryButtonLink', e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  />
-                </div>
-              </div>
+              ))}
+
+              <button
+                onClick={() => addArrayItem('slides', {
+                  headline: 'New Slide',
+                  subline: 'Description goes here',
+                  backgroundImage: '',
+                  primaryButtonText: 'Shop Now',
+                  primaryButtonLink: '/products'
+                })}
+                className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-bold text-slate-500 hover:border-brand-500 hover:text-brand-600 transition-all flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" /> Add Slide
+              </button>
             </div>
           )}
 

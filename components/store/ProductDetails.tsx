@@ -139,7 +139,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
   };
 
   return (
-    <section className="py-12 md:py-20 bg-white dark:bg-slate-950">
+    <section className="py-12 md:py-20 bg-white dark:bg-slate-950 mt-20">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start">
           {/* Image Gallery Section */}
