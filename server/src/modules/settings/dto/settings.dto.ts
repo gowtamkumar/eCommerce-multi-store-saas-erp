@@ -1,5 +1,5 @@
-import { IsString, IsEmail, IsOptional, IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class UpdateSiteSettingsDto {
     @ApiProperty({ required: false })
@@ -66,4 +66,9 @@ export class UpdateSiteSettingsDto {
     @IsObject()
     @IsOptional()
     smtp?: any;
+
+    @ApiProperty({ required: false })
+    @IsObject()
+    @IsOptional()
+    payment?: any;
 }

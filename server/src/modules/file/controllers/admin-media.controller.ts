@@ -1,27 +1,22 @@
 import {
     Controller,
-    Get,
-    Post,
     Delete,
-    Param,
-    Query,
-    UseGuards,
-    UploadedFile,
-    UseInterceptors,
-    ParseFilePipe,
-    MaxFileSizeValidator,
     FileTypeValidator,
+    Get,
+    MaxFileSizeValidator,
+    Param,
+    ParseFilePipe,
     ParseUUIDPipe,
+    Post,
+    Query,
+    UploadedFile,
+    UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
-import { FilesService } from '../services/file.service';
-import { JwtAuthGuard } from '../../admin/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../admin/auth/guards/roles.guard';
-import { Roles } from '../../admin/auth/decorators/roles.decorator';
-import { UserRole } from '../../../common/enums/user/user-role.enum';
 import { FilterFileDto } from '../dtos';
+import { FilesService } from '../services/file.service';
 
 @ApiTags('Admin Media')
 @Controller('admin/media')
@@ -60,7 +55,7 @@ export class AdminMediaController {
         @UploadedFile(
             new ParseFilePipe({
                 validators: [
-                    new FileTypeValidator({ fileType: 'image/(png|jpeg|jpg|gif|svg|webp)' }),
+                    new FileTypeValidator({ fileType: 'image/(png|jpeg|jpg|gif|svg|webp)', fallbackToMimetype: true }),
                     new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5MB
                 ],
             }),
