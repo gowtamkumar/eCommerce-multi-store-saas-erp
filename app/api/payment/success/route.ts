@@ -28,8 +28,11 @@ export async function POST(request: NextRequest) {
        // Depending on requirements, might want to redirect to error page even if backend fails
     }
 
-    // Redirect to UI Success Page
-    const origin = new URL(request.url).origin;
+    // Redirect to UI Success Page with correct subdomain
+    const host = request.headers.get("host");
+    const protocol = request.headers.get("x-forwarded-proto") || "http";
+    const origin = `${protocol}://${host}`;
+    
     return NextResponse.redirect(`${origin}/payment/success?tran_id=${tran_id}`, 303);
 
   } catch (error) {

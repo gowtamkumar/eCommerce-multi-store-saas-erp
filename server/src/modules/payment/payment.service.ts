@@ -103,8 +103,6 @@ export class PaymentService {
             });
 
             const result: any = await response.json();
-
-            console.log("result intt", result);
             
 
             if (result.status === 'SUCCESS') {

@@ -22,8 +22,11 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(data),
     });
 
-    // Redirect to UI Fail Page
-    const origin = new URL(request.url).origin;
+    // Redirect to UI Fail Page with correct subdomain
+    const host = request.headers.get("host");
+    const protocol = request.headers.get("x-forwarded-proto") || "http";
+    const origin = `${protocol}://${host}`;
+    
     return NextResponse.redirect(`${origin}/payment/fail?tran_id=${tran_id}`, 303);
 
   } catch (error) {

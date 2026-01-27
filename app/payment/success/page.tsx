@@ -35,7 +35,7 @@ function SuccessContent() {
 
         <div className="space-y-3">
           <Link
-            href="/account/orders"
+            href="/profile"
             className="block w-full py-3.5 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors"
           >
             View My Orders
