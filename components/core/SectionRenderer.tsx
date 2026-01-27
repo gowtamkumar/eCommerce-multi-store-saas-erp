@@ -1,10 +1,9 @@
 import { CustomizerSection, FAQItem } from "@/types/customizer";
 import { MousePointer2, Plus, Tag } from "lucide-react";
-import Link from "next/link";
-import React from "react";
 import CategoryGrid from "../store/CategoryGrid";
 import ProductSlider from "../store/ProductSlider";
 import ReviewSection from "../store/ReviewSection";
+import BannerSlider from "../store/BannerSlider";
 
 interface SectionRendererProps {
   sections: CustomizerSection[];
@@ -28,42 +27,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ sections }) => {
           switch (section.type) {
             case "banner":
               return (
-                <div
-                  style={{
-                    ...styles,
-                    backgroundImage: settings?.backgroundImage ? `url(${settings.backgroundImage})` : undefined,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
-                  className="relative min-h-[450px] md:min-h-[600px] flex items-center justify-center bg-slate-100 dark:bg-slate-800 transition-all overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-black/50 z-0" />
-                  <div className="relative z-10 px-4 md:px-10 text-left w-full max-w-7xl mx-auto">
-                    <span className="inline-block px-3 py-1 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full mb-4">New Season</span>
-                    <h1 className="text-4xl md:text-7xl font-extrabold text-white mb-4 leading-tight drop-shadow-lg">
-                      {settings?.headline || 'Summer Collection 2026'}
-                    </h1>
-                    <p className="text-lg md:text-2xl text-white/90 max-w-2xl mb-8 leading-relaxed font-medium">
-                      {settings?.subline || 'Discover the latest trends in luxury fashion and accessories.'}
-                    </p>
-                    <div className="flex flex-wrap gap-4">
-                      {(settings?.primaryButtonText || settings?.primaryButtonLink) && (
-                        <Link
-                          href={settings.primaryButtonLink || "#"}
-                          className="px-8 py-3 bg-white text-brand-600 font-bold rounded-lg shadow-xl hover:scale-105 transition-transform">
-                          {settings.primaryButtonText || "Shop Now"}
-                        </Link>
-                      )}
-                      {(settings?.secondaryButtonText || settings?.secondaryButtonLink) && (
-                        <Link
-                          href={settings.secondaryButtonLink || "#"}
-                          className="px-8 py-3 bg-white/10 text-white border border-white/30 backdrop-blur-md font-bold rounded-lg hover:bg-white/20 transition-all">
-                          {settings.secondaryButtonText || "Learn More"}
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <BannerSlider settings={settings} styles={styles} />
               );
 
             case "product-slider":
