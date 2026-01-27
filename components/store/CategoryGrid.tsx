@@ -20,7 +20,6 @@ export default function CategoryGrid({ title, count = 6, styles }: CategoryGridP
       setLoading(true);
       try {
         const res = await fetchAPI('/categories');
-        console.log('Categories API Response:', res);
         // Backend returns data directly in res.data array
         setCategories(Array.isArray(res.data) ? res.data : []);
       } catch (error) {

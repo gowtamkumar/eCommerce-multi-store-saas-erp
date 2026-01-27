@@ -23,9 +23,6 @@ export default function AdminLayout({
   const brandName = settings?.brandName || "Brand name";
   const logo = settings?.logo || "";
 
-  console.log("session layout", session);
-
-
 
   useEffect(() => {
     if (status === 'unauthenticated') {

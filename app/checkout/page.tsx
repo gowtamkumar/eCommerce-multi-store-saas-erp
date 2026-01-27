@@ -101,12 +101,12 @@ export default function CheckoutPage() {
         // 2. Initiate Payment
         const paymentJson = await fetchAPI('/payment/init', {
           method: 'POST',
-          body: JSON.stringify({ orderId: order.id }),
+          body: JSON.stringify({ orderId: order.id, callbackUrl: `${window.location.origin}/api/payment` }),
         });
 
-        if (paymentJson.gatewayUrl) {
+        if (paymentJson.data.gatewayUrl) {
           await clearCart();
-          window.location.href = paymentJson.gatewayUrl;
+          window.location.href = paymentJson.data.gatewayUrl;
           return;
         } else {
           throw new Error('Failed to initiate payment gateway');

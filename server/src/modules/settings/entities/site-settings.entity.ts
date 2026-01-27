@@ -1,11 +1,11 @@
 import {
-    Entity,
     Column,
-    PrimaryGeneratedColumn,
     CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
+    Entity,
     JoinColumn,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
@@ -87,6 +87,15 @@ export class SiteSettingsEntity {
         user: string;
         pass: string;
         from: string;
+    };
+
+    @Column({ type: 'jsonb', nullable: true })
+    payment: {
+        stripePublishableKey: string;
+        stripeSecretKey: string;
+        sslCommerzStoreId?: string;
+        sslCommerzStorePassword?: string;
+        sslCommerzIsSandbox?: boolean;
     };
 
     @Column({ type: 'uuid', unique: true })

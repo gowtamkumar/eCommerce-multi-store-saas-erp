@@ -4,9 +4,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { JsonWebTokenError } from 'jsonwebtoken';
 import { Observable } from 'rxjs';
 import { AuthStrategy } from '../../../../common/enums/auth/auth-strategy.enum';
-import { JsonWebTokenError } from 'jsonwebtoken';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard(AuthStrategy.JwtAuth) {
@@ -19,7 +19,6 @@ export class JwtAuthGuard extends AuthGuard(AuthStrategy.JwtAuth) {
   }
 
   handleRequest(err: any, user: any, info: any) {
-    console.log("[JwtAuthGuard] handleRequest", { err, user, info });
     // You can throw an exception based on either "info" or "err" arguments
     if (info instanceof JsonWebTokenError) {
       console.error("[JwtAuthGuard] JsonWebTokenError:", info.message);

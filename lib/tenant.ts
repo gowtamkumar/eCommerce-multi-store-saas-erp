@@ -61,13 +61,9 @@ export async function getTenantId(
           }
         }
 
-        console.log("queryParams", queryParams);
-
         const res = await fetch(`${nestApiUrl}/tenants${queryParams}`);
         if (res.ok) {
           const data = await res.json();
-          console.log("tenants", data);
-
           if (data.success && data.data?.id) {
             cachedTenantId = data.data.id;
             return cachedTenantId;

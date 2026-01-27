@@ -1,10 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import { SubscriptionBillingCycle } from '../../common/enums/subscription/billing-cycle.enum'
-import { SubscriptionStatus } from '../../common/enums/subscription/subscription-status.enum'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
 import * as crypto from 'crypto'
 import { Repository } from 'typeorm'
+import { SubscriptionBillingCycle } from '../../common/enums/subscription/billing-cycle.enum'
+import { SubscriptionStatus } from '../../common/enums/subscription/subscription-status.enum'
 import { UserRole } from '../../common/enums/user/user-role.enum'
 import { UserEntity } from '../admin/user/entities/user.entity'
 import { MailService } from '../mail/mail.service'
@@ -141,8 +141,6 @@ export class TenantService {
     if (subdomain) {
       domain = await this.findBySubdomain(subdomain)
     }
-
-    console.log('lookup domain', domain)
 
     if (!domain) {
       throw new NotFoundException('Subdomain or custom domain required')

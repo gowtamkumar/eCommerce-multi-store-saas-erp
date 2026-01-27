@@ -11,7 +11,6 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials, req) {
-        console.log("[Auth] Authorize called with credentials:", JSON.stringify(credentials));
         if (!credentials?.username || !credentials?.password) {
           throw new Error("Please enter an username and password");
         }
@@ -27,11 +26,7 @@ export const authOptions: NextAuthOptions = {
           h.forEach((val, key) => {
             headers[key] = val;
           });
-          console.log("Headers from next/headers:", headers);
         } catch (error) {
-          console.log(
-            "next/headers not available, falling back to req.headers"
-          );
           // Fallback to req.headers if next/headers is not available
           if (req?.headers) {
             if (typeof req.headers.forEach === "function") {
@@ -42,7 +37,6 @@ export const authOptions: NextAuthOptions = {
               Object.assign(headers, req.headers);
             }
           }
-          console.log("Headers from fallback:", headers);
         }
 
         // Clean up headers to avoid conflicts with fetchAPI's JSON handling
@@ -55,7 +49,6 @@ export const authOptions: NextAuthOptions = {
         // Server-side Tenant ID Resolution
         if (!headers['x-tenant-id'] && headers['host']) {
           const host = headers['host'];
-          console.log(`[Auth] Resolving tenant for host: ${host}`);
           const parts = host.split('.');
           let queryParams = `?customDomain=${host}`;
 
@@ -67,30 +60,21 @@ export const authOptions: NextAuthOptions = {
               queryParams += `&subdomain=${subdomain}`;
 
               try {
-                console.log(`[Auth] Fetching tenant info: /tenants${queryParams}`);
                 // We use fetchAPI to call our own backend
                 const tenantRes = await fetchAPI(`/tenants${queryParams}`, {
                   method: 'GET',
                   headers: {}, // Explicitly clear headers to ensure clean request
                 });
 
-                console.log(`[Auth] Tenant Resolution Response:`, JSON.stringify(tenantRes));
 
                 if (tenantRes.success && tenantRes.data?.id) {
-                  console.log(`[Auth] Resolved tenant ID: ${tenantRes.data.id}`);
                   headers['x-tenant-id'] = tenantRes.data.id;
-                } else {
-                  console.warn(`[Auth] Failed to find tenant ID in response data`);
-                }
+                } 
               } catch (e: any) {
-                console.error('[Auth] Failed to resolve tenant server-side:', e.message || e);
               }
             } else {
-              console.log(`[Auth] Skipping subdomain resolution for: ${subdomain}`);
             }
           }
-        } else {
-          console.log(`[Auth] existing headers: x-tenant-id=${headers['x-tenant-id']}, host=${headers['host']}`);
         }
 
         try {

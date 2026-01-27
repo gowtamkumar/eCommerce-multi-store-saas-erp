@@ -27,8 +27,6 @@ export class PageController {
   @Get('home')
   @ApiOperation({ summary: 'Get home page' })
   async findHomePage(@TenantId() tenantId: string) {
-    console.log('home api', tenantId)
-
     return await this.pageService.findHomePage(tenantId)
   }
 

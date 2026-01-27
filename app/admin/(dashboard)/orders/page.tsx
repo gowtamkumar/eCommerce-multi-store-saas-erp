@@ -89,7 +89,6 @@ export default function OrdersPage() {
       });
 
       setOrders(orders.map((o: any) => o.id === id ? { ...o, status: newStatus } : o));
-      console.log("|asdfasdf");
 
       if (selectedOrder && selectedOrder?.id === id) {
         setSelectedOrder({ ...selectedOrder, status: newStatus });

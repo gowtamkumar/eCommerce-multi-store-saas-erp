@@ -34,22 +34,15 @@ export default function Login() {
             // Fetch the session after successful login
             const session = await getSession();
 
-            console.log("Full Session object:", session);
-
             if (session?.user) {
                 const userRole = session.user.role;
-                console.log("User Role from session:", userRole);
-
                 toast.success(`Logged in as ${userRole || 'User'}`);
 
                 if (userRole === 'SuperAdmin') {
-                    console.log("Redirecting to /super-admin");
                     router.push('/super-admin');
                 } else if (userRole === 'Admin') {
-                    console.log("Redirecting to /admin");
                     router.push('/admin');
                 } else {
-                    console.log("User role is:", userRole, "Redirecting to / (home)");
                     router.push('/');
                 }
             } else {

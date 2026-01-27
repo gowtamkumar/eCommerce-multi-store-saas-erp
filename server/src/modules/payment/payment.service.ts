@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { OrderStatus } from '../../common/enums/order-status.enum';
 import { PaymentStatus } from '../../common/enums/payment-status.enum';
 import { OrderEntity } from '../order/entities/order.entity';
+import { SettingsService } from '../settings/settings.service';
 import { InitPaymentDto } from './dto/payment.dto';
 import { PaymentEntity } from './entities/payment.entity';
 
@@ -16,10 +17,11 @@ export class PaymentService {
         @InjectRepository(PaymentEntity)
         private paymentRepository: Repository<PaymentEntity>,
         private configService: ConfigService,
+        private settingsService: SettingsService,
     ) { }
 
     async init(dto: InitPaymentDto, tenantId: string) {
-        const { orderId } = dto;
+        const { orderId, callbackUrl } = dto;
 
         const order = await this.orderRepository.findOne({
             where: { id: orderId, tenantId },
@@ -30,16 +32,23 @@ export class PaymentService {
             throw new NotFoundException('Order not found');
         }
 
-        const store_id = this.configService.get<string>('STORE_ID') || 'testbox';
-        const store_passwd = this.configService.get<string>('STORE_PASSWORD') || 'qwerty';
-        const is_live = this.configService.get<string>('NODE_ENV') === 'production';
-        const app_url = this.configService.get<string>('NEXT_PUBLIC_APP_URL') || 'http://localhost:3000';
+        const settings = await this.settingsService.findByTenant(tenantId);
+        
+        
+        const store_id = settings.payment?.sslCommerzStoreId;
+        const store_passwd = settings.payment?.sslCommerzStorePassword;
+        const is_live = !settings.payment?.sslCommerzIsSandbox;
+        const app_url = callbackUrl
+        
+        if (!store_id || !store_passwd) {
+            throw new BadRequestException('Payment gateway not configured');
+        }
 
         const tran_id = `TRAN_${orderId}_${Date.now()}`;
 
         // Update order with transaction ID
         order.transactionId = tran_id;
-        await this.orderRepository.save(order);
+        await this.orderRepository.save(order);        
 
         const initData: any = {
             store_id,
@@ -47,9 +56,9 @@ export class PaymentService {
             total_amount: (order.totalAmount / (order.currencyRate || 1)).toFixed(2),
             currency: order.currency || 'BDT',
             tran_id,
-            success_url: `${app_url}/api/v1/payment/success?tran_id=${tran_id}`,
-            fail_url: `${app_url}/api/v1/payment/fail?tran_id=${tran_id}`,
-            cancel_url: `${app_url}/api/v1/payment/cancel?tran_id=${tran_id}`,
+            success_url: `${app_url}/success?tran_id=${tran_id}`,
+            fail_url: `${app_url}/fail?tran_id=${tran_id}`,
+            cancel_url: `${app_url}/cancel?tran_id=${tran_id}`,
             ipn_url: `${app_url}/api/v1/payment/ipn`,
             shipping_method: 'Courier',
             product_name: order.items?.map(i => i.product?.name).join(', ').substring(0, 250) || 'Order Items',
@@ -72,6 +81,8 @@ export class PaymentService {
             ship_state: 'N/A',
             ship_postcode: 'N/A',
             ship_country: 'Bangladesh',
+            value_a: app_url,
+            value_b: tenantId,
         };
 
         const apiUrl = is_live
@@ -90,6 +101,7 @@ export class PaymentService {
             });
 
             const result: any = await response.json();
+            
 
             if (result.status === 'SUCCESS') {
                 return { gatewayUrl: result.GatewayPageURL };
@@ -120,7 +132,7 @@ export class PaymentService {
             status: 'SUCCESS',
             gatewayResponse,
             tenantId: order.tenantId,
-        });
+        });        
         await this.paymentRepository.save(payment);
 
         return { success: true };
@@ -133,6 +145,19 @@ export class PaymentService {
         order.paymentStatus = PaymentStatus.FAILED;
         await this.orderRepository.save(order);
 
+        // Record payment failure
+        const payment = this.paymentRepository.create({
+            orderId: order.id,
+            transactionId: tran_id,
+            amount: order.totalAmount,
+            currency: order.currency,
+            method: gatewayResponse.card_type || 'Unknown',
+            status: 'FAILED',
+            gatewayResponse,
+            tenantId: order.tenantId,
+        });
+        await this.paymentRepository.save(payment);
+
         return { success: false };
     }
 
@@ -140,8 +165,21 @@ export class PaymentService {
         const order = await this.orderRepository.findOne({ where: { transactionId: tran_id } });
         if (!order) throw new NotFoundException('Order not found');
 
-        order.paymentStatus = PaymentStatus.PENDING;
+        order.paymentStatus = PaymentStatus.PENDING; // Or CANCELLED if you have that status
         await this.orderRepository.save(order);
+
+        // Record payment cancellation
+        const payment = this.paymentRepository.create({
+            orderId: order.id,
+            transactionId: tran_id,
+            amount: order.totalAmount,
+            currency: order.currency,
+            method: gatewayResponse.card_type || 'Unknown',
+            status: 'CANCELLED',
+            gatewayResponse,
+            tenantId: order.tenantId,
+        });
+        await this.paymentRepository.save(payment);
 
         return { cancelled: true };
     }
