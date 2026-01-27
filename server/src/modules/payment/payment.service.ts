@@ -33,15 +33,13 @@ export class PaymentService {
         }
 
         const settings = await this.settingsService.findByTenant(tenantId);
-
-        console.log("settings", settings);
         
         
         const store_id = settings.payment?.sslCommerzStoreId;
         const store_passwd = settings.payment?.sslCommerzStorePassword;
         const is_live = !settings.payment?.sslCommerzIsSandbox;
-        const app_url = callbackUrl || this.configService.get<string>('NEXT_PUBLIC_APP_URL') || 'http://localhost:3000';
-
+        const app_url = callbackUrl
+        
         if (!store_id || !store_passwd) {
             throw new BadRequestException('Payment gateway not configured');
         }
@@ -52,15 +50,19 @@ export class PaymentService {
         order.transactionId = tran_id;
         await this.orderRepository.save(order);
 
+
+        console.log("app_url", app_url);
+        
+
         const initData: any = {
             store_id,
             store_passwd,
             total_amount: (order.totalAmount / (order.currencyRate || 1)).toFixed(2),
             currency: order.currency || 'BDT',
             tran_id,
-            success_url: `${app_url}/api/v1/payment/success?tran_id=${tran_id}`,
-            fail_url: `${app_url}/api/v1/payment/fail?tran_id=${tran_id}`,
-            cancel_url: `${app_url}/api/v1/payment/cancel?tran_id=${tran_id}`,
+            success_url: `${app_url}/success?tran_id=${tran_id}`,
+            fail_url: `${app_url}/fail?tran_id=${tran_id}`,
+            cancel_url: `${app_url}/cancel?tran_id=${tran_id}`,
             ipn_url: `${app_url}/api/v1/payment/ipn`,
             shipping_method: 'Courier',
             product_name: order.items?.map(i => i.product?.name).join(', ').substring(0, 250) || 'Order Items',
@@ -101,6 +103,9 @@ export class PaymentService {
             });
 
             const result: any = await response.json();
+
+            console.log("result intt", result);
+            
 
             if (result.status === 'SUCCESS') {
                 return { gatewayUrl: result.GatewayPageURL };

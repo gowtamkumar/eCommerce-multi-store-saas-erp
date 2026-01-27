@@ -101,7 +101,7 @@ export default function CheckoutPage() {
         // 2. Initiate Payment
         const paymentJson = await fetchAPI('/payment/init', {
           method: 'POST',
-          body: JSON.stringify({ orderId: order.id, callbackUrl: window.location.href }),
+          body: JSON.stringify({ orderId: order.id, callbackUrl: `${window.location.origin}/api/payment` }),
         });
 
         console.log("paymentJson", paymentJson);
