@@ -1,9 +1,9 @@
-import { Controller, Post, Body, Query, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { PaymentService } from './payment.service';
-import { InitPaymentDto } from './dto/payment.dto';
-import { TenantId } from '../../common/decorators/tenant-id.decorator';
+import { Body, Controller, Post, Query, Res } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
+import { TenantId } from '../../common/decorators/tenant-id.decorator';
+import { InitPaymentDto } from './dto/payment.dto';
+import { PaymentService } from './payment.service';
 
 @ApiTags('Payment Actions')
 @Controller('payment')
@@ -19,6 +19,8 @@ export class PaymentActionController {
     @Post('success')
     @ApiOperation({ summary: 'Payment success callback' })
     async success(@Query('tran_id') tran_id: string, @Body() gatewayResponse: any, @Res() res: Response) {
+        console.log("testing.. payment success");
+        
         await this.paymentService.handleSuccess(tran_id, gatewayResponse);
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         return res.redirect(`${appUrl}/payment/success?tran_id=${tran_id}`);

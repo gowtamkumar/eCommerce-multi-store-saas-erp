@@ -135,6 +135,8 @@ export class PaymentService {
             gatewayResponse,
             tenantId: order.tenantId,
         });
+        console.log("payment success", payment);
+        
         await this.paymentRepository.save(payment);
 
         return { success: true };
@@ -147,6 +149,19 @@ export class PaymentService {
         order.paymentStatus = PaymentStatus.FAILED;
         await this.orderRepository.save(order);
 
+        // Record payment failure
+        const payment = this.paymentRepository.create({
+            orderId: order.id,
+            transactionId: tran_id,
+            amount: order.totalAmount,
+            currency: order.currency,
+            method: gatewayResponse.card_type || 'Unknown',
+            status: 'FAILED',
+            gatewayResponse,
+            tenantId: order.tenantId,
+        });
+        await this.paymentRepository.save(payment);
+
         return { success: false };
     }
 
@@ -154,8 +169,21 @@ export class PaymentService {
         const order = await this.orderRepository.findOne({ where: { transactionId: tran_id } });
         if (!order) throw new NotFoundException('Order not found');
 
-        order.paymentStatus = PaymentStatus.PENDING;
+        order.paymentStatus = PaymentStatus.PENDING; // Or CANCELLED if you have that status
         await this.orderRepository.save(order);
+
+        // Record payment cancellation
+        const payment = this.paymentRepository.create({
+            orderId: order.id,
+            transactionId: tran_id,
+            amount: order.totalAmount,
+            currency: order.currency,
+            method: gatewayResponse.card_type || 'Unknown',
+            status: 'CANCELLED',
+            gatewayResponse,
+            tenantId: order.tenantId,
+        });
+        await this.paymentRepository.save(payment);
 
         return { cancelled: true };
     }
