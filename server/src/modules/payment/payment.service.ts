@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { OrderStatus } from '../../common/enums/order-status.enum';
 import { PaymentStatus } from '../../common/enums/payment-status.enum';
 import { OrderEntity } from '../order/entities/order.entity';
+import { SettingsService } from '../settings/settings.service';
 import { InitPaymentDto } from './dto/payment.dto';
 import { PaymentEntity } from './entities/payment.entity';
 
@@ -16,10 +17,11 @@ export class PaymentService {
         @InjectRepository(PaymentEntity)
         private paymentRepository: Repository<PaymentEntity>,
         private configService: ConfigService,
+        private settingsService: SettingsService,
     ) { }
 
     async init(dto: InitPaymentDto, tenantId: string) {
-        const { orderId } = dto;
+        const { orderId, callbackUrl } = dto;
 
         const order = await this.orderRepository.findOne({
             where: { id: orderId, tenantId },
@@ -30,10 +32,19 @@ export class PaymentService {
             throw new NotFoundException('Order not found');
         }
 
-        const store_id = this.configService.get<string>('STORE_ID') || 'testbox';
-        const store_passwd = this.configService.get<string>('STORE_PASSWORD') || 'qwerty';
-        const is_live = this.configService.get<string>('NODE_ENV') === 'production';
-        const app_url = this.configService.get<string>('NEXT_PUBLIC_APP_URL') || 'http://localhost:3000';
+        const settings = await this.settingsService.findByTenant(tenantId);
+
+        console.log("settings", settings);
+        
+        
+        const store_id = settings.payment?.sslCommerzStoreId;
+        const store_passwd = settings.payment?.sslCommerzStorePassword;
+        const is_live = !settings.payment?.sslCommerzIsSandbox;
+        const app_url = callbackUrl || this.configService.get<string>('NEXT_PUBLIC_APP_URL') || 'http://localhost:3000';
+
+        if (!store_id || !store_passwd) {
+            throw new BadRequestException('Payment gateway not configured');
+        }
 
         const tran_id = `TRAN_${orderId}_${Date.now()}`;
 
