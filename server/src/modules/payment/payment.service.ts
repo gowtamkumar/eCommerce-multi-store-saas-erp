@@ -85,6 +85,8 @@ export class PaymentService {
             ship_state: 'N/A',
             ship_postcode: 'N/A',
             ship_country: 'Bangladesh',
+            value_a: app_url,
+            value_b: tenantId,
         };
 
         const apiUrl = is_live

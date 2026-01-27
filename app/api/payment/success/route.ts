@@ -15,10 +15,14 @@ export async function POST(request: NextRequest) {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
     
     // We assume backend expects query param tran_id and body with gateway response
+    const tenantId = data.value_b;
+    console.log("Tenant ID from callback:", tenantId);
+
     const res = await fetch(`${backendUrl}/payment/success?tran_id=${tran_id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-tenant-id": tenantId,
       },
       body: JSON.stringify(data),
     });

@@ -14,10 +14,13 @@ export async function POST(request: NextRequest) {
     // Call Backend API
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
     
+    const tenantId = data.value_b;
+    
     await fetch(`${backendUrl}/payment/cancel?tran_id=${tran_id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-tenant-id": tenantId,
       },
       body: JSON.stringify(data),
     });
