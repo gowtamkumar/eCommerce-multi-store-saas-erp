@@ -142,6 +142,17 @@ export class OrderService {
             orderItem.totalAmount = itemTotal;
             orderItem.tenantId = tenantId;
 
+            // TAKING SNAPSHOT HERE
+            orderItem.snapshot = {
+                productId: product.id,
+                productName: product.name,
+                productImage: product.images?.[0],
+                variantId: variant?.id,
+                variantSku: variant?.sku,
+                variantOptions: variant?.combination, // e.g. { Color: "Red" }
+                price: unitPrice,
+            };
+
             processedItems.push(orderItem);
             totalOrderAmount += itemTotal;
 

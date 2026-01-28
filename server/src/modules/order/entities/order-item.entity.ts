@@ -27,16 +27,19 @@ export class OrderItemEntity {
     @Column({ type: 'uuid' })
     productId: string;
 
-    @ManyToOne(() => ProductEntity)
+    @ManyToOne(() => ProductEntity, { onDelete: 'SET NULL' })
     @JoinColumn({ name: 'productId' })
     product: ProductEntity;
 
     @Column({ type: 'uuid', nullable: true })
     variantId: string;
 
-    @ManyToOne(() => ProductVariantEntity)
+    @ManyToOne(() => ProductVariantEntity, { onDelete: 'SET NULL' })
     @JoinColumn({ name: 'variantId' })
     variant: ProductVariantEntity;
+
+    @Column({ type: 'jsonb', nullable: true })
+    snapshot: any;
 
     @Column({ type: 'int' })
     quantity: number;
