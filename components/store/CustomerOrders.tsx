@@ -288,12 +288,17 @@ const CustomerOrders = () => {
                                                 <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
                                                     Qty: {item.quantity} x {formatPrice(item.unitPrice)}
                                                 </p>
+                                                {Number(item.discountAmount) > 0 && (
+                                                    <p className="text-xs text-red-500 font-medium mt-1">
+                                                        Discount: -{formatPrice(item.discountAmount)}
+                                                    </p>
+                                                )}
                                             </div>
                                             <div className="text-right flex items-center gap-2">
                                                 <p className="font-bold text-slate-900 dark:text-white">
                                                     {formatPrice(item.totalAmount)}
                                                 </p>
-                                                {selectedOrder.status === OrderStatus.COMPLETED && (
+                                                {selectedOrder.status === OrderStatus.COMPLETED && item.product && (
                                                     <button
                                                         onClick={() => {
                                                             setReviewingOrder(item);
