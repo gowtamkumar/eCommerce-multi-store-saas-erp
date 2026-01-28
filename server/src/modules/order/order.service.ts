@@ -216,7 +216,7 @@ export class OrderService {
     async findOne(id: string, tenantId: string) {
         const order = await this.orderRepository.findOne({
             where: { id, tenantId },
-            relations: ['items', 'items.product', 'items.variant'],
+            relations: ['items', 'items.product'],
         });
 
         if (!order) {
@@ -229,7 +229,7 @@ export class OrderService {
     async findByUserId(userId: string, tenantId: string) {
         const orders = await this.orderRepository.find({
             where: { userId, tenantId },
-            relations: ['items', 'items.product', 'items.variant'],
+            relations: ['items', 'items.product'],
             order: { createdAt: 'DESC' },
         });
 

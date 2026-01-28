@@ -15,6 +15,7 @@ interface OrderItem {
     unitPrice: number;
     discountAmount: number;
     totalAmount: number;
+    snapshot?: any;
     product: {
         id: string;
         name: string;
@@ -147,6 +148,10 @@ const CustomerOrders = () => {
                         const firstItem = order.items?.[0];
                         const itemCount = order.items?.length || 0;
 
+                        const productName = firstItem?.snapshot?.productName || firstItem?.product?.name || "Product Unavailable";
+                        const productImage = firstItem?.snapshot?.productImage || firstItem?.product?.images?.[0];
+                        const variantSku = firstItem?.snapshot?.variantSku
+
                         return (
                             <div
                                 key={order.id}
@@ -154,10 +159,10 @@ const CustomerOrders = () => {
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0">
-                                        {firstItem?.product?.images?.[0] ? (
+                                        {productImage ? (
                                             <img
-                                                src={firstItem.product.images[0]}
-                                                alt={firstItem.product.name}
+                                                src={productImage}
+                                                alt={productName}
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
@@ -167,16 +172,16 @@ const CustomerOrders = () => {
                                     <div>
                                         <h4 className="font-semibold text-slate-900 dark:text-white line-clamp-1">
                                             {itemCount > 1
-                                                ? `${firstItem?.product?.name || 'Multiple Products'} (+${itemCount - 1} more)`
-                                                : (firstItem?.product?.name || "Product Unavailable")}
+                                                ? `${productName} (+${itemCount - 1} more)`
+                                                : productName}
                                         </h4>
                                         <div className="flex flex-col gap-0.5 mt-0.5">
                                             <p className="text-xs text-slate-500 dark:text-slate-400">
                                                 {new Date(order.createdAt).toLocaleDateString()}
                                             </p>
-                                            {itemCount === 1 && firstItem?.variant && (
+                                            {itemCount === 1 && variantSku && (
                                                 <p className="text-[10px] font-bold text-brand-600 uppercase">
-                                                    SKU: {firstItem.variant.sku}
+                                                    SKU: {variantSku}
                                                 </p>
                                             )}
                                         </div>
@@ -243,56 +248,67 @@ const CustomerOrders = () => {
                         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
                             {/* Product Info */}
                             <div className="space-y-4">
-                                {(selectedOrder.items || []).map((item) => (
-                                    <div key={item.id} className="flex gap-4 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl items-center">
-                                        <div className="w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0">
-                                            {item.product?.images?.[0] && (
-                                                <img
-                                                    src={item.product.images[0]}
-                                                    alt={item.product.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            )}
+                                {(selectedOrder.items || []).map((item) => {
+                                    const productName = item.snapshot?.productName || item.product?.name || "Product Unavailable";
+                                    const productImage = item.snapshot?.productImage || item.product?.images?.[0];
+                                    const variantSku = item.snapshot?.variantSku || item.variant?.sku;
+                                    const variantOptions = item.snapshot?.variantOptions || item.variant?.combination;
+
+                                    return (
+                                        <div key={item.id} className="flex gap-4 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl items-center">
+                                            <div className="w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0">
+                                                {productImage && (
+                                                    <img
+                                                        src={productImage}
+                                                        alt={productName}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                )}
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="font-bold text-slate-900 dark:text-white text-base">
+                                                    {productName}
+                                                </h4>
+                                                {(variantSku || variantOptions) && (
+                                                    <div className="mt-0.5 flex flex-col gap-0.5">
+                                                        {variantSku && (
+                                                            <p className="text-[10px] font-bold text-brand-600 uppercase">
+                                                                SKU: {variantSku}
+                                                            </p>
+                                                        )}
+                                                        {variantOptions && (
+                                                            <p className="text-[10px] text-slate-500 dark:text-slate-400 italic">
+                                                                {Object.entries(variantOptions)
+                                                                    .map(([key, value]) => `${key}: ${value}`)
+                                                                    .join(", ")}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
+                                                    Qty: {item.quantity} x {formatPrice(item.unitPrice)}
+                                                </p>
+                                            </div>
+                                            <div className="text-right flex items-center gap-2">
+                                                <p className="font-bold text-slate-900 dark:text-white">
+                                                    {formatPrice(item.totalAmount)}
+                                                </p>
+                                                {selectedOrder.status === OrderStatus.COMPLETED && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setReviewingOrder(item);
+                                                            setIsReviewModalOpen(true);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-yellow-500 transition-colors"
+                                                        title="Write Review"
+                                                    >
+                                                        <Star className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-bold text-slate-900 dark:text-white text-base">
-                                                {item.product?.name}
-                                            </h4>
-                                            {item.variant && (
-                                                <div className="mt-0.5 flex flex-col gap-0.5">
-                                                    <p className="text-[10px] font-bold text-brand-600 uppercase">
-                                                        SKU: {item.variant.sku}
-                                                    </p>
-                                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 italic">
-                                                        {Object.entries(item.variant.combination)
-                                                            .map(([key, value]) => `${key}: ${value}`)
-                                                            .join(", ")}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
-                                                Qty: {item.quantity} x {formatPrice(item.unitPrice)}
-                                            </p>
-                                        </div>
-                                        <div className="text-right flex items-center gap-2">
-                                            <p className="font-bold text-slate-900 dark:text-white">
-                                                {formatPrice(item.totalAmount)}
-                                            </p>
-                                            {selectedOrder.status === OrderStatus.COMPLETED && (
-                                                <button
-                                                    onClick={() => {
-                                                        setReviewingOrder(item);
-                                                        setIsReviewModalOpen(true);
-                                                    }}
-                                                    className="p-2 text-slate-400 hover:text-yellow-500 transition-colors"
-                                                    title="Write Review"
-                                                >
-                                                    <Star className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             {/* Price Breakdown */}

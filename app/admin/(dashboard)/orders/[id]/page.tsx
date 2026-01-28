@@ -24,6 +24,7 @@ interface OrderItem {
   unitPrice: number;
   discountAmount: number;
   totalAmount: number;
+  snapshot?: any;
   product: {
     id: string;
     name: string;
@@ -240,39 +241,50 @@ export default function OrderDetailsPage({
             </tr>
           </thead>
           <tbody>
-            {(order.items || []).map((item) => (
-              <tr key={item.id} className="border-b border-slate-100">
-                <td className="py-6">
-                  <p className="font-bold text-slate-900 text-lg mb-1">
-                    {item.product?.name || "Product"}
-                  </p>
-                  <div className="flex flex-col gap-1 text-sm text-slate-500">
-                    <p>ID: #{item.product?.id?.slice(-6)?.toUpperCase() || "N/A"}</p>
-                    {item.variant && (
-                      <div className="flex flex-col gap-0.5 mt-1 border-l-2 border-brand-200 pl-2">
-                        <p className="text-xs font-bold text-brand-600 uppercase">
-                          SKU: {item.variant.sku}
-                        </p>
-                        <p className="text-[10px] italic">
-                          {item.variant.combination && Object.entries(item.variant.combination)
-                            .map(([key, value]) => `${key}: ${value}`)
-                            .join(", ")}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td className="py-6 text-center font-bold text-slate-900">
-                  {item.quantity}
-                </td>
-                <td className="py-6 text-right font-medium text-slate-600">
-                  {formatPrice(item.unitPrice)}
-                </td>
-                <td className="py-6 text-right font-bold text-slate-900">
-                  {formatPrice(item.totalAmount)}
-                </td>
-              </tr>
-            ))}
+            {(order.items || []).map((item) => {
+              const productName = item.snapshot?.productName || item.product?.name || "Product";
+              const productId = item.snapshot?.productId || item.product?.id;
+              const variantSku = item.snapshot?.variantSku
+              const variantOptions = item.snapshot?.variantOptions
+
+              return (
+                <tr key={item.id} className="border-b border-slate-100">
+                  <td className="py-6">
+                    <p className="font-bold text-slate-900 text-lg mb-1">
+                      {productName}
+                    </p>
+                    <div className="flex flex-col gap-1 text-sm text-slate-500">
+                      <p>ID: #{productId?.slice(-6)?.toUpperCase() || "N/A"}</p>
+                      {(variantSku || variantOptions) && (
+                        <div className="flex flex-col gap-0.5 mt-1 border-l-2 border-brand-200 pl-2">
+                          {variantSku && (
+                            <p className="text-xs font-bold text-brand-600 uppercase">
+                              SKU: {variantSku}
+                            </p>
+                          )}
+                          {variantOptions && (
+                            <p className="text-[10px] italic">
+                              {Object.entries(variantOptions)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-6 text-center font-bold text-slate-900">
+                    {item.quantity}
+                  </td>
+                  <td className="py-6 text-right font-medium text-slate-600">
+                    {formatPrice(item.unitPrice)}
+                  </td>
+                  <td className="py-6 text-right font-bold text-slate-900">
+                    {formatPrice(item.totalAmount)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
@@ -386,66 +398,79 @@ export default function OrderDetailsPage({
               </h2>
             </div>
             <div className="p-6 space-y-4">
-              {(order.items || []).map((item) => (
-                <div key={item.id} className="flex items-center gap-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl">
-                  <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm flex-shrink-0 relative border border-slate-100 dark:border-slate-700">
-                    {item.product?.images?.[0] ? (
-                      <img
-                        src={item.product.images[0]}
-                        alt={item.product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300">
-                        <Package className="w-8 h-8" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    {item.product ? (
-                      <Link
-                        href={`/admin/products/${item.product.id}`}
-                        className="text-base font-bold text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
-                      >
-                        {item.product.name}
-                      </Link>
-                    ) : (
-                      <span className="text-slate-500 italic">Deleted Product</span>
-                    )}
+              {(order.items || []).map((item) => {
+                const productName = item.snapshot?.productName || item.product?.name || "Product Unavailable";
+                const productImage = item.snapshot?.productImage || item.product?.images?.[0];
+                const variantSku = item.snapshot?.variantSku || item.variant?.sku;
+                const variantOptions = item.snapshot?.variantOptions || item.variant?.combination;
 
-                    {item.variant && (
-                      <div className="mt-1 flex flex-col gap-0.5">
-                        <p className="text-[10px] font-black text-brand-600 uppercase tracking-widest">
-                          SKU: {item.variant.sku}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                          {item.variant.combination && Object.entries(item.variant.combination)
-                            .map(([key, value]) => `${key}: ${value}`)
-                            .join(", ")}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
-                      <span>Quantity: {item.quantity}</span>
-                      <span>•</span>
-                      <span>
-                        Unit: {formatPrice(item.unitPrice)}
-                      </span>
+                return (
+                  <div key={item.id} className="flex items-center gap-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl">
+                    <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm flex-shrink-0 relative border border-slate-100 dark:border-slate-700">
+                      {productImage ? (
+                        <img
+                          src={productImage}
+                          alt={productName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-300">
+                          <Package className="w-8 h-8" />
+                        </div>
+                      )}
                     </div>
-                    {Number(item.discountAmount) > 0 && (
-                      <p className="text-xs text-red-500 font-medium mt-1">
-                        Discount: -{formatPrice(item.discountAmount)} unit
+                    <div className="flex-1">
+                      {item.product ? (
+                        <Link
+                          href={`/admin/products/${item.product.id}`}
+                          className="text-base font-bold text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                        >
+                          {productName}
+                        </Link>
+                      ) : (
+                        <span className="text-base font-bold text-slate-900 dark:text-white">
+                          {productName} <span className="text-xs font-normal text-slate-500 italic ml-2">(Deleted Product)</span>
+                        </span>
+                      )}
+
+                      {(variantSku || variantOptions) && (
+                        <div className="mt-1 flex flex-col gap-0.5">
+                          {variantSku && (
+                            <p className="text-[10px] font-black text-brand-600 uppercase tracking-widest">
+                              SKU: {variantSku}
+                            </p>
+                          )}
+                          {variantOptions && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                              {Object.entries(variantOptions)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
+                        <span>Quantity: {item.quantity}</span>
+                        <span>•</span>
+                        <span>
+                          Unit: {formatPrice(item.unitPrice)}
+                        </span>
+                      </div>
+                      {Number(item.discountAmount) > 0 && (
+                        <p className="text-xs text-red-500 font-medium mt-1">
+                          Discount: -{formatPrice(item.discountAmount)} unit
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-brand-600">
+                        {formatPrice(item.totalAmount)}
                       </p>
-                    )}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-brand-600">
-                      {formatPrice(item.totalAmount)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               {(!order.items || order.items.length === 0) && (
                 <div className="p-8 text-center bg-slate-50 dark:bg-slate-900/50 rounded-2xl">
