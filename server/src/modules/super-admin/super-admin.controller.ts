@@ -52,6 +52,7 @@ export class SuperAdminController {
       email,
       password,
       username,
+      emailVerificationToken: null,
       role: UserRole.SuperAdmin,
       isAdmin: true,
     })

@@ -1,5 +1,13 @@
 import { Transform } from 'class-transformer'
-import { IsDefined, IsEmail, IsNotEmpty, IsOptional, IsString, Length } from 'class-validator'
+import {
+  IsBoolean,
+  IsDefined,
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Length,
+} from 'class-validator'
 import { UserRole } from '../../../../common/enums/user/user-role.enum'
 
 export class CreateUserDto {
@@ -27,6 +35,11 @@ export class CreateUserDto {
 
   @IsNotEmpty()
   role: UserRole
+
+  @IsBoolean()
+  @IsNotEmpty()
+  @IsOptional()
+  isAdmin?: boolean
 
   @IsString()
   @IsNotEmpty()
