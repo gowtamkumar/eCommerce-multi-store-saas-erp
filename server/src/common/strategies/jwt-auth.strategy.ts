@@ -2,9 +2,9 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
-import { UserDto } from '../../user/dtos/user.dto'
-import { UserService } from '../../user/services/user.service'
-import { AccessTokenPayload } from '../dtos'
+import { AccessTokenPayload } from '../../modules/admin/auth/dtos'
+import { UserDto } from '../../modules/admin/user/dtos/user.dto'
+import { UserService } from '../../modules/admin/user/services/user.service'
 
 @Injectable()
 export class JwtAuthStrategy extends PassportStrategy(Strategy) {
@@ -25,14 +25,13 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
     try {
       const user = await this.userService.getUser(userId)
       if (!user) {
-        console.error(`[JwtStrategy] User not found for ID: ${userId}`);
+        console.error(`[JwtStrategy] User not found for ID: ${userId}`)
         throw new UnauthorizedException('Token not valid - User not found')
       }
       return user
     } catch (error) {
-      console.error(`[JwtStrategy] Error validating user:`, error);
-      throw new UnauthorizedException('Token not valid - Validation error');
+      console.error(`[JwtStrategy] Error validating user:`, error)
+      throw new UnauthorizedException('Token not valid - Validation error')
     }
-
   }
 }

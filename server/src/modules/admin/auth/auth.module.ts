@@ -1,13 +1,13 @@
-import { Inject, Module } from '@nestjs/common'
+import { Module } from '@nestjs/common'
+import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
-import { UserModule } from '../user/user.module'
+import { JwtAuthStrategy } from '../../../common/strategies/jwt-auth.strategy'
 import { TenantModule } from '../../tenant/tenant.module'
-import { AuthController } from './controllers/auth.controller'
+import { UserModule } from '../user/user.module'
 import { AdminAuthController } from './controllers/admin-auth.controller'
+import { AuthController } from './controllers/auth.controller'
 import { AuthService } from './services/auth.service'
-import { JwtAuthStrategy } from './strategies/jwt-auth.strategy'
-import { ConfigModule, ConfigService } from '@nestjs/config'
 
 import { MailModule } from '../../mail/mail.module'
 
@@ -30,4 +30,4 @@ import { MailModule } from '../../mail/mail.module'
   providers: [AuthService, JwtAuthStrategy],
   exports: [],
 })
-export class AuthModule { }
+export class AuthModule {}

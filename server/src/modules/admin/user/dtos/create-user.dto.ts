@@ -1,38 +1,35 @@
-import { Transform } from 'class-transformer';
-import {
-  IsDefined,
-  IsEmail,
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Length,
-} from 'class-validator';
-import { UserRole } from '../../../../common/enums/user/user-role.enum';
+import { Transform } from 'class-transformer'
+import { IsDefined, IsEmail, IsNotEmpty, IsOptional, IsString, Length } from 'class-validator'
+import { UserRole } from '../../../../common/enums/user/user-role.enum'
 
 export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   @IsDefined()
-  name: string;
+  name: string
 
   @Transform(({ value }) => value || null)
   @IsEmail()
   @IsOptional()
-  email: string;
+  email: string
 
   @IsString()
   @IsNotEmpty()
   @Length(5, 20)
   @IsDefined()
-  username: string;
+  username: string
 
   @IsString()
   @IsNotEmpty()
   @Length(8, 20)
   @IsDefined()
-  password: string;
+  password: string
 
   @IsNotEmpty()
-  role: UserRole;
+  role: UserRole
+
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  emailVerificationToken: string
 }

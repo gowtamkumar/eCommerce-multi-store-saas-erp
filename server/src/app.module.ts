@@ -64,6 +64,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module'
   ],
   controllers: [],
   providers: [
+    // Global Providers
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,
@@ -85,7 +86,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module'
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(TenantContextMiddleware)
+      .apply(TenantContextMiddleware) //.exclude(...) → Skip Middleware for These Routes
       .exclude(
         'tenant/lookup',
         'tenants',
@@ -104,6 +105,6 @@ export class AppModule implements NestModule {
         'products',
         'products/(.*)',
       )
-      .forRoutes('*')
+      .forRoutes('*') // Apply Middleware for These Routes
   }
 }

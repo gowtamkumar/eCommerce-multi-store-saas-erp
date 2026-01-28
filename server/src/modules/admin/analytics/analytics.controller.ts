@@ -1,54 +1,54 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../admin/auth/guards/jwt-auth.guard';
-import { TrafficService } from '../../super-admin/traffic.service';
-import { UserService } from '../../admin/user/services/user.service';
-import { ProductService } from '../../product/product.service';
-import { OrderService } from '../../order/order.service';
-import { PageService } from '../../page/page.service';
+import { Controller, Get, Request, UseGuards } from '@nestjs/common'
+import { ApiOperation, ApiTags } from '@nestjs/swagger'
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard'
+import { UserService } from '../../admin/user/services/user.service'
+import { OrderService } from '../../order/order.service'
+import { PageService } from '../../page/page.service'
+import { ProductService } from '../../product/product.service'
+import { TrafficService } from '../../super-admin/traffic.service'
 
 @ApiTags('Admin Analytics')
 @Controller('admin/analytics')
 @UseGuards(JwtAuthGuard)
 export class AnalyticsController {
-    constructor(
-        private readonly trafficService: TrafficService,
-        private readonly userService: UserService,
-        private readonly productService: ProductService,
-        private readonly orderService: OrderService,
-        private readonly pageService: PageService,
-    ) { }
+  constructor(
+    private readonly trafficService: TrafficService,
+    private readonly userService: UserService,
+    private readonly productService: ProductService,
+    private readonly orderService: OrderService,
+    private readonly pageService: PageService,
+  ) {}
 
-    @Get()
-    @ApiOperation({ summary: 'Get current tenant analytics' })
-    async getAnalytics(@Request() req: any) {
-        const tenantId = req.user.tenantId;
+  @Get()
+  @ApiOperation({ summary: 'Get current tenant analytics' })
+  async getAnalytics(@Request() req: any) {
+    const tenantId = req.user.tenantId
 
-        // Parallelize for performance
-        const [users, products, orders, pages, pageTraffic] = await Promise.all([
-            this.userService.countByTenant(tenantId),
-            this.productService.countByTenant(tenantId),
-            this.orderService.countByTenant(tenantId),
-            this.pageService.countByTenant(tenantId),
-            // Filter out API and Admin routes for Tenant Admin view
-            this.trafficService.getPageTrafficStats(tenantId, 30, ['/api', '/admin', '/super-admin']),
-        ]);
+    // Parallelize for performance
+    const [users, products, orders, pages, pageTraffic] = await Promise.all([
+      this.userService.countByTenant(tenantId),
+      this.productService.countByTenant(tenantId),
+      this.orderService.countByTenant(tenantId),
+      this.pageService.countByTenant(tenantId),
+      // Filter out API and Admin routes for Tenant Admin view
+      this.trafficService.getPageTrafficStats(tenantId, 30, ['/api', '/admin', '/super-admin']),
+    ])
 
-        return {
-            success: true,
-            data: {
-                counts: {
-                    users,
-                    products,
-                    orders,
-                    pages,
-                },
-                topPages: pageTraffic.map(pt => ({
-                    path: pt.path,
-                    hits: pt.requestCount,
-                    lastUpdated: pt.lastUpdated
-                })),
-            }
-        };
+    return {
+      success: true,
+      data: {
+        counts: {
+          users,
+          products,
+          orders,
+          pages,
+        },
+        topPages: pageTraffic.map((pt) => ({
+          path: pt.path,
+          hits: pt.requestCount,
+          lastUpdated: pt.lastUpdated,
+        })),
+      },
     }
+  }
 }
