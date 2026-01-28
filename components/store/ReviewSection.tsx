@@ -2,8 +2,9 @@
 
 import { fetchAPI } from "@/lib/api";
 import { ReviewItem } from "@/types/customizer";
-import { Star } from "lucide-react";
-import { useEffect, useState } from "react";
+import { animate, motion, useMotionValue } from "framer-motion";
+import { ArrowLeft, ArrowRight, Star } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface ReviewSectionProps {
   settings: {
@@ -19,14 +20,15 @@ interface ReviewSectionProps {
 export default function ReviewSection({ settings, styles }: ReviewSectionProps) {
   const [displayReviews, setDisplayReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  const x = useMotionValue(0);
 
   useEffect(() => {
     async function loadData() {
       if (settings.source === 'database') {
         setLoading(true);
         try {
-          // Fetch Product Reviews
-          // We use the public reviews endpoint which aggregates them, or we could fetch latest
           const data = await fetchAPI('/reviews/public');
           if (data.data) {
             let mapped = data.data.map((r: any) => ({
@@ -36,10 +38,8 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
               rating: r.rating,
               avatar: r.avatar
             }));
-            // Apply count limit
             const limit = settings.count || 6;
             mapped = mapped.slice(0, limit);
-
             setDisplayReviews(mapped);
           }
         } catch (error) {
@@ -48,23 +48,56 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
           setLoading(false);
         }
       } else {
-        // Manual mode
         setDisplayReviews(settings.reviews || []);
       }
     }
 
     loadData();
-  }, [settings.source, settings.reviews, settings.count]); // Re-run when settings change
+  }, [settings.source, settings.reviews, settings.count]);
+
+  useEffect(() => {
+    if (carouselRef.current) {
+      setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
+    }
+  }, [displayReviews]);
+
+  const slideLeft = () => {
+    const current = x.get();
+    const newPos = Math.min(current + 400, 0); // clamp to 0 (start)
+    animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
+  };
+
+  const slideRight = () => {
+    const current = x.get();
+    const newPos = Math.max(current - 400, -width); // clamp to -width (end)
+    animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
+  };
 
   return (
     <section style={styles} className="px-4 md:px-10 py-16 md:py-24 bg-slate-950 border-y border-white/5 overflow-hidden">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-center text-white text-3xl font-black mb-16 uppercase tracking-widest">
-          {settings?.title || 'Client Feedback'}
-        </h2>
+        <div className="flex justify-between items-end mb-16">
+          <h2 className="text-white text-3xl font-black uppercase tracking-widest">
+            {settings?.title || 'Client Feedback'}
+          </h2>
+          <div className="flex gap-4">
+            <button
+              onClick={slideLeft}
+              className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={slideRight}
+              className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
+            >
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
 
         {loading ? (
-          <div className="flex gap-8 overflow-x-hidden pb-8">
+          <div className="flex gap-8 overflow-hidden pb-8">
             {[1, 2, 3].map((i) => (
               <div key={i} className="min-w-[400px] md:min-w-[500px] bg-white/5 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shrink-0 animate-pulse">
                 <div className="flex gap-1 mb-8">
@@ -85,42 +118,53 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
             ))}
           </div>
         ) : (
-          <div className="flex gap-8 overflow-x-auto pb-8 scrollbar-hide">
-            {displayReviews.length > 0 ? (
-              displayReviews.map((review: any) => (
-                <div key={review.id} className="min-w-[400px] md:min-w-[500px] bg-white/5 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shrink-0">
-                  <div className="flex gap-1 mb-8">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-5 h-5 ${i < (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-white/10'}`} />
-                    ))}
-                  </div>
-                  <blockquote className="text-2xl text-white/90 mb-10 italic leading-snug">"{review.text}"</blockquote>
-                  <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-3xl overflow-hidden">
-                      {review.avatar && !review.avatar.startsWith('bg-') ? (
-                        <img src={review.avatar} alt={review.author} className="w-full h-full object-cover" />
-                      ) : (
-                        <span>👤</span>
-                      )}
+          <motion.div ref={carouselRef} className="cursor-grab active:cursor-grabbing overflow-hidden">
+            <motion.div
+              drag="x"
+              dragConstraints={{ right: 0, left: -width }}
+              whileTap={{ cursor: "grabbing" }}
+              style={{ x }}
+              className="flex gap-8"
+            >
+              {displayReviews.length > 0 ? (
+                displayReviews.map((review: any) => (
+                  <motion.div
+                    key={review.id}
+                    className="min-w-[350px] md:min-w-[500px] bg-white/5 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shrink-0 select-none pointer-events-auto"
+                  >
+                    <div className="flex gap-1 mb-8">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className={`w-5 h-5 ${i < (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-white/10'}`} />
+                      ))}
                     </div>
-                    <div>
-                      <p className="text-xl font-black text-brand-500 uppercase tracking-tight">{review.author}</p>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-bold">
-                        {settings.source === 'database' ? 'Verified Purchase' : 'Verified Client'}
-                      </p>
+                    <blockquote className="text-xl md:text-2xl text-white/90 mb-10 italic leading-snug">"{review.text}"</blockquote>
+                    <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-3xl overflow-hidden shadow-lg border-2 border-slate-700">
+                        {review.avatar && !review.avatar.startsWith('bg-') ? (
+                          <img src={review.avatar} alt={review.author} className="w-full h-full object-cover" />
+                        ) : (
+                          <span>👤</span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-lg md:text-xl font-black text-brand-500 uppercase tracking-tight">{review.author}</p>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-bold">
+                          {settings.source === 'database' ? 'Verified Purchase' : 'Verified Client'}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="w-full py-20 text-center text-white/10 border-4 border-dashed border-white/5 rounded-[3rem]">
+                  {settings.source === 'database'
+                    ? 'No reviews found in database'
+                    : 'Add social proof in the customizer settings panel'
+                  }
                 </div>
-              ))
-            ) : (
-              <div className="w-full py-20 text-center text-white/10 border-4 border-dashed border-white/5 rounded-[3rem]">
-                {settings.source === 'database'
-                  ? 'No reviews found in database'
-                  : 'Add social proof in the customizer settings panel'
-                }
-              </div>
-            )}
-          </div>
+              )}
+            </motion.div>
+          </motion.div>
         )}
       </div>
     </section>
