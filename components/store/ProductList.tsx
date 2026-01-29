@@ -1,5 +1,6 @@
 'use client';
 
+import Pagination from '@/components/ui/Pagination';
 import Price from '@/components/ui/Price';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpDown, Filter, Grid, List as ListIcon, Search, X } from 'lucide-react';
@@ -238,6 +239,12 @@ export default function ProductList({ products, total, onOpenMobileFilters }: Pr
           </button>
         </div>
       )}
+      {/* Pagination */}
+      <Pagination
+        currentPage={parseInt(searchParams.get('page') || '1')}
+        totalPages={Math.ceil(total / 20)} // Assuming 20 is the limit
+        baseUrl="/products"
+      />
     </div>
   );
 }

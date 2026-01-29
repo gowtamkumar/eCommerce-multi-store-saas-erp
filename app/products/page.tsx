@@ -95,7 +95,7 @@ export default async function ProductsPage({
 
       <div className="pt-32 pb-24">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mb-12">
+          <div className=" mb-12 text-center">
             <h1 className="text-4xl md:text-5xl font-bold font-display text-slate-900 dark:text-white mb-4">
               Our <span className="text-gradient">Collection</span>
             </h1>
