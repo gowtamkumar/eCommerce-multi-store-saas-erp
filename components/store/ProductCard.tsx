@@ -29,8 +29,6 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     setAdding(true);
     await addToCart(product.id, 1);
     setAdding(false);
-    // openCart is called automatically by addToCart via context, 
-    // but we can ensure visual feedback here if needed.
   };
 
   const discountPercentage = product.discountAmount > 0
@@ -40,15 +38,12 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group relative flex flex-col h-full"
+      className="group relative flex flex-col h-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <motion.div
-        className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm transition-all duration-500 hover:shadow-2xl"
-        whileHover={{ y: -8 }}
-      >
-        {/* Product Image */}
+      {/* Image Container */}
+      <div className="relative aspect-[4/5] overflow-hidden bg-slate-100 dark:bg-slate-800">
         {hasImage ? (
           <Image
             src={imageSrc}
@@ -65,76 +60,77 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
         )}
 
         {/* Badges */}
-        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+        <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
           {product.stock <= 0 ? (
-            <span className="px-3 py-1 bg-red-500/90 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-lg">
+            <span className="px-3 py-1 bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm">
               Out of Stock
             </span>
           ) : (
             <>
               {discountPercentage > 0 && (
-                <span className="px-3 py-1 bg-brand-600/90 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider rounded-full shadow-lg">
+                <span className="px-3 py-1 bg-rose-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm">
                   -{discountPercentage}%
                 </span>
               )}
-              {/* You might want a 'New' badge logic here */}
             </>
           )}
         </div>
 
-        {/* Action Overlay */}
-        <div className={`absolute inset-0 bg-black/20 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'} flex items-center justify-center gap-4`}>
-          {/* Quick View / Details (Redundant with link but good for UI) */}
+        {/* Overlay Actions */}
+        <div className={`absolute inset-0 bg-black/10 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+
+        {/* Quick View Button (Center) */}
+        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${isHovered ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: isHovered ? 1 : 0.8, opacity: isHovered ? 1 : 0 }}
-            transition={{ delay: 0.1 }}
-            className="w-12 h-12 rounded-full bg-white/90 backdrop-blur text-slate-900 flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform"
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: isHovered ? 0 : 10, opacity: isHovered ? 1 : 0 }}
+            className="pointer-events-auto"
           >
-            <Eye className="w-5 h-5" />
+            <button className="flex items-center gap-2 px-6 py-2.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-full text-sm font-semibold text-slate-900 dark:text-white shadow-lg hover:bg-white dark:hover:bg-slate-800 transition-colors">
+              <Eye className="w-4 h-4" />
+              Quick View
+            </button>
           </motion.div>
         </div>
+      </div>
 
-        {/* Add to Cart Floating Button */}
-        {product.stock > 0 && (
-          <motion.button
-            onClick={handleAddToCart}
-            className={`absolute bottom-4 right-4 w-12 h-12 rounded-full flex items-center justify-center shadow-xl transition-all z-20 focus:outline-none focus:ring-2 focus:ring-brand-500 ${adding
-              ? "!bg-green-500 text-white"
-              : "bg-white text-slate-900 hover:bg-brand-600 hover:text-white"
-              }`}
-            whileTap={{ scale: 0.9 }}
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: isHovered ? 0 : 20, opacity: isHovered ? 1 : 0 }}
-          >
-            {adding ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 1 }}
-                className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-              />
-            ) : (
-              <ShoppingBag className="w-5 h-5" />
-            )}
-          </motion.button>
-        )}
-      </motion.div>
+      {/* Product Info */}
+      <div className="flex flex-col flex-grow p-4">
+        <div className="mb-1">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            {product.category?.name || 'Collection'}
+          </span>
+        </div>
 
-      {/* Product Details */}
-      <div className="pt-4 px-2">
-        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">
-          {product.category?.name || 'Collection'}
-        </p>
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-tight group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors line-clamp-1">
+        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2 line-clamp-2 leading-snug group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
           {product.name}
         </h3>
-        <div className="flex items-center justify-between">
+
+        <div className="mt-auto pt-2 flex items-center justify-between">
           <Price
             amount={product.price}
-            className="text-xl font-bold text-slate-900 dark:text-white"
+            className="text-lg font-bold text-slate-900 dark:text-white"
             showOriginal={product.discountAmount > 0}
             originalAmount={+product.price + +product.discountAmount}
           />
+
+          {/* Add to Cart Button */}
+          {product.stock > 0 && (
+            <motion.button
+              onClick={handleAddToCart}
+              whileTap={{ scale: 0.9 }}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-sm ${adding
+                ? "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-brand-600 dark:hover:bg-brand-400 hover:text-white dark:hover:text-white"
+                }`}
+            >
+              {adding ? (
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <ShoppingBag className="w-4 h-4" />
+              )}
+            </motion.button>
+          )}
         </div>
       </div>
     </Link>
