@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface ProductSliderProps {
   headline?: string;
@@ -50,7 +50,7 @@ export default function BannerSlider({ settings, styles }: any) {
     <section
       style={{
         ...styles,
-        height: '600px' // fixed height for slider
+        height: styles?.height ? `${styles.height}px` : '600px'
       }}
       className="relative group overflow-hidden bg-slate-100 dark:bg-slate-800"
     >
@@ -66,11 +66,18 @@ export default function BannerSlider({ settings, styles }: any) {
             backgroundImage: currentContent?.backgroundImage ? `url(${currentContent.backgroundImage})` : undefined,
           }}
         >
-          <div className="absolute inset-0 bg-black/40 z-0" />
+          <div
+            className="absolute inset-0 bg-black/40 z-0 transition-all duration-300"
+            style={{ opacity: styles?.overlayOpacity !== undefined ? styles.overlayOpacity / 100 : 0.4 }}
+          />
         </motion.div>
       </AnimatePresence>
 
-      <div className="relative z-10 h-full flex items-center justify-center px-4 md:px-10 text-left w-full max-w-7xl mx-auto">
+      <div className={`relative z-10 h-full flex items-center px-4 md:px-10 w-full max-w-7xl mx-auto
+        ${styles?.textAlign === 'center' ? 'justify-center text-center' : ''}
+        ${styles?.textAlign === 'right' ? 'justify-end text-right' : ''}
+        ${!styles?.textAlign || styles?.textAlign === 'left' ? 'justify-start text-left' : ''}
+      `}>
         <AnimatePresence mode='wait'>
           <motion.div
             key={`content-${currentSlide}`}

@@ -514,29 +514,76 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Styling</h3>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase">Padding Top</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range" min="0" max="200" step="10"
-                  value={section.styles?.paddingTop || 0}
-                  onChange={(e) => updateStyle('paddingTop', parseInt(e.target.value))}
-                  className="flex-1 accent-brand-600"
-                />
-                <span className="text-[10px] font-bold text-slate-500 w-8">{section.styles?.paddingTop || 0}px</span>
+          <div className="space-y-4 mb-4">
+            {section.type === 'banner' && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Banner Height</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range" min="300" max="1000" step="50"
+                      value={section.styles?.height || 600}
+                      onChange={(e) => updateStyle('height', parseInt(e.target.value))}
+                      className="flex-1 accent-brand-600"
+                    />
+                    <span className="text-[10px] font-bold text-slate-500 w-10 text-right">{section.styles?.height || 600}px</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Overlay Opacity</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range" min="0" max="100" step="5"
+                      value={section.styles?.overlayOpacity !== undefined ? section.styles.overlayOpacity : 40}
+                      onChange={(e) => updateStyle('overlayOpacity', parseInt(e.target.value))}
+                      className="flex-1 accent-brand-600"
+                    />
+                    <span className="text-[10px] font-bold text-slate-500 w-10 text-right">{section.styles?.overlayOpacity !== undefined ? section.styles.overlayOpacity : 40}%</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Text Alignment</label>
+                  <select
+                    value={section.styles?.textAlign || 'center'}
+                    onChange={(e) => updateStyle('textAlign', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                  </select>
+                </div>
+
+                <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
+              </>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Padding Top</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range" min="0" max="200" step="10"
+                    value={section.styles?.paddingTop || 0}
+                    onChange={(e) => updateStyle('paddingTop', parseInt(e.target.value))}
+                    className="flex-1 accent-brand-600"
+                  />
+                  <span className="text-[10px] font-bold text-slate-500 w-8">{section.styles?.paddingTop || 0}px</span>
+                </div>
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase">Padding Bottom</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range" min="0" max="200" step="10"
-                  value={section.styles?.paddingBottom || 0}
-                  onChange={(e) => updateStyle('paddingBottom', parseInt(e.target.value))}
-                  className="flex-1 accent-brand-600"
-                />
-                <span className="text-[10px] font-bold text-slate-500 w-8">{section.styles?.paddingBottom || 0}px</span>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Padding Bottom</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range" min="0" max="200" step="10"
+                    value={section.styles?.paddingBottom || 0}
+                    onChange={(e) => updateStyle('paddingBottom', parseInt(e.target.value))}
+                    className="flex-1 accent-brand-600"
+                  />
+                  <span className="text-[10px] font-bold text-slate-500 w-8">{section.styles?.paddingBottom || 0}px</span>
+                </div>
               </div>
             </div>
           </div>

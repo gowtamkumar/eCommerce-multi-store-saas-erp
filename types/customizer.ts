@@ -18,6 +18,9 @@ export interface SectionStyles {
   paddingBottom: number;
   backgroundColor?: string;
   textColor?: string;
+  height?: number;
+  overlayOpacity?: number;
+  textAlign?: string;
 }
 
 // --- Specific Section Settings ---
