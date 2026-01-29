@@ -97,12 +97,22 @@ export class ProductService {
       query.andWhere('product.categoryId = :categoryId', { categoryId: filterDto.categoryId })
     }
 
+    if (filterDto.minPrice !== undefined && filterDto.minPrice !== null) {
+      query.andWhere('product.price >= :minPrice', { minPrice: Number(filterDto.minPrice) })
+    }
+
+    if (filterDto.maxPrice !== undefined && filterDto.maxPrice !== null) {
+      query.andWhere('product.price <= :maxPrice', { maxPrice: Number(filterDto.maxPrice) })
+    }
+
     if (q) {
       query.andWhere('(product.name ILIKE :q OR product.description ILIKE :q)', { q: `%${q}%` })
     }
 
     const [products, total] = await query
-      .orderBy('product.createdAt', 'DESC')
+      .orderBy(this.getSortOptions(filterDto.sort))
+            // .orderBy('product.createdAt', 'DESC')
+
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount()
@@ -276,5 +286,21 @@ export class ProductService {
 
   async countByTenant(tenantId: string) {
     return await this.productRepository.count({ where: { tenantId } })
+  }
+
+  private getSortOptions(sort?: string): any {
+    switch (sort) {
+      case 'price-low':
+        return { 'product.price': 'ASC' }
+      case 'price-high':
+        return { 'product.price': 'DESC' }
+      case 'name-asc':
+        return { 'product.name': 'ASC' }
+      case 'name-desc':
+        return { 'product.name': 'DESC' }
+      case 'newest':
+      default:
+        return { 'product.createdAt': 'DESC' }
+    }
   }
 }

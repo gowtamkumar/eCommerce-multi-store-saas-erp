@@ -1,6 +1,6 @@
 import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { ProductStatus } from '../../../common/enums/product-status.enum';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
+import { ProductStatus } from '../../../common/enums/product-status.enum';
 
 export class FilterProductDto extends PaginationDto {
     @IsEnum(ProductStatus)
@@ -10,4 +10,11 @@ export class FilterProductDto extends PaginationDto {
     @IsOptional()
     @IsString()
     categoryId?: string;
+
+    @IsOptional()
+    minPrice?: number;
+
+    @IsOptional()
+    @IsString()
+    sort?: string;
 }

@@ -1,13 +1,13 @@
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import PaymentStatus from "@/components/store/PaymentStatus";
-import ProductList from "@/components/store/ProductList";
 import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
 import { fetchAPI } from "@/lib/api";
 import { getSiteSettings } from "@/lib/getSettings";
 import { getTenantId } from "@/lib/tenant";
 import Link from "next/link";
 import { Suspense } from "react";
+import ProductsClientWrapper from "./ProductsClientWrapper"; // New client wrapper for layout state
 
 export async function generateMetadata() {
   const settings = await getSiteSettings();
@@ -18,9 +18,27 @@ export async function generateMetadata() {
   };
 }
 
-async function getProductsData() {
+async function getProductsData(searchParams: { [key: string]: string | string[] | undefined }) {
   try {
-    const res = await fetchAPI('/products?limit=50&status=active');
+    // Construct query string
+    const params = new URLSearchParams();
+    params.set('limit', '20'); // Pagination limit
+    params.set('status', 'active');
+
+    // Pass through filters
+    if (searchParams.search) params.set('q', searchParams.search as string);
+    if (searchParams.categoryId) params.set('categoryId', searchParams.categoryId as string);
+    if (searchParams.minPrice) params.set('minPrice', searchParams.minPrice as string);
+    if (searchParams.maxPrice) params.set('maxPrice', searchParams.maxPrice as string);
+    if (searchParams.page) params.set('page', searchParams.page as string);
+
+    // Server-side sort isn't fully implemented in Service yet (it defaults to date), 
+    // but we can pass it if we add it later. ProductList does some sorting locally too if needed,
+    // but ideally the API handles it.
+
+    // For now we rely on the API returning filtered results.
+
+    const res = await fetchAPI(`/products?${params.toString()}`);
     return {
       products: res.data?.products || [],
       total: res.data?.pagination?.total || 0
@@ -31,11 +49,23 @@ async function getProductsData() {
   }
 }
 
-export default async function ProductsPage() {
-  const tenantId = await getTenantId();
-  const settings = await getSiteSettings();
+async function getCategoriesData() {
+  try {
+    const res = await fetchAPI('/categories');
+    return res.success ? res.data : [];
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return [];
+  }
+}
 
-  // Redirect or show message if no tenant (though normally /products shouldn't be accessible on SaaS root if we want it strictly for tenants)
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const tenantId = await getTenantId();
+
   if (!tenantId) {
     return (
       <main className="min-h-screen flex items-center justify-center p-4">
@@ -48,7 +78,12 @@ export default async function ProductsPage() {
     );
   }
 
-  const { products, total } = await getProductsData();
+  const [productsData, categories] = await Promise.all([
+    getProductsData(searchParams),
+    getCategoriesData()
+  ]);
+
+  const { products, total } = productsData;
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
@@ -61,15 +96,19 @@ export default async function ProductsPage() {
       <div className="pt-32 pb-24">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mb-12">
-            <h1 className="text-4xl md:text-6xl font-bold font-display text-slate-900 dark:text-white mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold font-display text-slate-900 dark:text-white mb-4">
               Our <span className="text-gradient">Collection</span>
             </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-400">
-              Discover {total} premium products designed to elevate your experience.
+            <p className="text-lg text-slate-600 dark:text-slate-400">
+              Discover premium products designed to elevate your experience.
             </p>
           </div>
 
-          <ProductList initialProducts={products} total={total} />
+          <ProductsClientWrapper
+            categories={categories}
+            products={products}
+            total={total}
+          />
         </div>
       </div>
 
