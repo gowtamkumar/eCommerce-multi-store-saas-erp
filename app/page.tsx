@@ -90,6 +90,9 @@ export default async function Home() {
     );
   }
 
+  console.log("dfasdf", dynamicPage);
+
+
 
   // If a custom home page is designed, render it
   const sections = dynamicPage?.content?.sections || dynamicPage?.sections;
@@ -100,7 +103,11 @@ export default async function Home() {
           <PaymentStatus />
         </Suspense>
         <Navbar />
-        <SectionRenderer section={sections} />
+        <div className="flex flex-col">
+          {sections.map((section: any) => (
+            <SectionRenderer key={section.id} section={section} />
+          ))}
+        </div>
         <WhatsAppWidget />
         <Footer />
       </main>
