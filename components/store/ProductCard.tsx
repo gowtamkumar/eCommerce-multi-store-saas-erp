@@ -100,8 +100,8 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           <motion.button
             onClick={handleAddToCart}
             className={`absolute bottom-4 right-4 w-12 h-12 rounded-full flex items-center justify-center shadow-xl transition-all z-20 focus:outline-none focus:ring-2 focus:ring-brand-500 ${adding
-                ? "!bg-green-500 text-white"
-                : "bg-white text-slate-900 hover:bg-brand-600 hover:text-white"
+              ? "!bg-green-500 text-white"
+              : "bg-white text-slate-900 hover:bg-brand-600 hover:text-white"
               }`}
             whileTap={{ scale: 0.9 }}
             initial={{ y: 20, opacity: 0 }}
