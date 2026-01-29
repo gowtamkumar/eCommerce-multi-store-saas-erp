@@ -49,8 +49,11 @@ export default function BannerSlider({ settings, styles }: any) {
   return (
     <section
       style={{
-        ...styles,
-        height: styles?.height ? `${styles.height}px` : '600px'
+        height: styles?.height ? `${styles.height}px` : '600px',
+        paddingTop: styles?.paddingTop,
+        paddingBottom: styles?.paddingBottom,
+        backgroundColor: styles?.backgroundColor,
+        color: styles?.color
       }}
       className="relative group overflow-hidden bg-slate-100 dark:bg-slate-800"
     >
@@ -95,7 +98,10 @@ export default function BannerSlider({ settings, styles }: any) {
               {currentContent?.headline || 'Summer Collection 2026'}
             </h1>
             <p
-              className="text-lg md:text-2xl max-w-2xl mb-8 leading-relaxed font-medium"
+              className={`text-lg md:text-2xl max-w-2xl mb-8 leading-relaxed font-medium
+                ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
+                ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
+              `}
               style={{ color: styles?.sublineColor || 'rgba(255, 255, 255, 0.9)' }}
             >
               {currentContent?.subline || 'Discover the latest trends in luxury fashion and accessories.'}
