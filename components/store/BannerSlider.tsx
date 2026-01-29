@@ -88,10 +88,16 @@ export default function BannerSlider({ settings, styles }: any) {
             className="w-full"
           >
             <span className="inline-block px-3 py-1 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full mb-4">New Season</span>
-            <h1 className="text-4xl md:text-7xl font-extrabold text-white mb-4 leading-tight drop-shadow-lg">
+            <h1
+              className="text-4xl md:text-7xl font-extrabold mb-4 leading-tight drop-shadow-lg"
+              style={{ color: styles?.headlineColor || '#ffffff' }}
+            >
               {currentContent?.headline || 'Summer Collection 2026'}
             </h1>
-            <p className="text-lg md:text-2xl text-white/90 max-w-2xl mb-8 leading-relaxed font-medium">
+            <p
+              className="text-lg md:text-2xl max-w-2xl mb-8 leading-relaxed font-medium"
+              style={{ color: styles?.sublineColor || 'rgba(255, 255, 255, 0.9)' }}
+            >
               {currentContent?.subline || 'Discover the latest trends in luxury fashion and accessories.'}
             </p>
             <div className="flex flex-wrap gap-4">

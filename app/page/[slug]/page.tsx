@@ -1,6 +1,6 @@
+import SectionRenderer from '@/components/core/SectionRenderer';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
-import SectionRenderer from '@/components/core/SectionRenderer';
 import { fetchAPI } from '@/lib/api';
 import { getSiteSettings } from '@/lib/getSettings';
 import { notFound } from 'next/navigation';
@@ -51,8 +51,12 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
 
       <main>
         {/* Use SectionRenderer for proper page builder styling */}
-        {page.sections && page.sections.length > 0 ? (
-          <SectionRenderer sections={page.sections} />
+        {page.content?.sections && page.content.sections.length > 0 ? (
+          <div className="flex flex-col">
+            {page.content.sections.map((section: any) => (
+              <SectionRenderer key={section.id} section={section} />
+            ))}
+          </div>
         ) : (
           /* Backward Compatibility: Legacy Content Layout */
           <>

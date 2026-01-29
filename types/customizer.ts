@@ -21,6 +21,8 @@ export interface SectionStyles {
   height?: number;
   overlayOpacity?: number;
   textAlign?: string;
+  headlineColor?: string;
+  sublineColor?: string;
 }
 
 // --- Specific Section Settings ---

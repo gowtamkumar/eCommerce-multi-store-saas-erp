@@ -1,11 +1,10 @@
 import FAQ from "@/components/core/FAQ";
+import SectionRenderer from "@/components/core/SectionRenderer";
 import Footer from "@/components/layout/Footer";
-import SaaSLanding from "@/components/marketing/SaaSLanding";
 import Navbar from "@/components/layout/Navbar";
+import SaaSLanding from "@/components/marketing/SaaSLanding";
 import PaymentStatus from "@/components/store/PaymentStatus";
 import ProductDetails from "@/components/store/ProductDetails";
-import Reviews from "@/components/store/Reviews";
-import SectionRenderer from "@/components/core/SectionRenderer";
 import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
 import { fetchAPI } from "@/lib/api";
 import { getSiteSettings } from "@/lib/getSettings";
@@ -101,7 +100,7 @@ export default async function Home() {
           <PaymentStatus />
         </Suspense>
         <Navbar />
-        <SectionRenderer sections={sections} />
+        <SectionRenderer section={sections} />
         <WhatsAppWidget />
         <Footer />
       </main>

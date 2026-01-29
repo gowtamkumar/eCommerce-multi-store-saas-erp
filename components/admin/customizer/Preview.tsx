@@ -1,18 +1,7 @@
 "use client";
 
-import BannerSlider from '@/components/store/BannerSlider';
-import BuilderButton from '@/components/store/BuilderButton';
-import CategoryGrid from '@/components/store/CategoryGrid';
-import FAQSection from '@/components/store/FAQSection';
-import ImageBlock from '@/components/store/ImageBlock';
-import OfferBanner from '@/components/store/OfferBanner';
-import ProductSlider from '@/components/store/ProductSlider';
-import ReviewSection from '@/components/store/ReviewSection';
-import TextBlock from '@/components/store/TextBlock';
-import { CustomizerSection, FAQItem } from '@/types/customizer';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, MousePointer2, Plus, Tag } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import SectionRenderer from '@/components/core/SectionRenderer';
+import { CustomizerSection } from '@/types/customizer';
 
 interface PreviewProps {
   sections: CustomizerSection[];
@@ -68,77 +57,4 @@ export default function Preview({ sections, viewMode, selectedId, onSelect }: Pr
       </div>
     </div>
   );
-}
-
-function SectionRenderer({ section }: { section: CustomizerSection }) {
-  const settings = section.settings as any;
-  const styles = {
-    paddingTop: `${section.styles?.paddingTop || 0}px`,
-    paddingBottom: `${section.styles?.paddingBottom || 0}px`,
-    backgroundColor: section.styles?.backgroundColor,
-    color: section.styles?.textColor,
-  };
-
-  switch (section.type) {
-    case 'banner':
-      return <BannerSlider settings={settings} styles={styles} />
-
-    case 'product-slider':
-      return (
-        <ProductSlider
-          headline={settings?.headline}
-          count={settings?.count}
-          collectionId={settings?.collectionId}
-          styles={styles}
-        />
-      );
-
-    case 'category-grid':
-      return (
-        <CategoryGrid
-          title={settings?.title}
-          count={settings?.count}
-          styles={styles}
-        />
-      );
-
-    case 'offer-banner':
-      return (
-        <OfferBanner buttonText={settings?.buttonText} headline={settings?.headline} subline={settings?.subline} backgroundColor={settings?.backgroundColor} styles={styles} />
-      );
-
-    case 'review-slider':
-      return (
-        <ReviewSection
-          settings={settings}
-          styles={styles}
-        />
-      );
-
-    case "text-block":
-      return (
-        <TextBlock alignment={settings?.alignment} html={settings?.html} headline={settings?.headline} styles={styles} />
-      );
-
-    case "image-block":
-      return (
-        <ImageBlock image={settings?.image} headline={settings?.headline} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} />
-      );
-
-    case "button":
-      return (
-        <BuilderButton variant={settings?.variant} size={settings?.size} text={settings?.text} styles={styles} />
-      );
-
-    case "faq-section":
-      return (
-        <FAQSection items={settings?.items} headline={settings?.headline} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} />
-      );
-    default:
-      return (
-        <div style={styles} className="flex flex-col items-center justify-center min-h-[200px] bg-slate-50 dark:bg-slate-800/50 border border-dashed border-slate-200 dark:border-slate-700">
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{section.type} Section</p>
-        </div>
-      );
-  }
 }
