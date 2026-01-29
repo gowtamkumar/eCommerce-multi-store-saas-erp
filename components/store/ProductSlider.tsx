@@ -36,12 +36,28 @@ export default function ProductSlider({ headline, count = 4, collectionId, style
   }, [count, collectionId]);
 
   return (
-    <div style={styles} className="px-4 md:px-10 py-16 md:py-24 bg-slate-50 dark:bg-slate-900/40 overflow-hidden">
+    <div
+      style={{
+        paddingTop: styles?.paddingTop,
+        paddingBottom: styles?.paddingBottom,
+        backgroundColor: styles?.backgroundColor,
+        color: styles?.color
+      }}
+      className="px-4 md:px-10 bg-slate-50 dark:bg-slate-900/40 overflow-hidden"
+    >
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-10 md:mb-16">
+        <div className={`flex items-center justify-between mb-10 md:mb-16
+          ${styles?.textAlign === 'center' ? 'justify-center text-center' : ''}
+          ${styles?.textAlign === 'right' ? 'justify-end text-right' : ''}
+        `}>
           <div className="space-y-1">
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight">{headline || 'Trending Products'}</h2>
-            <div className="w-20 h-1.5 bg-brand-500 rounded-full" />
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight"
+              style={{ color: styles?.headlineColor }}
+            >{headline || 'Trending Products'}</h2>
+            <div className={`h-1.5 bg-brand-500 rounded-full w-20
+               ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
+               ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
+            `} />
           </div>
           {/* <div className="hidden md:flex gap-3">
             <button className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm">←</button>
