@@ -8,7 +8,7 @@ import { PaymentMethod } from "@/lib/enums/payment-method";
 import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
 import { motion } from "framer-motion";
 import { Check, CreditCard, Download, Loader2, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -66,23 +66,67 @@ export default function CheckoutPage() {
 
     setLoading(true);
 
-    const orderData = {
-      customerName: formData.name,
-      customerEmail: formData.email,
-      customerPhone: formData.phone,
-      address: formData.address,
-      orderNotes: formData.notes,
-      items: items.map(item => ({
-        productId: item.product.id,
-        variantId: item.variant?.id,
-        quantity: item.quantity
-      })),
-      paymentMethod,
-      currency: selectedCurrency.code,
-      currencyRate: selectedCurrency.rate,
-    };
-
     try {
+      let currentSession = session;
+
+      // Guest Checkout Logic: Auto-Register if no session
+      if (!currentSession?.user) {
+        try {
+          const generatedPassword = `User@${Math.random().toString(36).slice(-8)}!`;
+          const username = formData.email.split('@')[0] + Math.floor(Math.random() * 1000);
+
+          // Register
+          await fetchAPI('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: formData.name,
+              email: formData.email,
+              username: username,
+              password: generatedPassword
+            }),
+          });
+
+          // Login to get token
+          const loginResult = await signIn("credentials", {
+            username: username,
+            password: generatedPassword,
+            redirect: false,
+          });
+
+          if (loginResult?.error) {
+            throw new Error("Account created but failed to auto-login. Please login to continue.");
+          }
+
+          // Let's inform the user gently
+          toast.success("Account created automatically!");
+          localStorage.removeItem("temp_cart");
+        } catch (err: any) {
+          console.error("Auto-registration failed", err);
+          // If registration failed (e.g. email exists), we interrupt
+          toast.error(err.message || "Guest checkout failed. Please login.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Re-read session/token just in case (optional, but fetchAPI handles it)
+
+      const orderData = {
+        customerName: formData.name,
+        customerEmail: formData.email,
+        customerPhone: formData.phone,
+        address: formData.address,
+        orderNotes: formData.notes,
+        items: items.map(item => ({
+          productId: item.product.id,
+          variantId: item.variant?.id,
+          quantity: item.quantity
+        })),
+        paymentMethod,
+        currency: selectedCurrency.code,
+        currencyRate: selectedCurrency.rate,
+      };
+
       // 1. Create Order
       const orderJson = await fetchAPI('/orders', {
         method: 'POST',
@@ -115,8 +159,10 @@ export default function CheckoutPage() {
         // COD Success
         setLastOrder(order);
         await clearCart();
+
         setStep('success');
       }
+      localStorage.removeItem("temp_cart");
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error('Something went wrong. Please try again.');

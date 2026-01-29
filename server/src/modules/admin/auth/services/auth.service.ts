@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common'
+import { ConflictException, Injectable, InternalServerErrorException, Logger, UnauthorizedException } from '@nestjs/common'
 import { JwtService, JwtSignOptions } from '@nestjs/jwt'
 import * as crypto from 'crypto'
 import { MailService } from '../../../mail/mail.service'
@@ -41,7 +41,14 @@ export class AuthService {
       tenantId,
     )) as CreateUserDto
 
-    await this.mailService.sendVerificationEmail(user.email, verificationToken, tenantId)
+    if(!user) {
+      throw new InternalServerErrorException('Failed to create user')
+    }
+
+    // await this.mailService.sendVerificationEmail(user.email, verificationToken, tenantId)
+
+    // console.log('Verification email sent to', user.email);
+    
 
     const token = this.generatedSignedJwt(user)
 

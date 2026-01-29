@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as nodemailer from 'nodemailer';
-import { TenantEntity } from '../tenant/entities/tenant.entity';
+import { Repository } from 'typeorm';
 import { SiteSettingsEntity } from '../settings/entities/site-settings.entity';
+import { TenantEntity } from '../tenant/entities/tenant.entity';
 
 @Injectable()
 export class MailService {
@@ -67,12 +67,12 @@ export class MailService {
       `,
         };
 
-        try {
-            await transporter.sendMail(mailOptions);
-            this.logger.log(`Verification email sent to ${email}`);
-        } catch (error) {
-            this.logger.error(`Failed to send verification email to ${email}`, error.stack);
-        }
+        await transporter.sendMail(mailOptions);
+        this.logger.log(`Verification email sent to ${email}`);
+        // try {
+        // } catch (error) {
+        //     this.logger.error(`Failed to send verification email to ${email}`, error.stack);
+        // }
     }
 
     async sendResetPasswordEmail(email: string, token: string, tenantId: string) {

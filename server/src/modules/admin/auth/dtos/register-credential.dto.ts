@@ -9,7 +9,7 @@ export class RegisterCredentialDto {
 
   @IsString()
   @IsNotEmpty()
-  @Length(5, 20)
+  // @Length(5, 20)
   @IsDefined()
   username: string
 
