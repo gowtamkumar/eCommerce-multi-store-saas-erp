@@ -568,6 +568,30 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                       <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.sublineColor || '#ffffff'}</span>
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Button Color</label>
+                    <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <input
+                        type="color"
+                        value={section.styles?.buttonColor || '#2563eb'}
+                        onChange={(e) => updateStyle('buttonColor', e.target.value)}
+                        className="w-8 h-8 rounded border-none bg-transparent"
+                      />
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.buttonColor || '#2563eb'}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Button Text</label>
+                    <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <input
+                        type="color"
+                        value={section.styles?.buttonTextColor || '#ffffff'}
+                        onChange={(e) => updateStyle('buttonTextColor', e.target.value)}
+                        className="w-8 h-8 rounded border-none bg-transparent"
+                      />
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.buttonTextColor || '#ffffff'}</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />

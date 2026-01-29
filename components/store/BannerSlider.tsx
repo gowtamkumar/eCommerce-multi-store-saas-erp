@@ -100,11 +100,20 @@ export default function BannerSlider({ settings, styles }: any) {
             >
               {currentContent?.subline || 'Discover the latest trends in luxury fashion and accessories.'}
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className={`flex flex-wrap gap-4
+              ${styles?.textAlign === 'center' ? 'justify-center' : ''}
+              ${styles?.textAlign === 'right' ? 'justify-end' : ''}
+              ${!styles?.textAlign || styles?.textAlign === 'left' ? 'justify-start' : ''}
+            `}>
               {(currentContent?.primaryButtonText || currentContent?.primaryButtonLink) && (
                 <Link
                   href={currentContent.primaryButtonLink || "#"}
-                  className="px-8 py-3 bg-white text-brand-600 font-bold rounded-lg shadow-xl hover:scale-105 transition-transform">
+                  className="px-8 py-3 bg-white text-brand-600 font-bold rounded-lg shadow-xl hover:scale-105 transition-transform"
+                  style={{
+                    backgroundColor: styles?.buttonColor || '#ffffff',
+                    color: styles?.buttonTextColor || '#2563eb'
+                  }}
+                >
                   {currentContent.primaryButtonText || "Shop Now"}
                 </Link>
               )}

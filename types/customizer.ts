@@ -23,6 +23,8 @@ export interface SectionStyles {
   textAlign?: string;
   headlineColor?: string;
   sublineColor?: string;
+  buttonColor?: string;
+  buttonTextColor?: string;
 }
 
 // --- Specific Section Settings ---
