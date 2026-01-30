@@ -63,7 +63,7 @@ export default async function DynamicPage({
                 className="pt-20"
                 style={{
                     fontFamily: page.typography?.fontFamily || 'Inter, sans-serif',
-                    fontSize: `${page.typography?.baseFontSize || 16}px`,
+                    fontSize: `${page.typography?.baseFontSize || 18}px`,
                     ...(page.typography?.headingFont && { '--heading-font': page.typography.headingFont } as React.CSSProperties),
                     ...(page.typography?.headingFontFamily && { '--heading-font-family': page.typography.headingFontFamily } as React.CSSProperties),
                     ...(page.typography?.headingFontWeight && { '--heading-font-weight': page.typography.headingFontWeight } as React.CSSProperties),

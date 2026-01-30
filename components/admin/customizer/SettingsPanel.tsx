@@ -413,8 +413,36 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                 />
               </div>
               <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Subline</label>
+                <textarea
+                  value={settings?.subline || ''}
+                  onChange={(e) => updateSetting('subline', e.target.value)}
+                  rows={8}
+                  className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
+              </div>
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Image URL</label>
                 <input type="text" value={settings?.image || ''} onChange={(e) => updateSetting('image', e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Button Text</label>
+                <input
+                  type="text"
+                  value={settings?.buttonText || ''}
+                  onChange={(e) => updateSetting('buttonText', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Button URL</label>
+                <input
+                  type="text"
+                  value={settings?.buttonUrl || ''}
+                  onChange={(e) => updateSetting('buttonUrl', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Layout</label>

@@ -1,4 +1,6 @@
-export default function ImageBlock({ image, headline, subline, styles, buttonText, layout }: { image: string, headline: string, subline: string, styles: any, buttonText: string, layout: string }) {
+import Link from "next/link";
+
+export default function ImageBlock({ image, headline, subline, styles, buttonText, buttonUrl, layout }: { image: string, headline: string, subline: string, styles: any, buttonText: string, buttonUrl: string, layout: string }) {
     return (
         <section
             style={{
@@ -40,7 +42,8 @@ export default function ImageBlock({ image, headline, subline, styles, buttonTex
                         {subline || 'Feature your most important brand assets or stories here with high-quality imagery.'}
                     </p>
                     {buttonText && (
-                        <button
+                        <Link
+                            href={buttonUrl}
                             className="px-12 py-5 font-black rounded-2xl shadow-2xl hover:opacity-90 transition-all uppercase tracking-[0.3em] text-sm"
                             style={{
                                 backgroundColor: styles?.buttonColor || '#4f46e5',
@@ -48,7 +51,7 @@ export default function ImageBlock({ image, headline, subline, styles, buttonTex
                             }}
                         >
                             {buttonText}
-                        </button>
+                        </Link>
                     )}
                 </div>
             </div>

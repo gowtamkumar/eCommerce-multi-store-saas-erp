@@ -41,7 +41,7 @@ export default function Preview({ sections, viewMode, selectedId, onSelect, typo
         className="flex-1 overflow-y-auto scrollbar-hide flex flex-col"
         style={{
           fontFamily: typography?.fontFamily || 'Inter, sans-serif',
-          fontSize: `${typography?.baseFontSize || 16}px`,
+          fontSize: `${typography?.baseFontSize || 18}px`,
           ...(typography?.headingFont && { '--heading-font': typography.headingFont } as React.CSSProperties),
           ...(typography?.headingFontFamily && { '--heading-font-family': typography.headingFontFamily } as React.CSSProperties),
           ...(typography?.headingFontWeight && { '--heading-font-weight': typography.headingFontWeight } as React.CSSProperties),
