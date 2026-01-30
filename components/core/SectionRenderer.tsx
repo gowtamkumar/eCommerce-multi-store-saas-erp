@@ -27,6 +27,9 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
     textAlign: section.styles?.textAlign,
     headlineColor: section.styles?.headlineColor,
     sublineColor: section.styles?.sublineColor,
+    iconColor: section.styles?.iconColor,
+    iconBgColor: section.styles?.iconBgColor,
+    iconBorder: section.styles?.iconBorder,
   };
 
   const renderContent = () => {

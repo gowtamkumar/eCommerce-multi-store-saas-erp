@@ -25,6 +25,9 @@ export interface SectionStyles {
   sublineColor?: string;
   buttonColor?: string;
   buttonTextColor?: string;
+  iconColor?: string;
+  iconBgColor?: string;
+  iconBorder?: string;
 }
 
 // --- Specific Section Settings ---
