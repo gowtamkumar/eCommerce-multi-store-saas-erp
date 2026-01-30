@@ -73,7 +73,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
 
       case "text-block":
         return (
-          <TextBlock alignment={settings?.alignment} html={settings?.html} headline={settings?.headline} styles={styles} />
+          <TextBlock html={settings?.html} headline={settings?.headline} styles={styles} />
         );
 
       case "image-block":

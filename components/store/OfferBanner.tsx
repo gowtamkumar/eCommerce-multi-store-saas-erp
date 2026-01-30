@@ -2,6 +2,7 @@ import { Tag } from "lucide-react";
 
 export default function OfferBanner({ buttonText, headline, subline, backgroundColor, styles }: { buttonText: string, headline: string, subline: string, backgroundColor: string, styles: any }) {
 
+
     return (
         <section style={{
             ...styles,
