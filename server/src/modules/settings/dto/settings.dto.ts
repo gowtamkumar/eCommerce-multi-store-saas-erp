@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEmail, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class UpdateSiteSettingsDto {
     @ApiProperty({ required: false })
@@ -80,5 +80,30 @@ export class UpdateSiteSettingsDto {
         order: number;
         isOpenInNewTab: boolean;
         isActive: boolean;
+    }>;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    footerDescription?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsString()
+    footerCopyright?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsArray()
+    footerSections?: Array<{
+        title: string;
+        order: number;
+        links: Array<{
+            label: string;
+            href: string;
+            order: number;
+            isOpenInNewTab: boolean;
+            isActive: boolean;
+        }>;
     }>;
 }

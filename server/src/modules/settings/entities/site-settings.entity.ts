@@ -107,6 +107,25 @@ export class SiteSettingsEntity {
         isActive: boolean;
     }>;
 
+    @Column({ nullable: true })
+    footerDescription: string;
+
+    @Column({ nullable: true })
+    footerCopyright: string;
+
+    @Column({ type: 'jsonb', nullable: true })
+    footerSections: Array<{
+        title: string;
+        order: number;
+        links: Array<{
+            label: string;
+            href: string;
+            order: number;
+            isOpenInNewTab: boolean;
+            isActive: boolean;
+        }>;
+    }>;
+
     @Column({ type: 'uuid', unique: true })
     tenantId: string;
 

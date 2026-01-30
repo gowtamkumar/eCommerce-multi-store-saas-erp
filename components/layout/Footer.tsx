@@ -10,7 +10,8 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
   const { settings: contextSettings } = useSettings();
   const settings = propSettings || contextSettings;
   const brandName = settings?.brandName || "LuxeAudio";
-  const description = settings?.siteDescription || "Elevating your audio experience with premium sound and design.";
+  const footerDescription = settings?.footerDescription || settings?.siteDescription || "Elevating your audio experience with premium sound and design.";
+  const footerCopyright = settings?.footerCopyright || `© ${new Date().getFullYear()} ${brandName}. Made with Heart by Gowtam Kumar.`;
   const social: any = settings?.socialLinks || {};
 
   const [pages, setPages] = useState<any[]>([]);
@@ -39,7 +40,7 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
               {brandName}
             </Link>
             <p className="text-slate-400 max-w-sm leading-relaxed mb-8">
-              {description}
+              {footerDescription}
             </p>
             <div className="flex space-x-4">
               {social.facebook && (
@@ -64,33 +65,67 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
               )}
             </div>
           </div>
-          <div>
-            <h4 className="font-bold text-lg mb-6 text-white">Pages</h4>
-            <ul className="space-y-4 text-slate-400">
-              {pages.map((page) => (
-                <li key={page.id}>
-                  <Link
-                    href={page.isHomePage ? "/" : `/${page.slug}`}
-                    className="hover:text-blue-400 transition-colors"
-                  >
-                    {page.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold text-lg mb-6 text-white">Company</h4>
-            <ul className="space-y-4 text-slate-400">
-              <li><a href="#" className="hover:text-blue-400 transition-colors">About Us</a></li>
-              <li><a href="/contact" className="hover:text-blue-400 transition-colors">Contact</a></li>
-            </ul>
-          </div>
+          {settings?.footerSections?.length > 0 ? (
+            settings.footerSections
+              .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+              .map((section: any, idx: number) => (
+                <div key={idx}>
+                  <h4 className="font-bold text-lg mb-6 text-white">{section.title}</h4>
+                  <ul className="space-y-4 text-slate-400">
+                    {section.links
+                      ?.filter((link: any) => link.isActive !== false)
+                      ?.sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                      ?.map((link: any, linkIdx: number) => (
+                        <li key={linkIdx}>
+                          <Link
+                            href={link.href}
+                            target={link.isOpenInNewTab ? "_blank" : undefined}
+                            className="hover:text-brand-400 transition-colors"
+                          >
+                            {link.label}
+                          </Link>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              ))
+          ) : (
+            <>
+              <div>
+                <h4 className="font-bold text-lg mb-6 text-white">Pages</h4>
+                <ul className="space-y-4 text-slate-400">
+                  {pages.map((page) => (
+                    <li key={page.id}>
+                      <Link
+                        href={page.isHomePage ? "/" : `/${page.slug}`}
+                        className="hover:text-brand-400 transition-colors"
+                      >
+                        {page.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-bold text-lg mb-6 text-white">Company</h4>
+                <ul className="space-y-4 text-slate-400">
+                  <li><Link href="/" className="hover:text-brand-400 transition-colors">About Us</Link></li>
+                  <li><Link href="/contact" className="hover:text-brand-400 transition-colors">Contact</Link></li>
+                </ul>
+              </div>
+            </>
+          )}
         </div>
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm">
-          <p className="flex items-center gap-1">
-            &copy; {new Date().getFullYear()} {brandName}. Made with <Heart className="w-4 h-4 text-red-500 fill-current" /> by Gowtam Kumar.
-          </p>
+          <div className="flex items-center gap-1">
+            {footerCopyright.includes('Heart') ? (
+              <>
+                &copy; {new Date().getFullYear()} {brandName}. Made with <Heart className="w-4 h-4 text-red-500 fill-current" /> by Gowtam Kumar.
+              </>
+            ) : (
+              footerCopyright
+            )}
+          </div>
           <div className="flex space-x-8 mt-4 md:mt-0">
             <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
