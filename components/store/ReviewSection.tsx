@@ -76,7 +76,7 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
   return (
     <section
       style={{
-        ...styles,
+        ...styles, // Spread ALL styles including CSS custom properties
         paddingTop: styles?.paddingTop,
         paddingBottom: styles?.paddingBottom,
         backgroundColor: styles?.backgroundColor || '#020617', // slate-950 default

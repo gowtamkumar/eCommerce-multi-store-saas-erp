@@ -38,6 +38,7 @@ export default function ProductSlider({ headline, count = 4, collectionId, style
   return (
     <div
       style={{
+        ...styles, // Spread ALL styles including CSS custom properties
         paddingTop: styles?.paddingTop,
         paddingBottom: styles?.paddingBottom,
         backgroundColor: styles?.backgroundColor,

@@ -49,13 +49,14 @@ export default function BannerSlider({ settings, styles }: any) {
   return (
     <section
       style={{
+        ...styles, // Spread ALL styles including CSS custom properties
         height: styles?.height ? `${styles.height}px` : '600px',
         paddingTop: styles?.paddingTop,
         paddingBottom: styles?.paddingBottom,
         backgroundColor: styles?.backgroundColor,
         color: styles?.color
       }}
-      className="relative group overflow-hidden bg-slate-100 dark:bg-slate-800"
+      className="relative group overflow-hidden bg-slate100 dark:bg-slate-800"
     >
       <AnimatePresence mode='wait'>
         <motion.div

@@ -24,7 +24,7 @@ export default function BuilderButton({ variant, size, text, styles, link }: { v
     return (
         <div
             style={{
-                ...styles,
+                ...styles, // Spread ALL styles including CSS custom properties
                 paddingTop: styles?.paddingTop,
                 paddingBottom: styles?.paddingBottom,
                 backgroundColor: styles?.backgroundColor

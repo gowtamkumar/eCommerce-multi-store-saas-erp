@@ -5,7 +5,7 @@ export default function OfferBanner({ buttonText, headline, subline, backgroundC
 
     return (
         <section style={{
-            ...styles,
+            ...styles, // Spread ALL styles including CSS custom properties
             height: styles?.height ? `${styles.height}px` : 'auto',
             paddingTop: styles?.paddingTop,
             paddingBottom: styles?.paddingBottom,

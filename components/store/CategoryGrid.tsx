@@ -38,7 +38,7 @@ export default function CategoryGrid({ title, count = 6, styles }: CategoryGridP
   return (
     <section
       style={{
-        ...styles,
+        ...styles, // Spread ALL styles including CSS custom properties
         paddingTop: styles?.paddingTop,
         paddingBottom: styles?.paddingBottom,
         backgroundColor: styles?.backgroundColor,

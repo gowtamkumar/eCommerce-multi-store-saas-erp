@@ -4,7 +4,7 @@ export default function ImageBlock({ image, headline, subline, styles, buttonTex
     return (
         <section
             style={{
-                ...styles,
+                ...styles, // Spread ALL styles including CSS custom properties
                 paddingTop: styles?.paddingTop,
                 paddingBottom: styles?.paddingBottom,
                 backgroundColor: styles?.backgroundColor,

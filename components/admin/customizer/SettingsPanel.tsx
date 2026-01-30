@@ -657,8 +657,9 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
               </select>
             </div>
 
-            {/* <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
-             <div className="space-y-4">
+            <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
+
+            <div className="space-y-4">
               <h4 className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Typography</h4>
 
               <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -779,7 +780,7 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                   />
                 </div>
               </div>
-            </div> */}
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
