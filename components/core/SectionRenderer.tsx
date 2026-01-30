@@ -78,7 +78,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
 
       case "image-block":
         return (
-          <ImageBlock image={settings?.image} headline={settings?.headline} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} />
+          <ImageBlock image={settings?.image} headline={settings?.headline} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} layout={settings?.layout} />
         );
 
       case "button":

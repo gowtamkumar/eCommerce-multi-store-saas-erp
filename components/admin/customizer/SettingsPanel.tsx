@@ -389,14 +389,6 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
               </div>
-              {/* <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Alignment</label>
-                <select value={settings?.alignment || 'center'} onChange={(e) => updateSetting('alignment', e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                  <option value="left">Left</option>
-                  <option value="center">Center</option>
-                  <option value="right">Right</option>
-                </select>
-              </div> */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Content (HTML)</label>
                 <textarea
