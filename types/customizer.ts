@@ -28,6 +28,22 @@ export interface SectionStyles {
   iconColor?: string;
   iconBgColor?: string;
   iconBorder?: string;
+  // Typography - General
+  fontFamily?: string;
+  fontStyle?: 'normal' | 'italic';
+  fontWeight?: string;
+  fontSize?: string;
+  lineHeight?: string;
+  // Typography - Headings
+  headingFontFamily?: string;
+  headingFontWeight?: string;
+  headingFontSize?: string;
+  headingLineHeight?: string;
+  // Typography - Paragraphs
+  paragraphFontFamily?: string;
+  paragraphFontWeight?: string;
+  paragraphFontSize?: string;
+  paragraphLineHeight?: string;
 }
 
 // --- Specific Section Settings ---
@@ -162,5 +178,15 @@ export interface PageData {
     fontFamily: string;
     headingFont: string;
     baseFontSize: number;
+    // Headings
+    headingFontFamily?: string;
+    headingFontWeight?: string;
+    headingFontSize?: string;
+    headingLineHeight?: string;
+    // Paragraphs
+    paragraphFontFamily?: string;
+    paragraphFontWeight?: string;
+    paragraphFontSize?: string;
+    paragraphLineHeight?: string;
   };
 }

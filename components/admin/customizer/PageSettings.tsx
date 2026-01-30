@@ -131,63 +131,132 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
         </div>
 
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 uppercase">Body Font</label>
-            <select
-              value={data.typography?.fontFamily || 'Inter'}
-              onChange={(e) => handleChange('typography', { ...data.typography, fontFamily: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-            >
-              <option value="Inter">Inter</option>
-              <option value="Poppins">Poppins</option>
-              <option value="Roboto">Roboto</option>
-              <option value="Open Sans">Open Sans</option>
-              <option value="Lato">Lato</option>
-              <option value="Montserrat">Montserrat</option>
-              <option value="Nunito">Nunito</option>
-              <option value="Work Sans">Work Sans</option>
-              <option value="DM Sans">DM Sans</option>
-              <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
-              <option value="Manrope">Manrope</option>
-              <option value="Mulish">Mulish</option>
-              <option value="Raleway">Raleway</option>
-              <option value="Outfit">Outfit</option>
-              <option value="Space Grotesk">Space Grotesk</option>
-              <option value="Urbanist">Urbanist</option>
-              <option value="serif">Serif (System)</option>
-              <option value="sans-serif">Sans Serif (System)</option>
-              <option value="monospace">Monospace (System)</option>
-            </select>
+          {/* Headings Typography */}
+          <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+            <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Headings</h4>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Font Family</label>
+              <select
+                value={data.typography?.headingFontFamily || 'Inter'}
+                onChange={(e) => handleChange('typography', { ...data.typography, headingFontFamily: e.target.value })}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+              >
+                <option value="Inter">Inter</option>
+                <option value="Poppins">Poppins</option>
+                <option value="Montserrat">Montserrat</option>
+                <option value="Raleway">Raleway</option>
+                <option value="Playfair Display">Playfair Display</option>
+                <option value="Bebas Neue">Bebas Neue</option>
+                <option value="Oswald">Oswald</option>
+                <option value="Anton">Anton</option>
+                <option value="Lora">Lora</option>
+                <option value="Merriweather">Merriweather</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Weight</label>
+                <select
+                  value={data.typography?.headingFontWeight || '700'}
+                  onChange={(e) => handleChange('typography', { ...data.typography, headingFontWeight: e.target.value })}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                >
+                  <option value="400">Regular (400)</option>
+                  <option value="500">Medium (500)</option>
+                  <option value="600">Semibold (600)</option>
+                  <option value="700">Bold (700)</option>
+                  <option value="800">Extra Bold (800)</option>
+                  <option value="900">Black (900)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Size</label>
+                <input
+                  type="text"
+                  value={data.typography?.headingFontSize || ''}
+                  onChange={(e) => handleChange('typography', { ...data.typography, headingFontSize: e.target.value })}
+                  placeholder="2rem"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Line Height</label>
+              <input
+                type="text"
+                value={data.typography?.headingLineHeight || ''}
+                onChange={(e) => handleChange('typography', { ...data.typography, headingLineHeight: e.target.value })}
+                placeholder="1.2"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+              />
+            </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 uppercase">Heading Font</label>
-            <select
-              value={data.typography?.headingFont || 'Inter'}
-              onChange={(e) => handleChange('typography', { ...data.typography, headingFont: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-            >
-              <option value="Inter">Inter</option>
-              <option value="Poppins">Poppins</option>
-              <option value="Montserrat">Montserrat</option>
-              <option value="Raleway">Raleway</option>
-              <option value="Playfair Display">Playfair Display</option>
-              <option value="Bebas Neue">Bebas Neue</option>
-              <option value="Oswald">Oswald</option>
-              <option value="Anton">Anton</option>
-              <option value="Lora">Lora</option>
-              <option value="Merriweather">Merriweather</option>
-              <option value="Crimson Text">Crimson Text</option>
-              <option value="Cinzel">Cinzel</option>
-              <option value="Josefin Sans">Josefin Sans</option>
-              <option value="Space Grotesk">Space Grotesk</option>
-              <option value="Outfit">Outfit</option>
-              <option value="DM Sans">DM Sans</option>
-              <option value="serif">Serif (System)</option>
-              <option value="sans-serif">Sans Serif (System)</option>
-            </select>
+          {/* Paragraphs Typography */}
+          <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+            <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Paragraphs</h4>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Font Family</label>
+              <select
+                value={data.typography?.paragraphFontFamily || 'Inter'}
+                onChange={(e) => handleChange('typography', { ...data.typography, paragraphFontFamily: e.target.value })}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+              >
+                <option value="Inter">Inter</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Open Sans">Open Sans</option>
+                <option value="Lato">Lato</option>
+                <option value="Poppins">Poppins</option>
+                <option value="Nunito">Nunito</option>
+                <option value="Work Sans">Work Sans</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Weight</label>
+                <select
+                  value={data.typography?.paragraphFontWeight || '400'}
+                  onChange={(e) => handleChange('typography', { ...data.typography, paragraphFontWeight: e.target.value })}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                >
+                  <option value="300">Light (300)</option>
+                  <option value="400">Regular (400)</option>
+                  <option value="500">Medium (500)</option>
+                  <option value="600">Semibold (600)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Size</label>
+                <input
+                  type="text"
+                  value={data.typography?.paragraphFontSize || ''}
+                  onChange={(e) => handleChange('typography', { ...data.typography, paragraphFontSize: e.target.value })}
+                  placeholder="16px"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Line Height</label>
+              <input
+                type="text"
+                value={data.typography?.paragraphLineHeight || ''}
+                onChange={(e) => handleChange('typography', { ...data.typography, paragraphLineHeight: e.target.value })}
+                placeholder="1.6"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+              />
+            </div>
           </div>
 
+          {/* Base Font Size (kept for backwards compatibility) */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 uppercase">Base Font Size</label>
             <div className="flex items-center gap-2">

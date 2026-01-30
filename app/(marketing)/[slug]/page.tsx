@@ -64,9 +64,15 @@ export default async function DynamicPage({
                 style={{
                     fontFamily: page.typography?.fontFamily || 'Inter, sans-serif',
                     fontSize: `${page.typography?.baseFontSize || 16}px`,
-                    ...(page.typography?.headingFont && {
-                        '--heading-font': page.typography.headingFont,
-                    } as React.CSSProperties),
+                    ...(page.typography?.headingFont && { '--heading-font': page.typography.headingFont } as React.CSSProperties),
+                    ...(page.typography?.headingFontFamily && { '--heading-font-family': page.typography.headingFontFamily } as React.CSSProperties),
+                    ...(page.typography?.headingFontWeight && { '--heading-font-weight': page.typography.headingFontWeight } as React.CSSProperties),
+                    ...(page.typography?.headingFontSize && { '--heading-font-size': page.typography.headingFontSize } as React.CSSProperties),
+                    ...(page.typography?.headingLineHeight && { '--heading-line-height': page.typography.headingLineHeight } as React.CSSProperties),
+                    ...(page.typography?.paragraphFontFamily && { '--paragraph-font-family': page.typography.paragraphFontFamily } as React.CSSProperties),
+                    ...(page.typography?.paragraphFontWeight && { '--paragraph-font-weight': page.typography.paragraphFontWeight } as React.CSSProperties),
+                    ...(page.typography?.paragraphFontSize && { '--paragraph-font-size': page.typography.paragraphFontSize } as React.CSSProperties),
+                    ...(page.typography?.paragraphLineHeight && { '--paragraph-line-height': page.typography.paragraphLineHeight } as React.CSSProperties),
                 }}
             >
                 {/* If the page has modern sections, use the renderer */}

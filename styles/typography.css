@@ -1,0 +1,17 @@
+/* Global Typography Styles for Page Customizer */
+
+/* Apply heading typography from CSS custom properties */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--heading-font-family, var(--heading-font, inherit)) !important;
+  font-weight: var(--heading-font-weight, inherit) !important;
+  font-size: var(--heading-font-size, inherit) !important;
+  line-height: var(--heading-line-height, inherit) !important;
+}
+
+/* Apply paragraph typography from CSS custom properties */
+p {
+  font-family: var(--paragraph-font-family, inherit) !important;
+  font-weight: var(--paragraph-font-weight, inherit) !important;
+  font-size: var(--paragraph-font-size, inherit) !important;
+  line-height: var(--paragraph-line-height, inherit) !important;
+}
