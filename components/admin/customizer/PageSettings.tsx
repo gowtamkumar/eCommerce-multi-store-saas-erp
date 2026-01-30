@@ -139,10 +139,21 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
               className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
             >
               <option value="Inter">Inter</option>
+              <option value="Poppins">Poppins</option>
               <option value="Roboto">Roboto</option>
               <option value="Open Sans">Open Sans</option>
               <option value="Lato">Lato</option>
               <option value="Montserrat">Montserrat</option>
+              <option value="Nunito">Nunito</option>
+              <option value="Work Sans">Work Sans</option>
+              <option value="DM Sans">DM Sans</option>
+              <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+              <option value="Manrope">Manrope</option>
+              <option value="Mulish">Mulish</option>
+              <option value="Raleway">Raleway</option>
+              <option value="Outfit">Outfit</option>
+              <option value="Space Grotesk">Space Grotesk</option>
+              <option value="Urbanist">Urbanist</option>
               <option value="serif">Serif (System)</option>
               <option value="sans-serif">Sans Serif (System)</option>
               <option value="monospace">Monospace (System)</option>
@@ -157,10 +168,21 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
               className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
             >
               <option value="Inter">Inter</option>
-              <option value="Roboto">Roboto</option>
+              <option value="Poppins">Poppins</option>
+              <option value="Montserrat">Montserrat</option>
+              <option value="Raleway">Raleway</option>
               <option value="Playfair Display">Playfair Display</option>
-              <option value="Merriweather">Merriweather</option>
+              <option value="Bebas Neue">Bebas Neue</option>
               <option value="Oswald">Oswald</option>
+              <option value="Anton">Anton</option>
+              <option value="Lora">Lora</option>
+              <option value="Merriweather">Merriweather</option>
+              <option value="Crimson Text">Crimson Text</option>
+              <option value="Cinzel">Cinzel</option>
+              <option value="Josefin Sans">Josefin Sans</option>
+              <option value="Space Grotesk">Space Grotesk</option>
+              <option value="Outfit">Outfit</option>
+              <option value="DM Sans">DM Sans</option>
               <option value="serif">Serif (System)</option>
               <option value="sans-serif">Sans Serif (System)</option>
             </select>
