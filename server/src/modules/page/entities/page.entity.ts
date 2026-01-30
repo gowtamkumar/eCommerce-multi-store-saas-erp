@@ -43,6 +43,21 @@ export class PageEntity {
     @Column({ type: 'text', nullable: true })
     metaDescription: string;
 
+    @Column({ type: 'jsonb', nullable: true })
+    typography: {
+        fontFamily?: string;
+        headingFont?: string;
+        baseFontSize?: number;
+        headingFontFamily?: string;
+        headingFontWeight?: string;
+        headingFontSize?: string;
+        headingLineHeight?: string;
+        paragraphFontFamily?: string;
+        paragraphFontWeight?: string;
+        paragraphFontSize?: string;
+        paragraphLineHeight?: string;
+    };
+
     @Column({
         type: 'enum',
         enum: ['draft', 'published'],

@@ -29,6 +29,10 @@ export class CreatePageDto {
     @IsOptional()
     metaDescription?: string;
 
+    @ApiProperty({ required: false })
+    @IsOptional()
+    typography?: any;
+
     @ApiProperty({ required: false, default: 'active' })
     @IsString()
     @IsOptional()
