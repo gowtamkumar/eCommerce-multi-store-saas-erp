@@ -74,21 +74,21 @@ export default async function Home() {
     return <SaaSLanding />;
   }
 
-  if (settings.productMode === 'single') {
-    return (
-      <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-        <Suspense fallback={null}>
-          <PaymentStatus />
-        </Suspense>
-        <Navbar />
-        <ProductDetails product={product} />
-        {/* <Reviews /> */}
-        <FAQ />
-        <Footer />
-        <WhatsAppWidget />
-      </main>
-    );
-  }
+  // if (settings.productMode === 'single') {
+  //   return (
+  //     <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+  //       <Suspense fallback={null}>
+  //         <PaymentStatus />
+  //       </Suspense>
+  //       <Navbar />
+  //       <ProductDetails product={product} />
+  //       {/* <Reviews /> */}
+  //       <FAQ />
+  //       <Footer />
+  //       <WhatsAppWidget />
+  //     </main>
+  //   );
+  // }
 
   // If a custom home page is designed, render it
   const sections = dynamicPage?.content?.sections || dynamicPage?.sections;
@@ -99,7 +99,21 @@ export default async function Home() {
           <PaymentStatus />
         </Suspense>
         <Navbar />
-        <div className="flex flex-col">
+        <div className="flex flex-col"
+          style={{
+            fontFamily: dynamicPage?.typography?.fontFamily || 'Inter, sans-serif',
+            fontSize: `${dynamicPage?.typography?.baseFontSize || 18}px`,
+            ...(dynamicPage?.typography?.headingFont && { '--heading-font': dynamicPage?.typography.headingFont } as React.CSSProperties),
+            ...(dynamicPage?.typography?.headingFontFamily && { '--heading-font-family': dynamicPage?.typography.headingFontFamily } as React.CSSProperties),
+            ...(dynamicPage?.typography?.headingFontWeight && { '--heading-font-weight': dynamicPage?.typography.headingFontWeight } as React.CSSProperties),
+            ...(dynamicPage?.typography?.headingFontSize && { '--heading-font-size': dynamicPage?.typography.headingFontSize } as React.CSSProperties),
+            ...(dynamicPage?.typography?.headingLineHeight && { '--heading-line-height': dynamicPage?.typography.headingLineHeight } as React.CSSProperties),
+            ...(dynamicPage?.typography?.paragraphFontFamily && { '--paragraph-font-family': dynamicPage?.typography.paragraphFontFamily } as React.CSSProperties),
+            ...(dynamicPage?.typography?.paragraphFontWeight && { '--paragraph-font-weight': dynamicPage?.typography.paragraphFontWeight } as React.CSSProperties),
+            ...(dynamicPage?.typography?.paragraphFontSize && { '--paragraph-font-size': dynamicPage?.typography.paragraphFontSize } as React.CSSProperties),
+            ...(dynamicPage?.typography?.paragraphLineHeight && { '--paragraph-line-height': dynamicPage?.typography.paragraphLineHeight } as React.CSSProperties),
+          }}
+        >
           {sections.map((section: any) => (
             <SectionRenderer key={section.id} section={section} />
           ))}
