@@ -1,7 +1,8 @@
 "use client";
 
 import { CustomizerSection, SectionType } from '@/types/customizer';
-import { Grid, GripVertical, HelpCircle, ImageIcon, Layout, MessageSquare, MousePointer2, Plus, Sliders, Tag, Trash2, Type } from 'lucide-react';
+import { ChevronDown, ChevronUp, Grid, GripVertical, HelpCircle, ImageIcon, Layout, MessageSquare, MousePointer2, Plus, Sliders, Tag, Trash2, Type } from 'lucide-react';
+import { useState } from 'react';
 
 interface SidebarProps {
   sections: CustomizerSection[];
@@ -23,6 +24,7 @@ const SECTION_ICONS: Record<SectionType, any> = {
 };
 
 export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: SidebarProps) {
+  const [isAddSectionOpen, setIsAddSectionOpen] = useState(true);
   const addSection = (type: SectionType) => {
     const newSection: CustomizerSection = {
       id: `section-${Date.now()}`,
@@ -89,9 +91,20 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
         )}
       </div>
 
-      <div className="shrink-0 border-t border-slate-200 dark:border-slate-800 pt-4 bg-white dark:bg-slate-900">
-        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 px-1">Add Section</p>
-        <div className="grid grid-cols-2 gap-2">
+      <div className="shrink-0 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-all duration-300">
+        <button
+          onClick={() => setIsAddSectionOpen(!isAddSectionOpen)}
+          className="w-full flex items-center justify-between px-1 py-3 group"
+        >
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest group-hover:text-brand-600 transition-colors">Add Section</p>
+          {isAddSectionOpen ? (
+            <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-colors" />
+          ) : (
+            <ChevronUp className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition-colors" />
+          )}
+        </button>
+
+        <div className={`grid grid-cols-2 gap-2 overflow-hidden transition-all duration-300 ${isAddSectionOpen ? 'max-h-96 pb-4 opacity-100' : 'max-h-0 pb-0 opacity-0'}`}>
           {(Object.keys(SECTION_ICONS) as SectionType[]).map((type) => (
             <button
               key={type}
