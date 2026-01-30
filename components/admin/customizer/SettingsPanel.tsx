@@ -526,96 +526,96 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
           </div>
 
           <div className="space-y-4 mb-4">
-            {(section.type === 'banner' || section.type === 'product-slider' || section.type === 'button' || section.type === 'image-block' || section.type === 'offer-banner') && (
+
+            {section.type === 'banner' && (
               <>
-                {section.type === 'banner' && (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Banner Height</label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="range" min="300" max="1000" step="50"
-                          value={section.styles?.height || 600}
-                          onChange={(e) => updateStyle('height', parseInt(e.target.value))}
-                          className="flex-1 accent-brand-600"
-                        />
-                        <span className="text-[10px] font-bold text-slate-500 w-10 text-right">{section.styles?.height || 600}px</span>
-                      </div>
-                    </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Banner Height</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range" min="300" max="1000" step="50"
+                      value={section.styles?.height || 600}
+                      onChange={(e) => updateStyle('height', parseInt(e.target.value))}
+                      className="flex-1 accent-brand-600"
+                    />
+                    <span className="text-[10px] font-bold text-slate-500 w-10 text-right">{section.styles?.height || 600}px</span>
+                  </div>
+                </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Overlay Opacity</label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="range" min="0" max="100" step="5"
-                          value={section.styles?.overlayOpacity !== undefined ? section.styles.overlayOpacity : 40}
-                          onChange={(e) => updateStyle('overlayOpacity', parseInt(e.target.value))}
-                          className="flex-1 accent-brand-600"
-                        />
-                        <span className="text-[10px] font-bold text-slate-500 w-10 text-right">{section.styles?.overlayOpacity !== undefined ? section.styles.overlayOpacity : 40}%</span>
-                      </div>
-                    </div>
-                  </>
-                )}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Overlay Opacity</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range" min="0" max="100" step="5"
+                      value={section.styles?.overlayOpacity !== undefined ? section.styles.overlayOpacity : 40}
+                      onChange={(e) => updateStyle('overlayOpacity', parseInt(e.target.value))}
+                      className="flex-1 accent-brand-600"
+                    />
+                    <span className="text-[10px] font-bold text-slate-500 w-10 text-right">{section.styles?.overlayOpacity !== undefined ? section.styles.overlayOpacity : 40}%</span>
+                  </div>
+                </div>
+              </>
+            )}
 
-                <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              {(section.type !== 'button' && section.type !== 'offer-banner') && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Headline Color</label>
+                  <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <input
+                      type="color"
+                      value={section.styles?.headlineColor || '#ffffff'}
+                      onChange={(e) => updateStyle('headlineColor', e.target.value)}
+                      className="w-8 h-8 rounded border-none bg-transparent"
+                    />
+                    <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.headlineColor || '#ffffff'}</span>
+                  </div>
+                </div>
+              )}
+
+              {section.type === 'banner' && (
+                <>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Headline Color</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Subline Color</label>
                     <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
                       <input
                         type="color"
-                        value={section.styles?.headlineColor || '#ffffff'}
-                        onChange={(e) => updateStyle('headlineColor', e.target.value)}
+                        value={section.styles?.sublineColor || '#ffffff'}
+                        onChange={(e) => updateStyle('sublineColor', e.target.value)}
                         className="w-8 h-8 rounded border-none bg-transparent"
                       />
-                      <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.headlineColor || '#ffffff'}</span>
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.sublineColor || '#ffffff'}</span>
                     </div>
                   </div>
-                  {(section.type === 'banner' || section.type === 'button' || section.type === 'offer-banner') && (
-                    <>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Subline Color</label>
-                        <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                          <input
-                            type="color"
-                            value={section.styles?.sublineColor || '#ffffff'}
-                            onChange={(e) => updateStyle('sublineColor', e.target.value)}
-                            className="w-8 h-8 rounded border-none bg-transparent"
-                          />
-                          <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.sublineColor || '#ffffff'}</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Button Color</label>
-                        <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                          <input
-                            type="color"
-                            value={section.styles?.buttonColor || '#2563eb'}
-                            onChange={(e) => updateStyle('buttonColor', e.target.value)}
-                            className="w-8 h-8 rounded border-none bg-transparent"
-                          />
-                          <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.buttonColor || '#2563eb'}</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Button Text</label>
-                        <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                          <input
-                            type="color"
-                            value={section.styles?.buttonTextColor || '#ffffff'}
-                            onChange={(e) => updateStyle('buttonTextColor', e.target.value)}
-                            className="w-8 h-8 rounded border-none bg-transparent"
-                          />
-                          <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.buttonTextColor || '#ffffff'}</span>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Button Color</label>
+                    <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <input
+                        type="color"
+                        value={section.styles?.buttonColor || '#2563eb'}
+                        onChange={(e) => updateStyle('buttonColor', e.target.value)}
+                        className="w-8 h-8 rounded border-none bg-transparent"
+                      />
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.buttonColor || '#2563eb'}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Button Text</label>
+                    <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <input
+                        type="color"
+                        value={section.styles?.buttonTextColor || '#ffffff'}
+                        onChange={(e) => updateStyle('buttonTextColor', e.target.value)}
+                        className="w-8 h-8 rounded border-none bg-transparent"
+                      />
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.buttonTextColor || '#ffffff'}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
-                <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
-              </>
-            )}
+            <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
 
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-slate-500 uppercase">Text Alignment</label>
