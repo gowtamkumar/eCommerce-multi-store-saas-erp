@@ -74,10 +74,25 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
   };
 
   return (
-    <section style={styles} className="px-4 md:px-10 py-16 md:py-24 bg-slate-950 border-y border-white/5 overflow-hidden">
+    <section
+      style={{
+        ...styles,
+        paddingTop: styles?.paddingTop,
+        paddingBottom: styles?.paddingBottom,
+        backgroundColor: styles?.backgroundColor || '#020617', // slate-950 default
+        color: styles?.color
+      }}
+      className={`px-4 md:px-10 border-y border-white/5 overflow-hidden ${!styles?.paddingTop && !styles?.paddingBottom ? 'py-16 md:py-24' : ''}`}
+    >
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-end mb-16">
-          <h2 className="text-white text-3xl font-black uppercase tracking-widest">
+        <div className={`flex justify-between items-end mb-16
+           ${styles?.textAlign === 'center' ? 'flex-col items-center justify-center gap-6' : ''}
+           ${styles?.textAlign === 'right' ? 'flex-row-reverse' : ''} 
+        `}>
+          <h2
+            className="text-3xl font-black uppercase tracking-widest"
+            style={{ color: styles?.headlineColor || styles?.color || 'white' }}
+          >
             {settings?.title || 'Client Feedback'}
           </h2>
           <div className="flex gap-4">
@@ -137,7 +152,12 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
                         <Star key={i} className={`w-5 h-5 ${i < (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-white/10'}`} />
                       ))}
                     </div>
-                    <blockquote className="text-xl md:text-2xl text-white/90 mb-10 italic leading-snug">"{review.text}"</blockquote>
+                    <blockquote
+                      className="text-xl md:text-2xl mb-10 italic leading-snug"
+                      style={{ color: styles?.color || 'rgba(255, 255, 255, 0.9)' }}
+                    >
+                      "{review.text}"
+                    </blockquote>
                     <div className="flex items-center gap-5">
                       <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-3xl overflow-hidden shadow-lg border-2 border-slate-700">
                         {review.avatar && !review.avatar.startsWith('bg-') ? (
@@ -147,7 +167,12 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
                         )}
                       </div>
                       <div>
-                        <p className="text-lg md:text-xl font-black text-brand-500 uppercase tracking-tight">{review.author}</p>
+                        <p
+                          className="text-lg md:text-xl font-black uppercase tracking-tight"
+                          style={{ color: styles?.sublineColor || '#3b82f6' }} // brand-500 ish default
+                        >
+                          {review.author}
+                        </p>
                         <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-bold">
                           {settings.source === 'database' ? 'Verified Purchase' : 'Verified Client'}
                         </p>
