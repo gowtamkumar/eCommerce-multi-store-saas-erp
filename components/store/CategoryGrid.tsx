@@ -36,11 +36,36 @@ export default function CategoryGrid({ title, count = 6, styles }: CategoryGridP
   const displayedCategories = categories.slice(0, count);
 
   return (
-    <div style={styles} className="px-4 md:px-10 py-16 md:py-24">
+    <section
+      style={{
+        ...styles,
+        paddingTop: styles?.paddingTop,
+        paddingBottom: styles?.paddingBottom,
+        backgroundColor: styles?.backgroundColor,
+        color: styles?.color
+      }}
+      className={`px-4 md:px-10 ${!styles?.paddingTop && !styles?.paddingBottom ? 'py-16 md:py-24' : ''}`}
+    >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">{title || 'Explore Collections'}</h2>
-          <div className="w-24 h-1.5 bg-brand-600 mx-auto rounded-full" />
+        <div className={`mb-16 space-y-4
+          ${styles?.textAlign === 'center' ? 'text-center' : ''}
+          ${styles?.textAlign === 'right' ? 'text-right' : ''}
+          ${!styles?.textAlign || styles?.textAlign === 'left' ? 'text-left' : ''}
+        `}>
+          <h2
+            className="text-4xl md:text-5xl font-black tracking-tighter uppercase"
+            style={{ color: styles?.headlineColor || styles?.color }}
+          >
+            {title || 'Explore Collections'}
+          </h2>
+          <div
+            className={`w-24 h-1.5 rounded-full
+              ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
+              ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
+              ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
+            `}
+            style={{ backgroundColor: styles?.sublineColor || styles?.headlineColor || styles?.color || '#4f46e5' }}
+          />
         </div>
 
         {loading ? (
@@ -64,9 +89,9 @@ export default function CategoryGrid({ title, count = 6, styles }: CategoryGridP
                     <span className="text-8xl opacity-30 group-hover:opacity-100 transition-opacity">📦</span>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-10">
-                  <h3 className="text-3xl font-black text-white mb-3 uppercase tracking-tight">{category.name}</h3>
-                  <span className="text-white text-sm font-bold uppercase tracking-[0.2em] hover:text-brand-400 transition-colors text-left flex items-center gap-2">
+                <div className="absolute  inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-10">
+                  <h3 className="text-3xl font-black  mb-3 uppercase tracking-tight">{category.name}</h3>
+                  <span className={`  text-sm font-bold uppercase tracking-[0.2em] hover:text-brand-400 transition-colors text-left flex items-center gap-2 ${styles?.textAlign === 'center' ? 'justify-center' : styles?.textAlign === 'right' ? 'justify-end' : 'justify-start'}`}>
                     Shop Collection <Plus className="w-4 h-4" />
                   </span>
                 </div>
@@ -79,6 +104,6 @@ export default function CategoryGrid({ title, count = 6, styles }: CategoryGridP
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }
