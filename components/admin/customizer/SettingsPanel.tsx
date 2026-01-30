@@ -481,6 +481,15 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                   onChange={(e) => updateSetting('title', e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
+
+                <input
+                  type="text"
+                  value={settings?.subline || ''}
+                  onChange={(e) => updateSetting('subline', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
+
+
               </div>
               <div className="space-y-4">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Questions</label>
@@ -517,7 +526,7 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
           </div>
 
           <div className="space-y-4 mb-4">
-            {(section.type === 'banner' || section.type === 'product-slider') && (
+            {(section.type === 'banner' || section.type === 'product-slider' || section.type === 'button' || section.type === 'image-block' || section.type === 'offer-banner') && (
               <>
                 {section.type === 'banner' && (
                   <>
@@ -562,7 +571,7 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                       <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.headlineColor || '#ffffff'}</span>
                     </div>
                   </div>
-                  {section.type === 'banner' && (
+                  {(section.type === 'banner' || section.type === 'button' || section.type === 'offer-banner') && (
                     <>
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold text-slate-500 uppercase">Subline Color</label>

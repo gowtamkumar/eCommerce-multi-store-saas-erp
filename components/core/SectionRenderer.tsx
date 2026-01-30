@@ -30,6 +30,8 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
     iconColor: section.styles?.iconColor,
     iconBgColor: section.styles?.iconBgColor,
     iconBorder: section.styles?.iconBorder,
+    buttonColor: section.styles?.buttonColor,
+    buttonTextColor: section.styles?.buttonTextColor,
   };
 
   const renderContent = () => {
@@ -88,7 +90,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
 
       case "faq-section":
         return (
-          <FAQSection items={settings?.items} headline={settings?.headline} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} />
+          <FAQSection items={settings?.items} headline={settings?.title} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} />
         );
       default:
         return null;
