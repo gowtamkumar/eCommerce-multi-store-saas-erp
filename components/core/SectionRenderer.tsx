@@ -83,7 +83,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
 
       case "button":
         return (
-          <BuilderButton variant={settings?.variant} size={settings?.size} text={settings?.text} styles={styles} />
+          <BuilderButton variant={settings?.variant} size={settings?.size} text={settings?.text} styles={styles} link={settings?.link} />
         );
 
       case "faq-section":
