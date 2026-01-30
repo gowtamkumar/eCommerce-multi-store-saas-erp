@@ -1,8 +1,19 @@
 import { Tag } from "lucide-react";
 
 export default function OfferBanner({ buttonText, headline, subline, backgroundColor, styles }: { buttonText: string, headline: string, subline: string, backgroundColor: string, styles: any }) {
+    console.log("styles", styles);
+
     return (
-        <section style={{ ...styles, backgroundColor: backgroundColor || styles.backgroundColor || '#6366f1' }} className="px-10 py-8 relative overflow-hidden text-white">
+        <section style={{
+            ...styles,
+            backgroundColor: backgroundColor || styles.backgroundColor || '#6366f1'
+        }}
+            className={`px-10 py-8 relative overflow-hidden text-white 
+             ${styles?.textAlign === 'center' ? 'justify-center text-center' : ''}
+        ${styles?.textAlign === 'right' ? 'justify-end text-right' : ''}
+        ${!styles?.textAlign || styles?.textAlign === 'left' ? 'justify-start text-left' : ''}
+            `}
+        >
             <div className="absolute top-0 right-0 w-64 h-full bg-white/10 skew-x-12 transform translate-x-32" />
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
                 <div className="flex items-center gap-6">

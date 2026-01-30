@@ -90,10 +90,6 @@ export default async function Home() {
     );
   }
 
-  console.log("dfasdf", dynamicPage);
-
-
-
   // If a custom home page is designed, render it
   const sections = dynamicPage?.content?.sections || dynamicPage?.sections;
   if (sections && sections.length > 0 && settings.productMode === 'multiple') {
