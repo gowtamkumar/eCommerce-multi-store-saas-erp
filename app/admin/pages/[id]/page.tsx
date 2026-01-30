@@ -50,6 +50,7 @@ export default function CustomizerPage({ params }: { params: Promise<{ id: strin
           status: page.status || "published",
           metaTitle: page.metaTitle || "",
           metaDescription: page.metaDescription || "",
+          typography: page.typography || undefined,
           content: { sections: adaptedSections }
         });
       } else {

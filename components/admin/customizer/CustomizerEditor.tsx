@@ -35,6 +35,7 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
         status: data.status,
+        typography: data.typography,
       };
 
       if (isNewPage) {
@@ -156,6 +157,7 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
             viewMode={viewMode}
             selectedId={selectedSectionId}
             onSelect={setSelectedSectionId}
+            typography={data.typography}
           />
         </main>
 

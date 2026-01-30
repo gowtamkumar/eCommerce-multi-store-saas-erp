@@ -8,9 +8,14 @@ interface PreviewProps {
   viewMode: 'desktop' | 'mobile';
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  typography?: {
+    fontFamily: string;
+    headingFont: string;
+    baseFontSize: number;
+  };
 }
 
-export default function Preview({ sections, viewMode, selectedId, onSelect }: PreviewProps) {
+export default function Preview({ sections, viewMode, selectedId, onSelect, typography }: PreviewProps) {
   return (
     <div className={`bg-white dark:bg-slate-900 shadow-2xl transition-all duration-500 overflow-hidden flex flex-col ${viewMode === 'mobile' ? 'w-[375px] h-[667px] rounded-[40px] border-[12px] border-slate-800 dark:border-slate-800' : 'w-full h-full rounded-xl'}`}>
       {/* Canvas Header (only if not mobile frame) */}
@@ -24,7 +29,16 @@ export default function Preview({ sections, viewMode, selectedId, onSelect }: Pr
       )}
 
       {/* Actual Content Area */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col">
+      <div
+        className="flex-1 overflow-y-auto scrollbar-hide flex flex-col"
+        style={{
+          fontFamily: typography?.fontFamily || 'Inter, sans-serif',
+          fontSize: `${typography?.baseFontSize || 16}px`,
+          ...(typography?.headingFont && {
+            '--heading-font': typography.headingFont,
+          } as React.CSSProperties),
+        }}
+      >
         {sections.map((section) => (
           <div
             key={section.id}

@@ -489,7 +489,6 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
 
-
               </div>
               <div className="space-y-4">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Questions</label>
