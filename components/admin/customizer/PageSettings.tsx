@@ -1,7 +1,7 @@
 "use client";
 
 import { PageData } from '@/types/customizer';
-import { Globe, Layout, Search } from 'lucide-react';
+import { Globe, Layout, Search, Type } from 'lucide-react';
 
 interface PageSettingsProps {
   data: PageData;
@@ -119,6 +119,67 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
               placeholder="What this page is about..."
             />
             <p className="text-[9px] text-slate-400">Optimal: 150-160 characters. Current: {data.metaDescription?.length || 0}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Typography Settings */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 text-slate-400 mb-2">
+          <Type className="w-3.5 h-3.5" />
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Typography</h3>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 uppercase">Body Font</label>
+            <select
+              value={data.typography?.fontFamily || 'Inter'}
+              onChange={(e) => handleChange('typography', { ...data.typography, fontFamily: e.target.value })}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+            >
+              <option value="Inter">Inter</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Open Sans">Open Sans</option>
+              <option value="Lato">Lato</option>
+              <option value="Montserrat">Montserrat</option>
+              <option value="serif">Serif (System)</option>
+              <option value="sans-serif">Sans Serif (System)</option>
+              <option value="monospace">Monospace (System)</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 uppercase">Heading Font</label>
+            <select
+              value={data.typography?.headingFont || 'Inter'}
+              onChange={(e) => handleChange('typography', { ...data.typography, headingFont: e.target.value })}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+            >
+              <option value="Inter">Inter</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Playfair Display">Playfair Display</option>
+              <option value="Merriweather">Merriweather</option>
+              <option value="Oswald">Oswald</option>
+              <option value="serif">Serif (System)</option>
+              <option value="sans-serif">Sans Serif (System)</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 uppercase">Base Font Size</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="12"
+                max="24"
+                step="1"
+                value={data.typography?.baseFontSize || 16}
+                onChange={(e) => handleChange('typography', { ...data.typography, baseFontSize: parseInt(e.target.value) })}
+                className="flex-1 accent-brand-600"
+              />
+              <span className="text-[10px] font-bold text-slate-500 w-8 text-right">{data.typography?.baseFontSize || 16}px</span>
+            </div>
           </div>
         </div>
       </section>

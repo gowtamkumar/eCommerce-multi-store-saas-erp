@@ -158,4 +158,9 @@ export interface PageData {
   content: CustomizerData;
   metaTitle?: string;
   metaDescription?: string;
+  typography?: {
+    fontFamily: string;
+    headingFont: string;
+    baseFontSize: number;
+  };
 }
