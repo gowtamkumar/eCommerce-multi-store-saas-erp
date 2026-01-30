@@ -59,7 +59,16 @@ export default async function DynamicPage({
                 <PaymentStatus />
             </Suspense>
             <Navbar />
-            <div className="pt-20">
+            <div
+                className="pt-20"
+                style={{
+                    fontFamily: page.typography?.fontFamily || 'Inter, sans-serif',
+                    fontSize: `${page.typography?.baseFontSize || 16}px`,
+                    ...(page.typography?.headingFont && {
+                        '--heading-font': page.typography.headingFont,
+                    } as React.CSSProperties),
+                }}
+            >
                 {/* If the page has modern sections, use the renderer */}
                 {page.sections.length > 0 &&
                     page.sections.map((section: any) => (
