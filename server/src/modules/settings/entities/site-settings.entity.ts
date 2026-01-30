@@ -98,6 +98,15 @@ export class SiteSettingsEntity {
         sslCommerzIsSandbox?: boolean;
     };
 
+    @Column({ type: 'jsonb', nullable: true })
+    navbarLinks: Array<{
+        label: string;
+        href: string;
+        order: number;
+        isOpenInNewTab: boolean;
+        isActive: boolean;
+    }>;
+
     @Column({ type: 'uuid', unique: true })
     tenantId: string;
 

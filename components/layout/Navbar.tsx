@@ -3,6 +3,7 @@
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { fetchAPI } from "@/lib/api";
+import { AnimatePresence, motion } from "framer-motion";
 import { Command, Lock, LogOut, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
@@ -144,24 +145,43 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/" className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group">
-                Home
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
-              </Link>
-              <Link href="/products" className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group">
-                Shop
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
-              </Link>
-              <Link href="/contact" className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group">
-                Contact
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
-              </Link>
+              {settings?.navbarLinks?.length > 0 ? (
+                settings.navbarLinks
+                  .filter((link: any) => link.isActive !== false)
+                  .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                  .map((link: any, index: number) => (
+                    <Link
+                      key={index}
+                      href={link.href}
+                      target={link.isOpenInNewTab ? "_blank" : undefined}
+                      className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group"
+                    >
+                      {link.label}
+                      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
+                    </Link>
+                  ))
+              ) : (
+                <>
+                  <Link href="/" className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group">
+                    Home
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
+                  </Link>
+                  <Link href="/products" className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group">
+                    Shop
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
+                  </Link>
+                  <Link href="/contact" className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group">
+                    Contact
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Right Section with Search */}
-            <div className="flex items-center gap-3">
-              {/* Enhanced Search Bar - Always Visible */}
-              <div className="relative" ref={searchRef}>
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Enhanced Search Bar - Hidden on Mobile */}
+              <div className="hidden md:block relative" ref={searchRef}>
                 <form onSubmit={handleSearchSubmit} className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
                   <input
@@ -310,12 +330,26 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
       </nav>
 
       {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <>
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden" onClick={closeMobileMenu} />
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden"
+              onClick={closeMobileMenu}
+            />
 
-          <div className="fixed top-0 right-0 h-full w-80 bg-white dark:bg-slate-900 z-50 transform transition-transform duration-300 ease-out md:hidden shadow-2xl">
-            <div className="flex flex-col h-full">
+            {/* Sidebar */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-[280px] sm:w-80 bg-white dark:bg-slate-900 z-[70] md:hidden shadow-2xl flex flex-col"
+            >
               {/* Mobile Header */}
               <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-800">
                 <span className="text-xl font-black text-slate-900 dark:text-white">{brandName}</span>
@@ -346,18 +380,34 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
               {/* Mobile Links */}
               <div className="flex-1 overflow-y-auto py-4">
                 <nav className="flex flex-col space-y-1 px-4">
-                  <Link href="/" onClick={closeMobileMenu} className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
-                    Home
-                  </Link>
-                  <Link href="/products" onClick={closeMobileMenu} className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
-                    Shop
-                  </Link>
-                  <Link href="/about" onClick={closeMobileMenu} className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
-                    About
-                  </Link>
-                  <Link href="/contact" onClick={closeMobileMenu} className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
-                    Contact
-                  </Link>
+                  {settings?.navbarLinks?.length > 0 ? (
+                    settings.navbarLinks
+                      .filter((link: any) => link.isActive !== false)
+                      .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                      .map((link: any, index: number) => (
+                        <Link
+                          key={index}
+                          href={link.href}
+                          onClick={closeMobileMenu}
+                          target={link.isOpenInNewTab ? "_blank" : undefined}
+                          className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all"
+                        >
+                          {link.label}
+                        </Link>
+                      ))
+                  ) : (
+                    <>
+                      <Link href="/" onClick={closeMobileMenu} className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
+                        Home
+                      </Link>
+                      <Link href="/products" onClick={closeMobileMenu} className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
+                        Shop
+                      </Link>
+                      <Link href="/contact" onClick={closeMobileMenu} className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
+                        Contact
+                      </Link>
+                    </>
+                  )}
 
                   <div className="my-4 border-t border-slate-200 dark:border-slate-800" />
 
@@ -392,10 +442,10 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
               <div className="p-4 border-t border-slate-200 dark:border-slate-800">
                 <CurrencySwitcher />
               </div>
-            </div>
-          </div>
-        </>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 };

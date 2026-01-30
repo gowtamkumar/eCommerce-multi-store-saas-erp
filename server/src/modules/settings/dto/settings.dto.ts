@@ -71,4 +71,14 @@ export class UpdateSiteSettingsDto {
     @IsObject()
     @IsOptional()
     payment?: any;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    navbarLinks?: Array<{
+        label: string;
+        href: string;
+        order: number;
+        isOpenInNewTab: boolean;
+        isActive: boolean;
+    }>;
 }
