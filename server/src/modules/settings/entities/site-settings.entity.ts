@@ -64,12 +64,6 @@ export class SiteSettingsEntity {
         linkedin: string;
     };
 
-    @Column({
-        type: 'enum',
-        enum: ['single', 'multiple'],
-        default: 'single',
-    })
-    productMode: string;
 
     @Column({ type: 'jsonb', nullable: true })
     marketing: {

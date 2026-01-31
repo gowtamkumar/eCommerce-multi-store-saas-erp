@@ -38,6 +38,8 @@ type TabType =
     | "footer";
 
 export default function SettingsPage() {
+    // This is the settings inner page for the admin dashboard. It includes a nice design while preserving the existing functionality.
+
     return (
         <Suspense
             fallback={
@@ -98,7 +100,6 @@ function SettingsContent() {
             sslCommerzStorePassword: "",
             sslCommerzIsSandbox: false,
         },
-        productMode: "single" as "single" | "multiple",
         navbarLinks: [] as Array<{
             label: string;
             href: string;
@@ -190,7 +191,6 @@ function SettingsContent() {
                                 data.payment?.sslCommerzStorePassword || "",
                             sslCommerzIsSandbox: data.payment?.sslCommerzIsSandbox || false,
                         },
-                        productMode: data.productMode || "single",
                         navbarLinks: data.navbarLinks || [],
                         footerDescription: data.footerDescription || "",
                         footerCopyright: data.footerCopyright || "",
@@ -343,7 +343,7 @@ function SettingsContent() {
                             value={domainInput}
                             onChange={(e) => setDomainInput(e.target.value.toLowerCase())}
                             placeholder="e.g., shop.yourbrand.com"
-                            className="flex-1 px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                            className="flex-1 px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                         />
                         <button
                             type="button"
@@ -464,15 +464,15 @@ function SettingsContent() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="max-w-4xl mx-auto">
                 {/* Form Content Area */}
-                <div className="lg:col-span-3">
+                <div className="w-full">
                     <motion.div
                         key={activeTab}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-8 min-h-[500px]"
+                        className="bg-white dark:bg-slate-800 rounded-3xl shadow-md border border-slate-200/60 dark:border-slate-700/50 p-8 min-h-[500px]"
                     >
                         <form onSubmit={handleSubmit} className="space-y-8">
                             <AnimatePresence mode="wait">
@@ -510,7 +510,7 @@ function SettingsContent() {
                                                         onChange={(e) =>
                                                             setFormData({ ...formData, logo: e.target.value })
                                                         }
-                                                        className="flex-1 px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                        className="flex-1 px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                         placeholder="https://example.com/logo.png"
                                                     />
                                                 </div>
@@ -529,7 +529,7 @@ function SettingsContent() {
                                                             brandName: e.target.value,
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                     placeholder="e.g., LuxeAudio"
                                                 />
                                             </div>
@@ -547,7 +547,7 @@ function SettingsContent() {
                                                             siteDescription: e.target.value,
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200 resize-none"
                                                     placeholder="Tell us about your store..."
                                                 />
                                             </div>
@@ -566,7 +566,7 @@ function SettingsContent() {
                                                             contactEmail: e.target.value,
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                     placeholder="support@example.com"
                                                 />
                                             </div>
@@ -585,7 +585,7 @@ function SettingsContent() {
                                                             contactPhone: e.target.value,
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                     placeholder="+1 (555) 000-0000"
                                                 />
                                             </div>
@@ -604,7 +604,7 @@ function SettingsContent() {
                                                             whatsappPhone: e.target.value,
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                     placeholder="+1 (555) 000-0000"
                                                 />
                                             </div>
@@ -622,80 +622,11 @@ function SettingsContent() {
                                                             address: e.target.value,
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                     placeholder="123 Store St, Sound City"
                                                 />
                                             </div>
-                                            <div className="space-y-1.5 md:col-span-2">
-                                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                                    Product Display Mode
-                                                </label>
-                                                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-                                                    <div className="flex flex-col gap-3">
-                                                        <div className="flex items-center gap-3">
-                                                            <input
-                                                                type="radio"
-                                                                id="mode-single"
-                                                                name="productMode"
-                                                                value="single"
-                                                                checked={formData.productMode === "single"}
-                                                                onChange={(e) =>
-                                                                    setFormData({
-                                                                        ...formData,
-                                                                        productMode: e.target.value as
-                                                                            | "single"
-                                                                            | "multiple",
-                                                                    })
-                                                                }
-                                                                className="w-4 h-4 text-brand-600 focus:ring-brand-500"
-                                                            />
-                                                            <label
-                                                                htmlFor="mode-single"
-                                                                className="text-sm font-medium text-slate-900 dark:text-white cursor-pointer"
-                                                            >
-                                                                Single Product Focus (Default)
-                                                            </label>
-                                                        </div>
-                                                        <p className="text-xs text-slate-500 pl-7">
-                                                            Optimized for selling one main product. The
-                                                            homepage and product blocks will highlight this
-                                                            featured item.
-                                                        </p>
 
-                                                        <div className="w-full h-px bg-slate-200 dark:bg-slate-700 my-1" />
-
-                                                        <div className="flex items-center gap-3">
-                                                            <input
-                                                                type="radio"
-                                                                id="mode-multiple"
-                                                                name="productMode"
-                                                                value="multiple"
-                                                                checked={formData.productMode === "multiple"}
-                                                                onChange={(e) =>
-                                                                    setFormData({
-                                                                        ...formData,
-                                                                        productMode: e.target.value as
-                                                                            | "single"
-                                                                            | "multiple",
-                                                                    })
-                                                                }
-                                                                className="w-4 h-4 text-brand-600 focus:ring-brand-500"
-                                                            />
-                                                            <label
-                                                                htmlFor="mode-multiple"
-                                                                className="text-sm font-medium text-slate-900 dark:text-white cursor-pointer"
-                                                            >
-                                                                Multiple Products Grid
-                                                            </label>
-                                                        </div>
-                                                        <p className="text-xs text-slate-500 pl-7">
-                                                            Displays a grid of your latest active products.
-                                                            Best for general e-commerce stores with multiple
-                                                            items.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
                                         </div>
                                     </motion.div>
                                 )}
@@ -748,7 +679,7 @@ function SettingsContent() {
                                                             smtp: { ...formData.smtp, host: e.target.value },
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                     placeholder="smtp.example.com"
                                                 />
                                             </div>
@@ -769,7 +700,7 @@ function SettingsContent() {
                                                             },
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                     placeholder="587"
                                                 />
                                             </div>
@@ -827,7 +758,7 @@ function SettingsContent() {
                                                             smtp: { ...formData.smtp, user: e.target.value },
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                     placeholder="user@example.com"
                                                 />
                                             </div>
@@ -845,7 +776,7 @@ function SettingsContent() {
                                                             smtp: { ...formData.smtp, pass: e.target.value },
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                     placeholder="••••••••"
                                                 />
                                             </div>
@@ -863,7 +794,7 @@ function SettingsContent() {
                                                             smtp: { ...formData.smtp, from: e.target.value },
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                     placeholder="noreply@yourdomain.com"
                                                 />
                                                 <p className="text-xs text-slate-500">
@@ -913,7 +844,7 @@ function SettingsContent() {
                                                                     },
                                                                 })
                                                             }
-                                                            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                             placeholder="pk_test_..."
                                                         />
                                                     </div>
@@ -933,7 +864,7 @@ function SettingsContent() {
                                                                     },
                                                                 })
                                                             }
-                                                            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                             placeholder="sk_test_..."
                                                         />
                                                     </div>
@@ -964,7 +895,7 @@ function SettingsContent() {
                                                                     },
                                                                 })
                                                             }
-                                                            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                             placeholder="Enter Store ID"
                                                         />
                                                     </div>
@@ -984,7 +915,7 @@ function SettingsContent() {
                                                                     },
                                                                 })
                                                             }
-                                                            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                            className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                             placeholder="Enter Store Password"
                                                         />
                                                     </div>
@@ -1081,7 +1012,7 @@ function SettingsContent() {
                                                                                 supportedCurrencies: next,
                                                                             });
                                                                         }}
-                                                                        className="w-full bg-white dark:bg-slate-800 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                                                                        className="w-full bg-white dark:bg-slate-800 border border-transparent focus:border-brand-500/50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 outline-none transition-all duration-200"
                                                                     />
                                                                 </div>
                                                                 <div className="space-y-1">
@@ -1102,7 +1033,7 @@ function SettingsContent() {
                                                                                 supportedCurrencies: next,
                                                                             });
                                                                         }}
-                                                                        className="w-full bg-white dark:bg-slate-800 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                                                                        className="w-full bg-white dark:bg-slate-800 border border-transparent focus:border-brand-500/50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 outline-none transition-all duration-200"
                                                                     />
                                                                 </div>
                                                                 <div className="space-y-1">
@@ -1122,7 +1053,7 @@ function SettingsContent() {
                                                                                 supportedCurrencies: next,
                                                                             });
                                                                         }}
-                                                                        className="w-full bg-white dark:bg-slate-800 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                                                                        className="w-full bg-white dark:bg-slate-800 border border-transparent focus:border-brand-500/50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 outline-none transition-all duration-200"
                                                                     />
                                                                 </div>
                                                                 <div className="space-y-1">
@@ -1145,7 +1076,7 @@ function SettingsContent() {
                                                                                 supportedCurrencies: next,
                                                                             });
                                                                         }}
-                                                                        className="w-full bg-white dark:bg-slate-800 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                                                                        className="w-full bg-white dark:bg-slate-800 border border-transparent focus:border-brand-500/50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 outline-none transition-all duration-200"
                                                                     />
                                                                 </div>
                                                             </div>
@@ -1185,7 +1116,7 @@ function SettingsContent() {
                                                             currency: e.target.value,
                                                         })
                                                     }
-                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                 >
                                                     {formData.supportedCurrencies?.map((c) => (
                                                         <option key={c.code} value={c.code}>
@@ -1246,7 +1177,7 @@ function SettingsContent() {
                                                                     },
                                                                 })
                                                             }
-                                                            className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                                            className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                                                             placeholder={`https://${key}.com/yourstore`}
                                                         />
                                                     </div>
@@ -1509,7 +1440,7 @@ function SettingsContent() {
                                                                                 });
                                                                             }}
                                                                             placeholder="e.g. Products"
-                                                                            className="w-full bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                                                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all duration-200"
                                                                         />
                                                                     </div>
                                                                     <div className="md:col-span-4 space-y-1">
@@ -1528,7 +1459,7 @@ function SettingsContent() {
                                                                                 });
                                                                             }}
                                                                             placeholder="e.g. /products"
-                                                                            className="w-full bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                                                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all duration-200"
                                                                         />
                                                                     </div>
                                                                     <div className="md:col-span-2 space-y-1">
@@ -1547,7 +1478,7 @@ function SettingsContent() {
                                                                                     navbarLinks: next,
                                                                                 });
                                                                             }}
-                                                                            className="w-full bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                                                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all duration-200"
                                                                         />
                                                                     </div>
                                                                     <div className="md:col-span-2 flex items-center justify-around pb-2">
@@ -1810,7 +1741,7 @@ function SettingsContent() {
                                                                                 });
                                                                             }}
                                                                             placeholder="e.g. Shop categories"
-                                                                            className="w-full bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-500 outline-none"
+                                                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all duration-200"
                                                                         />
                                                                     </div>
                                                                     <div className="md:col-span-4 space-y-1">
@@ -1912,7 +1843,7 @@ function SettingsContent() {
                                                                                                     footerSections: next,
                                                                                                 });
                                                                                             }}
-                                                                                            className="w-full bg-slate-50 dark:bg-slate-800/80 border-none rounded-lg px-2 py-1.5 text-[13px] outline-none"
+                                                                                            className="w-full bg-slate-50 dark:bg-slate-800/80 border border-transparent focus:border-brand-500/50 rounded-lg px-2 py-1.5 text-[13px] focus:ring-2 focus:ring-brand-500/20 outline-none transition-all duration-200"
                                                                                         />
                                                                                     </div>
                                                                                     <div className="md:col-span-4 space-y-1">
@@ -1933,7 +1864,7 @@ function SettingsContent() {
                                                                                                     footerSections: next,
                                                                                                 });
                                                                                             }}
-                                                                                            className="w-full bg-slate-50 dark:bg-slate-800/80 border-none rounded-lg px-2 py-1.5 text-[13px] outline-none"
+                                                                                            className="w-full bg-slate-50 dark:bg-slate-800/80 border border-transparent focus:border-brand-500/50 rounded-lg px-2 py-1.5 text-[13px] focus:ring-2 focus:ring-brand-500/20 outline-none transition-all duration-200"
                                                                                         />
                                                                                     </div>
                                                                                     <div className="md:col-span-2 space-y-1">
@@ -1954,7 +1885,7 @@ function SettingsContent() {
                                                                                                     footerSections: next,
                                                                                                 });
                                                                                             }}
-                                                                                            className="w-full bg-slate-50 dark:bg-slate-800/80 border-none rounded-lg px-2 py-1.5 text-[13px] outline-none"
+                                                                                            className="w-full bg-slate-50 dark:bg-slate-800/80 border border-transparent focus:border-brand-500/50 rounded-lg px-2 py-1.5 text-[13px] focus:ring-2 focus:ring-brand-500/20 outline-none transition-all duration-200"
                                                                                         />
                                                                                     </div>
                                                                                     <div className="md:col-span-2 flex items-center justify-around pb-1.5">

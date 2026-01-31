@@ -53,11 +53,6 @@ export class UpdateSiteSettingsDto {
     socialLinks?: any;
 
     @ApiProperty({ required: false })
-    @IsString()
-    @IsOptional()
-    productMode?: string;
-
-    @ApiProperty({ required: false })
     @IsObject()
     @IsOptional()
     marketing?: any;

@@ -1,10 +1,8 @@
-import FAQ from "@/components/core/FAQ";
 import SectionRenderer from "@/components/core/SectionRenderer";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import SaaSLanding from "@/components/marketing/SaaSLanding";
 import PaymentStatus from "@/components/store/PaymentStatus";
-import ProductDetails from "@/components/store/ProductDetails";
 import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
 import { fetchAPI } from "@/lib/api";
 import { getSiteSettings } from "@/lib/getSettings";
@@ -74,25 +72,10 @@ export default async function Home() {
     return <SaaSLanding />;
   }
 
-  // if (settings.productMode === 'single') {
-  //   return (
-  //     <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-  //       <Suspense fallback={null}>
-  //         <PaymentStatus />
-  //       </Suspense>
-  //       <Navbar />
-  //       <ProductDetails product={product} />
-  //       {/* <Reviews /> */}
-  //       <FAQ />
-  //       <Footer />
-  //       <WhatsAppWidget />
-  //     </main>
-  //   );
-  // }
 
   // If a custom home page is designed, render it
   const sections = dynamicPage?.content?.sections || dynamicPage?.sections;
-  if (sections && sections.length > 0 && settings.productMode === 'multiple') {
+  if (sections && sections.length > 0) {
     return (
       <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
         <Suspense fallback={null}>

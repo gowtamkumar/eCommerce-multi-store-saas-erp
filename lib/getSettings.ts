@@ -15,7 +15,6 @@ export const DEFAULT_SETTINGS = {
         { code: 'USD', symbol: '$', rate: 120, name: 'US Dollar' }
     ],
     socialLinks: { facebook: "", twitter: "", instagram: "", linkedin: "" },
-    productMode: "single",
     marketing: { googleAnalyticsId: "", googleSiteVerification: "", facebookPixelId: "", facebookDomainVerification: "" }
 };
 
