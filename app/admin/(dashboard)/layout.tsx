@@ -2,7 +2,7 @@
 
 import { useSettings } from '@/contexts/SettingsContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Banknote, BarChart3, ChevronDown, CreditCard, FileText, Globe, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, Settings, Share2, ShoppingBag, Tag, TrendingUp, User, Users, X } from 'lucide-react';
+import { Banknote, BarChart3, ChevronDown, CreditCard, FileText, Globe, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, Settings, Share2, ShoppingBag, Tag, TrendingUp, User, Users, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -69,10 +69,14 @@ export default function AdminLayout({
     { icon: Globe, label: 'General Info', tab: 'general' },
     { icon: Globe, label: 'Custom Domain', tab: 'domain' },
     { icon: Mail, label: 'Email Settings', tab: 'email' },
+    { icon: CreditCard, label: 'Payment Credentials', tab: 'payment' },
     { icon: Banknote, label: 'Localization', tab: 'currencies' },
     { icon: Share2, label: 'Social Links', tab: 'social' },
     { icon: TrendingUp, label: 'Marketing & SEO', tab: 'marketing' },
+    { icon: Menu, label: 'Navbar Menu', tab: 'navbar' },
+    { icon: Layout, label: 'Footer Menu', tab: 'footer' },
   ];
+
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: `${window.location.origin}/login` });
