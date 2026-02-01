@@ -107,6 +107,8 @@ export class AppModule implements NestModule {
         'products',
         'products/(.*)',
         'platform/settings',
+        'plans',
+        'plans/(.*)',
       )
       .forRoutes('*') // Apply Middleware for These Routes
   }

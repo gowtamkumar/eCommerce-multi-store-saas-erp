@@ -1,9 +1,11 @@
 'use client';
 
 import { fetchAPI } from '@/lib/api';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, CheckCircle2, Globe, Layout, Loader2, Lock, User, Layers } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { publicSaasApi } from '@/lib/publicSaasApi ';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowRight, CheckCircle2, Globe, Layers, Layout, Loader2, Lock, User } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 interface SubscriptionPlan {
   id: string;
@@ -19,6 +21,10 @@ export default function CreateStorePage() {
   const [error, setError] = useState('');
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [fetchingPlans, setFetchingPlans] = useState(true);
+  const searchParams = useSearchParams();
+  const planIdFromUrl = searchParams.get('planId');
+
+
 
   const [formData, setFormData] = useState({
     storeName: '',
@@ -30,14 +36,19 @@ export default function CreateStorePage() {
     password: '',
   });
 
+
+
   useEffect(() => {
     async function getPlans() {
       try {
-        const res = await fetchAPI('/plans');
+        const res = await publicSaasApi('/plans');
         if (res.success) {
           setPlans(res.data);
-          if (res.data.length > 0) {
-            setFormData(prev => ({ ...prev, planId: res.data[0].id }));
+
+          // If planId is passed in URL, use it, otherwise default to first plan
+          const selectedPlanId = planIdFromUrl || (res.data.length > 0 ? res.data[0].id : '');
+          if (selectedPlanId) {
+            setFormData(prev => ({ ...prev, planId: selectedPlanId }));
           }
         }
       } catch (err) {
@@ -47,7 +58,7 @@ export default function CreateStorePage() {
       }
     }
     getPlans();
-  }, []);
+  }, [planIdFromUrl]);
 
   const handleSubdomainChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');

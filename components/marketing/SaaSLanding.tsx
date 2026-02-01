@@ -14,7 +14,6 @@ export default function SaaSLanding() {
   const [loading, setLoading] = useState(true);
 
 
-
   useEffect(() => {
     async function loadData() {
       try {
@@ -23,7 +22,6 @@ export default function SaaSLanding() {
           publicSaasApi('/plans')
         ]);
 
-        console.log("plansRes", plansRes);
         setSettings(settingsRes);
 
         setPlans(plansRes.data || plansRes || []);
@@ -35,8 +33,6 @@ export default function SaaSLanding() {
     }
     loadData();
   }, []);
-
-  console.log("plans", plans);
 
   const features = settings?.features || [
     { icon: 'Globe', title: 'Multi-Tenant', description: 'Run separate stores for different brands or regions with isolated data.' },
@@ -112,7 +108,7 @@ export default function SaaSLanding() {
                     ))}
                   </ul>
                   <Link
-                    href="/create-store"
+                    href={`/create-store?planId=${plan.id}`}
                     className={`block w-full py-4 rounded-2xl font-bold transition-all shadow-lg text-center ${plan.isPopular ? 'bg-brand-600 text-white hover:bg-brand-700 shadow-brand-500/25' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                   >
                     Get Started
