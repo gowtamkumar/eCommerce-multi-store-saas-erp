@@ -114,6 +114,7 @@ export class CartService {
                 where: { id: productId, tenantId },
                 relations: ['variants'],
             });
+
             if (product && product.variants && product.variants.length > 0) {
                 variantId = product.variants[0].id;
             }

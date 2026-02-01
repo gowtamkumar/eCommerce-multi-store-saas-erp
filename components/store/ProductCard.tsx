@@ -25,6 +25,7 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    console.log("add card", product);
 
     setAdding(true);
     await addToCart(product.id, 1);
@@ -34,6 +35,9 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const discountPercentage = product.discountAmount > 0
     ? Math.round((product.discountAmount / (product.price + product.discountAmount)) * 100)
     : 0;
+
+
+  console.log("product", product);
 
   return (
     <Link

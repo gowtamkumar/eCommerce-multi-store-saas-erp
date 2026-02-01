@@ -108,11 +108,6 @@ export class CreateProductDto {
     @IsOptional()
     isReview?: boolean;
 
-    @ApiProperty({ required: false })
-    @IsArray()
-    @IsString({ each: true })
-    @IsOptional()
-    features?: string[];
 
     @ApiProperty()
     @IsNumber()
