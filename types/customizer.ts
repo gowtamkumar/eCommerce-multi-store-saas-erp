@@ -61,8 +61,11 @@ export interface BannerSettings {
 
 export interface ProductSliderSettings {
   headline?: string;
+  source?: 'all' | 'collection';
   collectionId?: string;
   count?: number;
+  layout?: 'slider' | 'grid';
+  columns?: number;
   autoplay?: boolean;
 }
 

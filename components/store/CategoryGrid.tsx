@@ -79,7 +79,7 @@ export default function CategoryGrid({ title, count = 6, styles }: CategoryGridP
             {displayedCategories.map((category) => (
               <Link
                 key={category.id}
-                href={`/products?category=${category.slug}`}
+                href={`/products?categoryId=${category.id}`}
                 className="relative aspect-[4/5] rounded-[3rem] bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center group overflow-hidden border border-slate-200 dark:border-slate-700 transition-all hover:-translate-y-2"
               >
                 {category.image ? (

@@ -1,8 +1,9 @@
 "use client";
 
+import { fetchAPI } from '@/lib/api';
 import { CustomizerSection, FAQItem, ReviewItem } from '@/types/customizer';
 import { ChevronDown, ChevronUp, Palette, Plus, Settings2, Trash2, Type, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface SettingsPanelProps {
   section: CustomizerSection;
@@ -12,6 +13,21 @@ interface SettingsPanelProps {
 
 export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPanelProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const res = await fetchAPI('/categories');
+        if (res.success) {
+          setCategories(res.data);
+        }
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      }
+    }
+    loadCategories();
+  }, []);
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -240,8 +256,64 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
               </div>
+
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Products Count</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Product Source</label>
+                <select
+                  value={settings?.source || 'all'}
+                  onChange={(e) => updateSetting('source', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="all">All Products</option>
+                  <option value="collection">Specific Collection</option>
+                </select>
+              </div>
+
+              {settings?.source === 'collection' && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Select Collection</label>
+                  <select
+                    value={settings?.collectionId || ''}
+                    onChange={(e) => updateSetting('collectionId', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="">Select a collection...</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Layout</label>
+                <select
+                  value={settings?.layout || 'slider'}
+                  onChange={(e) => updateSetting('layout', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="slider">Post Slider</option>
+                  <option value="grid">Grid View</option>
+                </select>
+              </div>
+
+              {settings?.layout === 'grid' && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Items per row</label>
+                  <select
+                    value={settings?.columns || 4}
+                    onChange={(e) => updateSetting('columns', parseInt(e.target.value))}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value={2}>2 Columns</option>
+                    <option value={3}>3 Columns</option>
+                    <option value={4}>4 Columns</option>
+                  </select>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Max Products Count</label>
                 <input
                   type="number"
                   value={settings?.count || 4}

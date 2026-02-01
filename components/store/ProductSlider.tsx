@@ -7,11 +7,20 @@ import ProductCard from "./ProductCard";
 interface ProductSliderProps {
   headline?: string;
   count?: number;
-  collectionId?: string; // This is the category slug/id
+  collectionId?: string; // This is the category id
+  layout?: 'slider' | 'grid';
+  columns?: number;
   styles?: any;
 }
 
-export default function ProductSlider({ headline, count = 4, collectionId, styles }: ProductSliderProps) {
+export default function ProductSlider({
+  headline,
+  count = 4,
+  collectionId,
+  layout = 'slider',
+  columns = 4,
+  styles
+}: ProductSliderProps) {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,7 +30,7 @@ export default function ProductSlider({ headline, count = 4, collectionId, style
       try {
         let endpoint = `/products?limit=${count}&status=active`;
         if (collectionId) {
-          endpoint += `&category=${collectionId}`;
+          endpoint += `&categoryId=${collectionId}`;
         }
         const res = await fetchAPI(endpoint);
         setProducts(res.data?.products || []);
@@ -67,9 +76,12 @@ export default function ProductSlider({ headline, count = 4, collectionId, style
         </div>
 
         {loading ? (
-          <div className="flex gap-6 md:gap-10 overflow-x-hidden pb-8">
+          <div className={layout === 'grid'
+            ? `grid gap-6 md:gap-10 grid-cols-1 sm:grid-cols-2 ${columns === 2 ? 'md:grid-cols-2' : columns === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'}`
+            : "flex gap-6 md:gap-10 overflow-x-hidden pb-8"
+          }>
             {[...Array(count)].map((_, i) => (
-              <div key={i} className="min-w-[280px] md:min-w-[320px] flex-1 animate-pulse">
+              <div key={i} className={layout === 'grid' ? "" : "min-w-[280px] md:min-w-[320px] flex-1 animate-pulse"}>
                 <div className="aspect-square bg-slate-200 dark:bg-slate-800 rounded-[2.5rem] mb-6" />
                 <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-2" />
                 <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
@@ -77,16 +89,21 @@ export default function ProductSlider({ headline, count = 4, collectionId, style
             ))}
           </div>
         ) : products.length > 0 ? (
-          <div className="flex gap-6 md:gap-10 overflow-x-auto pb-8 scrollbar-hide">
+          <div className={layout === 'grid'
+            ? `grid gap-6 md:gap-10 grid-cols-1 sm:grid-cols-2 ${columns === 2 ? 'md:grid-cols-2' : columns === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'}`
+            : "flex gap-6 md:gap-10 overflow-x-auto pb-8 scrollbar-hide"
+          }>
             {products.map((product) => (
-              <div key={product.id} className="min-w-[280px] md:min-w-[320px] flex-1 h-[450px]">
+              <div key={product.id} className={layout === 'grid' ? "h-full" : "min-w-[280px] md:min-w-[320px] flex-1 h-[450px]"}>
                 <ProductCard product={product} />
               </div>
             ))}
           </div>
         ) : (
           <div className="py-20 text-center text-slate-400 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[3rem]">
-            No products found in this collection.
+            {collectionId
+              ? "No products found in this collection."
+              : "No products found. Add some products to see them here."}
           </div>
         )}
       </div>
