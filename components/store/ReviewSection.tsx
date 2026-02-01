@@ -9,9 +9,10 @@ import { useEffect, useRef, useState } from "react";
 interface ReviewSectionProps {
   settings: {
     title?: string;
-    source?: 'manual' | 'database';
+    source?: 'manual' | 'all' | 'selection' | 'database';
     count?: number;
     reviews?: ReviewItem[];
+    reviewIds?: string[];
     [key: string]: any;
   };
   styles?: any;
@@ -26,20 +27,30 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
 
   useEffect(() => {
     async function loadData() {
-      if (settings.source === 'database') {
+      if (settings.source === 'database' || settings.source === 'all' || settings.source === 'selection') {
         setLoading(true);
         try {
           const data = await fetchAPI('/reviews/public');
           if (data.data) {
             let mapped = data.data.map((r: any) => ({
-              id: r._id || r.id,
+              id: r.id || r._id,
               author: r.customerName,
               text: r.comment,
               rating: r.rating,
               avatar: r.avatar
             }));
-            const limit = settings.count || 6;
-            mapped = mapped.slice(0, limit);
+
+            if (settings.source === 'selection' && settings.reviewIds && settings.reviewIds.length > 0) {
+              // Filter by selected IDs
+              mapped = settings.reviewIds
+                .map((id: string) => mapped.find((r: any) => r.id === id))
+                .filter(Boolean);
+            } else {
+              // Default to limit for 'all' or 'database'
+              const limit = settings.count || 6;
+              mapped = mapped.slice(0, limit);
+            }
+
             setDisplayReviews(mapped);
           }
         } catch (error) {
@@ -53,7 +64,7 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
     }
 
     loadData();
-  }, [settings.source, settings.reviews, settings.count]);
+  }, [settings.source, settings.reviews, settings.count, settings.reviewIds]);
 
   useEffect(() => {
     if (carouselRef.current) {

@@ -103,11 +103,12 @@ export interface ReviewItem {
 
 export interface ReviewSliderSettings {
   title?: string;
-  source?: 'manual' | 'database';
+  source?: 'manual' | 'all' | 'selection';
   count?: number;
   layout?: 'slider' | 'grid';
   columns?: number;
-  reviews: ReviewItem[];
+  reviews?: ReviewItem[];
+  reviewIds?: string[];
 }
 
 export interface TextBlockSettings {

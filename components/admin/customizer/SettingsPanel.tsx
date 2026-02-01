@@ -14,19 +14,30 @@ interface SettingsPanelProps {
 export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPanelProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [dbReviews, setDbReviews] = useState<any[]>([]);
 
   useEffect(() => {
-    async function loadCategories() {
+    async function loadData() {
       try {
-        const res = await fetchAPI('/categories');
-        if (res.success) {
-          setCategories(res.data);
+        const [catRes, revRes] = await Promise.all([
+          fetchAPI('/categories'),
+          fetchAPI('/reviews/public')
+        ]);
+
+        if (catRes.success) setCategories(catRes.data);
+        if (revRes.data) {
+          setDbReviews(revRes.data.map((r: any) => ({
+            id: r.id || r._id,
+            author: r.customerName,
+            text: r.comment,
+            rating: r.rating
+          })));
         }
       } catch (error) {
-        console.error("Failed to load categories:", error);
+        console.error("Failed to load customizer data:", error);
       }
     }
-    loadCategories();
+    loadData();
   }, []);
 
   const toggleExpand = (id: string) => {
@@ -48,7 +59,7 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
   };
 
   const getSectionTitle = (type: string) => {
-    return type.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    return type.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
 
   const settings = section.settings as any;
@@ -373,7 +384,7 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                               className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                             >
                               <option value="">Choose collection...</option>
-                              {categories.map((cat) => (
+                              {categories.map((cat: any) => (
                                 <option key={cat.id} value={cat.id}>{cat.name}</option>
                               ))}
                             </select>
@@ -467,14 +478,60 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 >
                   <option value="manual">Manual Entry</option>
-                  <option value="database">Database</option>
+                  <option value="all">All Reviews (DB)</option>
+                  <option value="selection">Specific Selection</option>
                 </select>
               </div>
 
-              {settings?.source === 'database' ? (
+              {(settings?.source === 'all' || settings?.source === 'selection') ? (
                 <div className="space-y-4">
+                  {settings?.source === 'selection' && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Selected Reviews</label>
+                      <div className="space-y-2">
+                        {(settings?.reviewIds || []).map((id: string, idx: number) => {
+                          const review = dbReviews.find(r => r.id === id);
+                          return (
+                            <div key={`${id}-${idx}`} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                              <span className="text-xs flex-1 truncate">{review?.author || 'Unknown Review'}</span>
+                              <button
+                                onClick={() => {
+                                  const newIds = (settings.reviewIds || []).filter((_: any, i: number) => i !== idx);
+                                  updateSetting('reviewIds', newIds);
+                                }}
+                                className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (!e.target.value) return;
+                          const currentIds = settings.reviewIds || [];
+                          if (!currentIds.includes(e.target.value)) {
+                            updateSetting('reviewIds', [...currentIds, e.target.value]);
+                          }
+                        }}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      >
+                        <option value="">+ Add a review...</option>
+                        {dbReviews
+                          .filter(r => !(settings.reviewIds || []).includes(r.id))
+                          .map((r: any) => (
+                            <option key={r.id} value={r.id}>{r.author}: {r.text.substring(0, 30)}...</option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  )}
+
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Reviews Count</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Max Reviews Count</label>
                     <input
                       type="number"
                       value={settings?.count || 6}
@@ -484,9 +541,13 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                       max="12"
                     />
                   </div>
+
                   <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                     <p className="text-xs text-blue-600 dark:text-blue-400">
-                      Reviews are automatically fetched from your database.
+                      {settings?.source === 'selection'
+                        ? 'Selected reviews are dynamically synced with your store feedback'
+                        : 'Reviews are automatically fetched from your database'
+                      }
                     </p>
                   </div>
                 </div>
