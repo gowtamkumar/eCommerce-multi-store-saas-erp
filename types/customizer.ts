@@ -61,8 +61,9 @@ export interface BannerSettings {
 
 export interface ProductSliderSettings {
   headline?: string;
-  source?: 'all' | 'collection';
+  source?: 'all' | 'collection' | 'manual';
   collectionId?: string;
+  productIds?: string[];
   count?: number;
   layout?: 'slider' | 'grid';
   columns?: number;

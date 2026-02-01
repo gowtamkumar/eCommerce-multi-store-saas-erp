@@ -55,6 +55,8 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
           <ProductSlider
             headline={settings?.headline}
             count={settings?.count}
+            source={settings?.source}
+            productIds={settings?.productIds}
             collectionId={settings?.source === 'collection' ? settings?.collectionId : undefined}
             layout={settings?.layout}
             columns={settings?.columns}

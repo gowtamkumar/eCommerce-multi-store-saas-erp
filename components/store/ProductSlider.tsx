@@ -6,6 +6,8 @@ import ProductCard from "./ProductCard";
 
 interface ProductSliderProps {
   headline?: string;
+  source?: 'all' | 'collection' | 'manual';
+  productIds?: string[];
   count?: number;
   collectionId?: string; // This is the category id
   layout?: 'slider' | 'grid';
@@ -15,6 +17,8 @@ interface ProductSliderProps {
 
 export default function ProductSlider({
   headline,
+  source = 'all',
+  productIds = [],
   count = 4,
   collectionId,
   layout = 'slider',
@@ -28,12 +32,21 @@ export default function ProductSlider({
     async function loadProducts() {
       setLoading(true);
       try {
-        let endpoint = `/products?limit=${count}&status=active`;
-        if (collectionId) {
+        let endpoint = `/products?limit=${source === 'manual' ? 100 : count}&status=active`;
+        if (collectionId && source === 'collection') {
           endpoint += `&categoryId=${collectionId}`;
         }
         const res = await fetchAPI(endpoint);
-        setProducts(res.data?.products || []);
+        let fetchedProducts = res.data?.products || [];
+
+        if (source === 'manual' && productIds.length > 0) {
+          // Filter to only include products in productIds, maintaining the selection order
+          fetchedProducts = productIds
+            .map(id => fetchedProducts.find((p: any) => p.id === id))
+            .filter(Boolean);
+        }
+
+        setProducts(fetchedProducts);
       } catch (error) {
         console.error("Failed to fetch products for slider:", error);
       } finally {
@@ -42,7 +55,7 @@ export default function ProductSlider({
     }
 
     loadProducts();
-  }, [count, collectionId]);
+  }, [count, collectionId, source, JSON.stringify(productIds)]);
 
   return (
     <div
@@ -101,9 +114,11 @@ export default function ProductSlider({
           </div>
         ) : (
           <div className="py-20 text-center text-slate-400 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[3rem]">
-            {collectionId
+            {source === 'collection' && collectionId
               ? "No products found in this collection."
-              : "No products found. Add some products to see them here."}
+              : source === 'manual'
+                ? "No products selected. Select products in the customizer settings."
+                : "No products found. Add some products in the admin dashboard."}
           </div>
         )}
       </div>
