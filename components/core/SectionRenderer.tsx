@@ -67,6 +67,9 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
           <CategoryGrid
             title={settings?.title}
             count={settings?.count}
+            source={settings?.source}
+            items={settings?.items}
+            columns={settings?.columns}
             styles={styles}
           />
         );

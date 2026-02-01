@@ -8,10 +8,20 @@ import { useEffect, useState } from "react";
 interface CategoryGridProps {
   title?: string;
   count?: number;
+  source?: 'all' | 'manual';
+  items?: any[];
+  columns?: number;
   styles?: any;
 }
 
-export default function CategoryGrid({ title, count = 6, styles }: CategoryGridProps) {
+export default function CategoryGrid({
+  title,
+  count = 6,
+  source = 'all',
+  items = [],
+  columns = 3,
+  styles
+}: CategoryGridProps) {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,8 +42,18 @@ export default function CategoryGrid({ title, count = 6, styles }: CategoryGridP
     loadCategories();
   }, []);
 
-  // Limit categories based on count prop
-  const displayedCategories = categories.slice(0, count);
+  // Determine which categories to display
+  let displayedCategories = [];
+  if (source === 'manual' && items.length > 0) {
+    // Map manual items (using link as categoryId) to real category data
+    const selectedIds = items.map(item => item.link).filter(Boolean);
+    displayedCategories = selectedIds
+      .map(id => categories.find(c => c.id === id))
+      .filter(Boolean);
+  } else {
+    // Automatic selection
+    displayedCategories = categories.slice(0, count);
+  }
 
   return (
     <section
@@ -69,13 +89,13 @@ export default function CategoryGrid({ title, count = 6, styles }: CategoryGridP
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+          <div className={`grid gap-8 grid-cols-1 sm:grid-cols-2 ${columns === 2 ? 'md:grid-cols-2' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
             {[...Array(count)].map((_, i) => (
               <div key={i} className="aspect-[4/5] bg-slate-200 dark:bg-slate-800 rounded-[3rem] animate-pulse" />
             ))}
           </div>
         ) : displayedCategories.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+          <div className={`grid gap-8 grid-cols-1 sm:grid-cols-2 ${columns === 2 ? 'md:grid-cols-2' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
             {displayedCategories.map((category) => (
               <Link
                 key={category.id}

@@ -78,8 +78,10 @@ export interface CategoryItem {
 
 export interface CategoryGridSettings {
   title?: string;
+  source?: 'all' | 'manual';
+  count?: number;
   columns?: number;
-  items: CategoryItem[];
+  items?: CategoryItem[];
 }
 
 export interface OfferBannerSettings {
@@ -103,6 +105,8 @@ export interface ReviewSliderSettings {
   title?: string;
   source?: 'manual' | 'database';
   count?: number;
+  layout?: 'slider' | 'grid';
+  columns?: number;
   reviews: ReviewItem[];
 }
 

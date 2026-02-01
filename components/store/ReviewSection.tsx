@@ -112,9 +112,9 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
         </div>
 
         {loading ? (
-          <div className="flex gap-8 overflow-hidden pb-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="min-w-[400px] md:min-w-[500px] bg-white/5 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shrink-0 animate-pulse">
+          <div className={`grid gap-8 ${settings.layout === 'grid' ? (settings.columns === 1 ? 'grid-cols-1' : settings.columns === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3') : 'flex overflow-hidden pb-8'}`}>
+            {[...Array(settings.layout === 'grid' ? (settings.count || 3) : 3)].map((_, i) => (
+              <div key={i} className={`${settings.layout === 'grid' ? 'w-full' : 'min-w-[400px] md:min-w-[500px]'} bg-white/5 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shrink-0 animate-pulse`}>
                 <div className="flex gap-1 mb-8">
                   {[...Array(5)].map((_, j) => (
                     <Star key={j} className="w-5 h-5 text-white/10" />
@@ -131,6 +131,53 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
                 </div>
               </div>
             ))}
+          </div>
+        ) : settings.layout === 'grid' ? (
+          <div className={`grid gap-8 ${settings.columns === 1 ? 'grid-cols-1' : settings.columns === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+            {displayReviews.length > 0 ? (
+              displayReviews.map((review: any) => (
+                <div
+                  key={review.id}
+                  className="w-full bg-white/5 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10"
+                >
+                  <div className="flex gap-1 mb-8">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`w-5 h-5 ${i < (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-white/10'}`} />
+                    ))}
+                  </div>
+                  <blockquote
+                    className="text-xl md:text-2xl mb-10 italic leading-snug"
+                    style={{ color: styles?.color || 'rgba(255, 255, 255, 0.9)' }}
+                  >
+                    "{review.text}"
+                  </blockquote>
+                  <div className="flex items-center gap-5">
+                    <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-3xl overflow-hidden shadow-lg border-2 border-slate-700">
+                      {review.avatar && !review.avatar.startsWith('bg-') ? (
+                        <img src={review.avatar} alt={review.author} className="w-full h-full object-cover" />
+                      ) : (
+                        <span>👤</span>
+                      )}
+                    </div>
+                    <div>
+                      <p
+                        className="text-lg md:text-xl font-black uppercase tracking-tight"
+                        style={{ color: styles?.sublineColor || '#3b82f6' }}
+                      >
+                        {review.author}
+                      </p>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-bold">
+                        {settings.source === 'database' ? 'Verified Purchase' : 'Verified Client'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full py-20 text-center text-white/10 border-4 border-dashed border-white/5 rounded-[3rem]">
+                No reviews found
+              </div>
+            )}
           </div>
         ) : (
           <motion.div ref={carouselRef} className="cursor-grab active:cursor-grabbing overflow-hidden">
