@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Eye, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface ProductCardProps {
@@ -15,6 +16,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, priority = false }: ProductCardProps) {
   const { addToCart, openCart } = useCart();
+  const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [adding, setAdding] = useState(false);
 
@@ -25,7 +27,12 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("add card", product);
+
+    // If product has variants, redirect to product page to select variants
+    if (product.variants && product.variants.length > 0) {
+      router.push(`/products/${product.slug}`);
+      return;
+    }
 
     setAdding(true);
     await addToCart(product.id, 1);
@@ -37,7 +44,6 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     : 0;
 
 
-  console.log("product", product);
 
   return (
     <Link

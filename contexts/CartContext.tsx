@@ -209,7 +209,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    console.log(productId, quantity, variantId);
 
 
     // If Logged In

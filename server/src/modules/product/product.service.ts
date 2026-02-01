@@ -87,6 +87,7 @@ export class ProductService {
     const query = this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.variants', 'variants')
       .where('product.tenantId = :tenantId', { tenantId })
 
     if (status) {
@@ -123,6 +124,7 @@ export class ProductService {
   async findLatest(tenantId: string, limit: number = 10) {
     return await this.productRepository.find({
       where: { tenantId },
+      relations: ['variants', 'category'],
       order: { createdAt: 'DESC' },
       take: limit,
     })
