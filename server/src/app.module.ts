@@ -20,6 +20,7 @@ import { MailModule } from './modules/mail/mail.module'
 import { OrderModule } from './modules/order/order.module'
 import { PageModule } from './modules/page/page.module'
 import { PaymentModule } from './modules/payment/payment.module'
+import { PlatformModule } from './modules/platform/platform.module'
 import { ProductModule } from './modules/product/product.module'
 import { ProfileModule } from './modules/profile/profile.module'
 import { ReviewModule } from './modules/review/review.module'
@@ -58,6 +59,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module'
     MailModule,
     CategoryModule,
     CartModule,
+    PlatformModule,
     WishlistModule,
     TrackingModule,
     SubscriptionPlanModule,
@@ -104,6 +106,7 @@ export class AppModule implements NestModule {
         'pages/(.*)',
         'products',
         'products/(.*)',
+        'platform/settings',
       )
       .forRoutes('*') // Apply Middleware for These Routes
   }
