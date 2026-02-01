@@ -29,7 +29,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     stock: initialData?.stock?.toString() || '0',
     images: initialData?.images?.join(',') || '',
     status: initialData?.status || 'active',
-    categoryId: initialData?.categoryId || '',
+    categoryId: initialData?.categoryId || initialData?.category?.id || '',
     isReview: initialData?.isReview,
     attributes: initialData?.attributes || [] as ProductAttribute[],
     variants: initialData?.variants || [] as ProductVariant[],

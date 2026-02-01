@@ -169,6 +169,13 @@ export class ProductService {
     }
 
     const { faqs, attributes, variants, ...productData } = updateProductDto
+    
+    // If categoryId is specifically provided (even as null), 
+    // we should nullify the category object to ensure TypeORM uses the categoryId column
+    if ('categoryId' in productData) {
+      product.category = null;
+    }
+
     Object.assign(product, productData)
     await this.productRepository.save(product)
 
