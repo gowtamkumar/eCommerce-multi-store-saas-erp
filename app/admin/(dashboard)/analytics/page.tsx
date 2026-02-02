@@ -2,9 +2,9 @@
 
 import TenantAnalytics from "@/components/super-admin/TenantAnalytics";
 import { fetchAPI } from "@/lib/api";
+import { Activity } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { Activity } from "lucide-react";
 
 export default function AnalyticsPage() {
     const { data: session } = useSession();
@@ -14,7 +14,7 @@ export default function AnalyticsPage() {
     useEffect(() => {
         const loadAnalytics = async () => {
             try {
-                const res = await fetchAPI('/admin/analytics');
+                const res = await fetchAPI('/report/analytics');
                 if (res.success) {
                     setData(res.data);
                 }
