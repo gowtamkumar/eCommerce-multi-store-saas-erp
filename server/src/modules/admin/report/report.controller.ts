@@ -1,4 +1,4 @@
-import { Controller, Get, Request, UseGuards } from '@nestjs/common'
+import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { OrderStatus } from '../../../common/enums/order-status.enum'
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard'
@@ -57,7 +57,10 @@ export class ReportController {
 
   @Get('/dashboard')
   @ApiOperation({ summary: 'Get current tenant dashboard report' })
-  async getDashboardReport(@Request() req: any) {
+  async getDashboardReport(
+    @Request() req: any,
+    @Query('period') period: string = 'month'
+  ) {
     const tenantId = req.user.tenantId
 
     // Fetch all data in parallel for backend processing
@@ -73,7 +76,7 @@ export class ReportController {
     const productsData = products.products || []
     const pagesData = pages || []
 
-    // 1. Basic Counts
+    // 1. Basic Counts (All Time)
     const activeOrders = ordersData.filter((o: any) => o.status === OrderStatus.PENDING).length
     const totalProducts = productsData.length
     const totalSales = paymentsData.reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
@@ -83,20 +86,34 @@ export class ReportController {
     const recentPages = pagesData.slice(0, 5)
     const recentProducts = productsData.slice(0, 5)
 
-    // 3. Monthly Growth
+    // 3. Dynamic Period Calculation
     const now = new Date()
+    let startDate: Date
+    
+    switch (period) {
+      case 'day':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        break
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        break
+      case 'month':
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+        break
+    }
+
+    const filteredPayments = paymentsData.filter((p: any) => new Date(p.createdAt) >= startDate)
+    const filteredOrders = ordersData.filter((o: any) => new Date(o.createdAt) >= startDate)
+
+    const periodSales = filteredPayments.reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
+    const periodOrders = filteredOrders.length
+
+    // 4. Monthly Growth (Always calculate for context)
     const currentMonth = now.getMonth()
     const currentYear = now.getFullYear()
-
     const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1
     const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear
-
-    const currentMonthSales = paymentsData
-      .filter((p: any) => {
-        const date = new Date(p.createdAt)
-        return date.getMonth() === currentMonth && date.getFullYear() === currentYear
-      })
-      .reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
 
     const previousMonthSales = paymentsData
       .filter((p: any) => {
@@ -106,13 +123,20 @@ export class ReportController {
       .reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
 
     let monthlyGrowth: number | null = null
+    const thisMonthSales = paymentsData
+        .filter((p: any) => {
+          const date = new Date(p.createdAt)
+          return date.getMonth() === currentMonth && date.getFullYear() === currentYear
+        })
+        .reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
+
     if (previousMonthSales > 0) {
-      monthlyGrowth = ((currentMonthSales - previousMonthSales) / previousMonthSales) * 100
-    } else if (currentMonthSales > 0) {
+      monthlyGrowth = ((thisMonthSales - previousMonthSales) / previousMonthSales) * 100
+    } else if (thisMonthSales > 0) {
       monthlyGrowth = 100
     }
 
-    // 4. Sales Data (Last 7 Days)
+    // 5. Sales Data (Last 7 Days for Chart)
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const d = new Date()
       d.setDate(d.getDate() - i)
@@ -136,6 +160,8 @@ export class ReportController {
       success: true,
       data: {
         totalSales,
+        periodSales,
+        periodOrders,
         activeOrders,
         totalProducts,
         totalPages,
