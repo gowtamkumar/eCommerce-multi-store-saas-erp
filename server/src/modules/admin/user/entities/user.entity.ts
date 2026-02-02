@@ -1,14 +1,14 @@
 import { UserRole } from 'src/common/enums/user/user-role.enum';
 import { UserStatus } from 'src/common/enums/user/user-status.enum';
 import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
-  Index,
+    Column,
+    CreateDateColumn,
+    Entity,
+    Index,
+    JoinColumn,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 import { TenantEntity } from '../../../tenant/entities/tenant.entity';
 
@@ -65,6 +65,9 @@ export class UserEntity {
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.Active })
   status: UserStatus;
+
+  @Column({ nullable: true, select: false })
+  refreshToken: string;
 
   @Column({ type: 'uuid', nullable: true })
   tenantId: string;

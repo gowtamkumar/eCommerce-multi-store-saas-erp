@@ -1,5 +1,12 @@
-import { ConflictException, Injectable, InternalServerErrorException, Logger, UnauthorizedException } from '@nestjs/common'
-import { JwtService, JwtSignOptions } from '@nestjs/jwt'
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
 import * as crypto from 'crypto'
 import { MailService } from '../../../mail/mail.service'
 import { CreateUserDto } from '../../user/dtos/create-user.dto'
@@ -18,6 +25,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     private readonly tenantService: TenantService,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(registerCredentialDto: RegisterCredentialDto, tenantId: string) {
@@ -41,18 +49,17 @@ export class AuthService {
       tenantId,
     )) as CreateUserDto
 
-    if(!user) {
+    if (!user) {
       throw new InternalServerErrorException('Failed to create user')
     }
 
     // await this.mailService.sendVerificationEmail(user.email, verificationToken, tenantId)
 
     // console.log('Verification email sent to', user.email);
-    
 
-    const token = this.generatedSignedJwt(user)
+    const tokens = await this.getTokens(user)
 
-    return { token, user }
+    return { ...tokens, user }
   }
 
   async login(loginCredentialsDto: LoginCredentialDto, tenantId: string) {
@@ -74,11 +81,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid Login Credentials')
     }
 
-    const token = this.generatedSignedJwt(user)
+    const tokens = await this.getTokens(user)
 
     return {
       user,
-      token,
+      ...tokens,
     }
   }
 
@@ -111,15 +118,42 @@ export class AuthService {
     return this.userService.verifyUserByToken(token)
   }
 
-  private generatedSignedJwt(user) {
-    const jwtSignOptions: JwtSignOptions = {
-      subject: user.id,
-    }
+  async getTokens(user) {
     const payload = {
       username: user.username,
       tenantId: user.tenantId,
       role: user.role,
+      sub: user.id,
     }
-    return this.jwtService.sign(payload, jwtSignOptions)
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_SECRET_KEY'),
+        expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES') || '1h',
+      } as any),
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_SECRET_KEY'),
+        expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES') || '7d',
+      } as any),
+    ])
+
+    await this.userService.setCurrentRefreshToken(refreshToken, user.id)
+
+    return {
+      accessToken,
+      refreshToken,
+    }
+  }
+
+  async refreshTokens(userId: string, refreshToken: string) {
+    const user = await this.userService.getUserIfRefreshTokenMatches(refreshToken, userId)
+    if (!user) throw new UnauthorizedException('Access Denied')
+
+    const tokens = await this.getTokens(user)
+    return tokens
+  }
+
+  async logout(userId: string) {
+    return this.userService.removeRefreshToken(userId)
   }
 }

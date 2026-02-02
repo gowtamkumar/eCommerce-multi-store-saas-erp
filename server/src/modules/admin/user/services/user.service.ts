@@ -190,4 +190,35 @@ export class UserService {
   async countByTenant(tenantId: string) {
     return await this.userRepo.count({ where: { tenantId } })
   }
+
+  async setCurrentRefreshToken(refreshToken: string, userId: string) {
+    const currentRefreshToken = await bcrypt.hash(refreshToken, 10)
+    await this.userRepo.update(userId, {
+      refreshToken: currentRefreshToken,
+    })
+  }
+
+  async getUserIfRefreshTokenMatches(refreshToken: string, userId: string) {
+    const user = await this.userRepo
+      .createQueryBuilder('user')
+      .addSelect('user.refreshToken')
+      .where('user.id = :userId', { userId })
+      .getOne()
+
+    if (!user || !user.refreshToken) {
+      return null
+    }
+
+    const isRefreshTokenMatching = await bcrypt.compare(refreshToken, user.refreshToken)
+
+    if (isRefreshTokenMatching) {
+      return user
+    }
+  }
+
+  async removeRefreshToken(userId: string) {
+    return this.userRepo.update(userId, {
+      refreshToken: null,
+    })
+  }
 }

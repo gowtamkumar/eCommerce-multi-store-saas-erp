@@ -89,7 +89,10 @@ export const authOptions: NextAuthOptions = {
 
           if (data.success && data.data && data.data.user) {
             const user = data.data.user;
-            user.accessToken = data.data.token;
+            user.accessToken = data.data.accessToken;
+            user.refreshToken = data.data.refreshToken;
+            // Set expiry to 1 hour from now (in seconds)
+            user.accessTokenExpires = Math.floor(Date.now() / 1000) + 3600;
             return user;
           }
 
@@ -109,29 +112,43 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.role = user.role;
-        token.id = user.id;
-        token.phone = user.phone;
-        token.address = user.address;
-        token.role = user.role;
-        token.image = user.image;
-        token.tenantId = user.tenantId;
-        token.accessToken = user.accessToken;
+        return {
+          ...token,
+          id: user.id,
+          role: user.role,
+          phone: user.phone,
+          address: user.address,
+          image: user.image,
+          tenantId: user.tenantId,
+          accessToken: user.accessToken,
+          refreshToken: user.refreshToken,
+          accessTokenExpires: user.accessTokenExpires,
+        };
       }
+
       if (trigger === "update" && session) {
         return { ...token, ...session };
       }
-      return token;
+
+      // If token is not expired, return it
+      if (token.accessTokenExpires && Date.now() / 1000 < token.accessTokenExpires) {
+        
+        return token;
+      }
+
+      // Token has expired, try to refresh it
+      return refreshAccessToken(token);
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role;
         session.user.id = token.id;
+        session.user.role = token.role;
         session.user.phone = token.phone || "";
         session.user.address = token.address || "";
         session.user.image = token.image || "";
         session.user.tenantId = token.tenantId || "";
         session.user.accessToken = token.accessToken;
+        session.user.error = token.error;
       }
       return session;
     },
@@ -152,3 +169,38 @@ export const authOptions: NextAuthOptions = {
   // Add to .env.local: NEXTAUTH_SECRET=<generated-value>
   secret: process.env.NEXTAUTH_SECRET,
 };
+
+async function refreshAccessToken(token: any) {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1"}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: token.id,
+        refreshToken: token.refreshToken,
+      }),
+    });
+
+    const refreshedTokens = await res.json();
+
+    if (!res.ok) {
+      throw refreshedTokens;
+    }
+
+    return {
+      ...token,
+      accessToken: refreshedTokens.data.accessToken,
+      refreshToken: refreshedTokens.data.refreshToken ?? token.refreshToken, // Fallback to old refresh token if not rotated
+      accessTokenExpires: Math.floor(Date.now() / 1000) + 3600, // 1 hour
+    };
+  } catch (error) {
+    console.error("RefreshAccessTokenError", error);
+
+    return {
+      ...token,
+      error: "RefreshAccessTokenError",
+    };
+  }
+}

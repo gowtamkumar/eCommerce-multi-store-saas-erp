@@ -61,13 +61,13 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
       .json()
       .catch(() => ({ message: "An error occurred" }));
 
-    // Handle session expiry gracefully
-    if (res.status === 401) {
+    // Handle session expiry or refresh errors gracefully
+    if (res.status === 401 || (typeof window !== "undefined" && (await getSession())?.user?.error === "RefreshAccessTokenError")) {
       if (typeof window !== "undefined") {
         const { signOut } = await import("next-auth/react");
         // Only sign out if we are not already on the login page to avoid loops
         if (!window.location.pathname.includes("/login")) {
-          console.warn("Session expired (401), signing out...");
+          console.warn("Session expired or refresh failed, signing out...");
           await signOut({ callbackUrl: `${window.location.origin}/login` });
           return; // Stop execution after sign out
         }

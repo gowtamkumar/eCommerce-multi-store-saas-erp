@@ -18,7 +18,7 @@ export class AdminAuthController {
     try {
       const authPayload = await this.authService.login(loginCredentialDto, tenantId)
       // set cookies token
-      this.cookiesBuildTokenResponsive(res, authPayload.token)
+      this.cookiesBuildTokenResponsive(res, authPayload.accessToken)
 
       return {
         success: true,
@@ -34,8 +34,13 @@ export class AdminAuthController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('/logout')
-  logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    //revoke token
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    //revoke token from database
+    if (req.user) {
+      await this.authService.logout((req.user as any).id)
+    }
+    
+    // clear cookies
     Object.entries(req.cookies).forEach(([key]) => res.clearCookie(key))
 
     return {
@@ -43,6 +48,22 @@ export class AdminAuthController {
       statusCode: 200,
       message: `Logout successful`,
       data: null,
+    }
+  }
+
+  @Post('/refresh')
+  async refresh(
+    @Body() body: { userId: string; refreshToken: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const tokens = await this.authService.refreshTokens(body.userId, body.refreshToken)
+    this.cookiesBuildTokenResponsive(res, tokens.accessToken)
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Token refreshed successfully`,
+      data: tokens,
     }
   }
 

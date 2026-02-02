@@ -20,13 +20,41 @@ export class AuthController {
   ) {
     const authPayload = await this.authService.register(registerCredentialDto, tenantId)
     // set cookies token
-    this.cookiesBuildTokenResponsive(res, authPayload.token)
+    this.cookiesBuildTokenResponsive(res, authPayload.accessToken)
 
     return {
       success: true,
       statusCode: 200,
       message: `Registration successful`,
       data: authPayload,
+    }
+  }
+
+  @Post('/refresh')
+  async refresh(
+    @Body() body: { userId: string; refreshToken: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const tokens = await this.authService.refreshTokens(body.userId, body.refreshToken)
+    this.cookiesBuildTokenResponsive(res, tokens.accessToken)
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Token refreshed successfully`,
+      data: tokens,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/logout')
+  async logout(@CurrentUser() user: UserDto, @Res({ passthrough: true }) res: Response) {
+    await this.authService.logout(user.id)
+    res.clearCookie('token')
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Logout successful`,
     }
   }
 
