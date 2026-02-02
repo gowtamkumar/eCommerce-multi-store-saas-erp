@@ -91,8 +91,8 @@ export const authOptions: NextAuthOptions = {
             const user = data.data.user;
             user.accessToken = data.data.accessToken;
             user.refreshToken = data.data.refreshToken;
-            // Set expiry to 1 hour from now (in seconds)
-            user.accessTokenExpires = Math.floor(Date.now() / 1000) + 3600;
+            // Set expiry to 15 minutes from now (in seconds)
+            user.accessTokenExpires = Math.floor(Date.now() / 1000) + 900;
             return user;
           }
 
@@ -107,7 +107,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours - session expires after 1 day
+    maxAge: 7 * 24 * 60 * 60, // 7 days - session expires after 7 days
   },
   callbacks: {
     async jwt({ token, user, trigger, session }) {
@@ -129,13 +129,15 @@ export const authOptions: NextAuthOptions = {
       if (trigger === "update" && session) {
         return { ...token, ...session };
       }
-
+  console.log("called access token");
       // If token is not expired, return it
       if (token.accessTokenExpires && Date.now() / 1000 < token.accessTokenExpires) {
         
         return token;
       }
 
+      console.log("called refresh token");
+      
       // Token has expired, try to refresh it
       return refreshAccessToken(token);
     },
@@ -193,7 +195,7 @@ async function refreshAccessToken(token: any) {
       ...token,
       accessToken: refreshedTokens.data.accessToken,
       refreshToken: refreshedTokens.data.refreshToken ?? token.refreshToken, // Fallback to old refresh token if not rotated
-      accessTokenExpires: Math.floor(Date.now() / 1000) + 3600, // 1 hour
+      accessTokenExpires: Math.floor(Date.now() / 1000) + 900, // 15 minutes
     };
   } catch (error) {
     console.error("RefreshAccessTokenError", error);
