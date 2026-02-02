@@ -1,12 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Activity, ArrowLeft, BarChart3, Clock, ExternalLink, MousePointer2, Store, Users } from 'lucide-react';
+import { Activity, ArrowLeft, BarChart3, Clock, MousePointer2, Store, Users } from 'lucide-react';
 import Link from 'next/link';
-import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    BarChart, Bar, Legend
-} from 'recharts';
 
 interface TopPage {
     path: string;
@@ -99,7 +95,7 @@ export default function TenantAnalytics({ tenantId, data, tenantName }: TenantAn
                                     </tr>
                                 ) : (
                                     data.topPages.map((page, i) => (
-                                        <tr key={page.path} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                                        <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
                                             <td className="px-8 py-4">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-xs font-black text-slate-400">0{i + 1}.</span>
