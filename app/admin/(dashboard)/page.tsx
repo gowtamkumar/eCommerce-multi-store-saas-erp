@@ -2,7 +2,6 @@
 
 import { useSettings } from '@/contexts/SettingsContext';
 import { fetchAPI } from '@/lib/api';
-import { OrderStatus } from '@/lib/enums/order-status';
 import { FileText, Package, ShoppingBag, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -38,77 +37,31 @@ export default function AdminDashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      // Fetch all data in parallel
-      const [ordersData, productsData, paymentsData, pagesData] = await Promise.all([
-        fetchAPI('/orders'),
-        fetchAPI('/products'),
-        fetchAPI('/payments'),
-        fetchAPI('/pages'),
-      ]);
+      const response = await fetchAPI('/report/dashboard');
 
+      if (response.success && response.data) {
+        const {
+          totalSales,
+          activeOrders,
+          totalProducts,
+          totalPages,
+          recentPages,
+          recentProducts,
+          salesData,
+          monthlyGrowth
+        } = response.data;
 
-      // Calculate stats
-      const activeOrders = ordersData.data.orders
-        ?.filter((o: any) => o.status === OrderStatus.PENDING).length || 0;
-
-      const totalProducts = productsData.data.products?.length || 0;
-      const totalSales = paymentsData.data?.reduce((sum: number, p: any) => sum + (+p.amount || 0), 0) || 0;
-      const totalPages = pagesData.data?.length || 0;
-      const recentPages = pagesData.data?.slice(0, 5) || [];
-      const recentProducts = productsData.data.products?.slice(0, 5) || [];
-
-      setRecentProducts(recentProducts);
-
-      // Calculate monthly growth
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-
-      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-
-      const currentMonthSales = paymentsData.data?.filter((p: any) => {
-        const date = new Date(p.createdAt);
-        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-      }).reduce((sum: number, p: any) => sum + (+p.amount || 0), 0) || 0;
-
-      const previousMonthSales = paymentsData.data?.filter((p: any) => {
-        const date = new Date(p.createdAt);
-        return date.getMonth() === previousMonth && date.getFullYear() === previousYear;
-      }).reduce((sum: number, p: any) => sum + (+p.amount || 0), 0) || 0;
-
-      let monthlyGrowth: number | null = null;
-      if (previousMonthSales > 0) {
-        monthlyGrowth = ((currentMonthSales - previousMonthSales) / previousMonthSales) * 100;
-      } else if (currentMonthSales > 0) {
-        monthlyGrowth = 100; // 100% growth if previous month had no sales
+        setStats({
+          totalSales,
+          activeOrders,
+          totalProducts,
+          totalPages,
+          recentPages,
+          salesData,
+          monthlyGrowth,
+        });
+        setRecentProducts(recentProducts);
       }
-
-      // Process sales data for chart (Last 7 days)
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        return d.toISOString().split('T')[0];
-      }).reverse();
-
-      const salesData = last7Days.map(date => {
-        const daySales = paymentsData.data?.filter((p: any) => p.createdAt.startsWith(date))
-          .reduce((sum: number, p: any) => sum + (+p.amount || 0), 0) || 0;
-        return {
-          name: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          sales: daySales,
-        };
-      });
-
-      setStats({
-        totalSales,
-        activeOrders,
-        totalProducts,
-        totalPages,
-        recentPages,
-        salesData,
-        monthlyGrowth,
-      });
     } catch (error) {
       console.error('Failed to fetch dashboard stats', error);
     } finally {
