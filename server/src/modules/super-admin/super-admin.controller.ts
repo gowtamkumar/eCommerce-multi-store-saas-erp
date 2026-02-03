@@ -23,6 +23,7 @@ import { TenantService } from '../tenant/tenant.service'
 
 import { TrafficService } from './traffic.service'
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('super-admin')
 export class SuperAdminController {
   constructor(

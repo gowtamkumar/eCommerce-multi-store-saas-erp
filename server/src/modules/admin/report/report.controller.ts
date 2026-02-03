@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { OrderStatus } from '../../../common/enums/order-status.enum'
-import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard'
 import { OrderService } from '../../order/order.service'
 import { PageService } from '../../page/page.service'
 import { PaymentService } from '../../payment/payment.service'
@@ -22,7 +22,7 @@ export class ReportController {
     private readonly paymentService: PaymentService,
   ) {}
 
-  @Get("/analytics")
+  @Get('/analytics')
   @ApiOperation({ summary: 'Get current tenant analytics' })
   async getAnalytics(@Request() req: any) {
     const tenantId = req.user.tenantId
@@ -57,10 +57,7 @@ export class ReportController {
 
   @Get('/dashboard')
   @ApiOperation({ summary: 'Get current tenant dashboard report' })
-  async getDashboardReport(
-    @Request() req: any,
-    @Query('period') period: string = 'month'
-  ) {
+  async getDashboardReport(@Request() req: any, @Query('period') period: string = 'month') {
     const tenantId = req.user.tenantId
 
     // Fetch all data in parallel for backend processing
@@ -89,7 +86,7 @@ export class ReportController {
     // 3. Dynamic Period Calculation
     const now = new Date()
     let startDate: Date
-    
+
     switch (period) {
       case 'day':
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -124,11 +121,11 @@ export class ReportController {
 
     let monthlyGrowth: number | null = null
     const thisMonthSales = paymentsData
-        .filter((p: any) => {
-          const date = new Date(p.createdAt)
-          return date.getMonth() === currentMonth && date.getFullYear() === currentYear
-        })
-        .reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
+      .filter((p: any) => {
+        const date = new Date(p.createdAt)
+        return date.getMonth() === currentMonth && date.getFullYear() === currentYear
+      })
+      .reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
 
     if (previousMonthSales > 0) {
       monthlyGrowth = ((thisMonthSales - previousMonthSales) / previousMonthSales) * 100

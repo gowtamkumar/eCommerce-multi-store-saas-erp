@@ -5,7 +5,7 @@ import { AuthStrategy } from '../enums/auth/auth-strategy.enum'
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard(AuthStrategy.JwtAuth) {
-  anActivate(context: ExecutionContext) {
+  canActivate(context: ExecutionContext) {
     return super.canActivate(context)
   }
 

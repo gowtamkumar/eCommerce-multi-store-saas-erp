@@ -10,7 +10,9 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common'
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { TenantId } from '../../../../common/decorators/tenant-id.decorator'
 import { CreateUserDto } from '../dtos/create-user.dto'
 import { FilterUserDto } from '../dtos/filter-user.dto'
@@ -18,7 +20,7 @@ import { UpdatePasswordDto } from '../dtos/update-password.dto'
 import { UpdateUserDto } from '../dtos/update-user.dto'
 import { UserService } from '../services/user.service'
 
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UserController {
   private readonly logger = new Logger(UserController.name)
