@@ -128,6 +128,7 @@ export interface ImageBlockSettings {
   headline?: string;
   subline?: string;
   image?: string;
+  backgroundImage?: string;
   layout?: 'left' | 'right';
   buttonText?: string;
   buttonLink?: string;

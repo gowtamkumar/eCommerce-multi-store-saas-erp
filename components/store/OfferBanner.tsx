@@ -10,9 +10,11 @@ export default function OfferBanner({ settings, styles }: { settings: any, style
         secondaryButtonText,
         secondaryButtonLink,
         image,
-        backgroundImage,
+        backgroundImage: settingsBackgroundImage,
         layout = 'left'
     } = settings || {};
+
+    const backgroundImage = settingsBackgroundImage || styles?.backgroundImage;
 
     return (
         <section style={{
@@ -22,9 +24,6 @@ export default function OfferBanner({ settings, styles }: { settings: any, style
             paddingBottom: styles?.paddingBottom,
             backgroundColor: styles?.backgroundColor || '#6366f1',
             color: styles?.color || (backgroundImage ? '#ffffff' : undefined),
-            backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
         }}
             className={`relative overflow-hidden group 
                 ${!styles?.paddingTop && !styles?.paddingBottom ? 'px-10 py-16' : 'px-10'}
@@ -34,8 +33,19 @@ export default function OfferBanner({ settings, styles }: { settings: any, style
         >
             {backgroundImage && (
                 <div
-                    className="absolute inset-0 bg-black/40 z-0"
-                    style={{ opacity: (styles?.overlayOpacity ?? 40) / 100 }}
+                    className="absolute inset-0 w-full h-full bg-cover bg-center z-0"
+                    style={{
+                        backgroundImage: `url("${backgroundImage}")`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                    }}
+                />
+            )}
+
+            {backgroundImage && (
+                <div
+                    className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-0"
+                    style={{ opacity: (styles?.overlayOpacity ?? 60) / 100 }}
                 />
             )}
 
@@ -70,14 +80,14 @@ export default function OfferBanner({ settings, styles }: { settings: any, style
                 `}>
                     <div className="space-y-4">
                         <h2
-                            className="text-3xl md:text-6xl font-black uppercase tracking-tighter drop-shadow-lg"
-                            style={{ color: styles?.headlineColor || styles?.color || '#ffffff' }}
+                            className="text-3xl md:text-6xl font-black uppercase tracking-tighter drop-shadow-2xl"
+                            style={{ color: styles?.headlineColor || (backgroundImage ? '#ffffff' : styles?.color) }}
                         >
                             {headline || 'FLASH SALE'}
                         </h2>
                         <p
-                            className="font-bold uppercase tracking-widest text-sm md:text-xl opacity-90"
-                            style={{ color: styles?.sublineColor || styles?.color || 'rgba(255, 255, 255, 0.8)' }}
+                            className="font-bold uppercase tracking-widest text-sm md:text-xl opacity-90 drop-shadow-md"
+                            style={{ color: styles?.sublineColor || (backgroundImage ? 'rgba(255, 255, 255, 0.9)' : styles?.color) }}
                         >
                             {subline || 'Limited time offer'}
                         </p>
