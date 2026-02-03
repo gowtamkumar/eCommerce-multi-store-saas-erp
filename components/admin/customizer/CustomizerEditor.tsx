@@ -98,10 +98,10 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+          <Link href={`/${data.slug}`} target='_blank' className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
             <Eye className="w-4 h-4" />
             Preview
-          </button>
+          </Link>
           <button
             onClick={handleSave}
             disabled={isSaving}

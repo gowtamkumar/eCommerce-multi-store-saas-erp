@@ -503,13 +503,75 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Offer Details</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Offer Background Image</label>
                 <input
                   type="text"
-                  value={settings?.subline || ''}
-                  onChange={(e) => updateSetting('subline', e.target.value)}
+                  value={settings?.backgroundImage || ''}
+                  onChange={(e) => updateSetting('backgroundImage', e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Offer Small Image</label>
+                <input
+                  type="text"
+                  value={settings?.image || ''}
+                  onChange={(e) => updateSetting('image', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Layout</label>
+                <select
+                  value={settings?.layout || 'left'}
+                  onChange={(e) => updateSetting('layout', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="left">Content Left</option>
+                  <option value="right">Content Right</option>
+                </select>
+              </div>
+
+              <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Primary Button Text</label>
+                  <input
+                    type="text"
+                    value={settings?.buttonText || ''}
+                    onChange={(e) => updateSetting('buttonText', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Primary Button Link</label>
+                  <input
+                    type="text"
+                    value={settings?.buttonLink || ''}
+                    onChange={(e) => updateSetting('buttonLink', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Secondary Button Text</label>
+                  <input
+                    type="text"
+                    value={settings?.secondaryButtonText || ''}
+                    onChange={(e) => updateSetting('secondaryButtonText', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Secondary Button Link</label>
+                  <input
+                    type="text"
+                    value={settings?.secondaryButtonLink || ''}
+                    onChange={(e) => updateSetting('secondaryButtonLink', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -730,6 +792,27 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                   onChange={(e) => updateSetting('buttonUrl', e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                 />
+              </div>
+
+              <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Secondary Button Text</label>
+                  <input
+                    type="text"
+                    value={settings?.secondaryButtonText || ''}
+                    onChange={(e) => updateSetting('secondaryButtonText', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Secondary Button Link</label>
+                  <input
+                    type="text"
+                    value={settings?.secondaryButtonLink || ''}
+                    onChange={(e) => updateSetting('secondaryButtonLink', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </div>
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Layout</label>

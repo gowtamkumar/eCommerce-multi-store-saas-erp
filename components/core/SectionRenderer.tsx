@@ -79,7 +79,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
 
       case "offer-banner":
         return (
-          <OfferBanner buttonText={settings?.buttonText} headline={settings?.headline} subline={settings?.subline} backgroundColor={settings?.backgroundColor} styles={styles} />
+          <OfferBanner settings={settings} styles={styles} />
         );
 
       case "review-slider":
@@ -97,7 +97,17 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
 
       case "image-block":
         return (
-          <ImageBlock image={settings?.image} headline={settings?.headline} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} buttonUrl={settings?.buttonUrl} layout={settings?.layout} />
+          <ImageBlock
+            image={settings?.image}
+            headline={settings?.headline}
+            subline={settings?.subline}
+            buttonText={settings?.buttonText}
+            buttonUrl={settings?.buttonUrl}
+            secondaryButtonText={settings?.secondaryButtonText}
+            secondaryButtonLink={settings?.secondaryButtonLink}
+            layout={settings?.layout}
+            styles={styles}
+          />
         );
 
       case "button":

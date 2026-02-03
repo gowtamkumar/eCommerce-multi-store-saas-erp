@@ -89,8 +89,13 @@ export interface CategoryGridSettings {
 export interface OfferBannerSettings {
   headline?: string;
   subline?: string;
+  image?: string;
+  backgroundImage?: string;
+  layout?: 'left' | 'right';
   buttonText?: string;
   buttonLink?: string;
+  secondaryButtonText?: string;
+  secondaryButtonLink?: string;
   backgroundColor?: string;
   endDate?: string; // For countdown
 }
@@ -126,6 +131,8 @@ export interface ImageBlockSettings {
   layout?: 'left' | 'right';
   buttonText?: string;
   buttonLink?: string;
+  secondaryButtonText?: string;
+  secondaryButtonLink?: string;
 }
 
 export interface VideoBlockSettings {

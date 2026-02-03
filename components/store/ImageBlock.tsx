@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function ImageBlock({ image, headline, subline, styles, buttonText, buttonUrl, layout }: { image: string, headline: string, subline: string, styles: any, buttonText: string, buttonUrl: string, layout: string }) {
+export default function ImageBlock({ image, headline, subline, styles, buttonText, buttonUrl, secondaryButtonText, secondaryButtonLink, layout }: { image: string, headline: string, subline: string, styles: any, buttonText: string, buttonUrl: string, secondaryButtonText?: string, secondaryButtonLink?: string, layout: string }) {
     return (
         <section
             style={{
@@ -49,18 +49,34 @@ export default function ImageBlock({ image, headline, subline, styles, buttonTex
                     >
                         {subline || 'Feature your most important brand assets or stories here with high-quality imagery.'}
                     </p>
-                    {buttonText && (
-                        <Link
-                            href={buttonUrl}
-                            className="px-12 py-5 font-black rounded-2xl shadow-2xl hover:opacity-90 transition-all uppercase tracking-[0.3em] text-sm"
-                            style={{
-                                backgroundColor: styles?.buttonColor || '#4f46e5',
-                                color: styles?.buttonTextColor || '#ffffff'
-                            }}
-                        >
-                            {buttonText}
-                        </Link>
-                    )}
+                    <div className={`flex flex-wrap gap-4
+                        ${styles?.textAlign === 'center' ? 'justify-center' : ''}
+                        ${styles?.textAlign === 'right' ? 'justify-end' : 'justify-start'}
+                    `}>
+                        {buttonText && (
+                            <Link
+                                href={buttonUrl || '#'}
+                                className="px-12 py-5 font-black rounded-2xl shadow-2xl hover:opacity-90 transition-all uppercase tracking-[0.3em] text-sm"
+                                style={{
+                                    backgroundColor: styles?.buttonColor || '#4f46e5',
+                                    color: styles?.buttonTextColor || '#ffffff'
+                                }}
+                            >
+                                {buttonText}
+                            </Link>
+                        )}
+                        {secondaryButtonText && (
+                            <Link
+                                href={secondaryButtonLink || '#'}
+                                className="px-12 py-5 font-black rounded-2xl border-4 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all uppercase tracking-[0.3em] text-sm"
+                                style={{
+                                    color: styles?.color
+                                }}
+                            >
+                                {secondaryButtonText}
+                            </Link>
+                        )}
+                    </div>
                 </div>
             </div>
         </section>
