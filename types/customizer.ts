@@ -20,6 +20,8 @@ export type SectionType =
 export interface SectionStyles {
   paddingTop: number;
   paddingBottom: number;
+  mobilePaddingTop?: number;
+  mobilePaddingBottom?: number;
   backgroundColor?: string;
   textColor?: string;
   height?: number;

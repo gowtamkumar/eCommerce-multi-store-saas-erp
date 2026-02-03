@@ -60,6 +60,18 @@ body {
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-indigo-600 dark:from-brand-400 dark:to-indigo-400;
   }
+
+  .responsive-section {
+    padding-top: var(--section-pt);
+    padding-bottom: var(--section-pt);
+  }
+
+  @media (max-width: 768px) {
+    .responsive-section {
+      padding-top: var(--section-pt-mobile, var(--section-pt));
+      padding-bottom: var(--section-pb-mobile, var(--section-pb));
+    }
+  }
 }
 
 /* Custom Scrollbar */

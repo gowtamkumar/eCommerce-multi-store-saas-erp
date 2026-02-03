@@ -153,7 +153,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
   };
 
   return (
-    <div key={section.id}>
+    <div key={section.id} className="responsive-section">
       {renderContent()}
     </div>
   );
