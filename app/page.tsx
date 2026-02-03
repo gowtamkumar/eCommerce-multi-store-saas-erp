@@ -82,7 +82,7 @@ export default async function Home() {
           <PaymentStatus />
         </Suspense>
         <Navbar />
-        <div className="flex flex-col mt-16"
+        <div className="flex flex-col"
           style={{
             fontFamily: dynamicPage?.typography?.fontFamily || 'Inter, sans-serif',
             fontSize: `${dynamicPage?.typography?.baseFontSize || 18}px`,
