@@ -1,15 +1,16 @@
 import { ReviewEntity } from 'src/modules/review/entities/review.entity'
 import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
+    Column,
+    CreateDateColumn,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    OneToMany,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm'
 import { ProductStatus } from '../../../common/enums/product-status.enum'
+import { BrandEntity } from '../../brand/entities/brand.entity'
 import { CategoryEntity } from '../../category/entities/category.entity'
 import { FaqEntity } from '../../faq/entities/faq.entity'
 import { TenantEntity } from '../../tenant/entities/tenant.entity'
@@ -58,6 +59,13 @@ export class ProductEntity {
 
   @Column({ type: 'uuid', nullable: true })
   categoryId: string
+
+  @Column({ type: 'uuid', nullable: true })
+  brandId: string
+
+  @ManyToOne(() => BrandEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'brandId' })
+  brand: BrandEntity
 
   @ManyToOne(() => CategoryEntity, (category) => category.products, {
     nullable: true,

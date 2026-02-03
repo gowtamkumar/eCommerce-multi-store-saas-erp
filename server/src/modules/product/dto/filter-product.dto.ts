@@ -10,6 +10,10 @@ export class FilterProductDto extends PaginationDto {
     @IsOptional()
     @IsString()
     categoryId?: string;
+    
+    @IsOptional()
+    @IsString()
+    brandId?: string;
 
     @IsOptional()
     minPrice?: number;

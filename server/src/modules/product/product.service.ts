@@ -82,7 +82,7 @@ export class ProductService {
   async findAll(filterDto: any, tenantId: string) {
     const page = Math.max(1, parseInt(filterDto.page) || 1)
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
-    const { q, status, categoryId } = filterDto
+    const { q, status, categoryId, brandId } = filterDto
 
     const query = this.productRepository
       .createQueryBuilder('product')
@@ -96,6 +96,10 @@ export class ProductService {
 
     if (filterDto.categoryId) {
       query.andWhere('product.categoryId = :categoryId', { categoryId: filterDto.categoryId })
+    }
+
+    if (filterDto.brandId) {
+      query.andWhere('product.brandId = :brandId', { brandId: filterDto.brandId })
     }
 
     if (filterDto.minPrice !== undefined && filterDto.minPrice !== null) {

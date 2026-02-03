@@ -62,7 +62,7 @@ export default function AdminLayout({
     { icon: Users, label: 'Customers', href: '/admin/customers' },
     { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
     { icon: FileText, label: 'Pages', href: '/admin/pages' },
-    { icon: MessageSquare, label: 'Lead', href: '/admin/leads' },
+    { icon: MessageSquare, label: 'Newsletter', href: '/admin/leads' },
     { icon: User, label: 'Media', href: '/admin/media' },
   ];
 

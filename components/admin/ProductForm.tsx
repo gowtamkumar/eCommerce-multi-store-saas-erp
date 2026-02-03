@@ -18,6 +18,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
@@ -30,6 +31,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     images: initialData?.images?.join(',') || '',
     status: initialData?.status || 'active',
     categoryId: initialData?.categoryId || initialData?.category?.id || '',
+    brandId: initialData?.brandId || initialData?.brand?.id || '',
     isReview: initialData?.isReview,
     attributes: initialData?.attributes || [] as ProductAttribute[],
     variants: initialData?.variants || [] as ProductVariant[],
@@ -38,8 +40,12 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
 
 
   useEffect(() => {
-    fetchAPI('/categories').then(res => {
-      if (res.success) setCategories(res.data);
+    Promise.all([
+      fetchAPI('/categories'),
+      fetchAPI('/brands')
+    ]).then(([catRes, brandRes]) => {
+      if (catRes.success) setCategories(catRes.data);
+      if (brandRes.success) setBrands(brandRes.data);
     });
   }, []);
 
@@ -62,6 +68,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       slug: formData.slug || generateSlug(formData.name),
       images: formData.images.split(',').map((s: string) => s.trim()).filter(Boolean),
       categoryId: formData.categoryId || null,
+      brandId: formData.brandId || null,
       faqs: formData.faqs.map((f: any) => ({
         question: f.question,
         answer: f.answer,
@@ -213,6 +220,24 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <Tag className="w-4 h-4" /> Brand
+              </label>
+              <select
+                value={formData.brandId}
+                onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+              >
+                <option value="">No Brand</option>
+                {brands.map((brand) => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
                   </option>
                 ))}
               </select>

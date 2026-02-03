@@ -118,12 +118,12 @@ export default function LeadList() {
                 const link = document.createElement('a');
                 const url = URL.createObjectURL(blob);
                 link.setAttribute('href', url);
-                link.setAttribute('download', `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
+                link.setAttribute('download', `newsletter_export_${new Date().toISOString().split('T')[0]}.csv`);
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                toast.success('Leads exported successfully');
+                toast.success('Newsletter exported successfully');
             }
         } catch (error) {
             console.error('Export failed', error);
@@ -152,8 +152,8 @@ export default function LeadList() {
                         <MessageSquare className="w-8 h-8 text-brand-600 dark:text-brand-400" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display">Leads</h1>
-                        <p className="text-slate-500 dark:text-slate-400">View inquiries from the contact form</p>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display">Newsletter</h1>
+                        <p className="text-slate-500 dark:text-slate-400">View newsletter subscribers</p>
                     </div>
                 </div>
                 <button
@@ -194,7 +194,7 @@ export default function LeadList() {
                     </div>
                 </div>
                 <div className="text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                    Total: {pagination.total} leads
+                    Total: {pagination.total} subscribers
                 </div>
             </div>
 
@@ -217,14 +217,14 @@ export default function LeadList() {
                                     <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                                         <div className="flex justify-center items-center gap-2">
                                             <Loader2 className="w-5 h-5 animate-spin" />
-                                            Loading messages...
+                                            Loading subscribers...
                                         </div>
                                     </td>
                                 </tr>
                             ) : messages.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                                        {searchQuery ? 'No messages match your search.' : 'No messages found.'}
+                                        {searchQuery ? 'No subscribers match your search.' : 'No subscribers found.'}
                                     </td>
                                 </tr>
                             ) : (

@@ -11,18 +11,25 @@ interface Category {
   slug: string;
 }
 
+interface Brand {
+  id: string;
+  name: string;
+}
+
 interface ProductFiltersProps {
   categories: Category[];
+  brands: Brand[];
   isMobileOpen: boolean;
   onCloseMobile: () => void;
 }
 
-export default function ProductFilters({ categories, isMobileOpen, onCloseMobile }: ProductFiltersProps) {
+export default function ProductFilters({ categories, brands, isMobileOpen, onCloseMobile }: ProductFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   // State from URL
   const currentCategory = searchParams.get('categoryId') || '';
+  const currentBrand = searchParams.get('brandId') || '';
   const currentMinPrice = searchParams.get('minPrice') || '';
   const currentMaxPrice = searchParams.get('maxPrice') || '';
   const currentSort = searchParams.get('sort') || '';
@@ -32,6 +39,7 @@ export default function ProductFilters({ categories, isMobileOpen, onCloseMobile
   const [maxPrice, setMaxPrice] = useState(currentMaxPrice);
   const [isPriceExpanded, setIsPriceExpanded] = useState(true);
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(true);
+  const [isBrandExpanded, setIsBrandExpanded] = useState(true);
 
   // Sync state with URL changes
   useEffect(() => {
@@ -71,12 +79,18 @@ export default function ProductFilters({ categories, isMobileOpen, onCloseMobile
     if (window.innerWidth < 768) onCloseMobile();
   };
 
+  const handleBrandClick = (brandId: string) => {
+    const newValue = currentBrand === brandId ? null : brandId;
+    updateFilters({ brandId: newValue });
+    if (window.innerWidth < 768) onCloseMobile();
+  };
+
   const clearFilters = () => {
     router.push('/products');
     if (window.innerWidth < 768) onCloseMobile();
   };
 
-  const hasActiveFilters = currentCategory || currentMinPrice || currentMaxPrice;
+  const hasActiveFilters = currentCategory || currentBrand || currentMinPrice || currentMaxPrice;
 
   return (
     <>
@@ -126,8 +140,8 @@ export default function ProductFilters({ categories, isMobileOpen, onCloseMobile
                       <button
                         onClick={() => handleCategoryClick('')}
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${!currentCategory
-                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 font-medium'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 font-medium'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                           }`}
                       >
                         All Categories
@@ -137,11 +151,59 @@ export default function ProductFilters({ categories, isMobileOpen, onCloseMobile
                           key={cat.id}
                           onClick={() => handleCategoryClick(cat.id)}
                           className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${currentCategory === cat.id
-                              ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 font-medium'
-                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 font-medium'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                             }`}
                         >
                           {cat.name}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="h-px bg-slate-200 dark:bg-slate-800" />
+
+            {/* Brands */}
+            <div>
+              <button
+                onClick={() => setIsBrandExpanded(!isBrandExpanded)}
+                className="flex items-center justify-between w-full mb-4 group"
+              >
+                <h3 className="font-bold text-slate-900 dark:text-white">Brands</h3>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isBrandExpanded ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isBrandExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => handleBrandClick('')}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${!currentBrand
+                          ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 font-medium'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          }`}
+                      >
+                        All Brands
+                      </button>
+                      {brands.map((brand) => (
+                        <button
+                          key={brand.id}
+                          onClick={() => handleBrandClick(brand.id)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${currentBrand === brand.id
+                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 font-medium'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                            }`}
+                        >
+                          {brand.name}
                         </button>
                       ))}
                     </div>

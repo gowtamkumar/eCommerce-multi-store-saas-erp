@@ -6,11 +6,12 @@ import { useState } from 'react';
 
 interface ProductsClientWrapperProps {
   categories: any[];
+  brands: any[];
   products: any[];
   total: number;
 }
 
-export default function ProductsClientWrapper({ categories, products, total }: ProductsClientWrapperProps) {
+export default function ProductsClientWrapper({ categories, brands, products, total }: ProductsClientWrapperProps) {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   return (
@@ -18,6 +19,7 @@ export default function ProductsClientWrapper({ categories, products, total }: P
       {/* Sidebar Filters */}
       <ProductFilters
         categories={categories}
+        brands={brands}
         isMobileOpen={isMobileFiltersOpen}
         onCloseMobile={() => setIsMobileFiltersOpen(false)}
       />

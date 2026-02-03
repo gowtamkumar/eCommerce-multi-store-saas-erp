@@ -28,6 +28,7 @@ async function getProductsData(searchParams: { [key: string]: string | string[] 
     // Pass through filters
     if (searchParams.search) params.set('q', searchParams.search as string);
     if (searchParams.categoryId) params.set('categoryId', searchParams.categoryId as string);
+    if (searchParams.brandId) params.set('brandId', searchParams.brandId as string);
     if (searchParams.minPrice) params.set('minPrice', searchParams.minPrice as string);
     if (searchParams.maxPrice) params.set('maxPrice', searchParams.maxPrice as string);
     if (searchParams.page) params.set('page', searchParams.page as string);
@@ -59,6 +60,16 @@ async function getCategoriesData() {
   }
 }
 
+async function getBrandsData() {
+  try {
+    const res = await fetchAPI('/brands');
+    return res.success ? res.data : [];
+  } catch (error) {
+    console.error("Error fetching brands:", error);
+    return [];
+  }
+}
+
 export default async function ProductsPage({
   searchParams,
 }: {
@@ -78,9 +89,10 @@ export default async function ProductsPage({
     );
   }
 
-  const [productsData, categories] = await Promise.all([
+  const [productsData, categories, brands] = await Promise.all([
     getProductsData(searchParams),
-    getCategoriesData()
+    getCategoriesData(),
+    getBrandsData()
   ]);
 
   const { products, total } = productsData;
@@ -106,6 +118,7 @@ export default async function ProductsPage({
 
           <ProductsClientWrapper
             categories={categories}
+            brands={brands}
             products={products}
             total={total}
           />

@@ -115,7 +115,6 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
         await navigator.share({
           title: product.name,
           text:
-            product.tagline ||
             product.shortDescription ||
             product.description?.substring(0, 100),
           url: window.location.href,
@@ -271,9 +270,9 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
               </div>
 
 
-              {product.tagline && (
+              {product.shortDescription && (
                 <p className="text-xl text-slate-600 dark:text-slate-400 font-medium leading-relaxed italic border-l-4 border-brand-500 pl-4 mb-8">
-                  {product.tagline}
+                  {product.shortDescription}
                 </p>
               )}
             </div>
