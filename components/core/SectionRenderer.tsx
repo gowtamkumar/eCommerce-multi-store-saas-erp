@@ -5,6 +5,7 @@ import BuilderButton from "../store/BuilderButton";
 import CategoryGrid from "../store/CategoryGrid";
 import FAQSection from "../store/FAQSection";
 import ImageBlock from "../store/ImageBlock";
+import Newsletter from "../store/Newsletter";
 import OfferBanner from "../store/OfferBanner";
 import ProductSlider from "../store/ProductSlider";
 import ReviewSection from "../store/ReviewSection";
@@ -121,6 +122,16 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
             source={settings?.source}
             items={settings?.items}
             columns={settings?.columns}
+            styles={styles}
+          />
+        );
+      case "newsletter":
+        return (
+          <Newsletter
+            title={settings?.title}
+            description={settings?.description}
+            buttonText={settings?.buttonText}
+            placeholder={settings?.placeholder}
             styles={styles}
           />
         );

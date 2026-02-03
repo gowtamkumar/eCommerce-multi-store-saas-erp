@@ -1,11 +1,12 @@
-import { IsString, IsEmail, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
 import { LeadStatus } from '../../../common/enums/lead-status.enum';
 
 export class CreateLeadDto {
     @ApiProperty()
     @IsString()
-    name: string;
+    @IsOptional()
+    name?: string;
 
     @ApiProperty()
     @IsEmail()
@@ -23,11 +24,13 @@ export class CreateLeadDto {
 
     @ApiProperty()
     @IsString()
-    subject: string;
+    @IsOptional()
+    subject?: string;
 
     @ApiProperty()
     @IsString()
-    message: string;
+    @IsOptional()
+    message?: string;
 }
 
 export class UpdateLeadDto {

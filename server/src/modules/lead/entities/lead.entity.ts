@@ -1,11 +1,11 @@
 import {
-    Entity,
     Column,
-    PrimaryGeneratedColumn,
     CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
+    Entity,
     JoinColumn,
+    ManyToOne,
+    PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 import { LeadStatus } from '../../../common/enums/lead-status.enum';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
@@ -15,7 +15,7 @@ export class LeadEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ type: 'varchar', length: 255 })
+    @Column({ type: 'varchar', length: 255, nullable: true })
     name: string;
 
     @Column({ type: 'varchar', length: 255 })
@@ -27,10 +27,10 @@ export class LeadEntity {
     @Column({ type: 'text', nullable: true })
     address: string;
 
-    @Column({ type: 'varchar', length: 255 })
+    @Column({ type: 'varchar', length: 255, nullable: true })
     subject: string;
 
-    @Column({ type: 'text' })
+    @Column({ type: 'text', nullable: true })
     message: string;
 
     @Column({

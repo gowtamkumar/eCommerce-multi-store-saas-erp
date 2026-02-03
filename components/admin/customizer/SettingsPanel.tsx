@@ -596,6 +596,54 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
             </div>
           )}
 
+          {section.type === 'newsletter' && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Section Title</label>
+                <input
+                  type="text"
+                  value={settings?.title || ''}
+                  onChange={(e) => updateSetting('title', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="Join our Newsletter"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Description</label>
+                <textarea
+                  value={settings?.description || ''}
+                  onChange={(e) => updateSetting('description', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="Get the latest updates..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Input Placeholder</label>
+                <input
+                  type="text"
+                  value={settings?.placeholder || ''}
+                  onChange={(e) => updateSetting('placeholder', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="Enter your email"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Button Text</label>
+                <input
+                  type="text"
+                  value={settings?.buttonText || ''}
+                  onChange={(e) => updateSetting('buttonText', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="Subscribe"
+                />
+              </div>
+            </div>
+          )}
+
           {section.type === 'offer-banner' && (
             <div className="space-y-4">
               <div className="space-y-1.5">

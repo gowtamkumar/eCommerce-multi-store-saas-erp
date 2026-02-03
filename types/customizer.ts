@@ -13,6 +13,7 @@ export type SectionType =
   | 'button'
   | 'faq-section'
   | 'brand-grid'
+  | 'newsletter'
   | 'video-block';
 
 export interface SectionStyles {
@@ -93,6 +94,13 @@ export interface BrandGridSettings {
   count?: number;
   columns?: number;
   items?: any[];
+}
+
+export interface NewsletterSettings {
+  title?: string;
+  description?: string;
+  buttonText?: string;
+  placeholder?: string;
 }
 
 export interface OfferBannerSettings {
@@ -185,6 +193,7 @@ export type SectionSettings =
   | ButtonSettings
   | FAQSectionSettings
   | BrandGridSettings
+  | NewsletterSettings
   | VideoBlockSettings
   | Record<string, any>;
 
