@@ -9,6 +9,7 @@ import Newsletter from "../store/Newsletter";
 import OfferBanner from "../store/OfferBanner";
 import ProductSlider from "../store/ProductSlider";
 import ReviewSection from "../store/ReviewSection";
+import StatsCounter from "../store/StatsCounter";
 import TextBlock from "../store/TextBlock";
 import VideoBlock from "../store/VideoBlock";
 
@@ -132,6 +133,13 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
             description={settings?.description}
             buttonText={settings?.buttonText}
             placeholder={settings?.placeholder}
+            styles={styles}
+          />
+        );
+      case "stats-counter":
+        return (
+          <StatsCounter
+            stats={settings?.items}
             styles={styles}
           />
         );

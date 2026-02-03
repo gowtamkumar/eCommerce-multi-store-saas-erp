@@ -644,6 +644,72 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
             </div>
           )}
 
+          {section.type === 'stats-counter' && (
+            <div className="space-y-4">
+              <div className="space-y-4">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Stat Items</label>
+                {((settings?.items as any[]) || []).map((item: any, index: number) => (
+                  <div key={item.id} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-800/50 shadow-sm">
+                    <button
+                      onClick={() => toggleExpand(item.id)}
+                      className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <span className="shrink-0 w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                          {index + 1}
+                        </span>
+                        <span className="text-sm font-bold truncate">{item.label || 'New Stat'}</span>
+                      </div>
+                      {expandedItems.includes(item.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+
+                    {expandedItems.includes(item.id) && (
+                      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">Value</label>
+                          <input
+                            type="text"
+                            value={item.value || ''}
+                            onChange={(e) => updateArrayItem('items', item.id, { value: e.target.value })}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                            placeholder="e.g. 10k+"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">Label</label>
+                          <input
+                            type="text"
+                            value={item.label || ''}
+                            onChange={(e) => updateArrayItem('items', item.id, { label: e.target.value })}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                            placeholder="e.g. Happy Customers"
+                          />
+                        </div>
+
+                        <button
+                          onClick={() => removeArrayItem('items', item.id)}
+                          className="w-full py-1.5 text-[10px] font-bold text-red-500 flex items-center justify-center gap-1 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"
+                        >
+                          <Trash2 className="w-3 h-3" /> Remove Stat
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  onClick={() => addArrayItem('items', {
+                    label: 'New Stat',
+                    value: '100+'
+                  })}
+                  className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-bold text-slate-500 hover:border-brand-500 hover:text-brand-600 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Stat
+                </button>
+              </div>
+            </div>
+          )}
+
           {section.type === 'offer-banner' && (
             <div className="space-y-4">
               <div className="space-y-1.5">

@@ -1,7 +1,7 @@
 "use client";
 
 import { CustomizerSection, SectionType } from '@/types/customizer';
-import { ChevronDown, ChevronUp, Grid, GripVertical, HelpCircle, ImageIcon, Layout, Mail, MessageSquare, MousePointer2, Plus, Sliders, Tag, Trash2, Type, Video } from 'lucide-react';
+import { BarChart2, ChevronDown, ChevronUp, Grid, GripVertical, HelpCircle, ImageIcon, Layout, Mail, MessageSquare, MousePointer2, Plus, Sliders, Tag, Trash2, Type, Video } from 'lucide-react';
 import { useState } from 'react';
 
 interface SidebarProps {
@@ -17,6 +17,7 @@ const SECTION_ICONS: Record<SectionType, any> = {
   'category-grid': Grid,
   'brand-grid': Grid,
   'newsletter': Mail,
+  'stats-counter': BarChart2,
   'offer-banner': Tag,
   'review-slider': MessageSquare,
   'text-block': Type,

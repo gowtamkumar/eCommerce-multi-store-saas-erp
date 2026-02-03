@@ -14,6 +14,7 @@ export type SectionType =
   | 'faq-section'
   | 'brand-grid'
   | 'newsletter'
+  | 'stats-counter'
   | 'video-block';
 
 export interface SectionStyles {
@@ -101,6 +102,16 @@ export interface NewsletterSettings {
   description?: string;
   buttonText?: string;
   placeholder?: string;
+}
+
+export interface StatItem {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface StatsCounterSettings {
+  items: StatItem[];
 }
 
 export interface OfferBannerSettings {
@@ -194,6 +205,7 @@ export type SectionSettings =
   | FAQSectionSettings
   | BrandGridSettings
   | NewsletterSettings
+  | StatsCounterSettings
   | VideoBlockSettings
   | Record<string, any>;
 
