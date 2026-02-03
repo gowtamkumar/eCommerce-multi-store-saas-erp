@@ -2,7 +2,7 @@
 
 import { fetchAPI } from '@/lib/api';
 import { CustomizerSection, FAQItem, ReviewItem } from '@/types/customizer';
-import { ChevronDown, ChevronUp, Palette, Plus, Settings2, Trash2, Type, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Monitor, Palette, Plus, Settings2, Smartphone, Trash2, Type, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface SettingsPanelProps {
@@ -65,6 +65,13 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
     onUpdate({
       ...section,
       styles: { ...(section.styles || { paddingTop: 40, paddingBottom: 40 }), [key]: value },
+    });
+  };
+
+  const updateVisibility = (key: 'desktop' | 'mobile', value: boolean) => {
+    onUpdate({
+      ...section,
+      visibility: { ...{ desktop: true, mobile: true }, ...(section.visibility || {}), [key]: value },
     });
   };
 
@@ -794,6 +801,43 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
               </div>
             </div>
           )}
+
+          {/* Visibility Settings - Global */}
+          <section className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 text-slate-400 mb-2">
+              <Eye className="w-3.5 h-3.5" />
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Visibility</h3>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => updateVisibility('desktop', section.visibility?.desktop === false ? true : false)}
+                className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${section.visibility?.desktop !== false
+                  ? 'bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-900/20 dark:border-brand-800 dark:text-brand-400'
+                  : 'bg-slate-50 border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-700'
+                  }`}
+              >
+                <Monitor className="w-5 h-5" />
+                <span className="text-xs font-bold">Desktop</span>
+                <span className="text-[10px] opacity-70">{section.visibility?.desktop !== false ? 'Visible' : 'Hidden'}</span>
+              </button>
+
+              <button
+                onClick={() => updateVisibility('mobile', section.visibility?.mobile === false ? true : false)}
+                className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${section.visibility?.mobile !== false
+                  ? 'bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-900/20 dark:border-brand-800 dark:text-brand-400'
+                  : 'bg-slate-50 border-slate-200 text-slate-400 dark:bg-slate-800 dark:border-slate-700'
+                  }`}
+              >
+                <Smartphone className="w-5 h-5" />
+                <span className="text-xs font-bold">Mobile</span>
+                <span className="text-[10px] opacity-70">{section.visibility?.mobile !== false ? 'Visible' : 'Hidden'}</span>
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 text-center">
+              Click to toggle visibility on specific devices.
+            </p>
+          </section>
 
           {section.type === 'review-slider' && (
             <div className="space-y-4">

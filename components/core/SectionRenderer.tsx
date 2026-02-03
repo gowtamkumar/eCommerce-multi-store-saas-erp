@@ -47,6 +47,18 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
     ...(section.styles?.paragraphLineHeight && { '--paragraph-line-height': section.styles.paragraphLineHeight } as React.CSSProperties),
   };
 
+
+
+  // Visibility Logic
+  let visibilityClasses = 'block';
+  if (section.visibility) {
+    const { desktop, mobile } = section.visibility;
+    if (mobile && desktop) visibilityClasses = 'block';
+    else if (!mobile && desktop) visibilityClasses = 'hidden md:block';
+    else if (mobile && !desktop) visibilityClasses = 'block md:hidden';
+    else if (!mobile && !desktop) visibilityClasses = 'hidden';
+  }
+
   const renderContent = () => {
     switch (section.type) {
       case "banner":
@@ -153,7 +165,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
   };
 
   return (
-    <div key={section.id} className="responsive-section">
+    <div key={section.id} className={`responsive-section ${visibilityClasses}`}>
       {renderContent()}
     </div>
   );

@@ -216,6 +216,10 @@ export interface CustomizerSection {
   type: SectionType;
   settings: SectionSettings;
   styles?: SectionStyles;
+  visibility?: {
+    desktop: boolean;
+    mobile: boolean;
+  };
   disabled?: boolean;
 }
 
