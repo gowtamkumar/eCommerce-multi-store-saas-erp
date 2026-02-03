@@ -14,7 +14,11 @@ export default function FAQSection({ items, headline, subline, styles, buttonTex
             className={`px-4 md:px-10 ${!styles?.paddingTop && !styles?.paddingBottom ? 'py-20 md:py-32' : ''} ${!styles?.backgroundColor ? 'bg-slate-50 dark:bg-slate-900/30' : ''}`}
         >
             <div className="max-w-5xl mx-auto">
-                <div className="text-center mb-20 space-y-4">
+                <div className={`mb-20 space-y-4
+                    ${styles?.textAlign === 'center' ? 'text-center' : ''}
+                    ${styles?.textAlign === 'right' ? 'text-right' : ''}
+                    ${!styles?.textAlign || styles?.textAlign === 'left' ? 'text-left' : ''}
+                `}>
                     <h2
                         className="text-5xl md:text-6xl font-black uppercase tracking-tighter leading-none"
                         style={{ color: styles?.headlineColor || styles?.color }}
@@ -22,12 +26,20 @@ export default function FAQSection({ items, headline, subline, styles, buttonTex
                         {headline || 'Help Center'}
                     </h2>
                     <div
-                        className="w-24 h-2 mx-auto rounded-full"
+                        className={`w-24 h-2 rounded-full
+                            ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
+                            ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
+                            ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
+                        `}
                         style={{ backgroundColor: styles?.sublineColor || '#4f46e5' }}
                     />
                     {subline && (
                         <p
-                            className="text-lg leading-relaxed max-w-2xl mx-auto"
+                            className={`text-lg leading-relaxed max-w-2xl
+                                ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
+                                ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
+                                ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
+                            `}
                             style={{ color: styles?.color }}
                         >
                             {subline}

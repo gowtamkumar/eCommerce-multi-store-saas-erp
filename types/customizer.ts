@@ -11,7 +11,8 @@ export type SectionType =
   | 'text-block'
   | 'image-block'
   | 'button'
-  | 'faq-section';
+  | 'faq-section'
+  | 'video-block';
 
 export interface SectionStyles {
   paddingTop: number;
@@ -127,6 +128,17 @@ export interface ImageBlockSettings {
   buttonLink?: string;
 }
 
+export interface VideoBlockSettings {
+  headline?: string;
+  videoUrl?: string;
+  autoplay?: boolean;
+  loop?: boolean;
+  muted?: boolean;
+  controls?: boolean;
+  fullWidth?: boolean;
+  aspectRatio?: '16/9' | '4/3' | '1/1';
+}
+
 export interface ButtonSettings {
   text?: string;
   link?: string;
@@ -155,6 +167,7 @@ export type SectionSettings =
   | ImageBlockSettings
   | ButtonSettings
   | FAQSectionSettings
+  | VideoBlockSettings
   | Record<string, any>;
 
 export interface CustomizerSection {

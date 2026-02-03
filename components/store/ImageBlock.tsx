@@ -22,7 +22,11 @@ export default function ImageBlock({ image, headline, subline, styles, buttonTex
                         )}
                     </div>
                 </div>
-                <div className="flex-1 text-left space-y-10">
+                <div className={`flex-1 space-y-10
+                    ${styles?.textAlign === 'center' ? 'text-center' : ''}
+                    ${styles?.textAlign === 'right' ? 'text-right' : ''}
+                    ${!styles?.textAlign || styles?.textAlign === 'left' ? 'text-left' : ''}
+                `}>
                     <div className="space-y-6">
                         <h2
                             className="text-6xl md:text-8xl font-black leading-[0.9] tracking-tighter"
@@ -31,7 +35,11 @@ export default function ImageBlock({ image, headline, subline, styles, buttonTex
                             {headline || 'Pure Vision'}
                         </h2>
                         <div
-                            className="w-16 h-2 rounded-full"
+                            className={`w-16 h-2 rounded-full
+                                ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
+                                ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
+                                ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
+                            `}
                             style={{ backgroundColor: styles?.sublineColor || '#4f46e5' }}
                         />
                     </div>

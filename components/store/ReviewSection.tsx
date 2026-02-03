@@ -97,8 +97,9 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
     >
       <div className="max-w-7xl mx-auto">
         <div className={`flex justify-between items-end mb-16
-           ${styles?.textAlign === 'center' ? 'flex-col items-center justify-center gap-6' : ''}
-           ${styles?.textAlign === 'right' ? 'flex-row-reverse' : ''} 
+           ${styles?.textAlign === 'center' ? 'flex-col items-center justify-center gap-6 text-center' : ''}
+           ${styles?.textAlign === 'right' ? 'flex-row-reverse text-right' : ''} 
+           ${!styles?.textAlign || styles?.textAlign === 'left' ? 'text-left' : ''}
         `}>
           <h2
             className="text-3xl font-black uppercase tracking-widest"

@@ -31,7 +31,10 @@ export default function OfferBanner({ buttonText, headline, subline, backgroundC
                         }}>
                         <Tag className="w-8 h-8" style={{ color: styles?.iconColor || styles?.color || '#ffffff' }} />
                     </div>
-                    <div className={`${styles?.textAlign === 'center' ? 'text-center' : 'text-center md:text-left'}`}>
+                    <div className={
+                        styles?.textAlign === 'center' ? 'text-center' :
+                            styles?.textAlign === 'right' ? 'text-right' : 'text-left'
+                    }>
                         <h2
                             className="text-2xl font-black uppercase tracking-tighter drop-shadow-lg"
                             style={{ color: styles?.headlineColor || styles?.color || '#ffffff' }}

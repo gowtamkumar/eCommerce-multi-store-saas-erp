@@ -830,6 +830,98 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
               </div>
             </div>
           )}
+
+          {section.type === 'video-block' && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Headline</label>
+                <input
+                  type="text"
+                  value={settings?.headline || ''}
+                  onChange={(e) => updateSetting('headline', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="Video Title"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Video URL</label>
+                <input
+                  type="text"
+                  value={settings?.videoUrl || ''}
+                  onChange={(e) => updateSetting('videoUrl', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="YouTube, Vimeo or MP4 URL"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">Supports YouTube, Vimeo, and direct video links.</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Aspect Ratio</label>
+                <select
+                  value={settings?.aspectRatio || '16/9'}
+                  onChange={(e) => updateSetting('aspectRatio', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="16/9">16:9 (Standard)</option>
+                  <option value="4/3">4:3 (Classic)</option>
+                  <option value="1/1">1:1 (Square)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <input
+                    type="checkbox"
+                    id="autoplay"
+                    checked={settings?.autoplay || false}
+                    onChange={(e) => updateSetting('autoplay', e.target.checked)}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"
+                  />
+                  <label htmlFor="autoplay" className="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Autoplay</label>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <input
+                    type="checkbox"
+                    id="loop"
+                    checked={settings?.loop || false}
+                    onChange={(e) => updateSetting('loop', e.target.checked)}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"
+                  />
+                  <label htmlFor="loop" className="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Loop</label>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <input
+                    type="checkbox"
+                    id="muted"
+                    checked={settings?.muted || false}
+                    onChange={(e) => updateSetting('muted', e.target.checked)}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"
+                  />
+                  <label htmlFor="muted" className="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Muted</label>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <input
+                    type="checkbox"
+                    id="controls"
+                    checked={settings?.controls !== false}
+                    onChange={(e) => updateSetting('controls', e.target.checked)}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"
+                  />
+                  <label htmlFor="controls" className="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Controls</label>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <input
+                    type="checkbox"
+                    id="fullWidth"
+                    checked={settings?.fullWidth || false}
+                    onChange={(e) => updateSetting('fullWidth', e.target.checked)}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"
+                  />
+                  <label htmlFor="fullWidth" className="text-[10px] font-bold text-slate-500 uppercase cursor-pointer">Full Wide</label>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Style Settings */}

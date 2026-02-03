@@ -8,6 +8,7 @@ import OfferBanner from "../store/OfferBanner";
 import ProductSlider from "../store/ProductSlider";
 import ReviewSection from "../store/ReviewSection";
 import TextBlock from "../store/TextBlock";
+import VideoBlock from "../store/VideoBlock";
 
 interface SectionRendererProps {
   section: CustomizerSection;
@@ -107,6 +108,10 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
       case "faq-section":
         return (
           <FAQSection items={settings?.items} headline={settings?.title} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} />
+        );
+      case "video-block":
+        return (
+          <VideoBlock settings={settings} styles={styles} />
         );
       default:
         return null;

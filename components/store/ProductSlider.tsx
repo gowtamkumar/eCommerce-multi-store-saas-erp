@@ -72,6 +72,7 @@ export default function ProductSlider({
         <div className={`flex items-center justify-between mb-10 md:mb-16
           ${styles?.textAlign === 'center' ? 'justify-center text-center' : ''}
           ${styles?.textAlign === 'right' ? 'justify-end text-right' : ''}
+          ${!styles?.textAlign || styles?.textAlign === 'left' ? 'justify-start text-left' : ''}
         `}>
           <div className="space-y-1">
             <h2 className="text-3xl md:text-4xl font-black tracking-tight"
@@ -80,6 +81,7 @@ export default function ProductSlider({
             <div className={`h-1.5 bg-brand-500 rounded-full w-20
                ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
                ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
+               ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
             `} />
           </div>
           {/* <div className="hidden md:flex gap-3">
