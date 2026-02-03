@@ -38,7 +38,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module'
       envFilePath: ['.env.development.local', '.env.development'],
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'public'),
+      rootPath: join(process.cwd(), 'public/uploads'),
       serveRoot: '/uploads',
     }),
     AdminModule,
@@ -109,6 +109,8 @@ export class AppModule implements NestModule {
         'platform/settings',
         'plans',
         'plans/(.*)',
+        'uploads',
+        'uploads/(.*)',
       )
       .forRoutes('*') // Apply Middleware for These Routes
   }

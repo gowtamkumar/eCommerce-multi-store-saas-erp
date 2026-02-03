@@ -5,7 +5,6 @@ import { fetchAPI } from '@/lib/api';
 
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { Check, ChevronLeft, ChevronRight, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2, Upload } from 'lucide-react';
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 // If hook doesn't exist, I'll inline the debounce logic for now or use timeout
@@ -71,6 +70,7 @@ export default function MediaPage() {
 
             if (res.data) {
                 const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3900';
+                console.log("backendUrl", backendUrl);
 
                 const mappedMedia: MediaItem[] = res.data.map((f: any) => {
                     // Extract timestamp from filename (timestamp_name.ext)
@@ -112,6 +112,9 @@ export default function MediaPage() {
             setLoading(false);
         }
     };
+
+    console.log("media", media);
+
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -171,7 +174,7 @@ export default function MediaPage() {
 
 
     const copyToClipboard = (url: string, id: string) => {
-        const fullUrl = window.location.origin + url;
+        const fullUrl = url;
         navigator.clipboard.writeText(fullUrl);
         setCopiedId(id);
         setTimeout(() => setCopiedId(null), 2000);
@@ -279,10 +282,9 @@ export default function MediaPage() {
                             className="group relative bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300"
                         >
                             <div className="aspect-square relative bg-slate-100 dark:bg-slate-900 overflow-hidden">
-                                <Image
+                                <img
                                     src={item.url}
                                     alt={item.filename}
-                                    fill
                                     className="object-cover transition-transform duration-500 group-hover:scale-110"
                                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
                                 />
