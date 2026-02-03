@@ -16,14 +16,16 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
   const [categories, setCategories] = useState<any[]>([]);
   const [dbReviews, setDbReviews] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [catRes, revRes, prodRes] = await Promise.all([
+        const [catRes, revRes, prodRes, brandRes] = await Promise.all([
           fetchAPI('/categories'),
           fetchAPI('/reviews/public'),
-          fetchAPI('/products?limit=100')
+          fetchAPI('/products?limit=100'),
+          fetchAPI('/brands')
         ]);
 
         if (catRes.success) setCategories(catRes.data);
@@ -37,6 +39,9 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
         }
         if (prodRes.success && prodRes.data?.products) {
           setProducts(prodRes.data.products);
+        }
+        if (brandRes.success) {
+          setBrands(brandRes.data);
         }
       } catch (error) {
         console.error("Failed to load customizer data:", error);
@@ -465,6 +470,106 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
               ) : (
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Categories Count</label>
+                  <input
+                    type="number"
+                    value={settings?.count || 6}
+                    onChange={(e) => updateSetting('count', parseInt(e.target.value))}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    min="1"
+                    max="12"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Items per row</label>
+                <select
+                  value={settings?.columns || 3}
+                  onChange={(e) => updateSetting('columns', parseInt(e.target.value))}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value={2}>2 Columns</option>
+                  <option value={3}>3 Columns</option>
+                  <option value={4}>4 Columns</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {section.type === 'brand-grid' && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Section Title</label>
+                <input
+                  type="text"
+                  value={settings?.title || ''}
+                  onChange={(e) => updateSetting('title', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="e.g. Shop by Brand"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Selection Source</label>
+                <select
+                  value={settings?.source || 'all'}
+                  onChange={(e) => updateSetting('source', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="all">All Brands</option>
+                  <option value="manual">Manual Selection</option>
+                </select>
+              </div>
+
+              {settings?.source === 'manual' ? (
+                <div className="space-y-4">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Selected Brands</label>
+                  {(settings?.items || []).map((item: any, index: number) => (
+                    <div key={item.id} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-800/50 shadow-sm">
+                      <button
+                        onClick={() => toggleExpand(item.id)}
+                        className="w-full px-4 py-2 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800"
+                      >
+                        <span className="text-xs font-bold truncate">
+                          {brands.find(b => b.id === item.link)?.name || 'Select Brand...'}
+                        </span>
+                        {expandedItems.includes(item.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                      {expandedItems.includes(item.id) && (
+                        <div className="p-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase">Brand</label>
+                            <select
+                              value={item.link || ''}
+                              onChange={(e) => updateArrayItem('items', item.id, { link: e.target.value })}
+                              className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                            >
+                              <option value="">Choose brand...</option>
+                              {brands.map((brand: any) => (
+                                <option key={brand.id} value={brand.id}>{brand.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <button
+                            onClick={() => removeArrayItem('items', item.id)}
+                            className="w-full py-1 text-[9px] font-bold text-red-500 flex items-center justify-center gap-1 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg"
+                          >
+                            <Trash2 className="w-3 h-3" /> Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => addArrayItem('items', { label: 'Brand', link: '' })}
+                    className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-bold text-slate-500 hover:border-brand-500 hover:text-brand-600 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" /> Add Brand
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Brands Count</label>
                   <input
                     type="number"
                     value={settings?.count || 6}

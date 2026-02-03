@@ -10,6 +10,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware'
 import { DatabaseModule } from './database/database.module'
 import { AdminModule } from './modules/admin/admin.module'
+import { BrandModule } from './modules/brand/brand.module'
 import { CartModule } from './modules/cart/cart.module'
 import { CategoryModule } from './modules/category/category.module'
 import { FaqModule } from './modules/faq/faq.module'
@@ -45,6 +46,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module'
     DatabaseModule,
     FileModule,
     TenantModule,
+    BrandModule,
     ProductModule,
     OrderModule,
     FaqModule,
@@ -109,6 +111,8 @@ export class AppModule implements NestModule {
         'platform/settings',
         'plans',
         'plans/(.*)',
+        'brands',
+        'brands/(.*)',
         'uploads',
         'uploads/(.*)',
       )

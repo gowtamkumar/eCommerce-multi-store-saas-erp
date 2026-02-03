@@ -57,6 +57,7 @@ export default function AdminLayout({
     { icon: Menu, label: 'Navbar', href: '/admin/pages' },
     { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
     { icon: Package, label: 'Products', href: '/admin/products' },
+    { icon: Tag, label: 'Brands', href: '/admin/brands' },
     { icon: Tag, label: 'Categories', href: '/admin/categories' },
     { icon: Users, label: 'Customers', href: '/admin/customers' },
     { icon: CreditCard, label: 'Payments', href: '/admin/payments' },

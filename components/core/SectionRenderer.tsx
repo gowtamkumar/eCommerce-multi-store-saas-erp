@@ -1,5 +1,6 @@
 import { CustomizerSection } from "@/types/customizer";
 import BannerSlider from "../store/BannerSlider";
+import BrandGrid from "../store/BrandGrid";
 import BuilderButton from "../store/BuilderButton";
 import CategoryGrid from "../store/CategoryGrid";
 import FAQSection from "../store/FAQSection";
@@ -111,6 +112,17 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
       case "faq-section":
         return (
           <FAQSection items={settings?.items} headline={settings?.title} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} />
+        );
+      case "brand-grid":
+        return (
+          <BrandGrid
+            title={settings?.title}
+            count={settings?.count}
+            source={settings?.source}
+            items={settings?.items}
+            columns={settings?.columns}
+            styles={styles}
+          />
         );
       case "video-block":
         return (

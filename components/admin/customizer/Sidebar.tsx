@@ -15,6 +15,7 @@ const SECTION_ICONS: Record<SectionType, any> = {
   'banner': Layout,
   'product-slider': Sliders,
   'category-grid': Grid,
+  'brand-grid': Grid,
   'offer-banner': Tag,
   'review-slider': MessageSquare,
   'text-block': Type,

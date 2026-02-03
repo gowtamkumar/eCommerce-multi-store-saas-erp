@@ -12,6 +12,7 @@ export type SectionType =
   | 'image-block'
   | 'button'
   | 'faq-section'
+  | 'brand-grid'
   | 'video-block';
 
 export interface SectionStyles {
@@ -84,6 +85,14 @@ export interface CategoryGridSettings {
   count?: number;
   columns?: number;
   items?: CategoryItem[];
+}
+
+export interface BrandGridSettings {
+  title?: string;
+  source?: 'all' | 'manual';
+  count?: number;
+  columns?: number;
+  items?: any[];
 }
 
 export interface OfferBannerSettings {
@@ -175,6 +184,7 @@ export type SectionSettings =
   | ImageBlockSettings
   | ButtonSettings
   | FAQSectionSettings
+  | BrandGridSettings
   | VideoBlockSettings
   | Record<string, any>;
 
