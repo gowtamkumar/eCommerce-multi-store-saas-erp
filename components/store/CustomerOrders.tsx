@@ -413,14 +413,44 @@ const CustomerOrders = () => {
 
                             {/* Price Breakdown */}
                             <div className="bg-slate-100 dark:bg-slate-700/30 rounded-xl p-4 space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600 dark:text-slate-400">
-                                        Grand Total
-                                    </span>
-                                    <span className="font-bold text-lg text-brand-600 dark:text-brand-400">
-                                        {formatPrice(selectedOrder.totalAmount)}
-                                    </span>
-                                </div>
+                                {(() => {
+                                    // Calculate refunded amount
+                                    const totalRefunded = (selectedOrder.returns || []).reduce((total: number, returnReq: any) => {
+                                        if (returnReq.status === 'approved' || returnReq.status === 'refunded') {
+                                            return total + returnReq.items.reduce((itemTotal: number, returnItem: any) => {
+                                                const orderItem = selectedOrder.items?.find((oi: any) =>
+                                                    oi.productId === returnItem.productId &&
+                                                    (oi.variantId === returnItem.variantId || (!oi.variantId && !returnItem.variantId))
+                                                );
+                                                if (orderItem) {
+                                                    const itemPrice = Number(orderItem.unitPrice) - Number(orderItem.discountAmount || 0);
+                                                    return itemTotal + (itemPrice * returnItem.quantity);
+                                                }
+                                                return itemTotal;
+                                            }, 0);
+                                        }
+                                        return total;
+                                    }, 0);
+
+                                    return (
+                                        <>
+                                            {totalRefunded > 0 && (
+                                                <div className="flex justify-between text-sm text-orange-600 font-medium">
+                                                    <span>Refunded Amount</span>
+                                                    <span>-{formatPrice(totalRefunded)}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-600 dark:text-slate-400">
+                                                    Grand Total
+                                                </span>
+                                                <span className="font-bold text-lg text-brand-600 dark:text-brand-400">
+                                                    {formatPrice(selectedOrder.totalAmount - totalRefunded)}
+                                                </span>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
 
                             {/* Delivery Info */}

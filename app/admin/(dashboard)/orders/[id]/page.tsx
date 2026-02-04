@@ -160,6 +160,24 @@ export default function OrderDetailsPage({
   const subtotal = (order.items || []).reduce((acc, item) => acc + (Number(item.unitPrice) * item.quantity), 0);
   const totalDiscount = (order.items || []).reduce((acc, item) => acc + (Number(item.discountAmount) * item.quantity), 0);
 
+  // Calculate total refunded amount
+  const totalRefunded = (order.returns || []).reduce((total, returnReq) => {
+    if (returnReq.status === 'approved' || returnReq.status === 'refunded') {
+      return total + returnReq.items.reduce((itemTotal: number, returnItem: any) => {
+        const orderItem = order.items?.find((oi: any) =>
+          oi.productId === returnItem.productId &&
+          (oi.variantId === returnItem.variantId || (!oi.variantId && !returnItem.variantId))
+        );
+        if (orderItem) {
+          const itemPrice = Number(orderItem.unitPrice) - Number(orderItem.discountAmount || 0);
+          return itemTotal + (itemPrice * returnItem.quantity);
+        }
+        return itemTotal;
+      }, 0);
+    }
+    return total;
+  }, 0);
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {/* Print-only Invoice */}
@@ -560,10 +578,16 @@ export default function OrderDetailsPage({
                     <span>-{formatPrice(totalDiscount)}</span>
                   </div>
                 )}
+                {totalRefunded > 0 && (
+                  <div className="flex justify-between text-orange-600 font-medium">
+                    <span>Refunded Amount</span>
+                    <span>-{formatPrice(totalRefunded)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-xl font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-200 dark:border-slate-700">
                   <span>Payable Amount</span>
                   <span className="text-green-600">
-                    {formatPrice(order.totalAmount)}
+                    {formatPrice(order.totalAmount - totalRefunded)}
                   </span>
                 </div>
               </div>
