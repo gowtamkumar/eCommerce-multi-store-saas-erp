@@ -50,6 +50,7 @@ interface Order {
   paymentStatus: string;
   transactionId?: string;
   items: OrderItem[];
+  returns?: any[];
   createdAt: string;
   orderNotes?: string;
 }
@@ -64,6 +65,18 @@ export default function OrderDetailsPage({
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const { settings, formatPrice } = useSettings();
+
+  const getItemReturnStatus = (productId: string, variantId?: string) => {
+    if (!order?.returns) return null;
+    for (const req of order.returns) {
+      const found = req.items.find((i: any) =>
+        i.productId === productId &&
+        (i.variantId === variantId || (!i.variantId && !variantId))
+      );
+      if (found) return req.status;
+    }
+    return null;
+  };
 
   useEffect(() => {
     if (id) {
@@ -463,10 +476,24 @@ export default function OrderDetailsPage({
                         </p>
                       )}
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end gap-2">
                       <p className="text-lg font-bold text-brand-600">
                         {formatPrice(item.totalAmount)}
                       </p>
+                      {(() => {
+                        const returnStatus = getItemReturnStatus(item.product?.id || "", item.variant?.id);
+                        if (returnStatus) {
+                          return (
+                            <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase ${returnStatus === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                returnStatus === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                              }`}>
+                              Return: {returnStatus}
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 );

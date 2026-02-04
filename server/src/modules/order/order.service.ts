@@ -223,7 +223,7 @@ export class OrderService {
     async findOne(id: string, tenantId: string) {
         const order = await this.orderRepository.findOne({
             where: { id, tenantId },
-            relations: ['items', 'items.product'],
+            relations: ['items', 'items.product', 'items.variant', 'returns'],
         });
 
         if (!order) {
