@@ -71,12 +71,14 @@ export class ReturnService {
     }
 
     async findAll(tenantId: string) {
+        console.log('Fetching returns for tenant:', tenantId);
         const returns = await this.returnRepository.find({
             where: { tenantId },
             order: { createdAt: 'DESC' },
-            relations: ['order', 'user'],
+            relations: ['order', 'order.items', 'order.items.product', 'order.items.variant'],
         });
-        console.log("returns", returns);
+
+        console.log('Found returns:', returns.length);
         return returns;
     }
 
@@ -112,12 +114,14 @@ export class ReturnService {
             await this.restockItems(returnRequest.items, tenantId);
         }
 
+
         returnRequest.status = status;
         if (adminComment) {
             returnRequest.adminComment = adminComment;
         }
 
-        return await this.returnRepository.save(returnRequest);
+        const saved = await this.returnRepository.save(returnRequest);
+        return saved;
     }
 
     private async restockItems(items: any[], tenantId: string) {

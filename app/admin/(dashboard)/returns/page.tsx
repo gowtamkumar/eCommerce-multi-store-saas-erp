@@ -18,6 +18,7 @@ interface ReturnRequest {
   order: {
     id: string;
     customerName: string;
+    items?: any[];
   };
   items: any[];
   createdAt: string;
@@ -50,13 +51,12 @@ export default function ReturnsPage() {
   const [selectedReturn, setSelectedReturn] = useState<ReturnRequest | null>(null);
 
   const handleStatusUpdate = async (id: string, status: string, comment?: string) => {
-    if (!confirm(`Are you sure you want to mark this as ${status}?`)) return;
-
     try {
       const res = await fetchAPI(`/returns/${id}/status`, {
         method: "PATCH",
         body: JSON.stringify({ status, comment }),
       });
+
 
       if (res.id) {
         toast.success(`Return request ${status}`);
@@ -131,7 +131,9 @@ export default function ReturnsPage() {
                           ? "bg-green-100 text-green-700"
                           : req.status === "rejected"
                             ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
+                            : req.status === "refunded"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-yellow-100 text-yellow-700"
                           }`}
                       >
                         {req.status}
@@ -186,25 +188,55 @@ export default function ReturnsPage() {
                     {selectedReturn.order?.customerName}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm items-center">
                   <span className="text-slate-500 dark:text-slate-400">Status:</span>
-                  <span className="font-bold uppercase text-brand-600">
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${selectedReturn.status === "approved" ? "bg-green-100 text-green-700" :
+                    selectedReturn.status === "rejected" ? "bg-red-100 text-red-700" :
+                      selectedReturn.status === "refunded" ? "bg-blue-100 text-blue-700" :
+                        "bg-yellow-100 text-yellow-700"
+                    }`}>
                     {selectedReturn.status}
                   </span>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-semibold text-slate-900 dark:text-white mb-3">Items Requested</h4>
+                <h4 className="font-semibold text-slate-900 dark:text-white mb-3">Items Being Returned</h4>
                 <div className="space-y-3">
-                  {selectedReturn.items.map((item, index) => (
-                    <div key={index} className="flex gap-4 p-3 border border-slate-100 dark:border-slate-700 rounded-xl">
-                      <div className="flex-1">
-                        <p className="font-medium text-slate-900 dark:text-white text-sm">ITEM ID: {item.productId}</p>
-                        <p className="text-xs text-slate-500 mt-1">Quantity: {item.quantity}</p>
+                  {selectedReturn.items.map((returnItem: any, index: number) => {
+                    // Find the actual order item to get product details
+                    const orderItem = selectedReturn.order?.items?.find(
+                      (oi: any) => oi.productId === returnItem.productId &&
+                        (oi.variantId === returnItem.variantId || (!oi.variantId && !returnItem.variantId))
+                    );
+
+                    const productName = orderItem?.product?.name || "Product Unavailable";
+                    const productImage = orderItem?.product?.images?.[0];
+                    const variantSku = orderItem?.variant?.sku;
+                    const variantOptions = orderItem?.variant?.combination;
+
+                    return (
+                      <div key={index} className="flex gap-4 p-3 border border-slate-100 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/30">
+                        {productImage && (
+                          <div className="w-16 h-16 flex-shrink-0 bg-white dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                            <img src={productImage} alt={productName} className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="font-medium text-slate-900 dark:text-white text-sm">{productName}</p>
+                          {variantSku && (
+                            <p className="text-xs font-bold text-brand-600 uppercase mt-1">SKU: {variantSku}</p>
+                          )}
+                          {variantOptions && (
+                            <p className="text-xs text-slate-500 italic mt-0.5">
+                              {Object.entries(variantOptions).map(([key, value]) => `${key}: ${value}`).join(", ")}
+                            </p>
+                          )}
+                          <p className="text-xs text-slate-500 mt-1">Quantity: {returnItem.quantity}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -228,6 +260,16 @@ export default function ReturnsPage() {
                     className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
                   >
                     <Check className="w-4 h-4" /> Approve Return
+                  </button>
+                </div>
+              )}
+              {selectedReturn.status === "approved" && (
+                <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                  <button
+                    onClick={() => handleStatusUpdate(selectedReturn.id, "refunded")}
+                    className="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-4 h-4" /> Mark as Refunded
                   </button>
                 </div>
               )}

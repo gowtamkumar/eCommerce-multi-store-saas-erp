@@ -13,6 +13,7 @@ import {
   MapPin,
   Package,
   Phone,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
@@ -117,6 +118,11 @@ export default function OrderDetailsPage({
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    await fetchOrder();
+    toast.success("Order data refreshed");
   };
 
   const getStatusStyles = (status: string) => {
@@ -378,6 +384,14 @@ export default function OrderDetailsPage({
 
         <div className="flex items-center gap-3">
           <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-50 transition-colors"
+            title="Refresh order data"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+          <button
             onClick={() => window.print()}
             className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-50 transition-colors"
           >
@@ -465,6 +479,31 @@ export default function OrderDetailsPage({
 
                       <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
                         <span>Quantity: {item.quantity}</span>
+                        {(() => {
+                          const returnStatus = getItemReturnStatus(item.product?.id || "", item.variant?.id);
+                          if (returnStatus && (returnStatus === 'approved' || returnStatus === 'refunded')) {
+                            const returnedQty = order.returns?.find((req: any) => {
+                              const found = req.items.find((i: any) =>
+                                i.productId === (item.product?.id || "") &&
+                                (i.variantId === item.variant?.id || (!i.variantId && !item.variant?.id))
+                              );
+                              return found;
+                            })?.items.find((i: any) =>
+                              i.productId === (item.product?.id || "") &&
+                              (i.variantId === item.variant?.id || (!i.variantId && !item.variant?.id))
+                            )?.quantity;
+
+                            if (returnedQty) {
+                              return (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-orange-600 font-medium">Returned: {returnedQty}</span>
+                                </>
+                              );
+                            }
+                          }
+                          return null;
+                        })()}
                         <span>•</span>
                         <span>
                           Unit: {formatPrice(item.unitPrice)}
@@ -482,10 +521,12 @@ export default function OrderDetailsPage({
                       </p>
                       {(() => {
                         const returnStatus = getItemReturnStatus(item.product?.id || "", item.variant?.id);
+                        console.log("returnStatus", returnStatus);
                         if (returnStatus) {
                           return (
                             <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase ${returnStatus === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                returnStatus === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                              returnStatus === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                returnStatus === 'refunded' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
                                   'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                               }`}>
                               Return: {returnStatus}

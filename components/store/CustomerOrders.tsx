@@ -203,10 +203,42 @@ const CustomerOrders = () => {
                                             <p className="text-xs text-slate-500 dark:text-slate-400">
                                                 {new Date(order.createdAt).toLocaleDateString()}
                                             </p>
-                                            {itemCount === 1 && variantSku && (
-                                                <p className="text-[10px] font-bold text-brand-600 uppercase">
-                                                    SKU: {variantSku}
-                                                </p>
+                                            {itemCount === 1 && firstItem && (
+                                                <>
+                                                    {variantSku && (
+                                                        <p className="text-[10px] font-bold text-brand-600 uppercase">
+                                                            SKU: {variantSku}
+                                                        </p>
+                                                    )}
+                                                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                                                        <span>Qty: {firstItem.quantity}</span>
+                                                        {(() => {
+                                                            const returnStatus = getReturnStatus(order, firstItem.product!.id, firstItem.variant?.id);
+                                                            if (returnStatus && (returnStatus === 'approved' || returnStatus === 'refunded')) {
+                                                                const returnedQty = order.returns?.find((req: any) => {
+                                                                    const found = req.items.find((i: any) =>
+                                                                        i.productId === firstItem.product!.id &&
+                                                                        (i.variantId === firstItem.variant?.id || (!i.variantId && !firstItem.variant?.id))
+                                                                    );
+                                                                    return found;
+                                                                })?.items.find((i: any) =>
+                                                                    i.productId === firstItem.product!.id &&
+                                                                    (i.variantId === firstItem.variant?.id || (!i.variantId && !firstItem.variant?.id))
+                                                                )?.quantity;
+
+                                                                if (returnedQty) {
+                                                                    return (
+                                                                        <>
+                                                                            <span>•</span>
+                                                                            <span className="text-orange-600 font-semibold">Returned: {returnedQty}</span>
+                                                                        </>
+                                                                    );
+                                                                }
+                                                            }
+                                                            return null;
+                                                        })()}
+                                                    </div>
+                                                </>
                                             )}
                                         </div>
                                     </div>
@@ -341,7 +373,8 @@ const CustomerOrders = () => {
                                                         return (
                                                             <span className={`text-xs px-2 py-1 rounded font-medium uppercase ${returnStatus === 'approved' ? 'bg-green-100 text-green-700' :
                                                                 returnStatus === 'rejected' ? 'bg-red-100 text-red-700' :
-                                                                    'bg-yellow-100 text-yellow-700'
+                                                                    returnStatus === 'refunded' ? 'bg-blue-100 text-blue-700' :
+                                                                        'bg-yellow-100 text-yellow-700'
                                                                 }`}>
                                                                 Return: {returnStatus}
                                                             </span>
