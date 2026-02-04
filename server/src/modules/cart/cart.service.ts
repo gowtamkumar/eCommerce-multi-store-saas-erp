@@ -193,4 +193,42 @@ export class CartService {
         const cart = await this.findOrCreateCartEntity(userId, tenantId);
         await this.cartItemRepository.remove(cart.items);
     }
+
+    async syncCart(userId: string, tenantId: string, items: CreateCartItemDto[]): Promise<any> {
+        const cart = await this.findOrCreateCartEntity(userId, tenantId);
+
+        // Clear existing items
+        if (cart.items && cart.items.length > 0) {
+            await this.cartItemRepository.remove(cart.items);
+            cart.items = []; // Reset locally
+        }
+
+        // Add new items
+        for (const item of items) {
+            let { productId, variantId, quantity } = item;
+
+            // If variantId is not provided, check if the product has variants and pick the first one
+            if (!variantId) {
+                const product = await this.productRepository.findOne({
+                    where: { id: productId, tenantId },
+                    relations: ['variants'],
+                });
+
+                if (product && product.variants && product.variants.length > 0) {
+                    variantId = product.variants[0].id;
+                }
+            }
+
+            const cartItem = this.cartItemRepository.create({
+                cartId: cart.id,
+                productId,
+                variantId: variantId || null,
+                quantity: Number(quantity),
+                tenantId,
+            });
+            await this.cartItemRepository.save(cartItem);
+        }
+
+        return this.createOrGetCart(userId, tenantId);
+    }
 }

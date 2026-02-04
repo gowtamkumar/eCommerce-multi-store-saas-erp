@@ -1,14 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import {
-    IsArray,
     IsEmail,
     IsEnum,
     IsNumber,
     IsOptional,
     IsString,
-    Min,
-    ValidateNested,
+    Min
 } from 'class-validator';
 import { PaymentMethod } from '../../../common/enums/payment-method.enum';
 
@@ -45,11 +42,12 @@ export class CreateOrderDto {
     @IsString()
     address: string;
 
-    @ApiProperty({ type: [Object] })
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => OrderItemDto)
-    items: OrderItemDto[];
+    // @ApiProperty({ type: [Object], required: false })
+    // @IsArray()
+    // @ValidateNested({ each: true })
+    // @Type(() => OrderItemDto)
+    // @IsOptional()
+    // items?: OrderItemDto[];
 
     @ApiProperty({ enum: PaymentMethod })
     @IsEnum(PaymentMethod)

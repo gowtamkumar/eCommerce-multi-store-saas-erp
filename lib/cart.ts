@@ -66,3 +66,10 @@ export const clearCart = async () => {
     method: "DELETE",
   });
 };
+
+export const syncCart = async (items: { productId: string; quantity: number; variantId?: string }[]) => {
+  return await fetchAPI("/cart/sync", {
+    method: "POST",
+    body: JSON.stringify(items),
+  });
+};

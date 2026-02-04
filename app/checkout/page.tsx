@@ -4,6 +4,7 @@ import Price from "@/components/ui/Price";
 import { useCart } from "@/contexts/CartContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { fetchAPI } from "@/lib/api";
+import * as cartApi from "@/lib/cart";
 import { PaymentMethod } from "@/lib/enums/payment-method";
 import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
 import { motion } from "framer-motion";
@@ -109,7 +110,13 @@ export default function CheckoutPage() {
         }
       }
 
-      // Re-read session/token just in case (optional, but fetchAPI handles it)
+      // Sync Cart to Backend to ensure latest prices/stock are used for validation
+      const syncItems = items.map(item => ({
+        productId: item.product.id,
+        variantId: item.variant?.id,
+        quantity: item.quantity
+      }));
+      await cartApi.syncCart(syncItems);
 
       const orderData = {
         customerName: formData.name,
@@ -117,11 +124,7 @@ export default function CheckoutPage() {
         customerPhone: formData.phone,
         address: formData.address,
         orderNotes: formData.notes,
-        items: items.map(item => ({
-          productId: item.product.id,
-          variantId: item.variant?.id,
-          quantity: item.quantity
-        })),
+        // items: [], // Removed as backend fetches from cart directly
         paymentMethod,
         currency: selectedCurrency.code,
         currencyRate: selectedCurrency.rate,
@@ -149,7 +152,7 @@ export default function CheckoutPage() {
         });
 
         if (paymentJson.data.gatewayUrl) {
-          await clearCart();
+          // await clearCart();
           window.location.href = paymentJson.data.gatewayUrl;
           return;
         } else {
@@ -158,8 +161,6 @@ export default function CheckoutPage() {
       } else {
         // COD Success
         setLastOrder(order);
-        await clearCart();
-
         setStep('success');
       }
       localStorage.removeItem("temp_cart");

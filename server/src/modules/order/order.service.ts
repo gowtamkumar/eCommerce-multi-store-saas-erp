@@ -46,16 +46,11 @@ export class OrderService {
             customerEmail,
             customerPhone,
             address,
-            items,
             paymentMethod,
             orderNotes,
             currency,
             currencyRate,
         } = createOrderDto;
-
-        if (!items || items.length === 0) {
-            throw new BadRequestException('Order must contain at least one item');
-        }
 
         // Get settings for currency
         const settings = await this.settingsRepository.findOne({
@@ -66,6 +61,20 @@ export class OrderService {
         const user = await this.userRepository.findOne({
             where: { email: customerEmail, tenantId },
         });
+
+        // Always fetch from backend cart to ensure single source of truth
+        const cart = await this.cartService.createOrGetCart(user?.id, tenantId);
+
+        let itemsToProcess: any[] = [];
+        if (cart && cart.items && cart.items.length > 0) {
+            itemsToProcess = cart.items.map((cartItem: any) => ({
+                productId: cartItem.product.id,
+                variantId: cartItem.variant?.id,
+                quantity: cartItem.quantity
+            }));
+        } else {
+             throw new BadRequestException('Order must contain at least one item');
+        }
 
         if (!user) {
             // Create lead
@@ -103,7 +112,7 @@ export class OrderService {
         const processedItems: OrderItemEntity[] = [];
 
         // Process each item
-        for (const itemDto of items) {
+        for (const itemDto of itemsToProcess) {
             const product = await this.productRepository.findOne({
                 where: { id: itemDto.productId, tenantId },
             });

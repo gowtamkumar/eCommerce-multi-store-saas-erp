@@ -29,6 +29,15 @@ export class CartController {
     return this.cartService.addToCart(user.id, tenantId, createCartItemDto)
   }
 
+  @Post('sync')
+  syncCart(
+    @CurrentUser() user: UserEntity,
+    @TenantId() tenantId: string,
+    @Body() items: CreateCartItemDto[],
+  ) {
+    return this.cartService.syncCart(user.id, tenantId, items)
+  }
+
   @Patch('items/:id')
   updateCartItem(
     @CurrentUser() user: UserEntity,
