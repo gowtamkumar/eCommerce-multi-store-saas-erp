@@ -65,15 +65,8 @@ export class OrderService {
         // Always fetch from backend cart to ensure single source of truth
         const cart = await this.cartService.createOrGetCart(user?.id, tenantId);
 
-        let itemsToProcess: any[] = [];
-        if (cart && cart.items && cart.items.length > 0) {
-            itemsToProcess = cart.items.map((cartItem: any) => ({
-                productId: cartItem.product.id,
-                variantId: cartItem.variant?.id,
-                quantity: cartItem.quantity
-            }));
-        } else {
-             throw new BadRequestException('Order must contain at least one item');
+        if (!cart.items && cart.items.length === 0) {
+            throw new BadRequestException('Order must contain at least one item');
         }
 
         if (!user) {
@@ -112,27 +105,32 @@ export class OrderService {
         const processedItems: OrderItemEntity[] = [];
 
         // Process each item
-        for (const itemDto of itemsToProcess) {
+        for (const itemDto of cart.items) {
+            const productId = itemDto.product.id;
+            const variantId = itemDto.variant?.id;
+            const quantity = itemDto.quantity;
+
+            // find product
             const product = await this.productRepository.findOne({
-                where: { id: itemDto.productId, tenantId },
+                where: { id: productId, tenantId },
             });
 
             if (!product) {
-                throw new NotFoundException(`Product with ID ${itemDto.productId} not found`);
+                throw new NotFoundException(`Product with ID ${productId} not found`);
             }
 
             let variant: ProductVariantEntity | null = null;
-            if (itemDto.variantId) {
+            if (variantId) {
                 variant = await this.variantRepository.findOne({
-                    where: { id: itemDto.variantId, productId: product.id, tenantId },
+                    where: { id: variantId, productId: product.id, tenantId },
                 });
                 if (!variant) {
-                    throw new NotFoundException(`Variant with ID ${itemDto.variantId} not found for product ${product.name}`);
+                    throw new NotFoundException(`Variant with ID ${variantId} not found for product ${product.name}`);
                 }
             }
 
             const currentStock = variant ? variant.stock : product.stock;
-            if (currentStock < itemDto.quantity) {
+            if (currentStock < quantity) {
                 throw new BadRequestException(
                     `Insufficient stock for ${product.name}${variant ? ' (Variant)' : ''}. Only ${currentStock} items available.`,
                 );
@@ -140,12 +138,12 @@ export class OrderService {
 
             const unitPrice = variant?.price ? Number(variant.price) : Number(product.price);
             const discountAmount = Number(product.discountAmount) || 0;
-            const itemTotal = (unitPrice - discountAmount) * itemDto.quantity;
+            const itemTotal = (unitPrice - discountAmount) * quantity;
 
             const orderItem = new OrderItemEntity();
             orderItem.product = product;
             orderItem.variant = variant;
-            orderItem.quantity = itemDto.quantity;
+            orderItem.quantity = quantity;
             orderItem.unitPrice = unitPrice;
             orderItem.discountAmount = discountAmount;
             orderItem.totalAmount = itemTotal;
@@ -167,10 +165,10 @@ export class OrderService {
 
             // Decrement stock
             if (variant) {
-                variant.stock -= itemDto.quantity;
+                variant.stock -= quantity;
                 await this.variantRepository.save(variant);
             } else {
-                product.stock -= itemDto.quantity;
+                product.stock -= quantity;
                 await this.productRepository.save(product);
             }
         }
@@ -180,12 +178,15 @@ export class OrderService {
 
         const savedOrder = await this.orderRepository.save(order);
 
+        console.log("savedOrder", savedOrder);
+
+
         // Clear cart if user exists
         if (user && user.id) {
             await this.cartService.clearCart(user.id, tenantId);
         }
 
-        return { success: true, order: savedOrder };
+        return { message: "Order created successfully", success: true, order: savedOrder };
     }
 
     async findAll(filterDto: any, tenantId: string) {

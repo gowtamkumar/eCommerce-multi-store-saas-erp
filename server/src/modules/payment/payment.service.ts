@@ -119,7 +119,7 @@ export class PaymentService {
         if (!order) throw new NotFoundException('Order not found');
 
         order.paymentStatus = PaymentStatus.PAID;
-        order.status = OrderStatus.COMPLETED;
+        order.status = OrderStatus.PENDING;
         await this.orderRepository.save(order);
 
         // Record payment

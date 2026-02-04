@@ -19,8 +19,6 @@ export class PaymentActionController {
     @Post('success')
     @ApiOperation({ summary: 'Payment success callback' })
     async success(@Query('tran_id') tran_id: string, @Body() gatewayResponse: any, @Res() res: Response) {
-        console.log("testing.. payment success");
-        
         await this.paymentService.handleSuccess(tran_id, gatewayResponse);
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         return res.redirect(`${appUrl}/payment/success?tran_id=${tran_id}`);
