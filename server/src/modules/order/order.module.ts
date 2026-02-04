@@ -13,6 +13,10 @@ import { PaymentEntity } from '../payment/entities/payment.entity';
 import { ProductVariantEntity } from '../product/entities/variant.entity';
 import { OrderItemEntity } from './entities/order-item.entity';
 
+import { OrderReturnEntity } from './entities/order-return.entity';
+import { ReturnController } from './return.controller';
+import { ReturnService } from './return.service';
+
 @Module({
     imports: [
         TypeOrmModule.forFeature([
@@ -24,11 +28,12 @@ import { OrderItemEntity } from './entities/order-item.entity';
             PaymentEntity,
             OrderItemEntity,
             ProductVariantEntity,
+            OrderReturnEntity, // Registered
         ]),
         CartModule,
     ],
-    controllers: [OrderController],
-    providers: [OrderService],
-    exports: [OrderService],
+    controllers: [OrderController, ReturnController], // Registered
+    providers: [OrderService, ReturnService], // Registered
+    exports: [OrderService, ReturnService],
 })
 export class OrderModule { }

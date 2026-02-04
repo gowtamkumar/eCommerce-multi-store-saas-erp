@@ -3,8 +3,9 @@
 import { useSettings } from "@/contexts/SettingsContext";
 import { fetchAPI } from "@/lib/api";
 import { OrderStatus } from "@/lib/enums/order-status";
+import ReturnModal from "./ReturnModal";
 
-import { Eye, Package, ShoppingBag, Star } from "lucide-react";
+import { Eye, Package, RotateCcw, ShoppingBag, Star } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -47,7 +48,17 @@ const CustomerOrders = () => {
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
     const [reviewingOrder, setReviewingOrder] = useState<OrderItem | null>(null);
+    const [returningItem, setReturningItem] = useState<{
+        id: string;
+        productId: string;
+        variantId?: string;
+        productName: string;
+        quantity: number;
+        price: number;
+        discount: number;
+    } | null>(null);
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState("");
     const [submittingReview, setSubmittingReview] = useState(false);
@@ -310,6 +321,26 @@ const CustomerOrders = () => {
                                                         <Star className="w-4 h-4" />
                                                     </button>
                                                 )}
+                                                {(selectedOrder.status === OrderStatus.COMPLETED || selectedOrder.paymentStatus === "Paid") && item.product && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setReturningItem({
+                                                                id: item.id,
+                                                                productId: item.product?.id!,
+                                                                variantId: item.variant?.id,
+                                                                productName: item.snapshot?.productName || item.product?.name || "Item",
+                                                                quantity: item.quantity,
+                                                                price: item.unitPrice,
+                                                                discount: item.discountAmount || 0
+                                                            });
+                                                            setIsReturnModalOpen(true);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                                        title="Return Item"
+                                                    >
+                                                        <RotateCcw className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -364,19 +395,17 @@ const CustomerOrders = () => {
                                     Rating
                                 </label>
                                 <div className="flex gap-2">
-                                    {[1, 2, 3, 4, 5].map((s) => (
+                                    {[1, 2, 3, 4, 5].map((star) => (
                                         <button
-                                            key={s}
+                                            key={star}
                                             type="button"
-                                            onClick={() => setRating(s)}
-                                            className="focus:outline-none"
+                                            onClick={() => setRating(star)}
+                                            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${rating >= star
+                                                ? "bg-yellow-500 text-white"
+                                                : "bg-slate-100 text-slate-400 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600"
+                                                }`}
                                         >
-                                            <Star
-                                                className={`w-8 h-8 ${s <= rating
-                                                    ? "text-yellow-400 fill-yellow-400"
-                                                    : "text-slate-300 dark:text-slate-600"
-                                                    }`}
-                                            />
+                                            <Star className="w-5 h-5 fill-current" />
                                         </button>
                                     ))}
                                 </div>
@@ -412,6 +441,19 @@ const CustomerOrders = () => {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {/* Return Modal */}
+            {isReturnModalOpen && returningItem && selectedOrder && (
+                <ReturnModal
+                    orderId={selectedOrder.id}
+                    item={returningItem}
+                    onClose={() => setIsReturnModalOpen(false)}
+                    onSuccess={() => {
+                        setIsReturnModalOpen(false);
+                        // Optionally refresh orders?
+                    }}
+                />
             )}
         </div>
     );

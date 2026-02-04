@@ -2,7 +2,7 @@
 
 import { useSettings } from '@/contexts/SettingsContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Banknote, BarChart3, ChevronDown, CreditCard, FileText, Globe, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, Settings, Share2, ShoppingBag, Tag, TrendingUp, User, Users, X } from 'lucide-react';
+import { Banknote, BarChart3, ChevronDown, CreditCard, FileText, Globe, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, RotateCcw, Settings, Share2, ShoppingBag, Tag, TrendingUp, User, Users, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -62,6 +62,7 @@ export default function AdminLayout({
     { icon: Users, label: 'Customers', href: '/admin/customers' },
     { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
     { icon: FileText, label: 'Pages', href: '/admin/pages' },
+    { icon: RotateCcw, label: 'Returns', href: '/admin/returns' },
     { icon: MessageSquare, label: 'Newsletter', href: '/admin/leads' },
     { icon: User, label: 'Media', href: '/admin/media' },
   ];
