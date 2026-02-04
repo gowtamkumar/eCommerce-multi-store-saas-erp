@@ -178,9 +178,6 @@ export class OrderService {
 
         const savedOrder = await this.orderRepository.save(order);
 
-        console.log("savedOrder", savedOrder);
-
-
         // Clear cart if user exists
         if (user && user.id) {
             await this.cartService.clearCart(user.id, tenantId);
@@ -239,7 +236,7 @@ export class OrderService {
     async findByUserId(userId: string, tenantId: string) {
         const orders = await this.orderRepository.find({
             where: { userId, tenantId },
-            relations: ['items', 'items.product'],
+            relations: ['items', 'items.product', 'items.variant', 'returns'],
             order: { createdAt: 'DESC' },
         });
 

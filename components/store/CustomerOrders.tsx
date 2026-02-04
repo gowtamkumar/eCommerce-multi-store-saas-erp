@@ -39,6 +39,7 @@ interface Order {
     currency?: string;
     currencyRate?: number;
     items: OrderItem[];
+    returns?: any[];
     customerName: string;
     address: string;
 }
@@ -62,6 +63,18 @@ const CustomerOrders = () => {
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState("");
     const [submittingReview, setSubmittingReview] = useState(false);
+
+    const getReturnStatus = (order: Order, productId: string, variantId?: string) => {
+        if (!order.returns) return null;
+        for (const req of order.returns) {
+            const found = req.items.find((i: any) =>
+                i.productId === productId &&
+                (i.variantId === variantId || (!i.variantId && !variantId))
+            );
+            if (found) return req.status;
+        }
+        return null;
+    };
     const { data: session } = useSession();
     const { settings, formatPrice } = useSettings();
 
@@ -321,26 +334,44 @@ const CustomerOrders = () => {
                                                         <Star className="w-4 h-4" />
                                                     </button>
                                                 )}
-                                                {(selectedOrder.status === OrderStatus.COMPLETED || selectedOrder.paymentStatus === "Paid") && item.product && (
-                                                    <button
-                                                        onClick={() => {
-                                                            setReturningItem({
-                                                                id: item.id,
-                                                                productId: item.product?.id!,
-                                                                variantId: item.variant?.id,
-                                                                productName: item.snapshot?.productName || item.product?.name || "Item",
-                                                                quantity: item.quantity,
-                                                                price: item.unitPrice,
-                                                                discount: item.discountAmount || 0
-                                                            });
-                                                            setIsReturnModalOpen(true);
-                                                        }}
-                                                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                                                        title="Return Item"
-                                                    >
-                                                        <RotateCcw className="w-4 h-4" />
-                                                    </button>
-                                                )}
+                                                {(() => {
+                                                    const returnStatus = getReturnStatus(selectedOrder, item.product!.id, item.variant?.id);
+
+                                                    if (returnStatus) {
+                                                        return (
+                                                            <span className={`text-xs px-2 py-1 rounded font-medium uppercase ${returnStatus === 'approved' ? 'bg-green-100 text-green-700' :
+                                                                returnStatus === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                                    'bg-yellow-100 text-yellow-700'
+                                                                }`}>
+                                                                Return: {returnStatus}
+                                                            </span>
+                                                        );
+                                                    }
+
+                                                    if (selectedOrder.status === OrderStatus.COMPLETED || selectedOrder.paymentStatus === "Paid") {
+                                                        return (
+                                                            <button
+                                                                onClick={() => {
+                                                                    setReturningItem({
+                                                                        id: item.id,
+                                                                        productId: item.product!.id,
+                                                                        variantId: item.variant?.id,
+                                                                        productName: item.snapshot?.productName || item.product?.name || "Item",
+                                                                        quantity: item.quantity,
+                                                                        price: item.unitPrice,
+                                                                        discount: item.discountAmount || 0
+                                                                    });
+                                                                    setIsReturnModalOpen(true);
+                                                                }}
+                                                                className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                                                title="Return Item"
+                                                            >
+                                                                <RotateCcw className="w-4 h-4" />
+                                                            </button>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
                                             </div>
                                         </div>
                                     );

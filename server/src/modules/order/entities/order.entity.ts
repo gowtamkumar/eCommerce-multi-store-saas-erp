@@ -13,6 +13,7 @@ import { PaymentMethod } from '../../../common/enums/payment-method.enum';
 import { PaymentStatus } from '../../../common/enums/payment-status.enum';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { OrderItemEntity } from './order-item.entity';
+import { OrderReturnEntity } from './order-return.entity';
 
 @Entity('orders')
 export class OrderEntity {
@@ -33,6 +34,9 @@ export class OrderEntity {
 
     @OneToMany(() => OrderItemEntity, (item) => item.order, { cascade: true })
     items: OrderItemEntity[];
+
+    @OneToMany(() => OrderReturnEntity, (returnRequest) => returnRequest.order)
+    returns: OrderReturnEntity[];
 
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     totalAmount: number;

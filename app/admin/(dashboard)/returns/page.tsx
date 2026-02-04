@@ -47,18 +47,21 @@ export default function ReturnsPage() {
     }
   };
 
-  const handleStatusUpdate = async (id: string, status: string) => {
+  const [selectedReturn, setSelectedReturn] = useState<ReturnRequest | null>(null);
+
+  const handleStatusUpdate = async (id: string, status: string, comment?: string) => {
     if (!confirm(`Are you sure you want to mark this as ${status}?`)) return;
 
     try {
       const res = await fetchAPI(`/returns/${id}/status`, {
         method: "PATCH",
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, comment }),
       });
 
       if (res.id) {
         toast.success(`Return request ${status}`);
         fetchReturns();
+        setSelectedReturn(null);
       } else {
         toast.error("Failed to update status");
       }
@@ -138,24 +141,12 @@ export default function ReturnsPage() {
                       {new Date(req.createdAt).toLocaleDateString()}
                     </td>
                     <td className="p-4">
-                      {req.status === "pending" && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleStatusUpdate(req.id, "approved")}
-                            className="p-1.5 bg-green-100 text-green-600 rounded hover:bg-green-200 transition-colors"
-                            title="Approve"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleStatusUpdate(req.id, "rejected")}
-                            className="p-1.5 bg-red-100 text-red-600 rounded hover:bg-red-200 transition-colors"
-                            title="Reject"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
+                      <button
+                        onClick={() => setSelectedReturn(req)}
+                        className="text-brand-600 hover:text-brand-700 font-medium text-sm"
+                      >
+                        View Details
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -164,6 +155,86 @@ export default function ReturnsPage() {
           </table>
         </div>
       </div>
+
+      {/* Return Details Modal */}
+      {selectedReturn && (
+        <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-white/10 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                Return Request Details
+              </h3>
+              <button
+                onClick={() => setSelectedReturn(null)}
+                className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-slate-50 dark:bg-slate-700/30 p-4 rounded-xl space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500 dark:text-slate-400">Order ID:</span>
+                  <span className="font-mono font-medium text-slate-900 dark:text-white">
+                    #{selectedReturn.order?.id?.slice(-8).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500 dark:text-slate-400">Customer:</span>
+                  <span className="font-medium text-slate-900 dark:text-white">
+                    {selectedReturn.order?.customerName}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500 dark:text-slate-400">Status:</span>
+                  <span className="font-bold uppercase text-brand-600">
+                    {selectedReturn.status}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-slate-900 dark:text-white mb-3">Items Requested</h4>
+                <div className="space-y-3">
+                  {selectedReturn.items.map((item, index) => (
+                    <div key={index} className="flex gap-4 p-3 border border-slate-100 dark:border-slate-700 rounded-xl">
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 dark:text-white text-sm">ITEM ID: {item.productId}</p>
+                        <p className="text-xs text-slate-500 mt-1">Quantity: {item.quantity}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-slate-900 dark:text-white mb-2">Reason</h4>
+                <p className="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg">
+                  {selectedReturn.reason}
+                </p>
+              </div>
+
+              {selectedReturn.status === "pending" && (
+                <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                  <button
+                    onClick={() => handleStatusUpdate(selectedReturn.id, "rejected")}
+                    className="flex-1 py-3 bg-red-50 text-red-600 font-semibold rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <X className="w-4 h-4" /> Reject Return
+                  </button>
+                  <button
+                    onClick={() => handleStatusUpdate(selectedReturn.id, "approved")}
+                    className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-4 h-4" /> Approve Return
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

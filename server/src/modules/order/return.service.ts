@@ -35,16 +35,20 @@ export class ReturnService {
 
         // Basic validation: Check if items are in the order
         // In a real app, strict quantity checks against previously returned items would be needed
+        console.log('=== RETURN DEBUG ===');
+        console.log('Order items:', order.items.map(i => ({ productId: i.productId, variantId: i.variantId })));
+        console.log('Return items:', items);
+        
         for (const returnItem of items) {
-            console.log("Looking for:", returnItem);
-            console.log("In order items:", order.items.map(i => ({ pid: i.productId, vid: i.variantId })));
-
             const orderItem = order.items.find(
                 (oi) =>
                     oi.productId === returnItem.productId &&
                     (oi.variantId === returnItem.variantId ||
                         (!oi.variantId && !returnItem.variantId))
             );
+
+            console.log("returnItem", orderItem);
+
 
             if (!orderItem) {
                 throw new BadRequestException('Item not found in order');
@@ -67,8 +71,6 @@ export class ReturnService {
     }
 
     async findAll(tenantId: string) {
-        console.log("tenantId", tenantId);
-
         const returns = await this.returnRepository.find({
             where: { tenantId },
             order: { createdAt: 'DESC' },
