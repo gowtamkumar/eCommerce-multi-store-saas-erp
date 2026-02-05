@@ -49,17 +49,8 @@ export class PageService {
   }
 
   async findHomePage(tenantId: string) {
-    const [latestProducts, faqs, homePage] = await Promise.all([
-      this.productService.findLatest(tenantId, 8),
-      this.faqService.findAll({ status: 'active', page: 1, limit: 100 }, tenantId),
-      this.pageRepository.findOne({ where: { isHomePage: true, tenantId } }).catch(() => null),
-    ]);
-
-    return {
-      products: latestProducts,
-      faqs,
-      page: homePage,
-    };
+    const homePage = await this.pageRepository.findOne({ where: { isHomePage: true, tenantId } })
+    return homePage;
   }
 
   async update(id: string, dto: UpdatePageDto, tenantId: string) {

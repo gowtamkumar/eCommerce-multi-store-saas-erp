@@ -49,9 +49,6 @@ export default async function Home() {
     return <SaaSLanding />;
   }
 
-  let homeData: any = null;
-  let products: any[] = [];
-  let product: any = null;
   let dynamicPage: any = null;
 
   // Wrap API calls in try-catch to avoid crashing on tenant mismatch or local dev issues
@@ -61,11 +58,7 @@ export default async function Home() {
     if (!data || !data.success || data.isSaaS) {
       return <SaaSLanding />;
     }
-
-    homeData = data.data;
-    products = homeData?.products || [];
-    product = products[0];
-    dynamicPage = homeData?.page;
+    dynamicPage = data?.data;
   } catch (error) {
     console.error("Home page error:", error);
     return <SaaSLanding />;
@@ -73,7 +66,7 @@ export default async function Home() {
 
 
   // If a custom home page is designed, render it
-  const sections = dynamicPage?.content?.sections || dynamicPage?.sections;
+  const sections = dynamicPage?.sections;
   if (sections && sections.length > 0) {
     return (
       <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">

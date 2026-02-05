@@ -2,6 +2,7 @@
 
 import SectionRenderer from '@/components/core/SectionRenderer';
 import { CustomizerSection } from '@/types/customizer';
+import { useEffect, useRef } from 'react';
 
 interface PreviewProps {
   sections: CustomizerSection[];
@@ -24,6 +25,18 @@ interface PreviewProps {
 }
 
 export default function Preview({ sections, viewMode, selectedId, onSelect, typography }: PreviewProps) {
+  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Scroll to selected section
+  useEffect(() => {
+    if (selectedId && sectionRefs.current[selectedId]) {
+      sectionRefs.current[selectedId]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [selectedId]);
+
   return (
     <div className={`bg-white dark:bg-slate-900 shadow-2xl transition-all duration-500 overflow-hidden flex flex-col ${viewMode === 'mobile' ? 'w-[375px] h-[667px] rounded-[40px] border-[12px] border-slate-800 dark:border-slate-800' : 'w-full h-full rounded-xl'}`}>
       {/* Canvas Header (only if not mobile frame) */}

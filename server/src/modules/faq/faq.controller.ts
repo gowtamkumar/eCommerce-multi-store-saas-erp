@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
-import { FaqService } from './faq.service';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { TenantId } from '../../common/decorators/tenant-id.decorator';
 import { CreateFaqDto, UpdateFaqDto } from './dto/faq.dto';
 import { FilterFaqDto } from './dto/filter-faq.dto';
-import { TenantId } from '../../common/decorators/tenant-id.decorator';
+import { FaqService } from './faq.service';
 
 @Controller('faqs')
 export class FaqController {
@@ -41,5 +41,11 @@ export class FaqController {
     @Delete(':id')
     async remove(@Param('id') id: string, @TenantId() tenantId: string) {
         return await this.faqService.remove(id, tenantId);
+    }
+
+    @Post('multiple')
+    async findMultiple(@Body() body: { ids: string[] }, @TenantId() tenantId: string) {
+        const faqs = await this.faqService.findByIds(body.ids, tenantId);
+        return { success: true, data: faqs };
     }
 }

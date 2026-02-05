@@ -1,7 +1,47 @@
+'use client'
+import { fetchAPI } from "@/lib/api";
 import { FAQItem } from "@/types/customizer";
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 
-export default function FAQSection({ items, headline, subline, styles, buttonText }: { items: FAQItem[], headline: string, subline: string, styles: any, buttonText: string }) {
+interface FAQSectionProps {
+    items?: FAQItem[];
+    headline: string;
+    subline: string;
+    styles: any;
+    buttonText: string;
+    faqIds?: string[];
+}
+
+export default function FAQSection({ items, headline, subline, styles, buttonText, faqIds }: FAQSectionProps) {
+    const [faqs, setFaqs] = useState<FAQItem[]>(items || []);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        // If faqIds are provided, fetch FAQs from API
+        if (faqIds && faqIds.length > 0) {
+            setLoading(true);
+            fetchAPI('/faqs/multiple', {
+                method: 'POST',
+                body: JSON.stringify({ ids: faqIds })
+            })
+                .then((response) => {
+                    if (response.success && response.data) {
+                        setFaqs(response.data);
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error fetching FAQs:', error);
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
+        } else if (items) {
+            // Use provided items if no faqIds
+            setFaqs(items);
+        }
+    }, [faqIds, items]);
+
     return (
         <section
             style={{
@@ -47,8 +87,12 @@ export default function FAQSection({ items, headline, subline, styles, buttonTex
                     )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {(items || []).length > 0 ? (
-                        items.map((faq: FAQItem) => (
+                    {loading ? (
+                        <div className="col-span-full py-20 text-center text-slate-400">
+                            Loading FAQs...
+                        </div>
+                    ) : (faqs || []).length > 0 ? (
+                        faqs.map((faq: FAQItem) => (
                             <div key={faq.id} className="bg-white dark:bg-slate-800 rounded-[2.5rem] p-8 md:p-10 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer flex flex-col justify-between group h-fit">
                                 <div>
                                     <div className="flex items-center justify-between mb-6">

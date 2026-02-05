@@ -28,17 +28,27 @@ export default function ProductSlider({
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  console.log("product slider props", headline,
+    source,
+    productIds,
+    count,
+    collectionId,
+    layout,
+    columns,
+    styles);
+
+
   useEffect(() => {
     async function loadProducts() {
       setLoading(true);
       try {
         let endpoint = `/products?limit=${source === 'manual' ? 100 : count}&status=active`;
+
         if (collectionId && source === 'collection') {
           endpoint += `&categoryId=${collectionId}`;
         }
         const res = await fetchAPI(endpoint);
         let fetchedProducts = res.data?.products || [];
-
         if (source === 'manual' && productIds.length > 0) {
           // Filter to only include products in productIds, maintaining the selection order
           fetchedProducts = productIds

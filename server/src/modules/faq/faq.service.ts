@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FaqStatus } from 'src/common/enums/faq-status.enum';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateFaqDto, UpdateFaqDto } from './dto/faq.dto';
 import { FaqEntity } from './entities/faq.entity';
 
@@ -73,6 +73,22 @@ export class FaqService {
                 tenantId, 
                 productId: null, 
                 pageId: null,
+                status: FaqStatus.ACTIVE
+            },
+            order: { order: 'ASC', createdAt: 'DESC' }
+        });
+    }
+
+    // Find FAQs by multiple IDs
+    async findByIds(ids: string[], tenantId: string) {
+        if (!ids || ids.length === 0) {
+            return [];
+        }
+
+        return await this.faqRepository.find({
+            where: {
+                id: In(ids),
+                tenantId,
                 status: FaqStatus.ACTIVE
             },
             order: { order: 'ASC', createdAt: 'DESC' }

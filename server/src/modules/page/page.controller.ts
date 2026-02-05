@@ -23,7 +23,6 @@ export class PageController {
   @Get('home')
   async findHomePage(@TenantId() tenantId: string) {
     const data = await this.pageService.findHomePage(tenantId)
- 
     return {
       statusCode: 200,
       message: 'Home page data fetched successfully',

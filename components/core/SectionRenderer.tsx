@@ -125,7 +125,14 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
 
       case "faq-section":
         return (
-          <FAQSection items={settings?.items} headline={settings?.title} subline={settings?.subline} styles={styles} buttonText={settings?.buttonText} />
+          <FAQSection
+            items={settings?.items}
+            headline={settings?.title}
+            subline={settings?.subline}
+            styles={styles}
+            buttonText={settings?.buttonText}
+            faqIds={settings?.faqIds}
+          />
         );
       case "brand-grid":
         return (
