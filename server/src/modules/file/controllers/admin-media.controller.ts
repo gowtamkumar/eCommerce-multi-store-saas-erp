@@ -13,12 +13,10 @@ import {
     UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
 import { FilterFileDto } from '../dtos';
 import { FilesService } from '../services/file.service';
 
-@ApiTags('Admin Media')
 @Controller('admin/media')
 // @UseGuards(JwtAuthGuard, RolesGuard)
 // @Roles(UserRole.Admin, UserRole.SuperAdmin)
@@ -26,7 +24,6 @@ export class AdminMediaController {
     constructor(private readonly filesService: FilesService) { }
 
     @Get()
-    @ApiOperation({ summary: 'Get all media files' })
     async findAll(@Query() filterDto: FilterFileDto) {
         const files = await this.filesService.getFiles(filterDto);
         return {
@@ -37,7 +34,6 @@ export class AdminMediaController {
     }
 
     @Post()
-    @ApiOperation({ summary: 'Upload media file' })
     @UseInterceptors(
         FileInterceptor('file', {
             storage: diskStorage({
@@ -72,7 +68,6 @@ export class AdminMediaController {
     }
 
     @Delete(':id')
-    @ApiOperation({ summary: 'Delete media file' })
     async remove(@Param('id', ParseUUIDPipe) id: string) {
         await this.filesService.deleteFile(id);
         return {

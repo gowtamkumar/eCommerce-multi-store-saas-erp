@@ -9,7 +9,6 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
-import { ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { Roles } from '../../common/decorators/roles.decorator'
 import { UserRole } from '../../common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
@@ -37,8 +36,6 @@ export class SuperAdminController {
   ) {}
 
   @Post('/setup')
-  @ApiOperation({ summary: 'Initial Super Admin setup' })
-  @ApiResponse({ status: 201, description: 'Super Admin created successfully' })
   async setup(@Body() body: any) {
     const { name, email, password, username, setupKey } = body
 
@@ -123,7 +120,6 @@ export class SuperAdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SuperAdmin)
   @Get('/traffic')
-  @ApiOperation({ summary: 'Get traffic stats for last 7 days' })
   async getTraffic(@Query('days') days?: number) {
     return {
       success: true,
@@ -134,7 +130,6 @@ export class SuperAdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SuperAdmin)
   @Get('/tenants')
-  @ApiOperation({ summary: 'Get all tenants (SuperAdmin only)' })
   async getAllTenants() {
     return {
       success: true,
@@ -145,7 +140,6 @@ export class SuperAdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SuperAdmin)
   @Get('/tenants/analytics')
-  @ApiOperation({ summary: 'Get per-tenant granular analytics' })
   async getTenantAnalytics() {
     try {
       const tenants = await this.tenantService.findAll()
@@ -190,7 +184,6 @@ export class SuperAdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SuperAdmin)
   @Get('/tenants/:id/analytics')
-  @ApiOperation({ summary: 'Get detailed historical analytics for a specific tenant' })
   async getDetailedTenantAnalytics(@Param('id') id: string) {
     try {
       const [users, products, orders, pages, pageTraffic] = await Promise.all([
@@ -245,7 +238,6 @@ export class SuperAdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SuperAdmin)
   @Patch('/tenants/:id/status')
-  @ApiOperation({ summary: 'Update tenant status (Suspend/Activate)' })
   async updateTenantStatus(@Param('id') id: string, @Body('status') status: string) {
     const tenant = await this.tenantService.updateStatus(id, status)
     return {
@@ -258,7 +250,6 @@ export class SuperAdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SuperAdmin)
   @Patch('/tenants/:id/plan')
-  @ApiOperation({ summary: 'Update tenant subscription plan' })
   async updateTenantPlan(@Param('id') id: string, @Body('planId') planId: string) {
     // This would require a new method in TenantService to update the plan relation
     // For now, removing the legacy tier logic.

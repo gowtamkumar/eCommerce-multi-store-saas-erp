@@ -7,21 +7,17 @@ import {
     Put,
     Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { FilterOrderDto } from './dto/filter-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderService } from './order.service';
 
-@ApiTags('Orders')
 @Controller('orders')
 export class OrderController {
     constructor(private readonly orderService: OrderService) { }
 
     @Post()
-    @ApiOperation({ summary: 'Create a new order' })
-    @ApiResponse({ status: 201, description: 'Order created successfully' })
     async create(
         @Body() createOrderDto: CreateOrderDto,
         @TenantId() tenantId: string,
@@ -30,8 +26,6 @@ export class OrderController {
     }
 
     @Get()
-    @ApiOperation({ summary: 'Get all orders with pagination' })
-    @ApiResponse({ status: 200, description: 'Returns paginated orders' })
     async findAll(
         @Query() filterDto: FilterOrderDto,
         @TenantId() tenantId: string,
@@ -57,8 +51,6 @@ export class OrderController {
     }
 
     @Get(':id')
-    @ApiOperation({ summary: 'Get order by ID' })
-    @ApiResponse({ status: 200, description: 'Returns order' })
     async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
         const order = await this.orderService.findOne(id, tenantId);
         return {
@@ -69,8 +61,6 @@ export class OrderController {
     }
 
     @Get('user/:userId')
-    @ApiOperation({ summary: 'Get orders by user ID' })
-    @ApiResponse({ status: 200, description: 'Returns user orders' })
     async getUserOrders(
         @Param('userId') userId: string,
         @TenantId() tenantId: string,
@@ -84,8 +74,6 @@ export class OrderController {
     }
 
     @Put(':id')
-    @ApiOperation({ summary: 'Update order status' })
-    @ApiResponse({ status: 200, description: 'Order updated successfully' })
     async update(
         @Param('id') id: string,
         @Body() updateOrderDto: UpdateOrderDto,

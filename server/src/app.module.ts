@@ -31,7 +31,6 @@ import { SubscriptionPlanModule } from './modules/subscription-plan/subscription
 import { SuperAdminModule } from './modules/super-admin/super-admin.module'
 import { TenantModule } from './modules/tenant/tenant.module'
 import { TrackingModule } from './modules/tracking/tracking.module'
-import { WishlistModule } from './modules/wishlist/wishlist.module'
 
 @Module({
   imports: [
@@ -63,7 +62,6 @@ import { WishlistModule } from './modules/wishlist/wishlist.module'
     CategoryModule,
     CartModule,
     PlatformModule,
-    WishlistModule,
     TrackingModule,
     SubscriptionPlanModule,
     CacheModule,

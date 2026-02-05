@@ -7,7 +7,6 @@ import {
     Post,
     UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
 import { ReturnStatus } from '../../common/enums/return-status.enum';
@@ -17,10 +16,8 @@ import { UserEntity } from '../admin/user/entities/user.entity';
 import { CreateReturnDto } from './dto/create-return.dto';
 import { ReturnService } from './return.service';
 
-@ApiTags('Returns')
 @Controller('returns')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class ReturnController {
     constructor(private readonly returnService: ReturnService) { }
 

@@ -1,5 +1,4 @@
 import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common'
-import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { OrderStatus } from '../../../common/enums/order-status.enum'
 import { OrderService } from '../../order/order.service'
@@ -9,7 +8,6 @@ import { ProductService } from '../../product/product.service'
 import { TrafficService } from '../../super-admin/traffic.service'
 import { UserService } from '../user/services/user.service'
 
-@ApiTags('Admin Report')
 @Controller('report')
 @UseGuards(JwtAuthGuard)
 export class ReportController {
@@ -23,7 +21,6 @@ export class ReportController {
   ) {}
 
   @Get('/analytics')
-  @ApiOperation({ summary: 'Get current tenant analytics' })
   async getAnalytics(@Request() req: any) {
     const tenantId = req.user.tenantId
 
@@ -56,7 +53,6 @@ export class ReportController {
   }
 
   @Get('/dashboard')
-  @ApiOperation({ summary: 'Get current tenant dashboard report' })
   async getDashboardReport(@Request() req: any, @Query('period') period: string = 'month') {
     const tenantId = req.user.tenantId
 
