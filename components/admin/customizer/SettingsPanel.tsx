@@ -15,15 +15,17 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [dbReviews, setDbReviews] = useState<any[]>([]);
+  const [dbFaqs, setDbFaqs] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [catRes, revRes, prodRes, brandRes] = await Promise.all([
+        const [catRes, revRes, faqRes, prodRes, brandRes] = await Promise.all([
           fetchAPI('/categories'),
           fetchAPI('/reviews/public'),
+          fetchAPI('/faqs?limit=100'),
           fetchAPI('/products?limit=100'),
           fetchAPI('/brands')
         ]);
@@ -36,6 +38,9 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
             text: r.comment,
             rating: r.rating
           })));
+        }
+        if (faqRes.success && faqRes.data?.faqs) {
+          setDbFaqs(faqRes.data.faqs);
         }
         if (prodRes.success && prodRes.data?.products) {
           setProducts(prodRes.data.products);
@@ -1161,29 +1166,95 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                 />
 
               </div>
-              <div className="space-y-4">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Questions</label>
-                {((section.settings as any).items || []).map((faq: FAQItem) => (
-                  <div key={faq.id} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-800/50 shadow-sm">
-                    <button onClick={() => toggleExpand(faq.id)} className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800">
-                      <span className="text-sm font-bold truncate">{faq.question || 'New Question'}</span>
-                      {expandedItems.includes(faq.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                    {expandedItems.includes(faq.id) && (
-                      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                        <input type="text" placeholder="Question" value={faq.question} onChange={(e) => updateArrayItem('items', faq.id, { question: e.target.value })} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
-                        <textarea placeholder="Answer" value={faq.answer} onChange={(e) => updateArrayItem('items', faq.id, { answer: e.target.value })} rows={3} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
-                        <button onClick={() => removeArrayItem('items', faq.id)} className="w-full py-1.5 text-[10px] font-bold text-red-500 flex items-center justify-center gap-1 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg">
-                          <Trash2 className="w-3 h-3" /> Remove Question
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <button onClick={() => addArrayItem('items', { question: 'New Question', answer: 'Answer goes here' })} className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-bold text-slate-500 hover:border-brand-500 hover:text-brand-600 transition-all flex items-center justify-center gap-2">
-                  <Plus className="w-4 h-4" /> Add Question
-                </button>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Content Source</label>
+                <select
+                  value={settings?.source || 'manual'}
+                  onChange={(e) => updateSetting('source', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="manual">Manual Entry</option>
+                  <option value="selection">Specific FAQs (DB)</option>
+                </select>
               </div>
+
+              {settings?.source === 'selection' ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Selected FAQs</label>
+                    <div className="space-y-2">
+                      {(settings?.faqIds || []).map((id: string, idx: number) => {
+                        const faq = dbFaqs.find(f => f.id === id);
+                        return (
+                          <div key={`${id}-${idx}`} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <span className="text-xs flex-1 truncate">{faq?.question || 'Unknown FAQ'}</span>
+                            <button
+                              onClick={() => {
+                                const newIds = (settings.faqIds || []).filter((_: any, i: number) => i !== idx);
+                                updateSetting('faqIds', newIds);
+                              }}
+                              className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        if (!e.target.value) return;
+                        const currentIds = settings.faqIds || [];
+                        if (!currentIds.includes(e.target.value)) {
+                          updateSetting('faqIds', [...currentIds, e.target.value]);
+                        }
+                      }}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value="">+ Add a FAQ...</option>
+                      {dbFaqs
+                        .filter(f => !(settings.faqIds || []).includes(f.id))
+                        .map((f: any) => (
+                          <option key={f.id} value={f.id}>{f.question}</option>
+                        ))
+                      }
+                    </select>
+                  </div>
+
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-xs text-blue-600 dark:text-blue-400">
+                      Selected FAQs are dynamically synced with your store FAQs
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Questions</label>
+                  {((section.settings as any).items || []).map((faq: FAQItem) => (
+                    <div key={faq.id} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-800/50 shadow-sm">
+                      <button onClick={() => toggleExpand(faq.id)} className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <span className="text-sm font-bold truncate">{faq.question || 'New Question'}</span>
+                        {expandedItems.includes(faq.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                      {expandedItems.includes(faq.id) && (
+                        <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                          <input type="text" placeholder="Question" value={faq.question} onChange={(e) => updateArrayItem('items', faq.id, { question: e.target.value })} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
+                          <textarea placeholder="Answer" value={faq.answer} onChange={(e) => updateArrayItem('items', faq.id, { answer: e.target.value })} rows={3} className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800" />
+                          <button onClick={() => removeArrayItem('items', faq.id)} className="w-full py-1.5 text-[10px] font-bold text-red-500 flex items-center justify-center gap-1 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg">
+                            <Trash2 className="w-3 h-3" /> Remove Question
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <button onClick={() => addArrayItem('items', { question: 'New Question', answer: 'Answer goes here' })} className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-bold text-slate-500 hover:border-brand-500 hover:text-brand-600 transition-all flex items-center justify-center gap-2">
+                    <Plus className="w-4 h-4" /> Add Question
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

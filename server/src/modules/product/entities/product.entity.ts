@@ -77,6 +77,12 @@ export class ProductEntity {
   @OneToMany(() => FaqEntity, (faq) => faq.product)
   faqs: FaqEntity[]
 
+  @Column({ type: 'varchar', length: 50, default: 'manual' })
+  faqSource: string
+
+  @Column({ type: 'simple-array', nullable: true })
+  faqIds: string[]
+
   @OneToMany(() => ProductAttributeEntity, (attribute) => attribute.product)
   attributes: ProductAttributeEntity[]
 

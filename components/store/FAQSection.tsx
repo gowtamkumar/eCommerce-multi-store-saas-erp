@@ -11,15 +11,16 @@ interface FAQSectionProps {
     styles: any;
     buttonText: string;
     faqIds?: string[];
+    source?: string;
 }
 
-export default function FAQSection({ items, headline, subline, styles, buttonText, faqIds }: FAQSectionProps) {
+export default function FAQSection({ items, headline, subline, styles, buttonText, faqIds, source }: FAQSectionProps) {
     const [faqs, setFaqs] = useState<FAQItem[]>(items || []);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        // If faqIds are provided, fetch FAQs from API
-        if (faqIds && faqIds.length > 0) {
+        // Only fetch from API when source is 'selection' and faqIds are provided
+        if (source === 'selection' && faqIds && faqIds.length > 0) {
             setLoading(true);
             fetchAPI('/faqs/multiple', {
                 method: 'POST',
@@ -37,10 +38,10 @@ export default function FAQSection({ items, headline, subline, styles, buttonTex
                     setLoading(false);
                 });
         } else if (items) {
-            // Use provided items if no faqIds
+            // Use provided items for manual entry or backwards compatibility
             setFaqs(items);
         }
-    }, [faqIds, items]);
+    }, [faqIds, items, source]);
 
     return (
         <section

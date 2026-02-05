@@ -135,6 +135,17 @@ export class CreateProductDto {
     @IsOptional()
     faqs?: ProductFaqDto[];
 
+    @ApiProperty({ required: false })
+    @IsString()
+    @IsOptional()
+    faqSource?: string;
+
+    @ApiProperty({ required: false })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    faqIds?: string[];
+
     @ApiProperty({ required: false, type: [ProductAttributeDto] })
     @IsArray()
     @ValidateNested({ each: true })

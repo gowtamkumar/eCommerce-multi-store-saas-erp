@@ -132,6 +132,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
             styles={styles}
             buttonText={settings?.buttonText}
             faqIds={settings?.faqIds}
+            source={settings?.source}
           />
         );
       case "brand-grid":
