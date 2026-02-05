@@ -43,7 +43,6 @@ export async function generateMetadata() {
 
 export default async function Home() {
   const tenantId = await getTenantId(null, false);
-  const settings = await getSiteSettings();
 
   // If no tenant is resolved, show the SaaS landing page
   if (!tenantId) {
@@ -57,7 +56,7 @@ export default async function Home() {
 
   // Wrap API calls in try-catch to avoid crashing on tenant mismatch or local dev issues
   try {
-    const data = await fetchAPI('/home');
+    const data = await fetchAPI('/pages/home');
 
     if (!data || !data.success || data.isSaaS) {
       return <SaaSLanding />;

@@ -22,7 +22,14 @@ export class PageController {
 
   @Get('home')
   async findHomePage(@TenantId() tenantId: string) {
-    return await this.pageService.findHomePage(tenantId)
+    const data = await this.pageService.findHomePage(tenantId)
+ 
+    return {
+      statusCode: 200,
+      message: 'Home page data fetched successfully',
+      success: true,
+      data,
+    }
   }
 
   @Get('slug/:slug')

@@ -71,6 +71,7 @@ export class PageEntity {
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenantId' })
     tenant: TenantEntity;
+    
 
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;

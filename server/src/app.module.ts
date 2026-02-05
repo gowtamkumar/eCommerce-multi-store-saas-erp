@@ -16,7 +16,6 @@ import { CartModule } from './modules/cart/cart.module'
 import { CategoryModule } from './modules/category/category.module'
 import { FaqModule } from './modules/faq/faq.module'
 import { FileModule } from './modules/file/file.module'
-import { HomeModule } from './modules/home/home.module'
 import { LeadModule } from './modules/lead/lead.module'
 import { MailModule } from './modules/mail/mail.module'
 import { OrderModule } from './modules/order/order.module'
@@ -55,7 +54,6 @@ import { TrackingModule } from './modules/tracking/tracking.module'
     PageModule,
     SettingsModule,
     PaymentModule,
-    HomeModule,
     ProfileModule,
     SuperAdminModule,
     MailModule,

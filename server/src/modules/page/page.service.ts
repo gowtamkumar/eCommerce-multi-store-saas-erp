@@ -1,6 +1,8 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+import { FaqService } from '../faq/faq.service'
+import { ProductService } from '../product/product.service'
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto'
 import { PageEntity } from './entities/page.entity'
 
@@ -9,6 +11,8 @@ export class PageService {
   constructor(
     @InjectRepository(PageEntity)
     private pageRepository: Repository<PageEntity>,
+       private readonly productService: ProductService,
+            private readonly faqService: FaqService,
   ) { }
 
   async create(dto: CreatePageDto, tenantId: string) {
@@ -45,10 +49,17 @@ export class PageService {
   }
 
   async findHomePage(tenantId: string) {
-    const page = await this.pageRepository.findOne({ where: { isHomePage: true, tenantId } })
-    if (!page) throw new NotFoundException('Home page not found')
+    const [latestProducts, faqs, homePage] = await Promise.all([
+      this.productService.findLatest(tenantId, 8),
+      this.faqService.findAll({ status: 'active', page: 1, limit: 100 }, tenantId),
+      this.pageRepository.findOne({ where: { isHomePage: true, tenantId } }).catch(() => null),
+    ]);
 
-    return JSON.parse(JSON.stringify(page));
+    return {
+      products: latestProducts,
+      faqs,
+      page: homePage,
+    };
   }
 
   async update(id: string, dto: UpdatePageDto, tenantId: string) {
