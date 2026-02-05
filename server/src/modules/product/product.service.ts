@@ -265,12 +265,19 @@ export class ProductService {
       }
     }
 
+    // Invalidate cache after update
+    await this.cache.del(`product:${id}`, tenantId)
+
     return await this.findOne(id, tenantId)
   }
 
   async remove(id: string, tenantId: string) {
     const product: any = await this.findOne(id, tenantId)
     await this.productRepository.remove(product)
+    
+    // Invalidate cache after deletion
+    await this.cache.del(`product:${id}`, tenantId)
+    
     return { success: true, message: 'Product deleted successfully' }
   }
 
