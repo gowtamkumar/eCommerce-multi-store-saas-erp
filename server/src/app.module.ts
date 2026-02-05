@@ -11,6 +11,7 @@ import { TenantContextMiddleware } from './common/middleware/tenant-context.midd
 import { DatabaseModule } from './database/database.module'
 import { AdminModule } from './modules/admin/admin.module'
 import { BrandModule } from './modules/brand/brand.module'
+import { CacheModule } from './modules/cache/cache.module'
 import { CartModule } from './modules/cart/cart.module'
 import { CategoryModule } from './modules/category/category.module'
 import { FaqModule } from './modules/faq/faq.module'
@@ -65,6 +66,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module'
     WishlistModule,
     TrackingModule,
     SubscriptionPlanModule,
+    CacheModule,
   ],
   controllers: [],
   providers: [

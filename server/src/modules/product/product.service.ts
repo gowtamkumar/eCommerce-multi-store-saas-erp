@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+import { CacheService } from '../cache/cache.service'
 import { FaqEntity } from '../faq/entities/faq.entity'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
@@ -19,6 +20,7 @@ export class ProductService {
     private attributeRepository: Repository<ProductAttributeEntity>,
     @InjectRepository(ProductVariantEntity)
     private variantRepository: Repository<ProductVariantEntity>,
+    private cache: CacheService,
   ) {}
 
   async create(createProductDto: CreateProductDto, tenantId: string) {
@@ -116,7 +118,7 @@ export class ProductService {
 
     const [products, total] = await query
       .orderBy(this.getSortOptions(filterDto.sort))
-            // .orderBy('product.createdAt', 'DESC')
+      // .orderBy('product.createdAt', 'DESC')
 
       .skip((page - 1) * limit)
       .take(limit)
@@ -135,6 +137,17 @@ export class ProductService {
   }
 
   async findOne(id: string, tenantId: string) {
+    const cacheKey = `product:${id}`
+
+    const cached = await this.cache.get(cacheKey, tenantId)
+
+    if (cached) {
+      console.log('Get from cache', cached ? 'HIT' : 'MISS')
+      return cached
+    }
+
+    console.log('Get from db')
+
     const product = await this.productRepository.findOne({
       where: { id, tenantId },
       relations: ['faqs', 'attributes', 'variants', 'category'],
@@ -143,6 +156,8 @@ export class ProductService {
     if (!product) {
       throw new NotFoundException('Product not found')
     }
+
+    await this.cache.set(cacheKey, product, 300, tenantId)
 
     return product
   }
@@ -161,7 +176,7 @@ export class ProductService {
   }
 
   async update(id: string, updateProductDto: UpdateProductDto, tenantId: string) {
-    const product = await this.findOne(id, tenantId)
+    const product: any = await this.findOne(id, tenantId)
 
     // If slug is being updated, check uniqueness
     if (updateProductDto.slug && updateProductDto.slug !== product.slug) {
@@ -175,11 +190,11 @@ export class ProductService {
     }
 
     const { faqs, attributes, variants, ...productData } = updateProductDto
-    
-    // If categoryId is specifically provided (even as null), 
+
+    // If categoryId is specifically provided (even as null),
     // we should nullify the category object to ensure TypeORM uses the categoryId column
     if ('categoryId' in productData) {
-      product.category = null;
+      product.category = null
     }
 
     Object.assign(product, productData)
@@ -222,11 +237,9 @@ export class ProductService {
         where: { productId: product.id, tenantId },
       })
       const existingVariantIds = existingVariants.map((v) => v.id)
-      
+
       // 2. Identify incoming IDs (to exclude from deletion)
-      const incomingVariantIds = variants
-        .filter((v: any) => v.id)
-        .map((v: any) => v.id)
+      const incomingVariantIds = variants.filter((v: any) => v.id).map((v: any) => v.id)
 
       // 3. Upsert (Update existing + Insert new)
       // We map variants to entities. If ID exists, TypeORM updates; if not, it inserts.
@@ -240,18 +253,14 @@ export class ProductService {
       await this.variantRepository.save(variantEntities)
 
       // 4. Delete removed variants
-      const toDeleteIds = existingVariantIds.filter(
-        (id) => !incomingVariantIds.includes(id),
-      )
+      const toDeleteIds = existingVariantIds.filter((id) => !incomingVariantIds.includes(id))
 
       if (toDeleteIds.length > 0) {
         try {
           await this.variantRepository.delete(toDeleteIds)
         } catch (error) {
           // If deletion fails (e.g. FK constraint), we log it but don't crash
-          console.warn(
-            `Failed to delete variants ${toDeleteIds.join(', ')}: ${error.message}`,
-          )
+          console.warn(`Failed to delete variants ${toDeleteIds.join(', ')}: ${error.message}`)
         }
       }
     }
@@ -260,7 +269,7 @@ export class ProductService {
   }
 
   async remove(id: string, tenantId: string) {
-    const product = await this.findOne(id, tenantId)
+    const product: any = await this.findOne(id, tenantId)
     await this.productRepository.remove(product)
     return { success: true, message: 'Product deleted successfully' }
   }
@@ -283,7 +292,7 @@ export class ProductService {
       return await this.variantRepository.save(variant)
     }
 
-    const product = await this.findOne(productId, tenantId)
+    const product: any = await this.findOne(productId, tenantId)
 
     if (product.stock < quantity) {
       throw new ConflictException('Insufficient stock')
