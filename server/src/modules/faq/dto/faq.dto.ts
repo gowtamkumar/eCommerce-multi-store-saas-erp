@@ -1,5 +1,5 @@
-import { IsString, IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { FaqStatus } from '../../../common/enums/faq-status.enum';
 
 export class CreateFaqDto {
@@ -25,6 +25,16 @@ export class CreateFaqDto {
     @IsEnum(FaqStatus)
     @IsOptional()
     status?: FaqStatus;
+
+    @ApiProperty({ required: false })
+    @IsString()
+   @IsOptional()
+    productId?: string;
+
+    @ApiProperty({ required: false })
+    @IsString()
+    @IsOptional()
+    pageId?: string;
 }
 
 export class UpdateFaqDto extends CreateFaqDto { }

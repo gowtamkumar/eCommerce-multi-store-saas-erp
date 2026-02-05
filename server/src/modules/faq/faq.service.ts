@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { FaqStatus } from 'src/common/enums/faq-status.enum';
 import { Repository } from 'typeorm';
-import { FaqEntity } from './entities/faq.entity';
 import { CreateFaqDto, UpdateFaqDto } from './dto/faq.dto';
+import { FaqEntity } from './entities/faq.entity';
 
 @Injectable()
 export class FaqService {
@@ -55,5 +56,26 @@ export class FaqService {
         const faq = await this.findOne(id, tenantId);
         await this.faqRepository.remove(faq);
         return { success: true };
+    }
+
+    // Find FAQs by Page ID
+    async findByPage(pageId: string, tenantId: string) {
+        return await this.faqRepository.find({
+            where: { pageId, tenantId, status: FaqStatus.ACTIVE },
+            order: { order: 'ASC', createdAt: 'DESC' }
+        });
+    }
+
+    // Find Global FAQs (no productId or pageId)
+    async findGlobalFaqs(tenantId: string) {
+        return await this.faqRepository.find({
+            where: { 
+                tenantId, 
+                productId: null, 
+                pageId: null,
+                status: FaqStatus.ACTIVE
+            },
+            order: { order: 'ASC', createdAt: 'DESC' }
+        });
     }
 }

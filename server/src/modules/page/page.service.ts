@@ -88,6 +88,36 @@ export class PageService {
     return await this.pageRepository.find()
   }
 
+  // Load FAQs for a page with faq-section
+  async enrichPageWithFaqs(page: PageEntity) {
+    if (!page.sections || page.sections.length === 0) return page;
+
+    const enrichedSections = await Promise.all(
+      page.sections.map(async (section) => {
+        if (section.type === 'faq-section') {
+          const source = section.settings?.source || 'page';
+          
+          let faqs = [];
+          if (source === 'page') {
+            // Load FAQs linked to this page
+            faqs = await this.faqService.findByPage(page.id, page.tenantId);
+          } else if (source === 'global') {
+            // Load global FAQs (not linked to any page or product)
+            faqs = await this.faqService.findGlobalFaqs(page.tenantId);
+          } else if (source === 'specific' && section.settings?.faqIds) {
+            // Load specific FAQ IDs
+            // Would need a findByIds method in FaqService
+          }
+
+          return { ...section, data: { faqs } };
+        }
+        return section;
+      })
+    );
+
+    return { ...page, sections: enrichedSections };
+  }
+
   async countByTenant(tenantId: string) {
     return await this.pageRepository.count({ where: { tenantId } });
   }

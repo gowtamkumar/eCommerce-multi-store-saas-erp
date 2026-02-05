@@ -8,6 +8,7 @@ import {
     UpdateDateColumn,
 } from 'typeorm';
 import { FaqStatus } from '../../../common/enums/faq-status.enum';
+import { PageEntity } from '../../page/entities/page.entity';
 import { ProductEntity } from '../../product/entities/product.entity';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
@@ -48,6 +49,13 @@ export class FaqEntity {
     @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE', nullable: true })
     @JoinColumn({ name: 'productId' })
     product: ProductEntity;
+
+    @Column({ type: 'uuid', nullable: true })
+    pageId: string;
+
+    @ManyToOne(() => PageEntity, { onDelete: 'CASCADE', nullable: true })
+    @JoinColumn({ name: 'pageId' })
+    page: PageEntity;
 
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
