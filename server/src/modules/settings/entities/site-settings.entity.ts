@@ -8,7 +8,7 @@ import {
     UpdateDateColumn,
 } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
-import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto } from '../dto/index';
+import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto, SteadfastCourierDto } from '../dto/index';
 
 
 @Entity('site_settings')
@@ -16,38 +16,31 @@ export class SiteSettingsEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ type: 'varchar', length: 500, default: '' })
+    @Column({ nullable: true })
     logo: string;
 
-    @Column({ type: 'varchar', length: 255, default: 'LuxeAudio' })
+    @Column({ nullable: true })
     brandName: string;
 
-    @Column({
-        type: 'text',
-        default: 'Elevating your audio experience with premium sound and design.',
-    })
+    @Column({ nullable: true })
     siteDescription: string;
 
-    @Column({ type: 'varchar', length: 255, default: 'support@luxeaudio.com' })
+    @Column({ nullable: true })
     contactEmail: string;
 
-    @Column({ type: 'varchar', length: 50, default: '+1 (555) 123-4567' })
+    @Column({ nullable: true })
     contactPhone: string;
 
-    @Column({ type: 'varchar', length: 50, default: '+1 (555) 123-4567' })
+    @Column({ nullable: true })
     whatsappPhone: string;
 
-    @Column({
-        type: 'varchar',
-        length: 500,
-        default: '123 Audio Street, Sound City, SC 90210',
-    })
+    @Column({ nullable: true })
     address: string;
 
-    @Column({ type: 'varchar', length: 10, default: 'BDT' })
+    @Column({ nullable: true })
     currency: string;
 
-    @Column({ type: 'varchar', length: 10, default: '৳' })
+    @Column({ nullable: true })
     currencySymbol: string;
 
     @Column({ type: 'jsonb', nullable: true })
@@ -68,6 +61,9 @@ export class SiteSettingsEntity {
 
     @Column({ type: 'jsonb', nullable: true })
     pathaoCourier?: PathaoCourierDto
+
+    @Column({ type: 'jsonb', nullable: true })
+    steadfastCourier?: SteadfastCourierDto
 
     @Column({ type: 'jsonb', nullable: true })
     navbarLinks?: NavbarLinkDto[]

@@ -108,6 +108,10 @@ function SettingsContent() {
             pathaoPassword: "",
             sandboxMode: false,
         },
+        steadfastCourier: {
+            apiKey: "",
+            secretKey: "",
+        },
         navbarLinks: [] as Array<{
             label: string;
             href: string;
@@ -206,6 +210,10 @@ function SettingsContent() {
                             pathaoUsername: data.pathaoCourier?.pathaoUsername || "",
                             pathaoPassword: data.pathaoCourier?.pathaoPassword || "",
                             sandboxMode: data.pathaoCourier?.sandboxMode || false
+                        },
+                        steadfastCourier: {
+                            apiKey: data.steadfastCourier?.apiKey || "",
+                            secretKey: data.steadfastCourier?.secretKey || "",
                         },
                         navbarLinks: data.navbarLinks || [],
                         footerDescription: data.footerDescription || "",
@@ -2126,6 +2134,55 @@ function SettingsContent() {
                                                         Enable this for testing configation without real
                                                         transactions.
                                                     </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Steadfast Courier Section */}
+                                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm mt-6">
+                                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Steadfast Courier Settings</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                                <div className="space-y-1.5">
+                                                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                                        API Key
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.steadfastCourier.apiKey}
+                                                        onChange={(e) =>
+                                                            setFormData({
+                                                                ...formData,
+                                                                steadfastCourier: {
+                                                                    ...formData.steadfastCourier,
+                                                                    apiKey: e.target.value,
+                                                                },
+                                                            })
+                                                        }
+                                                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
+                                                        placeholder="Enter API Key"
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-1.5">
+                                                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                                        Secret Key
+                                                    </label>
+                                                    <input
+                                                        type="password"
+                                                        value={formData.steadfastCourier.secretKey}
+                                                        onChange={(e) =>
+                                                            setFormData({
+                                                                ...formData,
+                                                                steadfastCourier: {
+                                                                    ...formData.steadfastCourier,
+                                                                    secretKey: e.target.value,
+                                                                },
+                                                            })
+                                                        }
+                                                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
+                                                        placeholder="Enter Secret Key"
+                                                    />
                                                 </div>
                                             </div>
                                         </div>

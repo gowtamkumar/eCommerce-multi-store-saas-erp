@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsEmail, IsObject, IsOptional, IsString } from 'class-validator';
-import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto } from './index';
+import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto, SteadfastCourierDto } from './index';
 // import { FooterSectionDto } from './footerSection.dto';
 // import { MarketingDto } from './marketing.dto';
 // import { NavbarLinkDto } from './navbarLink.dto';
@@ -84,6 +84,11 @@ export class UpdateSiteSettingsDto {
     @IsObject()
     @IsOptional()
     pathaoCourier?: PathaoCourierDto;
+
+    @ApiProperty({ required: false })
+    @IsObject()
+    @IsOptional()
+    steadfastCourier?: SteadfastCourierDto;
 
     @ApiProperty({ required: false })
     @IsOptional()

@@ -6,4 +6,5 @@ export * from './pathaoCourier.dto';
 export * from './payment.dto';
 export * from './smtp.dto';
 export * from './socialLink.dto';
+export * from './steadfastCourier.dto';
 
