@@ -8,6 +8,8 @@ import {
     UpdateDateColumn,
 } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
+import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto } from '../dto/index';
+
 
 @Entity('site_settings')
 export class SiteSettingsEntity {
@@ -49,76 +51,35 @@ export class SiteSettingsEntity {
     currencySymbol: string;
 
     @Column({ type: 'jsonb', nullable: true })
-    supportedCurrencies: Array<{
-        code: string;
-        symbol: string;
-        rate: number;
-        name: string;
-    }>;
+    supportedCurrencies?: CurrenciesDto[];
 
     @Column({ type: 'jsonb', nullable: true })
-    socialLinks: {
-        facebook: string;
-        twitter: string;
-        instagram: string;
-        linkedin: string;
-    };
+    socialLinks?: SocialLinkDto;
 
 
     @Column({ type: 'jsonb', nullable: true })
-    marketing: {
-        googleAnalyticsId: string;
-        googleSiteVerification: string;
-        facebookPixelId: string;
-        facebookDomainVerification: string;
-    };
+    marketing?: MarketingDto
 
     @Column({ type: 'jsonb', nullable: true })
-    smtp: {
-        host: string;
-        port: number;
-        secure: boolean;
-        user: string;
-        pass: string;
-        from: string;
-    };
+    smtp?: SmtpDto
 
     @Column({ type: 'jsonb', nullable: true })
-    payment: {
-        stripePublishableKey: string;
-        stripeSecretKey: string;
-        sslCommerzStoreId?: string;
-        sslCommerzStorePassword?: string;
-        sslCommerzIsSandbox?: boolean;
-    };
+    payment?: PaymentDto
 
     @Column({ type: 'jsonb', nullable: true })
-    navbarLinks: Array<{
-        label: string;
-        href: string;
-        order: number;
-        isOpenInNewTab: boolean;
-        isActive: boolean;
-    }>;
+    pathaoCourier?: PathaoCourierDto
+
+    @Column({ type: 'jsonb', nullable: true })
+    navbarLinks?: NavbarLinkDto[]
 
     @Column({ nullable: true })
-    footerDescription: string;
+    footerDescription?: string;
 
     @Column({ nullable: true })
-    footerCopyright: string;
+    footerCopyright?: string;
 
     @Column({ type: 'jsonb', nullable: true })
-    footerSections: Array<{
-        title: string;
-        order: number;
-        links: Array<{
-            label: string;
-            href: string;
-            order: number;
-            isOpenInNewTab: boolean;
-            isActive: boolean;
-        }>;
-    }>;
+    footerSections?: FooterSectionDto[]
 
     @Column({ type: 'uuid', unique: true })
     tenantId: string;

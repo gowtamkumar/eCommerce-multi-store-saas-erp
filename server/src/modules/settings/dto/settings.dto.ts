@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsEmail, IsObject, IsOptional, IsString } from 'class-validator';
+import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto } from './index';
+// import { FooterSectionDto } from './footerSection.dto';
+// import { MarketingDto } from './marketing.dto';
+// import { NavbarLinkDto } from './navbarLink.dto';
+// import { PathaoCourierDto } from './pathaoCourier.dto';
+// import { PaymentDto } from './payment.dto';
+// import { SmtpDto } from './smtp.dto';
+// import { SocialLinkDto } from './socialLink.dto';
 
 export class UpdateSiteSettingsDto {
     @ApiProperty({ required: false })
@@ -48,34 +56,40 @@ export class UpdateSiteSettingsDto {
     currencySymbol?: string;
 
     @ApiProperty({ required: false })
-    @IsObject()
+    @IsArray()
     @IsOptional()
-    socialLinks?: any;
+    supportedCurrencies?: CurrenciesDto[];
 
     @ApiProperty({ required: false })
     @IsObject()
     @IsOptional()
-    marketing?: any;
+    socialLinks?: SocialLinkDto
 
     @ApiProperty({ required: false })
     @IsObject()
     @IsOptional()
-    smtp?: any;
+    marketing?: MarketingDto
 
     @ApiProperty({ required: false })
     @IsObject()
     @IsOptional()
-    payment?: any;
+    smtp?: SmtpDto
+
+    @ApiProperty({ required: false })
+    @IsObject()
+    @IsOptional()
+    payment?: PaymentDto;
+
+    @ApiProperty({ required: false })
+    @IsObject()
+    @IsOptional()
+    pathaoCourier?: PathaoCourierDto;
 
     @ApiProperty({ required: false })
     @IsOptional()
-    navbarLinks?: Array<{
-        label: string;
-        href: string;
-        order: number;
-        isOpenInNewTab: boolean;
-        isActive: boolean;
-    }>;
+    @IsArray()
+    navbarLinks?: NavbarLinkDto[];
+
 
     @ApiProperty({ required: false })
     @IsOptional()
@@ -90,15 +104,5 @@ export class UpdateSiteSettingsDto {
     @ApiProperty({ required: false })
     @IsOptional()
     @IsArray()
-    footerSections?: Array<{
-        title: string;
-        order: number;
-        links: Array<{
-            label: string;
-            href: string;
-            order: number;
-            isOpenInNewTab: boolean;
-            isActive: boolean;
-        }>;
-    }>;
+    footerSections?: FooterSectionDto[]
 }

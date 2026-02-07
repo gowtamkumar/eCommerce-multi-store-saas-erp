@@ -14,6 +14,7 @@ import { BrandModule } from './modules/brand/brand.module'
 import { CacheModule } from './modules/cache/cache.module'
 import { CartModule } from './modules/cart/cart.module'
 import { CategoryModule } from './modules/category/category.module'
+import { PathaoModule } from './modules/courier/pathao/pathao.module'
 import { FaqModule } from './modules/faq/faq.module'
 import { FileModule } from './modules/file/file.module'
 import { LeadModule } from './modules/lead/lead.module'
@@ -63,6 +64,7 @@ import { TrackingModule } from './modules/tracking/tracking.module'
     TrackingModule,
     SubscriptionPlanModule,
     CacheModule,
+    PathaoModule,
   ],
   controllers: [],
   providers: [
