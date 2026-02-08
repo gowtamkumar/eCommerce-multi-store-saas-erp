@@ -514,8 +514,11 @@ export default function OrderDetailsPage({
                         </div>
                       )}
 
-                      <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
-                        <span>Quantity: {item.quantity}</span>
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium text-slate-500">Qty:</span>
+                          <span className="font-bold text-slate-900 dark:text-white">{item.quantity}</span>
+                        </div>
                         {(() => {
                           const returnStatus = getItemReturnStatus(item.product?.id || "", item.variant?.id);
                           if (returnStatus && (returnStatus === 'approved' || returnStatus === 'refunded')) {
@@ -533,24 +536,52 @@ export default function OrderDetailsPage({
                             if (returnedQty) {
                               return (
                                 <>
-                                  <span>•</span>
-                                  <span className="text-orange-600 font-medium">Returned: {returnedQty}</span>
+                                  <span className="text-slate-300">•</span>
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-medium text-orange-500">Returned:</span>
+                                    <span className="font-bold text-orange-600">{returnedQty}</span>
+                                  </div>
                                 </>
                               );
                             }
                           }
                           return null;
                         })()}
-                        <span>•</span>
-                        <span>
-                          Unit: {formatPrice(item.unitPrice)}
-                        </span>
+                        <span className="text-slate-300">•</span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium text-slate-500">Unit Price:</span>
+                          <span className="font-bold text-slate-900 dark:text-white">{formatPrice(item.unitPrice)}</span>
+                        </div>
+                        {Number(item.discountAmount) > 0 && (
+                          <>
+                            <span className="text-slate-300">•</span>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium text-red-500">Discount/Unit:</span>
+                              <span className="font-bold text-red-600">-{formatPrice(item.discountAmount)}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      {Number(item.discountAmount) > 0 && (
-                        <p className="text-xs text-red-500 font-medium mt-1">
-                          Discount: -{formatPrice(item.discountAmount)} unit
-                        </p>
-                      )}
+
+                      {/* Price Calculation Breakdown */}
+                      <div className="mt-2 p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+                        <div className="text-[10px] sm:text-xs space-y-0.5">
+                          <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                            <span>{item.quantity} × {formatPrice(item.unitPrice)}</span>
+                            <span className="font-medium">{formatPrice(item.quantity * item.unitPrice)}</span>
+                          </div>
+                          {Number(item.discountAmount) > 0 && (
+                            <div className="flex justify-between text-red-500">
+                              <span>Discount ({item.quantity} × {formatPrice(item.discountAmount)})</span>
+                              <span className="font-medium">-{formatPrice(item.quantity * item.discountAmount)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-slate-900 dark:text-white font-bold pt-1 border-t border-slate-200 dark:border-slate-600">
+                            <span>Item Total</span>
+                            <span className="text-brand-600">{formatPrice(item.totalAmount)}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-2">
                       <p className="text-lg font-bold text-brand-600">
