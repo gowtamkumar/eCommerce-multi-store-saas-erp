@@ -4,7 +4,7 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { fetchAPI } from "@/lib/api";
 import { OrderStatus } from "@/lib/enums/order-status";
 import { PaymentStatus } from "@/lib/enums/payment-status";
-import { handleCreatePathaoOrder, handleCreateSteadfastOrder } from "@/lib/utils";
+import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, updateOrderStatus } from "@/lib/utils";
 import {
   ArrowLeft,
   Calendar,
@@ -107,41 +107,21 @@ export default function OrderDetailsPage({
 
   const handleStatusUpdate = async (updates: any) => {
     setUpdating(true);
-    try {
-      const res = await fetchAPI(`/orders/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(updates),
-      });
+    const result = await updateOrderStatus(id, updates);
 
-      if (res.success && res.data) {
-        setOrder(res.data);
-        toast.success("Order updated successfully");
-      } else {
-        toast.error("Failed to update order");
-      }
-    } catch (error) {
-      toast.error("Error updating order");
-    } finally {
-      setUpdating(false);
+    if (result.success && result.data) {
+      setOrder(result.data);
+      toast.success("Order updated successfully");
+    } else {
+      toast.error(result.error || "Failed to update order");
     }
+    setUpdating(false);
   };
 
   const handleRefresh = async () => {
     await fetchOrder();
     toast.success("Order data refreshed");
   };
-
-  const getStatusStyles = (status: string) => {
-    switch (status) {
-      case OrderStatus.COMPLETED:
-        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      case OrderStatus.CANCELLED:
-        return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-      default:
-        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-    }
-  };
-
 
   const handleCourierSelect = (courier: string) => {
     if (courier) {
@@ -419,7 +399,7 @@ export default function OrderDetailsPage({
               {new Date(order.createdAt).toLocaleString()}
             </div>
             <span
-              className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusStyles(
+              className={`px-3 py-1 rounded-full text-xs font-semibold ${getOrderStatusStyles(
                 order.status || "PENDING"
               )}`}
             >
@@ -449,7 +429,7 @@ export default function OrderDetailsPage({
             value={order.status || OrderStatus.PENDING}
             onChange={(e) => handleStatusUpdate({ status: e.target.value })}
             disabled={updating}
-            className={`px-4 py-2.5 rounded-xl font-bold text-sm cursor-pointer border-none outline-none ring-2 ring-slate-100 dark:ring-slate-700 transition-all ${getStatusStyles(
+            className={`px-4 py-2.5 rounded-xl font-bold text-sm cursor-pointer border-none outline-none ring-2 ring-slate-100 dark:ring-slate-700 transition-all ${getOrderStatusStyles(
               order.status || OrderStatus.PENDING
             )}`}
           >

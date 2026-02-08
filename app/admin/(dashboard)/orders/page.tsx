@@ -6,7 +6,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { OrderStatus } from '@/lib/enums/order-status';
 import { PaymentStatus } from '@/lib/enums/payment-status';
-import { handleCreatePathaoOrder, handleCreateSteadfastOrder } from '@/lib/utils';
+import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, updateOrderStatus } from '@/lib/utils';
 import { Order } from '@/types/order';
 import { ChevronLeft, ChevronRight, Eye, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
@@ -38,7 +38,7 @@ export default function OrdersPage() {
     limit: 20,
     totalPages: 1
   });
-  const { settings, formatPrice } = useSettings();
+  const { formatPrice } = useSettings();
   const debouncedSearch = useDebounce(searchQuery, 500);
 
 
@@ -75,35 +75,19 @@ export default function OrdersPage() {
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
-    try {
-      await fetchAPI(`/orders/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ status: newStatus }),
-      });
+    const result = await updateOrderStatus(id, { status: newStatus });
 
+    if (result.success) {
       setOrders(orders.map((o: any) => o.id === id ? { ...o, status: newStatus } : o));
 
       if (selectedOrder && selectedOrder?.id === id) {
         setSelectedOrder({ ...selectedOrder, status: newStatus });
       }
       toast.success('Order status updated');
-    } catch (error) {
-      toast.error('Error updating status');
+    } else {
+      toast.error(result.error || 'Error updating status');
     }
   };
-
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case OrderStatus.COMPLETED: return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-      case OrderStatus.CANCELLED: return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-      default: return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
-    }
-  };
-
-
-
-
 
   const handleCreateCourierOrder = async (order: Order) => {
     const courier = selectedCourier[order.id];
@@ -129,7 +113,7 @@ export default function OrdersPage() {
     if (pendingCourierOrder) {
       setShowCourierModal(false);
       setSelectedCourier({ ...selectedCourier, [pendingCourierOrder.order.id]: pendingCourierOrder.courier });
-      await handleCreateCourierOrder(pendingCourierOrder.order);
+      await handleCreateCourierOrder(pendingCourierOrder.order,);
       setPendingCourierOrder(null);
     }
   };
@@ -236,7 +220,7 @@ export default function OrdersPage() {
                       <select
                         value={order.status}
                         onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer ${getStatusColor(order.status)}`}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer ${getOrderStatusStyles(order.status)}`}
                       >
                         <option value={OrderStatus.PENDING}>Pending</option>
                         <option value={OrderStatus.COMPLETED}>Completed</option>

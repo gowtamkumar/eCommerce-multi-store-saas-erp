@@ -3,6 +3,7 @@ import { type ClassValue, clsx } from 'clsx';
 import toast from 'react-hot-toast';
 import { twMerge } from 'tailwind-merge';
 import { fetchAPI } from './api';
+import { OrderStatus } from './enums/order-status';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -68,7 +69,7 @@ export function formatCurrency(amount: number, currencySymbol?: string): string 
     }
   };
 
-    export const handleCreateSteadfastOrder = async (order: Order, setCreatingOrder: (orderId: string | null) => void) => {
+export const handleCreateSteadfastOrder = async (order: Order, setCreatingOrder: (orderId: string | null) => void) => {
       setCreatingOrder(order.id);
       try {
         // Format phone number to ensure it's 11 digits starting with 0
@@ -112,3 +113,40 @@ export function formatCurrency(amount: number, currencySymbol?: string): string 
         setCreatingOrder(null);
       }
     };
+
+
+
+
+export const getOrderStatusStyles = (status: string) => {
+    switch (status) {
+      case OrderStatus.COMPLETED:
+        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      case OrderStatus.CANCELLED:
+        return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+      default:
+        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+    }
+  };
+
+/**
+ * Update order status or other fields via API
+ * @param orderId - Order ID to update
+ * @param updates - Fields to update (e.g., { status: 'completed', paymentStatus: 'paid' })
+ * @returns Updated order data if successful
+ */
+export const updateOrderStatus = async (orderId: string, updates: Record<string, any>) => {
+  try {
+    const res = await fetchAPI(`/orders/${orderId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+
+    if (res.success && res.data) {
+      return { success: true, data: res.data };
+    } else {
+      return { success: false, error: 'Failed to update order' };
+    }
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Error updating order' };
+  }
+};
