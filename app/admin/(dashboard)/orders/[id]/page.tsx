@@ -4,16 +4,18 @@ import { useSettings } from "@/contexts/SettingsContext";
 import { fetchAPI } from "@/lib/api";
 import { OrderStatus } from "@/lib/enums/order-status";
 import { PaymentStatus } from "@/lib/enums/payment-status";
+import { handleCreatePathaoOrder, handleCreateSteadfastOrder } from "@/lib/utils";
 import {
   ArrowLeft,
   Calendar,
   CreditCard,
   FileText,
+  Loader2,
   Mail,
   MapPin,
   Package,
   Phone,
-  RefreshCw,
+  RefreshCw
 } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
@@ -66,6 +68,10 @@ export default function OrderDetailsPage({
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const { settings, formatPrice } = useSettings();
+  const [selectedCourier, setSelectedCourier] = useState<string>("");
+  const [showCourierModal, setShowCourierModal] = useState(false);
+  const [creatingOrder, setCreatingOrder] = useState<string | null>(null);
+  const [creatingPathaoOrder, setCreatingPathaoOrder] = useState<string | null>(null);
 
   const getItemReturnStatus = (productId: string, variantId?: string) => {
     if (!order?.returns) return null;
@@ -134,6 +140,29 @@ export default function OrderDetailsPage({
       default:
         return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
     }
+  };
+
+
+  const handleCourierSelect = (courier: string) => {
+    if (courier) {
+      setSelectedCourier(courier);
+      setShowCourierModal(true);
+    }
+  };
+
+  const handleConfirmCourierOrder = async (order: Order) => {
+    setShowCourierModal(false);
+    if (selectedCourier === 'steadfast') {
+      await handleCreateSteadfastOrder(order, setCreatingOrder);
+    } else if (selectedCourier === 'pathao') {
+      await handleCreatePathaoOrder(order, setCreatingPathaoOrder);
+    }
+    setSelectedCourier("");
+  };
+
+  const handleCancelCourierOrder = () => {
+    setShowCourierModal(false);
+    setSelectedCourier("");
   };
 
   if (loading) {
@@ -427,6 +456,15 @@ export default function OrderDetailsPage({
             <option value={OrderStatus.PENDING}>Mark as Pending</option>
             <option value={OrderStatus.COMPLETED}>Mark as Completed</option>
             <option value={OrderStatus.CANCELLED}>Mark as Cancelled</option>
+          </select>
+          <select
+            value={selectedCourier}
+            onChange={(e) => handleCourierSelect(e.target.value)}
+            className="px-4 py-2.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer hover:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
+          >
+            <option value="">🚚 Create Courier Order</option>
+            <option value="steadfast">📦 Steadfast</option>
+            <option value="pathao">🚚 Pathao</option>
           </select>
         </div>
       </div>
@@ -751,6 +789,39 @@ export default function OrderDetailsPage({
           </section>
         </div>
       </div>
+
+      {/* Courier Confirmation Modal */}
+      {showCourierModal && order && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 max-w-md w-full transform transition-all">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              Create {selectedCourier === 'pathao' ? 'Pathao' : 'Steadfast'} Order?
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-6">
+              Are you sure you want to create a {selectedCourier === 'pathao' ? 'Pathao' : 'Steadfast'} courier order for order <span className="font-mono font-semibold">{order.id.slice(-6).toUpperCase()}</span>?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleCancelCourierOrder}
+                // disabled={creatingOrder  || creatingPathaoOrder}
+                className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition-colors disabled:opacity-50"
+              >
+                No
+              </button>
+              <button
+                onClick={() => handleConfirmCourierOrder(order)}
+                // disabled={creatingOrder || creatingPathaoOrder}
+                className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {(creatingOrder || creatingPathaoOrder) && (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                )}
+                Yes, Create Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

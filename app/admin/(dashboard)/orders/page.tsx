@@ -6,26 +6,14 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { OrderStatus } from '@/lib/enums/order-status';
 import { PaymentStatus } from '@/lib/enums/payment-status';
+import { handleCreatePathaoOrder, handleCreateSteadfastOrder } from '@/lib/utils';
+import { Order } from '@/types/order';
 import { ChevronLeft, ChevronRight, Eye, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
-interface Order {
-  id: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  address: string;
-  totalAmount: number;
-  status: string;
-  paymentMethod: string;
-  paymentStatus: string;
-  transactionId?: string;
-  items: any[];
-  createdAt: string;
-  orderNotes?: string;
-}
+
 
 interface Pagination {
   total: number;
@@ -113,109 +101,16 @@ export default function OrdersPage() {
     }
   };
 
-  const handleCreateSteadfastOrder = async (order: Order) => {
-    setCreatingOrder(order.id);
-    try {
-      // Format phone number to ensure it's 11 digits starting with 0
-      let formattedPhone = (order.customerPhone || '').replace(/\D/g, ''); // Remove non-digits
 
-      // Ensure phone starts with 0 and is 11 digits
-      if (!formattedPhone.startsWith('0')) {
-        formattedPhone = '0' + formattedPhone;
-      }
-      if (formattedPhone.length > 11) {
-        formattedPhone = formattedPhone.slice(0, 11);
-      }
-      if (formattedPhone.length < 11) {
-        // Pad with zeros if too short, or use default
-        formattedPhone = '01700000000';
-      }
 
-      // Map order data to Steadfast format
-      const steadfastOrderData = {
-        invoice: order.id.slice(-8).toUpperCase(),
-        recipient_name: order.customerName,
-        recipient_phone: formattedPhone,
-        recipient_address: order.address || 'Address not provided',
-        cod_amount: Number(order.totalAmount) || 0, // Ensure it's a number
-        item_description: order.items?.map((item: any) =>
-          `${item.quantity}x ${item.product?.name || 'Product'}`
-        ).join(', ') || 'Order items'
-      };
 
-      const response = await fetchAPI('/courier/steadfast/create-order', {
-        method: 'POST',
-        body: JSON.stringify(steadfastOrderData),
-      });
-
-      toast.success('Steadfast order created successfully!');
-      console.log('Steadfast order response:', response);
-    } catch (error: any) {
-      console.error('Failed to create Steadfast order:', error);
-      toast.error(error?.message || 'Failed to create Steadfast order. Please check your courier settings.');
-    } finally {
-      setCreatingOrder(null);
-    }
-  };
-
-  const handleCreatePathaoOrder = async (order: Order) => {
-    setCreatingPathaoOrder(order.id);
-    try {
-      // Format phone number for Pathao
-      let formattedPhone = (order.customerPhone || '').replace(/\D/g, '');
-      if (!formattedPhone.startsWith('0')) {
-        formattedPhone = '0' + formattedPhone;
-      }
-      if (formattedPhone.length > 11) {
-        formattedPhone = formattedPhone.slice(0, 11);
-      }
-      if (formattedPhone.length < 11) {
-        formattedPhone = '01700000000';
-      }
-
-      // Calculate total item quantity and weight
-      const totalQuantity = order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 1;
-      const estimatedWeight = totalQuantity * 0.5; // Estimate 0.5kg per item
-
-      // Map order data to Pathao format
-      const pathaoOrderData = {
-        store_id: 1, // Default store ID - should be configured in settings
-        merchant_order_id: order.id.slice(-8).toUpperCase(),
-        recipient_name: order.customerName,
-        recipient_phone: formattedPhone,
-        recipient_address: order.address || 'Address not provided',
-        delivery_type: 48, // 48 for Normal Delivery, 12 for On Demand
-        item_type: 2, // 1 for Document, 2 for Parcel
-        item_quantity: totalQuantity,
-        item_weight: Math.min(estimatedWeight, 10), // Max 10kg
-        item_description: order.items?.map((item: any) =>
-          `${item.quantity}x ${item.product?.name || 'Product'}`
-        ).join(', ') || 'Order items',
-        amount_to_collect: Number(order.totalAmount) || 0,
-      };
-
-      const response = await fetchAPI('/courier/pathao/create-order', {
-        method: 'POST',
-        body: JSON.stringify(pathaoOrderData),
-      });
-
-      toast.success('Pathao order created successfully!');
-      console.log('Pathao order response:', response);
-    } catch (error: any) {
-      console.error('Failed to create Pathao order:', error);
-      toast.error(error?.message || 'Failed to create Pathao order. Please check your courier settings.');
-    } finally {
-      setCreatingPathaoOrder(null);
-    }
-  };
 
   const handleCreateCourierOrder = async (order: Order) => {
-    const courier = selectedCourier[order.id] || 'steadfast';
-
+    const courier = selectedCourier[order.id];
     if (courier === 'steadfast') {
-      await handleCreateSteadfastOrder(order);
+      await handleCreateSteadfastOrder(order, setCreatingOrder);
     } else if (courier === 'pathao') {
-      await handleCreatePathaoOrder(order);
+      await handleCreatePathaoOrder(order, setCreatingPathaoOrder);
     }
   };
 
@@ -265,22 +160,23 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      {/* Orders Table */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 hover:scrollbar-thumb-slate-400 dark:hover:scrollbar-thumb-slate-500 scrollbar-track-transparent">
+          <table className="w-full text-left min-w-[640px]">
             <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
               <tr>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Order ID</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Customer</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Unit Price</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Total</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Discount</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Payment</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Payment Status</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Date</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Status</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Courier</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 text-right">Actions</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 whitespace-nowrap">Order ID</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">Customer</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hidden md:table-cell">Unit Price</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">Total</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hidden lg:table-cell">Discount</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hidden lg:table-cell">Payment</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hidden md:table-cell">Payment Status</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hidden xl:table-cell">Date</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">Status</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">Courier</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -302,20 +198,20 @@ export default function OrdersPage() {
               ) : (
                 orders.map((order: any) => (
                   <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                    <td className="px-6 py-4 text-slate-500 font-mono text-xs">{order.id.slice(-6).toUpperCase()}</td>
-                    <td className="px-6 py-4">
-                      <div className="text-slate-900 dark:text-white font-medium">{order.customerName}</div>
-                      <div className="text-xs text-slate-500 truncate max-w-[200px]">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-slate-500 font-mono text-[10px] sm:text-xs whitespace-nowrap">{order.id.slice(-6).toUpperCase()}</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="text-slate-900 dark:text-white font-medium text-xs sm:text-sm">{order.customerName}</div>
+                      <div className="text-[10px] sm:text-xs text-slate-500 truncate max-w-[120px] sm:max-w-[200px]">
                         {order.items?.length > 1
                           ? `${order.items[0]?.product?.name} + ${order.items.length - 1} more`
                           : order.items?.[0]?.product?.name || 'No Items'}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300 text-sm">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-slate-600 dark:text-slate-300 text-xs sm:text-sm hidden md:table-cell">
                       {formatPrice(order.items?.[0]?.unitPrice || 0)}
                     </td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-semibold">{formatPrice(order.totalAmount || 0)}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-slate-600 dark:text-slate-300 font-semibold text-xs sm:text-sm">{formatPrice(order.totalAmount || 0)}</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 hidden lg:table-cell">
                       {order.items?.some((i: any) => Number(i.discountAmount) > 0) ? (
                         <span className="text-red-500 text-sm">
                           -{formatPrice(order.items.reduce((acc: number, item: any) => acc + (Number(item.discountAmount) * item.quantity), 0))}
@@ -324,8 +220,8 @@ export default function OrdersPage() {
                         <span className="text-slate-400 text-sm">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-300 capitalize">{order.paymentMethod}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-slate-600 dark:text-slate-300 capitalize text-xs sm:text-sm hidden lg:table-cell">{order.paymentMethod}</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 hidden md:table-cell">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.paymentStatus === PaymentStatus.PAID
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                         : order.paymentStatus === PaymentStatus.FAILED
@@ -335,8 +231,8 @@ export default function OrdersPage() {
                         {order.paymentStatus || PaymentStatus.PENDING}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-slate-500 text-sm">{new Date(order.createdAt).toLocaleDateString()}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-slate-500 text-xs sm:text-sm hidden xl:table-cell">{new Date(order.createdAt).toLocaleDateString()}</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <select
                         value={order.status}
                         onChange={(e) => handleStatusChange(order.id, e.target.value)}
@@ -347,7 +243,7 @@ export default function OrdersPage() {
                         <option value={OrderStatus.CANCELLED}>Cancelled</option>
                       </select>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <select
                         value={selectedCourier[order.id]}
                         onChange={(e) => handleCourierSelect(order, e.target.value)}
@@ -358,20 +254,8 @@ export default function OrdersPage() {
                         <option value="pathao">📦 Pathao</option>
                       </select>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* <button
-                          onClick={() => handleCreateCourierOrder(order)}
-                          disabled={isCreatingCourierOrder(order.id)}
-                          className="p-2 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title={`Create ${selectedCourier[order.id] === 'pathao' ? 'Pathao' : 'Steadfast'} Order`}
-                        >
-                          {isCreatingCourierOrder(order.id) ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Truck className="w-4 h-4" />
-                          )}
-                        </button> */}
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
+                      <div className="flex items-center justify-end gap-1 sm:gap-2">
                         <Link
                           href={`/admin/orders/${order.id}`}
                           className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors inline-block"
@@ -429,7 +313,6 @@ export default function OrdersPage() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleCancelCourierOrder}
-                disabled={isCreatingCourierOrder(pendingCourierOrder.order.id)}
                 className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium transition-colors disabled:opacity-50"
               >
                 No
