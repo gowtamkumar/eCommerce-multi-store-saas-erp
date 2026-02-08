@@ -56,7 +56,6 @@ The core items being sold.
 - **`stock`**: `Number` (Default: `0`)
 - **`status`**: `String` (Enum: `ACTIVE`, `INACTIVE`; Default: `INACTIVE`)
 - **`tagline`**: `String` (Optional)
-- **`socialProof`**: `Object` (noun, count, rating, avatars)
 - **`heroHighlights`**: `Array` (icon, label, value, color)
 - **`specifications`**: `Array` (label, value)
 - **`keyBenefits`**: `Array` (icon, title, description, color)

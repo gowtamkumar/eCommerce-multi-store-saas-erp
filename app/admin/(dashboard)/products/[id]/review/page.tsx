@@ -2,37 +2,15 @@
 
 import { useSettings } from '@/contexts/SettingsContext';
 import { fetchAPI } from '@/lib/api';
+import { Product, Review } from '@/types/product';
 import { ArrowLeft, Calendar, Coins, Edit, Package, Tag } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
 
-interface Product {
-    id: string;
-    name: string;
-    price: number;
-    discountAmount?: number;
-    currency: string;
-    stock: number;
-    status: string;
-    images: string[];
-    socialProof?: {
-        noun: string;
-        count: number;
-        rating: number;
-        avatars: string[];
-    };
-}
 
-interface Review {
-    id: string;
-    customerName: string;
-    customerEmail: string;
-    rating: number;
-    comment: string;
-    status: 'pending' | 'approved' | 'rejected';
-    createdAt: string;
-}
+
+
 
 export default function ProductReviewPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -225,28 +203,157 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                                 {product.status}
                             </span>
                         </div>
-                    </div>
 
-                    {/* Social Proof & Rating Preview */}
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
-                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Landing Page Metrics</h3>
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="text-center p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl">
-                                <p className="text-[10px] font-bold uppercase text-slate-400 mb-1">Rating</p>
-                                <p className="text-lg font-bold text-brand-600">{product.socialProof?.rating || 0}/5</p>
-                            </div>
-                            <div className="text-center p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl">
-                                <p className="text-[10px] font-bold uppercase text-slate-400 mb-1">Customers</p>
-                                <p className="text-lg font-bold text-brand-600">{product.socialProof?.count || 0}</p>
-                            </div>
-                            <div className="text-center p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl">
-                                <p className="text-[10px] font-bold uppercase text-slate-400 mb-1">Reviews</p>
-                                <p className="text-lg font-bold text-brand-600">{reviews.length}</p>
-                            </div>
+                        {/* Additional Product Details */}
+                        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                            {product.sku && (
+                                <div className="flex items-center gap-2 text-sm">
+                                    <span className="text-slate-500 dark:text-slate-400 font-medium">SKU:</span>
+                                    <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs">{product.sku}</span>
+                                </div>
+                            )}
+
+                            {product.category && (
+                                <div className="flex items-center gap-2 text-sm">
+                                    <span className="text-slate-500 dark:text-slate-400 font-medium">Category:</span>
+                                    <span className="px-2 py-1 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 rounded-lg font-medium text-xs">{product.category.name}</span>
+                                </div>
+                            )}
+
+                            {product.discountAmount && product.discountAmount > 0 && (
+                                <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-4 rounded-xl border border-red-100 dark:border-red-900/30">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">Pricing Details</span>
+                                    </div>
+                                    <div className="space-y-1 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-600 dark:text-slate-400">Base Price:</span>
+                                            <span className="line-through text-slate-500">{formatPrice(product.price)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-red-600 dark:text-red-400 font-medium">
+                                            <span>Discount:</span>
+                                            <span>-{formatPrice(product.discountAmount)}</span>
+                                        </div>
+                                        <div className="flex justify-between font-bold text-green-600 dark:text-green-400 pt-1 border-t border-red-200 dark:border-red-800">
+                                            <span>Final Price:</span>
+                                            <span>{formatPrice(product.price - product.discountAmount)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {product.tags && product.tags.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Tags</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {product.tags.map((tag, idx) => (
+                                            <span key={idx} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-xs font-medium">
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {product.description && (
+                                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Description</p>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        {product.description}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
+
                 </div>
             </div>
+
+            {/* Product Attributes & Variants Section */}
+            {((product.attributes && product.attributes.length > 0) || (product.variants && product.variants.length > 0)) && (
+                <div className="grid lg:grid-cols-2 gap-8 mb-12">
+                    {/* Product Attributes */}
+                    {product.attributes && product.attributes.length > 0 && (
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <Tag className="w-5 h-5 text-brand-500" />
+                                Product Attributes
+                            </h3>
+                            <div className="space-y-4">
+                                {product.attributes.map((attr, idx) => (
+                                    <div key={idx} className="border-b border-slate-100 dark:border-slate-700 last:border-0 pb-3 last:pb-0">
+                                        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                                            {attr.name}
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {attr.values.map((value, vidx) => (
+                                                <span
+                                                    key={vidx}
+                                                    className="px-3 py-1.5 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 rounded-lg text-sm font-medium border border-brand-100 dark:border-brand-800"
+                                                >
+                                                    {value}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Product Variants */}
+                    {product.variants && product.variants.length > 0 && (
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <Package className="w-5 h-5 text-brand-500" />
+                                Product Variants ({product.variants.length})
+                            </h3>
+                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                                {product.variants.map((variant, idx) => (
+                                    <div
+                                        key={variant.id || idx}
+                                        className="p-4 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-700"
+                                    >
+                                        <div className="flex items-start justify-between gap-3 mb-2">
+                                            <div className="flex-1">
+                                                <p className="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 mb-1">
+                                                    SKU: {variant.sku}
+                                                </p>
+                                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                                    {Object.entries(variant.combination).map(([key, value]) => (
+                                                        <span
+                                                            key={key}
+                                                            className="text-xs px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded font-medium text-slate-700 dark:text-slate-300"
+                                                        >
+                                                            {key}: <span className="font-bold">{value}</span>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className={`text-xs font-bold px-2 py-1 rounded ${variant.stock > 0
+                                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                    }`}>
+                                                    Stock: {variant.stock}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {variant.price && (
+                                            <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-600">
+                                                <Coins className="w-4 h-4 text-green-500" />
+                                                <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                                                    {formatPrice(variant.price)}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Customer Reviews Moderation Section */}
             <div className="space-y-6">

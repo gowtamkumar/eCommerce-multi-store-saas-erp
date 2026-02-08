@@ -4,6 +4,8 @@ export interface ProductAttribute {
   values: string[];
 }
 
+
+
 export interface ProductVariant {
   id?: string;
   sku: string;
@@ -25,6 +27,8 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
+  sku: string;
+  tags?: string[];
   description: string;
   shortDescription?: string;
   price: number;
@@ -40,4 +44,16 @@ export interface Product {
   variants?: ProductVariant[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+
+
+export interface Review {
+    id: string;
+    customerName: string;
+    customerEmail: string;
+    rating: number;
+    comment: string;
+    status: 'pending' | 'approved' | 'rejected';
+    createdAt: string;
 }

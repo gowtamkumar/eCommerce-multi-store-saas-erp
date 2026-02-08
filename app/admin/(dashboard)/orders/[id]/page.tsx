@@ -5,6 +5,7 @@ import { fetchAPI } from "@/lib/api";
 import { OrderStatus } from "@/lib/enums/order-status";
 import { PaymentStatus } from "@/lib/enums/payment-status";
 import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, updateOrderStatus } from "@/lib/utils";
+import { Order } from "@/types/order";
 import {
   ArrowLeft,
   Calendar,
@@ -21,42 +22,8 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-interface OrderItem {
-  id: string;
-  quantity: number;
-  unitPrice: number;
-  discountAmount: number;
-  totalAmount: number;
-  snapshot?: any;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    images: string[];
-  } | null;
-  variant: {
-    id: string;
-    sku: string;
-    combination: Record<string, string>;
-  } | null;
-}
 
-interface Order {
-  id: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  address: string;
-  totalAmount: number;
-  status: string;
-  paymentMethod: string;
-  paymentStatus: string;
-  transactionId?: string;
-  items: OrderItem[];
-  returns?: any[];
-  createdAt: string;
-  orderNotes?: string;
-}
+
 
 export default function OrderDetailsPage({
   params,
