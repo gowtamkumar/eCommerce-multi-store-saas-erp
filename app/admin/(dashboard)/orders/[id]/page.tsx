@@ -188,7 +188,7 @@ export default function OrderDetailsPage({
   }, 0);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12">
+    <div className="max-w-full mx-auto space-y-8 pb-12">
       {/* Print-only Invoice */}
       <div className="hidden print:block bg-white p-8 text-black">
         <div className="flex justify-between items-start mb-12">
@@ -378,28 +378,29 @@ export default function OrderDetailsPage({
       </div>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+      <div className="flex flex-col gap-4 print:hidden">
         <div>
           <Link
             href="/admin/orders"
-            className="inline-flex items-center gap-2 text-slate-500 hover:text-brand-600 transition-colors mb-2"
+            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-brand-600 transition-colors mb-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Orders
           </Link>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white font-display">
             Order{" "}
-            <span className="text-slate-400 font-mono text-2xl uppercase">
+            <span className="text-slate-400 font-mono text-xl sm:text-2xl uppercase">
               #{order.id.slice(-8)}
             </span>
           </h1>
-          <div className="flex items-center gap-4 mt-2">
-            <div className="flex items-center gap-2 text-sm text-slate-500">
+          <div className="flex flex-wrap items-center gap-3 mt-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500">
               <Calendar className="w-4 h-4" />
-              {new Date(order.createdAt).toLocaleString()}
+              <span className="hidden sm:inline">{new Date(order.createdAt).toLocaleString()}</span>
+              <span className="sm:hidden">{new Date(order.createdAt).toLocaleDateString()}</span>
             </div>
             <span
-              className={`px-3 py-1 rounded-full text-xs font-semibold ${getOrderStatusStyles(
+              className={`px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold ${getOrderStatusStyles(
                 order.status || "PENDING"
               )}`}
             >
@@ -409,27 +410,27 @@ export default function OrderDetailsPage({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           <button
             onClick={handleRefresh}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-50 transition-colors"
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
             title="Refresh order data"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            <span className="sm:inline">Refresh</span>
           </button>
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-50 transition-colors"
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors"
           >
             <FileText className="w-4 h-4" />
-            Print Order
+            <span className="sm:inline">Print</span>
           </button>
           <select
             value={order.status || OrderStatus.PENDING}
             onChange={(e) => handleStatusUpdate({ status: e.target.value })}
             disabled={updating}
-            className={`px-4 py-2.5 rounded-xl font-bold text-sm cursor-pointer border-none outline-none ring-2 ring-slate-100 dark:ring-slate-700 transition-all ${getOrderStatusStyles(
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm cursor-pointer border-none outline-none ring-2 ring-slate-100 dark:ring-slate-700 transition-all ${getOrderStatusStyles(
               order.status || OrderStatus.PENDING
             )}`}
           >
@@ -440,7 +441,7 @@ export default function OrderDetailsPage({
           <select
             value={selectedCourier}
             onChange={(e) => handleCourierSelect(e.target.value)}
-            className="px-4 py-2.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer hover:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer hover:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
           >
             <option value="">🚚 Create Courier Order</option>
             <option value="steadfast">📦 Steadfast</option>
@@ -454,13 +455,13 @@ export default function OrderDetailsPage({
         <div className="lg:col-span-2 space-y-8">
           {/* Items Section */}
           <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Package className="w-5 h-5 text-brand-500" />
+            <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Package className="w-4 sm:w-5 h-4 sm:h-5 text-brand-500" />
                 Order Items
               </h2>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
               {(order.items || []).map((item) => {
                 const productName = item.snapshot?.productName || item.product?.name || "Product Unavailable";
                 const productImage = item.snapshot?.productImage || item.product?.images?.[0];
@@ -468,8 +469,8 @@ export default function OrderDetailsPage({
                 const variantOptions = item.snapshot?.variantOptions || item.variant?.combination;
 
                 return (
-                  <div key={item.id} className="flex items-center gap-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl">
-                    <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm flex-shrink-0 relative border border-slate-100 dark:border-slate-700">
+                  <div key={item.id} className="flex items-center gap-3 sm:gap-6 p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl sm:rounded-2xl">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white dark:bg-slate-800 rounded-lg sm:rounded-xl overflow-hidden shadow-sm flex-shrink-0 relative border border-slate-100 dark:border-slate-700">
                       {productImage ? (
                         <img
                           src={productImage}
@@ -478,33 +479,33 @@ export default function OrderDetailsPage({
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-300">
-                          <Package className="w-8 h-8" />
+                          <Package className="w-6 h-6 sm:w-8 sm:h-8" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       {item.product ? (
                         <Link
                           href={`/admin/products/${item.product.id}`}
-                          className="text-base font-bold text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                          className="text-sm sm:text-base font-bold text-slate-900 dark:text-white hover:text-brand-600 transition-colors block truncate"
                         >
                           {productName}
                         </Link>
                       ) : (
-                        <span className="text-base font-bold text-slate-900 dark:text-white">
-                          {productName} <span className="text-xs font-normal text-slate-500 italic ml-2">(Deleted Product)</span>
+                        <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white block truncate">
+                          {productName} <span className="text-xs font-normal text-slate-500 italic ml-2">(Deleted)</span>
                         </span>
                       )}
 
                       {(variantSku || variantOptions) && (
                         <div className="mt-1 flex flex-col gap-0.5">
                           {variantSku && (
-                            <p className="text-[10px] font-black text-brand-600 uppercase tracking-widest">
+                            <p className="text-[9px] sm:text-[10px] font-black text-brand-600 uppercase tracking-widest">
                               SKU: {variantSku}
                             </p>
                           )}
                           {variantOptions && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                            <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 italic truncate">
                               {Object.entries(variantOptions)
                                 .map(([key, value]) => `${key}: ${value}`)
                                 .join(", ")}
@@ -631,11 +632,11 @@ export default function OrderDetailsPage({
         {/* Sidebar */}
         <div className="space-y-8 print:hidden">
           {/* Customer Info */}
-          <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6">
+          <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-4 sm:mb-6">
               Customer Details
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
                   <Package className="w-4 h-4 text-slate-500" />
@@ -644,7 +645,7 @@ export default function OrderDetailsPage({
                   <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">
                     Name
                   </p>
-                  <p className="font-medium text-slate-900 dark:text-white">
+                  <p className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">
                     {order.customerName}
                   </p>
                 </div>
@@ -653,11 +654,11 @@ export default function OrderDetailsPage({
                 <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
                   <Mail className="w-4 h-4 text-slate-500" />
                 </div>
-                <div className="overflow-hidden">
+                <div className="overflow-hidden flex-1">
                   <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">
                     Email
                   </p>
-                  <p className="font-medium text-slate-900 dark:text-white truncate">
+                  <p className="font-medium text-sm sm:text-base text-slate-900 dark:text-white truncate">
                     {order.customerEmail || "No email provided"}
                   </p>
                 </div>
@@ -670,20 +671,20 @@ export default function OrderDetailsPage({
                   <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">
                     Phone
                   </p>
-                  <p className="font-medium text-slate-900 dark:text-white">
+                  <p className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">
                     {order.customerPhone || "No phone provided"}
                   </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+              <div className="flex items-start gap-3 pt-3 sm:pt-4 border-t border-slate-100 dark:border-slate-700">
                 <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
                   <MapPin className="w-4 h-4 text-slate-500" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">
                     Shipping Address
                   </p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white leading-relaxed">
+                  <p className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white leading-relaxed">
                     {order.address}
                   </p>
                 </div>
