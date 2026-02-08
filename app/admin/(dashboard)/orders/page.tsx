@@ -6,7 +6,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { OrderStatus } from '@/lib/enums/order-status';
 import { PaymentStatus } from '@/lib/enums/payment-status';
-import { ChevronLeft, ChevronRight, Eye, Loader2, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, Loader2, Search, Truck } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -39,6 +39,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState({} as any);
+  const [creatingOrder, setCreatingOrder] = useState<string | null>(null);
   const [pagination, setPagination] = useState<Pagination>({
     total: 0,
     page: 1,
@@ -105,6 +106,51 @@ export default function OrdersPage() {
       case OrderStatus.COMPLETED: return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
       case OrderStatus.CANCELLED: return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
       default: return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+    }
+  };
+
+  const handleCreateSteadfastOrder = async (order: Order) => {
+    setCreatingOrder(order.id);
+    try {
+      // Format phone number to ensure it's 11 digits starting with 0
+      let formattedPhone = (order.customerPhone || '').replace(/\D/g, ''); // Remove non-digits
+
+      // Ensure phone starts with 0 and is 11 digits
+      if (!formattedPhone.startsWith('0')) {
+        formattedPhone = '0' + formattedPhone;
+      }
+      if (formattedPhone.length > 11) {
+        formattedPhone = formattedPhone.slice(0, 11);
+      }
+      if (formattedPhone.length < 11) {
+        // Pad with zeros if too short, or use default
+        formattedPhone = '01700000000';
+      }
+
+      // Map order data to Steadfast format
+      const steadfastOrderData = {
+        invoice: order.id.slice(-8).toUpperCase(),
+        recipient_name: order.customerName,
+        recipient_phone: formattedPhone,
+        recipient_address: order.address || 'Address not provided',
+        cod_amount: Number(order.totalAmount) || 0, // Ensure it's a number
+        item_description: order.items?.map((item: any) =>
+          `${item.quantity}x ${item.product?.name || 'Product'}`
+        ).join(', ') || 'Order items'
+      };
+
+      const response = await fetchAPI('/courier/steadfast/create-order', {
+        method: 'POST',
+        body: JSON.stringify(steadfastOrderData),
+      });
+
+      toast.success('Steadfast order created successfully!');
+      console.log('Steadfast order response:', response);
+    } catch (error: any) {
+      console.error('Failed to create Steadfast order:', error);
+      toast.error(error?.message || 'Failed to create Steadfast order. Please check your courier settings.');
+    } finally {
+      setCreatingOrder(null);
     }
   };
 
@@ -211,13 +257,27 @@ export default function OrdersPage() {
                       </select>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Link
-                        href={`/admin/orders/${order.id}`}
-                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors inline-block"
-                        title="View Details"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Link>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleCreateSteadfastOrder(order)}
+                          disabled={creatingOrder === order.id}
+                          className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Create Steadfast Order"
+                        >
+                          {creatingOrder === order.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Truck className="w-4 h-4" />
+                          )}
+                        </button>
+                        <Link
+                          href={`/admin/orders/${order.id}`}
+                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors inline-block"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -18,7 +18,7 @@ export class SteadfastService {
     private readonly settingsService: SettingsService,
   ) {}
 
-  private async initializeCredentials(tenantId: string = 'default') {
+  private async initializeCredentials(tenantId: string) {
     try {
       // Try to get credentials from settings first
       const settings = await this.settingsService.findByTenant(tenantId);
@@ -36,12 +36,13 @@ export class SteadfastService {
     }
   }
 
-  async createOrder(createOrderDto: CreateSteadfastOrderDto, tenantId: string = 'default') {
+  async createOrder(createOrderDto: CreateSteadfastOrderDto, tenantId: string) {
     await this.initializeCredentials(tenantId);
 
     try {
       const url = `${this.baseUrl}/create_order`;
-      
+
+    
       const response = await firstValueFrom(
         this.httpService.post(url, createOrderDto, {
           headers: {

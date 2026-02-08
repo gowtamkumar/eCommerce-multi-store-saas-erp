@@ -1,5 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { TenantId } from 'src/common/decorators/tenant-id.decorator';
 import { CreateSteadfastOrderDto } from './dto/create-order.dto';
 import { SteadfastService } from './steadfast.service';
 
@@ -10,7 +11,7 @@ export class SteadfastController {
 
   @Post('create-order')
   @ApiOperation({ summary: 'Create a Steadfast courier order' })
-  async createOrder(@Body() createOrderDto: CreateSteadfastOrderDto) {
-    return this.steadfastService.createOrder(createOrderDto);
+  async createOrder(@Body() createOrderDto: CreateSteadfastOrderDto, @TenantId() tenantId: string) {
+    return this.steadfastService.createOrder(createOrderDto, tenantId);
   }
 }
