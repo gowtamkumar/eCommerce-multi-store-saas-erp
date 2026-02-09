@@ -39,11 +39,14 @@ export function formatCurrency(amount: number, currencySymbol?: string): string 
 
       // Map order data to Pathao format
       const pathaoOrderData = {
-        store_id: 368297, // Default store ID - should be configured in settings
+        store_id: 368297, // Will be overridden by backend settings if available
         merchant_order_id: order.id.slice(-8).toUpperCase(),
         recipient_name: order.customerName,
         recipient_phone: formattedPhone,
         recipient_address: order.address || 'Address not provided',
+        recipient_city: Number((order as any).cityId) || 1, // Dhaka = 1 (default to satisfy API)
+        recipient_zone: Number((order as any).zoneId) || 1, 
+        recipient_area: Number((order as any).areaId) || 1,
         delivery_type: 48, // 48 for Normal Delivery, 12 for On Demand
         item_type: 2, // 1 for Document, 2 for Parcel
         item_quantity: totalQuantity,

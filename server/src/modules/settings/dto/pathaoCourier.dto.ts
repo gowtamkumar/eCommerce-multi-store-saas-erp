@@ -15,7 +15,11 @@ export class PathaoCourierDto {
 
    @IsString()
    @IsOptional()
-  pathaoPassword?: string;
+   pathaoPassword?: string;
+
+   @IsString()
+   @IsOptional()
+   pathaoStoreId?: string;
 
    @IsBoolean()
    @IsOptional()

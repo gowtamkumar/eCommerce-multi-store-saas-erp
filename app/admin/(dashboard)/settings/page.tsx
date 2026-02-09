@@ -108,6 +108,7 @@ function SettingsContent() {
             pathaoClientSecret: "",
             pathaoUsername: "",
             pathaoPassword: "",
+            pathaoStoreId: "",
             sandboxMode: false,
         },
         steadfastCourier: {
@@ -211,6 +212,7 @@ function SettingsContent() {
                             pathaoClientSecret: data.pathaoCourier?.pathaoClientSecret || "",
                             pathaoUsername: data.pathaoCourier?.pathaoUsername || "",
                             pathaoPassword: data.pathaoCourier?.pathaoPassword || "",
+                            pathaoStoreId: data.pathaoCourier?.pathaoStoreId || "",
                             sandboxMode: data.pathaoCourier?.sandboxMode || false
                         },
                         steadfastCourier: {
@@ -1985,11 +1987,32 @@ function SettingsContent() {
                                                             })
                                                         }
                                                         className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                                                        placeholder="Enter Password"
+                                                        placeholder="Enter Pathao Password"
                                                     />
                                                 </div>
 
                                                 <div className="space-y-1.5">
+                                                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                                        Pathao Store ID
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.pathaoCourier.pathaoStoreId}
+                                                        onChange={(e) =>
+                                                            setFormData({
+                                                                ...formData,
+                                                                pathaoCourier: {
+                                                                    ...formData.pathaoCourier,
+                                                                    pathaoStoreId: e.target.value,
+                                                                },
+                                                            })
+                                                        }
+                                                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
+                                                        placeholder="Enter Pathao Store ID"
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-1.5 md:col-span-2">
                                                     <label className="flex items-center gap-2 cursor-pointer">
                                                         <input
                                                             type="checkbox"
