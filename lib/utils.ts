@@ -39,7 +39,7 @@ export function formatCurrency(amount: number, currencySymbol?: string): string 
 
       // Map order data to Pathao format
       const pathaoOrderData = {
-        store_id: 1, // Default store ID - should be configured in settings
+        store_id: 368297, // Default store ID - should be configured in settings
         merchant_order_id: order.id.slice(-8).toUpperCase(),
         recipient_name: order.customerName,
         recipient_phone: formattedPhone,
