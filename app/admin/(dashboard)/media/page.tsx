@@ -113,8 +113,6 @@ export default function MediaPage() {
         }
     };
 
-    console.log("media", media);
-
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;

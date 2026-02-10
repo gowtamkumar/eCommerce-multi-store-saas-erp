@@ -4,8 +4,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsOptional,
-  IsString,
-  Length,
+  IsString
 } from 'class-validator';
 import { UserRole } from '../../../../common/enums/user/user-role.enum';
 import { UserStatus } from '../../../../common/enums/user/user-status.enum';
@@ -20,15 +19,23 @@ export class UpdateUserDto {
   @IsOptional()
   email: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @Length(5, 20)
-  username: string;
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  image?: string;
 
   @IsEnum(UserRole)
   @IsOptional()
-  role: UserRole;
+  role?: UserRole;
 
   @IsEnum(UserStatus)
-  status: UserStatus;
+  @IsOptional()
+  status?: UserStatus;
 }

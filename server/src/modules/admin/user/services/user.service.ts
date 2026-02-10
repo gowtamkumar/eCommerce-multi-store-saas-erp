@@ -105,6 +105,10 @@ export class UserService {
     if (!user) {
       throw new NotFoundException(`User of id ${id} not found`)
     }
+
+    console.log("updateUserDto", updateUserDto);
+    console.log("user", user);
+    
     this.userRepo.merge(user, updateUserDto)
     return this.userRepo.save(user)
   }
