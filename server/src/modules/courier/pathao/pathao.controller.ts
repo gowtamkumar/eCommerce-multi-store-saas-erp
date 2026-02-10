@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { TenantId } from 'src/common/decorators/tenant-id.decorator';
 import { CreatePathaoOrderDto } from './dto/create-order.dto';
@@ -14,23 +14,23 @@ export class PathaoController {
     return await this.pathaoService.createOrder(createOrderDto, tenantId);
   }
 
-  @Get('stores')
-  async getStores(@TenantId() tenantId: string) {
-    return await this.pathaoService.getStores(tenantId);
-  }
+  // @Get('stores')
+  // async getStores(@TenantId() tenantId: string) {
+  //   return await this.pathaoService.getStores(tenantId);
+  // }
 
-  @Get('cities')
-  async getCities(@TenantId() tenantId: string) {
-    return await this.pathaoService.getCities(tenantId);
-  }
+  // @Get('cities')
+  // async getCities(@TenantId() tenantId: string) {
+  //   return await this.pathaoService.getCities(tenantId);
+  // }
 
-  @Get('city/:cityId/zones')
-  async getZones(@Param('cityId') cityId: string, @TenantId() tenantId: string) {
-    return await this.pathaoService.getZones(Number(cityId), tenantId);
-  }
+  // @Get('city/:cityId/zones')
+  // async getZones(@Param('cityId') cityId: string, @TenantId() tenantId: string) {
+  //   return await this.pathaoService.getZones(Number(cityId), tenantId);
+  // }
 
-  @Get('zone/:zoneId/areas')
-  async getAreas(@Param('zoneId') zoneId: string, @TenantId() tenantId: string) {
-    return await this.pathaoService.getAreas(Number(zoneId), tenantId);
-  }
+  // @Get('zone/:zoneId/areas')
+  // async getAreas(@Param('zoneId') zoneId: string, @TenantId() tenantId: string) {
+  //   return await this.pathaoService.getAreas(Number(zoneId), tenantId);
+  // }
 }
