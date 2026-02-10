@@ -2,6 +2,8 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
+import { OrderStatus } from 'src/common/enums/order-status.enum';
+import { OrderService } from '../../order/order.service';
 import { SettingsService } from '../../settings/settings.service';
 import { CreateSteadfastOrderDto } from './dto/create-order.dto';
 
@@ -16,6 +18,7 @@ export class SteadfastService {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
     private readonly settingsService: SettingsService,
+    private readonly orderService: OrderService,
   ) {}
 
   private async initializeCredentials(tenantId: string) {
@@ -38,13 +41,38 @@ export class SteadfastService {
 
   async createOrder(createOrderDto: CreateSteadfastOrderDto, tenantId: string) {
     await this.initializeCredentials(tenantId);
+    const { orderId } = createOrderDto;
+
+    const order = await this.orderService.findOneForCourier(orderId, tenantId);
+
+    // Format phone number to ensure it's 11 digits starting with 0
+    let formattedPhone = (order.customerPhone || '').replace(/\D/g, '');
+    if (!formattedPhone.startsWith('0')) {
+      formattedPhone = '0' + formattedPhone;
+    }
+    if (formattedPhone.length > 11) {
+      formattedPhone = formattedPhone.slice(0, 11);
+    }
+    if (formattedPhone.length < 11) {
+      formattedPhone = '01700000000';
+    }
+
+    const steadfastOrderData = {
+      invoice: order.id.slice(-8).toUpperCase(),
+      recipient_name: order.customerName,
+      recipient_phone: formattedPhone,
+      recipient_address: order.address || 'Address not provided',
+      cod_amount: Number(order.totalAmount) || 0,
+      item_description: order.items?.map((item: any) =>
+        `${item.quantity}x ${item.product?.name || 'Product'}`
+      ).join(', ') || 'Order items'
+    };
 
     try {
       const url = `${this.baseUrl}/create_order`;
 
-    
       const response = await firstValueFrom(
-        this.httpService.post(url, createOrderDto, {
+        this.httpService.post(url, steadfastOrderData, {
           headers: {
             'Api-Key': this.apiKey,
             'Secret-Key': this.secretKey,
@@ -54,6 +82,10 @@ export class SteadfastService {
       );
 
       this.logger.log('Steadfast order created successfully');
+      
+      // Update order status to SHIPPED
+      await this.orderService.update(order.id, { status: OrderStatus.SHIPPED }, tenantId);
+
       return response.data;
     } catch (error) {
       this.logger.error('Failed to create Steadfast order', error.response?.data || error.message);

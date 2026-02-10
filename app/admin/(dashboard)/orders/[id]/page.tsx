@@ -404,6 +404,8 @@ export default function OrderDetailsPage({
             )}`}
           >
             <option value={OrderStatus.PENDING}>Mark as Pending</option>
+            <option value={OrderStatus.PROCESSING}>Mark as Processing</option>
+            <option value={OrderStatus.SHIPPED}>Mark as Shipped</option>
             <option value={OrderStatus.COMPLETED}>Mark as Completed</option>
             <option value={OrderStatus.CANCELLED}>Mark as Cancelled</option>
           </select>

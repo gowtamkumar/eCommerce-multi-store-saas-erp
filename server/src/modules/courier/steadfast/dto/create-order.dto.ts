@@ -12,6 +12,10 @@ import {
 } from 'class-validator';
 
 export class CreateSteadfastOrderDto {
+  @IsOptional()
+  @IsString()
+  orderId?: string;
+
   @ApiProperty({
     description: 'Unique invoice number (alpha-numeric, hyphens, underscores)',
     example: 'INV-12345',

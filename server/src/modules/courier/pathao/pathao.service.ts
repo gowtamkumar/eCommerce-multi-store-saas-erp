@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { firstValueFrom } from 'rxjs'
+import { OrderStatus } from 'src/common/enums/order-status.enum'
 import { OrderService } from 'src/modules/order/order.service'
 import { SettingsService } from '../../settings/settings.service'
 import { CreatePathaoOrderDto } from './dto/create-order.dto'
@@ -145,6 +146,10 @@ export class PathaoService {
         ),
       )
       this.logger.log('Pathao order created successfully', response.data)
+
+      // Update order status to SHIPPED
+      await this.orderService.update(order.id, { status: OrderStatus.SHIPPED }, tenantId);
+
       return response.data
     } catch (error) {
       this.logger.error('Failed to create Pathao order', error.response?.data || error.message)

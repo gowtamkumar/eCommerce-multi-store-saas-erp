@@ -182,7 +182,7 @@ export default function OrdersPage() {
               ) : (
                 orders.map((order: any) => (
                   <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-slate-500 font-mono text-[10px] sm:text-xs whitespace-nowrap">{order.id.slice(-6).toUpperCase()}</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-slate-500 font-mono text-[10px] sm:text-xs whitespace-nowrap">{order.id.slice(-8).toUpperCase()}</td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <div className="text-slate-900 dark:text-white font-medium text-xs sm:text-sm">{order.customerName}</div>
                       <div className="text-[10px] sm:text-xs text-slate-500 truncate max-w-[120px] sm:max-w-[200px]">
@@ -223,6 +223,8 @@ export default function OrdersPage() {
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer ${getOrderStatusStyles(order.status)}`}
                       >
                         <option value={OrderStatus.PENDING}>Pending</option>
+                        <option value={OrderStatus.PROCESSING}>Processing</option>
+                        <option value={OrderStatus.SHIPPED}>Shipped</option>
                         <option value={OrderStatus.COMPLETED}>Completed</option>
                         <option value={OrderStatus.CANCELLED}>Cancelled</option>
                       </select>

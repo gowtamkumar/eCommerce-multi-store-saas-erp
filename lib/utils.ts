@@ -68,7 +68,7 @@ export const handleCreateSteadfastOrder = async (order: Order, setCreatingOrder:
   
         const response = await fetchAPI('/courier/steadfast/create-order', {
           method: 'POST',
-          body: JSON.stringify(steadfastOrderData),
+          body: JSON.stringify({orderId: order.id}),
         });
   
         toast.success('Steadfast order created successfully!');
@@ -86,6 +86,10 @@ export const handleCreateSteadfastOrder = async (order: Order, setCreatingOrder:
 
 export const getOrderStatusStyles = (status: string) => {
     switch (status) {
+      case OrderStatus.PROCESSING:
+        return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+      case OrderStatus.SHIPPED:
+        return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
       case OrderStatus.COMPLETED:
         return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
       case OrderStatus.CANCELLED:
