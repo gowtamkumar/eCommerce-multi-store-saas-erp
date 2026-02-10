@@ -84,8 +84,15 @@ export class SteadfastService {
 
       this.logger.log('Steadfast order created successfully');
       
-      // Update order status to SHIPPED
-      await this.orderService.update(order.id, { status: OrderStatus.SHIPPED }, tenantId);
+      const responseData = response.data;
+      const trackingId = responseData.order?.tracking_code;
+
+      // Update order status to SHIPPED and save tracking info
+      await this.orderService.update(order.id, { 
+        status: OrderStatus.SHIPPED,
+        courierStatus: 'Steadfast',
+        trackingId: trackingId?.toString()
+      }, tenantId);
 
       return response.data;
     } catch (error) {

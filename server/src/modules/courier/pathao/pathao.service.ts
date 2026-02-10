@@ -145,10 +145,15 @@ export class PathaoService {
           },
         ),
       )
-      this.logger.log('Pathao order created successfully', response.data)
+      const responseData = response.data;
+      const trackingId = responseData.data?.consignment_id;
 
-      // Update order status to SHIPPED
-      await this.orderService.update(order.id, { status: OrderStatus.SHIPPED }, tenantId);
+      // Update order status to SHIPPED and save tracking info
+      await this.orderService.update(order.id, { 
+        status: OrderStatus.SHIPPED,
+        courierStatus: 'Pathao',
+        trackingId: trackingId?.toString()
+      }, tenantId);
 
       return response.data
     } catch (error) {

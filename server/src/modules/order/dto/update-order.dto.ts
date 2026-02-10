@@ -1,5 +1,5 @@
-import { IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsOptional } from 'class-validator';
 import { OrderStatus } from '../../../common/enums/order-status.enum';
 import { PaymentStatus } from '../../../common/enums/payment-status.enum';
 
@@ -17,4 +17,13 @@ export class UpdateOrderDto {
     @ApiProperty({ required: false })
     @IsOptional()
     transactionId?: string;
+
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    trackingId?: string;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    courierStatus?: string;
 }

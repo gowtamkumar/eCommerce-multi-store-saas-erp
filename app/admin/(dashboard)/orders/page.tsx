@@ -230,15 +230,39 @@ export default function OrdersPage() {
                       </select>
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4">
-                      <select
-                        value={selectedCourier[order.id]}
-                        onChange={(e) => handleCourierSelect(order, e.target.value)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer hover:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
-                      >
-                        <option value="">🚚 Create Courier Order</option>
-                        <option value="steadfast">🚚 Steadfast</option>
-                        <option value="pathao">📦 Pathao</option>
-                      </select>
+                      {order.courierStatus ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-brand-600 uppercase tracking-wider">
+                              {['pathao', 'steadfast'].includes(order.courierStatus.toLowerCase())
+                                ? order.courierStatus
+                                : 'DISPATCHED'}
+                            </span>
+                            {order.trackingId && (
+                              <a
+                                href={order.courierStatus.toLowerCase() === 'pathao' ? 'https://tracking.pathao.com/' : 'https://steadfast.com.bd/tracking'}
+                                target="_blank"
+                                className="text-slate-400 hover:text-brand-600"
+                              >
+                                <Eye className="w-3 h-3" />
+                              </a>
+                            )}
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 rounded-md font-bold uppercase truncate max-w-[100px]">
+                            Shipment Created
+                          </span>
+                        </div>
+                      ) : (
+                        <select
+                          value={selectedCourier[order.id] || ''}
+                          onChange={(e) => handleCourierSelect(order, e.target.value)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer hover:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
+                        >
+                          <option value="">🚚 Create Courier Order</option>
+                          <option value="steadfast">🚚 Steadfast</option>
+                          <option value="pathao">📦 Pathao</option>
+                        </select>
+                      )}
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
                       <div className="flex items-center justify-end gap-1 sm:gap-2">

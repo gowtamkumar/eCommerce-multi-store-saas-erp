@@ -80,6 +80,12 @@ export class OrderEntity {
     @JoinColumn({ name: 'tenantId' })
     tenant: TenantEntity;
 
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    trackingId: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    courierStatus: string;
+
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date;
 

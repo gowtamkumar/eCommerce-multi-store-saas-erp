@@ -16,7 +16,8 @@ import {
   MapPin,
   Package,
   Phone,
-  RefreshCw
+  RefreshCw,
+  Truck
 } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
@@ -691,6 +692,45 @@ export default function OrderDetailsPage({
                   </p>
                 </div>
               </div>
+
+              {order.courierStatus && (
+                <div className="flex items-start gap-3 pt-3 sm:pt-4 border-t border-slate-100 dark:border-slate-700">
+                  <div className="p-2 bg-brand-50 dark:bg-brand-900/20 rounded-lg">
+                    <Truck className="w-4 h-4 text-brand-600" />
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">
+                      Shipping & Tracking
+                    </p>
+                    <div className="mt-1">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        {order.courierStatus}
+                        <span className="text-[10px] px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 rounded-md">SHIPMENT CREATED</span>
+                      </p>
+                      {order.trackingId && (
+                        <div className="mt-2 space-y-1">
+                          <p className="text-[10px] text-slate-400 uppercase font-black">Tracking ID</p>
+                          <p className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 p-1.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                            {order.trackingId}
+                          </p>
+                          <a
+                            href={
+                              order.courierStatus.toLowerCase() === 'pathao'
+                                ? `https://tracking.pathao.com/`
+                                : `https://steadfast.com.bd/tracking`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block text-[10px] font-bold text-brand-600 hover:text-brand-700 transition-colors uppercase tracking-widest mt-1"
+                          >
+                            Track on {order.courierStatus} →
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 

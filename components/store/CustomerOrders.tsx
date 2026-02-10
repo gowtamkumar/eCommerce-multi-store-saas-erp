@@ -6,7 +6,7 @@ import { OrderStatus } from "@/lib/enums/order-status";
 import ReturnModal from "./ReturnModal";
 
 import { getOrderStatusStyles } from "@/lib/utils";
-import { Eye, Package, RotateCcw, Search, ShoppingBag, Star } from "lucide-react";
+import { Eye, Package, RotateCcw, Search, ShoppingBag, Star, Truck } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -43,6 +43,8 @@ interface Order {
     returns?: any[];
     customerName: string;
     address: string;
+    trackingId?: string;
+    courierStatus?: string;
 }
 
 const CustomerOrders = () => {
@@ -466,6 +468,42 @@ const CustomerOrders = () => {
                                     );
                                 })()}
                             </div>
+
+                            {/* Tracking Info */}
+                            {selectedOrder.courierStatus && (
+                                <div className="p-4 bg-brand-50 dark:bg-brand-900/10 rounded-xl border border-brand-100 dark:border-brand-900/20">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <Truck className="w-5 h-5 text-brand-600" />
+                                        <h5 className="font-bold text-slate-900 dark:text-white text-sm">
+                                            Tracking Information
+                                        </h5>
+                                    </div>
+                                    <div className="space-y-1 pl-8">
+                                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            Courier: <span className="font-bold">{selectedOrder.courierStatus}</span>
+                                        </p>
+                                        {selectedOrder.trackingId && (
+                                            <>
+                                                <p className="text-xs text-slate-500">
+                                                    ID: <span className="font-mono font-bold">{selectedOrder.trackingId}</span>
+                                                </p>
+                                                <a
+                                                    href={
+                                                        selectedOrder.courierStatus.toLowerCase() === 'pathao'
+                                                            ? `https://tracking.pathao.com/`
+                                                            : `https://steadfast.com.bd/tracking`
+                                                    }
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-block text-xs font-bold text-brand-600 hover:text-brand-700 transition-colors mt-2"
+                                                >
+                                                    Click here to track your package →
+                                                </a>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Delivery Info */}
                             <div>

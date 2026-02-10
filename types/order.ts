@@ -29,6 +29,8 @@ export interface Order {
   paymentMethod: string;
   paymentStatus: string;
   transactionId?: string;
+  trackingId?: string;
+  courierStatus?: string;
   items: OrderItem[];
   returns?: any[];
   createdAt: string;
