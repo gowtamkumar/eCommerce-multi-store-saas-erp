@@ -7,4 +7,5 @@ export * from './payment.dto';
 export * from './smtp.dto';
 export * from './socialLink.dto';
 export * from './steadfastCourier.dto';
+export * from './trust-badge.dto';
 

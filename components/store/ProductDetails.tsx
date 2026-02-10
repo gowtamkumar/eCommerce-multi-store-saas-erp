@@ -14,8 +14,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Star,
-  TruckIcon,
-  X,
+  X
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,7 +26,7 @@ interface ProductDetailsProps {
 }
 
 const ProductDetails = ({ product }: ProductDetailsProps) => {
-  const { formatPrice } = useSettings();
+  const { formatPrice, settings } = useSettings();
   const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -450,39 +449,42 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
             )}
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl group hover:border-brand-500/30 transition-all duration-500">
-                <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <ShieldCheck className="w-7 h-7 text-green-600" />
-                </div>
-                <div className="space-y-0.5">
-                  <p className="text-[10px] uppercase tracking-widest font-black text-slate-400">
-                    Security
-                  </p>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">
-                    100% Protected
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl group hover:border-brand-500/30 transition-all duration-500">
-                <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <TruckIcon className="w-7 h-7 text-blue-600" />
-                </div>
-                <div className="space-y-0.5">
-                  <p className="text-[10px] uppercase tracking-widest font-black text-slate-400">
-                    Shipping
-                  </p>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">
-                    Global Delivery
-                  </p>
-                </div>
-              </div>
+            <div className={`grid ${(settings?.trustBadges?.length || 0) > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+              {(settings?.trustBadges || [
+                { title: '100% Protected', description: 'Security', icon: 'ShieldCheck', color: 'green' },
+                { title: 'Global Delivery', description: 'Shipping', icon: 'Truck', color: 'blue' }
+              ]).map((badge: any, index: number) => {
+                const IconComponent = (require('lucide-react') as any)[badge.icon] || ShieldCheck;
+                const colors: any = {
+                  green: 'bg-green-50 dark:bg-green-900/20 text-green-600',
+                  blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600',
+                };
+                // Auto-color based on icon if not provided
+                const colorClass = colors[badge.color] ||
+                  (badge.icon?.toLowerCase().includes('shield') ? colors.green : colors.blue);
+
+                return (
+                  <div key={index} className="flex items-center gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl group hover:border-brand-500/30 transition-all duration-500">
+                    <div className={`w-12 h-12 ${colorClass.split(' ').slice(0, 2).join(' ')} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                      <IconComponent className={`w-7 h-7 ${colorClass.split(' ').pop()}`} />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-black text-slate-400">
+                        {badge.description}
+                      </p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                        {badge.title}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Tabs Section */}
             <div className="border-t border-slate-100 dark:border-slate-800 pt-12">
               <div className="flex gap-2 mb-8 bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl w-fit">
-                {["description", "specs", "shipping"].map((tab) => (
+                {["description", "specs"].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab as any)}
@@ -548,7 +550,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                         )}
                     </div>
                   )}
-                  {activeTab === "shipping" && (
+                  {/* {activeTab === "shipping" && (
                     <div className="grid gap-6">
                       <div className="flex gap-4 p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
                         <TruckIcon className="w-8 h-8 text-brand-600 shrink-0" />
@@ -575,7 +577,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                         </div>
                       </div>
                     </div>
-                  )}
+                  )} */}
 
                 </motion.div>
               </AnimatePresence>

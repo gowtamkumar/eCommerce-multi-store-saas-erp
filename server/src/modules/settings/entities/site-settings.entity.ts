@@ -8,7 +8,7 @@ import {
     UpdateDateColumn,
 } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
-import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto, SteadfastCourierDto } from '../dto/index';
+import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from '../dto/index';
 
 
 @Entity('site_settings')
@@ -76,6 +76,9 @@ export class SiteSettingsEntity {
 
     @Column({ type: 'jsonb', nullable: true })
     footerSections?: FooterSectionDto[]
+
+    @Column({ type: 'jsonb', nullable: true })
+    trustBadges?: TrustBadgeDto[]
 
     @Column({ type: 'uuid', unique: true })
     tenantId: string;

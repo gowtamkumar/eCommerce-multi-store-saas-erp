@@ -25,6 +25,11 @@ interface SiteSettings {
     instagram: string;
     linkedin: string;
   };
+  trustBadges?: Array<{
+    icon: string;
+    title: string;
+    description: string;
+  }>;
 }
 
 interface SettingsContextType {
