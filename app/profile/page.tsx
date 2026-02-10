@@ -18,11 +18,11 @@ export default function ProfilePage() {
     const [settings, setSettings] = useState<any>(null);
     const [stats, setStats] = useState({ totalOrders: 0, memberSince: '' });
 
-    // useEffect(() => {
-    //     if (status === 'unauthenticated') {
-    //         router.push('/login');
-    //     }
-    // }, [status, router]);
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            router.push('/login');
+        }
+    }, [status, router]);
 
     useEffect(() => {
         const loadInitialData = async () => {

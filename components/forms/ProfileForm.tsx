@@ -126,7 +126,7 @@ export default function ProfileForm({ variant }: { variant?: 'personal' | 'secur
 
         setPasswordLoading(true);
         try {
-            const data = await fetchAPI('/profile', {
+            const data = await fetchAPI(`/users/update-password/${(session?.user as any).id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({
                     currentPassword: passwordData.currentPassword,
