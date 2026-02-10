@@ -80,6 +80,8 @@ export default function ProfilePage() {
                             className="relative"
                         >
                             <div className="w-32 h-32 rounded-3xl overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl relative group">
+
+                                {/* <img src={formData.image} alt="Profile" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" /> */}
                                 <img
                                     src={session?.user?.image || "/images/placeholder-avatar.jpg"}
                                     alt={session?.user?.name || "User"}

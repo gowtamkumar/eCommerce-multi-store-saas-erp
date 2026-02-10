@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import ImageModal from '../ui/ImageModal';
 
 export default function ProfileForm({ variant }: { variant?: 'personal' | 'security' }) {
     const { data: session, status, update } = useSession();
@@ -14,6 +15,7 @@ export default function ProfileForm({ variant }: { variant?: 'personal' | 'secur
     const [loading, setLoading] = useState(false);
     const [imageUploading, setImageUploading] = useState(false);
     const [passwordLoading, setPasswordLoading] = useState(false);
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -30,20 +32,31 @@ export default function ProfileForm({ variant }: { variant?: 'personal' | 'secur
         confirmPassword: '',
     });
 
+    const fetchProfile = async () => {
+        try {
+            const res = await fetchAPI('/profile');
+            if (res.data) {
+                setFormData({
+                    name: res.data.name || '',
+                    email: res.data.email || '',
+                    phone: res.data.phone || '',
+                    address: res.data.address || '',
+                    image: res.data.image || '',
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+        }
+    };
+
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.push('/login');
         }
-        if (session?.user) {
-            setFormData({
-                name: session.user.name || '',
-                email: session.user.email || '',
-                phone: session.user.phone || '',
-                address: session.user.address || '',
-                image: session.user.image || '',
-            });
+        if (status === 'authenticated') {
+            fetchProfile();
         }
-    }, [session, status, router]);
+    }, [status, router]);
 
     if (status === 'loading') {
         return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-brand-600" /></div>;
@@ -203,7 +216,10 @@ export default function ProfileForm({ variant }: { variant?: 'personal' | 'secur
                 {/* Profile Header within Form */}
                 <div className="flex flex-col md:flex-row items-center gap-8 pb-8 border-b border-slate-100 dark:border-slate-700/50">
                     <div className="relative">
-                        <div className="w-32 h-32 rounded-[2rem] bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl relative group">
+                        <div
+                            onClick={() => formData.image && setIsImageModalOpen(true)}
+                            className={`w-32 h-32 rounded-[2rem] bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl relative group ${formData.image ? 'cursor-zoom-in' : ''}`}
+                        >
                             {formData.image ? (
                                 <img src={formData.image} alt="Profile" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                             ) : (
@@ -275,16 +291,6 @@ export default function ProfileForm({ variant }: { variant?: 'personal' | 'secur
                             placeholder="017XXXXXXXX"
                         />
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Avatar URL</label>
-                        <input
-                            type="text"
-                            value={formData.image}
-                            onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                            className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all placeholder:text-slate-400 font-medium"
-                            placeholder="https://..."
-                        />
-                    </div>
                 </div>
 
                 <div className="space-y-2">
@@ -308,6 +314,13 @@ export default function ProfileForm({ variant }: { variant?: 'personal' | 'secur
                     </button>
                 </div>
             </form>
+
+            <ImageModal
+                isOpen={isImageModalOpen}
+                onClose={() => setIsImageModalOpen(false)}
+                imageUrl={formData.image}
+                altText={formData.name}
+            />
         </div>
     );
 }
