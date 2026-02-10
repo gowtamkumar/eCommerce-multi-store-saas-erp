@@ -21,45 +21,9 @@ export function formatCurrency(amount: number, currencySymbol?: string): string 
     setCreatingPathaoOrder(order.id);
     
     try {
-      // Format phone number for Pathao
-      let formattedPhone = (order.customerPhone || '').replace(/\D/g, '');
-      if (!formattedPhone.startsWith('0')) {
-        formattedPhone = '0' + formattedPhone;
-      }
-      if (formattedPhone.length > 11) {
-        formattedPhone = formattedPhone.slice(0, 11);
-      }
-      if (formattedPhone.length < 11) {
-        formattedPhone = '01700000000';
-      }
-
-      // Calculate total item quantity and weight
-      const totalQuantity = order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 1;
-      const estimatedWeight = totalQuantity * 0.5; // Estimate 0.5kg per item
-
-      // Map order data to Pathao format
-      const pathaoOrderData = {
-        store_id: 368297, // Will be overridden by backend settings if available
-        merchant_order_id: order.id.slice(-8).toUpperCase(),
-        recipient_name: order.customerName,
-        recipient_phone: formattedPhone,
-        recipient_address: order.address || 'Address not provided',
-        recipient_city: Number((order as any).cityId) || 1, // Dhaka = 1 (default to satisfy API)
-        recipient_zone: Number((order as any).zoneId) || 1, 
-        recipient_area: Number((order as any).areaId) || 1,
-        delivery_type: 48, // 48 for Normal Delivery, 12 for On Demand
-        item_type: 2, // 1 for Document, 2 for Parcel
-        item_quantity: totalQuantity,
-        item_weight: Math.min(estimatedWeight, 10), // Max 10kg
-        item_description: order.items?.map((item: any) =>
-          `${item.quantity}x ${item.product?.name || 'Product'}`
-        ).join(', ') || 'Order items',
-        amount_to_collect: Number(order.totalAmount) || 0,
-      };
-
       const response = await fetchAPI('/courier/pathao/create-order', {
         method: 'POST',
-        body: JSON.stringify(pathaoOrderData),
+        body: JSON.stringify({orderId: order.id}),
       });
 
       toast.success('Pathao order created successfully!');

@@ -89,8 +89,7 @@ export default function OrdersPage() {
     }
   };
 
-  const handleCreateCourierOrder = async (order: Order) => {
-    const courier = selectedCourier[order.id];
+  const handleCreateCourierOrder = async (order: Order, courier: string) => {
     if (courier === 'steadfast') {
       await handleCreateSteadfastOrder(order, setCreatingOrder);
     } else if (courier === 'pathao') {
@@ -111,9 +110,10 @@ export default function OrdersPage() {
 
   const handleConfirmCourierOrder = async () => {
     if (pendingCourierOrder) {
+      const { order, courier } = pendingCourierOrder;
       setShowCourierModal(false);
-      setSelectedCourier({ ...selectedCourier, [pendingCourierOrder.order.id]: pendingCourierOrder.courier });
-      await handleCreateCourierOrder(pendingCourierOrder.order,);
+      setSelectedCourier({ ...selectedCourier, [order.id]: courier });
+      await handleCreateCourierOrder(order, courier);
       setPendingCourierOrder(null);
     }
   };
@@ -233,7 +233,7 @@ export default function OrdersPage() {
                         onChange={(e) => handleCourierSelect(order, e.target.value)}
                         className="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer hover:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
                       >
-                        <option value="">Select Courier</option>
+                        <option value="">🚚 Create Courier Order</option>
                         <option value="steadfast">🚚 Steadfast</option>
                         <option value="pathao">📦 Pathao</option>
                       </select>

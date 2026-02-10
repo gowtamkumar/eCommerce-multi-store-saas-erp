@@ -233,6 +233,19 @@ export class OrderService {
         return order;
     }
 
+     async findOneForCourier(id: string, tenantId: string) {
+        const order = await this.orderRepository.findOne({
+            where: { id, tenantId },
+            relations: ['items', 'items.product'],
+        });
+
+        if (!order) {
+            throw new NotFoundException('Order not found');
+        }
+
+        return order;
+    }
+
     async findByUserId(userId: string, tenantId: string) {
         const orders = await this.orderRepository.find({
             where: { userId, tenantId },

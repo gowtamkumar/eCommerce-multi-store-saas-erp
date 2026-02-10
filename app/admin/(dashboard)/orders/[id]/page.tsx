@@ -98,13 +98,15 @@ export default function OrderDetailsPage({
   };
 
   const handleConfirmCourierOrder = async (order: Order) => {
+    const courier = selectedCourier;
     setShowCourierModal(false);
-    if (selectedCourier === 'steadfast') {
+    setSelectedCourier("");
+
+    if (courier === 'steadfast') {
       await handleCreateSteadfastOrder(order, setCreatingOrder);
-    } else if (selectedCourier === 'pathao') {
+    } else if (courier === 'pathao') {
       await handleCreatePathaoOrder(order, setCreatingPathaoOrder);
     }
-    setSelectedCourier("");
   };
 
   const handleCancelCourierOrder = () => {
