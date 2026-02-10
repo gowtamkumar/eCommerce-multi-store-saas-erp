@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common'
 import { TenantId } from '../../common/decorators/tenant-id.decorator'
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto'
 import { PageService } from './page.service'
 
@@ -8,6 +9,7 @@ export class PageController {
   constructor(private readonly pageService: PageService) { }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(@Body() dto: CreatePageDto, @TenantId() tenantId: string) {
     return await this.pageService.create(dto, tenantId)
   }
@@ -42,11 +44,13 @@ export class PageController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   async update(@Param('id') id: string, @Body() dto: UpdatePageDto, @TenantId() tenantId: string) {
     return await this.pageService.update(id, dto, tenantId)
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async remove(@Param('id') id: string, @TenantId() tenantId: string) {
     return await this.pageService.remove(id, tenantId)
   }

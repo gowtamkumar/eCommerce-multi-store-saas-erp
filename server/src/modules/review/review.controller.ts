@@ -1,14 +1,16 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
-import { ReviewService } from './review.service';
-import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto';
-import { FilterReviewDto } from './dto/filter-review.dto';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { FilterReviewDto } from './dto/filter-review.dto';
+import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto';
+import { ReviewService } from './review.service';
 
 @Controller('reviews')
 export class ReviewController {
     constructor(private readonly reviewService: ReviewService) { }
 
     @Post()
+    @UseGuards(JwtAuthGuard)
     async create(@Body() dto: CreateReviewDto, @TenantId() tenantId: string) {
         return await this.reviewService.create(dto, tenantId);
     }
@@ -42,11 +44,13 @@ export class ReviewController {
     }
 
     @Put(':id')
+    @UseGuards(JwtAuthGuard)
     async update(@Param('id') id: string, @Body() dto: UpdateReviewDto, @TenantId() tenantId: string) {
         return await this.reviewService.update(id, dto, tenantId);
     }
 
     @Delete(':id')
+    @UseGuards(JwtAuthGuard)
     async remove(@Param('id') id: string, @TenantId() tenantId: string) {
         return await this.reviewService.remove(id, tenantId);
     }

@@ -6,8 +6,10 @@ import {
     Post,
     Put,
     Query,
+    UseGuards,
 } from '@nestjs/common';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { FilterOrderDto } from './dto/filter-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -75,6 +77,7 @@ export class OrderController {
     }
 
     @Put(':id')
+    @UseGuards(JwtAuthGuard)
     async update(
         @Param('id') id: string,
         @Body() updateOrderDto: UpdateOrderDto,

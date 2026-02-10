@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { TenantId } from '../../common/decorators/tenant-id.decorator'
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { CreateReviewDto } from '../review/dto/review.dto'
 import { ReviewService } from '../review/review.service'
 import { CreateProductDto } from './dto/create-product.dto'
@@ -15,6 +16,7 @@ export class ProductController {
   ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(@Body() createProductDto: CreateProductDto, @TenantId() tenantId: string) {
     return await this.productService.create(createProductDto, tenantId)
   }
@@ -53,6 +55,7 @@ export class ProductController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
@@ -62,6 +65,7 @@ export class ProductController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async remove(@Param('id') id: string, @TenantId() tenantId: string) {
     return await this.productService.remove(id, tenantId)
   }
@@ -72,6 +76,7 @@ export class ProductController {
   }
 
   @Post(':id/reviews')
+  @UseGuards(JwtAuthGuard)
   async createReview(
     @Param('id') productId: string,
     @Body() createReviewDto: CreateReviewDto,

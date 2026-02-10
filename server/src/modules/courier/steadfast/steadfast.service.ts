@@ -28,8 +28,8 @@ export class SteadfastService {
       
       if (settings?.steadfastCourier) {
         this.baseUrl = this.configService.get<string>('STEADFAST_BASE_URL');
-        this.apiKey = settings.steadfastCourier.apiKey || this.configService.get<string>('STEADFAST_API_KEY');
-        this.secretKey = settings.steadfastCourier.secretKey || this.configService.get<string>('STEADFAST_SECRET_KEY');
+        this.apiKey = settings.steadfastCourier.apiKey 
+        this.secretKey = settings.steadfastCourier.secretKey
       }
     } catch (error) {
       this.logger.warn('Failed to load settings, using environment variables', error);
@@ -53,6 +53,7 @@ export class SteadfastService {
     if (formattedPhone.length > 11) {
       formattedPhone = formattedPhone.slice(0, 11);
     }
+
     if (formattedPhone.length < 11) {
       formattedPhone = '01700000000';
     }
@@ -60,7 +61,7 @@ export class SteadfastService {
     const steadfastOrderData = {
       invoice: order.id.slice(-8).toUpperCase(),
       recipient_name: order.customerName,
-      recipient_phone: formattedPhone,
+      recipient_phone: "formattedPhone",
       recipient_address: order.address || 'Address not provided',
       cod_amount: Number(order.totalAmount) || 0,
       item_description: order.items?.map((item: any) =>
