@@ -77,8 +77,6 @@ export default withAuth(
 
         // Sensitive routes that require authentication for all methods
         const sensitiveApiRoutes = [
-          // "/api/orders",
-          // "/api/payments",
           "/api/profile",
           "/api/users",
         ];
