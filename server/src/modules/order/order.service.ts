@@ -4,7 +4,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { LeadStatus } from '../../common/enums/lead-status.enum';
 import { OrderStatus } from '../../common/enums/order-status.enum';
 import { PaymentStatus } from '../../common/enums/payment-status.enum';
@@ -205,7 +205,7 @@ export class OrderService {
 
         if (search) {
             queryBuilder.andWhere(
-                '(order.customerName ILIKE :search OR order.customerEmail ILIKE :search OR order.customerPhone ILIKE :search OR order.id ILIKE :search)',
+                '(order.customerName ILIKE :search OR order.customerEmail ILIKE :search OR order.customerPhone ILIKE :search OR CAST(order.id AS TEXT) ILIKE :search)',
                 { search: `%${search}%` },
             );
         }
@@ -248,14 +248,29 @@ export class OrderService {
         return order;
     }
 
-    async findByUserId(userId: string, tenantId: string) {
-        const orders = await this.orderRepository.find({
-            where: { userId, tenantId },
-            relations: ['items', 'items.product', 'items.variant', 'returns'],
-            order: { createdAt: 'DESC' },
-        });
+    async findByUserId(userId: string, tenantId: string, search?: string) {
+        const queryBuilder = this.orderRepository
+            .createQueryBuilder('order')
+            .leftJoinAndSelect('order.items', 'items')
+            .leftJoinAndSelect('items.product', 'product')
+            .leftJoinAndSelect('items.variant', 'variant')
+            .leftJoinAndSelect('order.returns', 'returns')
+            .where('order.userId = :userId', { userId })
+            .andWhere('order.tenantId = :tenantId', { tenantId });
 
-        return orders;
+        if (search) {
+            queryBuilder.andWhere(
+                new Brackets((qb) => {
+                    qb.where('order.customerName ILIKE :search', { search: `%${search}%` })
+                        .orWhere('order.customerEmail ILIKE :search', { search: `%${search}%` })
+                        .orWhere('order.customerPhone ILIKE :search', { search: `%${search}%` })
+                        .orWhere('CAST(order.id AS TEXT) ILIKE :search', { search: `%${search}%` })
+                        .orWhere('product.name ILIKE :search', { search: `%${search}%` });
+                }),
+            );
+        }
+
+        return await queryBuilder.orderBy('order.createdAt', 'DESC').getMany();
     }
 
     async update(id: string, updateOrderDto: UpdateOrderDto, tenantId: string) {

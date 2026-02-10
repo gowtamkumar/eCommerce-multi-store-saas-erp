@@ -63,9 +63,10 @@ export class OrderController {
     @Get('user/:userId')
     async getUserOrders(
         @Param('userId') userId: string,
+        @Query('search') search: string,
         @TenantId() tenantId: string,
     ) {
-        const orders = await this.orderService.findByUserId(userId, tenantId);
+        const orders = await this.orderService.findByUserId(userId, tenantId, search);
         return {
             success: true,
             statusCode: 200,

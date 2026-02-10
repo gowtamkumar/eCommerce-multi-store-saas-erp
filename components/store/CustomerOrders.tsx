@@ -6,7 +6,7 @@ import { OrderStatus } from "@/lib/enums/order-status";
 import ReturnModal from "./ReturnModal";
 
 import { getOrderStatusStyles } from "@/lib/utils";
-import { Eye, Package, RotateCcw, ShoppingBag, Star } from "lucide-react";
+import { Eye, Package, RotateCcw, Search, ShoppingBag, Star } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -64,6 +64,8 @@ const CustomerOrders = () => {
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState("");
     const [submittingReview, setSubmittingReview] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
 
     const getReturnStatus = (order: Order, productId: string, variantId?: string) => {
         if (!order.returns) return null;
@@ -82,18 +84,26 @@ const CustomerOrders = () => {
 
     useEffect(() => {
         if (session?.user?.id) {
-            fetchOrders();
+            fetchOrders(debouncedSearch);
         }
-    }, [session?.user?.id]);
+    }, [session?.user?.id, debouncedSearch]);
 
-    const fetchOrders = async () => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    const fetchOrders = async (search?: string) => {
         try {
             if (!session?.user?.id) {
                 setLoading(false);
                 return;
             }
 
-            const res = await fetchAPI(`/orders/user/${session.user.id}`);
+            const query = search ? `?search=${encodeURIComponent(search)}` : "";
+            const res = await fetchAPI(`/orders/user/${session.user.id}${query}`);
 
             if (res.success && res.data && Array.isArray(res.data)) {
                 setOrders(res.data);
@@ -140,10 +150,23 @@ const CustomerOrders = () => {
 
     return (
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8 h-full">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-brand-600" />
-                Order History
-            </h2>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <ShoppingBag className="w-5 h-5 text-brand-600" />
+                    Order History
+                </h2>
+
+                <div className="relative max-w-sm w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Search by Order ID or Product..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                    />
+                </div>
+            </div>
 
             {orders.length === 0 ? (
                 <div className="text-center py-12">
