@@ -187,7 +187,9 @@ export class OrderService {
     }
 
     async findAll(filterDto: any, tenantId: string) {
-        const { page, limit, q, status } = filterDto;
+        const { page, limit, search, status } = filterDto;
+        console.log("filterDto", filterDto);
+        
         const skip = (page - 1) * limit;
 
         const queryBuilder = this.orderRepository
@@ -201,10 +203,10 @@ export class OrderService {
             queryBuilder.andWhere('order.status = :status', { status });
         }
 
-        if (q) {
+        if (search) {
             queryBuilder.andWhere(
-                '(order.customerName ILIKE :q OR order.customerEmail ILIKE :q)',
-                { q: `%${q}%` },
+                '(order.customerName ILIKE :search OR order.customerEmail ILIKE :search OR order.customerPhone ILIKE :search OR order.id ILIKE :search)',
+                { search: `%${search}%` },
             );
         }
 

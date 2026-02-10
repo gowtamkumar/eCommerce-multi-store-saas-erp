@@ -5,6 +5,7 @@ import {
     IsNumber,
     IsOptional,
     IsString,
+    Matches,
     Min
 } from 'class-validator';
 import { PaymentMethod } from '../../../common/enums/payment-method.enum';
@@ -36,6 +37,9 @@ export class CreateOrderDto {
 
     @ApiProperty()
     @IsString()
+    @Matches(/^01\d{9}$/, {
+        message: 'Customer phone must be a valid 11-digit Bangladeshi number starting with 01',
+    })
     customerPhone: string;
 
     @ApiProperty()

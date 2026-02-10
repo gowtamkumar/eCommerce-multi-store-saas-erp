@@ -40,6 +40,7 @@ export default function CheckoutPage() {
     address: '',
     notes: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Update form data when session loads
   useEffect(() => {
@@ -56,7 +57,24 @@ export default function CheckoutPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+
+    // Sanitize phone input: allow only digits and limit to 11
+    if (name === 'phone') {
+      const cleaned = value.replace(/\D/g, '').slice(0, 11);
+      setFormData(prev => ({ ...prev, [name]: cleaned }));
+
+      // Clear error as user types
+      if (errors.phone) {
+        setErrors(prev => ({ ...prev, phone: '' }));
+      }
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear other errors
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const summary = cart?.summary || { subtotal: 0, offer_discount: 0, coupon_discount: 0, payable: 0 };
@@ -64,6 +82,14 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) return;
+
+    // Phone validation
+    const phoneRegex = /^01\d{9}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      setErrors(prev => ({ ...prev, phone: 'Please enter a valid 11-digit number starting with 01' }));
+      toast.error('Invalid phone number');
+      return;
+    }
 
     setLoading(true);
 
@@ -303,9 +329,13 @@ export default function CheckoutPage() {
                         required
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                        placeholder="+1 (555) 000-0000"
+                        className={`w-full px-4 py-3 rounded-xl border bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all ${errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 dark:border-slate-700'
+                          }`}
+                        placeholder="017XXXXXXXX"
                       />
+                      {errors.phone && (
+                        <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Shipping Address</label>
