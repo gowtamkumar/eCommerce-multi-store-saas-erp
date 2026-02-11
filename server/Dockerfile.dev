@@ -1,0 +1,18 @@
+# use officeily image for node.js
+FROM node:24-alpine
+# set work directory
+WORKDIR /app
+# Copy package files first (better caching)
+COPY package.json package-lock.json* ./
+
+# install dependency
+RUN npm install
+
+# Copy rest of the app
+COPY . .
+
+# Expose Port
+EXPOSE 3900
+
+# RUN next.js appliction development mode
+CMD ["npm", "run", "start:dev"]
