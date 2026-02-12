@@ -38,7 +38,7 @@ export default function Login() {
                 toast.success(`Logged in as ${userRole || 'User'}`);
 
                 if (userRole === 'SuperAdmin') {
-                    router.push('/super-admin');
+                    router.push('/system-platform');
                 } else if (userRole === 'Admin') {
                     router.push('/admin');
                 } else {
