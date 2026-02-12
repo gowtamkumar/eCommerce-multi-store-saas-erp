@@ -1,8 +1,7 @@
 'use client';
 
 import { fetchAPI } from '@/services/api';
-
-import ProductForm from '@/components/admin/ProductForm';
+import ProductForm from '@/features/product/components/ProductForm';
 import { use, useEffect, useState } from 'react';
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {

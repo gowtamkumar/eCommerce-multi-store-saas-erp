@@ -4,10 +4,10 @@ import PaymentStatus from '@/components/shared/PaymentStatus';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
-import FAQ from '@/components/shared/FAQ';
-import ProductDetails from '@/components/shared/ProductDetails';
-import RelatedProducts from '@/components/shared/RelatedProducts';
-import Reviews from '@/components/shared/Reviews';
+import FAQ from '@/features/faq/components/FAQ';
+import ProductDetails from '@/features/product/components/ProductDetails';
+import RelatedProducts from '@/features/product/components/RelatedProducts';
+import Reviews from '@/features/profile/components/Reviews';
 import { fetchAPI } from "@/services/api";
 
 async function getProduct(slug: string) {
@@ -75,8 +75,6 @@ export default async function Product({ params }: { params: Promise<{ slug: stri
     if (!product) {
         notFound();
     }
-
-    // Check if product uses the new builder system
 
     return (
         <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">

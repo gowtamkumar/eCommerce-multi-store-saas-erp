@@ -1,9 +1,9 @@
 "use client";
 
-import ProfileForm from '@/components/shared/forms/ProfileForm';
+import ProfileForm from '@/features/profile/components/ProfileForm';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
-import CustomerOrders from '@/components/shared/CustomerOrders';
+import CustomerOrders from '@/features/profile/components/CustomerOrders';
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Calendar, Loader2, LogOut, Package, ShieldCheck, User } from 'lucide-react';

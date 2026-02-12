@@ -1,4 +1,4 @@
-import ContactForm from '@/components/shared/forms/ContactForm';
+import ContactForm from '@/features/contact/components/ContactForm';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import { getSiteSettings } from '@/services/getSettings';

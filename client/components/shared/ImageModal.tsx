@@ -1,14 +1,7 @@
 'use client';
-
+import { ImageModalProps } from '@/types/inex';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
-
-interface ImageModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  imageUrl: string;
-  altText?: string;
-}
 
 export default function ImageModal({
   isOpen,

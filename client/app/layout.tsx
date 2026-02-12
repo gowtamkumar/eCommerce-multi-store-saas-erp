@@ -1,12 +1,9 @@
 import { Inter, Outfit } from "next/font/google";
 import "../styles/typography.css";
 import "./globals.css";
-
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
-// Force dynamic rendering for multi-tenant environment
 export const dynamic = 'force-dynamic';
-
 import AuthProvider from "@/hooks/AuthProvider";
 import ToasterProvider from "@/hooks/ToasterProvider";
 import { CartProvider } from "@/hooks/CartContext";

@@ -1,14 +1,10 @@
 'use client';
 
+import { PaginationProps } from '@/types/inex';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  baseUrl: string;
-}
 
 export default function Pagination({ currentPage, totalPages, baseUrl }: PaginationProps) {
   const searchParams = useSearchParams();
@@ -56,8 +52,8 @@ export default function Pagination({ currentPage, totalPages, baseUrl }: Paginat
                 key={page}
                 href={createPageUrl(page)}
                 className={`w-10 h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === page
-                    ? 'bg-brand-600 text-white shadow-sm shadow-brand-500/25'
-                    : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                  ? 'bg-brand-600 text-white shadow-sm shadow-brand-500/25'
+                  : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
                   }`}
               >
                 {page}

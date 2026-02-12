@@ -1,4 +1,4 @@
-import SectionRenderer from "@/components/shared/SectionRenderer";
+import SectionRenderer from "@/features/pages/components/customizer/SectionRenderer";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import PaymentStatus from "@/components/shared/PaymentStatus";

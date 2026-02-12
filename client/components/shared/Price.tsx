@@ -1,14 +1,8 @@
 'use client';
 
 import { useSettings } from "@/hooks/SettingsContext";
+import { PriceProps } from "@/types/inex";
 import { useEffect, useState } from "react";
-
-interface PriceProps {
-  amount: number;
-  className?: string;
-  showOriginal?: boolean;
-  originalAmount?: number;
-}
 
 export default function Price({ amount, className = "", showOriginal = false, originalAmount }: PriceProps) {
   const { formatPrice, convertPrice, selectedCurrency } = useSettings();

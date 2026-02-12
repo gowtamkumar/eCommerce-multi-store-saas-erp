@@ -1,4 +1,4 @@
-interface OrderItem {
+export interface OrderItem {
   id: string;
   quantity: number;
   unitPrice: number;
@@ -18,6 +18,7 @@ interface OrderItem {
   } | null;
 }
 
+
 export interface Order {
   id: string;
   customerName: string;
@@ -35,4 +36,6 @@ export interface Order {
   returns?: any[];
   createdAt: string;
   orderNotes?: string;
+  currency?: string;
+  currencyRate?: number;
 }
