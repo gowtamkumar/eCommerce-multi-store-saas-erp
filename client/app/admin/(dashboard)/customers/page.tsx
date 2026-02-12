@@ -1,8 +1,8 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 
-import ConfirmModal from '@/components/ui/ConfirmModal';
+import ConfirmModal from '@/components/shared/ConfirmModal';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ChevronLeft, ChevronRight, Loader2, Search, Trash2, User as UserIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';

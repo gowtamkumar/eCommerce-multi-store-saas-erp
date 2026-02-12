@@ -1,4 +1,4 @@
-import PlanForm from "@/components/super-admin/PlanForm";
+import PlanForm from "@/components/system-platform/PlanForm";
 
 export default function CreatePlanPage() {
     return (

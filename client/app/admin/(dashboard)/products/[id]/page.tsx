@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 
 import ProductForm from '@/components/admin/ProductForm';
 import { use, useEffect, useState } from 'react';

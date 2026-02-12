@@ -1,6 +1,6 @@
-import TenantAnalytics from "@/components/super-admin/TenantAnalytics";
+import TenantAnalytics from "@/components/system-platform/TenantAnalytics";
 import { notFound } from "next/navigation";
-import { fetchSuperAdminAPI } from "@/lib/supperAdminApi";
+import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 
 
 async function getTenantAnalyticsData(id: string) {

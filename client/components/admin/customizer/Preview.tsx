@@ -1,6 +1,6 @@
 "use client";
 
-import SectionRenderer from '@/components/core/SectionRenderer';
+import SectionRenderer from '@/components/shared/SectionRenderer';
 import { CustomizerSection } from '@/types/customizer';
 import { useEffect, useRef } from 'react';
 

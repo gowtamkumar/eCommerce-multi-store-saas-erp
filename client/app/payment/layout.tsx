@@ -1,6 +1,6 @@
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
-import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
+import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
 
 export default function PaymentLayout({
   children,

@@ -1,5 +1,5 @@
-import SuperAdminDashboard from "@/components/super-admin/SuperAdminDashboard";
-import { fetchSuperAdminAPI } from "@/lib/supperAdminApi";
+import SuperAdminDashboard from "@/components/system-platform/SuperAdminDashboard";
+import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 
 
 async function getSuperAdminDashboardData() {

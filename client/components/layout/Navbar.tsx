@@ -1,15 +1,15 @@
 "use client";
 
-import { useCart } from "@/contexts/CartContext";
-import { useSettings } from "@/contexts/SettingsContext";
-import { fetchAPI } from "@/lib/api";
+import { useCart } from "@/hooks/CartContext";
+import { useSettings } from "@/hooks/SettingsContext";
+import { fetchAPI } from "@/services/api";
 import { AnimatePresence, motion } from "framer-motion";
 import { Command, Lock, LogOut, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import CurrencySwitcher from "../store/CurrencySwitcher";
+import CurrencySwitcher from "../shared/store/CurrencySwitcher";
 
 const Navbar = ({ settings: propSettings }: { settings?: any }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

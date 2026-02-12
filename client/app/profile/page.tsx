@@ -1,10 +1,10 @@
 "use client";
 
-import ProfileForm from '@/components/forms/ProfileForm';
+import ProfileForm from '@/components/shared/forms/ProfileForm';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
-import CustomerOrders from '@/components/store/CustomerOrders';
-import { fetchAPI } from '@/lib/api';
+import CustomerOrders from '@/components/shared/store/CustomerOrders';
+import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Calendar, Loader2, LogOut, Package, ShieldCheck, User } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';

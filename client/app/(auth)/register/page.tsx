@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 import { Loader2, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

@@ -1,7 +1,7 @@
 'use client';
 
-import ProductFilters from '@/components/store/ProductFilters';
-import ProductList from '@/components/store/ProductList';
+import ProductFilters from '@/components/shared/store/ProductFilters';
+import ProductList from '@/components/shared/store/ProductList';
 import { useState } from 'react';
 
 interface ProductsClientWrapperProps {

@@ -1,8 +1,8 @@
 'use client';
 
-import { useSettings } from '@/contexts/SettingsContext';
+import { useSettings } from '@/hooks/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 import { ChevronLeft, ChevronRight, Loader2, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

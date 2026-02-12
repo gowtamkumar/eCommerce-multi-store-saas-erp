@@ -2,8 +2,8 @@
 
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
-import Price from "@/components/ui/Price";
-import { useCart } from "@/contexts/CartContext";
+import Price from "@/components/shared/Price";
+import { useCart } from "@/hooks/CartContext";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";

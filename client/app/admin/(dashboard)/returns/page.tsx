@@ -1,7 +1,7 @@
 "use client";
 
-import { useSettings } from "@/contexts/SettingsContext";
-import { fetchAPI } from "@/lib/api";
+import { useSettings } from "@/hooks/SettingsContext";
+import { fetchAPI } from "@/services/api";
 import { Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";

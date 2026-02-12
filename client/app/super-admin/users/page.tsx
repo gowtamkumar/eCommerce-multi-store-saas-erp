@@ -1,5 +1,5 @@
-import UserList from "@/components/super-admin/UserList";
-import { fetchSuperAdminAPI } from "@/lib/supperAdminApi";
+import UserList from "@/components/system-platform/UserList";
+import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 
 async function getUsers() {
   try {

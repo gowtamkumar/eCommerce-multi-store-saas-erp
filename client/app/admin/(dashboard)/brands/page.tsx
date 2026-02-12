@@ -1,7 +1,7 @@
 'use client';
 
-import ConfirmModal from '@/components/ui/ConfirmModal';
-import { fetchAPI } from '@/lib/api';
+import ConfirmModal from '@/components/shared/ConfirmModal';
+import { fetchAPI } from '@/services/api';
 import { Edit, Globe, Image as ImageIcon, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';

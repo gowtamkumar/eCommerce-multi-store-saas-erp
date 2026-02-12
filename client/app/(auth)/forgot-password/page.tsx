@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 import { KeyRound, Loader2, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense, useState } from 'react';

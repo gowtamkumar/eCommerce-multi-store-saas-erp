@@ -1,7 +1,7 @@
 "use client";
 
 import CustomizerEditor from "@/components/admin/customizer/CustomizerEditor";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI } from "@/services/api";
 import { PageData } from "@/types/customizer";
 import { Loader2 } from "lucide-react";
 import { use, useEffect, useState } from "react";

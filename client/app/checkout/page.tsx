@@ -1,10 +1,10 @@
 "use client";
 
-import Price from "@/components/ui/Price";
-import { useCart } from "@/contexts/CartContext";
-import { useSettings } from "@/contexts/SettingsContext";
-import { fetchAPI } from "@/lib/api";
-import * as cartApi from "@/lib/cart";
+import Price from "@/components/shared/Price";
+import { useCart } from "@/hooks/CartContext";
+import { useSettings } from "@/hooks/SettingsContext";
+import { fetchAPI } from "@/services/api";
+import * as cartApi from "@/services/cart";
 import { PaymentMethod } from "@/lib/enums/payment-method";
 import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
 import { motion } from "framer-motion";
@@ -18,7 +18,7 @@ import toast from "react-hot-toast";
 
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
-import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
+import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
 
 export default function CheckoutPage() {
   const { cart, items, updateQuantity, removeItem, clearCart, loading: cartLoading } = useCart();

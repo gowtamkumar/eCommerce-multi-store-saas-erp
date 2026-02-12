@@ -1,10 +1,10 @@
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
-import PaymentStatus from "@/components/store/PaymentStatus";
-import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
-import { fetchAPI } from "@/lib/api";
-import { getSiteSettings } from "@/lib/getSettings";
-import { getTenantId } from "@/lib/tenant";
+import PaymentStatus from "@/components/shared/store/PaymentStatus";
+import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
+import { fetchAPI } from "@/services/api";
+import { getSiteSettings } from "@/services/getSettings";
+import { getTenantId } from "@/services/tenant";
 import Link from "next/link";
 import { Suspense } from "react";
 import ProductsClientWrapper from "./ProductsClientWrapper"; // New client wrapper for layout state

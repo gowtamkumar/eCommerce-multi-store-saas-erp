@@ -1,7 +1,7 @@
-import ContactForm from '@/components/forms/ContactForm';
+import ContactForm from '@/components/shared/forms/ContactForm';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
-import { getSiteSettings } from '@/lib/getSettings';
+import { getSiteSettings } from '@/services/getSettings';
 import { Mail, MapPin, Phone } from 'lucide-react';
 
 export async function generateMetadata() {

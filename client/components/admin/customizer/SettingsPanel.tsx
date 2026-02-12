@@ -1,6 +1,6 @@
 "use client";
 
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 import { CustomizerSection, FAQItem, ReviewItem } from '@/types/customizer';
 import { ChevronDown, ChevronUp, Eye, Monitor, Palette, Plus, Settings2, Smartphone, Trash2, Type, X } from 'lucide-react';
 import { useEffect, useState } from 'react';

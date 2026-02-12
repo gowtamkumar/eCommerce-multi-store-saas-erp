@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 import { LeadStatus } from '@/lib/enums/lead-status';
 import { ChevronLeft, ChevronRight, Download, Filter, Loader2, MessageSquare, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';

@@ -1,4 +1,4 @@
-import { useSettings } from '@/contexts/SettingsContext';
+import { useSettings } from '@/hooks/SettingsContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';

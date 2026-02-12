@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchSuperAdminAPI } from '@/lib/supperAdminApi';
+import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
 import { motion } from 'framer-motion';
 import { Activity, Clock, Database, HardDrive, ShieldCheck, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';

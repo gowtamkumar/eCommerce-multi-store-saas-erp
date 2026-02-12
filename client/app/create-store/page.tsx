@@ -1,7 +1,7 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
-import { publicSaasApi } from '@/lib/publicSaasApi ';
+import { fetchAPI } from '@/services/api';
+import { publicSaasApi } from '@/services/publicSaasApi ';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, Globe, Layers, Layout, Loader2, Lock, User } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';

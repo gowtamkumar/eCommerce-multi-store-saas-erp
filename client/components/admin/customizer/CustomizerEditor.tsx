@@ -1,6 +1,6 @@
 "use client";
 
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 import { CustomizerSection, PageData } from '@/types/customizer';
 import { ArrowLeft, Eye, Layout, Monitor, Save, Settings, Smartphone } from 'lucide-react';
 import Link from 'next/link';

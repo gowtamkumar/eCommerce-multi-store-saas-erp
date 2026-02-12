@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { fetchAPI } from "./api";
+import { fetchAPI } from "../services/api";
 import nestApiUrl from "./api-url";
 
 export const authOptions: NextAuthOptions = {

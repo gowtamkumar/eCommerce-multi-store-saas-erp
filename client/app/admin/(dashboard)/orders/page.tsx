@@ -1,8 +1,8 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 
-import { useSettings } from '@/contexts/SettingsContext';
+import { useSettings } from '@/hooks/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { OrderStatus } from '@/lib/enums/order-status';
 import { PaymentStatus } from '@/lib/enums/payment-status';

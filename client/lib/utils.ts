@@ -2,7 +2,7 @@ import { Order } from '@/types/order';
 import { type ClassValue, clsx } from 'clsx';
 import toast from 'react-hot-toast';
 import { twMerge } from 'tailwind-merge';
-import { fetchAPI } from './api';
+import { fetchAPI } from '../services/api';
 import { OrderStatus } from './enums/order-status';
 
 export function cn(...inputs: ClassValue[]) {

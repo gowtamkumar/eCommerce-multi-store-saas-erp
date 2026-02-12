@@ -1,6 +1,6 @@
 'use client';
 
-import { useSettings } from '@/contexts/SettingsContext';
+import { useSettings } from '@/hooks/SettingsContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Banknote, BarChart3, ChevronDown, CreditCard, FileText, Globe, HelpCircle, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, RotateCcw, Settings, Share2, ShoppingBag, Tag, TrendingUp, Truck, User, Users, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';

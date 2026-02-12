@@ -1,12 +1,12 @@
-import SectionRenderer from "@/components/core/SectionRenderer";
+import SectionRenderer from "@/components/shared/SectionRenderer";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
-import SaaSLanding from "@/components/marketing/SaaSLanding";
-import PaymentStatus from "@/components/store/PaymentStatus";
-import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
-import { fetchAPI } from "@/lib/api";
-import { getSiteSettings } from "@/lib/getSettings";
-import { getTenantId } from "@/lib/tenant";
+import SaaSLanding from "@/components/system-platform/SaaSLanding";
+import PaymentStatus from "@/components/shared/store/PaymentStatus";
+import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
+import { fetchAPI } from "@/services/api";
+import { getSiteSettings } from "@/services/getSettings";
+import { getTenantId } from "@/services/tenant";
 import { Suspense } from "react";
 
 

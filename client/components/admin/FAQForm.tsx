@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 import { motion } from 'framer-motion';
 import { Save, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';

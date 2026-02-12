@@ -1,7 +1,7 @@
 'use client';
 
-import { useSettings } from '@/contexts/SettingsContext';
-import { fetchAPI } from '@/lib/api';
+import { useSettings } from '@/hooks/SettingsContext';
+import { fetchAPI } from '@/services/api';
 import { FileText, Package, ShoppingBag, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';

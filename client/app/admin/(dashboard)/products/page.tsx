@@ -1,10 +1,10 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 export const dynamic = 'force-dynamic';
 
-import ConfirmModal from '@/components/ui/ConfirmModal';
-import { useSettings } from '@/contexts/SettingsContext';
+import ConfirmModal from '@/components/shared/ConfirmModal';
+import { useSettings } from '@/hooks/SettingsContext';
 import { Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';

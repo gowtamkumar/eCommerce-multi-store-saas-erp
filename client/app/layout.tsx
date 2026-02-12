@@ -7,14 +7,14 @@ const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 // Force dynamic rendering for multi-tenant environment
 export const dynamic = 'force-dynamic';
 
-import AuthProvider from "@/components/providers/AuthProvider";
-import ToasterProvider from "@/components/providers/ToasterProvider";
-import { CartProvider } from "@/contexts/CartContext";
-import { SettingsProvider } from "@/contexts/SettingsContext";
-import { getSiteSettings } from "@/lib/getSettings";
+import AuthProvider from "@/hooks/AuthProvider";
+import ToasterProvider from "@/hooks/ToasterProvider";
+import { CartProvider } from "@/hooks/CartContext";
+import { SettingsProvider } from "@/hooks/SettingsContext";
+import { getSiteSettings } from "@/services/getSettings";
 import Script from "next/script";
-import CartDrawer from "@/components/store/CartDrawer";
-import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
+import CartDrawer from "@/components/shared/store/CartDrawer";
+import AnalyticsTracker from "@/components/shared/AnalyticsTracker";
 
 export default async function RootLayout({
   children,

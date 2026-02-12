@@ -1,14 +1,14 @@
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
-import PaymentStatus from '@/components/store/PaymentStatus';
+import PaymentStatus from '@/components/shared/store/PaymentStatus';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
-import FAQ from '@/components/core/FAQ';
-import ProductDetails from '@/components/store/ProductDetails';
-import RelatedProducts from '@/components/store/RelatedProducts';
-import Reviews from '@/components/store/Reviews';
-import { fetchAPI } from "@/lib/api";
+import FAQ from '@/components/shared/FAQ';
+import ProductDetails from '@/components/shared/store/ProductDetails';
+import RelatedProducts from '@/components/shared/store/RelatedProducts';
+import Reviews from '@/components/shared/store/Reviews';
+import { fetchAPI } from "@/services/api";
 
 async function getProduct(slug: string) {
     try {

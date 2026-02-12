@@ -1,5 +1,5 @@
 'use client'
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 import { Globe, Layout, Plus, Save, Shield, Trash2, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';

@@ -1,7 +1,7 @@
 'use client';
 
-import { useSettings } from '@/contexts/SettingsContext';
-import { fetchAPI } from '@/lib/api';
+import { useSettings } from '@/hooks/SettingsContext';
+import { fetchAPI } from '@/services/api';
 import { Product, Review } from '@/types/product';
 import { ArrowLeft, Calendar, Coins, Edit, Package, Tag } from 'lucide-react';
 import Image from 'next/image';

@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchAPI } from '@/lib/api';
+import { fetchAPI } from '@/services/api';
 import { Category, ProductAttribute, ProductVariant } from '@/types/product';
 import { Image as ImageIcon, Layout, Loader2, MessageSquare, Plus, Save, Star, Tag, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';

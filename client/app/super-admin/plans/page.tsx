@@ -1,5 +1,5 @@
-import PlanList from "@/components/super-admin/PlanList";
-import { fetchSuperAdminAPI } from "@/lib/supperAdminApi";
+import PlanList from "@/components/system-platform/PlanList";
+import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 
 async function getPlans() {
     try {

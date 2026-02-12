@@ -1,7 +1,7 @@
 "use client";
 
-import { useSettings } from "@/contexts/SettingsContext";
-import { fetchAPI } from "@/lib/api";
+import { useSettings } from "@/hooks/SettingsContext";
+import { fetchAPI } from "@/services/api";
 import { OrderStatus } from "@/lib/enums/order-status";
 import { PaymentStatus } from "@/lib/enums/payment-status";
 import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, updateOrderStatus } from "@/lib/utils";

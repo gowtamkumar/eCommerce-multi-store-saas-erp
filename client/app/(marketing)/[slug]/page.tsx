@@ -1,9 +1,9 @@
-import SectionRenderer from "@/components/core/SectionRenderer";
+import SectionRenderer from "@/components/shared/SectionRenderer";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
-import PaymentStatus from "@/components/store/PaymentStatus";
-import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
-import { fetchAPI } from "@/lib/api";
+import PaymentStatus from "@/components/shared/store/PaymentStatus";
+import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
+import { fetchAPI } from "@/services/api";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 

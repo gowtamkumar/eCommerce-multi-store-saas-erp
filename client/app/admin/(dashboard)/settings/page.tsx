@@ -1,7 +1,7 @@
 "use client";
 
 import GeneralSettings from "@/components/admin/setting/GeneralSettings";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI } from "@/services/api";
 export const dynamic = "force-dynamic";
 
 import { AnimatePresence, motion } from "framer-motion";
