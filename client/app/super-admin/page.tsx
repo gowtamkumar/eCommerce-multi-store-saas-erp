@@ -1,4 +1,4 @@
-import SuperAdminDashboard from "@/components/system-platform/SuperAdminDashboard";
+import SuperAdminDashboard from "@/features/system-platform/components/SuperAdminDashboard";
 import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 
 
@@ -9,17 +9,6 @@ async function getSuperAdminDashboardData() {
       fetchSuperAdminAPI('/super-admin/traffic?days=7'),
       fetchSuperAdminAPI('/super-admin/tenants/analytics')
     ]);
-    // fetch(`${API_URL}/super-admin/health`, {
-    //   headers: { 'Authorization': `Bearer ${token}` }
-    // }).then(res => res.json()),
-    // fetch(`${API_URL}/super-admin/traffic?days=7`, {
-    //   headers: { 'Authorization': `Bearer ${token}` }
-    // }).then(res => res.json()),
-    // fetch(`${API_URL}/super-admin/tenants/analytics`, {
-    //   headers: { 'Authorization': `Bearer ${token}` }
-    // }).then(res => res.json())
-
-
 
     return {
       stats: {

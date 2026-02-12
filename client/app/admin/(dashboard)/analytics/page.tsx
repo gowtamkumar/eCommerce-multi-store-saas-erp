@@ -1,6 +1,6 @@
 'use client';
 
-import TenantAnalytics from "@/components/system-platform/TenantAnalytics";
+import TenantAnalytics from "@/features/system-platform/components/TenantAnalytics";
 import { fetchAPI } from "@/services/api";
 import { Activity } from "lucide-react";
 import { useSession } from "next-auth/react";

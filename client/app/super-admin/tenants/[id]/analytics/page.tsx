@@ -1,10 +1,9 @@
-import TenantAnalytics from "@/components/system-platform/TenantAnalytics";
+import TenantAnalytics from "@/features/system-platform/components/TenantAnalytics";
 import { notFound } from "next/navigation";
 import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 
 
 async function getTenantAnalyticsData(id: string) {
-
 
     try {
         const [analyticsRes, tenantRes] = await Promise.all([

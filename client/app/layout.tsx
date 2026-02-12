@@ -13,7 +13,7 @@ import { CartProvider } from "@/hooks/CartContext";
 import { SettingsProvider } from "@/hooks/SettingsContext";
 import { getSiteSettings } from "@/services/getSettings";
 import Script from "next/script";
-import CartDrawer from "@/components/shared/store/CartDrawer";
+import CartDrawer from "@/components/shared/CartDrawer";
 import AnalyticsTracker from "@/components/shared/AnalyticsTracker";
 
 export default async function RootLayout({

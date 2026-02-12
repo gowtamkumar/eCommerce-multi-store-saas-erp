@@ -1,4 +1,4 @@
-import TenantList from "@/components/system-platform/TenantList";
+import TenantList from "@/features/system-platform/components/TenantList";
 import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 
 async function getTenants() {

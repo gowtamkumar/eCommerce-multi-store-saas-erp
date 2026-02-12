@@ -9,7 +9,7 @@ import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import CurrencySwitcher from "../shared/store/CurrencySwitcher";
+import CurrencySwitcher from "../shared/CurrencySwitcher";
 
 const Navbar = ({ settings: propSettings }: { settings?: any }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

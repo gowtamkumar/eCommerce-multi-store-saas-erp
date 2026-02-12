@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import Price from "../Price";
+import Price from "./Price";
 
 const CartDrawer = () => {
   const { isCartOpen, closeCart, cart, items, updateQuantity, removeItem } = useCart();

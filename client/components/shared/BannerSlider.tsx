@@ -1,19 +1,15 @@
 "use client";
-
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-interface ProductSliderProps {
-  headline?: string;
-  count?: number;
-  collectionId?: string; // This is the category slug/id
+interface BannerSliderProps {
+  settings?: any;
   styles?: any;
 }
 
-export default function BannerSlider({ settings, styles }: any) {
-  // eslint-disable-next-line
+export default function BannerSlider({ settings, styles }: BannerSliderProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const slides = settings?.slides?.length > 0 ? settings.slides : [{
     id: 'default',
@@ -26,7 +22,6 @@ export default function BannerSlider({ settings, styles }: any) {
     secondaryButtonLink: settings?.secondaryButtonLink,
   }];
 
-  // Auto-play
   useEffect(() => {
     if (slides.length <= 1) return;
     const timer = setInterval(() => {

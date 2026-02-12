@@ -1,17 +1,17 @@
 import { CustomizerSection } from "@/types/customizer";
-import BannerSlider from "./store/BannerSlider";
-import BrandGrid from "./store/BrandGrid";
-import BuilderButton from "./store/BuilderButton";
-import CategoryGrid from "./store/CategoryGrid";
-import FAQSection from "./store/FAQSection";
-import ImageBlock from "./store/ImageBlock";
-import Newsletter from "./store/Newsletter";
-import OfferBanner from "./store/OfferBanner";
-import ProductSlider from "./store/ProductSlider";
-import ReviewSection from "./store/ReviewSection";
-import StatsCounter from "./store/StatsCounter";
-import TextBlock from "./store/TextBlock";
-import VideoBlock from "./store/VideoBlock";
+import BannerSlider from "./BannerSlider";
+import BrandGrid from "./BrandGrid";
+import BuilderButton from "./BuilderButton";
+import CategoryGrid from "./CategoryGrid";
+import FAQSection from "./FAQSection";
+import ImageBlock from "./ImageBlock";
+import Newsletter from "./Newsletter";
+import OfferBanner from "./OfferBanner";
+import ProductSlider from "./ProductSlider";
+import ReviewSection from "./ReviewSection";
+import StatsCounter from "./StatsCounter";
+import TextBlock from "./TextBlock";
+import VideoBlock from "./VideoBlock";
 
 interface SectionRendererProps {
   section: CustomizerSection;

@@ -1,13 +1,13 @@
 import SectionRenderer from "@/components/shared/SectionRenderer";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
-import SaaSLanding from "@/components/system-platform/SaaSLanding";
-import PaymentStatus from "@/components/shared/store/PaymentStatus";
+import PaymentStatus from "@/components/shared/PaymentStatus";
 import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
 import { fetchAPI } from "@/services/api";
 import { getSiteSettings } from "@/services/getSettings";
 import { getTenantId } from "@/services/tenant";
 import { Suspense } from "react";
+import SaaSLanding from "@/features/system-platform/components/SaaSLanding";
 
 
 export async function generateMetadata() {

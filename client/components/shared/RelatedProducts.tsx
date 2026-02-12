@@ -1,6 +1,6 @@
 'use client';
 
-import ProductCard from '@/components/shared/store/ProductCard';
+import ProductCard from '@/components/shared/ProductCard';
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
 import { motion } from 'framer-motion';

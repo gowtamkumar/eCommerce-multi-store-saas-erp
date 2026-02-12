@@ -79,6 +79,7 @@ export default function AdminLayout({
     { icon: Menu, label: 'Navbar Menu', tab: 'navbar' },
     { icon: Layout, label: 'Footer Menu', tab: 'footer' },
     { icon: Truck, label: 'Courier Config', tab: 'courier' },
+    { icon: Truck, label: 'Trust & Safety', tab: 'trust' },
   ];
 
 

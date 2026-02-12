@@ -1,7 +1,7 @@
 import SectionRenderer from "@/components/shared/SectionRenderer";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
-import PaymentStatus from "@/components/shared/store/PaymentStatus";
+import PaymentStatus from "@/components/shared/PaymentStatus";
 import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
 import { fetchAPI } from "@/services/api";
 import { notFound } from "next/navigation";
@@ -39,7 +39,6 @@ export default async function DynamicPage({
     params: Promise<{ slug: string }>;
 }) {
     const { slug } = await params;
-
     // Reserved slugs
     if (
         ["api", "admin", "login", "products", "checkout", "orders"].includes(slug)
