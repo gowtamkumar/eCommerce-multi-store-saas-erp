@@ -7,12 +7,12 @@ import { usePathname } from 'next/navigation';
 export default function SystemSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMenuOpen: boolean; setIsMobileMenuOpen: (open: boolean) => void }) {
     const pathname = usePathname();
     const navItems = [
-        { icon: LayoutDashboard, label: 'Overview', href: '/super-admin' },
-        { icon: Globe, label: 'Tenants (Stores)', href: '/super-admin/tenants' },
-        { icon: Users, label: 'Global Users', href: '/super-admin/users' },
-        { icon: Activity, label: 'Platform Health', href: '/super-admin/health' },
-        { icon: Layers, label: 'Subscription Plans', href: '/super-admin/plans' },
-        { icon: Settings, label: 'Global Settings', href: '/super-admin/settings' },
+        { icon: LayoutDashboard, label: 'Overview', href: '/system-platform' },
+        { icon: Globe, label: 'Tenants (Stores)', href: '/system-platform/tenants' },
+        { icon: Users, label: 'Global Users', href: '/system-platform/users' },
+        { icon: Activity, label: 'Platform Health', href: '/system-platform/health' },
+        { icon: Layers, label: 'Subscription Plans', href: '/system-platform/plans' },
+        { icon: Settings, label: 'Global Settings', href: '/system-platform/settings' },
     ];
 
     const handleLogout = async () => {
