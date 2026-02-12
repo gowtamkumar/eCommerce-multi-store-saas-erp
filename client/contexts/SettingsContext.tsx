@@ -1,5 +1,4 @@
 'use client';
-
 import { fetchAPI } from '@/lib/api';
 import { createContext, useContext, useEffect, useState } from 'react';
 

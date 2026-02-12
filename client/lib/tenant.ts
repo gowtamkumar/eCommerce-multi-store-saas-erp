@@ -1,3 +1,6 @@
+"use server";
+import nestApiUrl from "./api-url";
+
 let cachedTenantId: string | null = null;
 let tenantLookupPromise: Promise<string | null> | null = null;
 
@@ -49,8 +52,11 @@ export async function getTenantId(
 
     tenantLookupPromise = (async () => {
       try {
-        const nestApiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
+        // Use imported nestApiUrl or fallback
+        const apiUrl = nestApiUrl || (typeof window !== 'undefined'
+          ? process.env.NEXT_PUBLIC_API_URL
+          : process.env.API_URL_INTERNAL);
+
         const parts = hostname.split(".");
         let queryParams = `?customDomain=${hostname}`;
 
@@ -61,7 +67,7 @@ export async function getTenantId(
           }
         }
 
-        const res = await fetch(`${nestApiUrl}/tenants${queryParams}`);
+        const res = await fetch(`${apiUrl}/tenants${queryParams}`);
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.data?.id) {
@@ -115,8 +121,6 @@ export async function getTenantId(
     }
 
     try {
-      const nestApiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
       const parts = hostname.split(".");
       let queryParams = "";
 

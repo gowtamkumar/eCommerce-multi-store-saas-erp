@@ -16,7 +16,6 @@ import {
   Star,
   X
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -151,12 +150,10 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 className="relative aspect-square rounded-[2rem] overflow-hidden bg-slate-100 dark:bg-slate-900 group cursor-zoom-in"
                 onClick={() => setIsLightboxOpen(true)}
               >
-                <Image
+                <img
                   src={images[selectedImage]}
                   alt={product.name}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  priority
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 flex items-center justify-center">
                   <Maximize2 className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-10 h-10" />
@@ -182,11 +179,10 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                       : "border-transparent hover:border-slate-300 dark:hover:border-slate-700"
                       }`}
                   >
-                    <Image
+                    <img
                       src={image}
                       alt={`${product.name} - ${idx + 1}`}
-                      fill
-                      className="object-cover"
+                      className="w-full h-full object-cover"
                     />
                   </button>
                 ))}
@@ -601,12 +597,10 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
             </button>
 
             <div className="relative w-full h-fit max-h-full aspect-square md:aspect-video flex items-center justify-center">
-              <Image
+              <img
                 src={images[selectedImage]}
                 alt={product.name}
-                width={1200}
-                height={800}
-                className="object-contain max-h-[80vh] rounded-3xl"
+                className="object-contain max-h-[80vh] rounded-3xl w-auto h-auto max-w-full"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
@@ -621,7 +615,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                   onClick={() => setSelectedImage(i)}
                   className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${selectedImage === i ? "border-brand-500 scale-110" : "border-transparent opacity-50 hover:opacity-100"}`}
                 >
-                  <Image src={img} alt="thumb" fill className="object-cover" />
+                  <img src={img} alt="thumb" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

@@ -1,8 +1,9 @@
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
+// Use internal Docker service name for server-side, public URL for client-side
+
 import { getSession } from "next-auth/react";
 
 import { getTenantId } from "./tenant";
+import nestApiUrl from "./api-url";
 
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const headers: any = { ...options.headers };
@@ -47,7 +48,7 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     }
   }
 
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  const res = await fetch(`${nestApiUrl}${endpoint}`, {
     ...options,
     headers,
   });
@@ -61,24 +62,24 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
       .json()
       .catch(() => ({ message: "An error occurred" }));
 
-      // Handle session expiry or refresh errors gracefully
-      if (res.status === 401 || (typeof window !== "undefined" && (await getSession())?.user?.error === "RefreshAccessTokenError")) {
-        if (typeof window !== "undefined") {
-          const { signOut } = await import("next-auth/react");
-          const pathname = window.location.pathname;
-          
-          // Only sign out and redirect if we are on a protected route
-          const isProtectedRoute = pathname.startsWith("/admin") || pathname.startsWith("/profile");
+    // Handle session expiry or refresh errors gracefully
+    if (res.status === 401 || (typeof window !== "undefined" && (await getSession())?.user?.error === "RefreshAccessTokenError")) {
+      if (typeof window !== "undefined") {
+        const { signOut } = await import("next-auth/react");
+        const pathname = window.location.pathname;
 
-          if (isProtectedRoute && !pathname.includes("/login")) {
-            console.warn("Session expired on protected route, signing out...");
-            await signOut({ callbackUrl: `${window.location.origin}/login` });
-            return; // Stop execution after sign out
-          } else {
-            console.warn("Unauthorized API call on public route or already on login page. Skipping redirect.");
-          }
+        // Only sign out and redirect if we are on a protected route
+        const isProtectedRoute = pathname.startsWith("/admin") || pathname.startsWith("/profile");
+
+        if (isProtectedRoute && !pathname.includes("/login")) {
+          console.warn("Session expired on protected route, signing out...");
+          await signOut({ callbackUrl: `${window.location.origin}/login` });
+          return; // Stop execution after sign out
+        } else {
+          console.warn("Unauthorized API call on public route or already on login page. Skipping redirect.");
         }
       }
+    }
 
     throw new Error(
       error.message || "An error occurred while fetching the data.",

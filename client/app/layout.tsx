@@ -1,27 +1,20 @@
 import { Inter, Outfit } from "next/font/google";
-import "./globals.css";
 import "../styles/typography.css";
+import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
-
 // Force dynamic rendering for multi-tenant environment
 export const dynamic = 'force-dynamic';
-
-// export const metadata: Metadata = {
-//   title: "LuxeAudio | Experience Sound Like Never Before",
-//   description: "Premium audio equipment for the discerning listener.",
-// };
 
 import AuthProvider from "@/components/providers/AuthProvider";
 import ToasterProvider from "@/components/providers/ToasterProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
-
-import CartDrawer from "@/components/store/CartDrawer";
-import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 import { getSiteSettings } from "@/lib/getSettings";
 import Script from "next/script";
+import CartDrawer from "@/components/store/CartDrawer";
+import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 
 export default async function RootLayout({
   children,

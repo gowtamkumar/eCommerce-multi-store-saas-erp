@@ -1,11 +1,10 @@
 'use client';
 
-import Price from '@/components/ui/Price';
+import ProductCard from '@/components/store/ProductCard';
 import { useSettings } from '@/contexts/SettingsContext';
 import { fetchAPI } from '@/lib/api';
 import { motion } from 'framer-motion';
-import { ArrowRight, ShoppingBag } from 'lucide-react';
-import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -69,7 +68,7 @@ export default function RelatedProducts({ currentProductId }: RelatedProductsPro
                     </Link>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                     {products.map((product, index) => (
                         <motion.div
                             key={product.id}
@@ -77,43 +76,9 @@ export default function RelatedProducts({ currentProductId }: RelatedProductsPro
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
-                            className="group"
+                            className="h-full"
                         >
-                            <Link href={`/products/${product.slug}`} className="block">
-                                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-4">
-                                    <Image
-                                        src={product.images[0] || 'https://via.placeholder.com/400'}
-                                        alt={product.name}
-                                        fill
-                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                    />
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-
-                                    <div className="absolute bottom-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                                        <span className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-full shadow-lg font-medium text-sm">
-                                            <ShoppingBag className="w-4 h-4" />
-                                            View Product
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                                    {product.name}
-                                </h3>
-                                {product.tagline && (
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
-                                        {product.tagline}
-                                    </p>
-                                )}
-                                <div className="flex items-center gap-3 mt-2">
-                                    <Price
-                                        amount={product.price}
-                                        className="text-slate-900 dark:text-white"
-                                        showOriginal={product.discountAmount !== undefined && product.discountAmount > 0}
-                                        originalAmount={product.price + (product.discountAmount || 0)}
-                                    />
-                                </div>
-                            </Link>
+                            <ProductCard product={product} />
                         </motion.div>
                     ))}
                 </div>

@@ -131,13 +131,12 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
                         <div className="aspect-square relative bg-slate-100 dark:bg-slate-900">
                             {product.images && product.images.length > 0 ? (
-                                <Image
+                                <img
                                     src={product.images[selectedImage]}
                                     alt={product.name}
-                                    fill
-                                    className="object-cover"
-                                    priority
+                                    className="w-full h-full object-cover"
                                 />
+
                             ) : (
                                 <div className="flex items-center justify-center h-full">
                                     <Package className="w-24 h-24 text-slate-300 dark:text-slate-600" />
@@ -158,7 +157,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                                         : 'border-slate-200 dark:border-slate-700 hover:border-brand-300'
                                         }`}
                                 >
-                                    <Image src={image} alt={`${product.name} ${index + 1}`} fill className="object-cover" />
+                                    <img src={image} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
                                 </button>
                             ))}
                         </div>

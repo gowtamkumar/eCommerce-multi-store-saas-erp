@@ -8,11 +8,11 @@ export async function POST(request: NextRequest) {
 
     const tran_id = request.nextUrl.searchParams.get("tran_id")
 
-    // Call Backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
-    
+    // Use internal Docker service name for server-side
+    const backendUrl = process.env.API_URL_INTERNAL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
+
     const tenantId = data.value_b;
-    
+
     await fetch(`${backendUrl}/payment/cancel?tran_id=${tran_id}`, {
       method: "POST",
       headers: {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const host = request.headers.get("host");
     const protocol = request.headers.get("x-forwarded-proto") || "http";
     const origin = `${protocol}://${host}`;
-    
+
     return NextResponse.redirect(`${origin}/payment/cancel?tran_id=${tran_id}`, 303);
 
   } catch (error) {

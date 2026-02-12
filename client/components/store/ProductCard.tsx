@@ -55,13 +55,10 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
       {/* Image Container */}
       <div className="relative aspect-[4/5] overflow-hidden bg-slate-100 dark:bg-slate-800">
         {hasImage ? (
-          <Image
+          <img
             src={imageSrc}
             alt={product.name}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            priority={priority}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-slate-300 dark:text-slate-600">

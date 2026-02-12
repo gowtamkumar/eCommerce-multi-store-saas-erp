@@ -66,38 +66,45 @@ export default async function Home() {
 
 
   // If a custom home page is designed, render it
-  const sections = dynamicPage?.sections;
-  if (sections && sections.length > 0) {
-    return (
-      <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-        <Suspense fallback={null}>
-          <PaymentStatus />
-        </Suspense>
-        <Navbar />
-        <div className="flex flex-col"
-          style={{
-            fontFamily: dynamicPage?.typography?.fontFamily || 'Inter, sans-serif',
-            fontSize: `${dynamicPage?.typography?.baseFontSize || 18}px`,
-            ...(dynamicPage?.typography?.headingFont && { '--heading-font': dynamicPage?.typography.headingFont } as React.CSSProperties),
-            ...(dynamicPage?.typography?.headingFontFamily && { '--heading-font-family': dynamicPage?.typography.headingFontFamily } as React.CSSProperties),
-            ...(dynamicPage?.typography?.headingFontWeight && { '--heading-font-weight': dynamicPage?.typography.headingFontWeight } as React.CSSProperties),
-            ...(dynamicPage?.typography?.headingFontSize && { '--heading-font-size': dynamicPage?.typography.headingFontSize } as React.CSSProperties),
-            ...(dynamicPage?.typography?.headingLineHeight && { '--heading-line-height': dynamicPage?.typography.headingLineHeight } as React.CSSProperties),
-            ...(dynamicPage?.typography?.paragraphFontFamily && { '--paragraph-font-family': dynamicPage?.typography.paragraphFontFamily } as React.CSSProperties),
-            ...(dynamicPage?.typography?.paragraphFontWeight && { '--paragraph-font-weight': dynamicPage?.typography.paragraphFontWeight } as React.CSSProperties),
-            ...(dynamicPage?.typography?.paragraphFontSize && { '--paragraph-font-size': dynamicPage?.typography.paragraphFontSize } as React.CSSProperties),
-            ...(dynamicPage?.typography?.paragraphLineHeight && { '--paragraph-line-height': dynamicPage?.typography.paragraphLineHeight } as React.CSSProperties),
-          }}
-        >
-          {sections.map((section: any) => (
+  const sections = dynamicPage?.sections || [];
+  const typography = dynamicPage?.typography || {};
+
+  return (
+    <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+      <Suspense fallback={null}>
+        <PaymentStatus />
+      </Suspense>
+      <Navbar />
+      <div className="flex flex-col"
+        style={{
+          fontFamily: typography?.fontFamily || 'Inter, sans-serif',
+          fontSize: `${typography?.baseFontSize || 18}px`,
+          ...(typography?.headingFont && { '--heading-font': typography.headingFont } as React.CSSProperties),
+          ...(typography?.headingFontFamily && { '--heading-font-family': typography.headingFontFamily } as React.CSSProperties),
+          ...(typography?.headingFontWeight && { '--heading-font-weight': typography.headingFontWeight } as React.CSSProperties),
+          ...(typography?.headingFontSize && { '--heading-font-size': typography.headingFontSize } as React.CSSProperties),
+          ...(typography?.headingLineHeight && { '--heading-line-height': typography.headingLineHeight } as React.CSSProperties),
+          ...(typography?.paragraphFontFamily && { '--paragraph-font-family': typography.paragraphFontFamily } as React.CSSProperties),
+          ...(typography?.paragraphFontWeight && { '--paragraph-font-weight': typography.paragraphFontWeight } as React.CSSProperties),
+          ...(typography?.paragraphFontSize && { '--paragraph-font-size': typography.paragraphFontSize } as React.CSSProperties),
+          ...(typography?.paragraphLineHeight && { '--paragraph-line-height': typography.paragraphLineHeight } as React.CSSProperties),
+        }}
+      >
+        {sections.length > 0 ? (
+          sections.map((section: any) => (
             <SectionRenderer key={section.id} section={section} />
-          ))}
-        </div>
-        <WhatsAppWidget />
-        <Footer />
-      </main>
-    );
-  }
+          ))
+        ) : (
+          <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center">
+            <h1 className="text-4xl font-bold mb-4">Welcome to our store</h1>
+            <p className="text-xl text-gray-600 dark:text-gray-400">We are currently setting things up. Please check back soon!</p>
+          </div>
+        )}
+      </div>
+      <WhatsAppWidget />
+      <Footer />
+    </main>
+  );
 
 
 }

@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { fetchAPI } from "./api";
+import nestApiUrl from "./api-url";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -69,7 +70,7 @@ export const authOptions: NextAuthOptions = {
 
                 if (tenantRes.success && tenantRes.data?.id) {
                   headers['x-tenant-id'] = tenantRes.data.id;
-                } 
+                }
               } catch (e: any) {
               }
             } else {
@@ -129,15 +130,15 @@ export const authOptions: NextAuthOptions = {
       if (trigger === "update" && session) {
         return { ...token, ...session };
       }
-  console.log("called access token");
+      console.log("called access token");
       // If token is not expired, return it
       if (token.accessTokenExpires && Date.now() / 1000 < token.accessTokenExpires) {
-        
+
         return token;
       }
 
       console.log("called refresh token");
-      
+
       // Token has expired, try to refresh it
       return refreshAccessToken(token);
     },
@@ -174,7 +175,9 @@ export const authOptions: NextAuthOptions = {
 
 async function refreshAccessToken(token: any) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1"}/auth/refresh`, {
+    // Use internal Docker service name for server-side
+
+    const res = await fetch(`${nestApiUrl}/auth/refresh`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -1,5 +1,4 @@
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3900/api/v1";
+import nestApiUrl from "./api-url";
 
 export async function fetchSuperAdminAPI(endpoint: string, options: RequestInit = {}) {
   // Server-side auth token retrieval
@@ -17,7 +16,7 @@ export async function fetchSuperAdminAPI(endpoint: string, options: RequestInit 
     ...options.headers,
   };
 
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  const res = await fetch(`${nestApiUrl}${endpoint}`, {
     ...options,
     headers,
   });
