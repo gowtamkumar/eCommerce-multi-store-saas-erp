@@ -263,11 +263,10 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 </div>
               </div>
 
-
               {product.shortDescription && (
-                <p className="text-xl text-slate-600 dark:text-slate-400 font-medium leading-relaxed italic border-l-4 border-brand-500 pl-4 mb-8">
-                  {product.shortDescription}
-                </p>
+                <p
+                  dangerouslySetInnerHTML={{ __html: product.shortDescription }}
+                  className="text-xl text-slate-600 dark:text-slate-400 font-medium leading-relaxed italic border-l-4 border-brand-500 pl-4 mb-8" />
               )}
             </div>
 

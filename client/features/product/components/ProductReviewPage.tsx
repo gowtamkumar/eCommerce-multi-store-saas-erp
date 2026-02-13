@@ -257,9 +257,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                             {product.description && (
                                 <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                                     <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Description</p>
-                                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                                        {product.description}
-                                    </p>
+                                    <p dangerouslySetInnerHTML={{ __html: product.description }} className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed" />
                                 </div>
                             )}
                         </div>

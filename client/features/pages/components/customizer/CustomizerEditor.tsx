@@ -47,8 +47,8 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
         toast.success('Page created successfully');
 
         // Navigate to the newly created page to enable further editing
-        if (response?.id) {
-          window.location.href = `/admin/pages/${response.id}`;
+        if (response?.data?.id) {
+          window.location.href = `/admin/pages/${response.data.id}`;
         }
       } else {
         // Update existing page with PUT /pages/:id
