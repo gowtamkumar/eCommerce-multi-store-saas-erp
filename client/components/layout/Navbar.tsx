@@ -11,7 +11,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import CurrencySwitcher from "../shared/CurrencySwitcher";
 
-const Navbar = ({ settings: propSettings }: { settings?: any }) => {
+const Navbar = () => {
+  const { data: session } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,13 +21,9 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-
-  const { settings: contextSettings } = useSettings();
+  const { settings } = useSettings();
   const { totalItems, openCart } = useCart();
-  const settings = propSettings || contextSettings;
   const brandName = settings?.brandName || "LuxeAudio";
-
-  const { data: session } = useSession();
 
   useEffect(() => {
     // Handle scroll effect
@@ -145,37 +142,21 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              {settings?.navbarLinks?.length > 0 ? (
-                settings.navbarLinks
-                  .filter((link: any) => link.isActive !== false)
-                  .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-                  .map((link: any, index: number) => (
-                    <Link
-                      key={index}
-                      href={link.href}
-                      target={link.isOpenInNewTab ? "_blank" : undefined}
-                      className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group"
-                    >
-                      {link.label}
-                      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
-                    </Link>
-                  ))
-              ) : (
-                <>
-                  <Link href="/" className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group">
-                    Home
+              {settings?.navbarLinks
+                ?.filter((link: any) => link.isActive !== false)
+                ?.sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                ?.map((link: any, index: number) => (
+                  <Link
+                    key={index}
+                    href={link.href}
+                    target={link.isOpenInNewTab ? "_blank" : undefined}
+                    className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group"
+                  >
+                    {link.label}
                     <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
                   </Link>
-                  <Link href="/products" className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group">
-                    Shop
-                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
-                  </Link>
-                  <Link href="/contact" className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group">
-                    Contact
-                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
-                  </Link>
-                </>
-              )}
+                ))
+              }
             </div>
 
             {/* Right Section with Search */}
@@ -380,34 +361,21 @@ const Navbar = ({ settings: propSettings }: { settings?: any }) => {
               {/* Mobile Links */}
               <div className="flex-1 overflow-y-auto py-4">
                 <nav className="flex flex-col space-y-1 px-4">
-                  {settings?.navbarLinks?.length > 0 ? (
-                    settings.navbarLinks
-                      .filter((link: any) => link.isActive !== false)
-                      .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-                      .map((link: any, index: number) => (
-                        <Link
-                          key={index}
-                          href={link.href}
-                          onClick={closeMobileMenu}
-                          target={link.isOpenInNewTab ? "_blank" : undefined}
-                          className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all"
-                        >
-                          {link.label}
-                        </Link>
-                      ))
-                  ) : (
-                    <>
-                      <Link href="/" onClick={closeMobileMenu} className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
-                        Home
+                  {settings?.navbarLinks
+                    ?.filter((link: any) => link.isActive !== false)
+                    ?.sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                    ?.map((link: any, index: number) => (
+                      <Link
+                        key={index}
+                        href={link.href}
+                        onClick={closeMobileMenu}
+                        target={link.isOpenInNewTab ? "_blank" : undefined}
+                        className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all"
+                      >
+                        {link.label}
                       </Link>
-                      <Link href="/products" onClick={closeMobileMenu} className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
-                        Shop
-                      </Link>
-                      <Link href="/contact" onClick={closeMobileMenu} className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
-                        Contact
-                      </Link>
-                    </>
-                  )}
+                    ))
+                  }
 
                   <div className="my-4 border-t border-slate-200 dark:border-slate-800" />
 

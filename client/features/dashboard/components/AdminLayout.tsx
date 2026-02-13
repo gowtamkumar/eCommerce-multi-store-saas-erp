@@ -2,7 +2,7 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Banknote, BarChart3, ChevronDown, CreditCard, FileText, Globe, HelpCircle, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, RotateCcw, Settings, Share2, ShoppingBag, Tag, TrendingUp, Truck, User, Users, X } from 'lucide-react';
+import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard, FileText, Globe, HelpCircle, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, RotateCcw, Settings, Share2, ShoppingBag, Tag, TrendingUp, Truck, User, Users, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ export default function AdminLayout({
     const router = useRouter();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(pathname?.startsWith('/admin/settings'));
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const { data: session, status }: any = useSession();
 
     const brandName = settings?.brandName || "Brand name";
@@ -36,6 +37,11 @@ export default function AdminLayout({
     useEffect(() => {
         if (pathname?.startsWith('/admin/settings')) {
             setIsSettingsOpen(true);
+        }
+
+        // Auto-collapse sidebar when in Page Builder
+        if (pathname?.startsWith('/admin/pages/') && pathname.split('/').length > 3) {
+            setIsSidebarCollapsed(true);
         }
     }, [pathname]);
 
@@ -104,22 +110,43 @@ export default function AdminLayout({
 
             {/* Sidebar */}
             <motion.aside
-                className={`fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-transform duration-300 ease-in-out print:hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-                    }`}
+                className={`fixed md:sticky top-0 left-0 z-50 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 ease-in-out print:hidden 
+                    ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0'}
+                    ${isSidebarCollapsed ? 'md:w-20' : 'md:w-72'}
+                    `}
             >
-                <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <h1 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-3">
-                        {logo ? (
-                            <img src={logo} alt={brandName} className="h-10 w-auto object-contain" />
-                        ) : (
-                            <>
-                                {brandName.substring(0, 4)}<span className="text-brand-600">{brandName.substring(4)}</span>
-                            </>
-                        )}
-                    </h1>
-                    <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-                        <X className="w-6 h-6" />
-                    </button>
+                <div className={`p-6 border-b border-slate-200 dark:border-slate-700 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+                    {!isSidebarCollapsed && (
+                        <h1 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-3 overflow-hidden whitespace-nowrap">
+                            {logo ? (
+                                <img src={logo} alt={brandName} className="h-10 w-auto object-contain" />
+                            ) : (
+                                <>
+                                    {brandName.substring(0, 4)}<span className="text-brand-600">{brandName.substring(4)}</span>
+                                </>
+                            )}
+                        </h1>
+                    )}
+                    {isSidebarCollapsed && logo && (
+                        <img src={logo} alt={brandName} className="h-8 w-auto object-contain" />
+                    )}
+                    {isSidebarCollapsed && !logo && (
+                        <h1 className="text-xl font-bold font-display text-brand-600">
+                            {brandName.substring(0, 1)}
+                        </h1>
+                    )}
+
+                    <div className="flex items-center">
+                        <button
+                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                            className="hidden md:flex text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                        >
+                            {isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                        </button>
+                        <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
                 </div>
 
                 <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -130,13 +157,14 @@ export default function AdminLayout({
                                 key={index}
                                 href={item.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
+                                title={isSidebarCollapsed ? item.label : ''}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
                                     ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-semibold'
                                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
-                                    }`}
+                                    } ${isSidebarCollapsed ? 'justify-center' : ''}`}
                             >
-                                <item.icon className={`w-5 h-5 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                                {item.label}
+                                <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                                {!isSidebarCollapsed && <span>{item.label}</span>}
                             </Link>
                         );
                     })}
@@ -147,16 +175,17 @@ export default function AdminLayout({
                     <div className="space-y-1">
                         <button
                             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                            className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all font-medium ${pathname?.startsWith('/admin/settings')
+                            title={isSidebarCollapsed ? 'Settings' : ''}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${pathname?.startsWith('/admin/settings')
                                 ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400'
                                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
-                                }`}
+                                } ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}
                         >
                             <div className="flex items-center gap-3">
-                                <Settings className="w-5 h-5" />
-                                Settings
+                                <Settings className="w-5 h-5 flex-shrink-0" />
+                                {!isSidebarCollapsed && <span>Settings</span>}
                             </div>
-                            <ChevronDown className={`w-4 h-4 transition-transform ${isSettingsOpen ? 'rotate-180' : ''}`} />
+                            {!isSidebarCollapsed && <ChevronDown className={`w-4 h-4 transition-transform ${isSettingsOpen ? 'rotate-180' : ''}`} />}
                         </button>
 
                         <AnimatePresence>
@@ -190,13 +219,24 @@ export default function AdminLayout({
                         </AnimatePresence>
                     </div>
 
-                    <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all font-medium"
-                    >
-                        <LogOut className="w-5 h-5" />
-                        Sign Out
-                    </button>
+                    {!isSidebarCollapsed && (
+                        <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all font-medium"
+                        >
+                            <LogOut className="w-5 h-5" />
+                            Sign Out
+                        </button>
+                    )}
+                    {isSidebarCollapsed && (
+                        <button
+                            onClick={handleLogout}
+                            title="Sign Out"
+                            className="w-full flex items-center justify-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all font-medium"
+                        >
+                            <LogOut className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
             </motion.aside>
 

@@ -1,17 +1,18 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common'
+import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { TenantId } from '../../common/decorators/tenant-id.decorator'
 import { UpdatePasswordDto, UpdateUserDto } from '../admin/user/dtos'
 import { UserService } from '../admin/user/services/user.service'
 import { OrderService } from '../order/order.service'
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 
 @Controller('profile')
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class ProfileController {
   constructor(
     private readonly userService: UserService,
     private readonly orderService: OrderService,
-  ) {}
+  ) { }
 
   @Get()
   async getProfile(@CurrentUser() user: any) {

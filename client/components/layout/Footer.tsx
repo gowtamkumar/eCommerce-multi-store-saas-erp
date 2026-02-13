@@ -6,12 +6,11 @@ import { Facebook, Heart, Instagram, Linkedin, Twitter } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-const Footer = ({ settings: propSettings }: { settings?: any }) => {
-  const { settings: contextSettings } = useSettings();
-  const settings = propSettings || contextSettings;
+const Footer = () => {
+  const { settings } = useSettings();
   const brandName = settings?.brandName || "LuxeAudio";
-  const footerDescription = settings?.footerDescription || settings?.siteDescription || "Elevating your audio experience with premium sound and design.";
-  const footerCopyright = settings?.footerCopyright || `© ${new Date().getFullYear()} ${brandName}. Made with Heart by Gowtam Kumar.`;
+  const footerDescription = settings?.siteDescription
+  const footerCopyright = `© ${new Date().getFullYear()} ${brandName}. Made with Heart by Gowtam Kumar.`;
   const social: any = settings?.socialLinks || {};
 
   const [pages, setPages] = useState<any[]>([]);
@@ -65,31 +64,7 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
               )}
             </div>
           </div>
-          {settings?.footerSections?.length > 0 ? (
-            settings.footerSections
-              .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-              .map((section: any, idx: number) => (
-                <div key={idx}>
-                  <h4 className="font-bold text-lg mb-6 text-white">{section.title}</h4>
-                  <ul className="space-y-4 text-slate-400">
-                    {section.links
-                      ?.filter((link: any) => link.isActive !== false)
-                      ?.sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-                      ?.map((link: any, linkIdx: number) => (
-                        <li key={linkIdx}>
-                          <Link
-                            href={link.href}
-                            target={link.isOpenInNewTab ? "_blank" : undefined}
-                            className="hover:text-brand-400 transition-colors"
-                          >
-                            {link.label}
-                          </Link>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-              ))
-          ) : (
+          {(
             <>
               <div>
                 <h4 className="font-bold text-lg mb-6 text-white">Pages</h4>
@@ -106,13 +81,7 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
                   ))}
                 </ul>
               </div>
-              <div>
-                <h4 className="font-bold text-lg mb-6 text-white">Company</h4>
-                <ul className="space-y-4 text-slate-400">
-                  <li><Link href="/" className="hover:text-brand-400 transition-colors">About Us</Link></li>
-                  <li><Link href="/contact" className="hover:text-brand-400 transition-colors">Contact</Link></li>
-                </ul>
-              </div>
+
             </>
           )}
         </div>

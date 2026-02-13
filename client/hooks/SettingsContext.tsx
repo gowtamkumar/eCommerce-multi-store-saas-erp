@@ -24,6 +24,13 @@ interface SiteSettings {
     instagram: string;
     linkedin: string;
   };
+  navbarLinks: {
+    label: string;
+    href: string;
+    order: number;
+    isOpenInNewTab: boolean;
+    isActive: boolean;
+  }[];
   trustBadges?: Array<{
     icon: string;
     title: string;

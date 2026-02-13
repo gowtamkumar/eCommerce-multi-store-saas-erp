@@ -96,28 +96,28 @@ export class AppModule implements NestModule {
       .exclude(
         'tenant/lookup',
         'tenants',
-        'tenants/(.*)',
+        'tenants/*path',
         'onboard',
         'admin/login',
-        'auth/(.*)',
+        'auth/*path',
         'super-admin',
-        'super-admin/(.*)',
+        'super-admin/*path',
         'settings',
         'home',
         'categories',
-        'categories/(.*)',
+        'categories/*path',
         'pages',
-        'pages/(.*)',
+        'pages/*path',
         'products',
-        'products/(.*)',
+        'products/*path',
         'platform/settings',
         'plans',
-        'plans/(.*)',
+        'plans/*path',
         'brands',
-        'brands/(.*)',
+        'brands/*path',
         'uploads',
-        'uploads/(.*)',
+        'uploads/*path',
       )
-      .forRoutes('*') // Apply Middleware for These Routes
+      .forRoutes('*path') // Apply Middleware for These Routes
   }
 }

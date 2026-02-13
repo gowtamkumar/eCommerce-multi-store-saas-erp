@@ -1,6 +1,5 @@
 'use client';
 
-import { useSettings } from '@/hooks/SettingsContext';
 import { useDownloadInvoice } from '@/lib/handleDownloadInvoice';
 import { OrderStatus } from '@/lib/enums/order-status';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -9,7 +8,6 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
 const PaymentStatusContent = () => {
-  const { settings } = useSettings();
   const { downloadInvoice } = useDownloadInvoice();
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);

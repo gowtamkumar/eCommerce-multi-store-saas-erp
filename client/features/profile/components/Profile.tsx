@@ -10,34 +10,50 @@ import { Calendar, Loader2, LogOut, Package, ShieldCheck, User } from 'lucide-re
 import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useSettings } from '@/hooks/SettingsContext';
 
 export default function Profile() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'security'>('profile');
-    const [settings, setSettings] = useState<any>(null);
+    const [formData, setFormData] = useState({});
     const [stats, setStats] = useState({ totalOrders: 0, memberSince: '' });
 
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.push('/login');
         }
+        if (status === 'authenticated') {
+            fetchProfile();
+        }
     }, [status, router]);
+
+    const fetchProfile = async () => {
+        try {
+            const res = await fetchAPI('/profile');
+            if (res.data) {
+                setFormData(res.data);
+            }
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+        }
+    };
 
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                const settingsData = await fetchAPI('/settings');
-                setSettings(settingsData);
 
                 if (session?.user?.id) {
                     const ordersData = await fetchAPI(`/orders/user/${session.user.id}`);
+                    console.log("ordersData", ordersData);
+
                     const user = session.user as any;
                     setStats({
                         totalOrders: ordersData.data?.length || 0,
                         memberSince: user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Member'
                     });
                 }
+
             } catch (error) {
                 console.error("Failed to load profile data", error);
             }
@@ -62,7 +78,7 @@ export default function Profile() {
 
     return (
         <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
-            <Navbar settings={settings} />
+            <Navbar />
 
             {/* Premium Header Banner */}
             <div className="relative pt-32 pb-20 overflow-hidden">
@@ -81,7 +97,6 @@ export default function Profile() {
                         >
                             <div className="w-32 h-32 rounded-3xl overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl relative group">
 
-                                {/* <img src={formData.image} alt="Profile" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" /> */}
                                 <img
                                     src={session?.user?.image || "/images/placeholder-avatar.jpg"}
                                     alt={session?.user?.name || "User"}
@@ -174,7 +189,7 @@ export default function Profile() {
                                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Account Tier</p>
                                         <p className="text-white font-black flex items-center gap-2">
                                             Premium Member
-                                            <div className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+                                            <div className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></div>
                                         </p>
                                     </div>
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/20 rounded-full blur-2xl -mr-12 -mt-12 transition-transform duration-500 group-hover:scale-150" />
@@ -199,7 +214,7 @@ export default function Profile() {
                                             <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Profile Details</h3>
                                             <p className="text-slate-500 dark:text-slate-400 text-sm">Update your personal information and address</p>
                                         </div>
-                                        <ProfileForm variant={"personal" as "personal"} />
+                                        <ProfileForm variant={"personal" as "personal"} formData={formData} setFormData={setFormData} />
                                     </div>
                                 )}
 
@@ -215,7 +230,7 @@ export default function Profile() {
                                             <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Security Settings</h3>
                                             <p className="text-slate-500 dark:text-slate-400 text-sm">Protect your account and change password</p>
                                         </div>
-                                        <ProfileForm variant={"security" as "security"} />
+                                        <ProfileForm variant={"security" as "security"} formData={formData} setFormData={setFormData} />
                                     </div>
                                 )}
                             </motion.div>
@@ -224,7 +239,7 @@ export default function Profile() {
                 </div>
             </div>
 
-            <Footer settings={settings} />
+            <Footer />
         </main>
     );
 }

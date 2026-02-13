@@ -8,22 +8,15 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
-export default function ProfileForm({ variant }: { variant?: 'personal' | 'security' }) {
+export default function ProfileForm({ variant, formData, setFormData }: { variant?: 'personal' | 'security', formData: any, setFormData: any }) {
     const { data: session, status, update } = useSession();
 
-    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [imageUploading, setImageUploading] = useState(false);
     const [passwordLoading, setPasswordLoading] = useState(false);
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        image: '',
-    });
+
 
 
     const [passwordData, setPasswordData] = useState({
@@ -32,35 +25,8 @@ export default function ProfileForm({ variant }: { variant?: 'personal' | 'secur
         confirmPassword: '',
     });
 
-    const fetchProfile = async () => {
-        try {
-            const res = await fetchAPI('/profile');
-            if (res.data) {
-                setFormData({
-                    name: res.data.name || '',
-                    email: res.data.email || '',
-                    phone: res.data.phone || '',
-                    address: res.data.address || '',
-                    image: res.data.image || '',
-                });
-            }
-        } catch (error) {
-            console.error('Error fetching profile:', error);
-        }
-    };
 
-    useEffect(() => {
-        if (status === 'unauthenticated') {
-            router.push('/login');
-        }
-        if (status === 'authenticated') {
-            fetchProfile();
-        }
-    }, [status, router]);
 
-    if (status === 'loading') {
-        return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-brand-600" /></div>;
-    }
 
     const handleProfileUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -105,7 +71,7 @@ export default function ProfileForm({ variant }: { variant?: 'personal' | 'secur
             if (data.success && data.data?.filename) {
                 const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3900';
                 const imageUrl = `${backendUrl}/uploads/${data.data.filename}`;
-                setFormData(prev => ({ ...prev, image: imageUrl }));
+                setFormData((prev: any) => ({ ...prev, image: imageUrl }));
             } else {
                 toast.error('Failed to upload image');
             }

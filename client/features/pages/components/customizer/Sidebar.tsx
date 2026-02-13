@@ -25,6 +25,7 @@ const SECTION_ICONS: Record<SectionType, any> = {
   'button': MousePointer2,
   'faq-section': HelpCircle,
   'video-block': Video,
+  'contact': Mail,
 };
 
 export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: SidebarProps) {

@@ -1349,6 +1349,101 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
               </div>
             </div>
           )}
+
+          {section.type === 'contact' && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Section Title</label>
+                <input
+                  type="text"
+                  value={settings?.title || ''}
+                  onChange={(e) => updateSetting('title', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="Get in Touch"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Subline</label>
+                <textarea
+                  value={settings?.subline || ''}
+                  onChange={(e) => updateSetting('subline', e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="We'd love to hear from you."
+                />
+              </div>
+
+              <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Visibility</label>
+                <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <input
+                    type="checkbox"
+                    id="showInfo"
+                    checked={settings?.showInfo !== false}
+                    onChange={(e) => updateSetting('showInfo', e.target.checked)}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"
+                  />
+                  <label htmlFor="showInfo" className="text-xs font-medium cursor-pointer flex-1">Show Contact Info</label>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <input
+                    type="checkbox"
+                    id="showForm"
+                    checked={settings?.showForm !== false}
+                    onChange={(e) => updateSetting('showForm', e.target.checked)}
+                    className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"
+                  />
+                  <label htmlFor="showForm" className="text-xs font-medium cursor-pointer flex-1">Show Contact Form</label>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Layout</label>
+                <select
+                  value={settings?.cardLayout || 'left'}
+                  onChange={(e) => updateSetting('cardLayout', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="left">Info Left, Form Right</option>
+                  <option value="right">Form Left, Info Right</option>
+                </select>
+              </div>
+
+              <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <h4 className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Overrides (Optional)</h4>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Email Override</label>
+                  <input
+                    type="text"
+                    value={settings?.email || ''}
+                    onChange={(e) => updateSetting('email', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="Leave empty to use site settings"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Phone Override</label>
+                  <input
+                    type="text"
+                    value={settings?.phone || ''}
+                    onChange={(e) => updateSetting('phone', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="Leave empty to use site settings"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Address Override</label>
+                  <textarea
+                    value={settings?.address || ''}
+                    onChange={(e) => updateSetting('address', e.target.value)}
+                    rows={2}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="Leave empty to use site settings"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Style Settings */}
@@ -1442,6 +1537,35 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                         className="w-8 h-8 rounded border-none bg-transparent"
                       />
                       <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.buttonTextColor || '#ffffff'}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {section.type === 'contact' && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Icon Color</label>
+                    <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <input
+                        type="color"
+                        value={section.styles?.iconColor || '#3b82f6'}
+                        onChange={(e) => updateStyle('iconColor', e.target.value)}
+                        className="w-8 h-8 rounded border-none bg-transparent"
+                      />
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.iconColor || '#3b82f6'}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Icon Background</label>
+                    <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <input
+                        type="color"
+                        value={section.styles?.iconBgColor || '#eff6ff'}
+                        onChange={(e) => updateStyle('iconBgColor', e.target.value)}
+                        className="w-8 h-8 rounded border-none bg-transparent"
+                      />
+                      <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.iconBgColor || '#eff6ff'}</span>
                     </div>
                   </div>
                 </>

@@ -15,16 +15,17 @@ export type SectionType =
   | 'brand-grid'
   | 'newsletter'
   | 'stats-counter'
-  | 'video-block';
+  | 'video-block'
+  | 'contact';
 
 export interface SectionStyles {
-  paddingTop: number;
-  paddingBottom: number;
-  mobilePaddingTop?: number;
-  mobilePaddingBottom?: number;
+  paddingTop: number | string;
+  paddingBottom: number | string;
+  mobilePaddingTop?: number | string;
+  mobilePaddingBottom?: number | string;
   backgroundColor?: string;
   textColor?: string;
-  height?: number;
+  height?: number | string;
   overlayOpacity?: number;
   textAlign?: string;
   headlineColor?: string;
@@ -36,20 +37,20 @@ export interface SectionStyles {
   iconBorder?: string;
   // Typography - General
   fontFamily?: string;
-  fontStyle?: 'normal' | 'italic';
-  fontWeight?: string;
-  fontSize?: string;
-  lineHeight?: string;
+  fontStyle?: 'normal' | 'italic' | string;
+  fontWeight?: string | number;
+  fontSize?: string | number;
+  lineHeight?: string | number;
   // Typography - Headings
   headingFontFamily?: string;
-  headingFontWeight?: string;
-  headingFontSize?: string;
-  headingLineHeight?: string;
+  headingFontWeight?: string | number;
+  headingFontSize?: string | number;
+  headingLineHeight?: string | number;
   // Typography - Paragraphs
   paragraphFontFamily?: string;
-  paragraphFontWeight?: string;
-  paragraphFontSize?: string;
-  paragraphLineHeight?: string;
+  paragraphFontWeight?: string | number;
+  paragraphFontSize?: string | number;
+  paragraphLineHeight?: string | number;
 }
 
 // --- Specific Section Settings ---
@@ -195,6 +196,18 @@ export interface FAQSectionSettings {
   items: FAQItem[];
 }
 
+export interface ContactSectionSettings {
+  title?: string;
+  subline?: string;
+  showMap?: boolean;
+  showForm?: boolean;
+  showInfo?: boolean;
+  cardLayout?: 'left' | 'right' | 'center';
+  email?: string;
+  phone?: string;
+  address?: string;
+}
+
 export type SectionSettings =
   | BannerSettings
   | ProductSliderSettings
@@ -209,6 +222,7 @@ export type SectionSettings =
   | NewsletterSettings
   | StatsCounterSettings
   | VideoBlockSettings
+  | ContactSectionSettings
   | Record<string, any>;
 
 export interface CustomizerSection {

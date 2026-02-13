@@ -8,6 +8,7 @@ import ReviewSection from "@/features/pages/components/customizer/ReviewSection"
 import StatsCounter from "@/features/pages/components/customizer/StatsCounter";
 import TextBlock from "@/features/pages/components/customizer/TextBlock";
 import VideoBlock from "@/features/pages/components/customizer/VideoBlock";
+import ContactSection from "@/features/pages/components/customizer/ContactSection";
 import BrandGrid from "@/features/brand/components/BrandGrid";
 import CategoryGrid from "@/features/category/components/CategoryGrid";
 import FAQSection from "@/features/faq/components/FAQSection";
@@ -179,6 +180,10 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
       case "video-block":
         return (
           <VideoBlock settings={settings} styles={styles} />
+        );
+      case "contact":
+        return (
+          <ContactSection settings={settings} styles={styles} />
         );
       default:
         return null;
