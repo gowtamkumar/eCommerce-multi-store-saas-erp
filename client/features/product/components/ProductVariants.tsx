@@ -9,10 +9,11 @@ interface ProductVariantsProps {
   attributes: ProductAttribute[];
   variants: ProductVariant[];
   basePrice: number;
+  stock: number;
   onChange: (attributes: ProductAttribute[], variants: ProductVariant[]) => void;
 }
 
-export default function ProductVariants({ attributes, variants, basePrice, onChange }: ProductVariantsProps) {
+export default function ProductVariants({ attributes, variants, basePrice, stock, onChange }: ProductVariantsProps) {
   const [localAttributes, setLocalAttributes] = useState<ProductAttribute[]>(attributes);
   const [localVariants, setLocalVariants] = useState<ProductVariant[]>(variants);
   const [showGenerator, setShowGenerator] = useState(false);
@@ -88,8 +89,8 @@ export default function ProductVariants({ attributes, variants, basePrice, onCha
       const sku = `SKU-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
       return {
         sku,
-        price: undefined,
-        stock: 0,
+        price: +basePrice || 0,
+        stock: stock || 0,
         combination: combo,
       };
     });

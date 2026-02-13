@@ -90,8 +90,6 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     };
 
 
-
-
     try {
       const url = isEdit ? `/products/${initialData.id}` : '/products';
       const method = isEdit ? 'PUT' : 'POST';
@@ -183,6 +181,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
               attributes={formData.attributes}
               variants={formData.variants}
               basePrice={parseFloat(formData.price)}
+              stock={formData.stock}
               onChange={(attributes, variants) => setFormData({ ...formData, attributes, variants })}
             />
           </div>

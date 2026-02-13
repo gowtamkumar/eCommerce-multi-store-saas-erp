@@ -25,7 +25,6 @@ import { PageModule } from './modules/page/page.module'
 import { PaymentModule } from './modules/payment/payment.module'
 import { PlatformModule } from './modules/platform/platform.module'
 import { ProductModule } from './modules/product/product.module'
-import { ProfileModule } from './modules/profile/profile.module'
 import { ReviewModule } from './modules/review/review.module'
 import { SettingsModule } from './modules/settings/settings.module'
 import { SubscriptionPlanModule } from './modules/subscription-plan/subscription-plan.module'
@@ -56,7 +55,6 @@ import { TrackingModule } from './modules/tracking/tracking.module'
     PageModule,
     SettingsModule,
     PaymentModule,
-    ProfileModule,
     SuperAdminModule,
     MailModule,
     CategoryModule,

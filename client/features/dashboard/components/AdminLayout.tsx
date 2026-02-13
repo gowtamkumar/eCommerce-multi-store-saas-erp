@@ -117,23 +117,29 @@ export default function AdminLayout({
             >
                 <div className={`p-6 border-b border-slate-200 dark:border-slate-700 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
                     {!isSidebarCollapsed && (
-                        <h1 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-3 overflow-hidden whitespace-nowrap">
-                            {logo ? (
-                                <img src={logo} alt={brandName} className="h-10 w-auto object-contain" />
-                            ) : (
-                                <>
-                                    {brandName.substring(0, 4)}<span className="text-brand-600">{brandName.substring(4)}</span>
-                                </>
-                            )}
-                        </h1>
+                        <Link href="/">
+                            <h1 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-3 overflow-hidden whitespace-nowrap">
+                                {logo ? (
+                                    <img src={logo} alt={brandName} className="h-10 w-auto object-contain" />
+                                ) : (
+                                    <>
+                                        {brandName.substring(0, 4)}<span className="text-brand-600">{brandName.substring(4)}</span>
+                                    </>
+                                )}
+                            </h1>
+                        </Link>
                     )}
                     {isSidebarCollapsed && logo && (
-                        <img src={logo} alt={brandName} className="h-8 w-auto object-contain" />
+                        <Link href="/">
+                            <img src={logo} alt={brandName} className="h-8 w-auto object-contain" />
+                        </Link>
                     )}
                     {isSidebarCollapsed && !logo && (
-                        <h1 className="text-xl font-bold font-display text-brand-600">
-                            {brandName.substring(0, 1)}
-                        </h1>
+                        <Link href="/">
+                            <h1 className="text-xl font-bold font-display text-brand-600">
+                                {brandName.substring(0, 1)}
+                            </h1>
+                        </Link>
                     )}
 
                     <div className="flex items-center">

@@ -19,13 +19,14 @@ import { FilterUserDto } from '../dtos/filter-user.dto'
 import { UpdatePasswordDto } from '../dtos/update-password.dto'
 import { UpdateUserDto } from '../dtos/update-user.dto'
 import { UserService } from '../services/user.service'
+import { CurrentUser } from 'src/common/decorators/current-user.decorator'
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UserController {
   private readonly logger = new Logger(UserController.name)
 
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get('/')
   async getUsers(@Query() filterUserDto: FilterUserDto, @TenantId() tenantId: string) {
@@ -45,6 +46,11 @@ export class UserController {
         },
       },
     }
+  }
+
+  @Get('/profile')
+  async getProfile(@CurrentUser() user: any) {
+    return this.userService.getUser(user.id)
   }
 
   @Get('/:id')
@@ -71,7 +77,7 @@ export class UserController {
     }
   }
 
-  @Put('/:id')
+  @Patch('/:id')
   async updateUser(@Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: UpdateUserDto) {
     const user = await this.userService.updateUser(id, updateUserDto)
 
@@ -82,6 +88,7 @@ export class UserController {
       data: user,
     }
   }
+
 
   @Patch('/update-password/:id')
   async updatePassword(

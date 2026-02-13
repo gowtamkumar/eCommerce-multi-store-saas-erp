@@ -4,8 +4,7 @@ import ImageModal from '@/components/shared/ImageModal';
 import { fetchAPI } from '@/services/api';
 import { Camera, Loader2, Lock, Save, User } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 export default function ProfileForm({ variant, formData, setFormData }: { variant?: 'personal' | 'security', formData: any, setFormData: any }) {
@@ -33,7 +32,7 @@ export default function ProfileForm({ variant, formData, setFormData }: { varian
         setLoading(true);
 
         try {
-            const data = await fetchAPI('/profile', {
+            const data = await fetchAPI(`/users/${formData?.id}`, {
                 method: 'PATCH',
                 body: JSON.stringify(formData),
             });
@@ -92,7 +91,7 @@ export default function ProfileForm({ variant, formData, setFormData }: { varian
 
         setPasswordLoading(true);
         try {
-            const data = await fetchAPI(`/users/update-password/${(session?.user as any).id}`, {
+            const data = await fetchAPI(`/users/update-password/${formData?.id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({
                     currentPassword: passwordData.currentPassword,

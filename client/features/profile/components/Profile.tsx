@@ -30,7 +30,7 @@ export default function Profile() {
 
     const fetchProfile = async () => {
         try {
-            const res = await fetchAPI('/profile');
+            const res = await fetchAPI('/users/profile');
             if (res.data) {
                 setFormData(res.data);
             }
