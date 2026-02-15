@@ -1,8 +1,8 @@
 'use client';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Activity, Globe, LayoutDashboard, LogOut, Menu, Settings, Users, X, Layers } from 'lucide-react';
-import Link from 'next/link';
+import { Activity, Globe, Layers, LayoutDashboard, LogOut, Settings, ShieldCheck, Users, X } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 export default function SystemSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: { isMobileMenuOpen: boolean; setIsMobileMenuOpen: (open: boolean) => void }) {
     const pathname = usePathname();
@@ -12,6 +12,7 @@ export default function SystemSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }:
         { icon: Users, label: 'Global Users', href: '/system-platform/users' },
         { icon: Activity, label: 'Platform Health', href: '/system-platform/health' },
         { icon: Layers, label: 'Subscription Plans', href: '/system-platform/plans' },
+        { icon: Users, label: 'Subscribers', href: '/system-platform/subscribers' },
         { icon: Settings, label: 'Global Settings', href: '/system-platform/settings' },
     ];
 

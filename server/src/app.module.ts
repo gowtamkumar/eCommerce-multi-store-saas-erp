@@ -32,6 +32,8 @@ import { SuperAdminModule } from './modules/super-admin/super-admin.module'
 import { TenantModule } from './modules/tenant/tenant.module'
 import { TrackingModule } from './modules/tracking/tracking.module'
 
+import { SubscriberModule } from './modules/subscriber/subscriber.module'
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -65,6 +67,7 @@ import { TrackingModule } from './modules/tracking/tracking.module'
     CacheModule,
     PathaoModule,
     SteadfastModule,
+    SubscriberModule,
   ],
   controllers: [],
   providers: [
@@ -115,6 +118,8 @@ export class AppModule implements NestModule {
         'brands/*path',
         'uploads',
         'uploads/*path',
+        'subscribers',
+        'subscribers/*path',
       )
       .forRoutes('*path') // Apply Middleware for These Routes
   }

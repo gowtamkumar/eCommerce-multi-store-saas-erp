@@ -1,7 +1,10 @@
 'use client';
 
+import { fetchAPI } from '@/services/api';
 import { Facebook, Heart, Instagram, Linkedin, Mail, Twitter } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface MarketingFooterProps {
   settings?: any;
@@ -12,6 +15,38 @@ export default function MarketingFooter({ settings }: MarketingFooterProps) {
   const footerDescription = settings?.footerDescription || "Empowering the next generation of eCommerce entrepreneurs with powerful tools and seamless scaling.";
   const footerCopyright = settings?.footerCopyright || `© ${new Date().getFullYear()} ${brandName}. Made with Heart by Gowtam Kumar.`;
   const social: any = settings?.socialLinks || {};
+
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setSubmitting(true);
+    try {
+      const res = await fetchAPI('/subscribers', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.success || res.id) { // Adjust based on direct entity return or wrapper
+        toast.success('Successfully subscribed to newsletter!');
+        setEmail('');
+      } else {
+        toast.error(res.message || 'Failed to subscribe');
+      }
+    } catch (error: any) {
+      // If the error message is about conflict, show a friendly message
+      if (error.message?.includes('already subscribed')) {
+        toast.error('You are already subscribed!');
+      } else {
+        toast.error('Something went wrong. Please try again.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pt-16 pb-8">
@@ -80,17 +115,24 @@ export default function MarketingFooter({ settings }: MarketingFooterProps) {
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                 Subscribe to our newsletter for the latest updates and eCommerce tips.
               </p>
-              <form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-3" onSubmit={handleSubscribe}>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
                     className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-500 transition-all"
                   />
                 </div>
-                <button type="submit" className="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-brand-500/20">
-                  Subscribe
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 disabled:opacity-70 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-brand-500/20"
+                >
+                  {submitting ? 'Subscribing...' : 'Subscribe'}
                 </button>
               </form>
             </div>
