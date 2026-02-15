@@ -1,11 +1,10 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, Layers, Loader2, Plus, X } from 'lucide-react';
-import { useState } from 'react';
 import { fetchAPI } from '@/services/api';
-import { toast } from 'react-hot-toast';
+import { ArrowLeft, CheckCircle2, Layers, Loader2, Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 
 interface PlanFormProps {
     initialData?: any;
@@ -53,7 +52,7 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
 
             if (res.success) {
                 toast.success(`Plan ${isEditing ? 'updated' : 'created'} successfully`);
-                router.push('/super-admin/plans');
+                router.push('/system-platform/plans');
                 router.refresh();
             }
         } catch (error: any) {

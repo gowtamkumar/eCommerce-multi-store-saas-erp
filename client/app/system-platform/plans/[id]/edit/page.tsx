@@ -4,6 +4,8 @@ import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 async function getPlan(id: string) {
     try {
         const res = await fetchSuperAdminAPI(`/super-admin/plans/${id}`);
+        console.log("res", res);
+
         return res.data;
     } catch (error) {
         console.error("Error fetching plan:", error);

@@ -6,11 +6,15 @@ import { Facebook, Heart, Instagram, Linkedin, Twitter } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-const Footer = () => {
-  const { settings } = useSettings();
+const Footer = ({ settings: propSettings }: { settings?: any }) => {
+  const { settings: contextSettings } = useSettings();
+
+  // Use prop settings if available (e.g. from SaaSLanding), otherwise fall back to context
+  const settings = propSettings || contextSettings;
+
   const brandName = settings?.brandName || "LuxeAudio";
-  const footerDescription = settings?.siteDescription
-  const footerCopyright = `© ${new Date().getFullYear()} ${brandName}. Made with Heart by Gowtam Kumar.`;
+  const footerDescription = settings?.footerDescription || settings?.siteDescription;
+  const footerCopyright = settings?.footerCopyright || `© ${new Date().getFullYear()} ${brandName}. Made with Heart by Gowtam Kumar.`;
   const social: any = settings?.socialLinks || {};
 
   const [pages, setPages] = useState<any[]>([]);

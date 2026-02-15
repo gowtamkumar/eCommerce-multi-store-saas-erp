@@ -1,9 +1,9 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
-import { Edit2, Layers, Plus, Search, Trash2, CheckCircle2, XCircle } from 'lucide-react';
-import { useState } from 'react';
 import { fetchAPI } from '@/services/api';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle2, Edit2, Layers, Plus, Search, Trash2, XCircle } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 
 interface SubscriptionPlan {
@@ -87,7 +87,7 @@ export default function PlanList({ initialPlans }: PlanListProps) {
                         />
                     </div>
                     <button
-                        onClick={() => window.location.href = '/super-admin/plans/create'}
+                        onClick={() => window.location.href = '/system-platform/plans/create'}
                         className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all text-sm font-semibold shadow-lg shadow-indigo-600/20"
                     >
                         <Plus className="w-4 h-4" />
@@ -122,7 +122,7 @@ export default function PlanList({ initialPlans }: PlanListProps) {
                                             {plan.isActive ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                                         </button>
                                         <button
-                                            onClick={() => window.location.href = `/super-admin/plans/${plan.id}/edit`}
+                                            onClick={() => window.location.href = `/system-platform/plans/${plan.id}/edit`}
                                             className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl"
                                         >
                                             <Edit2 className="w-4 h-4" />

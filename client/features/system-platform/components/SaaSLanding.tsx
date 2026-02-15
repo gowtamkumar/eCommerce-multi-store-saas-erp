@@ -23,6 +23,7 @@ export default function SaaSLanding() {
         ]);
 
         setSettings(settingsRes);
+        console.log('Platform Settings Data:', settingsRes);
 
         setPlans(plansRes.data || plansRes || []);
       } catch (error) {
