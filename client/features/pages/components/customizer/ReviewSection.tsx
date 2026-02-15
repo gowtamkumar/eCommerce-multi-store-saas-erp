@@ -110,15 +110,17 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
           <div className="flex gap-4">
             <button
               onClick={slideLeft}
-              className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
+              className="w-12 h-12 rounded-full border flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
+              style={{ borderColor: styles?.headlineColor || styles?.color || 'rgba(255,255,255,0.1)' }}
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" style={{ color: styles?.headlineColor || styles?.color || 'white' }} />
             </button>
             <button
               onClick={slideRight}
-              className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
+              className="w-12 h-12 rounded-full border flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
+              style={{ borderColor: styles?.headlineColor || styles?.color || 'rgba(255,255,255,0.1)' }}
             >
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-5 h-5" style={{ color: styles?.headlineColor || styles?.color || 'white' }} />
             </button>
           </div>
         </div>

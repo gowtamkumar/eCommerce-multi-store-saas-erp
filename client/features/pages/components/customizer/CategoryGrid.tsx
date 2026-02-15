@@ -100,7 +100,18 @@ export default function CategoryGrid({
               <Link
                 key={category.id}
                 href={`/products?categoryId=${category.id}`}
-                className="relative aspect-[4/5] rounded-[3rem] bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center group overflow-hidden border border-slate-200 dark:border-slate-700 transition-all hover:-translate-y-2"
+                className={`relative aspect-[4/5] bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center group overflow-hidden transition-all hover:-translate-y-2
+                  ${styles?.cardRadius === 'medium' ? 'rounded-2xl' : ''}
+                  ${styles?.cardRadius === 'large' ? 'rounded-[2rem]' : ''}
+                  ${styles?.cardRadius === 'full' ? 'rounded-[3rem]' : ''}
+                  ${!styles?.cardRadius || styles?.cardRadius === 'none' ? 'rounded-none' : ''}
+                  ${styles?.cardBorder === 'thin' ? 'border border-slate-200 dark:border-slate-700' : ''}
+                  ${styles?.cardBorder === 'medium' ? 'border-2 border-slate-200 dark:border-slate-700' : ''}
+                  ${styles?.cardBorder === 'thick' ? 'border-4 border-slate-200 dark:border-slate-700' : ''}
+                  ${styles?.cardShadow === 'small' ? 'shadow-lg' : ''}
+                  ${styles?.cardShadow === 'medium' ? 'shadow-xl' : ''}
+                  ${styles?.cardShadow === 'large' ? 'shadow-2xl' : ''}
+                `}
               >
                 {category.image ? (
                   <img src={category.image} alt={category.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />

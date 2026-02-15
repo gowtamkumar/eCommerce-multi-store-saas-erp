@@ -41,6 +41,9 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
     imageRadius: section.styles?.imageRadius,
     imageBorder: section.styles?.imageBorder,
     imageShadow: section.styles?.imageShadow,
+    cardRadius: section.styles?.cardRadius,
+    cardBorder: section.styles?.cardBorder,
+    cardShadow: section.styles?.cardShadow,
     // Section-specific typography CSS custom properties
     ...(section.styles?.headingFontFamily && { '--heading-font-family': section.styles.headingFontFamily } as React.CSSProperties),
     ...(section.styles?.headingFontWeight && { '--heading-font-weight': section.styles.headingFontWeight } as React.CSSProperties),

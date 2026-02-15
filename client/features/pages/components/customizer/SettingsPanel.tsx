@@ -505,6 +505,46 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                   <option value={4}>4 Columns</option>
                 </select>
               </div>
+
+              <div className="space-y-1.5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Card Radius</label>
+                <select
+                  value={section.styles?.cardRadius || 'none'}
+                  onChange={(e) => updateStyle('cardRadius', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="none">None</option>
+                  <option value="medium">Medium</option>
+                  <option value="large">Large</option>
+                  <option value="full">Full (Rounded)</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Card Border</label>
+                <select
+                  value={section.styles?.cardBorder || 'none'}
+                  onChange={(e) => updateStyle('cardBorder', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="none">None</option>
+                  <option value="thin">Thin</option>
+                  <option value="medium">Medium</option>
+                  <option value="thick">Thick</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Card Shadow</label>
+                <select
+                  value={section.styles?.cardShadow || 'none'}
+                  onChange={(e) => updateStyle('cardShadow', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                >
+                  <option value="none">None</option>
+                  <option value="small">Small</option>
+                  <option value="medium">Medium</option>
+                  <option value="large">Large</option>
+                </select>
+              </div>
             </div>
           )}
 

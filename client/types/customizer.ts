@@ -39,6 +39,10 @@ export interface SectionStyles {
   imageRadius?: string;
   imageBorder?: string;
   imageShadow?: string;
+  // Card Styles
+  cardRadius?: string;
+  cardBorder?: string;
+  cardShadow?: string;
   // Typography - General
   fontFamily?: string;
   fontStyle?: 'normal' | 'italic' | string;
