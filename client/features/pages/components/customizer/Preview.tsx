@@ -69,6 +69,9 @@ export default function Preview({ sections, viewMode, selectedId, onSelect, typo
         {sections.map((section) => (
           <div
             key={section.id}
+            ref={(el) => {
+              if (el) sectionRefs.current[section.id] = el;
+            }}
             onClick={(e) => {
               e.stopPropagation();
               onSelect(section.id);
