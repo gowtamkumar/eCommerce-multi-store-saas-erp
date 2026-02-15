@@ -1,103 +1,10 @@
 'use client'
+import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
 import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
 import { Globe, Layout, Plus, Save, Shield, Trash2, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-
-function ImageUploadField({
-    label,
-    value,
-    onChange,
-    loadingMsg = 'Uploading...',
-    successMsg = 'Uploaded successfully',
-    errorMsg = 'Error uploading image',
-    aspectRatio = 'square',
-    description
-}: {
-    label: string,
-    value: string,
-    onChange: (val: string) => void,
-    loadingMsg?: string,
-    successMsg?: string,
-    errorMsg?: string,
-    aspectRatio?: 'square' | 'wide',
-    description?: string
-}) {
-    return (
-        <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{label}</label>
-            <div className={`flex ${aspectRatio === 'square' ? 'items-center gap-6' : 'flex-col gap-4'}`}>
-                {value && (
-                    <div className={`relative ${aspectRatio === 'square' ? 'w-24 h-24' : 'w-full h-48'} rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-50 dark:bg-slate-900/50 flex items-center justify-center group`}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                            src={value}
-                            alt={label}
-                            className={`max-w-full max-h-full ${aspectRatio === 'square' ? 'object-contain' : 'object-cover w-full h-full'}`}
-                        />
-                        <button
-                            onClick={() => onChange('')}
-                            className={`absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors ${aspectRatio === 'wide' ? 'opacity-0 group-hover:opacity-100 shadow-lg' : ''}`}
-                        >
-                            <Trash2 className="w-3 h-3" />
-                        </button>
-                    </div>
-                )}
-
-                <div className="flex-1 space-y-3">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
-                            <Plus className="w-6 h-6 text-slate-400 mb-2" />
-                            <p className="text-sm text-slate-500 dark:text-slate-400"><span className="font-semibold">Click to upload</span> {label.toLowerCase()}</p>
-                            {description && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{description}</p>}
-                        </div>
-                        <input
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-
-                                const loadingToast = toast.loading(loadingMsg);
-                                try {
-                                    const formData = new FormData();
-                                    formData.append('file', file);
-
-                                    const res = await fetchSuperAdminAPI('/admin/media', {
-                                        method: 'POST',
-                                        body: formData,
-                                    });
-
-                                    if (res.success) {
-                                        const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3900';
-                                        onChange(`${backendUrl}/uploads/${res.data?.filename}`);
-                                        toast.success(successMsg);
-                                    } else {
-                                        toast.error(errorMsg);
-                                    }
-                                } catch (error) {
-                                    console.error('Upload error:', error);
-                                    toast.error(errorMsg);
-                                } finally {
-                                    toast.dismiss(loadingToast);
-                                }
-                            }}
-                        />
-                    </label>
-                    <input
-                        type="text"
-                        value={value || ''}
-                        onChange={(e) => onChange(e.target.value)}
-                        className="w-full px-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                        placeholder={`Or paste external ${label.toLowerCase()} URL...`}
-                    />
-                </div>
-            </div>
-        </div>
-    );
-}
 
 export default function GlobalSetting() {
     const [settings, setSettings] = useState<any>(null);
@@ -214,6 +121,7 @@ export default function GlobalSetting() {
                                 label="Brand Logo"
                                 value={settings.brandLogo}
                                 onChange={(val) => setSettings({ ...settings, brandLogo: val })}
+                                uploadApi={fetchSuperAdminAPI}
                                 loadingMsg="Uploading logo..."
                                 successMsg="Logo uploaded successfully"
                                 errorMsg="Error uploading logo"
@@ -299,6 +207,7 @@ export default function GlobalSetting() {
                                     label="Hero Image"
                                     value={settings.hero?.image}
                                     onChange={(val) => setSettings({ ...settings, hero: { ...settings.hero, image: val } })}
+                                    uploadApi={fetchSuperAdminAPI}
                                     loadingMsg="Uploading hero image..."
                                     successMsg="Hero image uploaded successfully"
                                     errorMsg="Error uploading hero image"

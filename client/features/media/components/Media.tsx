@@ -1,8 +1,9 @@
 'use client';
 import ConfirmModal from '@/components/shared/ConfirmModal';
+import ImageUploadField from '@/components/shared/ImageUploadField';
 import { Pagination } from '@/features/customer/type';
 import { fetchAPI } from '@/services/api';
-import { Check, ChevronLeft, ChevronRight, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2, Upload } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { MediaItem } from '../type';
@@ -12,7 +13,6 @@ import { MediaItem } from '../type';
 export default function Media() {
     const [media, setMedia] = useState<MediaItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [uploading, setUploading] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [pagination, setPagination] = useState<Pagination>({
@@ -96,32 +96,7 @@ export default function Media() {
     };
 
 
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
 
-        const file = e.target.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
-
-        setUploading(true);
-        try {
-            // fetchAPI handles FormData automatically (removes Content-Type)
-            await fetchAPI('/admin/media', {
-                method: 'POST',
-                body: formData,
-            });
-
-            // Refresh current page
-            fetchMedia(pagination.page, debouncedSearch);
-            toast.success('Image uploaded successfully');
-        } catch (error) {
-            console.error('Error uploading:', error);
-            toast.error('Error uploading image');
-        } finally {
-            setUploading(false);
-            e.target.value = '';
-        }
-    };
 
     const handleDelete = (id: string) => {
         setConfirmModal({
@@ -135,7 +110,7 @@ export default function Media() {
                         method: 'DELETE',
                     });
 
-                    setMedia(media.filter((item: any) => item.id !== id));
+                    setMedia(media.filter((item: any) => item._id !== id));
                     toast.success('Image deleted successfully');
 
                     // Optional: refetch if we want to update pagination counts strictly
@@ -177,28 +152,16 @@ export default function Media() {
                     <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your images and assets</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <input
-                            type="file"
-                            id="file-upload"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handleUpload}
-                            disabled={uploading}
-                        />
-                        <label
-                            htmlFor="file-upload"
-                            className={`flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium cursor-pointer transition-all shadow-lg shadow-brand-500/20 active:scale-95 ${uploading ? 'opacity-70 cursor-wait' : ''
-                                }`}
-                        >
-                            {uploading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <Upload className="w-5 h-5" />
-                            )}
-                            {uploading ? 'Uploading...' : 'Upload New'}
-                        </label>
-                    </div>
+                    <ImageUploadField
+                        label="Upload New"
+                        variant="button"
+                        uploadApi={fetchAPI}
+                        onUploadSuccess={() => fetchMedia(pagination.page, debouncedSearch)}
+                        className="relative"
+                        onChange={function (val: string): void {
+                            throw new Error('Function not implemented.');
+                        }}
+                    />
                 </div>
             </div>
 
@@ -258,7 +221,7 @@ export default function Media() {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {media.map((item: any) => (
                         <div
-                            key={item.id}
+                            key={item._id}
                             className="group relative bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300"
                         >
                             <div className="aspect-square relative bg-slate-100 dark:bg-slate-900 overflow-hidden">
@@ -270,10 +233,10 @@ export default function Media() {
                                 />
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-3">
                                     <button
-                                        onClick={() => copyToClipboard(item.url, item.id)}
+                                        onClick={() => copyToClipboard(item.url, item._id)}
                                         className="flex items-center gap-2 px-3 py-1.5 bg-white text-slate-900 rounded-lg text-xs font-bold hover:bg-slate-100 transition-colors transform translate-y-2 group-hover:translate-y-0"
                                     >
-                                        {copiedId === item.id ? (
+                                        {copiedId === item._id ? (
                                             <>
                                                 <Check className="w-3 h-3 text-green-600" /> Copied!
                                             </>
@@ -284,7 +247,7 @@ export default function Media() {
                                         )}
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(item.id)}
+                                        onClick={() => handleDelete(item._id)}
                                         className="flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-bold hover:bg-red-600 transition-colors transform translate-y-2 group-hover:translate-y-0 delay-75"
                                     >
                                         <Trash2 className="w-3 h-3" /> Delete
