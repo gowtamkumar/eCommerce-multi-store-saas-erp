@@ -16,6 +16,9 @@ export async function fetchSuperAdminAPI(endpoint: string, options: RequestInit 
     ...options.headers,
   };
 
+  console.log("`${nestApiUrl}${endpoint}`", `${nestApiUrl}${endpoint}`);
+  
+
   const res = await fetch(`${nestApiUrl}${endpoint}`, {
     ...options,
     headers,

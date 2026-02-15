@@ -14,7 +14,7 @@ export default function GlobalSetting() {
         async function loadSettings() {
             try {
                 const res = await fetchAPI('/platform/settings');
-                setSettings(res);
+                setSettings(res.data);
             } catch (error) {
                 console.error('Failed to load settings:', error);
                 toast.error('Failed to load platform settings');
@@ -148,6 +148,15 @@ export default function GlobalSetting() {
                                     />
                                 </div>
                                 <div>
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Primary Button Link</label>
+                                    <input
+                                        type="text"
+                                        value={settings.hero?.primaryBtnLink || ''}
+                                        onChange={(e) => setSettings({ ...settings, hero: { ...settings.hero, primaryBtnLink: e.target.value } })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    />
+                                </div>
+                                <div>
                                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Secondary Button Text</label>
                                     <input
                                         type="text"
@@ -155,6 +164,68 @@ export default function GlobalSetting() {
                                         onChange={(e) => setSettings({ ...settings, hero: { ...settings.hero, secondaryBtnText: e.target.value } })}
                                         className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                     />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Secondary Button Link</label>
+                                    <input
+                                        type="text"
+                                        value={settings.hero?.secondaryBtnLink || ''}
+                                        onChange={(e) => setSettings({ ...settings, hero: { ...settings.hero, secondaryBtnLink: e.target.value } })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Hero Visuals</h3>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Hero Image URL</label>
+                                    <input
+                                        type="text"
+                                        value={settings.hero?.image || ''}
+                                        onChange={(e) => setSettings({ ...settings, hero: { ...settings.hero, image: e.target.value } })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        placeholder="https://images.unsplash.com/..."
+                                    />
+                                    <p className="text-xs text-slate-500 mt-2">Provide a URL for the dashboard preview image.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Trust Badges</h3>
+                                <div className="space-y-3">
+                                    {(settings.hero?.trustBadges || ['No credit card required', '14-day free trial', 'Instant setup']).map((badge: string, idx: number) => (
+                                        <div key={idx} className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={badge}
+                                                onChange={(e) => {
+                                                    const newBadges = [...(settings.hero?.trustBadges || ['No credit card required', '14-day free trial', 'Instant setup'])];
+                                                    newBadges[idx] = e.target.value;
+                                                    setSettings({ ...settings, hero: { ...settings.hero, trustBadges: newBadges } });
+                                                }}
+                                                className="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    const newBadges = (settings.hero?.trustBadges || ['No credit card required', '14-day free trial', 'Instant setup']).filter((_: any, i: number) => i !== idx);
+                                                    setSettings({ ...settings, hero: { ...settings.hero, trustBadges: newBadges } });
+                                                }}
+                                                className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={() => {
+                                            const newBadges = [...(settings.hero?.trustBadges || ['No credit card required', '14-day free trial', 'Instant setup']), 'New Badge'];
+                                            setSettings({ ...settings, hero: { ...settings.hero, trustBadges: newBadges } });
+                                        }}
+                                        className="text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                                    >
+                                        <Plus className="w-4 h-4" /> Add Badge
+                                    </button>
                                 </div>
                             </div>
                         </div>

@@ -24,7 +24,12 @@ export class SubscriptionPlanService {
     }
 
     async findOne(id: string) {
+        console.log("testing...", id);
+
         const plan = await this.planRepository.findOne({ where: { id } })
+
+        console.log("plan", plan);
+
         if (!plan) {
             throw new NotFoundException(`Subscription plan with ID "${id}" not found`)
         }
@@ -45,6 +50,8 @@ export class SubscriptionPlanService {
     }
 
     async findActive() {
+        console.log("testing...");
+        
         return await this.planRepository.find({
             where: { isActive: true },
             order: { price: 'ASC' },

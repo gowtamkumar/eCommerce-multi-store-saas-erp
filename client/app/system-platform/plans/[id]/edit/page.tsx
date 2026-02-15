@@ -4,8 +4,6 @@ import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 async function getPlan(id: string) {
     try {
         const res = await fetchSuperAdminAPI(`/super-admin/plans/${id}`);
-        console.log("res", res);
-
         return res.data;
     } catch (error) {
         console.error("Error fetching plan:", error);
@@ -14,7 +12,9 @@ async function getPlan(id: string) {
 }
 
 export default async function EditPlanPage({ params }: { params: { id: string } }) {
-    const plan = await getPlan(params.id);
+    const { id } = await params;
+
+    const plan = await getPlan(id);
 
     if (!plan) {
         return (

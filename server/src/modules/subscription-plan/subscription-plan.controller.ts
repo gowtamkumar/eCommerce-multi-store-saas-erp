@@ -25,6 +25,8 @@ export class SubscriptionPlanController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
+    console.log("testing...asdfasdf", id);
+    
     return this.planService.findOne(id)
   }
 

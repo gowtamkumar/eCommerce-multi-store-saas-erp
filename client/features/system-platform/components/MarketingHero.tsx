@@ -4,7 +4,9 @@ import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, Play } from 'lucide-react';
 import Link from 'next/link';
 
-export default function MarketingHero({ data }: { data?: any }) {
+export default function MarketingHero({ data }: any) {
+  console.log("data", data);
+
   const content = data || {
     badge: 'Next-Gen eCommerce Platform',
     title: 'Launch Your Store in Seconds, Not Days',
@@ -43,7 +45,7 @@ export default function MarketingHero({ data }: { data?: any }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-5xl lg:text-7xl font-bold font-display text-slate-900 dark:text-white mb-6 leading-[1.1]"
-            dangerouslySetInnerHTML={{ __html: content.title.replace('Seconds', '<span class="bg-gradient-to-r from-brand-600 to-blue-600 bg-clip-text text-transparent">Seconds</span>') }}
+            dangerouslySetInnerHTML={{ __html: content?.title?.replace('Seconds', '<span class="bg-gradient-to-r from-brand-600 to-blue-600 bg-clip-text text-transparent">Seconds</span>') }}
           />
 
           {/* Subheadline */}
@@ -64,14 +66,14 @@ export default function MarketingHero({ data }: { data?: any }) {
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
           >
             <Link
-              href={content.primaryBtnLink}
+              href={content.primaryBtnLink || '#'}
               className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-brand-600 text-white font-bold text-lg hover:bg-brand-700 transition-all hover:shadow-2xl hover:shadow-brand-500/30 group"
             >
               {content.primaryBtnText}
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              href={content.secondaryBtnLink}
+              href={content.secondaryBtnLink || '#'}
               className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all group"
             >
               <Play className="mr-2 w-5 h-5 fill-current" />
@@ -86,7 +88,7 @@ export default function MarketingHero({ data }: { data?: any }) {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4"
           >
-            {['No credit card required', '14-day free trial', 'Instant setup'].map((text) => (
+            {(content.trustBadges || ['No credit card required', '14-day free trial', 'Instant setup']).map((text: string) => (
               <div key={text} className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
                 <CheckCircle2 className="w-4 h-4 text-brand-600" />
                 {text}
