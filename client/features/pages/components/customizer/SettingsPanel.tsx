@@ -1501,6 +1501,49 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
                 </div>
               )}
 
+              {section.type === 'image-block' && (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Image Radius</label>
+                    <select
+                      value={section.styles?.imageRadius || 'none'}
+                      onChange={(e) => updateStyle('imageRadius', e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value="none">None</option>
+                      <option value="medium">Medium</option>
+                      <option value="large">Large</option>
+                      <option value="full">Full (Circle)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Image Border</label>
+                    <select
+                      value={section.styles?.imageBorder || 'none'}
+                      onChange={(e) => updateStyle('imageBorder', e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value="none">None</option>
+                      <option value="thin">Thin (4px)</option>
+                      <option value="thick">Thick (12px)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Image Shadow</label>
+                    <select
+                      value={section.styles?.imageShadow || 'none'}
+                      onChange={(e) => updateStyle('imageShadow', e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value="none">None</option>
+                      <option value="small">Small</option>
+                      <option value="medium">Medium</option>
+                      <option value="large">Large</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
               {section.type === 'banner' && (
                 <>
                   <div className="space-y-2">

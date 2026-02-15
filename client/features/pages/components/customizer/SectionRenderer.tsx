@@ -1,8 +1,8 @@
 import BrandGrid from "@/features/brand/components/BrandGrid";
-import CategoryGrid from "@/features/category/components/CategoryGrid";
 import FAQSection from "@/features/faq/components/FAQSection";
 import BannerSlider from "@/features/pages/components/customizer/BannerSlider";
 import BuilderButton from "@/features/pages/components/customizer/BuilderButton";
+import CategoryGrid from "@/features/pages/components/customizer/CategoryGrid";
 import ContactSection from "@/features/pages/components/customizer/ContactSection";
 import ImageBlock from "@/features/pages/components/customizer/ImageBlock";
 import Newsletter from "@/features/pages/components/customizer/Newsletter";
@@ -38,6 +38,9 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
     iconBorder: section.styles?.iconBorder,
     buttonColor: section.styles?.buttonColor,
     buttonTextColor: section.styles?.buttonTextColor,
+    imageRadius: section.styles?.imageRadius,
+    imageBorder: section.styles?.imageBorder,
+    imageShadow: section.styles?.imageShadow,
     // Section-specific typography CSS custom properties
     ...(section.styles?.headingFontFamily && { '--heading-font-family': section.styles.headingFontFamily } as React.CSSProperties),
     ...(section.styles?.headingFontWeight && { '--heading-font-weight': section.styles.headingFontWeight } as React.CSSProperties),

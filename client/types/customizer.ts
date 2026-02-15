@@ -35,6 +35,10 @@ export interface SectionStyles {
   iconColor?: string;
   iconBgColor?: string;
   iconBorder?: string;
+  // Image Styles
+  imageRadius?: string;
+  imageBorder?: string;
+  imageShadow?: string;
   // Typography - General
   fontFamily?: string;
   fontStyle?: 'normal' | 'italic' | string;

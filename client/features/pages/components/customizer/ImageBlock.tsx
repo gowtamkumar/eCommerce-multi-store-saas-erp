@@ -43,7 +43,17 @@ export default function ImageBlock({ settings, styles }: { settings: any, styles
 
             <div className={`max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16 md:gap-24 relative z-10 ${layout === 'right' ? 'md:flex-row-reverse' : ''}`}>
                 <div className="flex-1 w-full relative group">
-                    <div className="aspect-[4/5] bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden transition-all duration-700">
+                    <div className={`aspect-[4/5] bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden transition-all duration-700
+                        ${styles?.imageRadius === 'medium' ? 'rounded-2xl' : ''}
+                        ${styles?.imageRadius === 'large' ? 'rounded-[2rem]' : ''}
+                        ${styles?.imageRadius === 'full' ? 'rounded-full' : ''}
+                        ${!styles?.imageRadius || styles?.imageRadius === 'none' ? '' : ''}
+                        ${styles?.imageBorder === 'thin' ? 'border-4 border-white dark:border-slate-700' : ''}
+                        ${styles?.imageBorder === 'thick' ? 'border-[12px] border-white dark:border-slate-700' : ''}
+                        ${styles?.imageShadow === 'small' ? 'shadow-lg' : ''}
+                        ${styles?.imageShadow === 'medium' ? 'shadow-xl' : ''}
+                        ${styles?.imageShadow === 'large' ? 'shadow-2xl' : ''}
+                    `}>
                         {image ? (
                             <img src={image} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         ) : (
