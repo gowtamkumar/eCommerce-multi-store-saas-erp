@@ -1,5 +1,9 @@
+import BrandGrid from "@/features/brand/components/BrandGrid";
+import CategoryGrid from "@/features/category/components/CategoryGrid";
+import FAQSection from "@/features/faq/components/FAQSection";
 import BannerSlider from "@/features/pages/components/customizer/BannerSlider";
 import BuilderButton from "@/features/pages/components/customizer/BuilderButton";
+import ContactSection from "@/features/pages/components/customizer/ContactSection";
 import ImageBlock from "@/features/pages/components/customizer/ImageBlock";
 import Newsletter from "@/features/pages/components/customizer/Newsletter";
 import OfferBanner from "@/features/pages/components/customizer/OfferBanner";
@@ -8,24 +12,8 @@ import ReviewSection from "@/features/pages/components/customizer/ReviewSection"
 import StatsCounter from "@/features/pages/components/customizer/StatsCounter";
 import TextBlock from "@/features/pages/components/customizer/TextBlock";
 import VideoBlock from "@/features/pages/components/customizer/VideoBlock";
-import ContactSection from "@/features/pages/components/customizer/ContactSection";
-import BrandGrid from "@/features/brand/components/BrandGrid";
-import CategoryGrid from "@/features/category/components/CategoryGrid";
-import FAQSection from "@/features/faq/components/FAQSection";
 import { CustomizerSection } from "@/types/customizer";
-// import BannerSlider from "../../../../components/shared/BannerSlider";
-// import BrandGrid from "../../../brand/components/BrandGrid";
-// import BuilderButton from "../../../../components/shared/BuilderButton";
-// import CategoryGrid from "../../../category/components/CategoryGrid";
-// import FAQSection from "../../../faq/components/FAQSection";
-// import ImageBlock from "../../../../components/shared/ImageBlock";
-// import Newsletter from "../../../../components/shared/Newsletter";
-// import OfferBanner from "../../../../components/shared/OfferBanner";
-// import ProductSlider from "../../../../components/shared/ProductSlider";
-// import ReviewSection from "../../../../components/shared/ReviewSection";
-// import StatsCounter from "../../../../components/shared/StatsCounter";
-// import TextBlock from "../../../../components/shared/TextBlock";
-// import VideoBlock from "../../../../components/shared/VideoBlock";
+
 
 interface SectionRendererProps {
   section: CustomizerSection;

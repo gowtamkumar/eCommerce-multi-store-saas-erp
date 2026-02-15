@@ -19,6 +19,8 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
     secondaryButtonLink: settings?.secondaryButtonLink,
   }];
 
+  console.log("slides", slides);
+
   useEffect(() => {
     if (slides.length <= 1) return;
     const timer = setInterval(() => {
@@ -36,6 +38,7 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
   };
 
   const currentContent = slides[currentSlide];
+
 
 
   return (
