@@ -1,7 +1,7 @@
 "use client";
 
 import { CustomizerSection, SectionType } from '@/types/customizer';
-import { BarChart2, ChevronDown, ChevronUp, Grid, GripVertical, HelpCircle, ImageIcon, Layout, Mail, MessageSquare, MousePointer2, Plus, Sliders, Tag, Trash2, Type, Video } from 'lucide-react';
+import { BarChart2, ChevronDown, ChevronUp, Grid, HelpCircle, ImageIcon, Layout, Mail, MessageSquare, MousePointer2, Plus, Sliders, Tag, Trash2, Type, Video } from 'lucide-react';
 import { useState } from 'react';
 
 interface SidebarProps {
@@ -64,9 +64,6 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
               onClick={() => onSelect(section.id)}
               className={`group flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${isActive ? 'bg-brand-50 border-brand-200 dark:bg-brand-900/20 dark:border-brand-800' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-brand-200 dark:hover:border-brand-800'}`}
             >
-              <div className="text-slate-400 group-hover:text-slate-600 transition-colors">
-                <GripVertical className="w-4 h-4 cursor-grab" />
-              </div>
               <div className={`p-2 rounded-lg ${isActive ? 'bg-brand-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
                 <Icon className="w-4 h-4" />
               </div>
@@ -75,6 +72,41 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
                   {getLabel(section.type)}
                 </p>
               </div>
+
+              {/* Reorder Buttons */}
+              <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const index = sections.findIndex(s => s.id === section.id);
+                    if (index > 0) {
+                      const newSections = [...sections];
+                      [newSections[index - 1], newSections[index]] = [newSections[index], newSections[index - 1]];
+                      onUpdate(newSections);
+                    }
+                  }}
+                  disabled={sections.indexOf(section) === 0}
+                  className="p-1 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronUp className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const index = sections.findIndex(s => s.id === section.id);
+                    if (index < sections.length - 1) {
+                      const newSections = [...sections];
+                      [newSections[index], newSections[index + 1]] = [newSections[index + 1], newSections[index]];
+                      onUpdate(newSections);
+                    }
+                  }}
+                  disabled={sections.indexOf(section) === sections.length - 1}
+                  className="p-1 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
               <button
                 onClick={(e) => deleteSection(section.id, e)}
                 className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all"

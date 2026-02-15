@@ -43,7 +43,7 @@ export default function ImageBlock({ settings, styles }: { settings: any, styles
 
             <div className={`max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16 md:gap-24 relative z-10 ${layout === 'right' ? 'md:flex-row-reverse' : ''}`}>
                 <div className="flex-1 w-full relative group">
-                    <div className="aspect-[4/5] bg-slate-100 dark:bg-slate-800 rounded-3xl md:rounded-[4rem] border-8 md:border-[12px] border-white dark:border-slate-800 shadow-2xl flex items-center justify-center overflow-hidden transition-all duration-700">
+                    <div className="aspect-[4/5] bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden transition-all duration-700">
                         {image ? (
                             <img src={image} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         ) : (

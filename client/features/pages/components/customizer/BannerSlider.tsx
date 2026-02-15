@@ -19,8 +19,6 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
     secondaryButtonLink: settings?.secondaryButtonLink,
   }];
 
-  console.log("slides", slides);
-
   useEffect(() => {
     if (slides.length <= 1) return;
     const timer = setInterval(() => {
@@ -38,8 +36,6 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
   };
 
   const currentContent = slides[currentSlide];
-
-
 
   return (
     <section
@@ -62,11 +58,11 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
           transition={{ duration: 0.7 }}
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{
-            backgroundImage: currentContent?.backgroundImage ? `url(${currentContent.backgroundImage})` : undefined,
+            backgroundImage: currentContent?.backgroundImage ? `url("${currentContent.backgroundImage}")` : undefined,
           }}
         >
           <div
-            className="absolute inset-0 bg-black/40 z-0 transition-all duration-300"
+            className="absolute inset-0 bg-black/40 z-0 transition-all duration-300 pointer-events-none"
             style={{ opacity: styles?.overlayOpacity !== undefined ? styles.overlayOpacity / 100 : 0.4 }}
           />
         </motion.div>
