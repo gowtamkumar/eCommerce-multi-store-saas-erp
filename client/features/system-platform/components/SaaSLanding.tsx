@@ -53,7 +53,7 @@ export default function SaaSLanding() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900 overflow-x-hidden">
-      <MarketingNavbar />
+      <MarketingNavbar brandName={settings?.brandName} brandLogo={settings?.brandLogo} />
       <MarketingHero data={settings?.hero} />
 
       {/* Feature Section */}
@@ -152,7 +152,8 @@ export default function SaaSLanding() {
       </section>
 
       <MarketingFooter settings={{
-        brandName: settings?.hero?.title?.split(' ')?.[0] || 'SaaS',
+        brandName: settings?.brandName,
+        brandLogo: settings?.brandLogo,
         footerDescription: settings?.footer?.description,
         footerCopyright: settings?.footer?.copyright,
         socialLinks: settings?.footer?.socials

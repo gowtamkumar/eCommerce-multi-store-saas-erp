@@ -54,8 +54,17 @@ export default function MarketingFooter({ settings }: MarketingFooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           {/* Brand Column */}
           <div className="space-y-6">
-            <Link href="/" className="text-2xl font-bold font-display text-slate-900 dark:text-white mb-6 block tracking-tight">
-              {brandName}
+            <Link href="/" className="flex items-center gap-2 group">
+              {settings?.brandLogo ? (
+                <img src={settings.brandLogo} alt={brandName} className="h-8 w-auto object-contain" />
+              ) : (
+                <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">{brandName.charAt(0)}</span>
+                </div>
+              )}
+              <span className="text-2xl font-bold font-display text-slate-900 dark:text-white tracking-tight">
+                {brandName}
+              </span>
             </Link>
             <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
               {footerDescription}

@@ -15,6 +15,9 @@ export class PlatformSettingsService {
 
     if (!settings) {
       settings = this.platformSettingsRepository.create({
+        brandName: 'YourSaaS',
+        brandLogo: '',
+        supportEmail: 'support@yoursaas.com',
         hero: {
           badge: 'Next-Gen eCommerce Platform',
           title: 'Launch Your Store in Seconds, Not Days',

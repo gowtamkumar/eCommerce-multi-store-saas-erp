@@ -10,16 +10,18 @@ import {
     Post,
     Query,
     UploadedFile,
+    UseGuards,
     UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 import { FilterFileDto } from '../dtos';
 import { FilesService } from '../services/file.service';
 
 @Controller('admin/media')
-// @UseGuards(JwtAuthGuard, RolesGuard)
-// @Roles(UserRole.Admin, UserRole.SuperAdmin)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminMediaController {
     constructor(private readonly filesService: FilesService) { }
 

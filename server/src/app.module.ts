@@ -116,6 +116,8 @@ export class AppModule implements NestModule {
         'plans/*path',
         'brands',
         'brands/*path',
+        'admin/media',
+        'admin/media/*path',
         'uploads',
         'uploads/*path',
         'subscribers',

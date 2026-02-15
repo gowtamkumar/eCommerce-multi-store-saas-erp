@@ -5,7 +5,7 @@ import { ArrowRight, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-export default function MarketingNavbar() {
+export default function MarketingNavbar({ brandName, brandLogo }: { brandName?: string, brandLogo?: string }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -34,12 +34,13 @@ export default function MarketingNavbar() {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform">
-              <span className="text-white font-bold text-xl">L</span>
-            </div>
-            <span className="text-2xl font-bold font-display text-slate-900 dark:text-white">
-              Luxe<span className="text-brand-600">SaaS</span>
-            </span>
+            {brandLogo ? (
+              <img src={brandLogo} alt={brandName} className="h-10 w-auto object-contain rounded-lg" />
+            ) : (
+              <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform">
+                <span className="text-white font-bold text-xl">{brandName ? brandName.charAt(0) : 'L'}</span>
+              </div>
+            )}
           </Link>
 
           {/* Desktop Navigation */}

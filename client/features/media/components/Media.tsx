@@ -1,11 +1,11 @@
 'use client';
-import { fetchAPI } from '@/services/api';
 import ConfirmModal from '@/components/shared/ConfirmModal';
+import { Pagination } from '@/features/customer/type';
+import { fetchAPI } from '@/services/api';
 import { Check, ChevronLeft, ChevronRight, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { MediaItem } from '../type';
-import { Pagination } from '@/features/customer/type';
 
 
 
@@ -54,8 +54,6 @@ export default function Media() {
 
             if (res.data) {
                 const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3900';
-                console.log("backendUrl", backendUrl);
-
                 const mappedMedia: MediaItem[] = res.data.map((f: any) => {
                     // Extract timestamp from filename (timestamp_name.ext)
                     let createdAt = new Date().toISOString();

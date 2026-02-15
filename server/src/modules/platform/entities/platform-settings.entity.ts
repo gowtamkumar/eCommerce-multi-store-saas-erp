@@ -5,6 +5,15 @@ export class PlatformSettingsEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ nullable: true })
+  brandName: string;
+
+  @Column({ nullable: true })
+  brandLogo: string;
+
+  @Column({ nullable: true })
+  supportEmail: string;
+
   @Column({ type: 'jsonb', nullable: true })
   hero: {
     badge: string;
