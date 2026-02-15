@@ -698,6 +698,26 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
 
           {section.type === 'stats-counter' && (
             <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Section Title</label>
+                <input
+                  type="text"
+                  value={settings?.title || ''}
+                  onChange={(e) => updateSetting('title', e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="Stats Overview"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">Subline</label>
+                <textarea
+                  value={settings?.subline || ''}
+                  onChange={(e) => updateSetting('subline', e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  placeholder="Brief description..."
+                />
+              </div>
               <div className="space-y-4">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">Stat Items</label>
                 {((settings?.items as any[]) || []).map((item: any, index: number) => (
@@ -1655,6 +1675,101 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
               )}
             </div>
 
+            {section.type === 'stats-counter' && (
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Title Color</label>
+                  <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <input
+                      type="color"
+                      value={section.styles?.titleColor || '#000000'}
+                      onChange={(e) => updateStyle('titleColor', e.target.value)}
+                      className="w-8 h-8 rounded border-none bg-transparent"
+                    />
+                    <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.titleColor || '#000000'}</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Subline Color</label>
+                  <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <input
+                      type="color"
+                      value={section.styles?.sublineColor || '#64748b'}
+                      onChange={(e) => updateStyle('sublineColor', e.target.value)}
+                      className="w-8 h-8 rounded border-none bg-transparent"
+                    />
+                    <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.sublineColor || '#64748b'}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Card Radius</label>
+                  <select
+                    value={section.styles?.cardRadius || 'large'}
+                    onChange={(e) => updateStyle('cardRadius', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="none">None</option>
+                    <option value="medium">Medium</option>
+                    <option value="large">Large</option>
+                    <option value="full">Full (Circle)</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Card Shadow</label>
+                  <select
+                    value={section.styles?.cardShadow || 'none'}
+                    onChange={(e) => updateStyle('cardShadow', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="none">None</option>
+                    <option value="small">Small</option>
+                    <option value="medium">Medium</option>
+                    <option value="large">Large</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Card Border</label>
+                  <select
+                    value={section.styles?.cardBorder || 'none'}
+                    onChange={(e) => updateStyle('cardBorder', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="none">None</option>
+                    <option value="normal">Normal (1px)</option>
+                    <option value="thin">Thin (4px)</option>
+                    <option value="thick">Thick (12px)</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Card Border Color</label>
+                  <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <input
+                      type="color"
+                      value={section.styles?.borderColor || '#ffffff1a'}
+                      onChange={(e) => updateStyle('borderColor', e.target.value)}
+                      className="w-8 h-8 rounded border-none bg-transparent"
+                    />
+                    <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.borderColor || '#ffffff1a'}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Card Background</label>
+                  <div className="flex items-center gap-2 p-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <input
+                      type="color"
+                      value={section.styles?.cardBackgroundColor || '#ffffff0d'}
+                      onChange={(e) => updateStyle('cardBackgroundColor', e.target.value)}
+                      className="w-8 h-8 rounded border-none bg-transparent"
+                    />
+                    <span className="text-[10px] font-mono text-slate-500 uppercase">{section.styles?.cardBackgroundColor || '#ffffff0d'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
 
             <div className="space-y-1.5">
@@ -1670,151 +1785,157 @@ export default function SettingsPanel({ section, onUpdate, onClose }: SettingsPa
               </select>
             </div>
 
+
+
             <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
 
             <div className="space-y-4">
               <h4 className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Typography</h4>
 
               {/* Headings Typography - Collapsible */}
-              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800/30">
-                <button
-                  onClick={() => toggleExpand('typography-headings')}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100 dark:hover:bg-slate-800/50"
-                >
-                  <h5 className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Headings</h5>
-                  {expandedItems.includes('typography-headings') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
+              {(section.type !== 'image-block' && section.type !== 'video-block' && section.type !== 'review-slider') && (
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800/30">
+                  <button
+                    onClick={() => toggleExpand('typography-headings')}
+                    className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                  >
+                    <h5 className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Headings</h5>
+                    {expandedItems.includes('typography-headings') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
 
-                {expandedItems.includes('typography-headings') && (
-                  <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-4 bg-white dark:bg-slate-900">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Font Family</label>
-                      <select
-                        value={section.styles?.headingFontFamily || ''}
-                        onChange={(e) => updateStyle('headingFontFamily', e.target.value)}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                      >
-                        <option value="">Default</option>
-                        <option value="Inter">Inter</option>
-                        <option value="Poppins">Poppins</option>
-                        <option value="Montserrat">Montserrat</option>
-                        <option value="Playfair Display">Playfair Display</option>
-                        <option value="Bebas Neue">Bebas Neue</option>
-                        <option value="Oswald">Oswald</option>
-                      </select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
+                  {expandedItems.includes('typography-headings') && (
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-4 bg-white dark:bg-slate-900">
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Weight</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Font Family</label>
                         <select
-                          value={section.styles?.headingFontWeight || '700'}
-                          onChange={(e) => updateStyle('headingFontWeight', e.target.value)}
+                          value={section.styles?.headingFontFamily || ''}
+                          onChange={(e) => updateStyle('headingFontFamily', e.target.value)}
                           className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                         >
-                          <option value="400">Regular (400)</option>
-                          <option value="500">Medium (500)</option>
-                          <option value="600">Semibold (600)</option>
-                          <option value="700">Bold (700)</option>
-                          <option value="800">Extra Bold (800)</option>
-                          <option value="900">Black (900)</option>
+                          <option value="">Default</option>
+                          <option value="Inter">Inter</option>
+                          <option value="Poppins">Poppins</option>
+                          <option value="Montserrat">Montserrat</option>
+                          <option value="Playfair Display">Playfair Display</option>
+                          <option value="Bebas Neue">Bebas Neue</option>
+                          <option value="Oswald">Oswald</option>
                         </select>
                       </div>
 
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">Weight</label>
+                          <select
+                            value={section.styles?.headingFontWeight || '700'}
+                            onChange={(e) => updateStyle('headingFontWeight', e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                          >
+                            <option value="400">Regular (400)</option>
+                            <option value="500">Medium (500)</option>
+                            <option value="600">Semibold (600)</option>
+                            <option value="700">Bold (700)</option>
+                            <option value="800">Extra Bold (800)</option>
+                            <option value="900">Black (900)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">Size</label>
+                          <input
+                            type="text"
+                            value={section.styles?.headingFontSize || ''}
+                            onChange={(e) => updateStyle('headingFontSize', e.target.value)}
+                            placeholder="2rem"
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                          />
+                        </div>
+                      </div>
+
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Size</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Line Height</label>
                         <input
                           type="text"
-                          value={section.styles?.headingFontSize || ''}
-                          onChange={(e) => updateStyle('headingFontSize', e.target.value)}
-                          placeholder="2rem"
+                          value={section.styles?.headingLineHeight || ''}
+                          onChange={(e) => updateStyle('headingLineHeight', e.target.value)}
+                          placeholder="1.2"
                           className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                         />
                       </div>
                     </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Line Height</label>
-                      <input
-                        type="text"
-                        value={section.styles?.headingLineHeight || ''}
-                        onChange={(e) => updateStyle('headingLineHeight', e.target.value)}
-                        placeholder="1.2"
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
               {/* Paragraphs Typography - Collapsible */}
-              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800/30">
-                <button
-                  onClick={() => toggleExpand('typography-paragraphs')}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100 dark:hover:bg-slate-800/50"
-                >
-                  <h5 className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Paragraphs</h5>
-                  {expandedItems.includes('typography-paragraphs') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
+              {(section.type !== 'image-block' && section.type !== 'video-block' && section.type !== 'review-slider') && (
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800/30">
+                  <button
+                    onClick={() => toggleExpand('typography-paragraphs')}
+                    className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                  >
+                    <h5 className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Paragraphs</h5>
+                    {expandedItems.includes('typography-paragraphs') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
 
-                {expandedItems.includes('typography-paragraphs') && (
-                  <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-4 bg-white dark:bg-slate-900">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Font Family</label>
-                      <select
-                        value={section.styles?.paragraphFontFamily || ''}
-                        onChange={(e) => updateStyle('paragraphFontFamily', e.target.value)}
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                      >
-                        <option value="">Default</option>
-                        <option value="Inter">Inter</option>
-                        <option value="Roboto">Roboto</option>
-                        <option value="Open Sans">Open Sans</option>
-                        <option value="Lato">Lato</option>
-                        <option value="Poppins">Poppins</option>
-                      </select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
+                  {expandedItems.includes('typography-paragraphs') && (
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-4 bg-white dark:bg-slate-900">
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Weight</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Font Family</label>
                         <select
-                          value={section.styles?.paragraphFontWeight || '400'}
-                          onChange={(e) => updateStyle('paragraphFontWeight', e.target.value)}
+                          value={section.styles?.paragraphFontFamily || ''}
+                          onChange={(e) => updateStyle('paragraphFontFamily', e.target.value)}
                           className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                         >
-                          <option value="300">Light (300)</option>
-                          <option value="400">Regular (400)</option>
-                          <option value="500">Medium (500)</option>
-                          <option value="600">Semibold (600)</option>
+                          <option value="">Default</option>
+                          <option value="Inter">Inter</option>
+                          <option value="Roboto">Roboto</option>
+                          <option value="Open Sans">Open Sans</option>
+                          <option value="Lato">Lato</option>
+                          <option value="Poppins">Poppins</option>
                         </select>
                       </div>
 
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">Weight</label>
+                          <select
+                            value={section.styles?.paragraphFontWeight || '400'}
+                            onChange={(e) => updateStyle('paragraphFontWeight', e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                          >
+                            <option value="300">Light (300)</option>
+                            <option value="400">Regular (400)</option>
+                            <option value="500">Medium (500)</option>
+                            <option value="600">Semibold (600)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase">Size</label>
+                          <input
+                            type="text"
+                            value={section.styles?.paragraphFontSize || ''}
+                            onChange={(e) => updateStyle('paragraphFontSize', e.target.value)}
+                            placeholder="16px"
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                          />
+                        </div>
+                      </div>
+
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase">Size</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Line Height</label>
                         <input
                           type="text"
-                          value={section.styles?.paragraphFontSize || ''}
-                          onChange={(e) => updateStyle('paragraphFontSize', e.target.value)}
-                          placeholder="16px"
+                          value={section.styles?.paragraphLineHeight || ''}
+                          onChange={(e) => updateStyle('paragraphLineHeight', e.target.value)}
+                          placeholder="1.6"
                           className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                         />
                       </div>
                     </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Line Height</label>
-                      <input
-                        type="text"
-                        value={section.styles?.paragraphLineHeight || ''}
-                        onChange={(e) => updateStyle('paragraphLineHeight', e.target.value)}
-                        placeholder="1.6"
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

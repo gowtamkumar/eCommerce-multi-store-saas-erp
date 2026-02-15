@@ -168,6 +168,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
         return (
           <StatsCounter
             stats={settings?.items}
+            settings={settings}
             styles={styles}
           />
         );

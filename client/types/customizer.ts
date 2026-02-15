@@ -29,6 +29,7 @@ export interface SectionStyles {
   overlayOpacity?: number;
   textAlign?: string;
   headlineColor?: string;
+  titleColor?: string;
   sublineColor?: string;
   buttonColor?: string;
   buttonTextColor?: string;
@@ -43,6 +44,8 @@ export interface SectionStyles {
   cardRadius?: string;
   cardBorder?: string;
   cardShadow?: string;
+  cardBackgroundColor?: string;
+  borderColor?: string;
   // Typography - General
   fontFamily?: string;
   fontStyle?: 'normal' | 'italic' | string;
