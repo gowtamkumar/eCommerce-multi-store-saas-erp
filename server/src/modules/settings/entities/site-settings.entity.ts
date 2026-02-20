@@ -19,19 +19,19 @@ export class SiteSettingsEntity {
     @Column({ nullable: true })
     logo: string;
 
-    @Column({ nullable: true })
+    @Column({ name: 'brand_name', nullable: true })
     brandName: string;
 
-    @Column({ nullable: true })
+    @Column({ name: 'site_description', nullable: true })
     siteDescription: string;
 
-    @Column({ nullable: true })
+    @Column({ name: 'contact_email', nullable: true })
     contactEmail: string;
 
-    @Column({ nullable: true })
+    @Column({ name: 'contact_phone', nullable: true })
     contactPhone: string;
 
-    @Column({ nullable: true })
+    @Column({ name: 'whatsapp_phone', nullable: true })
     whatsappPhone: string;
 
     @Column({ nullable: true })
@@ -40,15 +40,14 @@ export class SiteSettingsEntity {
     @Column({ nullable: true })
     currency: string;
 
-    @Column({ nullable: true })
+    @Column({ name: 'currency_symbol', nullable: true })
     currencySymbol: string;
 
-    @Column({ type: 'jsonb', nullable: true })
+    @Column({ type: 'jsonb', name: 'supported_currencies', nullable: true })
     supportedCurrencies?: CurrenciesDto[];
 
-    @Column({ type: 'jsonb', nullable: true })
+    @Column({ type: 'jsonb', name: 'social_links', nullable: true })
     socialLinks?: SocialLinkDto;
-
 
     @Column({ type: 'jsonb', nullable: true })
     marketing?: MarketingDto
@@ -59,37 +58,37 @@ export class SiteSettingsEntity {
     @Column({ type: 'jsonb', nullable: true })
     payment?: PaymentDto
 
-    @Column({ type: 'jsonb', nullable: true })
+    @Column({ type: 'jsonb', name: 'pathao_courier', nullable: true })
     pathaoCourier?: PathaoCourierDto
 
-    @Column({ type: 'jsonb', nullable: true })
+    @Column({ type: 'jsonb', name: 'steadfast_courier', nullable: true })
     steadfastCourier?: SteadfastCourierDto
 
-    @Column({ type: 'jsonb', nullable: true })
+    @Column({ type: 'jsonb', name: 'navbar_links', nullable: true })
     navbarLinks?: NavbarLinkDto[]
 
-    @Column({ nullable: true })
+    @Column({ name: 'footer_description', nullable: true })
     footerDescription?: string;
 
-    @Column({ nullable: true })
+    @Column({ name: 'footer_copyright', nullable: true })
     footerCopyright?: string;
 
-    @Column({ type: 'jsonb', nullable: true })
+    @Column({ type: 'jsonb', name: 'footer_sections', nullable: true })
     footerSections?: FooterSectionDto[]
 
-    @Column({ type: 'jsonb', nullable: true })
+    @Column({ type: 'jsonb', name: 'trust_badges', nullable: true })
     trustBadges?: TrustBadgeDto[]
 
-    @Column({ type: 'uuid', unique: true })
+    @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
 
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'tenantId' })
+    @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
 
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 }

@@ -25,15 +25,15 @@ export class SubscriptionPlanEntity {
     @Column({ type: 'jsonb', default: [] })
     features: string[]
 
-    @Column({ default: true })
+    @Column({ name: 'is_active', default: true })
     isActive: boolean
 
     @OneToMany(() => TenantEntity, (tenant) => tenant.subscriptionPlan)
     tenants: TenantEntity[]
 
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date
 }

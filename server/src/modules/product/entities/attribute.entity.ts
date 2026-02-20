@@ -20,19 +20,19 @@ export class ProductAttributeEntity {
     @Column({ type: 'simple-array' })
     values: string[]; // e.g., ["Red", "Blue"] or ["S", "M", "L"]
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'product_id' })
     productId: string;
 
     @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'productId' })
+    @JoinColumn({ name: 'product_id' })
     product: ProductEntity;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
 
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 }

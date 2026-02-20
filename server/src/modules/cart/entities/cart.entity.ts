@@ -17,26 +17,25 @@ export class CartEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'user_id' })
     userId: string;
-
     @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'userId' })
+    @JoinColumn({ name: 'user_id' })
     user: UserEntity;
+
+
+    @Column({ type: 'uuid', name: 'tenant_id' })
+    tenantId: string;
+    @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'tenant_id' })
+    tenant: TenantEntity;
 
     @OneToMany(() => CartItemEntity, (item) => item.cart, { cascade: true })
     items: CartItemEntity[];
 
-    @Column({ type: 'uuid' })
-    tenantId: string;
-
-    @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'tenantId' })
-    tenant: TenantEntity;
-
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 }

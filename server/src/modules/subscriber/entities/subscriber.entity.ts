@@ -8,18 +8,18 @@ import {
 
 @Entity('subscribers')
 export class SubscriberEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ type: 'varchar', length: 255, unique: true })
-    email: string;
+  @Column({ type: 'varchar', unique: true })
+  email: string;
 
-    @Column({ type: 'boolean', default: true })
-    isActive: boolean;
+  @Column({ type: 'boolean', name: 'is_active', default: true })
+  isActive: boolean;
 
-    @CreateDateColumn({ type: 'timestamptz' })
-    createdAt: Date;
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
+  createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
-    updatedAt: Date;
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
+  updatedAt: Date;
 }

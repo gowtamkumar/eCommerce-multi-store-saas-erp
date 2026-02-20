@@ -122,11 +122,16 @@ export class CreateProductDto {
     @IsUUID()
     @IsOptional()
     categoryId?: string;
-    
+
     @ApiProperty({ required: false })
     @IsUUID()
     @IsOptional()
     brandId?: string;
+
+    @ApiProperty({ required: false })
+    @IsUUID()
+    @IsOptional()
+    landingPageId?: string;
 
     @ApiProperty({ required: false, type: [ProductFaqDto] })
     @IsArray()

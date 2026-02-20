@@ -36,30 +36,30 @@ export class FaqEntity {
     })
     status: FaqStatus;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
 
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'tenantId' })
+    @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
 
-    @Column({ type: 'uuid', nullable: true })
+    @Column({ type: 'uuid', nullable: true, name: 'product_id' })
     productId: string;
 
     @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE', nullable: true })
-    @JoinColumn({ name: 'productId' })
+    @JoinColumn({ name: 'product_id' })
     product: ProductEntity;
 
-    @Column({ type: 'uuid', nullable: true })
+    @Column({ type: 'uuid', name: 'page_id', nullable: true })
     pageId: string;
 
     @ManyToOne(() => PageEntity, { onDelete: 'CASCADE', nullable: true })
-    @JoinColumn({ name: 'pageId' })
+    @JoinColumn({ name: 'page_id' })
     page: PageEntity;
 
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 }

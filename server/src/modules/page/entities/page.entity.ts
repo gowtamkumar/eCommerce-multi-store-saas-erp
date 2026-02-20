@@ -22,7 +22,7 @@ export class PageEntity {
     @Column({ type: 'varchar', length: 255, default: '' })
     slug: string;
 
-    @Column({ type: 'boolean', default: false })
+    @Column({ type: 'boolean', name: 'is_home_page', default: false })
     isHomePage: boolean;
 
     @Column({ type: 'int', default: 0 })
@@ -37,10 +37,10 @@ export class PageEntity {
         disabled?: boolean;
     }>;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
+    @Column({ type: 'varchar', name: 'meta_title', length: 255, nullable: true })
     metaTitle: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', name: 'meta_description', nullable: true })
     metaDescription: string;
 
     @Column({ type: 'jsonb', nullable: true })
@@ -65,17 +65,17 @@ export class PageEntity {
     })
     status: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
 
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'tenantId' })
+    @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
-    
 
-    @CreateDateColumn({ type: 'timestamptz' })
+
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 }

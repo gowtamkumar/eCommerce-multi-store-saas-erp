@@ -1,19 +1,21 @@
 import { ReviewEntity } from 'src/modules/review/entities/review.entity'
 import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    OneToMany,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  OneToOne,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm'
 import { ProductStatus } from '../../../common/enums/product-status.enum'
 import { BrandEntity } from '../../brand/entities/brand.entity'
 import { CategoryEntity } from '../../category/entities/category.entity'
 import { FaqEntity } from '../../faq/entities/faq.entity'
 import { TenantEntity } from '../../tenant/entities/tenant.entity'
+import { PageEntity } from '../../page/entities/page.entity'
 import { ProductAttributeEntity } from './attribute.entity'
 import { ProductVariantEntity } from './variant.entity'
 
@@ -31,16 +33,16 @@ export class ProductEntity {
   @Column({ type: 'text' })
   description: string
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', name: 'short_description', nullable: true })
   shortDescription: string
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', name: 'is_review', default: true })
   isReview: boolean
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'discount_amount' })
   discountAmount: number
 
   @Column({ type: 'simple-array' })
@@ -57,30 +59,38 @@ export class ProductEntity {
   })
   status: ProductStatus
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'uuid', name: 'category_id', nullable: true })
   categoryId: string
-
-  @Column({ type: 'uuid', nullable: true })
-  brandId: string
-
-  @ManyToOne(() => BrandEntity, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'brandId' })
-  brand: BrandEntity
-
   @ManyToOne(() => CategoryEntity, (category) => category.products, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  @JoinColumn({ name: 'categoryId' })
+  @JoinColumn({ name: 'category_id' })
   category: CategoryEntity
+
+  @Column({ type: 'uuid', name: 'brand_id', nullable: true })
+  brandId: string
+
+  @ManyToOne(() => BrandEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'brand_id' })
+  brand: BrandEntity
+
+
+  @Column({ type: 'uuid', name: 'landing_page_id', nullable: true })
+  landingPageId: string
+
+  @OneToOne(() => PageEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'landing_page_id' })
+  landingPage: PageEntity
+
 
   @OneToMany(() => FaqEntity, (faq) => faq.product)
   faqs: FaqEntity[]
 
-  @Column({ type: 'varchar', length: 50, default: 'manual' })
+  @Column({ type: 'varchar', length: 50, default: 'manual', name: 'faq_source' })
   faqSource: string
 
-  @Column({ type: 'simple-array', nullable: true })
+  @Column({ type: 'simple-array', nullable: true, name: 'faq_ids' })
   faqIds: string[]
 
   @OneToMany(() => ProductAttributeEntity, (attribute) => attribute.product)
@@ -92,16 +102,16 @@ export class ProductEntity {
   @OneToMany(() => ReviewEntity, (reviews) => reviews.product)
   reviews: ReviewEntity[]
 
-  @Column({ type: 'uuid' })
+  @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
 
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'tenantId' })
+  @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date
 
-  @UpdateDateColumn({ type: 'timestamptz' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date
 }

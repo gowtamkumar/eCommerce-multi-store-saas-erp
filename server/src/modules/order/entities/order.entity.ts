@@ -20,13 +20,13 @@ export class OrderEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ type: 'varchar', length: 255 })
+    @Column({ type: 'varchar', name: 'customer_name', length: 255 })
     customerName: string;
 
-    @Column({ type: 'varchar', length: 255 })
+    @Column({ type: 'varchar', name: 'customer_email', length: 255 })
     customerEmail: string;
 
-    @Column({ type: 'varchar', length: 50 })
+    @Column({ type: 'varchar', name: 'customer_phone', length: 50 })
     customerPhone: string;
 
     @Column({ type: 'text' })
@@ -38,13 +38,13 @@ export class OrderEntity {
     @OneToMany(() => OrderReturnEntity, (returnRequest) => returnRequest.order)
     returns: OrderReturnEntity[];
 
-    @Column({ type: 'decimal', precision: 10, scale: 2 })
+    @Column({ type: 'decimal', name: 'total_amount', precision: 10, scale: 2 })
     totalAmount: number;
 
-    @Column({ type: 'varchar', length: 10, default: 'BDT' })
+    @Column({ type: 'varchar', name: 'currency', length: 10, default: 'BDT' })
     currency: string;
 
-    @Column({ type: 'decimal', precision: 10, scale: 4, default: 1 })
+    @Column({ type: 'decimal', name: 'currency_rate', precision: 10, scale: 4, default: 1 })
     currencyRate: number;
 
     @Column({
@@ -54,41 +54,42 @@ export class OrderEntity {
     })
     status: OrderStatus;
 
-    @Column({ type: 'enum', enum: PaymentMethod })
+    @Column({ type: 'enum', name: 'payment_method', enum: PaymentMethod })
     paymentMethod: PaymentMethod;
 
     @Column({
+        name: 'payment_status',
         type: 'enum',
         enum: PaymentStatus,
         default: PaymentStatus.PENDING,
     })
     paymentStatus: PaymentStatus;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
+    @Column({ type: 'varchar', name: 'transaction_id', length: 255, nullable: true })
     transactionId: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', name: 'order_notes', nullable: true })
     orderNotes: string;
 
-    @Column({ type: 'uuid', nullable: true })
+    @Column({ type: 'uuid', name: 'user_id' })
     userId: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
 
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'tenantId' })
+    @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
+    @Column({ type: 'varchar', name: 'tracking_id', length: 255, nullable: true })
     trackingId: string;
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
+    @Column({ type: 'varchar', name: 'courier_status', length: 255, nullable: true })
     courierStatus: string;
 
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 }

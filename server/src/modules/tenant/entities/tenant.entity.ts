@@ -8,23 +8,25 @@ export class TenantEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
-  @Column({ type: 'varchar', length: 255 })
+
+  @Column({ name: 'store_name' })
   storeName: string
 
-  @Column({ type: 'varchar', length: 100, unique: true })
+  @Column({ name: 'subdomain', unique: true })
   subdomain: string
 
-  @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
+  @Column({ name: 'custom_domain', nullable: true, unique: true })
   customDomain: string
 
   @Column({
+    name: 'custom_domain_status',
     type: 'enum',
     enum: ['pending', 'verified', 'active'],
     default: 'pending',
   })
   customDomainStatus: string
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ name: 'custom_domain_verified_at', type: 'timestamptz', nullable: true })
   customDomainVerifiedAt: Date
 
   @Column({
@@ -34,23 +36,24 @@ export class TenantEntity {
   })
   status: string
 
-  @Column({ default: false })
+  @Column({ name: 'ssl_enabled', default: false })
   sslEnabled: boolean
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date
 
-  @UpdateDateColumn({ type: 'timestamptz' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date
 
-  @Column({ nullable: true })
+  @Column({ name: 'subscription_plan_id', nullable: true })
   subscriptionPlanId: string
 
   @ManyToOne(() => SubscriptionPlanEntity, (plan) => plan.tenants)
-  @JoinColumn({ name: 'subscriptionPlanId' })
+  @JoinColumn({ name: 'subscription_plan_id' })
   subscriptionPlan: SubscriptionPlanEntity
 
   @Column({
+    name: 'subscription_billing_cycle',
     type: 'enum',
     enum: SubscriptionBillingCycle,
     default: SubscriptionBillingCycle.Monthly,
@@ -58,15 +61,16 @@ export class TenantEntity {
   subscriptionBillingCycle: SubscriptionBillingCycle
 
   @Column({
+    name: 'subscription_status',
     type: 'enum',
     enum: SubscriptionStatus,
     default: SubscriptionStatus.Active,
   })
   subscriptionStatus: SubscriptionStatus
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ name: 'subscription_starts_at', type: 'timestamptz', nullable: true })
   subscriptionStartsAt: Date
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ name: 'subscription_ends_at', type: 'timestamptz', nullable: true })
   subscriptionEndsAt: Date
 }

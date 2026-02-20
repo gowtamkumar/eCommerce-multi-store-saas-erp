@@ -15,41 +15,49 @@ export class PaymentEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'order_id' })
     orderId: string;
 
     @ManyToOne(() => OrderEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'orderId' })
+    @JoinColumn({ name: 'order_id' })
     order: OrderEntity;
 
-    @Column({ type: 'varchar', length: 255 })
+    // TODO: Add user entity and relation
+    @Column({ type: 'uuid', name: 'user_id', nullable: true })
+    userId: string;
+
+    // @ManyToOne(() => UserEntity, { onDelete: 'SET NULL' })
+    // @JoinColumn({ name: 'user_id' })
+    // user: UserEntity;
+
+    @Column({ type: 'varchar', name: 'transaction_id', length: 255 })
     transactionId: string;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2 })
+    @Column({ type: 'decimal', name: 'amount', precision: 10, scale: 2 })
     amount: number;
 
-    @Column({ type: 'varchar', length: 10, default: 'BDT' })
+    @Column({ type: 'varchar', name: 'currency', length: 10, default: 'BDT' })
     currency: string;
 
-    @Column({ type: 'varchar', length: 50 })
+    @Column({ type: 'varchar', name: 'method', length: 50 })
     method: string;
 
-    @Column({ type: 'varchar', length: 50 })
+    @Column({ type: 'varchar', name: 'status', length: 50 })
     status: string;
 
-    @Column({ type: 'jsonb', nullable: true })
+    @Column({ type: 'jsonb', name: 'gateway_response', nullable: true })
     gatewayResponse: any;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
 
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'tenantId' })
+    @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
 
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 }

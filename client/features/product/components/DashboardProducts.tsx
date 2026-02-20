@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic';
 
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import { useSettings } from '@/hooks/SettingsContext';
-import { Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import { Edit, Eye, Plus, Search, Trash2, LayoutTemplate } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -24,12 +25,13 @@ export default function DashboardProducts() {
         onConfirm: () => { },
         isDangerous: false,
     });
+
     const { settings, formatPrice } = useSettings();
+    const router = useRouter();
 
     useEffect(() => {
         fetchProducts();
     }, []);
-
     useEffect(() => {
         // Filter products based on search query
         if (searchQuery.trim() === '') {
@@ -91,6 +93,87 @@ export default function DashboardProducts() {
             toast.success('Product status updated');
         } catch (error) {
             toast.error('Error updating product status');
+        }
+    };
+
+    const handleLandingPage = async (product: Product) => {
+        if (product.landingPage?.id) {
+            router.push(`/admin/pages/${product.landingPage.id}`);
+            return;
+        }
+
+        const toastId = toast.loading('Creating landing page...');
+        try {
+            // 1. Create Page
+            const pageRes = await fetchAPI('/pages', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title: `${product.name} Landing Page`,
+                    slug: `landing-${product.slug}-${Date.now().toString().slice(-4)}`, // Ensure uniqueness
+                    status: 'published',
+                    isHomePage: false,
+                    sections: [
+                        {
+                            id: `section-${Date.now()}`,
+                            type: 'banner',
+                            settings: {
+                                slides: [
+                                    {
+                                        id: `slide-${Date.now()}`,
+                                        headline: product.name,
+                                        subline: 'Experience the best quality',
+                                        buttonText: 'Buy Now',
+                                        buttonLink: '#',
+                                        image: product.images?.[0] || '',
+                                        overlayOpacity: 40
+                                    }
+                                ]
+                            },
+                            styles: {
+                                paddingTop: 60,
+                                paddingBottom: 60,
+                                textAlign: 'center',
+                                textColor: '#FFFFFF',
+                                headlineColor: '#FFFFFF',
+                                sublineColor: '#ECECEC',
+                                buttonColor: '#000000',
+                                buttonTextColor: '#FFFFFF'
+                            }
+                        },
+                        {
+                            id: `section-${Date.now() + 1}`,
+                            type: 'text-block',
+                            settings: {
+                                headline: 'About this Product',
+                                html: `<p>${product.description || 'Product detailed description goes here.'}</p>`
+                            },
+                            styles: {
+                                paddingTop: 40,
+                                paddingBottom: 40,
+                                textAlign: 'left',
+                                textColor: '#333333'
+                            }
+                        }
+                    ]
+                })
+            });
+
+            if (!pageRes.success) throw new Error('Failed to create page');
+            const newPage = pageRes.data;
+
+            // 2. Link to Product
+            const linkRes = await fetchAPI(`/products/${product.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ landingPageId: newPage.id })
+            });
+
+            if (!linkRes.success) throw new Error('Failed to link page to product');
+
+            toast.success('Landing page created!', { id: toastId });
+            router.push(`/admin/pages/${newPage.id}`);
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to create landing page', { id: toastId });
         }
     };
 
@@ -208,6 +291,16 @@ export default function DashboardProducts() {
                                                 >
                                                     <Edit className="w-4 h-4" />
                                                 </Link>
+                                                <button
+                                                    onClick={() => handleLandingPage(product)}
+                                                    className={`p-2 rounded-lg transition-colors ${product.landingPage
+                                                        ? 'text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                                        : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                                        }`}
+                                                    title={product.landingPage ? "Edit Landing Page" : "Create Landing Page"}
+                                                >
+                                                    <LayoutTemplate className="w-4 h-4" />
+                                                </button>
                                                 <button
                                                     onClick={() => handleDelete(product.id)}
                                                     className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"

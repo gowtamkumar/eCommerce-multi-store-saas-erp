@@ -18,17 +18,17 @@ export class ReviewEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'product_id' })
     productId: string;
 
     @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'productId' })
+    @JoinColumn({ name: 'product_id' })
     product: ProductEntity;
 
-    @Column({ type: 'varchar', length: 255 })
+    @Column({ type: 'varchar', name: 'customer_name', length: 255 })
     customerName: string;
 
-    @Column({ type: 'varchar', length: 255 })
+    @Column({ type: 'varchar', name: 'customer_email', length: 255 })
     customerEmail: string;
 
     @Column({ type: 'int', default: 5 })
@@ -44,16 +44,16 @@ export class ReviewEntity {
     })
     status: ReviewStatus;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
 
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'tenantId' })
+    @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
 
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 }

@@ -21,7 +21,7 @@ export class ProductService {
     @InjectRepository(ProductVariantEntity)
     private variantRepository: Repository<ProductVariantEntity>,
     private cache: CacheService,
-  ) {}
+  ) { }
 
   async create(createProductDto: CreateProductDto, tenantId: string) {
     // Check if slug exists for this tenant
@@ -150,7 +150,7 @@ export class ProductService {
 
     const product = await this.productRepository.findOne({
       where: { id, tenantId },
-      relations: ['faqs', 'attributes', 'variants', 'category'],
+      relations: ['faqs', 'attributes', 'variants', 'category', 'landingPage'],
     })
 
     if (!product) {
@@ -165,7 +165,7 @@ export class ProductService {
   async findBySlug(slug: string, tenantId: string) {
     const product = await this.productRepository.findOne({
       where: { slug, tenantId },
-      relations: ['faqs', 'category', 'attributes', 'variants', 'reviews'],
+      relations: ['faqs', 'category', 'attributes', 'variants', 'reviews', 'landingPage'],
     })
 
     if (!product) {
@@ -274,10 +274,10 @@ export class ProductService {
   async remove(id: string, tenantId: string) {
     const product: any = await this.findOne(id, tenantId)
     await this.productRepository.remove(product)
-    
+
     // Invalidate cache after deletion
     await this.cache.del(`product:${id}`, tenantId)
-    
+
     return { success: true, message: 'Product deleted successfully' }
   }
 

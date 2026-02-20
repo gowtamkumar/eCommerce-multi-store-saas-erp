@@ -17,40 +17,40 @@ export class CartItemEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'cart_id' })
     cartId: string;
 
     @ManyToOne(() => CartEntity, (cart) => cart.items, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'cartId' })
+    @JoinColumn({ name: 'cart_id' })
     cart: CartEntity;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'product_id' })
     productId: string;
 
     @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'productId' })
+    @JoinColumn({ name: 'product_id' })
     product: ProductEntity;
 
-    @Column({ type: 'uuid', nullable: true })
+    @Column({ type: 'uuid', nullable: true, name: 'variant_id' })
     variantId: string;
 
     @ManyToOne(() => ProductVariantEntity, { onDelete: 'SET NULL', nullable: true })
-    @JoinColumn({ name: 'variantId' })
+    @JoinColumn({ name: 'variant_id' })
     variant: ProductVariantEntity;
 
     @Column({ type: 'int', default: 1 })
     quantity: number;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
 
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'tenantId' })
+    @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
 
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 }

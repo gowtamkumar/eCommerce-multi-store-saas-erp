@@ -42,6 +42,7 @@ export interface Product {
   faqs?: Array<{ question: string; answer: string; order?: number }>;
   attributes?: ProductAttribute[];
   variants?: ProductVariant[];
+  landingPage?: { id: string; slug: string };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -49,11 +50,11 @@ export interface Product {
 
 
 export interface Review {
-    id: string;
-    customerName: string;
-    customerEmail: string;
-    rating: number;
-    comment: string;
-    status: 'pending' | 'approved' | 'rejected';
-    createdAt: string;
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  rating: number;
+  comment: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
 }

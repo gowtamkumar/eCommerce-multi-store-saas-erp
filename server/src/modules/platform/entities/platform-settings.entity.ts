@@ -5,13 +5,13 @@ export class PlatformSettingsEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'brand_name' })
   brandName: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'brand_logo' })
   brandLogo: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'support_email' })
   supportEmail: string;
 
   @Column({ type: 'jsonb', nullable: true })
@@ -45,6 +45,6 @@ export class PlatformSettingsEntity {
     };
   };
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date;
 }

@@ -29,19 +29,19 @@ export class ProductVariantEntity {
     @Column({ type: 'jsonb' })
     combination: Record<string, string>; // e.g., { "Color": "Red", "Size": "XL" }
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'product_id' })
     productId: string;
 
     @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'productId' })
+    @JoinColumn({ name: 'product_id' })
     product: ProductEntity;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
 
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 }

@@ -17,18 +17,18 @@ export class OrderReturnEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'order_id' })
     orderId: string;
 
     @ManyToOne(() => OrderEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'orderId' })
+    @JoinColumn({ name: 'order_id' })
     order: OrderEntity;
 
-    @Column({ type: 'uuid', nullable: true })
+    @Column({ type: 'uuid', name: 'user_id' })
     userId: string;
 
     @ManyToOne(() => UserEntity, { onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'userId' })
+    @JoinColumn({ name: 'user_id' })
     user: UserEntity;
 
     @Column({
@@ -41,26 +41,26 @@ export class OrderReturnEntity {
     @Column({ type: 'text' })
     reason: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', name: 'admin_comment', nullable: true })
     adminComment: string;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    @Column({ type: 'decimal', name: 'refund_amount', precision: 10, scale: 2, nullable: true })
     refundAmount: number;
 
     // Stores which items are returned: [{ productId, variantId, quantity }]
     @Column({ type: 'jsonb' })
     items: any[];
 
-    @Column({ type: 'uuid' })
+    @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
 
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'tenantId' })
+    @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
 
-    @CreateDateColumn({ type: 'timestamptz' })
+    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz' })
+    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 }

@@ -8,7 +8,6 @@ export const SwaggerConfig = (app: INestApplication) => {
         .setTitle('eCommerce Multi Tenant SaaS')
         .setDescription('The eCommerce Multi Tenant SaaS API description')
         .setVersion('1.0')
-        .addTag('Subscription Plans')
         .build();
     const documentFactory = () => SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, documentFactory)
