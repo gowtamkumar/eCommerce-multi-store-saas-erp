@@ -57,7 +57,4 @@ export class ReviewEntity {
     @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
     updatedAt: Date;
 
-    @Column({ name: 'renamemigration' })
-    renamemigration: string;
-
 }

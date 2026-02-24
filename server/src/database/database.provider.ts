@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config'
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm'
 
 const defaultConnection = (configService: ConfigService): TypeOrmModuleOptions => {
-  const isProduction = configService.get<string>('NODE_ENV') === 'production'
+  // const isProduction = configService.get<string>('NODE_ENV') === 'production'
 
   return {
     type: 'postgres',

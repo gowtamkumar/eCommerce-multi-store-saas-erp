@@ -46,6 +46,17 @@ You might see `synchronize: true` in some TypeORM tutorials. **Never use this in
 - **Synchronize** will try to make the database match your entities automatically. If you delete a property in your entity, it might delete the column and **all your data** along with it.
 - **Migrations** are explicit. You can see exactly what SQL will run, you can test it, and you can roll it back if something goes wrong.
 
+### ⚠️ The "Synchronize Trap" (Important!)
+Some developers think: *"I will use `synchronize: true` in dev to be fast, and migrations in production."*
+**This is a trap.** Here is why:
+- `migration:generate` works by comparing your **Entities** to your **Database**.
+- If `synchronize: true` has already updated your dev database, TypeORM will think your database and entities are **identical**.
+- When you run `migration:generate`, it will create an **empty migration file**.
+- You will have nothing to commit to Git, and your production database will never get the updates.
+
+> [!CAUTION]
+> **Keep `synchronize: false` in development** if you intend to use migrations for production. This ensures your dev database reflects the state of your migrations, not just your entities.
+
 ### The Migration Workflow (Step-by-Step)
 
 Follow these steps whenever you need to change the database schema (add/remove columns, create tables, etc.):
@@ -181,7 +192,19 @@ In production, your `AppDataSource` will look for a `.env.production` file or sy
 
 ---
 
-## 6. Development Workflow
+## 7. Summary: Dev vs Prod Workflow
+
+| Activity | Development Environment | Production Environment |
+| :--- | :--- | :--- |
+| **Change Entities?** | ✅ Yes | ❌ Never |
+| **Generate Migrations?** | ✅ Yes (always) | ❌ Never |
+| **Run Migrations?** | ✅ Yes | ✅ Yes (during deploy) |
+| **Revert Migrations?** | ✅ Yes (to fix mistakes) | ⚠️ Only if Emergency |
+| **Commit to Git?** | ✅ Yes (include migration files) | ❌ N/A |
+
+---
+
+## 8. Development Workflow
 
 ### Backend (NestJS)
 The backend is located in the `server` directory. It uses Hot Module Replacement (HMR) to reflect changes immediately when running in Docker.
