@@ -1,11 +1,8 @@
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config'
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm'
 
-
-const defaultConnection = (
-  configService: ConfigService,
-): TypeOrmModuleOptions => {
-  const isProduction = configService.get<string>('NODE_ENV') === 'production';
+const defaultConnection = (configService: ConfigService): TypeOrmModuleOptions => {
+  const isProduction = configService.get<string>('NODE_ENV') === 'production'
 
   return {
     type: 'postgres',
@@ -15,14 +12,15 @@ const defaultConnection = (
     password: configService.get<string>('DB_PASSWORD'),
     database: configService.get<string>('DB_DATABASE'),
     autoLoadEntities: true,
-    synchronize: !isProduction,
-  };
-};
+    synchronize: false,
+    logging: true,
+  }
+}
 
 export const databaseProvider = [
   TypeOrmModule.forRootAsync({
-    // imports: [ConfigModule], 
+    // imports: [ConfigModule],
     inject: [ConfigService],
     useFactory: defaultConnection,
   }),
-];
+]

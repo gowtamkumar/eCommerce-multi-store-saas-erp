@@ -22,4 +22,6 @@ export class SubscriberEntity {
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date;
+
+
 }
