@@ -1,13 +1,13 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { ReturnStatus } from 'src/common/enums/return-status.enum';
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
+import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
 } from 'typeorm';
-import { ReturnStatus } from '../../../common/enums/return-status.enum';
-import { UserEntity } from '../../admin/user/entities/user.entity';
-import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { OrderEntity } from './order.entity';
 
 @Entity('order_returns')

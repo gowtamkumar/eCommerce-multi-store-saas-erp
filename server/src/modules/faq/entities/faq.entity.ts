@@ -1,14 +1,14 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { FaqStatus } from 'src/common/enums/faq-status.enum';
+import { PageEntity } from 'src/modules/page/entities/page.entity';
+import { ProductEntity } from 'src/modules/product/entities/product.entity';
+import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
 } from 'typeorm';
-import { FaqStatus } from '../../../common/enums/faq-status.enum';
-import { PageEntity } from '../../page/entities/page.entity';
-import { ProductEntity } from '../../product/entities/product.entity';
-import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
 @Entity('faqs')
 export class FaqEntity extends BaseEntity {

@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: postgres-db-dev
+    container_name: multi_tenant_postgres_db_dev
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -11,12 +11,12 @@ services:
     ports:
       - "5434:5432"
     networks:
-      - main_network
+      - multi_tenant_main_network
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   pgadmin:
-    container_name: pgadmin_ecommerce
+    container_name: multi_tenant_pgadmin_ecommerce
     image: dpage/pgadmin4:latest
     environment:
       - PGADMIN_DEFAULT_EMAIL=gowtampaul0@gmail.com
@@ -26,36 +26,36 @@ services:
     depends_on:
       - postgres
     networks:
-      - main_network
+      - multi_tenant_main_network
 
   redis:
     image: redis:7-alpine
-    container_name: redis-dev
+    container_name: multi_tenant_redis_dev
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data # Optional: Persist Redis data
     networks:
-      - main_network
+      - multi_tenant_main_network
 
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: redis-commander-dev
+    container_name: multi_tenant_redis_commander_dev
     environment:
-      - REDIS_HOST=redis-dev
+      - REDIS_HOST=redis
       - REDIS_PORT=6379
     ports:
       - "8088:8081"
     depends_on:
       - redis
     networks:
-      - main_network
+      - multi_tenant_main_network
 
   server:
     build:
       context: ./server
       dockerfile: Dockerfile.dev
-    container_name: server-dev
+    container_name: multi_tenant_server_dev
     ports:
       - "3900:3900"
     env_file:
@@ -67,13 +67,13 @@ services:
       - postgres
       - redis
     networks:
-      - main_network
+      - multi_tenant_main_network
 
   client:
     build:
       context: ./client
       dockerfile: Dockerfile.dev
-    container_name: client-dev
+    container_name: multi_tenant_client_dev
     ports:
       - "3000:3000"
     env_file:
@@ -83,10 +83,10 @@ services:
       - /app/node_modules
       - /app/.next
     networks:
-      - main_network
+      - multi_tenant_main_network
 
 networks:
-  main_network:
+  multi_tenant_main_network:
     driver: bridge
 
 volumes:

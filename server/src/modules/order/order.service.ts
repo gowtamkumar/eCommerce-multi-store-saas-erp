@@ -4,10 +4,10 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { LeadStatus } from 'src/common/enums/lead-status.enum';
+import { OrderStatus } from 'src/common/enums/order-status.enum';
+import { PaymentStatus } from 'src/common/enums/payment-status.enum';
 import { Brackets, Repository } from 'typeorm';
-import { LeadStatus } from '../../common/enums/lead-status.enum';
-import { OrderStatus } from '../../common/enums/order-status.enum';
-import { PaymentStatus } from '../../common/enums/payment-status.enum';
 import { UserEntity } from '../admin/user/entities/user.entity';
 import { CartService } from '../cart/cart.service';
 import { LeadEntity } from '../lead/entities/lead.entity';

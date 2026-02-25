@@ -1,12 +1,13 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { LeadStatus } from 'src/common/enums/lead-status.enum';
+import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
 import {
     Column,
     Entity,
     JoinColumn,
     ManyToOne,
 } from 'typeorm';
-import { LeadStatus } from '../../../common/enums/lead-status.enum';
-import { TenantEntity } from '../../tenant/entities/tenant.entity';
+
 
 @Entity('leads')
 export class LeadEntity extends BaseEntity {

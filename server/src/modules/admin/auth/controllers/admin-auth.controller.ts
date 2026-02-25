@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Post, Req, Res, UseGuards } from '@nestjs/common'
 import { Request, Response } from 'express'
-import { TenantId } from '../../../../common/decorators/tenant-id.decorator'
-import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard'
+import { TenantId } from 'src/common/decorators/tenant-id.decorator'
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { LoginCredentialDto } from '../dtos'
 import { AuthService } from '../services/auth.service'
 

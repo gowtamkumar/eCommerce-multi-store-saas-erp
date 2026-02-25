@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { TenantId } from '../../common/decorators/tenant-id.decorator';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { TenantId } from 'src/common/decorators/tenant-id.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CreateFaqDto, UpdateFaqDto } from './dto/faq.dto';
 import { FilterFaqDto } from './dto/filter-faq.dto';
 import { FaqService } from './faq.service';

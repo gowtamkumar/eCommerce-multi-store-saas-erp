@@ -1,15 +1,15 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { OrderStatus } from 'src/common/enums/order-status.enum';
+import { PaymentMethod } from 'src/common/enums/payment-method.enum';
+import { PaymentStatus } from 'src/common/enums/payment-status.enum';
+import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
 import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
+    Column,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+    OneToMany,
 } from 'typeorm';
-import { OrderStatus } from '../../../common/enums/order-status.enum';
-import { PaymentMethod } from '../../../common/enums/payment-method.enum';
-import { PaymentStatus } from '../../../common/enums/payment-status.enum';
-import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { OrderItemEntity } from './order-item.entity';
 import { OrderReturnEntity } from './order-return.entity';
 

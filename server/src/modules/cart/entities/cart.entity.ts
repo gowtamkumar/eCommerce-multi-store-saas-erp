@@ -1,13 +1,13 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
+import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
 import {
-    Column,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    OneToMany,
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
 } from 'typeorm';
-import { UserEntity } from '../../admin/user/entities/user.entity';
-import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { CartItemEntity } from './cart-item.entity';
 
 @Entity('carts')

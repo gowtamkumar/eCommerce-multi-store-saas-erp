@@ -1,11 +1,11 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
 import {
     Column,
     Entity,
     JoinColumn,
     ManyToOne,
 } from 'typeorm';
-import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
 @Entity('brands')
 export class BrandEntity extends BaseEntity {

@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LeadEntity } from './entities/lead.entity';
 import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto';
+import { LeadEntity } from './entities/lead.entity';
 
 @Injectable()
 export class LeadService {

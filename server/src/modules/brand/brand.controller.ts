@@ -8,9 +8,9 @@ import {
     Put,
     UseGuards,
 } from '@nestjs/common';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { TenantId } from '../../common/decorators/tenant-id.decorator';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { TenantId } from 'src/common/decorators/tenant-id.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { BrandService } from './brand.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';

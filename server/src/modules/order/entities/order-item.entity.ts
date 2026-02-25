@@ -1,13 +1,13 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { ProductEntity } from 'src/modules/product/entities/product.entity';
+import { ProductVariantEntity } from 'src/modules/product/entities/variant.entity';
+import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
 } from 'typeorm';
-import { ProductEntity } from '../../product/entities/product.entity';
-import { ProductVariantEntity } from '../../product/entities/variant.entity';
-import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { OrderEntity } from './order.entity';
 
 @Entity('order_items')

@@ -8,18 +8,17 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  Put,
   Query,
-  UseGuards,
+  UseGuards
 } from '@nestjs/common'
+import { CurrentUser } from 'src/common/decorators/current-user.decorator'
+import { TenantId } from 'src/common/decorators/tenant-id.decorator'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
-import { TenantId } from '../../../../common/decorators/tenant-id.decorator'
 import { CreateUserDto } from '../dtos/create-user.dto'
 import { FilterUserDto } from '../dtos/filter-user.dto'
 import { UpdatePasswordDto } from '../dtos/update-password.dto'
 import { UpdateUserDto } from '../dtos/update-user.dto'
 import { UserService } from '../services/user.service'
-import { CurrentUser } from 'src/common/decorators/current-user.decorator'
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')

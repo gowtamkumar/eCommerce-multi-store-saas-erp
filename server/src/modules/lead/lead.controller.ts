@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Param, Patch, Query } from '@nestjs/common';
-import { LeadService } from './lead.service';
-import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { TenantId } from 'src/common/decorators/tenant-id.decorator';
 import { FilterLeadDto } from './dto/filter-lead.dto';
-import { TenantId } from '../../common/decorators/tenant-id.decorator';
+import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto';
+import { LeadService } from './lead.service';
 
 @Controller('leads')
 export class LeadController {
