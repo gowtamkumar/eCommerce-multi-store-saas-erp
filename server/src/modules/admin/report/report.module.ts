@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { OrderModule } from '../../order/order.module';
-import { PageModule } from '../../page/page.module';
-import { PaymentModule } from '../../payment/payment.module';
-import { ProductModule } from '../../product/product.module';
-import { SuperAdminModule } from '../../super-admin/super-admin.module';
-import { UserModule } from '../user/user.module';
-import { ReportController } from './report.controller';
+import { ReportController } from 'src/modules/admin/report/report.controller';
+import { UserModule } from 'src/modules/admin/user/user.module';
+import { OrderModule } from 'src/modules/order/order.module';
+import { PageModule } from 'src/modules/page/page.module';
+import { PaymentModule } from 'src/modules/payment/payment.module';
+import { ProductModule } from 'src/modules/product/product.module';
+import { SuperAdminModule } from 'src/modules/system-platform/super-admin/super-admin.module';
 
 @Module({
     imports: [

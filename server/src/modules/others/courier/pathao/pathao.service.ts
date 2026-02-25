@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config'
 import { firstValueFrom } from 'rxjs'
 import { OrderStatus } from 'src/common/enums/order-status.enum'
 import { OrderService } from 'src/modules/order/order.service'
-import { SettingsService } from '../../settings/settings.service'
+import { SettingsService } from 'src/modules/settings/settings.service'
 import { CreatePathaoOrderDto } from './dto/create-order.dto'
 
 @Injectable()

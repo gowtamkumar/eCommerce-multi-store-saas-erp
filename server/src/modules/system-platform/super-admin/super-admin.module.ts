@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { SuperAdminController } from './super-admin.controller';
-import { UserModule } from '../admin/user/user.module';
-import { TenantModule } from '../tenant/tenant.module';
-import { OrderModule } from '../order/order.module';
-import { ReviewModule } from '../review/review.module';
-import { ProductModule } from '../product/product.module';
-import { PageModule } from '../page/page.module';
-import { TrafficService } from './traffic.service';
-import { TenantTrafficEntity } from './entities/tenant-traffic.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { TrafficInterceptor } from 'src/common/interceptors/traffic.interceptor';
+import { UserModule } from 'src/modules/admin/user/user.module';
+import { OrderModule } from 'src/modules/order/order.module';
+import { PageModule } from 'src/modules/page/page.module';
+import { ProductModule } from 'src/modules/product/product.module';
+import { ReviewModule } from 'src/modules/review/review.module';
+import { TenantModule } from 'src/modules/tenant/tenant.module';
 import { PageTrafficEntity } from './entities/page-traffic.entity';
-import { TrafficInterceptor } from '../../common/interceptors/traffic.interceptor';
+import { TenantTrafficEntity } from './entities/tenant-traffic.entity';
+import { SuperAdminController } from './super-admin.controller';
+import { TrafficService } from './traffic.service';
 
 @Module({
     imports: [

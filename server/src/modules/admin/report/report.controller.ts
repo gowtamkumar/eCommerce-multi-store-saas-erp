@@ -1,11 +1,11 @@
 import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common'
+import { OrderStatus } from 'src/common/enums/order-status.enum'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
-import { OrderStatus } from '../../../common/enums/order-status.enum'
-import { OrderService } from '../../order/order.service'
-import { PageService } from '../../page/page.service'
-import { PaymentService } from '../../payment/payment.service'
-import { ProductService } from '../../product/product.service'
-import { TrafficService } from '../../super-admin/traffic.service'
+import { OrderService } from 'src/modules/order/order.service'
+import { PageService } from 'src/modules/page/page.service'
+import { PaymentService } from 'src/modules/payment/payment.service'
+import { ProductService } from 'src/modules/product/product.service'
+import { TrafficService } from 'src/modules/system-platform/super-admin/traffic.service'
 import { UserService } from '../user/services/user.service'
 
 @Controller('report')

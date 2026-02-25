@@ -11,28 +11,20 @@ import { TenantContextMiddleware } from './common/middleware/tenant-context.midd
 import { DatabaseModule } from './database/database.module'
 import { AdminModule } from './modules/admin/admin.module'
 import { BrandModule } from './modules/brand/brand.module'
-import { CacheModule } from './modules/cache/cache.module'
 import { CartModule } from './modules/cart/cart.module'
 import { CategoryModule } from './modules/category/category.module'
-import { PathaoModule } from './modules/courier/pathao/pathao.module'
-import { SteadfastModule } from './modules/courier/steadfast/steadfast.module'
 import { FaqModule } from './modules/faq/faq.module'
-import { FileModule } from './modules/file/file.module'
 import { LeadModule } from './modules/lead/lead.module'
-import { MailModule } from './modules/mail/mail.module'
 import { OrderModule } from './modules/order/order.module'
+import { OthersModule } from './modules/others/others.module'
 import { PageModule } from './modules/page/page.module'
 import { PaymentModule } from './modules/payment/payment.module'
-import { PlatformModule } from './modules/platform/platform.module'
 import { ProductModule } from './modules/product/product.module'
 import { ReviewModule } from './modules/review/review.module'
 import { SettingsModule } from './modules/settings/settings.module'
-import { SubscriptionPlanModule } from './modules/subscription-plan/subscription-plan.module'
-import { SuperAdminModule } from './modules/super-admin/super-admin.module'
-import { TenantModule } from './modules/tenant/tenant.module'
-import { TrackingModule } from './modules/tracking/tracking.module'
-
 import { SubscriberModule } from './modules/subscriber/subscriber.module'
+import { SystemPlatformModule } from './modules/system-platform/system-platform.module'
+import { TenantModule } from './modules/tenant/tenant.module'
 
 @Module({
   imports: [
@@ -46,7 +38,6 @@ import { SubscriberModule } from './modules/subscriber/subscriber.module'
     }),
     AdminModule,
     DatabaseModule,
-    FileModule,
     TenantModule,
     BrandModule,
     ProductModule,
@@ -57,17 +48,11 @@ import { SubscriberModule } from './modules/subscriber/subscriber.module'
     PageModule,
     SettingsModule,
     PaymentModule,
-    SuperAdminModule,
-    MailModule,
     CategoryModule,
     CartModule,
-    PlatformModule,
-    TrackingModule,
-    SubscriptionPlanModule,
-    CacheModule,
-    PathaoModule,
-    SteadfastModule,
+    OthersModule,
     SubscriberModule,
+    SystemPlatformModule,
   ],
   controllers: [],
   providers: [

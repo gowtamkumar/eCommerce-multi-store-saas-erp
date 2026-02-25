@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Headers, Req } from '@nestjs/common';
+import { Body, Controller, Headers, Post, Req } from '@nestjs/common';
 import { TrafficService } from '../super-admin/traffic.service';
 
 @Controller('tracking')

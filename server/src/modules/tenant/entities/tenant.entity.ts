@@ -1,7 +1,7 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
-import { SubscriptionBillingCycle } from '../../../common/enums/subscription/billing-cycle.enum'
-import { SubscriptionStatus } from '../../../common/enums/subscription/subscription-status.enum'
-import { SubscriptionPlanEntity } from '../../subscription-plan/entities/subscription-plan.entity'
+import { SubscriptionBillingCycle } from 'src/common/enums/subscription/billing-cycle.enum'
+import { SubscriptionStatus } from 'src/common/enums/subscription/subscription-status.enum'
+import { SubscriptionPlanEntity } from 'src/modules/system-platform/subscription-plan/entities/subscription-plan.entity'
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
 @Entity('tenants')
 export class TenantEntity {

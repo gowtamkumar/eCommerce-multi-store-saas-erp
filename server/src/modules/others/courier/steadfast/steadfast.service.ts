@@ -3,8 +3,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
-import { OrderService } from '../../order/order.service';
-import { SettingsService } from '../../settings/settings.service';
+import { OrderService } from 'src/modules/order/order.service';
+import { SettingsService } from 'src/modules/settings/settings.service';
 import { CreateSteadfastOrderDto } from './dto/create-order.dto';
 
 @Injectable()

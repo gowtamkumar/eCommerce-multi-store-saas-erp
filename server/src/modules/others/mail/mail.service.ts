@@ -2,9 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as nodemailer from 'nodemailer';
+import { SiteSettingsEntity } from 'src/modules/settings/entities/site-settings.entity';
+import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
 import { Repository } from 'typeorm';
-import { SiteSettingsEntity } from '../settings/entities/site-settings.entity';
-import { TenantEntity } from '../tenant/entities/tenant.entity';
 
 @Injectable()
 export class MailService {

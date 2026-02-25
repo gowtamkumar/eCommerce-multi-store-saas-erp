@@ -1,3 +1,4 @@
+import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity'
 import {
     Column,
     CreateDateColumn,
@@ -6,7 +7,6 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm'
-import { TenantEntity } from '../../tenant/entities/tenant.entity'
 
 @Entity('subscription_plans')
 export class SubscriptionPlanEntity {

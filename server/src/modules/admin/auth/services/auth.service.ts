@@ -8,14 +8,13 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as crypto from 'crypto'
-import { MailService } from '../../../mail/mail.service'
-import { CreateUserDto } from '../../user/dtos/create-user.dto'
-import { UserDto } from '../../user/dtos/user.dto'
-import { UserService } from '../../user/services/user.service'
-import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
-
 import { UserRole } from 'src/common/enums/user/user-role.enum'
-import { TenantService } from '../../../tenant/tenant.service'
+import { CreateUserDto } from 'src/modules/admin/user/dtos/create-user.dto'
+import { UserDto } from 'src/modules/admin/user/dtos/user.dto'
+import { UserService } from 'src/modules/admin/user/services/user.service'
+import { MailService } from 'src/modules/others/mail/mail.service'
+import { TenantService } from 'src/modules/tenant/tenant.service'
+import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 
 @Injectable()
 export class AuthService {

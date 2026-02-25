@@ -9,16 +9,16 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
-import { Roles } from '../../common/decorators/roles.decorator'
-import { UserRole } from '../../common/enums/user/user-role.enum'
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
-import { RolesGuard } from '../../common/guards/roles.guard'
-import { UserService } from '../admin/user/services/user.service'
-import { OrderService } from '../order/order.service'
-import { PageService } from '../page/page.service'
-import { ProductService } from '../product/product.service'
-import { ReviewService } from '../review/review.service'
-import { TenantService } from '../tenant/tenant.service'
+import { Roles } from 'src/common/decorators/roles.decorator'
+import { UserRole } from 'src/common/enums/user/user-role.enum'
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
+import { RolesGuard } from 'src/common/guards/roles.guard'
+import { UserService } from 'src/modules/admin/user/services/user.service'
+import { OrderService } from 'src/modules/order/order.service'
+import { PageService } from 'src/modules/page/page.service'
+import { ProductService } from 'src/modules/product/product.service'
+import { ReviewService } from 'src/modules/review/review.service'
+import { TenantService } from 'src/modules/tenant/tenant.service'
 
 import { TrafficService } from './traffic.service'
 

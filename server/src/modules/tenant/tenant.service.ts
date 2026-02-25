@@ -7,9 +7,9 @@ import { SubscriptionBillingCycle } from '../../common/enums/subscription/billin
 import { SubscriptionStatus } from '../../common/enums/subscription/subscription-status.enum'
 import { UserRole } from '../../common/enums/user/user-role.enum'
 import { UserEntity } from '../admin/user/entities/user.entity'
-import { MailService } from '../mail/mail.service'
+import { MailService } from '../others/mail/mail.service'
 import { SettingsService } from '../settings/settings.service'
-import { SubscriptionPlanService } from '../subscription-plan/subscription-plan.service'
+import { SubscriptionPlanService } from '../system-platform/subscription-plan/subscription-plan.service'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantEntity } from './entities/tenant.entity'
 

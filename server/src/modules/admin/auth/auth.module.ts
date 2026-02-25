@@ -2,14 +2,14 @@ import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
-import { JwtAuthStrategy } from '../../../common/strategies/jwt-auth.strategy'
+import { JwtAuthStrategy } from 'src/common/strategies/jwt-auth.strategy'
 import { TenantModule } from '../../tenant/tenant.module'
 import { UserModule } from '../user/user.module'
 import { AdminAuthController } from './controllers/admin-auth.controller'
 import { AuthController } from './controllers/auth.controller'
 import { AuthService } from './services/auth.service'
 
-import { MailModule } from '../../mail/mail.module'
+import { MailModule } from 'src/modules/others/mail/mail.module'
 
 @Module({
   imports: [
