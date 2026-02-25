@@ -1,28 +1,24 @@
-import { ReviewEntity } from 'src/modules/review/entities/review.entity'
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { ReviewEntity } from 'src/modules/review/entities/review.entity';
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
-  OneToOne,
   ManyToOne,
   OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm'
-import { ProductStatus } from '../../../common/enums/product-status.enum'
-import { BrandEntity } from '../../brand/entities/brand.entity'
-import { CategoryEntity } from '../../category/entities/category.entity'
-import { FaqEntity } from '../../faq/entities/faq.entity'
-import { TenantEntity } from '../../tenant/entities/tenant.entity'
-import { PageEntity } from '../../page/entities/page.entity'
-import { ProductAttributeEntity } from './attribute.entity'
-import { ProductVariantEntity } from './variant.entity'
+  OneToOne,
+} from 'typeorm';
+import { ProductStatus } from '../../../common/enums/product-status.enum';
+import { BrandEntity } from '../../brand/entities/brand.entity';
+import { CategoryEntity } from '../../category/entities/category.entity';
+import { FaqEntity } from '../../faq/entities/faq.entity';
+import { PageEntity } from '../../page/entities/page.entity';
+import { TenantEntity } from '../../tenant/entities/tenant.entity';
+import { ProductAttributeEntity } from './attribute.entity';
+import { ProductVariantEntity } from './variant.entity';
 
 @Entity('products')
-export class ProductEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string
+export class ProductEntity extends BaseEntity {
 
   @Column({ type: 'varchar', length: 255 })
   name: string
@@ -109,9 +105,5 @@ export class ProductEntity {
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 
-  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  createdAt: Date
 
-  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date
 }

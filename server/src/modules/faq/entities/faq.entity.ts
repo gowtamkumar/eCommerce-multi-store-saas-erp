@@ -1,11 +1,9 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { FaqStatus } from '../../../common/enums/faq-status.enum';
 import { PageEntity } from '../../page/entities/page.entity';
@@ -13,10 +11,7 @@ import { ProductEntity } from '../../product/entities/product.entity';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
 @Entity('faqs')
-export class FaqEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
-
+export class FaqEntity extends BaseEntity {
     @Column({ type: 'text' })
     question: string;
 
@@ -56,10 +51,4 @@ export class FaqEntity {
     @ManyToOne(() => PageEntity, { onDelete: 'CASCADE', nullable: true })
     @JoinColumn({ name: 'page_id' })
     page: PageEntity;
-
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date;
-
-    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-    updatedAt: Date;
 }

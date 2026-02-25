@@ -1,12 +1,10 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import {
-    Entity,
-    Column,
-    PrimaryGeneratedColumn,
-    CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
-    JoinColumn,
-    Index,
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { ReviewStatus } from '../../../common/enums/review-status.enum';
 import { ProductEntity } from '../../product/entities/product.entity';
@@ -14,9 +12,7 @@ import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
 @Entity('reviews')
 @Index(['productId', 'status'])
-export class ReviewEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+export class ReviewEntity extends BaseEntity {
 
     @Column({ type: 'uuid', name: 'product_id' })
     productId: string;
@@ -51,10 +47,6 @@ export class ReviewEntity {
     @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
 
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-    updatedAt: Date;
 
 }

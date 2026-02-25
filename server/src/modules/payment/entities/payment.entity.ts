@@ -1,19 +1,15 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import {
-    Entity,
-    Column,
-    PrimaryGeneratedColumn,
-    CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
-    JoinColumn,
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { OrderEntity } from '../../order/entities/order.entity';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
 @Entity('payments')
-export class PaymentEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+export class PaymentEntity extends BaseEntity {
 
     @Column({ type: 'uuid', name: 'order_id' })
     orderId: string;
@@ -55,9 +51,5 @@ export class PaymentEntity {
     @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
 
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-    updatedAt: Date;
 }

@@ -1,12 +1,11 @@
-import { SubscriptionBillingCycle } from 'src/common/enums/subscription/billing-cycle.enum'
-import { SubscriptionStatus } from 'src/common/enums/subscription/subscription-status.enum'
-import { SubscriptionPlanEntity } from 'src/modules/system-platform/subscription-plan/entities/subscription-plan.entity'
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { SubscriptionBillingCycle } from 'src/common/enums/subscription/billing-cycle.enum';
+import { SubscriptionStatus } from 'src/common/enums/subscription/subscription-status.enum';
+import { SubscriptionPlanEntity } from 'src/modules/system-platform/subscription-plan/entities/subscription-plan.entity';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity('tenants')
-export class TenantEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string
+export class TenantEntity extends BaseEntity {
 
 
   @Column({ name: 'store_name' })
@@ -39,11 +38,7 @@ export class TenantEntity {
   @Column({ name: 'ssl_enabled', default: false })
   sslEnabled: boolean
 
-  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  createdAt: Date
 
-  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date
 
   @Column({ name: 'subscription_plan_id', nullable: true })
   subscriptionPlanId: string

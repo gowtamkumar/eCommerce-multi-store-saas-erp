@@ -1,9 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { Column, Entity } from 'typeorm';
 
 @Entity('files')
-export class FileEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class FileEntity extends BaseEntity {
 
   @Column()
   fieldname: string; // Photo, Signature, etc

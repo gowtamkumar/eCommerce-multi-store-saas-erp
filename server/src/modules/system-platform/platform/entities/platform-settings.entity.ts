@@ -1,9 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { Column, Entity } from 'typeorm';
 
 @Entity('platform_settings')
-export class PlatformSettingsEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class PlatformSettingsEntity extends BaseEntity {
 
   @Column({ nullable: true, name: 'brand_name' })
   brandName: string;
@@ -45,6 +44,5 @@ export class PlatformSettingsEntity {
     };
   };
 
-  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date;
+
 }

@@ -1,18 +1,14 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { ProductEntity } from './product.entity';
 
 @Entity('product_variants')
-export class ProductVariantEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+export class ProductVariantEntity extends BaseEntity {
 
     @Column({ type: 'varchar', length: 255 })
     sku: string;
@@ -39,9 +35,5 @@ export class ProductVariantEntity {
     @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
 
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-    updatedAt: Date;
 }

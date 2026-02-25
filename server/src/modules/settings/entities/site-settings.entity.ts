@@ -1,20 +1,16 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from '../dto/index';
 
 
 @Entity('site_settings')
-export class SiteSettingsEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+export class SiteSettingsEntity extends BaseEntity {
 
     @Column({ nullable: true })
     logo: string;
@@ -86,9 +82,5 @@ export class SiteSettingsEntity {
     @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
 
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-    updatedAt: Date;
 }

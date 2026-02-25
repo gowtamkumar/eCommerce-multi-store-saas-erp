@@ -1,12 +1,10 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    OneToMany,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { OrderStatus } from '../../../common/enums/order-status.enum';
 import { PaymentMethod } from '../../../common/enums/payment-method.enum';
@@ -16,10 +14,7 @@ import { OrderItemEntity } from './order-item.entity';
 import { OrderReturnEntity } from './order-return.entity';
 
 @Entity('orders')
-export class OrderEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
-
+export class OrderEntity extends BaseEntity {
     @Column({ type: 'varchar', name: 'customer_name', length: 255 })
     customerName: string;
 
@@ -86,10 +81,5 @@ export class OrderEntity {
 
     @Column({ type: 'varchar', name: 'courier_status', length: 255, nullable: true })
     courierStatus: string;
-
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date;
-
-    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-    updatedAt: Date;
 }
+

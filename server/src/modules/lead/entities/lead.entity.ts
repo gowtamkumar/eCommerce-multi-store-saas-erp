@@ -1,20 +1,15 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import {
     Column,
-    CreateDateColumn,
     Entity,
     JoinColumn,
     ManyToOne,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
 } from 'typeorm';
 import { LeadStatus } from '../../../common/enums/lead-status.enum';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
 @Entity('leads')
-export class LeadEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
-
+export class LeadEntity extends BaseEntity {
     @Column({ type: 'varchar', length: 255, nullable: true })
     name: string;
 
@@ -46,10 +41,5 @@ export class LeadEntity {
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
-
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date;
-
-    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-    updatedAt: Date;
 }
+

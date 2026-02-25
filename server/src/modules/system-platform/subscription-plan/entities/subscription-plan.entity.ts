@@ -1,17 +1,13 @@
-import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity'
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
 import {
     Column,
-    CreateDateColumn,
     Entity,
     OneToMany,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
-} from 'typeorm'
+} from 'typeorm';
 
 @Entity('subscription_plans')
-export class SubscriptionPlanEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string
+export class SubscriptionPlanEntity extends BaseEntity {
 
     @Column({ type: 'varchar', length: 255 })
     name: string
@@ -31,9 +27,5 @@ export class SubscriptionPlanEntity {
     @OneToMany(() => TenantEntity, (tenant) => tenant.subscriptionPlan)
     tenants: TenantEntity[]
 
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date
 
-    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-    updatedAt: Date
 }

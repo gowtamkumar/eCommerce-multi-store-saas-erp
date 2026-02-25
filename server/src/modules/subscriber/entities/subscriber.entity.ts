@@ -1,15 +1,11 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import {
   Column,
-  CreateDateColumn,
   Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('subscribers')
-export class SubscriberEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class SubscriberEntity extends BaseEntity {
 
   @Column({ type: 'varchar', unique: true })
   email: string;
@@ -17,11 +13,7 @@ export class SubscriberEntity {
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive: boolean;
 
-  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date;
 
 
 }

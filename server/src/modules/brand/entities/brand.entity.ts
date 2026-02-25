@@ -1,19 +1,14 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import {
     Column,
-    CreateDateColumn,
     Entity,
     JoinColumn,
     ManyToOne,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
 } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
 @Entity('brands')
-export class BrandEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
-
+export class BrandEntity extends BaseEntity {
     @Column({ type: 'varchar', length: 255 })
     name: string;
 
@@ -35,10 +30,5 @@ export class BrandEntity {
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
-
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date;
-
-    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-    updatedAt: Date;
 }
+

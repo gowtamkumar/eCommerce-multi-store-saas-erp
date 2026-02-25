@@ -61,7 +61,7 @@ export class SteadfastService {
     const steadfastOrderData = {
       invoice: order.id.slice(-8).toUpperCase(),
       recipient_name: order.customerName,
-      recipient_phone: "formattedPhone",
+      recipient_phone: formattedPhone,
       recipient_address: order.address || 'Address not provided',
       cod_amount: Number(order.totalAmount) || 0,
       item_description: order.items?.map((item: any) =>

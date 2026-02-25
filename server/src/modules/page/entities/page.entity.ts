@@ -1,20 +1,16 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    Index,
-    JoinColumn,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
 @Entity('pages')
 @Index(['slug', 'tenantId'], { unique: true })
-export class PageEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+export class PageEntity extends BaseEntity {
 
     @Column({ type: 'varchar', length: 255 })
     title: string;
@@ -73,9 +69,5 @@ export class PageEntity {
     tenant: TenantEntity;
 
 
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-    updatedAt: Date;
 }

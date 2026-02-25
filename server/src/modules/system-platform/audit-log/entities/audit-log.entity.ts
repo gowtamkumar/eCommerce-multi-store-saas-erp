@@ -1,21 +1,18 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
 import {
     Column,
-    CreateDateColumn,
     Entity,
     Index,
     JoinColumn,
     ManyToOne,
-    PrimaryGeneratedColumn,
 } from 'typeorm';
 
 @Entity('audit_logs')
 @Index(['tenantId', 'createdAt'])
 @Index(['tenantId', 'entity', 'entityId'])
 @Index(['tenantId', 'userId'])
-export class AuditLogEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+export class AuditLogEntity extends BaseEntity {
 
     @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
@@ -50,6 +47,5 @@ export class AuditLogEntity {
     @Column({ type: 'text', name: 'user_agent', nullable: true })
     userAgent: string;
 
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date;
+
 }

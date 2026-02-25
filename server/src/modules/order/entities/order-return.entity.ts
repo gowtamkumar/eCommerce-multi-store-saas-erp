@@ -1,11 +1,9 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import {
-    Column,
-    CreateDateColumn,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-    UpdateDateColumn,
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { ReturnStatus } from '../../../common/enums/return-status.enum';
 import { UserEntity } from '../../admin/user/entities/user.entity';
@@ -13,10 +11,7 @@ import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { OrderEntity } from './order.entity';
 
 @Entity('order_returns')
-export class OrderReturnEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
-
+export class OrderReturnEntity extends BaseEntity {
     @Column({ type: 'uuid', name: 'order_id' })
     orderId: string;
 
@@ -57,10 +52,5 @@ export class OrderReturnEntity {
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
-
-    @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-    createdAt: Date;
-
-    @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-    updatedAt: Date;
 }
+

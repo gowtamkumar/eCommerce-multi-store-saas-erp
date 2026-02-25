@@ -1,10 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { Column, Entity, Unique } from 'typeorm';
 
 @Entity('tenant_traffic')
 @Unique(['tenantId', 'date'])
-export class TenantTrafficEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+export class TenantTrafficEntity extends BaseEntity {
 
     @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;
