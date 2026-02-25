@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ReportController } from 'src/modules/admin/report/report.controller';
 import { UserModule } from 'src/modules/admin/user/user.module';
 import { OrderModule } from 'src/modules/order/order.module';
+import { ReportController } from 'src/modules/others/report/report.controller';
 import { PageModule } from 'src/modules/page/page.module';
 import { PaymentModule } from 'src/modules/payment/payment.module';
 import { ProductModule } from 'src/modules/product/product.module';

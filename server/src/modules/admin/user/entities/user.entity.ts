@@ -1,24 +1,19 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import { UserRole } from 'src/common/enums/user/user-role.enum';
 import { UserStatus } from 'src/common/enums/user/user-status.enum';
 import {
   Column,
-  CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  ManyToOne
 } from 'typeorm';
 import { TenantEntity } from '../../../tenant/entities/tenant.entity';
 
 @Entity('users')
 @Index(['username', 'tenantId'], { unique: true })
 @Index(['email', 'tenantId'], { unique: true })
-export class UserEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class UserEntity extends BaseEntity {
   @Column()
   name: string;
 
@@ -66,19 +61,14 @@ export class UserEntity {
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.Active })
   status: UserStatus;
 
-  @Column({ nullable: true, select: false, name: 'refresh_token' })
+  @Column({ nullable: true, name: 'refresh_token' })
   refreshToken: string;
 
   @Column({ type: 'uuid', name: 'tenant_id', nullable: true })
   tenantId: string;
-
+  
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity;
 
-  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date;
 }

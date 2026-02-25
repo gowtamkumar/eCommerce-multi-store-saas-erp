@@ -6,7 +6,7 @@ import { PageService } from 'src/modules/page/page.service'
 import { PaymentService } from 'src/modules/payment/payment.service'
 import { ProductService } from 'src/modules/product/product.service'
 import { TrafficService } from 'src/modules/system-platform/super-admin/traffic.service'
-import { UserService } from '../user/services/user.service'
+import { UserService } from '../../admin/user/services/user.service'
 
 @Controller('report')
 @UseGuards(JwtAuthGuard)

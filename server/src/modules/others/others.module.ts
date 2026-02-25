@@ -4,10 +4,11 @@ import { PathaoModule } from './courier/pathao/pathao.module';
 import { SteadfastModule } from './courier/steadfast/steadfast.module';
 import { FileModule } from './file/file.module';
 import { MailModule } from './mail/mail.module';
+import { ReportModule } from './report/report.module';
 
 
 @Module({
-  imports: [FileModule,MailModule, PathaoModule, SteadfastModule, CacheModule],
+  imports: [FileModule,MailModule, PathaoModule, SteadfastModule, CacheModule, ReportModule],
   // exports: [FileModule,MailModule, PathaoModule, SteadfastModule, CacheModule],
 })
 export class OthersModule { }
