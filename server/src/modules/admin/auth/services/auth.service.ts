@@ -25,7 +25,7 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly tenantService: TenantService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   async register(registerCredentialDto: RegisterCredentialDto, tenantId: string) {
     this.logger.log(`${this.register.name} Service Called`)
@@ -64,10 +64,12 @@ export class AuthService {
   async login(loginCredentialsDto: LoginCredentialDto, tenantId: string) {
     this.logger.log(`${this.login.name} Service Called`)
 
-    // Check if tenant is suspended
-    const tenant = await this.tenantService.findOne(tenantId)
-    if (tenant && tenant.status === 'suspended') {
-      throw new UnauthorizedException('Store is suspended. Please contact support.')
+    // Check if tenant is suspended (skip for super admin who has no tenant)
+    if (tenantId) {
+      const tenant = await this.tenantService.findOne(tenantId)
+      if (tenant && tenant.status === 'suspended') {
+        throw new UnauthorizedException('Store is suspended. Please contact support.')
+      }
     }
 
     const { username, password } = loginCredentialsDto

@@ -79,6 +79,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+          console.log("before login");
+
           const data = await fetchAPI('/admin/login', {
             method: "POST",
             headers,
@@ -87,6 +89,9 @@ export const authOptions: NextAuthOptions = {
               password: credentials.password,
             }),
           });
+
+          console.log("data", data);
+
 
           if (data.success && data.data && data.data.user) {
             const user = data.data.user;
@@ -99,6 +104,8 @@ export const authOptions: NextAuthOptions = {
 
           throw new Error(data.message || "Authentication failed");
         } catch (error: unknown) {
+          console.log("error", error);
+
           const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
           console.error("Authorize internal fetch error:", errorMessage);
           throw new Error(errorMessage);

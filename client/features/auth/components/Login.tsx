@@ -26,6 +26,7 @@ export default function Login() {
                 redirect: false,
             });
 
+
             if (res?.error) {
                 setError(res.error);
             }
@@ -47,7 +48,7 @@ export default function Login() {
             } else {
                 console.error("Session missing user after login success. Session content:", JSON.stringify(session));
                 // fallback reload
-                window.location.reload();
+                // window.location.reload();
             }
 
 
