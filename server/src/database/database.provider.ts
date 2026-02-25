@@ -12,8 +12,8 @@ const defaultConnection = (configService: ConfigService): TypeOrmModuleOptions =
     password: configService.get<string>('DB_PASSWORD'),
     database: configService.get<string>('DB_DATABASE'),
     autoLoadEntities: true,
-    synchronize: !isProduction,
-    logging: true,
+    synchronize: false,
+    logging: false,
   }
 }
 

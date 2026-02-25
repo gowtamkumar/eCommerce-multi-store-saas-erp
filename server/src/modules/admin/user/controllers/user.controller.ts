@@ -9,7 +9,7 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards
+  UseGuards,
 } from '@nestjs/common'
 import { CurrentUser } from 'src/common/decorators/current-user.decorator'
 import { TenantId } from 'src/common/decorators/tenant-id.decorator'
@@ -25,7 +25,7 @@ import { UserService } from '../services/user.service'
 export class UserController {
   private readonly logger = new Logger(UserController.name)
 
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Get('/')
   async getUsers(@Query() filterUserDto: FilterUserDto, @TenantId() tenantId: string) {
@@ -87,7 +87,6 @@ export class UserController {
       data: user,
     }
   }
-
 
   @Patch('/update-password/:id')
   async updatePassword(

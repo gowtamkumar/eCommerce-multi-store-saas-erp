@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, Query } from '@nestjs/common'
+import { Body, Controller, Get, Logger, Post, Put, Query } from '@nestjs/common'
 import { TenantId } from '../../common/decorators/tenant-id.decorator'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantLookupDto } from './dto/tenant-lookup.dto'
@@ -6,10 +6,14 @@ import { TenantService } from './tenant.service'
 
 @Controller('tenants')
 export class TenantController {
+  private readonly logger = new Logger(TenantController.name)
   constructor(private readonly tenantService: TenantService) {}
 
   @Post()
   async create(@Body() createTenantDto: CreateTenantDto) {
+    this.logger.log(`create`)
+    console.log('login')
+
     return await this.tenantService.create(createTenantDto)
   }
 

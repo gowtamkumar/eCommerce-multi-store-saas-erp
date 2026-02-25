@@ -1,40 +1,34 @@
-import { IsString, IsEmail, IsEnum, IsNotEmpty, MinLength, IsOptional } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsDefined, IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator'
 
 export class CreateTenantDto {
-    @ApiProperty({ example: 'My Awesome Store', description: 'Store name' })
-    @IsString()
-    @IsNotEmpty()
-    storeName: string;
+  @IsDefined()
+  @IsString()
+  @IsNotEmpty()
+  storeName: string
 
-    @ApiProperty({ example: 'mystore', description: 'Subdomain for the store' })
-    @IsString()
-    @IsNotEmpty()
-    subdomain: string;
+  @IsDefined()
+  @IsString()
+  @IsNotEmpty()
+  subdomain: string
 
-    @ApiProperty({ example: 'uuid-of-plan', description: 'Subscription Plan ID' })
-    @IsString()
-    @IsOptional()
-    planId?: string;
+  @IsString()
+  @IsOptional()
+  planId?: string
 
-    // Admin user details for the new tenant
-    @ApiProperty({ example: 'Admin User', description: 'Admin name' })
-    @IsString()
-    @IsNotEmpty()
-    adminName: string;
+  // Admin user details for the new tenant
+  @IsString()
+  @IsNotEmpty()
+  adminName: string
 
-    @ApiProperty({ example: 'admin', description: 'Admin username' })
-    @IsString()
-    @IsNotEmpty()
-    adminUsername: string;
+  @IsString()
+  @IsNotEmpty()
+  adminUsername: string
 
-    @ApiProperty({ example: 'admin@store.com', description: 'Admin email' })
-    @IsEmail()
-    @IsNotEmpty()
-    adminEmail: string;
+  @IsEmail()
+  @IsNotEmpty()
+  adminEmail: string
 
-    @ApiProperty({ example: 'password123', description: 'Admin password' })
-    @IsString()
-    @MinLength(6)
-    adminPassword: string;
+  @IsString()
+  @MinLength(6)
+  adminPassword: string
 }
