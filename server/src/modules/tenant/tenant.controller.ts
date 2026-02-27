@@ -12,8 +12,6 @@ export class TenantController {
   @Post()
   async create(@Body() createTenantDto: CreateTenantDto) {
     this.logger.log(`create`)
-    console.log('login')
-
     return await this.tenantService.create(createTenantDto)
   }
 

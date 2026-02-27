@@ -1,91 +1,98 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
-import * as nodemailer from 'nodemailer';
-import { SiteSettingsEntity } from 'src/modules/settings/entities/site-settings.entity';
-import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
-import { Repository } from 'typeorm';
+import { Injectable, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { InjectRepository } from '@nestjs/typeorm'
+import * as nodemailer from 'nodemailer'
+import { SiteSettingsEntity } from 'src/modules/settings/entities/site-settings.entity'
+import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity'
+import { Repository } from 'typeorm'
 
 @Injectable()
 export class MailService {
-    private transporter: nodemailer.Transporter;
-    private readonly logger = new Logger(MailService.name);
+  private transporter: nodemailer.Transporter
+  private readonly logger = new Logger(MailService.name)
 
-    constructor(
-        private configService: ConfigService,
-        @InjectRepository(TenantEntity)
-        private tenantRepo: Repository<TenantEntity>,
-        @InjectRepository(SiteSettingsEntity)
-        private settingsRepo: Repository<SiteSettingsEntity>,
-    ) {
-        this.transporter = nodemailer.createTransport({
-            host: this.configService.get<string>('SMTP_HOST'),
-            port: this.configService.get<number>('SMTP_PORT'),
-            secure: this.configService.get<boolean>('SMTP_SECURE', false),
-            auth: {
-                user: this.configService.get<string>('SMTP_USER'),
-                pass: this.configService.get<string>('SMTP_PASS'),
-            },
-        });
+  constructor(
+    private configService: ConfigService,
+    @InjectRepository(TenantEntity)
+    private tenantRepo: Repository<TenantEntity>,
+    @InjectRepository(SiteSettingsEntity)
+    private settingsRepo: Repository<SiteSettingsEntity>,
+  ) {
+    this.transporter = nodemailer.createTransport({
+      host: this.configService.get<string>('SMTP_HOST'),
+      port: this.configService.get<number>('SMTP_PORT'),
+      secure: this.configService.get<boolean>('SMTP_SECURE', false),
+      auth: {
+        user: this.configService.get<string>('SMTP_USER'),
+        pass: this.configService.get<string>('SMTP_PASS'),
+      },
+    })
+  }
+
+  private async getTransporter(tenantId: string) {
+    if (!tenantId)
+      return {
+        transporter: this.transporter,
+        from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),
+      }
+
+    const settings = await this.settingsRepo.findOne({ where: { tenantId } })
+    if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
+      const tenantTransporter = nodemailer.createTransport({
+        host: settings.smtp.host,
+        port: settings.smtp.port,
+        secure: settings.smtp.secure,
+        auth: {
+          user: settings.smtp.user,
+          pass: settings.smtp.pass,
+        },
+      })
+      return { transporter: tenantTransporter, from: settings.smtp.from }
     }
 
-    private async getTransporter(tenantId: string) {
-        if (!tenantId) return { transporter: this.transporter, from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com') };
-
-        const settings = await this.settingsRepo.findOne({ where: { tenantId } });
-        if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
-            const tenantTransporter = nodemailer.createTransport({
-                host: settings.smtp.host,
-                port: settings.smtp.port,
-                secure: settings.smtp.secure,
-                auth: {
-                    user: settings.smtp.user,
-                    pass: settings.smtp.pass,
-                },
-            });
-            return { transporter: tenantTransporter, from: settings.smtp.from };
-        }
-
-        return { transporter: this.transporter, from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com') };
+    return {
+      transporter: this.transporter,
+      from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),
     }
+  }
 
-    async sendVerificationEmail(email: string, token: string, tenantId: string) {
-        const baseUrl = await this.getTenantBaseUrl(tenantId);
-        const verificationLink = `${baseUrl}/verify-email?token=${token}`;
+  async sendVerificationEmail(email: string, token: string, tenantId: string) {
+    const baseUrl = await this.getTenantBaseUrl(tenantId)
+    const verificationLink = `${baseUrl}/verify-email?token=${token}`
 
-        const { transporter, from } = await this.getTransporter(tenantId);
+    const { transporter, from } = await this.getTransporter(tenantId)
 
-        const mailOptions = {
-            from: from,
-            to: email,
-            subject: 'Verify Your Email',
-            html: `
+    const mailOptions = {
+      from: from,
+      to: email,
+      subject: 'Verify Your Email',
+      html: `
         <h1>Email Verification</h1>
         <p>Please click the link below to verify your email address:</p>
         <a href="${verificationLink}">${verificationLink}</a>
         <p>If you didn't request this, please ignore this email.</p>
       `,
-        };
-
-        await transporter.sendMail(mailOptions);
-        this.logger.log(`Verification email sent to ${email}`);
-        // try {
-        // } catch (error) {
-        //     this.logger.error(`Failed to send verification email to ${email}`, error.stack);
-        // }
     }
 
-    async sendResetPasswordEmail(email: string, token: string, tenantId: string) {
-        const baseUrl = await this.getTenantBaseUrl(tenantId);
-        const resetLink = `${baseUrl}/reset-password?token=${token}`;
+    try {
+      await transporter.sendMail(mailOptions)
+      this.logger.log(`Verification email sent to ${email}`)
+    } catch (error) {
+      this.logger.error(`Failed to send verification email to ${email}`, error)
+    }
+  }
 
-        const { transporter, from } = await this.getTransporter(tenantId);
+  async sendResetPasswordEmail(email: string, token: string, tenantId: string) {
+    const baseUrl = await this.getTenantBaseUrl(tenantId)
+    const resetLink = `${baseUrl}/reset-password?token=${token}`
 
-        const mailOptions = {
-            from: from,
-            to: email,
-            subject: 'Reset Your Password',
-            html: `
+    const { transporter, from } = await this.getTransporter(tenantId)
+
+    const mailOptions = {
+      from: from,
+      to: email,
+      subject: 'Reset Your Password',
+      html: `
         <h1>Password Reset Request</h1>
         <p>You are receiving this email because you (or someone else) have requested the reset of the password for your account.</p>
         <p>Please click on the following link to complete the process:</p>
@@ -93,36 +100,36 @@ export class MailService {
         <p>This link will expire in 1 hour.</p>
         <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
       `,
-        };
-
-        try {
-            await transporter.sendMail(mailOptions);
-            this.logger.log(`Password reset email sent to ${email}`);
-        } catch (error) {
-            this.logger.error(`Failed to send password reset email to ${email}`, error.stack);
-        }
     }
 
-    private async getTenantBaseUrl(tenantId: string): Promise<string> {
-        const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
-
-        if (!tenantId) return appUrl;
-
-        const tenant = await this.tenantRepo.findOne({ where: { id: tenantId } });
-        if (!tenant) return appUrl;
-
-        if (tenant.customDomain) {
-            const protocol = appUrl.startsWith('https') ? 'https' : 'http';
-            return `${protocol}://${tenant.customDomain}`;
-        }
-
-        try {
-            const url = new URL(appUrl);
-            url.hostname = `${tenant.subdomain}.${url.hostname}`;
-            // Remove trailing slash if present
-            return url.toString().replace(/\/$/, '');
-        } catch (e) {
-            return appUrl;
-        }
+    try {
+      await transporter.sendMail(mailOptions)
+      this.logger.log(`Password reset email sent to ${email}`)
+    } catch (error) {
+      this.logger.error(`Failed to send password reset email to ${email}`, error)
     }
+  }
+
+  private async getTenantBaseUrl(tenantId: string): Promise<string> {
+    const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000')
+
+    if (!tenantId) return appUrl
+
+    const tenant = await this.tenantRepo.findOne({ where: { id: tenantId } })
+    if (!tenant) return appUrl
+
+    if (tenant.customDomain) {
+      const protocol = appUrl.startsWith('https') ? 'https' : 'http'
+      return `${protocol}://${tenant.customDomain}`
+    }
+
+    try {
+      const url = new URL(appUrl)
+      url.hostname = `${tenant.subdomain}.${url.hostname}`
+      // Remove trailing slash if present
+      return url.toString().replace(/\/$/, '')
+    } catch (e) {
+      return appUrl
+    }
+  }
 }

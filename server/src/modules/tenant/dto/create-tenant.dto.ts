@@ -18,17 +18,17 @@ export class CreateTenantDto {
   // Admin user details for the new tenant
   @IsString()
   @IsNotEmpty()
-  adminName: string
+  name: string
 
   @IsString()
   @IsNotEmpty()
-  adminUsername: string
+  username: string
 
   @IsEmail()
   @IsNotEmpty()
-  adminEmail: string
+  email: string
 
   @IsString()
   @MinLength(6)
-  adminPassword: string
+  password: string
 }

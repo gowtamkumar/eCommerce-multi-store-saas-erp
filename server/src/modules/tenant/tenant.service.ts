@@ -23,11 +23,12 @@ export class TenantService {
     private readonly settingsService: SettingsService,
     private readonly mailService: MailService,
     private readonly subscriptionPlanService: SubscriptionPlanService,
-  ) { }
+  ) {}
 
   async create(createTenantDto: CreateTenantDto) {
-    const { storeName, subdomain, planId, adminName, adminUsername, adminEmail, adminPassword } =
-      createTenantDto
+    const { storeName, subdomain, planId, name, username, email, password } = createTenantDto
+
+    console.log('createTenantDto', createTenantDto)
 
     // Check if subdomain already exists
     const existingTenant = await this.tenantRepository.findOne({
@@ -38,15 +39,17 @@ export class TenantService {
       throw new ConflictException('Subdomain already exists')
     }
 
-    let subscriptionPlan = null;
+    let subscriptionPlan = null
     if (planId) {
-      subscriptionPlan = await this.subscriptionPlanService.findOne(planId);
+      subscriptionPlan = await this.subscriptionPlanService.findOne(planId)
     }
 
+    console.log('plan checking..')
+
     // Create tenant
-    const now = new Date();
-    const endsAt = new Date();
-    endsAt.setMonth(now.getMonth() + 1); // Default to 1 month from now
+    const now = new Date()
+    const endsAt = new Date()
+    endsAt.setMonth(now.getMonth() + 1) // Default to 1 month from now
 
     const tenant = this.tenantRepository.create({
       storeName,
@@ -61,13 +64,13 @@ export class TenantService {
     const savedTenant = await this.tenantRepository.save(tenant)
 
     // Create admin user for this tenant
-    const hashedPassword = await bcrypt.hash(adminPassword, 10)
+    const hashedPassword = await bcrypt.hash(password, 10)
 
     const verificationToken = crypto.randomBytes(32).toString('hex')
     const adminUser = this.userRepository.create({
-      name: adminName,
-      username: adminUsername,
-      email: adminEmail,
+      name,
+      username,
+      email,
       password: hashedPassword,
       role: UserRole.Admin,
       tenantId: savedTenant.id,
@@ -78,13 +81,17 @@ export class TenantService {
     const savedUser = await this.userRepository.save(adminUser)
 
     // Send verification email
-    await this.mailService.sendVerificationEmail(adminEmail, verificationToken, savedTenant.id)
+    const mailRes = await this.mailService.sendVerificationEmail(
+      email,
+      verificationToken,
+      savedTenant.id,
+    )
 
     // Initialize Site Settings
-    await this.settingsService.update(savedTenant.id, {
+    const res = await this.settingsService.update(savedTenant.id, {
       brandName: storeName,
       siteDescription: `Welcome to ${storeName}! Premium products and excellent service.`,
-      contactEmail: adminEmail,
+      contactEmail: email,
     })
 
     return {

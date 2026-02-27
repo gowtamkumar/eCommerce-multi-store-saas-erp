@@ -91,20 +91,25 @@ export default function CreateStore() {
                 body: JSON.stringify(formData),
             });
 
+            console.log("data res", data);
 
             if (data.success && data.subdomain) {
+                console.log("checking..");
+
                 // Successful onboarding
                 const protocol = window.location.protocol;
                 const hostname = window.location.hostname;
                 const port = window.location.port ? `:${window.location.port}` : '';
                 const adminUrl = `${protocol}//${data.subdomain}.${hostname}${port}/admin/login`;
-
                 alert("Store created successfully! Redirecting to your admin dashboard...");
                 window.location.href = adminUrl;
-            } else {
-                setError(data.error || 'Something went wrong');
             }
-        } catch (_err) {
+            else {
+                setError(data.message || 'Something went wrong');
+            }
+
+        } catch (err) {
+            console.log("eee", err);
             setError('Failed to connect to server');
         } finally {
             setLoading(false);
@@ -207,7 +212,7 @@ export default function CreateStore() {
                                                     placeholder="myshop"
                                                 />
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">
-                                                    .luxesaas.com
+                                                    .gowtam.com
                                                 </div>
                                             </div>
                                             <p className="mt-2 text-xs text-slate-400">Only letters, numbers, and hyphens allowed.</p>
