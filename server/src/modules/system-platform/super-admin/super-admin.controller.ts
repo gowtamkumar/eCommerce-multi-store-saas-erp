@@ -9,6 +9,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
+import si from 'systeminformation';
 import { Roles } from 'src/common/decorators/roles.decorator'
 import { UserRole } from 'src/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
@@ -19,8 +20,8 @@ import { PageService } from 'src/modules/page/page.service'
 import { ProductService } from 'src/modules/product/product.service'
 import { ReviewService } from 'src/modules/review/review.service'
 import { TenantService } from 'src/modules/tenant/tenant.service'
-
 import { TrafficService } from './traffic.service'
+
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('super-admin')
@@ -33,7 +34,7 @@ export class SuperAdminController {
     private readonly trafficService: TrafficService,
     private readonly productService: ProductService,
     private readonly pageService: PageService,
-  ) {}
+  ) { }
 
   @Post('/setup')
   async setup(@Body() body: any) {
@@ -93,10 +94,64 @@ export class SuperAdminController {
       {} as Record<string, number>,
     )
 
+    async function getFullSystemStatus() {
+      const cpu = await si.cpu();
+      const cpuLoad = await si.currentLoad();
+      const mem = await si.mem();
+      const disk = await si.fsSize();
+      const network = await si.networkStats();
+      const temp = await si.cpuTemperature();
+      const osInfo = await si.osInfo();
+      const time = await si.time();
+
+      const processes = await si.processes();
+
+      const status = {
+        cpu: {
+          manufacturer: cpu.manufacturer,
+          brand: cpu.brand,
+          cores: cpu.cores,
+          physicalCores: cpu.physicalCores,
+          usagePercent: cpuLoad.currentLoad.toFixed(2)
+        },
+        memory: {
+          total: (mem.total / 1024 / 1024 / 1024).toFixed(2) + " GB",
+          used: (mem.used / 1024 / 1024 / 1024).toFixed(2) + " GB",
+          usagePercent: ((mem.used / mem.total) * 100).toFixed(2)
+        },
+        disk: disk.map(d => ({
+          filesystem: d.fs,
+          sizeGB: (d.size / 1024 / 1024 / 1024).toFixed(2),
+          usedGB: (d.used / 1024 / 1024 / 1024).toFixed(2),
+          usagePercent: d.use
+        })),
+        network: network.map(n => ({
+          interface: n.iface,
+          rx_bytes: n.rx_bytes,
+          tx_bytes: n.tx_bytes
+        })),
+        temperature: temp.main,
+        os: {
+          platform: osInfo.platform,
+          distro: osInfo.distro,
+          release: osInfo.release,
+          uptimeMinutes: (+time / 60).toFixed(2)
+        },
+        totalProcesses: processes.all
+      };
+
+      return status
+    }
+
+    // console.log("info", await getFullSystemStatus());
+
+    const pcStatus = await getFullSystemStatus();
+
     return {
       success: true,
       data: {
         status: 'ok',
+        serverStatus: pcStatus,
         health: {
           database: 'Connected',
           uptime: process.uptime(),

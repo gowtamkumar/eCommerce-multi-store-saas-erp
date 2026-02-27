@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs';
-import * as PDFDocument from 'pdfkit';
+import PDFDocument from 'pdfkit';
 import { Repository } from 'typeorm';
 import { CreateFileDto, FilterFileDto, UpdateFileDto } from '../dtos';
 import { FileEntity } from '../entities/file.entity';

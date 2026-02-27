@@ -29,12 +29,13 @@ export async function fetchSuperAdminAPI(endpoint: string, options: RequestInit 
   if (!(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
   }
-  
+
 
   const res = await fetch(`${nestApiUrl}${endpoint}`, {
     ...options,
     headers,
   });
+  console.log("res", await res.json());
 
   if (!res.ok) {
     const error = await res

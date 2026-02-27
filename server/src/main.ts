@@ -1,6 +1,6 @@
 import { Logger, ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
-import * as cookieParser from 'cookie-parser'
+import cookieParser from 'cookie-parser'
 import { json } from 'express'
 import { rateLimit } from 'express-rate-limit'
 import { AppModule } from './app.module'

@@ -61,6 +61,7 @@
     "rimraf": "^6.1.2",
     "rxjs": "^7.8.2",
     "swagger-ui-express": "^5.0.1",
+    "systeminformation": "^5.31.1",
     "typeorm": "^0.3.28",
     "zod": "^4.2.1"
   },

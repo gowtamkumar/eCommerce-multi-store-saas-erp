@@ -13,6 +13,8 @@ export default function PlatformHealth() {
         const fetchHealth = async () => {
             try {
                 const result = await fetchSuperAdminAPI('/super-admin/health');
+                console.log("result", result);
+
                 setData(result.data);
             } catch (err) {
                 console.error(err);
@@ -26,6 +28,8 @@ export default function PlatformHealth() {
     }, []);
 
     if (loading && !data) return <div className="text-center py-20">Monitoring platform health...</div>;
+
+
 
     const formatUptime = (seconds: number) => {
         const d = Math.floor(seconds / (3600 * 24));
