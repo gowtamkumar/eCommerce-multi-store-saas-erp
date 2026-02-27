@@ -54,24 +54,25 @@ export default function TenantList({ initialTenants }: TenantListProps) {
     }
   };
 
-  const handleUpdatePlan = async (id: string, newPlan: string) => {
-    setLoadingId(id);
-    try {
-      const res = await fetchAPI(`/super-admin/tenants/${id}/plan`, {
-        method: 'PATCH',
-        body: JSON.stringify({ planTier: newPlan }),
-      });
+  // const handleUpdatePlan = async (id: string, newPlan: string) => {
+  //   setLoadingId(id);
+  //   try {
+  //     const res = await fetchAPI(`/super-admin/tenants/${id}/plan`, {
+  //       method: 'PATCH',
+  //       body: JSON.stringify({ planTier: newPlan }),
+  //     });
 
-      if (res.success) {
-        setTenants(tenants.map(t => t.id === id ? { ...t, planTier: newPlan } : t));
-        toast.success(`Plan updated to ${newPlan}`);
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update plan');
-    } finally {
-      setLoadingId(null);
-    }
-  };
+  //     if (res.success) {
+  //       setTenants(tenants.map(t => t.id === id ? { ...t, planTier: newPlan } : t));
+  //       toast.success(`Plan updated to ${newPlan}`);
+  //     }
+  //   } catch (error: any) {
+  //     toast.error(error.message || 'Failed to update plan');
+  //   } finally {
+  //     setLoadingId(null);
+  //   }
+  // };
+
 
   return (
     <div className="space-y-8">
@@ -201,14 +202,14 @@ export default function TenantList({ initialTenants }: TenantListProps) {
                             </button>
                           )}
                           <Link
-                            href={`/super-admin/tenants/${tenant.id}/analytics`}
+                            href={`/system-platform/tenants/${tenant.id}/analytics`}
                             className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
                             title="Detailed Analytics"
                           >
                             <BarChart3 className="w-5 h-5" />
                           </Link>
                           <a
-                            href={`http://${tenant.subdomain}.localhost:3000`}
+                            href={tenant.customDomain ? tenant.customDomain : `http://${tenant.subdomain}.localhost:3000`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"

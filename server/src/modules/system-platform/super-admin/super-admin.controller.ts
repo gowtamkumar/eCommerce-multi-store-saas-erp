@@ -144,11 +144,10 @@ export class SuperAdminController {
       this.userService.userOverview(),
       this.productService.productOverview(),
       this.orderService.orderOverview(),
-      this.trafficService.getTrafficStats(1),
+      this.trafficService.getGlobalTrafficStats(days || 7),
     ])
 
-
-    const totalRequestsLast24h = traffic.reduce((acc, t) => acc + t.requestCount, 0)
+    const totalRequestsLast24h = traffic[0]?.requestCount || 0
 
     return {
       success: true,
@@ -157,6 +156,7 @@ export class SuperAdminController {
         ...userOverview,
         ...productOverview,
         ...orderOverview,
+        traffic,
         totalRequestsLast24h,
       },
     }
@@ -168,7 +168,7 @@ export class SuperAdminController {
   async getTraffic(@Query('days') days?: number) {
     return {
       success: true,
-      data: await this.trafficService.getTrafficStats(days || 7),
+      data: await this.trafficService.getGlobalTrafficStats(days || 7),
     }
   }
 

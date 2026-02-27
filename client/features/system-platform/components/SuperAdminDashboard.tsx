@@ -8,17 +8,18 @@ interface Stats {
   totalTenants: number;
   totalUsers: number;
   totalOrders: number;
+  totalReviews?: number;
   requestsLast24h: number;
   plans: Record<string, number>;
   statuses: Record<string, number>;
 }
 
 interface TrafficData {
-  id: string;
-  tenantId: string;
+  id?: string;
+  tenantId?: string;
   date: string;
   requestCount: number;
-  lastUpdated: string;
+  lastUpdated?: string;
 }
 
 interface TenantAnalytics {
@@ -45,8 +46,8 @@ interface SuperAdminDashboardProps {
 export default function SuperAdminDashboard({ stats, traffic, tenantAnalytics }: SuperAdminDashboardProps) {
   const cards = [
     { label: 'Total Stores', value: stats.totalTenants, icon: Store, color: 'bg-indigo-500', trend: '+12%' },
-    { label: 'Merchant Accounts', value: stats.totalUsers, icon: Users, color: 'bg-emerald-500', trend: '+5%' },
-    { label: 'Global Orders', value: stats.totalOrders, icon: BarChart3, color: 'bg-amber-500', trend: '+18%' },
+    { label: 'Users', value: stats.totalUsers, icon: Users, color: 'bg-emerald-500', trend: '+5%' },
+    { label: 'Orders', value: stats.totalOrders, icon: BarChart3, color: 'bg-amber-500', trend: '+18%' },
     { label: '24h Traffic', value: stats.requestsLast24h, icon: Activity, color: 'bg-blue-500', trend: 'Requests' },
   ];
 
@@ -128,35 +129,41 @@ export default function SuperAdminDashboard({ stats, traffic, tenantAnalytics }:
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Recent Platform Activity</h2>
               <p className="text-sm text-slate-500">Cross-tenant request volume</p>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 text-green-600 rounded-2xl">
-              <ShieldCheck className="w-4 h-4" />
-              <span className="text-sm font-bold">System Healthy</span>
-            </div>
           </div>
           <div className="flex-1 p-8">
-            {traffic.length > 0 ? (
-              <div className="h-48 flex items-end gap-2 px-4">
-                {traffic.slice(0, 14).reverse().map((t, i) => {
-                  const maxVal = Math.max(...traffic.map(x => x.requestCount));
-                  const height = (t.requestCount / maxVal) * 100;
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                        {t.requestCount} requests
+            {traffic.length > 0 ? (() => {
+              const maxVal = Math.max(...traffic.map(x => x.requestCount), 1);
+              const chartData = [...traffic].slice(0, 14).reverse();
+
+              return (
+                <div className="h-48 flex items-end gap-2 px-4">
+                  {chartData.map((t, i) => {
+                    const height = (t.requestCount / maxVal) * 100;
+                    const dateObj = new Date(t.date);
+                    const isInvalidDate = isNaN(dateObj.getTime());
+
+
+
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                          {t.requestCount} requests
+                        </div>
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: `${height}%` }}
+                          transition={{ duration: 0.5, ease: "easeOut" }}
+                          className="w-full bg-indigo-500/20 group-hover:bg-indigo-500/40 rounded-t-lg transition-colors min-h-[4px]"
+                        />
+                        <span className="text-[8px] font-bold text-slate-400 uppercase hidden md:block">
+                          {!isInvalidDate ? dateObj.toLocaleDateString([], { weekday: 'short' }) : '---'}
+                        </span>
                       </div>
-                      <motion.div
-                        initial={{ height: 0 }}
-                        animate={{ height: `${height}%` }}
-                        className="w-full bg-indigo-500/20 group-hover:bg-indigo-500/40 rounded-t-lg transition-colors min-h-[4px]"
-                      />
-                      <span className="text-[8px] font-bold text-slate-400 uppercase hidden md:block">
-                        {new Date(t.date).toLocaleDateString([], { weekday: 'short' })}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
+                    )
+                  })}
+                </div>
+              );
+            })() : (
               <div className="h-full flex flex-col items-center justify-center text-slate-400 italic py-12">
                 <Activity className="w-12 h-12 mb-4 opacity-20" />
                 <p>No traffic data collected yet.</p>

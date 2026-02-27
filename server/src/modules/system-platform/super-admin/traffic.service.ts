@@ -11,7 +11,7 @@ export class TrafficService {
     private trafficRepository: Repository<TenantTrafficEntity>,
     @InjectRepository(PageTrafficEntity)
     private pageTrafficRepository: Repository<PageTrafficEntity>,
-  ) {}
+  ) { }
 
   async logRequest(tenantId: string) {
     if (!tenantId) return
@@ -53,14 +53,35 @@ export class TrafficService {
 
   async getTrafficStats(days: number = 7) {
     const sinceDate = new Date()
+    sinceDate.setHours(0, 0, 0, 0)
     sinceDate.setDate(sinceDate.getDate() - days)
 
     return await this.trafficRepository.find({
       where: {
-        // filter by date if needed
+        date: Raw((alias) => `${alias} >= :sinceDate`, { sinceDate }),
       },
       order: { date: 'DESC' },
     })
+  }
+
+  async getGlobalTrafficStats(days: number = 7) {
+    const sinceDate = new Date()
+    sinceDate.setHours(0, 0, 0, 0)
+    sinceDate.setDate(sinceDate.getDate() - days)
+
+    const stats = await this.trafficRepository
+      .createQueryBuilder('traffic')
+      .select('traffic.date', 'date')
+      .addSelect('SUM(traffic.request_count)', 'requestCount')
+      .where('traffic.date >= :sinceDate', { sinceDate })
+      .groupBy('traffic.date')
+      .orderBy('traffic.date', 'DESC')
+      .getRawMany()
+
+    return stats.map((s) => ({
+      date: s.date,
+      requestCount: parseInt(s.requestCount, 10),
+    }))
   }
 
   async getPageTrafficStats(tenantId: string, days: number = 30, excludePrefixes: string[] = []) {
