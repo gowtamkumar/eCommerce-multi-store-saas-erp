@@ -12,6 +12,8 @@ import { SettingsService } from '../settings/settings.service'
 import { SubscriptionPlanService } from '../system-platform/subscription-plan/subscription-plan.service'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantEntity } from './entities/tenant.entity'
+import { CustomDomainStatus } from 'src/common/enums/tenant/custom-domain-status'
+import { TenantStatus } from 'src/common/enums/tenant/tenant-status.enum'
 
 @Injectable()
 export class TenantService {
@@ -23,13 +25,10 @@ export class TenantService {
     private readonly settingsService: SettingsService,
     private readonly mailService: MailService,
     private readonly subscriptionPlanService: SubscriptionPlanService,
-  ) {}
+  ) { }
 
   async create(createTenantDto: CreateTenantDto) {
     const { storeName, subdomain, planId, name, username, email, password } = createTenantDto
-
-    console.log('createTenantDto', createTenantDto)
-
     // Check if subdomain already exists
     const existingTenant = await this.tenantRepository.findOne({
       where: { subdomain },
@@ -158,7 +157,7 @@ export class TenantService {
   async updateCustomDomain(id: string, customDomain: string) {
     const tenant = await this.findOne(id)
     tenant.customDomain = customDomain
-    tenant.customDomainStatus = 'pending'
+    tenant.customDomainStatus = CustomDomainStatus.PENDING
     tenant.customDomainVerifiedAt = null
     return await this.tenantRepository.save(tenant)
   }
@@ -166,14 +165,34 @@ export class TenantService {
   async verifyCustomDomain(id: string) {
     const tenant = await this.findOne(id)
     // Mock verification: in a real app, you'd check DNS records here
-    tenant.customDomainStatus = 'active'
+    tenant.customDomainStatus = CustomDomainStatus.ACTIVE
     tenant.customDomainVerifiedAt = new Date()
     return await this.tenantRepository.save(tenant)
   }
 
   async updateStatus(id: string, status: string) {
     const tenant = await this.findOne(id)
-    tenant.status = status
+    tenant.status = status as TenantStatus
     return await this.tenantRepository.save(tenant)
+  }
+
+
+  async tenantOverview() {
+    const totalTenants = await this.tenantRepository.count()
+    const activeTenants = await this.tenantRepository.count({
+      where: { status: TenantStatus.ACTIVE },
+    })
+    const suspendedTenants = await this.tenantRepository.count({
+      where: { status: TenantStatus.SUSPENDED },
+    })
+    const archivedTenants = await this.tenantRepository.count({
+      where: { status: TenantStatus.ARCHIVED },
+    })
+    return {
+      totalTenants,
+      activeTenants,
+      suspendedTenants,
+      archivedTenants,
+    }
   }
 }

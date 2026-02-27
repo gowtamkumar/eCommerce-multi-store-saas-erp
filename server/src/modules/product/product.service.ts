@@ -8,6 +8,7 @@ import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductAttributeEntity } from './entities/attribute.entity'
 import { ProductEntity } from './entities/product.entity'
 import { ProductVariantEntity } from './entities/variant.entity'
+import { ProductStatus } from 'src/common/enums/product-status.enum'
 
 @Injectable()
 export class ProductService {
@@ -330,6 +331,21 @@ export class ProductService {
       case 'newest':
       default:
         return { 'product.createdAt': 'DESC' }
+    }
+  }
+
+  async productOverview() {
+    const totalProducts = await this.productRepository.count()
+    const activeProducts = await this.productRepository.count({
+      where: { status: ProductStatus.ACTIVE },
+    })
+    const inactiveProducts = await this.productRepository.count({
+      where: { status: ProductStatus.INACTIVE },
+    })
+    return {
+      totalProducts,
+      activeProducts,
+      inactiveProducts,
     }
   }
 }

@@ -67,76 +67,97 @@ export class SuperAdminController {
   @Roles(UserRole.SuperAdmin)
   @Get('/health')
   async getHealth() {
-    async function getFullSystemStatus() {
-      const cpu = await si.cpu();
-      const cpuLoad = await si.currentLoad();
-      const mem = await si.mem();
-      const disk = await si.fsSize();
-      const network = await si.networkStats();
-      const temp = await si.cpuTemperature();
-      const osInfo = await si.osInfo();
-      const time = await si.time();
 
-      const processes = await si.processes();
-      const docker = await si.dockerContainers(true); // Fetch all containers with full info
+    const cpu = await si.cpu();
+    const cpuLoad = await si.currentLoad();
+    const mem = await si.mem();
+    const disk = await si.fsSize();
+    const network = await si.networkStats();
+    const temp = await si.cpuTemperature();
+    const osInfo = await si.osInfo();
+    const time = await si.time();
 
-      const status = {
-        cpu: {
-          manufacturer: cpu.manufacturer,
-          brand: cpu.brand,
-          cores: cpu.cores,
-          physicalCores: cpu.physicalCores,
-          usagePercent: cpuLoad.currentLoad.toFixed(2),
-          loadAverage: Array.isArray(cpuLoad.avgLoad) ? cpuLoad.avgLoad.join(', ') : String(cpuLoad.avgLoad)
-        },
-        memory: {
-          total: (mem.total / 1024 / 1024 / 1024).toFixed(2) + " GB",
-          used: (mem.active / 1024 / 1024 / 1024).toFixed(2) + " GB",
-          usagePercent: ((mem.active / mem.total) * 100).toFixed(2)
-        },
-        disk: disk.map(d => ({
-          filesystem: d.fs,
-          sizeGB: (d.size / 1024 / 1024 / 1024).toFixed(2),
-          usedGB: (d.used / 1024 / 1024 / 1024).toFixed(2),
-          usagePercent: d.use
-        })),
-        network: network.map(n => ({
-          interface: n.iface,
-          rx_bytes: n.rx_bytes,
-          tx_bytes: n.tx_bytes
-        })),
-        temperature: temp.main,
-        os: {
-          platform: osInfo.platform,
-          distro: osInfo.distro,
-          release: osInfo.release,
-          uptimeSeconds: time.uptime
-        },
-        docker: docker.map(c => ({
-          id: c.id,
-          name: c.name,
-          image: c.image,
-          state: c.state
-        })),
-        totalProcesses: processes.all
-      };
+    const processes = await si.processes();
+    const docker = await si.dockerContainers(true); // Fetch all containers with full info
 
-      return status
-    }
-
-    const serverStatus = await getFullSystemStatus();
+    const stats = {
+      cpu: {
+        manufacturer: cpu.manufacturer,
+        brand: cpu.brand,
+        cores: cpu.cores,
+        physicalCores: cpu.physicalCores,
+        usagePercent: cpuLoad.currentLoad.toFixed(2),
+        loadAverage: Array.isArray(cpuLoad.avgLoad) ? cpuLoad.avgLoad.join(', ') : String(cpuLoad.avgLoad)
+      },
+      memory: {
+        total: (mem.total / 1024 / 1024 / 1024).toFixed(2) + " GB",
+        used: (mem.active / 1024 / 1024 / 1024).toFixed(2) + " GB",
+        usagePercent: ((mem.active / mem.total) * 100).toFixed(2)
+      },
+      disk: disk.map(d => ({
+        filesystem: d.fs,
+        sizeGB: (d.size / 1024 / 1024 / 1024).toFixed(2),
+        usedGB: (d.used / 1024 / 1024 / 1024).toFixed(2),
+        usagePercent: d.use
+      })),
+      network: network.map(n => ({
+        interface: n.iface,
+        rx_bytes: n.rx_bytes,
+        tx_bytes: n.tx_bytes
+      })),
+      temperature: temp.main,
+      os: {
+        platform: osInfo.platform,
+        distro: osInfo.distro,
+        release: osInfo.release,
+        uptimeSeconds: time.uptime
+      },
+      docker: docker.map(c => ({
+        id: c.id,
+        name: c.name,
+        image: c.image,
+        state: c.state
+      })),
+      totalProcesses: processes.all
+    };
 
     return {
       success: true,
       data: {
         status: 'ok',
-        serverStatus,
-        health: {
-          database: 'Connected',
-          version: '1.0.0',
-        },
+        stats,
+        database: 'Connected',
+        version: '1.0.0',
         timestamp: new Date().toISOString(),
         service: 'eCommerce Multi-Tenant SaaS Backend',
+      },
+    }
+  }
+
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SuperAdmin)
+  @Get('/overview')
+  async getOverview(@Query('days') days?: number) {
+    const [tenantOverview, userOverview, productOverview, orderOverview, traffic] = await Promise.all([
+      this.tenantService.tenantOverview(),
+      this.userService.userOverview(),
+      this.productService.productOverview(),
+      this.orderService.orderOverview(),
+      this.trafficService.getTrafficStats(1),
+    ])
+
+
+    const totalRequestsLast24h = traffic.reduce((acc, t) => acc + t.requestCount, 0)
+
+    return {
+      success: true,
+      data: {
+        ...tenantOverview,
+        ...userOverview,
+        ...productOverview,
+        ...orderOverview,
+        totalRequestsLast24h,
       },
     }
   }

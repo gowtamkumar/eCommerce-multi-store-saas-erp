@@ -100,7 +100,6 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 // --- Main Page ---
-
 export default function PlatformHealth() {
     const [data, setData] = useState<any>(null);
     const [history, setHistory] = useState<any[]>([]);
@@ -110,10 +109,8 @@ export default function PlatformHealth() {
         const fetchHealth = async () => {
             try {
                 const result = await fetchSuperAdminAPI('/super-admin/health');
-                const ss = result.data?.serverStatus;
-
+                const ss = result.data?.stats;
                 setData(result.data);
-
                 if (ss) {
                     setHistory(prev => {
                         const newSnapshot = {
@@ -158,7 +155,7 @@ export default function PlatformHealth() {
             </div>
         );
 
-    const ss = data?.serverStatus;
+    const ss = data?.stats;
     const cpuUsage = parseFloat(ss?.cpu?.usagePercent ?? 0);
     const memUsage = parseFloat(ss?.memory?.usagePercent ?? 0);
 
@@ -192,7 +189,7 @@ export default function PlatformHealth() {
                 <StatCard
                     icon={<Database className="w-7 h-7" />}
                     label="Storage Layer"
-                    value={data?.health?.database || 'Connected'}
+                    value={data?.database}
                     sub="PostgreSQL Engine"
                 />
                 <StatCard
@@ -210,7 +207,7 @@ export default function PlatformHealth() {
                 <StatCard
                     icon={<ShieldCheck className="w-7 h-7" />}
                     label="Revision"
-                    value={`v${data?.health?.version || '1.0.0'}`}
+                    value={`v${data?.version}`}
                     sub="Stable Build"
                 />
             </div>
@@ -310,6 +307,36 @@ export default function PlatformHealth() {
                         </div>
                     </section>
 
+                    {/* Docker Module */}
+                    <section className="bg-white dark:bg-slate-800 rounded-[3rem] border border-slate-100 dark:border-slate-700/50 p-8 shadow-sm">
+                        <SectionHeader icon={Box} title="Runtime Context" subtitle="Containerized Environment" />
+                        <div className="space-y-4 max-h-[480px] overflow-y-auto pr-2 custom-scrollbar">
+                            {ss?.docker?.length > 0 ? (
+                                ss.docker.map((container: any) => (
+                                    <div key={container.id} className="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-slate-800 transition-all duration-300 hover:border-sky-500/40 group">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex gap-4 min-w-0">
+                                                <div className={`mt-1 h-2 w-2 rounded-full shrink-0 group-hover:scale-150 transition-transform ${container.state === 'running' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                                <div className="min-w-0">
+                                                    <p className="font-black text-slate-900 dark:text-white truncate text-sm uppercase leading-none">{container.name.replace('/', '')}</p>
+                                                    <p className="text-[9px] font-bold text-slate-400 truncate mt-1.5 opacity-80">{container.image}</p>
+                                                </div>
+                                            </div>
+                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest leading-none ${container.state === 'running' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                                                {container.state}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="py-12 text-center rounded-3xl bg-slate-50 dark:bg-slate-900/50 border-2 border-dashed border-slate-200 dark:border-slate-800">
+                                    <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Node Isolated</p>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
                     {/* Hardware Snapshot Module (Bars) */}
                     <section className="bg-white dark:bg-slate-800 rounded-[3rem] border border-slate-100 dark:border-slate-700/50 p-10 shadow-xl shadow-indigo-500 text-slate-900 dark:text-white relative overflow-hidden">
                         <div className="absolute -bottom-10 -right-10 opacity-[0.03] rotate-12 pointer-events-none">
@@ -385,35 +412,6 @@ export default function PlatformHealth() {
                 {/* COLUMN 2: ENVIRONMENT & INFRA (4/12) */}
                 <div className="xl:col-span-4 space-y-10">
 
-                    {/* Docker Module */}
-                    <section className="bg-white dark:bg-slate-800 rounded-[3rem] border border-slate-100 dark:border-slate-700/50 p-8 shadow-sm">
-                        <SectionHeader icon={Box} title="Runtime Context" subtitle="Containerized Environment" />
-                        <div className="space-y-4 max-h-[480px] overflow-y-auto pr-2 custom-scrollbar">
-                            {ss?.docker?.length > 0 ? (
-                                ss.docker.map((container: any) => (
-                                    <div key={container.id} className="p-5 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-100 dark:border-slate-800 transition-all duration-300 hover:border-sky-500/40 group">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="flex gap-4 min-w-0">
-                                                <div className={`mt-1 h-2 w-2 rounded-full shrink-0 group-hover:scale-150 transition-transform ${container.state === 'running' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                                                <div className="min-w-0">
-                                                    <p className="font-black text-slate-900 dark:text-white truncate text-sm uppercase leading-none">{container.name.replace('/', '')}</p>
-                                                    <p className="text-[9px] font-bold text-slate-400 truncate mt-1.5 opacity-80">{container.image}</p>
-                                                </div>
-                                            </div>
-                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest leading-none ${container.state === 'running' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                                                {container.state}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="py-12 text-center rounded-3xl bg-slate-50 dark:bg-slate-900/50 border-2 border-dashed border-slate-200 dark:border-slate-800">
-                                    <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-                                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Node Isolated</p>
-                                </div>
-                            )}
-                        </div>
-                    </section>
 
                     {/* Storage & Connectivity Module */}
                     <section className="bg-white dark:bg-slate-800 rounded-[3rem] border border-slate-100 dark:border-slate-700/50 p-8 shadow-sm space-y-12">

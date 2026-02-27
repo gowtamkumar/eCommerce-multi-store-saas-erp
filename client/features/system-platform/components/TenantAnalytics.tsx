@@ -36,7 +36,7 @@ export default function TenantAnalytics({ tenantId, data, tenantName }: TenantAn
         <div className="space-y-8">
             <div className="flex items-center gap-4">
                 <Link
-                    href="/super-admin"
+                    href="/system-platform"
                     className="p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all"
                 >
                     <ArrowLeft className="w-5 h-5 text-slate-500" />

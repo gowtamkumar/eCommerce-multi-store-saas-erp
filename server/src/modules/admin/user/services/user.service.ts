@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt'
 import { Repository } from 'typeorm'
 import { CreateUserDto, FilterUserDto, UpdatePasswordDto, UpdateUserDto } from '../dtos'
 import { UserEntity } from '../entities/user.entity'
+import { UserStatus } from 'src/common/enums/user/user-status.enum'
 
 @Injectable()
 export class UserService {
@@ -12,7 +13,7 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
-  ) {}
+  ) { }
 
   async getUsers(
     filterUserDto: FilterUserDto,
@@ -224,5 +225,20 @@ export class UserService {
     return this.userRepo.update(userId, {
       refreshToken: null,
     })
+  }
+
+  async userOverview() {
+    const totalUsers = await this.userRepo.count()
+    const activeUsers = await this.userRepo.count({
+      where: { status: UserStatus.Active },
+    })
+    const inactiveUsers = await this.userRepo.count({
+      where: { status: UserStatus.Inactive },
+    })
+    return {
+      totalUsers,
+      activeUsers,
+      inactiveUsers,
+    }
   }
 }

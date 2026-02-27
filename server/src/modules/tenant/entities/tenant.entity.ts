@@ -1,6 +1,8 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import { SubscriptionBillingCycle } from 'src/common/enums/subscription/billing-cycle.enum';
 import { SubscriptionStatus } from 'src/common/enums/subscription/subscription-status.enum';
+import { CustomDomainStatus } from 'src/common/enums/tenant/custom-domain-status';
+import { TenantStatus } from 'src/common/enums/tenant/tenant-status.enum';
 import { SubscriptionPlanEntity } from 'src/modules/system-platform/subscription-plan/entities/subscription-plan.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
@@ -20,20 +22,20 @@ export class TenantEntity extends BaseEntity {
   @Column({
     name: 'custom_domain_status',
     type: 'enum',
-    enum: ['pending', 'verified', 'active'],
-    default: 'pending',
+    enum: CustomDomainStatus,
+    default: CustomDomainStatus.PENDING,
   })
-  customDomainStatus: string
+  customDomainStatus: CustomDomainStatus
 
   @Column({ name: 'custom_domain_verified_at', type: 'timestamptz', nullable: true })
   customDomainVerifiedAt: Date
 
   @Column({
     type: 'enum',
-    enum: ['active', 'suspended', 'archived'],
-    default: 'active',
+    enum: TenantStatus,
+    default: TenantStatus.ACTIVE,
   })
-  status: string
+  status: TenantStatus
 
   @Column({ name: 'ssl_enabled', default: false })
   sslEnabled: boolean

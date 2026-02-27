@@ -189,7 +189,7 @@ export class OrderService {
     async findAll(filterDto: any, tenantId: string) {
         const { page, limit, search, status } = filterDto;
         console.log("filterDto", filterDto);
-        
+
         const skip = (page - 1) * limit;
 
         const queryBuilder = this.orderRepository
@@ -235,7 +235,7 @@ export class OrderService {
         return order;
     }
 
-     async findOneForCourier(id: string, tenantId: string) {
+    async findOneForCourier(id: string, tenantId: string) {
         const order = await this.orderRepository.findOne({
             where: { id, tenantId },
             relations: ['items', 'items.product'],
@@ -317,5 +317,24 @@ export class OrderService {
 
     async countByTenant(tenantId: string) {
         return await this.orderRepository.count({ where: { tenantId } });
+    }
+
+    async orderOverview() {
+        const totalOrders = await this.orderRepository.count()
+        const pendingOrders = await this.orderRepository.count({
+            where: { status: OrderStatus.PENDING },
+        })
+        const completedOrders = await this.orderRepository.count({
+            where: { status: OrderStatus.COMPLETED },
+        })
+        const cancelledOrders = await this.orderRepository.count({
+            where: { status: OrderStatus.CANCELLED },
+        })
+        return {
+            totalOrders,
+            pendingOrders,
+            completedOrders,
+            cancelledOrders,
+        }
     }
 }
