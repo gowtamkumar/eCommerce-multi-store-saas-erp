@@ -35,7 +35,6 @@ export async function fetchSuperAdminAPI(endpoint: string, options: RequestInit 
     ...options,
     headers,
   });
-  console.log("res", await res.json());
 
   if (!res.ok) {
     const error = await res

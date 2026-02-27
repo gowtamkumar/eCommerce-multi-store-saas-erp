@@ -67,33 +67,6 @@ export class SuperAdminController {
   @Roles(UserRole.SuperAdmin)
   @Get('/health')
   async getHealth() {
-    const [users, tenants, orders, reviews, traffic] = await Promise.all([
-      this.userService.findAllUsersCrossTenant(),
-      this.tenantService.findAll(),
-      this.orderService.findAllOrders(),
-      this.reviewService.findAllReviews(),
-      this.trafficService.getTrafficStats(1), // Last 24h
-    ])
-
-    const totalRequestsLast24h = traffic.reduce((acc, t) => acc + t.requestCount, 0)
-
-    const planStats = tenants.reduce(
-      (acc, t) => {
-        const planName = t.subscriptionPlan?.name || 'No Plan'
-        acc[planName] = (acc[planName] || 0) + 1
-        return acc
-      },
-      {} as Record<string, number>,
-    )
-
-    const statusStats = tenants.reduce(
-      (acc, t) => {
-        acc[t.status] = (acc[t.status] || 0) + 1
-        return acc
-      },
-      {} as Record<string, number>,
-    )
-
     async function getFullSystemStatus() {
       const cpu = await si.cpu();
       const cpuLoad = await si.currentLoad();
@@ -105,6 +78,7 @@ export class SuperAdminController {
       const time = await si.time();
 
       const processes = await si.processes();
+      const docker = await si.dockerContainers(true); // Fetch all containers with full info
 
       const status = {
         cpu: {
@@ -112,12 +86,13 @@ export class SuperAdminController {
           brand: cpu.brand,
           cores: cpu.cores,
           physicalCores: cpu.physicalCores,
-          usagePercent: cpuLoad.currentLoad.toFixed(2)
+          usagePercent: cpuLoad.currentLoad.toFixed(2),
+          loadAverage: Array.isArray(cpuLoad.avgLoad) ? cpuLoad.avgLoad.join(', ') : String(cpuLoad.avgLoad)
         },
         memory: {
           total: (mem.total / 1024 / 1024 / 1024).toFixed(2) + " GB",
-          used: (mem.used / 1024 / 1024 / 1024).toFixed(2) + " GB",
-          usagePercent: ((mem.used / mem.total) * 100).toFixed(2)
+          used: (mem.active / 1024 / 1024 / 1024).toFixed(2) + " GB",
+          usagePercent: ((mem.active / mem.total) * 100).toFixed(2)
         },
         disk: disk.map(d => ({
           filesystem: d.fs,
@@ -135,36 +110,30 @@ export class SuperAdminController {
           platform: osInfo.platform,
           distro: osInfo.distro,
           release: osInfo.release,
-          uptimeMinutes: (+time / 60).toFixed(2)
+          uptimeSeconds: time.uptime
         },
+        docker: docker.map(c => ({
+          id: c.id,
+          name: c.name,
+          image: c.image,
+          state: c.state
+        })),
         totalProcesses: processes.all
       };
 
       return status
     }
 
-    // console.log("info", await getFullSystemStatus());
-
-    const pcStatus = await getFullSystemStatus();
+    const serverStatus = await getFullSystemStatus();
 
     return {
       success: true,
       data: {
         status: 'ok',
-        serverStatus: pcStatus,
+        serverStatus,
         health: {
           database: 'Connected',
-          uptime: process.uptime(),
           version: '1.0.0',
-        },
-        stats: {
-          totalTenants: tenants.length,
-          totalUsers: users.length,
-          totalOrders: orders.length,
-          totalReviews: reviews.length,
-          totalRequestsLast24h,
-          plans: planStats,
-          statuses: statusStats,
         },
         timestamp: new Date().toISOString(),
         service: 'eCommerce Multi-Tenant SaaS Backend',
