@@ -50,8 +50,6 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     headers,
   });
 
-  console.log("res", await res.json());
-
   if (!res.ok) {
     if (res.status === 404 && (options as any).silent404) {
       return { success: false, data: null, message: "Not found" };
