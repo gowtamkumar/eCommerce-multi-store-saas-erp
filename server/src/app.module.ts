@@ -5,6 +5,7 @@ import { ServeStaticModule } from '@nestjs/serve-static'
 import { join } from 'path'
 import { GlobalExceptionFilter } from './common/exception/exception-filter'
 import { TenantStatusGuard } from './common/guards/tenant-status.guard'
+import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor'
 import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware'
@@ -23,6 +24,7 @@ import { ProductModule } from './modules/product/product.module'
 import { ReviewModule } from './modules/review/review.module'
 import { SettingsModule } from './modules/settings/settings.module'
 import { SubscriberModule } from './modules/subscriber/subscriber.module'
+import { AuditLogModule } from './modules/system-platform/audit-log/audit-log.module'
 import { SystemPlatformModule } from './modules/system-platform/system-platform.module'
 import { TenantModule } from './modules/tenant/tenant.module'
 
@@ -52,6 +54,7 @@ import { TenantModule } from './modules/tenant/tenant.module'
     CartModule,
     OthersModule,
     SubscriberModule,
+    AuditLogModule,
     SystemPlatformModule,
   ],
   controllers: [],
@@ -68,6 +71,10 @@ import { TenantModule } from './modules/tenant/tenant.module'
     {
       provide: APP_INTERCEPTOR,
       useClass: TransformInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditLogInterceptor,
     },
     {
       provide: APP_INTERCEPTOR,

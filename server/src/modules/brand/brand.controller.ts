@@ -8,6 +8,7 @@ import {
     Put,
     UseGuards,
 } from '@nestjs/common';
+import { Audit } from 'src/common/decorators/audit.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { TenantId } from 'src/common/decorators/tenant-id.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -21,6 +22,7 @@ export class BrandController {
 
     @Post()
     @UseGuards(JwtAuthGuard)
+    @Audit({ entity: 'Brand', action: 'CREATE' })
     async create(@Body() createBrandDto: CreateBrandDto, @CurrentUser() user: any) {
         const data = await this.brandService.create(createBrandDto, user.tenantId);
         return { success: true, data };
@@ -40,6 +42,7 @@ export class BrandController {
 
     @Put(':id')
     @UseGuards(JwtAuthGuard)
+    @Audit({ entity: 'Brand', action: 'UPDATE' })
     async update(
         @Param('id') id: string,
         @Body() updateBrandDto: UpdateBrandDto,
@@ -51,6 +54,7 @@ export class BrandController {
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard)
+    @Audit({ entity: 'Brand', action: 'DELETE' })
     async remove(@Param('id') id: string, @CurrentUser() user: any) {
         return await this.brandService.remove(id, user.tenantId);
     }
