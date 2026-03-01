@@ -1,74 +1,80 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger'
 import {
-    IsEmail,
-    IsEnum,
-    IsNumber,
-    IsOptional,
-    IsString,
-    Matches,
-    Min
-} from 'class-validator';
-import { PaymentMethod } from '../../../common/enums/payment-method.enum';
+  IsDefined,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  Min,
+} from 'class-validator'
+import { PaymentMethod } from '../../../common/enums/payment-method.enum'
 
 export class OrderItemDto {
-    @ApiProperty()
-    @IsString()
-    productId: string;
+  @ApiProperty()
+  @IsString()
+  productId: string
 
-    @ApiProperty({ required: false })
-    @IsString()
-    @IsOptional()
-    variantId?: string;
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  variantId?: string
 
-    @ApiProperty()
-    @IsNumber()
-    @Min(1)
-    quantity: number;
+  @ApiProperty()
+  @IsNumber()
+  @Min(1)
+  quantity: number
 }
 
 export class CreateOrderDto {
-    @ApiProperty()
-    @IsString()
-    customerName: string;
+  @IsOptional()
+  @IsUUID()
+  @IsString()
+  userId: string
 
-    @ApiProperty()
-    @IsEmail()
-    customerEmail: string;
+  @IsDefined()
+  @IsNotEmpty()
+  @IsString()
+  customerName: string
 
-    @ApiProperty()
-    @IsString()
-    @Matches(/^01\d{9}$/, {
-        message: 'Customer phone must be a valid 11-digit Bangladeshi number starting with 01',
-    })
-    customerPhone: string;
+  @IsEmail()
+  customerEmail: string
 
-    @ApiProperty()
-    @IsString()
-    address: string;
+  @IsString()
+  @Matches(/^01\d{9}$/, {
+    message: 'Customer phone must be a valid 11-digit Bangladeshi number starting with 01',
+  })
+  customerPhone: string
 
-    // @ApiProperty({ type: [Object], required: false })
-    // @IsArray()
-    // @ValidateNested({ each: true })
-    // @Type(() => OrderItemDto)
-    // @IsOptional()
-    // items?: OrderItemDto[];
+  @IsString()
+  address: string
 
-    @ApiProperty({ enum: PaymentMethod })
-    @IsEnum(PaymentMethod)
-    paymentMethod: PaymentMethod;
+  // @ApiProperty({ type: [Object], required: false })
+  // @IsArray()
+  // @ValidateNested({ each: true })
+  // @Type(() => OrderItemDto)
+  // @IsOptional()
+  // items?: OrderItemDto[];
 
-    @ApiProperty({ required: false })
-    @IsString()
-    @IsOptional()
-    orderNotes?: string;
+  @ApiProperty({ enum: PaymentMethod })
+  @IsEnum(PaymentMethod)
+  paymentMethod: PaymentMethod
 
-    @ApiProperty({ required: false })
-    @IsString()
-    @IsOptional()
-    currency?: string;
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  orderNotes?: string
 
-    @ApiProperty({ required: false })
-    @IsNumber()
-    @IsOptional()
-    currencyRate?: number;
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  currency?: string
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  currencyRate?: number
 }
