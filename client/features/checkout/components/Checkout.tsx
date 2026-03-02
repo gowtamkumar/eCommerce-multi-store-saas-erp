@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { getSession, signIn, useSession } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -36,8 +35,6 @@ export default function Checkout() {
     const { selectedCurrency, formatPrice } = useSettings();
     const { data: session, status: sessionStatus } = useSession();
     const { downloadInvoice } = useDownloadInvoice();
-    const router = useRouter();
-
     const [loading, setLoading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<"cod" | "sslcommerz">(
         PaymentMethod.COD as any,

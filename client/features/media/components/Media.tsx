@@ -53,7 +53,7 @@ export default function Media() {
             const res = await fetchAPI(`/admin/media?${params}`);
 
             if (res.data) {
-                const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3900';
+                const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '');
                 const mappedMedia: MediaItem[] = res.data.map((f: any) => {
                     // Extract timestamp from filename (timestamp_name.ext)
                     let createdAt = new Date().toISOString();

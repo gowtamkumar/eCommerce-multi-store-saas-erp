@@ -6,6 +6,7 @@ import { fetchAPI } from "@/services/api";
 import { AnimatePresence, motion } from "framer-motion";
 import { Command, Lock, LogOut, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -125,7 +126,7 @@ const Navbar = () => {
             {/* Logo */}
             <Link href="/" className="flex-shrink-0 flex items-center gap-2 group">
               {settings?.logo ? (
-                <img src={settings.logo} alt={brandName} className="h-10 w-auto object-contain" />
+                <Image src={settings.logo} height={500} width={500} priority unoptimized alt={brandName} className="h-14 w-auto object-contain" />
               ) : (
                 <>
                   <div className="w-10 h-10 bg-gradient-to-br from-brand-600 to-brand-700 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-lg">

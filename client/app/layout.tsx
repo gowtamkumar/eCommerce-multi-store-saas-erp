@@ -1,17 +1,17 @@
+import AnalyticsTracker from "@/components/shared/AnalyticsTracker";
+import CartDrawer from "@/components/shared/CartDrawer";
+import AuthProvider from "@/hooks/AuthProvider";
+import { CartProvider } from "@/hooks/CartContext";
+import { SettingsProvider } from "@/hooks/SettingsContext";
+import ToasterProvider from "@/hooks/ToasterProvider";
+import { getSiteSettings } from "@/services/getSettings";
 import { Inter, Outfit } from "next/font/google";
+import Script from "next/script";
 import "../styles/typography.css";
 import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 export const dynamic = 'force-dynamic';
-import AuthProvider from "@/hooks/AuthProvider";
-import ToasterProvider from "@/hooks/ToasterProvider";
-import { CartProvider } from "@/hooks/CartContext";
-import { SettingsProvider } from "@/hooks/SettingsContext";
-import { getSiteSettings } from "@/services/getSettings";
-import Script from "next/script";
-import CartDrawer from "@/components/shared/CartDrawer";
-import AnalyticsTracker from "@/components/shared/AnalyticsTracker";
 
 export default async function RootLayout({
   children,

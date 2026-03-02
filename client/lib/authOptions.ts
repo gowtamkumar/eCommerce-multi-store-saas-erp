@@ -44,35 +44,38 @@ export const authOptions: NextAuthOptions = {
         // We MUST remove 'content-type' (lowercase) because the incoming request likely has
         // 'application/x-www-form-urlencoded' which overrides our 'Content-Type: application/json'
         // when passed to fetch, causing the backend to parse the body incorrectly.
-        if (headers['content-type']) delete headers['content-type'];
-        if (headers['content-length']) delete headers['content-length'];
+        if (headers["content-type"]) delete headers["content-type"];
+        if (headers["content-length"]) delete headers["content-length"];
 
         // Server-side Tenant ID Resolution
-        if (!headers['x-tenant-id'] && headers['host']) {
-          const host = headers['host'];
-          const parts = host.split('.');
+        if (!headers["x-tenant-id"] && headers["host"]) {
+          const host = headers["host"];
+          const parts = host.split(".");
           let queryParams = `?customDomain=${host}`;
 
           if (parts.length > 1) {
             const subdomain = parts[0];
             // Standard subdomain logic (ignoring www/api/localhost if not subdomained)
             // Fix: Strict check for localhost:3000 to allow subdomains like store.localhost:3000
-            if (subdomain !== 'www' && subdomain !== 'api' && host !== 'localhost:3000' && host !== '127.0.0.1:3000') {
+            if (
+              subdomain !== "www" &&
+              subdomain !== "api" &&
+              host !== "localhost:3000" &&
+              host !== "127.0.0.1:3000"
+            ) {
               queryParams += `&subdomain=${subdomain}`;
 
               try {
                 // We use fetchAPI to call our own backend
                 const tenantRes = await fetchAPI(`/tenants${queryParams}`, {
-                  method: 'GET',
+                  method: "GET",
                   headers: {}, // Explicitly clear headers to ensure clean request
                 });
 
-
                 if (tenantRes.success && tenantRes.data?.id) {
-                  headers['x-tenant-id'] = tenantRes.data.id;
+                  headers["x-tenant-id"] = tenantRes.data.id;
                 }
-              } catch (e: any) {
-              }
+              } catch (e: any) {}
             } else {
             }
           }
@@ -81,7 +84,7 @@ export const authOptions: NextAuthOptions = {
         try {
           console.log("before login");
 
-          const data = await fetchAPI('/admin/login', {
+          const data = await fetchAPI("/admin/login", {
             method: "POST",
             headers,
             body: JSON.stringify({
@@ -91,7 +94,6 @@ export const authOptions: NextAuthOptions = {
           });
 
           console.log("data", data);
-
 
           if (data.success && data.data && data.data.user) {
             const user = data.data.user;
@@ -106,7 +108,10 @@ export const authOptions: NextAuthOptions = {
         } catch (error: unknown) {
           console.log("error", error);
 
-          const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "An unknown error occurred";
           console.error("Authorize internal fetch error:", errorMessage);
           throw new Error(errorMessage);
         }
@@ -137,14 +142,13 @@ export const authOptions: NextAuthOptions = {
       if (trigger === "update" && session) {
         return { ...token, ...session };
       }
-      console.log("called access token");
       // If token is not expired, return it
-      if (token.accessTokenExpires && Date.now() / 1000 < token.accessTokenExpires) {
-
+      if (
+        token.accessTokenExpires &&
+        Date.now() / 1000 < token.accessTokenExpires
+      ) {
         return token;
       }
-
-      console.log("called refresh token");
 
       // Token has expired, try to refresh it
       return refreshAccessToken(token);
@@ -166,7 +170,12 @@ export const authOptions: NextAuthOptions = {
       // Allows relative callback URLs to preserve current subdomain
       if (url.startsWith("/")) return url;
       // Allows callback URLs on the same origin (including subdomains)
-      else if (url.includes('localhost') || url.includes('.com') || url.includes('.net')) return url;
+      else if (
+        url.includes("localhost") ||
+        url.includes(".com") ||
+        url.includes(".net")
+      )
+        return url;
       return baseUrl;
     },
   },
