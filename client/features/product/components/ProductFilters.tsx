@@ -46,9 +46,6 @@ export default function ProductFilters({ categories, brands, isMobileOpen, onClo
     // Reset pagination when filtering
     params.delete('page');
 
-    console.log("params", params.toString());
-
-
     router.push(`/products?${params.toString()}`);
   };
 
