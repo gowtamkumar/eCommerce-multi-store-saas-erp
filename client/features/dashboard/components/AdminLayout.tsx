@@ -2,7 +2,7 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard, FileText, Globe, HelpCircle, History as HistoryIcon, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, RotateCcw, Settings, Share2, ShoppingBag, Tag, TrendingUp, Truck, User, Users, X } from 'lucide-react';
+import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard, FileText, Globe, HelpCircle, History as HistoryIcon, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, RotateCcw, Settings, Share2, ShoppingBag, ShoppingCart, Tag, TrendingUp, Truck, User, Users, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -65,6 +65,8 @@ export default function AdminLayout({
         { icon: Package, label: 'Products', href: '/admin/products' },
         { icon: HistoryIcon, label: 'Inventory', href: '/admin/inventory' },
         { icon: Tag, label: 'Brands', href: '/admin/brands' },
+        { icon: Truck, label: 'Suppliers', href: '/admin/suppliers' },
+        { icon: ShoppingCart, label: 'Purchases', href: '/admin/purchases' },
         { icon: Tag, label: 'Categories', href: '/admin/categories' },
         { icon: Users, label: 'Customers', href: '/admin/customers' },
         { icon: CreditCard, label: 'Payments', href: '/admin/payments' },

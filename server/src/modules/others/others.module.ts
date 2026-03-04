@@ -5,7 +5,9 @@ import { SteadfastModule } from './courier/steadfast/steadfast.module'
 import { InventoryTransactionModule } from './inventory-transaction/inventory-transaction.module'
 import { MailModule } from './mail/mail.module'
 import { FileModule } from './media/file.module'
+import { PurchaseModule } from './purchase/purchase.module'
 import { ReportModule } from './report/report.module'
+import { SupplierModule } from './supplier/supplier.module'
 
 @Module({
   imports: [
@@ -16,7 +18,9 @@ import { ReportModule } from './report/report.module'
     CacheModule,
     ReportModule,
     InventoryTransactionModule,
+    SupplierModule,
+    PurchaseModule,
   ],
-  exports: [InventoryTransactionModule],
+  exports: [InventoryTransactionModule, SupplierModule, PurchaseModule],
 })
 export class OthersModule { }
