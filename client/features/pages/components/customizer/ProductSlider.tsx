@@ -20,16 +20,6 @@ export default function ProductSlider({
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  console.log("product slider props", headline,
-    source,
-    productIds,
-    count,
-    collectionId,
-    layout,
-    columns,
-    styles);
-
-
   useEffect(() => {
     async function loadProducts() {
       setLoading(true);

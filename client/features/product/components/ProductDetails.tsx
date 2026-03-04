@@ -22,9 +22,8 @@ import toast from "react-hot-toast";
 import { ProductDetailsProps } from "../types";
 
 
-
 const ProductDetails = ({ product }: ProductDetailsProps) => {
-  const { formatPrice, settings } = useSettings();
+  const { settings } = useSettings();
   const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -101,6 +100,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
         : ["https://placeholder.com/600"];
 
   const images = currentImages;
+
 
   const handleAddToCart = () => {
     addToCart(product.id, quantity, selectedVariant?.id);
@@ -410,9 +410,8 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 <ShoppingBag className="w-6 h-6" />
                 {currentStock <= 0
                   ? "Out of Stock"
-                  : selectedVariant
-                    ? "Add to Cart"
-                    : "Select Options"}
+                  : "Add to Cart"
+                }
               </button>
 
               <button

@@ -75,9 +75,9 @@ export class ProductEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'landing_page_id', nullable: true })
   landingPageId: string
 
-  @OneToOne(() => PageEntity, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'landing_page_id' })
-  landingPage: PageEntity
+  // @OneToOne(() => PageEntity, { nullable: true, onDelete: 'SET NULL' })
+  // @JoinColumn({ name: 'landing_page_id' })
+  // landingPage: PageEntity
 
 
   @OneToMany(() => FaqEntity, (faq) => faq.product)

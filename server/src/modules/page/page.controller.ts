@@ -11,7 +11,8 @@ export class PageController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(@Body() dto: CreatePageDto, @TenantId() tenantId: string) {
-    return await this.pageService.create(dto, tenantId)
+    const page = await this.pageService.create(dto, tenantId);
+    return { success: true, data: page };
   }
 
   @Get()

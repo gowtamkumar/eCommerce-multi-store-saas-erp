@@ -91,6 +91,7 @@ export class ProductService {
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.variants', 'variants')
+      // .leftJoinAndSelect('product.landingPage', 'landingPage')
       .where('product.tenantId = :tenantId', { tenantId })
 
     if (status) {
@@ -151,7 +152,7 @@ export class ProductService {
 
     const product = await this.productRepository.findOne({
       where: { id, tenantId },
-      relations: ['faqs', 'attributes', 'variants', 'category', 'landingPage'],
+      relations: ['faqs', 'attributes', 'variants', 'category'],
     })
 
     if (!product) {
@@ -166,7 +167,7 @@ export class ProductService {
   async findBySlug(slug: string, tenantId: string) {
     const product = await this.productRepository.findOne({
       where: { slug, tenantId },
-      relations: ['faqs', 'category', 'attributes', 'variants', 'reviews', 'landingPage'],
+      relations: ['faqs', 'category', 'attributes', 'variants', 'reviews'],
     })
 
     if (!product) {

@@ -122,8 +122,8 @@ export default function DashboardProducts() {
                                         id: `slide-${Date.now()}`,
                                         headline: product.name,
                                         subline: 'Experience the best quality',
-                                        buttonText: 'Buy Now',
-                                        buttonLink: '#',
+                                        buttonText: 'Shop Now',
+                                        buttonLink: `/products/${product.slug}`,
                                         image: product.images?.[0] || '',
                                         overlayOpacity: 40
                                     }
@@ -153,12 +153,28 @@ export default function DashboardProducts() {
                                 textAlign: 'left',
                                 textColor: '#333333'
                             }
+                        },
+                        {
+                            id: `section-${Date.now() + 2}`,
+                            type: 'button',
+                            settings: {
+                                text: 'Buy Now',
+                                link: `/products/${product.slug}`,
+                                variant: 'primary',
+                                size: 'lg'
+                            },
+                            styles: {
+                                paddingTop: 20,
+                                paddingBottom: 40,
+                                textAlign: 'center'
+                            }
                         }
                     ]
                 })
             });
 
-            if (!pageRes.success) throw new Error('Failed to create page');
+            // pageRes is { success: true, data: page }
+            if (!pageRes.success || !pageRes.data?.id) throw new Error('Failed to create page');
             const newPage = pageRes.data;
 
             // 2. Link to Product
