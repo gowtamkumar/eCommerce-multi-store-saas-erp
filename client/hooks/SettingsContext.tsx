@@ -36,6 +36,19 @@ interface SiteSettings {
     title: string;
     description: string;
   }>;
+  footerDescription?: string;
+  footerCopyright?: string;
+  footerSections?: Array<{
+    title: string;
+    order: number;
+    links: Array<{
+      label: string;
+      href: string;
+      order: number;
+      isOpenInNewTab: boolean;
+      isActive: boolean;
+    }>;
+  }>;
 }
 
 interface SettingsContextType {

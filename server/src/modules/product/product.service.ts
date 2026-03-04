@@ -87,6 +87,9 @@ export class ProductService {
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { q, status, categoryId, brandId } = filterDto
 
+    console.log("filterDto", filterDto);
+
+
     const query = this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')

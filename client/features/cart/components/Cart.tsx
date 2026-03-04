@@ -59,9 +59,11 @@ export default function Cart() {
                                     <div className="relative w-24 h-24 flex-shrink-0 bg-slate-100 dark:bg-slate-700 rounded-xl overflow-hidden">
                                         {item.product?.image ? (
                                             <Image
-                                                src={item.product.image}
-                                                alt={item.product.name}
+                                                src={item.product?.image}
+                                                alt={item.product?.name}
                                                 fill
+                                                priority
+                                                unoptimized
                                                 className="object-cover"
                                             />
                                         ) : (

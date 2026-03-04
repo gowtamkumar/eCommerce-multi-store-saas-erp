@@ -36,7 +36,7 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
 
   return (
     <footer className="bg-slate-900 text-white py-16 border-t border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-12 mb-12">
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="text-3xl font-bold text-white mb-6 block tracking-tight">
@@ -68,25 +68,47 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
               )}
             </div>
           </div>
-          {(
-            <>
-              <div>
-                <h4 className="font-bold text-lg mb-6 text-white">Pages</h4>
-                <ul className="space-y-4 text-slate-400">
-                  {pages.map((page) => (
-                    <li key={page.id}>
-                      <Link
-                        href={page.isHomePage ? "/" : `/${page.slug}`}
-                        className="hover:text-brand-400 transition-colors"
-                      >
-                        {page.title}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-            </>
+          {settings?.footerSections && settings.footerSections.length > 0 ? (
+            settings.footerSections
+              .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+              .map((section: any, idx: number) => (
+                <div key={idx}>
+                  <h4 className="font-bold text-lg mb-6 text-white">{section.title}</h4>
+                  <ul className="space-y-4 text-slate-400">
+                    {section.links
+                      ?.filter((link: any) => link.isActive !== false)
+                      .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+                      .map((link: any, lIdx: number) => (
+                        <li key={lIdx}>
+                          <Link
+                            href={link.href}
+                            target={link.isOpenInNewTab ? "_blank" : undefined}
+                            rel={link.isOpenInNewTab ? "noopener noreferrer" : undefined}
+                            className="hover:text-brand-400 transition-colors"
+                          >
+                            {link.label}
+                          </Link>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              ))
+          ) : (
+            <div>
+              <h4 className="font-bold text-lg mb-6 text-white">Pages</h4>
+              <ul className="space-y-4 text-slate-400">
+                {pages.map((page: any) => (
+                  <li key={page.id}>
+                    <Link
+                      href={page.isHomePage ? "/" : `/${page.slug}`}
+                      className="hover:text-brand-400 transition-colors"
+                    >
+                      {page.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm">
