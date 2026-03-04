@@ -11,6 +11,10 @@ export class CreatePurchaseOrderItemDto {
 
     @IsNumber()
     unitPrice: number;
+
+    @IsUUID()
+    @IsOptional()
+    variantId?: string;
 }
 
 export class CreatePurchaseOrderDto {

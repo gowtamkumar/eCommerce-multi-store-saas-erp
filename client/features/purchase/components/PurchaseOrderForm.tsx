@@ -32,19 +32,28 @@ export default function PurchaseOrderForm() {
         });
     }, []);
 
-    const addItem = (product: any) => {
-        if (formData.items.find(item => item.productId === product.id)) {
-            toast.error('Product already added');
+    const addItem = (product: any, variant?: any) => {
+        const itemId = variant ? `${product.id}-${variant.id}` : product.id;
+
+        if (formData.items.find(item =>
+            variant ? (item.productId === product.id && item.variantId === variant.id) : (item.productId === product.id && !item.variantId)
+        )) {
+            toast.error('Item already added');
             return;
         }
+
+        const variantLabel = variant ? Object.entries(variant.combination).map(([k, v]) => `${k}: ${v}`).join(', ') : '';
 
         setFormData({
             ...formData,
             items: [...formData.items, {
                 productId: product.id,
+                variantId: variant?.id || null,
                 name: product.name,
+                variantLabel,
+                sku: variant?.sku || product.sku || product.slug,
                 quantity: 1,
-                unitPrice: product.price // Default to selling price, user can adjust
+                unitPrice: variant?.price || product.price // Default to selling price
             }]
         });
         setSearchProduct('');
@@ -80,6 +89,7 @@ export default function PurchaseOrderForm() {
                     referenceNumber: formData.referenceNumber,
                     items: formData.items.map(item => ({
                         productId: item.productId,
+                        variantId: item.variantId || null,
                         quantity: parseInt(item.quantity),
                         unitPrice: parseFloat(item.unitPrice)
                     }))
@@ -134,23 +144,51 @@ export default function PurchaseOrderForm() {
                                     {filteredProductList.length === 0 ? (
                                         <div className="p-4 text-center text-slate-500">No products found</div>
                                     ) : (
-                                        filteredProductList.map(p => (
-                                            <button
-                                                key={p.id}
-                                                type="button"
-                                                onClick={() => addItem(p)}
-                                                className="w-full p-4 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left border-b last:border-0 border-slate-50 dark:border-slate-700"
-                                            >
-                                                <div className="w-10 h-10 bg-slate-100 dark:bg-slate-900 rounded flex items-center justify-center">
-                                                    {p.images?.[0] ? <img src={p.images[0]} alt="" className="w-full h-full object-cover rounded" /> : <Package className="w-5 h-5 text-slate-400" />}
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-slate-900 dark:text-white">{p.name}</div>
-                                                    <div className="text-xs text-slate-500">SKU: {p.slug} | Stock: {p.stock}</div>
-                                                </div>
-                                                <Plus className="w-4 h-4 ml-auto text-brand-500" />
-                                            </button>
-                                        ))
+                                        filteredProductList.flatMap(p => {
+                                            if (p.variants && p.variants.length > 0) {
+                                                return p.variants.map((v: any) => (
+                                                    <button
+                                                        key={`${p.id}-${v.id}`}
+                                                        type="button"
+                                                        onClick={() => addItem(p, v)}
+                                                        className="w-full p-4 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left border-b last:border-0 border-slate-50 dark:border-slate-700"
+                                                    >
+                                                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-900 rounded flex items-center justify-center">
+                                                            {v.images?.[0] ? <img src={v.images[0]} alt="" className="w-full h-full object-cover rounded" /> : (p.images?.[0] ? <img src={p.images[0]} alt="" className="w-full h-full object-cover rounded" /> : <Package className="w-5 h-5 text-slate-400" />)}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="font-bold text-slate-900 dark:text-white">{p.name}</div>
+                                                            <div className="flex flex-wrap gap-1 mt-0.5">
+                                                                {Object.entries(v.combination || {}).map(([k, val]) => (
+                                                                    <span key={k} className="text-[10px] bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-400 font-medium">
+                                                                        {k}: {val as string}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                            <div className="text-[10px] text-slate-500 mt-1">SKU: {v.sku} | Stock: {v.stock}</div>
+                                                        </div>
+                                                        <Plus className="w-4 h-4 ml-auto text-brand-500" />
+                                                    </button>
+                                                ));
+                                            }
+                                            return [
+                                                <button
+                                                    key={p.id}
+                                                    type="button"
+                                                    onClick={() => addItem(p)}
+                                                    className="w-full p-4 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left border-b last:border-0 border-slate-50 dark:border-slate-700"
+                                                >
+                                                    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-900 rounded flex items-center justify-center">
+                                                        {p.images?.[0] ? <img src={p.images[0]} alt="" className="w-full h-full object-cover rounded" /> : <Package className="w-5 h-5 text-slate-400" />}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-slate-900 dark:text-white">{p.name}</div>
+                                                        <div className="text-xs text-slate-500">SKU: {p.slug} | Stock: {p.stock}</div>
+                                                    </div>
+                                                    <Plus className="w-4 h-4 ml-auto text-brand-500" />
+                                                </button>
+                                            ];
+                                        })
                                     )}
                                 </div>
                             )}
@@ -177,7 +215,11 @@ export default function PurchaseOrderForm() {
                                         formData.items.map((item, idx) => (
                                             <tr key={item.productId} className="group">
                                                 <td className="py-4">
-                                                    <div className="font-medium text-slate-900 dark:text-white">{item.name}</div>
+                                                    <div className="font-bold text-slate-900 dark:text-white leading-tight">{item.name}</div>
+                                                    {item.variantLabel && (
+                                                        <div className="text-[10px] text-slate-500 mt-0.5 uppercase tracking-wide font-medium">{item.variantLabel}</div>
+                                                    )}
+                                                    <div className="text-[10px] text-slate-400 font-mono mt-0.5">SKU: {item.sku}</div>
                                                 </td>
                                                 <td className="py-4">
                                                     <input

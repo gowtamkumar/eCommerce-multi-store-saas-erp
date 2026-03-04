@@ -9,6 +9,8 @@ import { InventoryTransactionType } from '../../../../common/enums/inventory-tra
 import { InventoryTransactionReferenceType } from '../../../../common/enums/inventory-transaction-reference-type.enum';
 import { ProductEntity } from '../../../product/entities/product.entity';
 import { TenantEntity } from '../../../tenant/entities/tenant.entity';
+import { ProductVariantEntity } from '../../../product/entities/variant.entity';
+import { SupplierEntity } from '../../supplier/entities/supplier.entity';
 
 @Entity('inventory_transactions')
 export class InventoryTransactionEntity extends BaseEntity {
@@ -19,6 +21,20 @@ export class InventoryTransactionEntity extends BaseEntity {
     @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'product_id' })
     product: ProductEntity
+
+    @Column({ type: 'uuid', name: 'variant_id', nullable: true })
+    variantId: string
+
+    @ManyToOne(() => ProductVariantEntity, { onDelete: 'SET NULL', nullable: true })
+    @JoinColumn({ name: 'variant_id' })
+    variant: ProductVariantEntity
+
+    @Column({ type: 'uuid', name: 'supplier_id', nullable: true })
+    supplierId: string
+
+    @ManyToOne(() => SupplierEntity, { onDelete: 'SET NULL', nullable: true })
+    @JoinColumn({ name: 'supplier_id' })
+    supplier: SupplierEntity
 
     @Column({
         type: 'enum',

@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { InventoryTransactionEntity } from './entities/inventory-transaction.entity';
 import { CreateInventoryTransactionDto } from './dto/create-inventory-transaction.dto';
 import { ProductEntity } from '../../product/entities/product.entity';
+import { ProductVariantEntity } from '../../product/entities/variant.entity';
+import { InventoryTransactionType } from '../../../common/enums/inventory-transaction-type.enum';
 
 @Injectable()
 export class InventoryTransactionService {
@@ -12,6 +14,8 @@ export class InventoryTransactionService {
         private readonly repository: Repository<InventoryTransactionEntity>,
         @InjectRepository(ProductEntity)
         private readonly productRepository: Repository<ProductEntity>,
+        @InjectRepository(ProductVariantEntity)
+        private readonly variantRepository: Repository<ProductVariantEntity>,
     ) { }
 
     async create(dto: CreateInventoryTransactionDto, tenantId: string) {
@@ -23,22 +27,28 @@ export class InventoryTransactionService {
             throw new NotFoundException('Product not found');
         }
 
+        // Update static stock fields (cache)
+        const qtyChange = dto.type === InventoryTransactionType.OUT ? -dto.quantity : dto.quantity;
+
+        if (dto.variantId) {
+            const variant = await this.variantRepository.findOne({
+                where: { id: dto.variantId, productId: dto.productId, tenantId }
+            });
+            if (variant) {
+                variant.stock = (variant.stock || 0) + qtyChange;
+                await this.variantRepository.save(variant);
+            }
+        } else {
+            product.stock = (product.stock || 0) + qtyChange;
+            await this.productRepository.save(product);
+        }
+
         const transaction = this.repository.create({
             ...dto,
             tenantId,
         });
 
-        const savedTransaction = await this.repository.save(transaction);
-
-        // Update product stock
-        if (dto.type === 'IN') {
-            product.stock += dto.quantity;
-        } else {
-            product.stock -= dto.quantity;
-        }
-        await this.productRepository.save(product);
-
-        return savedTransaction;
+        return await this.repository.save(transaction);
     }
 
     async findAll(tenantId: string) {

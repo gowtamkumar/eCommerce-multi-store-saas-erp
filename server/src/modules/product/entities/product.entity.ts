@@ -16,6 +16,7 @@ import { PageEntity } from '../../page/entities/page.entity';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { ProductAttributeEntity } from './attribute.entity';
 import { ProductVariantEntity } from './variant.entity';
+import { SupplierEntity } from '../../others/supplier/entities/supplier.entity';
 
 @Entity('products')
 export class ProductEntity extends BaseEntity {
@@ -97,6 +98,13 @@ export class ProductEntity extends BaseEntity {
 
   @OneToMany(() => ReviewEntity, (reviews) => reviews.product)
   reviews: ReviewEntity[]
+
+  @Column({ type: 'uuid', name: 'supplier_id', nullable: true })
+  supplierId: string
+
+  @ManyToOne(() => SupplierEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'supplier_id' })
+  supplier: SupplierEntity
 
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string

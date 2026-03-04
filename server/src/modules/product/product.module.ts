@@ -9,6 +9,8 @@ import { ProductEntity } from './entities/product.entity'
 import { ProductVariantEntity } from './entities/variant.entity'
 import { ProductController } from './product.controller'
 import { ProductService } from './product.service'
+import { InventoryTransactionModule } from '../others/inventory-transaction/inventory-transaction.module'
+import { PurchaseModule } from '../others/purchase/purchase.module'
 
 @Module({
   imports: [
@@ -21,9 +23,11 @@ import { ProductService } from './product.service'
     ]),
     ReviewModule,
     CacheModule,
+    InventoryTransactionModule,
+    PurchaseModule,
   ],
   controllers: [ProductController],
   providers: [ProductService],
   exports: [ProductService],
 })
-export class ProductModule {}
+export class ProductModule { }

@@ -4,9 +4,10 @@ import { InventoryTransactionEntity } from './entities/inventory-transaction.ent
 import { InventoryTransactionService } from './inventory-transaction.service';
 import { InventoryTransactionController } from './inventory-transaction.controller';
 import { ProductEntity } from '../../product/entities/product.entity';
+import { ProductVariantEntity } from '../../product/entities/variant.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([InventoryTransactionEntity, ProductEntity])],
+    imports: [TypeOrmModule.forFeature([InventoryTransactionEntity, ProductEntity, ProductVariantEntity])],
     controllers: [InventoryTransactionController],
     providers: [InventoryTransactionService],
     exports: [InventoryTransactionService],

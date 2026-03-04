@@ -133,6 +133,11 @@ export class CreateProductDto {
     @IsOptional()
     landingPageId?: string;
 
+    @ApiProperty({ required: false })
+    @IsUUID()
+    @IsOptional()
+    supplierId?: string;
+
     @ApiProperty({ required: false, type: [ProductFaqDto] })
     @IsArray()
     @ValidateNested({ each: true })

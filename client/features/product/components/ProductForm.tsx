@@ -19,6 +19,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
@@ -32,6 +33,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     status: initialData?.status || 'active',
     categoryId: initialData?.categoryId || initialData?.category?.id || '',
     brandId: initialData?.brandId || initialData?.brand?.id || '',
+    supplierId: initialData?.supplierId || initialData?.supplier?.id || '',
     isReview: initialData?.isReview,
     attributes: initialData?.attributes || [] as ProductAttribute[],
     variants: initialData?.variants || [] as ProductVariant[],
@@ -44,10 +46,12 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   useEffect(() => {
     Promise.all([
       fetchAPI('/categories'),
-      fetchAPI('/brands')
-    ]).then(([catRes, brandRes]) => {
+      fetchAPI('/brands'),
+      fetchAPI('/suppliers')
+    ]).then(([catRes, brandRes, supplierRes]) => {
       if (catRes.success) setCategories(catRes.data);
       if (brandRes.success) setBrands(brandRes.data);
+      if (supplierRes.success) setSuppliers(supplierRes.data);
     });
   }, []);
 
@@ -71,6 +75,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       images: formData.images.split(',').map((s: string) => s.trim()).filter(Boolean),
       categoryId: formData.categoryId || null,
       brandId: formData.brandId || null,
+      supplierId: formData.supplierId || null,
       faqSource: formData.faqSource,
       faqIds: formData.faqSource === 'selection' ? formData.faqIds : [],
       faqs: formData.faqSource === 'manual' ? formData.faqs.map((f: any) => ({
@@ -247,6 +252,24 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <Plus className="w-4 h-4" /> Main Supplier
+              </label>
+              <select
+                value={formData.supplierId}
+                onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+              >
+                <option value="">No Supplier</option>
+                {suppliers.map((sup) => (
+                  <option key={sup.id} value={sup.id}>
+                    {sup.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Pricing */}
@@ -291,6 +314,9 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                 onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all"
               />
+              <p className="mt-2 text-[10px] text-slate-400 leading-relaxed italic">
+                * Setting initial stock will automatically generate a RECEIVED Purchase Order for the selected supplier.
+              </p>
             </div>
           </div>
 

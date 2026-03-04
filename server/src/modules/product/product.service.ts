@@ -9,6 +9,11 @@ import { ProductAttributeEntity } from './entities/attribute.entity'
 import { ProductEntity } from './entities/product.entity'
 import { ProductVariantEntity } from './entities/variant.entity'
 import { ProductStatus } from 'src/common/enums/product-status.enum'
+import { InventoryTransactionService } from '../others/inventory-transaction/inventory-transaction.service'
+import { InventoryTransactionType } from '../../common/enums/inventory-transaction-type.enum'
+import { InventoryTransactionReferenceType } from '../../common/enums/inventory-transaction-reference-type.enum'
+import { PurchaseOrderService } from '../others/purchase/purchase-order.service'
+import { PurchaseOrderStatus } from 'src/common/enums/purchase-order-status.enum'
 
 @Injectable()
 export class ProductService {
@@ -22,6 +27,8 @@ export class ProductService {
     @InjectRepository(ProductVariantEntity)
     private variantRepository: Repository<ProductVariantEntity>,
     private cache: CacheService,
+    private readonly inventoryService: InventoryTransactionService,
+    private readonly purchaseOrderService: PurchaseOrderService,
   ) { }
 
   async create(createProductDto: CreateProductDto, tenantId: string) {
@@ -39,9 +46,22 @@ export class ProductService {
     const product = this.productRepository.create({
       ...productData,
       tenantId,
+      stock: 0, // Ensure base stock is 0, handled via transactions
     })
 
     const savedProduct = await this.productRepository.save(product)
+
+    // Handle initial stock via Purchase Order if stock > 0
+    const poItems = []
+
+    // Check base product stock (if no variants)
+    if (productData.stock > 0 && (!variants || variants.length === 0)) {
+      poItems.push({
+        productId: savedProduct.id,
+        quantity: productData.stock,
+        unitPrice: productData.price, // Use product price as default unit price
+      })
+    }
 
     // Save FAQs
     if (faqs && faqs.length > 0) {
@@ -69,14 +89,36 @@ export class ProductService {
 
     // Save Variants
     if (variants && variants.length > 0) {
-      const variantEntities = variants.map((variant) =>
-        this.variantRepository.create({
-          ...variant,
+      for (const variantDto of variants) {
+        const variant = this.variantRepository.create({
+          ...variantDto,
           productId: savedProduct.id,
           tenantId,
-        }),
-      )
-      await this.variantRepository.save(variantEntities)
+          stock: 0,
+        })
+        const savedVariant = await this.variantRepository.save(variant)
+
+        if (variantDto.stock > 0) {
+          poItems.push({
+            productId: savedProduct.id,
+            variantId: savedVariant.id,
+            quantity: variantDto.stock,
+            unitPrice: variantDto.price || productData.price,
+          })
+        }
+      }
+    }
+
+    // Create a RECEIVED Purchase Order if there are items to stock
+    if (poItems.length > 0 && createProductDto.supplierId) {
+      const po = await this.purchaseOrderService.create({
+        supplierId: createProductDto.supplierId,
+        referenceNumber: `INITIAL_${savedProduct.slug.toUpperCase()}_${Date.now()}`,
+        items: poItems,
+      }, tenantId)
+
+      // Mark as received immediately to trigger inventory
+      await this.purchaseOrderService.updateStatus(po.id, { status: PurchaseOrderStatus.RECEIVED }, tenantId)
     }
 
     return await this.findOne(savedProduct.id, tenantId)
@@ -242,20 +284,58 @@ export class ProductService {
       const existingVariantIds = existingVariants.map((v) => v.id)
 
       // 2. Identify incoming IDs (to exclude from deletion)
-      const incomingVariantIds = variants.filter((v: any) => v.id).map((v: any) => v.id)
+      const incomingVariantsWithId = variants.filter((v: any) => v.id)
+      const incomingVariantIds = incomingVariantsWithId.map((v: any) => v.id)
+      const newVariants = variants.filter((v: any) => !v.id)
 
-      // 3. Upsert (Update existing + Insert new)
-      // We map variants to entities. If ID exists, TypeORM updates; if not, it inserts.
-      const variantEntities = variants.map((variant) =>
-        this.variantRepository.create({
-          ...variant,
+      // 3. Update existing variants
+      for (const variantDto of incomingVariantsWithId) {
+        const variant = this.variantRepository.create({
+          ...variantDto,
           productId: product.id,
           tenantId,
-        }),
-      )
-      await this.variantRepository.save(variantEntities)
+          // We don't touch stock here, as it's handled by transactions
+          // Unless the user explicitly wants to adjust it via update?
+          // If updateDto has stock, maybe we should log an ADJUSTMENT?
+          // For now, let's keep it simple: only handle NEW variants as INITIAL.
+        })
+        await this.variantRepository.save(variant)
+      }
 
-      // 4. Delete removed variants
+      const poItems = []
+
+      // 4. Create new variants and log stock via Purchase Order
+      for (const variantDto of newVariants) {
+        const variant = this.variantRepository.create({
+          ...variantDto,
+          productId: product.id,
+          tenantId,
+          stock: 0, // Ensure variant stock starts at 0, handled via transactions
+        })
+        const savedVariant = await this.variantRepository.save(variant)
+
+        if (variantDto.stock > 0) {
+          poItems.push({
+            productId: product.id,
+            variantId: savedVariant.id,
+            quantity: variantDto.stock,
+            unitPrice: variantDto.price || product.price,
+          })
+        }
+      }
+
+      // Create a RECEIVED Purchase Order for new variants if there are items to stock
+      if (poItems.length > 0 && product.supplierId) {
+        const po = await this.purchaseOrderService.create({
+          supplierId: product.supplierId,
+          referenceNumber: `INITIAL_VAR_${product.slug.toUpperCase()}_${Date.now()}`,
+          items: poItems,
+        }, tenantId)
+
+        await this.purchaseOrderService.updateStatus(po.id, { status: PurchaseOrderStatus.RECEIVED }, tenantId)
+      }
+
+      // 5. Delete removed variants
       const toDeleteIds = existingVariantIds.filter((id) => !incomingVariantIds.includes(id))
 
       if (toDeleteIds.length > 0) {
@@ -285,31 +365,15 @@ export class ProductService {
   }
 
   async decrementStock(productId: string, quantity: number, tenantId: string, variantId?: string) {
-    if (variantId) {
-      const variant = await this.variantRepository.findOne({
-        where: { id: variantId, productId, tenantId },
-      })
-
-      if (!variant) {
-        throw new NotFoundException('Product variant not found')
-      }
-
-      if (variant.stock < quantity) {
-        throw new ConflictException('Insufficient variant stock')
-      }
-
-      variant.stock -= quantity
-      return await this.variantRepository.save(variant)
-    }
-
-    const product: any = await this.findOne(productId, tenantId)
-
-    if (product.stock < quantity) {
-      throw new ConflictException('Insufficient stock')
-    }
-
-    product.stock -= quantity
-    return await this.productRepository.save(product)
+    // Note: The inventory service handles updating the static stock fields (cache)
+    // and logging the transaction record.
+    return await this.inventoryService.create({
+      productId,
+      variantId,
+      quantity,
+      type: InventoryTransactionType.OUT,
+      referenceType: InventoryTransactionReferenceType.ADJUSTMENT,
+    }, tenantId)
   }
 
   async findAllProductsCrossTenant() {

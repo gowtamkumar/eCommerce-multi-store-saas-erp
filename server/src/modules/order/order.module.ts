@@ -14,6 +14,7 @@ import { OrderController } from './order.controller'
 import { OrderService } from './order.service'
 import { ReturnController } from './return.controller'
 import { ReturnService } from './return.service'
+import { InventoryTransactionModule } from '../others/inventory-transaction/inventory-transaction.module'
 
 @Module({
   imports: [
@@ -29,9 +30,10 @@ import { ReturnService } from './return.service'
       OrderReturnEntity, // Registered
     ]),
     CartModule,
+    InventoryTransactionModule,
   ],
   controllers: [OrderController, ReturnController], // Registered
   providers: [OrderService, ReturnService], // Registered
   exports: [OrderService, ReturnService],
 })
-export class OrderModule {}
+export class OrderModule { }

@@ -44,7 +44,7 @@ export class PurchaseOrderService {
     async findOne(id: string, tenantId: string) {
         const order = await this.repository.findOne({
             where: { id, tenantId },
-            relations: ['supplier', 'items', 'items.product'],
+            relations: ['supplier', 'items', 'items.product', 'items.variant'],
         });
         if (!order) {
             throw new NotFoundException('Purchase order not found');
@@ -79,10 +79,12 @@ export class PurchaseOrderService {
             for (const item of order.items) {
                 await this.inventoryService.create({
                     productId: item.productId,
+                    variantId: item.variantId,
                     quantity: item.quantity,
                     type: InventoryTransactionType.IN,
                     referenceType: InventoryTransactionReferenceType.PURCHASE,
                     referenceId: order.id,
+                    supplierId: order.supplierId,
                 }, tenantId);
             }
 

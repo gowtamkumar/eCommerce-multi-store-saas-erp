@@ -18,4 +18,12 @@ export class CreateInventoryTransactionDto {
     @IsString()
     @IsOptional()
     referenceId?: string;
+
+    @IsUUID()
+    @IsOptional()
+    variantId?: string;
+
+    @IsUUID()
+    @IsOptional()
+    supplierId?: string;
 }

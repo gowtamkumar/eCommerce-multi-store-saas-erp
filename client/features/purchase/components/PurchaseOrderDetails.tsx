@@ -123,7 +123,17 @@ export default function PurchaseOrderDetails() {
                                     {order.items?.map((item: any) => (
                                         <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                             <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">
-                                                {item.product?.name || 'Unknown Product'}
+                                                <div className="font-bold">{item.product?.name || 'Unknown Product'}</div>
+                                                {item.variant && (
+                                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                                        {Object.entries(item.variant.combination || {}).map(([k, v]: [string, any]) => (
+                                                            <span key={k} className="text-[10px] bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-400 font-medium uppercase tracking-tighter">
+                                                                {k}: {v}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <div className="text-[10px] text-slate-400 font-mono mt-1">SKU: {item.variant?.sku || item.product?.slug}</div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400 text-center">
                                                 {item.quantity}

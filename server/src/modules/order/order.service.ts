@@ -14,6 +14,10 @@ import { CreateOrderDto } from './dto/create-order.dto'
 import { UpdateOrderDto } from './dto/update-order.dto'
 import { OrderItemEntity } from './entities/order-item.entity'
 import { OrderEntity } from './entities/order.entity'
+import { InventoryTransactionService } from '../others/inventory-transaction/inventory-transaction.service'
+import { InventoryTransactionType } from '../../common/enums/inventory-transaction-type.enum'
+import { InventoryTransactionReferenceType } from '../../common/enums/inventory-transaction-reference-type.enum'
+import { DataSource } from 'typeorm'
 
 @Injectable()
 export class OrderService {
@@ -33,7 +37,9 @@ export class OrderService {
     @InjectRepository(PaymentEntity)
     private paymentRepository: Repository<PaymentEntity>,
     private cartService: CartService,
-  ) {}
+    private readonly inventoryService: InventoryTransactionService,
+    private readonly dataSource: DataSource,
+  ) { }
 
   async create(createOrderDto: CreateOrderDto, tenantId: string) {
     const {
@@ -146,15 +152,6 @@ export class OrderService {
 
       processedItems.push(orderItem)
       totalOrderAmount += itemTotal
-
-      // Decrement stock
-      if (variant) {
-        variant.stock -= quantity
-        await this.variantRepository.save(variant)
-      } else {
-        product.stock -= quantity
-        await this.productRepository.save(product)
-      }
     }
 
     order.totalAmount = totalOrderAmount
@@ -260,37 +257,70 @@ export class OrderService {
   async update(id: string, updateOrderDto: UpdateOrderDto, tenantId: string) {
     const order = await this.findOne(id, tenantId)
 
-    // Check if payment status is changing to PAID
-    if (
-      updateOrderDto.paymentStatus === PaymentStatus.PAID &&
-      order.paymentStatus !== PaymentStatus.PAID
-    ) {
-      // Create payment record for manual update (e.g. COD)
-      const transactionId =
-        updateOrderDto.transactionId || order.transactionId || `MANUAL_COD_${Date.now()}`
+    // Using query runner for business transaction
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
 
-      // Check if payment already exists
-      const existingPayment = await this.paymentRepository.findOne({
-        where: { transactionId, tenantId },
-      })
+    try {
+      const oldStatus = order.status
+      const oldPaymentStatus = order.paymentStatus
 
-      if (!existingPayment) {
-        const payment = this.paymentRepository.create({
-          orderId: order.id,
-          transactionId,
-          amount: order.totalAmount,
-          currency: order.currency,
-          method: order.paymentMethod || 'Manual',
-          status: 'SUCCESS',
-          gatewayResponse: { note: 'Manual update from admin dashboard' },
-          tenantId,
+      // Check if payment status is changing to PAID
+      if (
+        updateOrderDto.paymentStatus === PaymentStatus.PAID &&
+        oldPaymentStatus !== PaymentStatus.PAID
+      ) {
+        const transactionId =
+          updateOrderDto.transactionId || order.transactionId || `MANUAL_COD_${Date.now()}`
+
+        const existingPayment = await queryRunner.manager.findOne(PaymentEntity, {
+          where: { transactionId, tenantId },
         })
-        await this.paymentRepository.save(payment)
-      }
-    }
 
-    Object.assign(order, updateOrderDto)
-    return await this.orderRepository.save(order)
+        if (!existingPayment) {
+          const payment = this.paymentRepository.create({
+            orderId: order.id,
+            transactionId,
+            amount: order.totalAmount,
+            currency: order.currency,
+            method: order.paymentMethod || 'Manual',
+            status: 'SUCCESS',
+            gatewayResponse: { note: 'Manual update from admin dashboard' },
+            tenantId,
+          })
+          await queryRunner.manager.save(payment)
+        }
+      }
+
+      // Check for Order Completion to log Inventory Transaction
+      if (
+        updateOrderDto.status === OrderStatus.COMPLETED &&
+        oldStatus !== OrderStatus.COMPLETED
+      ) {
+        for (const item of order.items) {
+          await this.inventoryService.create({
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity,
+            type: InventoryTransactionType.OUT,
+            referenceType: InventoryTransactionReferenceType.ORDER,
+            referenceId: order.id,
+          }, tenantId);
+        }
+      }
+
+      Object.assign(order, updateOrderDto)
+      const savedOrder = await queryRunner.manager.save(order)
+
+      await queryRunner.commitTransaction()
+      return savedOrder
+    } catch (err) {
+      await queryRunner.rollbackTransaction()
+      throw err
+    } finally {
+      await queryRunner.release()
+    }
   }
 
   async findAllOrders() {
