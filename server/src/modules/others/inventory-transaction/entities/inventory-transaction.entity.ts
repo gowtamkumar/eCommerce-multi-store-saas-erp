@@ -1,0 +1,48 @@
+import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import {
+    Column,
+    Entity,
+    JoinColumn,
+    ManyToOne,
+} from 'typeorm';
+import { InventoryTransactionType } from '../../../../common/enums/inventory-transaction-type.enum';
+import { InventoryTransactionReferenceType } from '../../../../common/enums/inventory-transaction-reference-type.enum';
+import { ProductEntity } from '../../../product/entities/product.entity';
+import { TenantEntity } from '../../../tenant/entities/tenant.entity';
+
+@Entity('inventory_transactions')
+export class InventoryTransactionEntity extends BaseEntity {
+
+    @Column({ type: 'uuid', name: 'product_id' })
+    productId: string
+
+    @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'product_id' })
+    product: ProductEntity
+
+    @Column({
+        type: 'enum',
+        enum: InventoryTransactionType,
+    })
+    type: InventoryTransactionType
+
+    @Column({ type: 'int' })
+    quantity: number
+
+    @Column({
+        type: 'enum',
+        enum: InventoryTransactionReferenceType,
+        name: 'reference_type'
+    })
+    referenceType: InventoryTransactionReferenceType
+
+    @Column({ type: 'varchar', length: 255, name: 'reference_id', nullable: true })
+    referenceId: string
+
+    @Column({ type: 'uuid', name: 'tenant_id' })
+    tenantId: string
+
+    @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'tenant_id' })
+    tenant: TenantEntity
+}
