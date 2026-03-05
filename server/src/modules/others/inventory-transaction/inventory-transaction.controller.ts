@@ -34,4 +34,11 @@ export class InventoryTransactionController {
         const transactions = await this.service.findByProduct(productId, tenantId);
         return { success: true, data: transactions };
     }
+
+    @Get('stock-summary')
+    @UseGuards(JwtAuthGuard)
+    async getStockSummary(@TenantId() tenantId: string) {
+        const data = await this.service.getStockSummary(tenantId);
+        return { success: true, data };
+    }
 }
