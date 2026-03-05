@@ -45,7 +45,10 @@ export default function AdminDashboard() {
                     recentPages,
                     recentProducts,
                     salesData,
-                    monthlyGrowth
+                    monthlyGrowth,
+                    supplierStats,
+                    lowStockCount,
+                    lowStockProducts
                 } = response.data;
 
                 setStats({
@@ -58,6 +61,9 @@ export default function AdminDashboard() {
                     recentPages,
                     salesData,
                     monthlyGrowth,
+                    supplierStats,
+                    lowStockCount,
+                    lowStockProducts
                 });
                 setRecentProducts(recentProducts);
             }
@@ -263,12 +269,22 @@ export default function AdminDashboard() {
                                     <p className="text-xl font-black">{stats.supplierStats?.totalPurchaseOrders || 0}</p>
                                 </div>
                             </div>
-                            <Link
-                                href="/admin/purchases"
-                                className="mt-4 block w-full py-3 bg-white/10 hover:bg-white/20 rounded-2xl text-center text-xs font-black uppercase tracking-widest transition-all"
-                            >
-                                Manage Supplies
-                            </Link>
+
+                            {(stats.lowStockCount || 0) > 0 ? (
+                                <Link
+                                    href="/admin/inventory"
+                                    className="mt-4 block w-full py-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-2xl text-center text-xs font-black uppercase tracking-widest transition-all"
+                                >
+                                    ⚠️ {stats.lowStockCount} Low Stock Items
+                                </Link>
+                            ) : (
+                                <Link
+                                    href="/admin/purchases"
+                                    className="mt-4 block w-full py-3 bg-white/10 hover:bg-white/20 rounded-2xl text-center text-xs font-black uppercase tracking-widest transition-all"
+                                >
+                                    Manage Supplies
+                                </Link>
+                            )}
                         </div>
                     </div>
 

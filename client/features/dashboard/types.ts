@@ -14,4 +14,6 @@ export interface DashboardStats {
         totalAmountDue: number;
         recentPurchaseOrders: any[];
     };
+    lowStockCount?: number;
+    lowStockProducts?: any[];
 }

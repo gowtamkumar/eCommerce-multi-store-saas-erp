@@ -36,6 +36,14 @@ interface SiteSettings {
     title: string;
     description: string;
   }>;
+  pathaoCourier?: {
+    pathaoClientId?: string;
+    pathaoStoreId?: string;
+    sandboxMode?: boolean;
+  };
+  steadfastCourier?: {
+    apiKey?: string;
+  };
   footerDescription?: string;
   footerCopyright?: string;
   footerSections?: Array<{

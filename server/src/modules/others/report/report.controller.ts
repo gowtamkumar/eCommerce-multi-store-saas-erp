@@ -182,6 +182,20 @@ export class ReportController {
           suppliers: suppliers.length,
           purchaseOrders: purchaseOrders.length,
         },
+        lowStockCount: productsData.filter((p: any) => {
+          if (p.variants && p.variants.length > 0) {
+            return p.variants.some((v: any) => v.stock <= 5)
+          }
+          return p.stock <= 5
+        }).length,
+        lowStockProducts: productsData
+          .filter((p: any) => {
+            if (p.variants && p.variants.length > 0) {
+              return p.variants.some((v: any) => v.stock <= 5)
+            }
+            return p.stock <= 5
+          })
+          .slice(0, 5),
       },
     }
   }

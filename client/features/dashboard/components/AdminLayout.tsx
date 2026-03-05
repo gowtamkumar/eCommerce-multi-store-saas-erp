@@ -70,8 +70,7 @@ export default function AdminLayout({
             items: [
                 { icon: Package, label: 'Products', href: '/admin/products' },
                 { icon: Tag, label: 'Categories', href: '/admin/categories' },
-                { icon: Tag, label: 'Brands', href: '/admin/brands' },
-                { icon: HistoryIcon, label: 'Inventory', href: '/admin/inventory' },
+                { icon: Globe, label: 'Brands', href: '/admin/brands' },
             ]
         },
         {
@@ -85,8 +84,10 @@ export default function AdminLayout({
         {
             title: 'Supply Chain',
             items: [
-                { icon: Truck, label: 'Suppliers', href: '/admin/suppliers' },
-                { icon: ShoppingCart, label: 'Purchases', href: '/admin/purchases' },
+                { icon: Package, label: 'Inventory', href: '/admin/inventory' },
+                { icon: Users, label: 'Suppliers', href: '/admin/suppliers' },
+                { icon: Truck, label: 'Purchase Orders', href: '/admin/purchases' },
+                { icon: Truck, label: 'Couriers', href: '/admin/couriers' },
             ]
         },
         {
