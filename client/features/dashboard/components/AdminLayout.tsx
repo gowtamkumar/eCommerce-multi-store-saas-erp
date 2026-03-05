@@ -2,7 +2,7 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard, FileText, Globe, HelpCircle, History as HistoryIcon, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, RotateCcw, Settings, Share2, ShoppingBag, ShoppingCart, Tag, TrendingUp, Truck, User, Users, X } from 'lucide-react';
+import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard, FileText, Globe, HelpCircle, History as HistoryIcon, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, RotateCcw, Settings, Share2, ShoppingBag, ShoppingCart, Star, Tag, TrendingUp, Truck, User, Users, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -94,6 +94,8 @@ export default function AdminLayout({
             items: [
                 { icon: Users, label: 'Customers', href: '/admin/customers' },
                 { icon: MessageSquare, label: 'Newsletter', href: '/admin/leads' },
+                { icon: Star, label: 'Reviews', href: '/admin/reviews' },
+                { icon: Mail, label: 'Subscribers', href: '/admin/subscribers' },
             ]
         },
         {

@@ -10,7 +10,7 @@ export class ReviewService {
   constructor(
     @InjectRepository(ReviewEntity)
     private reviewRepository: Repository<ReviewEntity>,
-  ) {}
+  ) { }
 
   async create(dto: CreateReviewDto, tenantId: string) {
     const review = this.reviewRepository.create({ ...dto, tenantId })
@@ -28,7 +28,7 @@ export class ReviewService {
     }
 
     if (q) {
-      query.andWhere('(review.reviewerName ILIKE :q OR review.content ILIKE :q)', { q: `%${q}%` })
+      query.andWhere('(review.customerName ILIKE :q OR review.comment ILIKE :q)', { q: `%${q}%` })
     }
 
     const [reviews, total] = await query

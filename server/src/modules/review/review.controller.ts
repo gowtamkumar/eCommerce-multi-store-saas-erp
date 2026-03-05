@@ -16,6 +16,7 @@ export class ReviewController {
     }
 
     @Get()
+    @UseGuards(JwtAuthGuard)
     async findAll(@Query() filterDto: FilterReviewDto, @TenantId() tenantId: string) {
         const { reviews, total } = await this.reviewService.findAll(filterDto, tenantId);
         return {
