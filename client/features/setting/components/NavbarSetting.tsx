@@ -106,7 +106,7 @@ export default function NavbarSetting({
                                     type="button"
                                     onClick={() => {
                                         const next = formData.navbarLinks.filter(
-                                            (_, i) => i !== index,
+                                            (_: any, i: number) => i !== index,
                                         );
                                         setFormData({
                                             ...formData,

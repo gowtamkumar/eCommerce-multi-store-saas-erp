@@ -10,7 +10,7 @@ import { UpdateCartItemDto } from './dto/update-cart-item.dto'
 @UseGuards(JwtAuthGuard)
 @Controller('cart')
 export class CartController {
-  constructor(private readonly cartService: CartService) {}
+  constructor(private readonly cartService: CartService) { }
 
   @Get()
   getCart(@CurrentUser() user: UserEntity, @TenantId() tenantId: string) {
@@ -57,5 +57,22 @@ export class CartController {
   @Delete()
   clearCart(@CurrentUser() user: UserEntity, @TenantId() tenantId: string) {
     return this.cartService.clearCart(user.id, tenantId)
+  }
+
+  @Post('coupon/apply')
+  applyCoupon(
+    @CurrentUser() user: UserEntity,
+    @TenantId() tenantId: string,
+    @Body('code') code: string,
+  ) {
+    return this.cartService.applyCoupon(user.id, tenantId, code)
+  }
+
+  @Post('coupon/remove')
+  removeCoupon(
+    @CurrentUser() user: UserEntity,
+    @TenantId() tenantId: string,
+  ) {
+    return this.cartService.removeCoupon(user.id, tenantId)
   }
 }

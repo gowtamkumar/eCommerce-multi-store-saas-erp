@@ -34,6 +34,7 @@ export interface Cart {
   currency: string;
   items: CartItem[];
   summary: CartSummary;
+  appliedCouponCode?: string | null;
 }
 
 export const getCart = async (): Promise<Cart> => {
@@ -71,5 +72,18 @@ export const syncCart = async (items: { productId: string; quantity: number; var
   return await fetchAPI("/cart/sync", {
     method: "POST",
     body: JSON.stringify(items),
+  });
+};
+
+export const applyCoupon = async (code: string) => {
+  return await fetchAPI("/cart/coupon/apply", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+};
+
+export const removeCoupon = async () => {
+  return await fetchAPI("/cart/coupon/remove", {
+    method: "POST",
   });
 };

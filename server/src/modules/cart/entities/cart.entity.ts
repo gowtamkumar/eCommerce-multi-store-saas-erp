@@ -27,5 +27,8 @@ export class CartEntity extends BaseEntity {
 
   @OneToMany(() => CartItemEntity, (item) => item.cart, { cascade: true })
   items: CartItemEntity[];
+
+  @Column({ type: 'varchar', length: 50, name: 'applied_coupon_code', nullable: true })
+  appliedCouponCode: string | null;
 }
 

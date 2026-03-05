@@ -14,6 +14,7 @@ import { CreateOrderDto } from './dto/create-order.dto'
 import { UpdateOrderDto } from './dto/update-order.dto'
 import { OrderItemEntity } from './entities/order-item.entity'
 import { OrderEntity } from './entities/order.entity'
+import { CouponService } from '../coupon/coupon.service'
 import { InventoryTransactionService } from '../others/inventory-transaction/inventory-transaction.service'
 import { InventoryTransactionType } from '../../common/enums/inventory-transaction-type.enum'
 import { InventoryTransactionReferenceType } from '../../common/enums/inventory-transaction-reference-type.enum'
@@ -39,6 +40,7 @@ export class OrderService {
     private cartService: CartService,
     private readonly inventoryService: InventoryTransactionService,
     private readonly dataSource: DataSource,
+    private readonly couponService: CouponService,
   ) { }
 
   async create(createOrderDto: CreateOrderDto, tenantId: string) {
@@ -154,7 +156,29 @@ export class OrderService {
       totalOrderAmount += itemTotal
     }
 
-    order.totalAmount = totalOrderAmount
+    let couponDiscountAmount = 0
+    if (cart.appliedCouponCode) {
+      try {
+        const validation = await this.couponService.validateCoupon(
+          cart.appliedCouponCode,
+          totalOrderAmount,
+          tenantId
+        );
+        if (validation.valid) {
+          couponDiscountAmount = validation.discountAmount;
+          order.appliedCoupon = cart.appliedCouponCode;
+          order.couponDiscountAmount = couponDiscountAmount;
+
+          // Track usage
+          await this.couponService.incrementUsage(validation.coupon.id, tenantId);
+        }
+      } catch (error) {
+        // Log or ignore invalid coupons at checkout, we just won't apply the discount
+        console.error('Invalid coupon at checkout', error);
+      }
+    }
+
+    order.totalAmount = totalOrderAmount - couponDiscountAmount
     order.items = processedItems
 
     const savedOrder = await this.orderRepository.save(order)

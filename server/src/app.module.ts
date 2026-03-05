@@ -27,6 +27,7 @@ import { SubscriberModule } from './modules/subscriber/subscriber.module'
 import { AuditLogModule } from './modules/system-platform/audit-log/audit-log.module'
 import { SystemPlatformModule } from './modules/system-platform/system-platform.module'
 import { TenantModule } from './modules/tenant/tenant.module'
+import { CouponModule } from './modules/coupon/coupon.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { TenantModule } from './modules/tenant/tenant.module'
     SubscriberModule,
     AuditLogModule,
     SystemPlatformModule,
+    CouponModule,
   ],
   controllers: [],
   providers: [

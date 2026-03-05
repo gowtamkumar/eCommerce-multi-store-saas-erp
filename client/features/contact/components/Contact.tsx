@@ -30,7 +30,7 @@ export default async function Contact() {
 
     return (
         <main className="min-h-screen bg-white dark:bg-slate-900">
-            <Navbar settings={settings} />
+            <Navbar />
 
             <div className="pt-32 pb-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

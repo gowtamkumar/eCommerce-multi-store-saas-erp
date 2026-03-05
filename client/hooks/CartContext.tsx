@@ -21,6 +21,8 @@ interface CartContextType {
   isCartOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
+  applyCoupon: (code: string) => Promise<void>;
+  removeCoupon: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -303,6 +305,43 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const applyCoupon = async (code: string) => {
+    if (!session?.user) {
+      toast.error("Please login to apply coupons");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await cartApi.applyCoupon(code);
+      await refreshCart();
+      toast.success("Coupon applied successfully");
+    } catch (error: any) {
+      console.error("Apply coupon error", error);
+      toast.error(error.message || "Failed to apply coupon");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeCoupon = async () => {
+    if (!session?.user) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await cartApi.removeCoupon();
+      await refreshCart();
+      toast.success("Coupon removed");
+    } catch (error) {
+      console.error("Remove coupon error", error);
+      toast.error("Failed to remove coupon");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const items = cart?.items || [];
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -321,6 +360,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         isCartOpen,
         openCart,
         closeCart,
+        applyCoupon,
+        removeCoupon,
       }}
     >
       {children}

@@ -38,7 +38,7 @@ export default function CurrenciesSetting({
                                 onClick={() => {
                                     const newCurrencies =
                                         formData.supportedCurrencies.filter(
-                                            (_, i: number) => i !== index,
+                                            (_: any, i: number) => i !== index,
                                         );
                                     setFormData({
                                         ...formData,
@@ -174,7 +174,7 @@ export default function CurrenciesSetting({
                     }
                     className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
                 >
-                    {formData.supportedCurrencies?.map((c) => (
+                    {formData.supportedCurrencies?.map((c: any) => (
                         <option key={c.code} value={c.code}>
                             {c.name} ({c.code})
                         </option>
@@ -188,7 +188,7 @@ export default function CurrenciesSetting({
                 </label>
                 <div className="px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 text-slate-500 font-bold">
                     {formData.supportedCurrencies?.find(
-                        (c) => c.code === formData.currency,
+                        (c: any) => c.code === formData.currency,
                     )?.symbol || "৳"}
                 </div>
             </div>

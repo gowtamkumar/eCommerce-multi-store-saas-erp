@@ -178,7 +178,7 @@ export default function FooterSetting({ formData, setFormData, setCollapsedFoote
                                         type="button"
                                         onClick={() => {
                                             const next = formData.footerSections.filter(
-                                                (_, i: number) => i !== sIdx,
+                                                (_: any, i: number) => i !== sIdx,
                                             );
                                             setFormData({
                                                 ...formData,
@@ -305,7 +305,7 @@ export default function FooterSetting({ formData, setFormData, setCollapsedFoote
                                                                     next[sIdx].links = next[
                                                                         sIdx
                                                                     ].links.filter(
-                                                                        (_, i: number) => i !== lIdx,
+                                                                        (_: any, i: number) => i !== lIdx,
                                                                     );
                                                                     setFormData({
                                                                         ...formData,

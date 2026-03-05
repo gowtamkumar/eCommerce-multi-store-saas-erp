@@ -15,7 +15,9 @@ import {
     Loader2,
     ShieldCheck,
     ShoppingBag,
+    Tag,
     Truck,
+    X,
 } from "lucide-react";
 import { getSession, signIn, useSession } from "next-auth/react";
 import Link from "next/link";
@@ -31,6 +33,8 @@ export default function Checkout() {
         cart,
         items,
         loading: cartLoading,
+        applyCoupon,
+        removeCoupon,
     } = useCart();
     const { selectedCurrency, formatPrice } = useSettings();
     const { data: session, status: sessionStatus } = useSession();
@@ -50,6 +54,8 @@ export default function Checkout() {
         address: "",
         notes: "",
     });
+    const [couponCode, setCouponCode] = useState("");
+    const [couponLoading, setCouponLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Update form data when session loads
@@ -240,6 +246,17 @@ export default function Checkout() {
             </div>
         );
     }
+
+    const handleApplyCoupon = async () => {
+        if (!couponCode.trim()) return;
+        setCouponLoading(true);
+        try {
+            await applyCoupon(couponCode);
+            setCouponCode("");
+        } finally {
+            setCouponLoading(false);
+        }
+    };
 
     if (items.length === 0 && step === "form") {
         return (
@@ -525,6 +542,55 @@ export default function Checkout() {
                                     ))}
                                 </div>
 
+                                <div className="border-t border-slate-100 dark:border-slate-700 pt-6 pb-4 mb-4">
+                                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                                        <Tag className="w-4 h-4 text-brand-600" />
+                                        Coupon Code
+                                    </h4>
+
+                                    {cart?.appliedCouponCode ? (
+                                        <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                                            <div className="flex items-center gap-2">
+                                                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                                <span className="text-sm font-bold text-green-700 dark:text-green-400 font-mono tracking-wider">
+                                                    {cart.appliedCouponCode}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => removeCoupon()}
+                                                type="button"
+                                                className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                                                title="Remove Coupon"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={couponCode}
+                                                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                                placeholder="Enter code"
+                                                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm font-mono uppercase"
+                                                onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleApplyCoupon}
+                                                disabled={!couponCode.trim() || couponLoading}
+                                                className="px-4 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold rounded-xl hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors disabled:opacity-50 text-sm flex items-center justify-center min-w-[80px]"
+                                            >
+                                                {couponLoading ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    "Apply"
+                                                )}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <div className="border-t border-slate-100 dark:border-slate-700 pt-4 space-y-3 mb-6">
                                     <div className="flex justify-between text-slate-600 dark:text-slate-400">
                                         <span>Subtotal</span>
@@ -532,9 +598,17 @@ export default function Checkout() {
                                     </div>
                                     {summary.offer_discount > 0 && (
                                         <div className="flex justify-between text-green-600">
-                                            <span>Discount</span>
+                                            <span>Product Dis.</span>
                                             <span>
                                                 -<Price amount={summary.offer_discount} />
+                                            </span>
+                                        </div>
+                                    )}
+                                    {summary.coupon_discount > 0 && (
+                                        <div className="flex justify-between text-brand-600 font-medium">
+                                            <span>Coupon Dis.</span>
+                                            <span>
+                                                -<Price amount={summary.coupon_discount} />
                                             </span>
                                         </div>
                                     )}

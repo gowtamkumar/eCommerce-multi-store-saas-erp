@@ -81,5 +81,11 @@ export class OrderEntity extends BaseEntity {
 
     @Column({ type: 'varchar', name: 'courier_status', length: 255, nullable: true })
     courierStatus: string;
+
+    @Column({ type: 'varchar', name: 'applied_coupon', length: 50, nullable: true })
+    appliedCoupon: string;
+
+    @Column({ type: 'decimal', name: 'coupon_discount_amount', precision: 10, scale: 2, default: 0 })
+    couponDiscountAmount: number;
 }
 

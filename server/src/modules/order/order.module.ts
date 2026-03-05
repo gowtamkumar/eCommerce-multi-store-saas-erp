@@ -15,9 +15,11 @@ import { OrderService } from './order.service'
 import { ReturnController } from './return.controller'
 import { ReturnService } from './return.service'
 import { InventoryTransactionModule } from '../others/inventory-transaction/inventory-transaction.module'
+import { CouponModule } from '../coupon/coupon.module'
 
 @Module({
   imports: [
+    CouponModule,
     TypeOrmModule.forFeature([
       OrderEntity,
       ProductEntity,

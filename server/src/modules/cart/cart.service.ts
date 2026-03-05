@@ -7,6 +7,7 @@ import { CreateCartItemDto } from './dto/create-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { CartItemEntity } from './entities/cart-item.entity';
 import { CartEntity } from './entities/cart.entity';
+import { CouponService } from '../coupon/coupon.service';
 
 @Injectable()
 export class CartService {
@@ -19,7 +20,8 @@ export class CartService {
         private readonly productRepository: Repository<ProductEntity>,
         @InjectRepository(SiteSettingsEntity)
         private readonly siteSettingsRepository: Repository<SiteSettingsEntity>,
-    ) {}
+        private readonly couponService: CouponService,
+    ) { }
 
     async createOrGetCart(userId: string, tenantId: string): Promise<any> {
         const cart = await this.findOrCreateCartEntity(userId, tenantId);
@@ -91,6 +93,22 @@ export class CartService {
             };
         });
 
+        let payable = subtotal - totalDiscount;
+        let couponDiscountAmount = 0;
+
+        if (cart.appliedCouponCode) {
+            try {
+                // We use validateCoupon to get the discount amount but we don't throw error if invalid to not break cart loading
+                const validation = await this.couponService.validateCoupon(cart.appliedCouponCode, payable, tenantId);
+                if (validation.valid) {
+                    couponDiscountAmount = validation.discountAmount;
+                    payable -= couponDiscountAmount;
+                }
+            } catch (error) {
+                // If coupon invalid (e.g., expired), we could remove it. For now, we just ignore it for calculation.
+            }
+        }
+
         return {
             cart_id: cart.id,
             currency,
@@ -98,9 +116,10 @@ export class CartService {
             summary: {
                 subtotal: subtotal,
                 offer_discount: totalDiscount,
-                coupon_discount: 0,
-                payable: subtotal - totalDiscount,
+                coupon_discount: couponDiscountAmount,
+                payable: payable,
             },
+            appliedCouponCode: cart.appliedCouponCode,
         };
     }
 
@@ -161,7 +180,7 @@ export class CartService {
         }
 
         if (cartItem.cart.userId !== userId) {
-             throw new NotFoundException('Cart item not found in user cart');
+            throw new NotFoundException('Cart item not found in user cart');
         }
 
         cartItem.quantity = updateCartItemDto.quantity;
@@ -181,7 +200,7 @@ export class CartService {
         }
 
         if (cartItem.cart.userId !== userId) {
-             throw new NotFoundException('Cart item not found in user cart');
+            throw new NotFoundException('Cart item not found in user cart');
         }
 
         await this.cartItemRepository.remove(cartItem);
@@ -228,6 +247,30 @@ export class CartService {
             });
             await this.cartItemRepository.save(cartItem);
         }
+
+        return this.createOrGetCart(userId, tenantId);
+    }
+
+    async applyCoupon(userId: string, tenantId: string, code: string): Promise<any> {
+        const cart = await this.findOrCreateCartEntity(userId, tenantId);
+
+        // Calculate current subtotal/payable before coupon to validate it
+        const currentCart = await this.transformCart(cart, tenantId);
+        const payableBeforeCoupon = currentCart.summary.payable + currentCart.summary.coupon_discount;
+
+        // Validates and throws error if invalid
+        await this.couponService.validateCoupon(code, payableBeforeCoupon, tenantId);
+
+        cart.appliedCouponCode = code.toUpperCase();
+        await this.cartRepository.save(cart);
+
+        return this.createOrGetCart(userId, tenantId);
+    }
+
+    async removeCoupon(userId: string, tenantId: string): Promise<any> {
+        const cart = await this.findOrCreateCartEntity(userId, tenantId);
+        cart.appliedCouponCode = null;
+        await this.cartRepository.save(cart);
 
         return this.createOrGetCart(userId, tenantId);
     }
