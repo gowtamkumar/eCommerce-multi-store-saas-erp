@@ -57,24 +57,54 @@ export default function AdminLayout({
         return null;
     }
 
-    const navItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-        { icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
-        { icon: Menu, label: 'Navbar', href: '/admin/pages' },
-        { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
-        { icon: Package, label: 'Products', href: '/admin/products' },
-        { icon: HistoryIcon, label: 'Inventory', href: '/admin/inventory' },
-        { icon: Tag, label: 'Brands', href: '/admin/brands' },
-        { icon: Truck, label: 'Suppliers', href: '/admin/suppliers' },
-        { icon: ShoppingCart, label: 'Purchases', href: '/admin/purchases' },
-        { icon: Tag, label: 'Categories', href: '/admin/categories' },
-        { icon: Users, label: 'Customers', href: '/admin/customers' },
-        { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
-        { icon: FileText, label: 'Pages', href: '/admin/pages' },
-        { icon: HelpCircle, label: 'FAQs', href: '/admin/faqs' },
-        { icon: RotateCcw, label: 'Returns', href: '/admin/returns' },
-        { icon: MessageSquare, label: 'Newsletter', href: '/admin/leads' },
-        { icon: User, label: 'Media', href: '/admin/media' },
+    const navGroups = [
+        {
+            title: 'Overview',
+            items: [
+                { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
+                { icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
+            ]
+        },
+        {
+            title: 'Catalog',
+            items: [
+                { icon: Package, label: 'Products', href: '/admin/products' },
+                { icon: Tag, label: 'Categories', href: '/admin/categories' },
+                { icon: Tag, label: 'Brands', href: '/admin/brands' },
+                { icon: HistoryIcon, label: 'Inventory', href: '/admin/inventory' },
+            ]
+        },
+        {
+            title: 'Sales & Finance',
+            items: [
+                { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
+                { icon: RotateCcw, label: 'Returns', href: '/admin/returns' },
+                { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
+            ]
+        },
+        {
+            title: 'Supply Chain',
+            items: [
+                { icon: Truck, label: 'Suppliers', href: '/admin/suppliers' },
+                { icon: ShoppingCart, label: 'Purchases', href: '/admin/purchases' },
+            ]
+        },
+        {
+            title: 'People & CRM',
+            items: [
+                { icon: Users, label: 'Customers', href: '/admin/customers' },
+                { icon: MessageSquare, label: 'Newsletter', href: '/admin/leads' },
+            ]
+        },
+        {
+            title: 'Content',
+            items: [
+                { icon: FileText, label: 'Pages', href: '/admin/pages' },
+                { icon: Menu, label: 'Navbar', href: '/admin/pages' },
+                { icon: User, label: 'Media', href: '/admin/media' },
+                { icon: HelpCircle, label: 'FAQs', href: '/admin/faqs' },
+            ]
+        }
     ];
 
     const settingsItems = [
@@ -158,25 +188,36 @@ export default function AdminLayout({
                     </div>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                    {navItems.map((item, index) => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link
-                                key={index}
-                                href={item.href}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                title={isSidebarCollapsed ? item.label : ''}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
-                                    ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-semibold'
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
-                                    } ${isSidebarCollapsed ? 'justify-center' : ''}`}
-                            >
-                                <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                                {!isSidebarCollapsed && <span>{item.label}</span>}
-                            </Link>
-                        );
-                    })}
+                <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
+                    {navGroups.map((group, groupIndex) => (
+                        <div key={groupIndex} className="space-y-2">
+                            {!isSidebarCollapsed && (
+                                <h3 className="px-4 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                                    {group.title}
+                                </h3>
+                            )}
+                            <div className="space-y-1">
+                                {group.items.map((item, index) => {
+                                    const isActive = pathname === item.href;
+                                    return (
+                                        <Link
+                                            key={`${groupIndex}-${index}`}
+                                            href={item.href}
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            title={isSidebarCollapsed ? item.label : ''}
+                                            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${isActive
+                                                ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-semibold'
+                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
+                                                } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                                        >
+                                            <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                                            {!isSidebarCollapsed && <span>{item.label}</span>}
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
                 </nav>
 
                 <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-1">

@@ -276,11 +276,11 @@ export default function AdminDashboard() {
                     <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
                         <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6">Quick Actions</h3>
                         <div className="grid grid-cols-2 gap-4">
-                            <Link href="/admin/products/create" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-brand-50 dark:hover:bg-brand-900/20 group transition-all">
+                            <Link href="/admin/products/new" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-brand-50 dark:hover:bg-brand-900/20 group transition-all">
                                 <Plus className="w-6 h-6 text-brand-600 mb-2 group-hover:scale-110 transition-transform" />
                                 <p className="text-[10px] font-black uppercase tracking-widest">New Product</p>
                             </Link>
-                            <Link href="/admin/purchases/create" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 group transition-all">
+                            <Link href="/admin/purchases/new" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 group transition-all">
                                 <Truck className="w-6 h-6 text-emerald-600 mb-2 group-hover:scale-110 transition-transform" />
                                 <p className="text-[10px] font-black uppercase tracking-widest">New Purchase</p>
                             </Link>
