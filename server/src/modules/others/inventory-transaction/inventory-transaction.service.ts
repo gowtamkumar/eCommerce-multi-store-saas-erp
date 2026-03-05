@@ -27,20 +27,29 @@ export class InventoryTransactionService {
             throw new NotFoundException('Product not found');
         }
 
-        // Update static stock fields (cache)
-        const qtyChange = dto.type === InventoryTransactionType.OUT ? -dto.quantity : dto.quantity;
+        // Update static stock fields (cache) atomically
+        const isIncrement = dto.type !== InventoryTransactionType.OUT;
+        const absQty = Math.abs(dto.quantity);
 
         if (dto.variantId) {
             const variant = await this.variantRepository.findOne({
-                where: { id: dto.variantId, productId: dto.productId, tenantId }
+                where: { id: dto.variantId, tenantId }
             });
             if (variant) {
-                variant.stock = (variant.stock || 0) + qtyChange;
-                await this.variantRepository.save(variant);
+                if (isIncrement) {
+                    await this.variantRepository.increment({ id: variant.id, tenantId }, 'stock', absQty);
+                } else {
+                    await this.variantRepository.decrement({ id: variant.id, tenantId }, 'stock', absQty);
+                }
+            } else {
+                throw new NotFoundException(`Variant with ID ${dto.variantId} not found`);
             }
         } else {
-            product.stock = (product.stock || 0) + qtyChange;
-            await this.productRepository.save(product);
+            if (isIncrement) {
+                await this.productRepository.increment({ id: product.id, tenantId }, 'stock', absQty);
+            } else {
+                await this.productRepository.decrement({ id: product.id, tenantId }, 'stock', absQty);
+            }
         }
 
         const transaction = this.repository.create({

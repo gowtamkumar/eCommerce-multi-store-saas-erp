@@ -4,6 +4,13 @@ import { PurchaseOrderStatus } from '../../../../common/enums/purchase-order-sta
 import { SupplierEntity } from '../../supplier/entities/supplier.entity';
 import { TenantEntity } from '../../../tenant/entities/tenant.entity';
 import { PurchaseOrderItemEntity } from './purchase-order-item.entity';
+import { SupplierPaymentEntity } from './supplier-payment.entity';
+
+export enum PurchaseOrderPaymentStatus {
+    PENDING = 'PENDING',
+    PARTIAL = 'PARTIAL',
+    PAID = 'PAID',
+}
 
 @Entity('purchase_orders')
 export class PurchaseOrderEntity extends BaseEntity {
@@ -27,8 +34,22 @@ export class PurchaseOrderEntity extends BaseEntity {
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'total_amount' })
     totalAmount: number;
 
+    @Column({
+        type: 'enum',
+        enum: PurchaseOrderPaymentStatus,
+        default: PurchaseOrderPaymentStatus.PENDING,
+        name: 'payment_status'
+    })
+    paymentStatus: PurchaseOrderPaymentStatus;
+
+    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'paid_amount' })
+    paidAmount: number;
+
     @OneToMany(() => PurchaseOrderItemEntity, (item: PurchaseOrderItemEntity) => item.purchaseOrder, { cascade: true })
     items: PurchaseOrderItemEntity[];
+
+    @OneToMany(() => SupplierPaymentEntity, (payment: SupplierPaymentEntity) => payment.purchaseOrder)
+    payments: SupplierPaymentEntity[];
 
     @Column({ type: 'uuid', name: 'tenant_id' })
     tenantId: string;

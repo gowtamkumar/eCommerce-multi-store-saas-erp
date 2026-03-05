@@ -7,6 +7,8 @@ import { PaymentService } from 'src/modules/payment/payment.service'
 import { ProductService } from 'src/modules/product/product.service'
 import { TrafficService } from 'src/modules/system-platform/super-admin/traffic.service'
 import { UserService } from '../../admin/user/services/user.service'
+import { SupplierService } from '../supplier/supplier.service'
+import { PurchaseOrderService } from '../purchase/purchase-order.service'
 
 @Controller('report')
 @UseGuards(JwtAuthGuard)
@@ -18,7 +20,9 @@ export class ReportController {
     private readonly orderService: OrderService,
     private readonly pageService: PageService,
     private readonly paymentService: PaymentService,
-  ) {}
+    private readonly supplierService: SupplierService,
+    private readonly purchaseOrderService: PurchaseOrderService,
+  ) { }
 
   @Get('/analytics')
   async getAnalytics(@Request() req: any) {
@@ -57,11 +61,13 @@ export class ReportController {
     const tenantId = req.user.tenantId
 
     // Fetch all data in parallel for backend processing
-    const [orders, products, payments, pages] = await Promise.all([
+    const [orders, products, payments, pages, suppliers, purchaseOrders] = await Promise.all([
       this.orderService.findAll({ page: 1, limit: 1000 }, tenantId),
       this.productService.findAll({ page: 1, limit: 1000 }, tenantId),
       this.paymentService.findAll(tenantId),
       this.pageService.findAll(tenantId),
+      this.supplierService.findAll(tenantId),
+      this.purchaseOrderService.findAll(tenantId),
     ])
 
     const paymentsData = payments || []
@@ -162,11 +168,19 @@ export class ReportController {
         recentProducts,
         salesData,
         monthlyGrowth,
+        supplierStats: {
+          totalSuppliers: suppliers.length,
+          totalPurchaseOrders: purchaseOrders.length,
+          totalAmountDue: purchaseOrders.reduce((sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)), 0),
+          recentPurchaseOrders: purchaseOrders.slice(0, 5),
+        },
         counts: {
           users: await this.userService.countByTenant(tenantId),
           products: totalProducts,
           orders: ordersData.length,
           pages: totalPages,
+          suppliers: suppliers.length,
+          purchaseOrders: purchaseOrders.length,
         },
       },
     }

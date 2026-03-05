@@ -1,9 +1,12 @@
 import { Body, Controller, Get, Param, Post, Patch, UseGuards } from '@nestjs/common';
 import { PurchaseOrderService } from './purchase-order.service';
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from './dto/purchase-order.dto';
+import { RecordSupplierPaymentDto } from './dto/record-payment.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { TenantId } from '../../../common/decorators/tenant-id.decorator';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Purchase Orders')
 @Controller('purchase-orders')
 @UseGuards(JwtAuthGuard)
 export class PurchaseOrderController {
@@ -31,5 +34,14 @@ export class PurchaseOrderController {
         @TenantId() tenantId: string,
     ) {
         return await this.service.updateStatus(id, dto, tenantId);
+    }
+
+    @Post(':id/payments')
+    async recordPayment(
+        @Param('id') id: string,
+        @Body() dto: RecordSupplierPaymentDto,
+        @TenantId() tenantId: string,
+    ) {
+        return await this.service.recordPayment(id, dto, tenantId);
     }
 }

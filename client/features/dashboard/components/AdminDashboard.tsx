@@ -1,7 +1,7 @@
 'use client';
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
-import { FileText, Package, ShoppingBag, TrendingUp } from 'lucide-react';
+import { FileText, Package, ShoppingBag, TrendingUp, History as HistoryIcon, Plus, Truck } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -178,11 +178,15 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Sales Chart */}
-                <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Sales Overview</h3>
-                    <div className="h-[300px] w-full">
+                <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                            <TrendingUp className="w-6 h-6 text-brand-500" /> Revenue Analytics
+                        </h3>
+                    </div>
+                    <div className="h-[350px] w-full">
                         {loading ? (
-                            <div className="w-full h-full bg-slate-100 dark:bg-slate-800/50 animate-pulse rounded-xl"></div>
+                            <div className="w-full h-full bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-2xl"></div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={stats.salesData}>
@@ -192,34 +196,38 @@ export default function AdminDashboard() {
                                             <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
                                     <XAxis
                                         dataKey="name"
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fill: '#64748b', fontSize: 12 }}
+                                        tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
                                         dy={10}
                                     />
                                     <YAxis
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fill: '#64748b', fontSize: 12 }}
+                                        tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
                                         tickFormatter={(value) => `${formatPrice(value)}`}
                                     />
                                     <Tooltip
                                         contentStyle={{
-                                            backgroundColor: '#fff',
-                                            borderRadius: '12px',
+                                            backgroundColor: '#1e293b',
+                                            borderRadius: '16px',
                                             border: 'none',
-                                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                                            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                                            color: '#fff',
+                                            padding: '12px'
                                         }}
+                                        itemStyle={{ color: '#fff', fontWeight: 800 }}
+                                        labelStyle={{ color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}
                                         formatter={(value: any) => [`${formatPrice(value)}`, 'Sales']}
                                     />
                                     <Area
                                         type="monotone"
                                         dataKey="sales"
                                         stroke="#3b82f6"
-                                        strokeWidth={3}
+                                        strokeWidth={4}
                                         fillOpacity={1}
                                         fill="url(#colorSales)"
                                     />
@@ -230,80 +238,170 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="lg:col-span-1 flex flex-col gap-6">
-                    {/* Recent Products */}
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recent Products</h3>
-                            <Link href="/admin/products" className="text-sm text-brand-600 hover:underline">View all</Link>
+                    {/* Supply Chain Stats */}
+                    <div className="bg-slate-900 text-white p-8 rounded-3xl shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                            <Truck className="w-24 h-24" />
                         </div>
-                        <div className="space-y-4">
-                            {loading ? (
-                                <div className="space-y-4">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className="h-12 bg-slate-100 dark:bg-slate-700/50 animate-pulse rounded-xl"></div>
-                                    ))}
+                        <h3 className="text-lg font-black mb-6 flex items-center gap-2">
+                            Supply Chain
+                        </h3>
+                        <div className="space-y-6">
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Due to Suppliers</p>
+                                <p className="text-3xl font-black text-rose-400 font-mono">
+                                    {formatPrice(stats.supplierStats?.totalAmountDue || 0)}
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Suppliers</p>
+                                    <p className="text-xl font-black">{stats.supplierStats?.totalSuppliers || 0}</p>
                                 </div>
-                            ) : (
-                                recentProducts.map((product: any) => (
-                                    <div key={product.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                                {product.images?.[0] && (
-                                                    <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-slate-900 dark:text-white">{product.name}</p>
-                                                <p className="text-xs text-slate-500">{formatPrice(product.price)}</p>
-                                            </div>
-                                        </div>
-                                        <div className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${product.status === 'active'
-                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30'
-                                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800'
-                                            }`}>
-                                            {product.status}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Purchases</p>
+                                    <p className="text-xl font-black">{stats.supplierStats?.totalPurchaseOrders || 0}</p>
+                                </div>
+                            </div>
+                            <Link
+                                href="/admin/purchases"
+                                className="mt-4 block w-full py-3 bg-white/10 hover:bg-white/20 rounded-2xl text-center text-xs font-black uppercase tracking-widest transition-all"
+                            >
+                                Manage Supplies
+                            </Link>
                         </div>
                     </div>
 
-                    {/* Recent Pages */}
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recent Pages</h3>
-                            <Link href="/admin/pages" className="text-sm text-brand-600 hover:underline">View all</Link>
+                    {/* Quick Launch */}
+                    <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
+                        <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6">Quick Actions</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Link href="/admin/products/create" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-brand-50 dark:hover:bg-brand-900/20 group transition-all">
+                                <Plus className="w-6 h-6 text-brand-600 mb-2 group-hover:scale-110 transition-transform" />
+                                <p className="text-[10px] font-black uppercase tracking-widest">New Product</p>
+                            </Link>
+                            <Link href="/admin/purchases/create" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 group transition-all">
+                                <Truck className="w-6 h-6 text-emerald-600 mb-2 group-hover:scale-110 transition-transform" />
+                                <p className="text-[10px] font-black uppercase tracking-widest">New Purchase</p>
+                            </Link>
                         </div>
-                        <div className="space-y-4">
-                            {loading ? (
-                                <div className="space-y-4">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className="h-12 bg-slate-100 dark:bg-slate-700/50 animate-pulse rounded-xl"></div>
-                                    ))}
-                                </div>
-                            ) : (
-                                stats.recentPages.map((page: any) => (
-                                    <div key={page.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center">
-                                                <FileText className="w-5 h-5 text-brand-600 dark:text-brand-400" />
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-slate-900 dark:text-white">{page.title}</p>
-                                                <p className="text-xs text-slate-500">/{page.isHomePage ? '' : page.slug}</p>
-                                            </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Recent Purchases */}
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                            <HistoryIcon className="w-6 h-6 text-brand-500" /> Recent Purchases
+                        </h3>
+                        <Link href="/admin/purchases" className="text-sm font-bold text-brand-600 hover:underline">View all</Link>
+                    </div>
+                    <div className="space-y-4">
+                        {loading ? (
+                            Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className="h-20 bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-2xl"></div>
+                            ))
+                        ) : stats.supplierStats?.recentPurchaseOrders?.length ? (
+                            stats.supplierStats.recentPurchaseOrders.map((po: any) => (
+                                <Link
+                                    key={po.id}
+                                    href={`/admin/purchases/${po.id}`}
+                                    className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 hover:border-brand-500/30 transition-all group"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:scale-110 transition-transform">
+                                            <Package className="w-6 h-6 text-slate-400" />
                                         </div>
-                                        <div className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${page.status === 'published'
-                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30'
-                                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30'
-                                            }`}>
-                                            {page.status}
+                                        <div>
+                                            <p className="font-black text-slate-900 dark:text-white">{po.referenceNumber}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{po.supplier?.name}</p>
                                         </div>
                                     </div>
-                                ))
-                            )}
-                        </div>
+                                    <div className="text-right">
+                                        <p className="font-black text-slate-900 dark:text-white font-mono">{formatPrice(po.totalAmount)}</p>
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${po.status === 'RECEIVED' ? 'text-emerald-500' : 'text-orange-500'
+                                            }`}>
+                                            {po.status}
+                                        </span>
+                                    </div>
+                                </Link>
+                            ))
+                        ) : (
+                            <div className="py-20 text-center space-y-4">
+                                <Truck className="w-12 h-12 text-slate-200 mx-auto" strokeWidth={1} />
+                                <p className="text-sm text-slate-400 font-bold italic">No purchase orders found</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Recent Products */}
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                            <Plus className="w-6 h-6 text-brand-500" /> Recent Products
+                        </h3>
+                        <Link href="/admin/products" className="text-sm font-bold text-brand-600 hover:underline">View all</Link>
+                    </div>
+                    <div className="space-y-4">
+                        {loading ? (
+                            Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className="h-20 bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-2xl"></div>
+                            ))
+                        ) : recentProducts.map((product: any) => (
+                            <div key={product.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 group transition-all">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 overflow-hidden border border-slate-100 dark:border-slate-700 group-hover:scale-110 transition-transform">
+                                        {product.images?.[0] && (
+                                            <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="font-black text-slate-900 dark:text-white text-sm line-clamp-1">{product.name}</p>
+                                        <p className="text-[10px] font-bold text-slate-500 font-mono tracking-tighter">{formatPrice(product.price)}</p>
+                                    </div>
+                                </div>
+                                <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${product.status === 'active' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                                    }`}>
+                                    {product.status}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Recent Pages */}
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                            <FileText className="w-6 h-6 text-brand-500" /> Recent Pages
+                        </h3>
+                        <Link href="/admin/pages" className="text-sm font-bold text-brand-600 hover:underline">View all</Link>
+                    </div>
+                    <div className="space-y-4">
+                        {loading ? (
+                            Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className="h-20 bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-2xl"></div>
+                            ))
+                        ) : stats.recentPages.map((page: any) => (
+                            <div key={page.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 group transition-all">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:rotate-12 transition-transform">
+                                        <FileText className="w-6 h-6 text-slate-400" />
+                                    </div>
+                                    <div>
+                                        <p className="font-black text-slate-900 dark:text-white text-sm line-clamp-1">{page.title}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">/{page.isHomePage ? 'index' : page.slug}</p>
+                                    </div>
+                                </div>
+                                <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${page.status === 'published' ? 'bg-cyan-100 text-cyan-600' : 'bg-yellow-100 text-yellow-600'
+                                    }`}>
+                                    {page.status}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>

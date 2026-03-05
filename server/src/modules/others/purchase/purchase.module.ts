@@ -6,9 +6,11 @@ import { PurchaseOrderService } from './purchase-order.service';
 import { PurchaseOrderController } from './purchase-order.controller';
 import { InventoryTransactionModule } from '../inventory-transaction/inventory-transaction.module';
 
+import { SupplierPaymentEntity } from './entities/supplier-payment.entity';
+
 @Module({
     imports: [
-        TypeOrmModule.forFeature([PurchaseOrderEntity, PurchaseOrderItemEntity]),
+        TypeOrmModule.forFeature([PurchaseOrderEntity, PurchaseOrderItemEntity, SupplierPaymentEntity]),
         InventoryTransactionModule,
     ],
     controllers: [PurchaseOrderController],

@@ -8,4 +8,10 @@ export interface DashboardStats {
     recentPages: any[];
     salesData: any[];
     monthlyGrowth: number | null;
+    supplierStats?: {
+        totalSuppliers: number;
+        totalPurchaseOrders: number;
+        totalAmountDue: number;
+        recentPurchaseOrders: any[];
+    };
 }
