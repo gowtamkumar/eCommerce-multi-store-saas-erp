@@ -129,7 +129,7 @@ export class OrderService {
       }
 
       const unitPrice = variant?.price ? Number(variant.price) : Number(product.price)
-      const discountAmount = Number(product.discountAmount) || 0
+      const discountAmount = itemDto.pricing?.discount ? Number(itemDto.pricing.discount) : (Number(product.discountAmount) || 0)
       const itemTotal = (unitPrice - discountAmount) * quantity
 
       const orderItem = new OrderItemEntity()
@@ -153,15 +153,17 @@ export class OrderService {
       }
 
       processedItems.push(orderItem)
-      totalOrderAmount += itemTotal
     }
+
+    // Use cart's computed pre-coupon total
+    const preCouponTotal = cart.summary.subtotal - cart.summary.offer_discount;
 
     let couponDiscountAmount = 0
     if (cart.appliedCouponCode) {
       try {
         const validation = await this.couponService.validateCoupon(
           cart.appliedCouponCode,
-          totalOrderAmount,
+          preCouponTotal,
           tenantId
         );
         if (validation.valid) {
@@ -178,7 +180,8 @@ export class OrderService {
       }
     }
 
-    order.totalAmount = totalOrderAmount - couponDiscountAmount
+    // Calculate final total based on Cart's computed pre-coupon total minus applied valid coupon
+    order.totalAmount = preCouponTotal - couponDiscountAmount
     order.items = processedItems
 
     const savedOrder = await this.orderRepository.save(order)

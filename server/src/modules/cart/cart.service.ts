@@ -8,6 +8,8 @@ import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { CartItemEntity } from './entities/cart-item.entity';
 import { CartEntity } from './entities/cart.entity';
 import { CouponService } from '../coupon/coupon.service';
+import { PromotionService } from '../promotion/promotion.service';
+import { PromotionType, PromotionTargetType } from '../promotion/entities/promotion.entity';
 
 @Injectable()
 export class CartService {
@@ -21,6 +23,7 @@ export class CartService {
         @InjectRepository(SiteSettingsEntity)
         private readonly siteSettingsRepository: Repository<SiteSettingsEntity>,
         private readonly couponService: CouponService,
+        private readonly promotionService: PromotionService,
     ) { }
 
     async createOrGetCart(userId: string, tenantId: string): Promise<any> {
@@ -53,13 +56,48 @@ export class CartService {
         });
         const currency = settings?.currency || 'BDT';
 
+        // Fetch active promotions
+        const activePromotions = await this.promotionService.findActivePromotions(tenantId);
+
         // Calculate and transform items
         let subtotal = 0;
         let totalDiscount = 0;
 
         const transformedItems = (cart.items || []).map((item) => {
             const basePrice = Number(item.variant?.price || item.product?.price || 0);
-            const discount = Number(item.product?.discountAmount || 0);
+            let discount = Number(item.product?.discountAmount || 0);
+
+            // Check for best applicable promotional offer for this item
+            let bestPromoDiscount = 0;
+            for (const promo of activePromotions) {
+                let applies = false;
+                if (promo.targetType === PromotionTargetType.SPECIFIC_PRODUCT && promo.targetId === item.productId) {
+                    applies = true;
+                } else if (promo.targetType === PromotionTargetType.SPECIFIC_CATEGORY && promo.targetId === item.product?.categoryId) {
+                    applies = true;
+                } else if (promo.targetType === PromotionTargetType.SPECIFIC_BRAND && promo.targetId === item.product?.brandId) {
+                    applies = true;
+                }
+
+                if (applies) {
+                    let calcDiscount = 0;
+                    if (promo.promotionType === PromotionType.PERCENTAGE) {
+                        calcDiscount = (basePrice * Number(promo.value)) / 100;
+                    } else if (promo.promotionType === PromotionType.FIXED_AMOUNT) {
+                        calcDiscount = Number(promo.value);
+                    }
+                    if (calcDiscount > bestPromoDiscount) {
+                        bestPromoDiscount = calcDiscount;
+                    }
+                }
+            }
+
+            // Apply whichever is higher: direct product discount or promotional discount
+            discount = Math.max(discount, bestPromoDiscount);
+
+            // Ensure discount doesn't exceed base price
+            discount = Math.min(discount, basePrice);
+
             const finalPrice = basePrice - discount;
             const quantity = Number(item.quantity);
             const lineTotal = finalPrice * quantity;
@@ -94,6 +132,34 @@ export class CartService {
         });
 
         let payable = subtotal - totalDiscount;
+
+        // Calculate Order-Level Promotions (Entire Order / Min Cart Value)
+        let orderLevelPromoDiscount = 0;
+        for (const promo of activePromotions) {
+            let applies = false;
+            if (promo.targetType === PromotionTargetType.ENTIRE_ORDER) {
+                applies = true;
+            } else if (promo.targetType === PromotionTargetType.MINIMUM_CART_VALUE && promo.minOrderValue && payable >= promo.minOrderValue) {
+                applies = true;
+            }
+
+            if (applies) {
+                let calcDiscount = 0;
+                if (promo.promotionType === PromotionType.PERCENTAGE) {
+                    calcDiscount = (payable * Number(promo.value)) / 100;
+                } else if (promo.promotionType === PromotionType.FIXED_AMOUNT) {
+                    calcDiscount = Number(promo.value);
+                }
+                if (calcDiscount > orderLevelPromoDiscount) {
+                    orderLevelPromoDiscount = calcDiscount;
+                }
+            }
+        }
+
+        // Apply order-level promo discounts
+        orderLevelPromoDiscount = Math.min(orderLevelPromoDiscount, payable);
+        payable -= orderLevelPromoDiscount;
+
         let couponDiscountAmount = 0;
 
         if (cart.appliedCouponCode) {
@@ -109,13 +175,17 @@ export class CartService {
             }
         }
 
+        // We report orderLevelPromoDiscount separately or merged it with totalDiscount
+        // To keep the API interface intact, we can add it to offer_discount.
+        totalDiscount += orderLevelPromoDiscount;
+
         return {
             cart_id: cart.id,
             currency,
             items: transformedItems,
             summary: {
                 subtotal: subtotal,
-                offer_discount: totalDiscount,
+                offer_discount: totalDiscount, // Includes product discounts AND order level promo discounts
                 coupon_discount: couponDiscountAmount,
                 payable: payable,
             },

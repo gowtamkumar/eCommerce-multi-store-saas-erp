@@ -28,6 +28,7 @@ import { AuditLogModule } from './modules/system-platform/audit-log/audit-log.mo
 import { SystemPlatformModule } from './modules/system-platform/system-platform.module'
 import { TenantModule } from './modules/tenant/tenant.module'
 import { CouponModule } from './modules/coupon/coupon.module';
+import { PromotionModule } from './modules/promotion/promotion.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { CouponModule } from './modules/coupon/coupon.module';
     AuditLogModule,
     SystemPlatformModule,
     CouponModule,
+    PromotionModule,
   ],
   controllers: [],
   providers: [

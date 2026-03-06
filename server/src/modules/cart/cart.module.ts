@@ -7,9 +7,10 @@ import { CartService } from './cart.service';
 import { CartItemEntity } from './entities/cart-item.entity';
 import { CartEntity } from './entities/cart.entity';
 import { CouponModule } from '../coupon/coupon.module';
+import { PromotionModule } from '../promotion/promotion.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([CartEntity, CartItemEntity, ProductEntity, SiteSettingsEntity]), CouponModule],
+    imports: [TypeOrmModule.forFeature([CartEntity, CartItemEntity, ProductEntity, SiteSettingsEntity]), CouponModule, PromotionModule],
     controllers: [CartController],
     providers: [CartService],
     exports: [CartService],
