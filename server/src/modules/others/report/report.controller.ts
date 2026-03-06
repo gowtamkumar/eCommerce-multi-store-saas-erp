@@ -65,13 +65,14 @@ export class ReportController {
     const tenantId = req.user.tenantId
 
     // Fetch all data in parallel for backend processing
-    const [orders, products, payments, pages, suppliers, purchaseOrders] = await Promise.all([
+    const [orders, products, payments, pages, suppliers, purchaseOrders, traffic] = await Promise.all([
       this.orderService.findAll({ page: 1, limit: 1000 }, tenantId),
       this.productService.findAll({ page: 1, limit: 1000 }, tenantId),
       this.paymentService.findAll(tenantId),
       this.pageService.findAll(tenantId),
       this.supplierService.findAll(tenantId),
       this.purchaseOrderService.findAll(tenantId),
+      this.trafficService.getGlobalTrafficStats(7),
     ])
 
     const paymentsData = payments || []
@@ -200,6 +201,10 @@ export class ReportController {
             return p.stock <= 5
           })
           .slice(0, 5),
+        traffic: {
+          totalHits: traffic.reduce((sum, t) => sum + t.requestCount, 0),
+          recentHits: traffic.slice(0, 7)
+        }
       },
     }
   }
@@ -508,10 +513,11 @@ export class ReportController {
   async getFinanceSummary(@Request() req: any) {
     const tenantId = req.user.tenantId;
 
-    const [customerPayments, expenses, supplierPayments] = await Promise.all([
+    const [customerPayments, expenses, supplierPayments, purchaseOrders] = await Promise.all([
       this.paymentService.findAll(tenantId),
       this.expenseService.findAll(tenantId),
       this.purchaseOrderService.findAllPayments(tenantId),
+      this.purchaseOrderService.findAll(tenantId),
     ]);
 
     const inflow = customerPayments.filter((p: any) => p.status === 'SUCCESS');
@@ -519,6 +525,7 @@ export class ReportController {
     const totalOpExpenses = expenses.reduce((sum, e) => sum + (+e.amount || 0), 0);
     const totalSupplierPayments = supplierPayments.reduce((sum, sp) => sum + (+sp.amount || 0), 0);
     const totalExpenses = totalOpExpenses + totalSupplierPayments;
+    const totalAmountDue = purchaseOrders.reduce((sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)), 0);
 
     // Monthly Trend (Last 6 Months)
     const months = Array.from({ length: 6 }, (_, i) => {
@@ -554,10 +561,16 @@ export class ReportController {
           totalRevenue,
           totalExpenses,
           netProfit: totalRevenue - totalExpenses,
-          margin: totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue) * 100 : 0
+          margin: totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue) * 100 : 0,
+          totalAmountDue
         },
         chartData,
-        expenseBreakdown: Object.entries(categories).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
+        expenseBreakdown: Object.entries(categories).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value),
+        supplierStats: {
+          totalSuppliers: (await this.supplierService.findAll(tenantId)).length,
+          totalPurchaseOrders: purchaseOrders.length,
+          recentPurchaseOrders: purchaseOrders.slice(0, 5)
+        }
       }
     };
   }

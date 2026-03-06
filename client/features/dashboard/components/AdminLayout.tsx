@@ -59,16 +59,21 @@ export default function AdminLayout({
 
     const navGroups = [
         {
-            title: 'Analytics & Reports',
+            title: 'Business Insights',
             items: [
-                { icon: LayoutDashboard, label: 'Finance Dashboard', href: '/admin/reports/finance' },
-                { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-                { icon: BarChart3, label: 'Sales Report', href: '/admin/reports/sales' },
-                { icon: BarChart3, label: 'P&L Report', href: '/admin/reports/profit-loss' },
+                { icon: LayoutDashboard, label: 'Operational Hub', href: '/admin' },
+                { icon: TrendingUp, label: 'Finance Summary', href: '/admin/reports/finance' },
+                { icon: Globe, label: 'Real-time Traffic', href: '/admin/analytics' },
+            ]
+        },
+        {
+            title: 'Financial Reports',
+            items: [
+                { icon: BarChart3, label: 'Sales Analysis', href: '/admin/reports/sales' },
+                { icon: FileText, label: 'Profit & Loss', href: '/admin/reports/profit-loss' },
                 { icon: Users, label: 'Supplier Ledger', href: '/admin/reports/supplier-ledger' },
                 { icon: Wallet, label: 'Cash Flow', href: '/admin/reports/cash-flow' },
-                { icon: Download, label: 'Export Reports', href: '/admin/reports/export' },
-                { icon: Globe, label: 'Traffic', href: '/admin/analytics' },
+                { icon: Download, label: 'Export Center', href: '/admin/reports/export' },
             ]
         },
         {

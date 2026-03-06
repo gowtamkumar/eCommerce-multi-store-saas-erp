@@ -13,7 +13,8 @@ import {
     LayoutDashboard,
     PieChart,
     TrendingUp,
-    Wallet
+    Wallet,
+    Truck
 } from 'lucide-react';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
@@ -67,23 +68,23 @@ export default function FinanceDashboard() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white font-display">Finance Overview</h1>
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white font-display">Finance Summary</h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-1">Real-time health of your business finances</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold shadow-sm">
-                        This Month
+                        Total Analytics
                     </button>
                 </div>
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center mb-4">
                         <TrendingUp className="w-6 h-6 text-blue-600" />
                     </div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Revenue</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Revenue</p>
                     <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{formatPrice(data?.kpis?.totalRevenue || 0)}</h3>
                 </div>
 
@@ -91,7 +92,7 @@ export default function FinanceDashboard() {
                     <div className="w-12 h-12 bg-rose-50 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-4">
                         <Wallet className="w-6 h-6 text-rose-600" />
                     </div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Expenses</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Expenses</p>
                     <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{formatPrice(data?.kpis?.totalExpenses || 0)}</h3>
                 </div>
 
@@ -103,18 +104,28 @@ export default function FinanceDashboard() {
                     <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{formatPrice(data?.kpis?.netProfit || 0)}</h3>
                 </div>
 
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md group">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 bg-amber-50 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center">
+                            <Truck className="w-6 h-6 text-amber-600" />
+                        </div>
+                    </div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Supplier Debt</p>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">{formatPrice(data?.kpis?.totalAmountDue || 0)}</h3>
+                </div>
+
                 <div className="bg-brand-600 p-6 rounded-3xl border border-brand-500 shadow-lg shadow-brand-500/20 text-white relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform">
                         <BarChart3 className="w-12 h-12" />
                     </div>
-                    <p className="text-xs font-bold text-white/70 uppercase tracking-widest">Profit Margin</p>
+                    <p className="text-xs font-bold text-white/70 uppercase tracking-widest">Margin</p>
                     <h3 className="text-3xl font-black mt-1">{data?.kpis?.margin?.toFixed(1)}%</h3>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 {/* Revenue vs Expense Chart */}
-                <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                         <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
                             <TrendingUp className="w-6 h-6 text-brand-600" />
@@ -136,7 +147,7 @@ export default function FinanceDashboard() {
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={(val) => `${val}`} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
                                 <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '16px', color: '#fff' }} />
                                 <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
                                 <Area type="monotone" dataKey="expense" stroke="#f43f5e" strokeWidth={4} fillOpacity={1} fill="url(#colorExp)" />
@@ -145,42 +156,68 @@ export default function FinanceDashboard() {
                     </div>
                 </div>
 
-                {/* Expense Breakdown */}
-                <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-8 flex items-center gap-2">
-                        <PieChart className="w-6 h-6 text-orange-500" />
-                        Outflow Distribution
-                    </h3>
-                    <div className="h-[250px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <RechartsPieChart>
-                                <Pie
-                                    data={data?.expenseBreakdown || []}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {(data?.expenseBreakdown || []).map((entry: any, index: number) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </RechartsPieChart>
-                        </ResponsiveContainer>
-                    </div>
-                    <div className="mt-8 space-y-3">
-                        {data?.expenseBreakdown?.slice(0, 4).map((item: any, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
-                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.name}</span>
+                {/* Supply Chain Stats */}
+                <div className="lg:col-span-1 flex flex-col gap-6">
+                    <div className="bg-slate-900 text-white p-8 rounded-3xl shadow-2xl relative overflow-hidden group h-full flex flex-col justify-between">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                            <Truck className="w-24 h-24" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-black mb-6 flex items-center gap-2 text-white">
+                                Supply Chain
+                            </h3>
+                            <div className="space-y-6">
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Payouts Due</p>
+                                    <p className="text-3xl font-black text-rose-400 font-mono">
+                                        {formatPrice(data?.kpis?.totalAmountDue || 0)}
+                                    </p>
                                 </div>
-                                <span className="text-sm font-black text-slate-900 dark:text-white">{formatPrice(item.value)}</span>
+                                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Suppliers</p>
+                                        <p className="text-xl font-black">{data?.supplierStats?.totalSuppliers || 0}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total POs</p>
+                                        <p className="text-xl font-black">{data?.supplierStats?.totalPurchaseOrders || 0}</p>
+                                    </div>
+                                </div>
                             </div>
-                        ))}
+                        </div>
+
+                        <Link
+                            href="/admin/reports/supplier-ledger"
+                            className="mt-8 block w-full py-4 bg-white/10 hover:bg-white/20 rounded-2xl text-center text-[10px] font-black uppercase tracking-widest transition-all"
+                        >
+                            Open Supplier Ledger
+                        </Link>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                            <PieChart className="w-5 h-5 text-orange-500" />
+                            Outflow Breakdown
+                        </h3>
+                        <div className="h-[120px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RechartsPieChart>
+                                    <Pie
+                                        data={data?.expenseBreakdown || []}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={35}
+                                        outerRadius={50}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {(data?.expenseBreakdown || []).map((entry: any, index: number) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                </RechartsPieChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
                 </div>
             </div>

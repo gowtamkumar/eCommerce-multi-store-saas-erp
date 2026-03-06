@@ -16,4 +16,8 @@ export interface DashboardStats {
     };
     lowStockCount?: number;
     lowStockProducts?: any[];
+    traffic?: {
+        totalHits: number;
+        recentHits: any[];
+    };
 }

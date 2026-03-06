@@ -1,7 +1,7 @@
 'use client';
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
-import { FileText, Package, ShoppingBag, TrendingUp, History as HistoryIcon, Plus, Truck } from 'lucide-react';
+import { FileText, Package, ShoppingBag, TrendingUp, History as HistoryIcon, Plus, Truck, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -137,47 +137,45 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        Current active sessions
+                        Awaiting fulfillment
                     </div>
                 </div>
 
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-md">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Growth Index</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Traffic (7D)</p>
                             {loading ? (
                                 <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
                             ) : (
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                                    {stats.monthlyGrowth !== null ? `${stats.monthlyGrowth.toFixed(0)}%` : '---'}
-                                </h3>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{(stats.traffic as any)?.totalHits || 0}</h3>
                             )}
                         </div>
-                        <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
-                            <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <div className="p-3 bg-cyan-100 dark:bg-cyan-900/30 rounded-xl">
+                            <Globe className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
                         </div>
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        Monthly performance trend
+                        Total hits this week
                     </div>
                 </div>
 
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-md">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Lifetime Revenue</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Inventory Alert</p>
                             {loading ? (
                                 <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
                             ) : (
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{formatPrice(stats.totalSales)}</h3>
+                                <h3 className="text-2xl font-bold text-rose-600">{stats.lowStockCount || 0}</h3>
                             )}
                         </div>
-                        <div className="p-3 bg-brand-100 dark:bg-brand-900/30 rounded-xl">
-                            <Package className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+                        <div className="p-3 bg-rose-100 dark:bg-rose-900/30 rounded-xl">
+                            <Package className="w-5 h-5 text-rose-600 dark:text-rose-400" />
                         </div>
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        Total sales since launch
+                        Items with low stock
                     </div>
                 </div>
             </div>
@@ -187,7 +185,7 @@ export default function AdminDashboard() {
                 <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
                     <div className="flex items-center justify-between mb-8">
                         <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                            <TrendingUp className="w-6 h-6 text-brand-500" /> Revenue Analytics
+                            <TrendingUp className="w-6 h-6 text-brand-500" /> Fulfillment Velocity
                         </h3>
                     </div>
                     <div className="h-[350px] w-full">
@@ -214,7 +212,6 @@ export default function AdminDashboard() {
                                         axisLine={false}
                                         tickLine={false}
                                         tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
-                                        tickFormatter={(value) => `${formatPrice(value)}`}
                                     />
                                     <Tooltip
                                         contentStyle={{
@@ -227,7 +224,6 @@ export default function AdminDashboard() {
                                         }}
                                         itemStyle={{ color: '#fff', fontWeight: 800 }}
                                         labelStyle={{ color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}
-                                        formatter={(value: any) => [`${formatPrice(value)}`, 'Sales']}
                                     />
                                     <Area
                                         type="monotone"
@@ -244,61 +240,25 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="lg:col-span-1 flex flex-col gap-6">
-                    {/* Supply Chain Stats */}
-                    <div className="bg-slate-900 text-white p-8 rounded-3xl shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                            <Truck className="w-24 h-24" />
-                        </div>
-                        <h3 className="text-lg font-black mb-6 flex items-center gap-2">
-                            Supply Chain
-                        </h3>
-                        <div className="space-y-6">
-                            <div>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Due to Suppliers</p>
-                                <p className="text-3xl font-black text-rose-400 font-mono">
-                                    {formatPrice(stats.supplierStats?.totalAmountDue || 0)}
-                                </p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                                <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Suppliers</p>
-                                    <p className="text-xl font-black">{stats.supplierStats?.totalSuppliers || 0}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Purchases</p>
-                                    <p className="text-xl font-black">{stats.supplierStats?.totalPurchaseOrders || 0}</p>
-                                </div>
-                            </div>
-
-                            {(stats.lowStockCount || 0) > 0 ? (
-                                <Link
-                                    href="/admin/inventory"
-                                    className="mt-4 block w-full py-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-2xl text-center text-xs font-black uppercase tracking-widest transition-all"
-                                >
-                                    ⚠️ {stats.lowStockCount} Low Stock Items
-                                </Link>
-                            ) : (
-                                <Link
-                                    href="/admin/purchases"
-                                    className="mt-4 block w-full py-3 bg-white/10 hover:bg-white/20 rounded-2xl text-center text-xs font-black uppercase tracking-widest transition-all"
-                                >
-                                    Manage Supplies
-                                </Link>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Quick Launch */}
-                    <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
+                    {/* Quick Actions */}
+                    <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700 h-full flex flex-col justify-center">
                         <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6">Quick Actions</h3>
                         <div className="grid grid-cols-2 gap-4">
-                            <Link href="/admin/products/new" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-brand-50 dark:hover:bg-brand-900/20 group transition-all">
-                                <Plus className="w-6 h-6 text-brand-600 mb-2 group-hover:scale-110 transition-transform" />
+                            <Link href="/admin/products/new" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-brand-50 dark:hover:bg-brand-900/20 group transition-all text-center">
+                                <Plus className="w-6 h-6 text-brand-600 mb-2 group-hover:scale-110 transition-transform mx-auto" />
                                 <p className="text-[10px] font-black uppercase tracking-widest">New Product</p>
                             </Link>
-                            <Link href="/admin/purchases/new" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 group transition-all">
-                                <Truck className="w-6 h-6 text-emerald-600 mb-2 group-hover:scale-110 transition-transform" />
+                            <Link href="/admin/purchases/new" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 group transition-all text-center">
+                                <Truck className="w-6 h-6 text-emerald-600 mb-2 group-hover:scale-110 transition-transform mx-auto" />
                                 <p className="text-[10px] font-black uppercase tracking-widest">New Purchase</p>
+                            </Link>
+                            <Link href="/admin/orders" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-900/20 group transition-all text-center">
+                                <ShoppingBag className="w-6 h-6 text-blue-600 mb-2 group-hover:scale-110 transition-transform mx-auto" />
+                                <p className="text-[10px] font-black uppercase tracking-widest">Manage Orders</p>
+                            </Link>
+                            <Link href="/admin/analytics" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-cyan-50 dark:hover:bg-cyan-900/20 group transition-all text-center">
+                                <Globe className="w-6 h-6 text-cyan-600 mb-2 group-hover:scale-110 transition-transform mx-auto" />
+                                <p className="text-[10px] font-black uppercase tracking-widest">View Traffic</p>
                             </Link>
                         </div>
                     </div>
