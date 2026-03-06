@@ -61,7 +61,7 @@ export default function AdminLayout({
         {
             title: 'Business Insights',
             items: [
-                { icon: LayoutDashboard, label: 'Operational Hub', href: '/admin' },
+                { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
                 { icon: TrendingUp, label: 'Finance Summary', href: '/admin/reports/finance' },
                 { icon: Globe, label: 'Real-time Traffic', href: '/admin/analytics' },
             ]

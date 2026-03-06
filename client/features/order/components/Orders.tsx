@@ -8,7 +8,7 @@ import { OrderStatus } from '@/lib/enums/order-status';
 import { PaymentStatus } from '@/lib/enums/payment-status';
 import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, updateOrderStatus } from '@/lib/utils';
 import { Order } from '@/types/order';
-import { ChevronLeft, ChevronRight, Eye, Loader2, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, Loader2, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -134,8 +134,17 @@ export default function Orders() {
                         className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                     />
                 </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">
-                    Total: {pagination.total} orders
+                <div className="flex items-center gap-4">
+                    <Link
+                        href="/admin/orders/create"
+                        className="px-4 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-brand-500/20"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Create Order
+                    </Link>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                        Total: {pagination.total} orders
+                    </div>
                 </div>
             </div>
 

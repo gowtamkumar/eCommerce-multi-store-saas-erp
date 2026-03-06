@@ -54,6 +54,8 @@ export class OrderService {
       currency,
       currencyRate,
       userId,
+      items: directItems,
+      appliedCouponCode,
     } = createOrderDto
 
     // Get settings for currency
@@ -62,15 +64,142 @@ export class OrderService {
     })
 
     // Find or create lead/user
-    const user = await this.userRepository.findOne({
+    const user = userId ? await this.userRepository.findOne({
       where: { id: userId, tenantId },
-    })
+    }) : null
 
-    // Always fetch from backend cart to ensure single source of truth
-    const cart = await this.cartService.createOrGetCart(user?.id, tenantId)
+    let cart: any = null
+    const processedItems: OrderItemEntity[] = []
+    let preCouponTotal = 0
 
-    if (!cart.items && cart.items.length === 0) {
-      throw new BadRequestException('Order must contain at least one item')
+    if (directItems && directItems.length > 0) {
+      // Process direct items (Admin/Inner Order flow)
+      for (const itemDto of directItems) {
+        const { productId, variantId, quantity } = itemDto
+
+        // find product
+        const product = await this.productRepository.findOne({
+          where: { id: productId, tenantId },
+        })
+
+        if (!product) {
+          throw new NotFoundException(`Product with ID ${productId} not found`)
+        }
+
+        let variant: ProductVariantEntity | null = null
+        if (variantId) {
+          variant = await this.variantRepository.findOne({
+            where: { id: variantId, productId: product.id, tenantId },
+          })
+          if (!variant) {
+            throw new NotFoundException(
+              `Variant with ID ${variantId} not found for product ${product.name}`,
+            )
+          }
+        }
+
+        const currentStock = variant ? variant.stock : product.stock
+        if (currentStock < quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for ${product.name}${variant ? ' (Variant)' : ''}. Only ${currentStock} items available.`,
+          )
+        }
+
+        const unitPrice = variant?.price ? Number(variant.price) : Number(product.price)
+        const discountAmount = Number(product.discountAmount) || 0
+        const itemTotal = (unitPrice - discountAmount) * quantity
+
+        const orderItem = new OrderItemEntity()
+        orderItem.product = product
+        orderItem.variant = variant
+        orderItem.quantity = quantity
+        orderItem.unitPrice = unitPrice
+        orderItem.discountAmount = discountAmount
+        orderItem.totalAmount = itemTotal
+        orderItem.tenantId = tenantId
+
+        orderItem.snapshot = {
+          productId: product.id,
+          productName: product.name,
+          productImage: product.images?.[0],
+          variantId: variant?.id,
+          variantSku: variant?.sku,
+          variantOptions: variant?.combination,
+          price: unitPrice,
+        }
+
+        processedItems.push(orderItem)
+        preCouponTotal += itemTotal
+      }
+    } else {
+      // Always fetch from backend cart to ensure single source of truth (Customer flow)
+      cart = await this.cartService.createOrGetCart(user?.id, tenantId)
+
+      if (!cart.items || cart.items.length === 0) {
+        throw new BadRequestException('Order must contain at least one item')
+      }
+
+      // Process each item from cart
+      for (const itemDto of cart.items) {
+        const productId = itemDto.product.id
+        const variantId = itemDto.variant?.id
+        const quantity = itemDto.quantity
+
+        // find product
+        const product = await this.productRepository.findOne({
+          where: { id: productId, tenantId },
+        })
+
+        if (!product) {
+          throw new NotFoundException(`Product with ID ${productId} not found`)
+        }
+
+        let variant: ProductVariantEntity | null = null
+        if (variantId) {
+          variant = await this.variantRepository.findOne({
+            where: { id: variantId, productId: product.id, tenantId },
+          })
+          if (!variant) {
+            throw new NotFoundException(
+              `Variant with ID ${variantId} not found for product ${product.name}`,
+            )
+          }
+        }
+
+        const currentStock = variant ? variant.stock : product.stock
+        if (currentStock < quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for ${product.name}${variant ? ' (Variant)' : ''}. Only ${currentStock} items available.`,
+          )
+        }
+
+        const unitPrice = variant?.price ? Number(variant.price) : Number(product.price)
+        const discountAmount = itemDto.pricing?.discount ? Number(itemDto.pricing.discount) : (Number(product.discountAmount) || 0)
+        const itemTotal = (unitPrice - discountAmount) * quantity
+
+        const orderItem = new OrderItemEntity()
+        orderItem.product = product
+        orderItem.variant = variant
+        orderItem.quantity = quantity
+        orderItem.unitPrice = unitPrice
+        orderItem.discountAmount = discountAmount
+        orderItem.totalAmount = itemTotal
+        orderItem.tenantId = tenantId
+
+        // TAKING SNAPSHOT HERE
+        orderItem.snapshot = {
+          productId: product.id,
+          productName: product.name,
+          productImage: product.images?.[0],
+          variantId: variant?.id,
+          variantSku: variant?.sku,
+          variantOptions: variant?.combination, // e.g. { Color: "Red" }
+          price: unitPrice,
+        }
+
+        processedItems.push(orderItem)
+      }
+      preCouponTotal = cart.summary.subtotal - cart.summary.offer_discount;
     }
 
     // Create initial order
@@ -79,7 +208,7 @@ export class OrderService {
       customerEmail,
       customerPhone,
       address,
-      items: [],
+      items: processedItems,
       totalAmount: 0, // Will be calculated
       currency: currency || settings?.currency || 'USD',
       currencyRate: currencyRate || 1,
@@ -91,84 +220,19 @@ export class OrderService {
       tenantId,
     })
 
-    let totalOrderAmount = 0
-    const processedItems: OrderItemEntity[] = []
-
-    // Process each item
-    for (const itemDto of cart.items) {
-      const productId = itemDto.product.id
-      const variantId = itemDto.variant?.id
-      const quantity = itemDto.quantity
-
-      // find product
-      const product = await this.productRepository.findOne({
-        where: { id: productId, tenantId },
-      })
-
-      if (!product) {
-        throw new NotFoundException(`Product with ID ${productId} not found`)
-      }
-
-      let variant: ProductVariantEntity | null = null
-      if (variantId) {
-        variant = await this.variantRepository.findOne({
-          where: { id: variantId, productId: product.id, tenantId },
-        })
-        if (!variant) {
-          throw new NotFoundException(
-            `Variant with ID ${variantId} not found for product ${product.name}`,
-          )
-        }
-      }
-
-      const currentStock = variant ? variant.stock : product.stock
-      if (currentStock < quantity) {
-        throw new BadRequestException(
-          `Insufficient stock for ${product.name}${variant ? ' (Variant)' : ''}. Only ${currentStock} items available.`,
-        )
-      }
-
-      const unitPrice = variant?.price ? Number(variant.price) : Number(product.price)
-      const discountAmount = itemDto.pricing?.discount ? Number(itemDto.pricing.discount) : (Number(product.discountAmount) || 0)
-      const itemTotal = (unitPrice - discountAmount) * quantity
-
-      const orderItem = new OrderItemEntity()
-      orderItem.product = product
-      orderItem.variant = variant
-      orderItem.quantity = quantity
-      orderItem.unitPrice = unitPrice
-      orderItem.discountAmount = discountAmount
-      orderItem.totalAmount = itemTotal
-      orderItem.tenantId = tenantId
-
-      // TAKING SNAPSHOT HERE
-      orderItem.snapshot = {
-        productId: product.id,
-        productName: product.name,
-        productImage: product.images?.[0],
-        variantId: variant?.id,
-        variantSku: variant?.sku,
-        variantOptions: variant?.combination, // e.g. { Color: "Red" }
-        price: unitPrice,
-      }
-
-      processedItems.push(orderItem)
-    }
-
-    // Use cart's computed pre-coupon total
-    const preCouponTotal = cart.summary.subtotal - cart.summary.offer_discount;
-
     let couponDiscountAmount = 0
-    if (cart.appliedCouponCode) {
+    const finalCouponCode = appliedCouponCode || cart?.appliedCouponCode
+
+    if (finalCouponCode) {
       try {
         const validation = await this.couponService.validateCoupon(
-          cart.appliedCouponCode,
+          finalCouponCode,
           preCouponTotal,
           tenantId
         );
         if (validation.valid) {
           couponDiscountAmount = validation.discountAmount;
-          order.appliedCoupon = cart.appliedCouponCode;
+          order.appliedCoupon = finalCouponCode;
           order.couponDiscountAmount = couponDiscountAmount;
 
           // Track usage
@@ -180,14 +244,13 @@ export class OrderService {
       }
     }
 
-    // Calculate final total based on Cart's computed pre-coupon total minus applied valid coupon
+    // Calculate final total
     order.totalAmount = preCouponTotal - couponDiscountAmount
-    order.items = processedItems
 
     const savedOrder = await this.orderRepository.save(order)
 
-    // Clear cart if user exists
-    if (user && user.id) {
+    // Clear cart if user exists and this was a cart-based order
+    if (user && user.id && !directItems) {
       await this.cartService.clearCart(user.id, tenantId)
     }
 

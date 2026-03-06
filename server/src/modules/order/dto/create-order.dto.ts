@@ -10,7 +10,10 @@ import {
   IsUUID,
   Matches,
   Min,
+  IsArray,
+  ValidateNested,
 } from 'class-validator'
+import { Type } from 'class-transformer'
 import { PaymentMethod } from '../../../common/enums/payment-method.enum'
 
 export class OrderItemDto {
@@ -52,12 +55,12 @@ export class CreateOrderDto {
   @IsString()
   address: string
 
-  // @ApiProperty({ type: [Object], required: false })
-  // @IsArray()
-  // @ValidateNested({ each: true })
-  // @Type(() => OrderItemDto)
-  // @IsOptional()
-  // items?: OrderItemDto[];
+  @ApiProperty({ type: [OrderItemDto], required: false })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderItemDto)
+  @IsOptional()
+  items?: OrderItemDto[]
 
   @ApiProperty({ enum: PaymentMethod })
   @IsEnum(PaymentMethod)
@@ -77,4 +80,9 @@ export class CreateOrderDto {
   @IsNumber()
   @IsOptional()
   currencyRate?: number
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  appliedCouponCode?: string
 }
