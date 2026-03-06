@@ -14,6 +14,8 @@ import { InventoryTransactionType } from '../../common/enums/inventory-transacti
 import { InventoryTransactionReferenceType } from '../../common/enums/inventory-transaction-reference-type.enum'
 import { PurchaseOrderService } from '../others/purchase/purchase-order.service'
 import { PurchaseOrderStatus } from 'src/common/enums/purchase-order-status.enum'
+import { PromotionService } from '../promotion/promotion.service'
+import { PromotionType } from '../promotion/entities/promotion.entity'
 
 @Injectable()
 export class ProductService {
@@ -29,7 +31,162 @@ export class ProductService {
     private cache: CacheService,
     private readonly inventoryService: InventoryTransactionService,
     private readonly purchaseOrderService: PurchaseOrderService,
+    private readonly promotionService: PromotionService,
   ) { }
+
+  private async attachPromotions(product: any, tenantId: string) {
+    if (!product) return product;
+    try {
+      const activePromos = await this.promotionService.findActivePromotions(tenantId);
+      if (!activePromos || activePromos.length === 0) return product;
+
+      const applicablePromotions = activePromos.filter(promo => {
+        if (promo.targetType === 'specific_product' && promo.targetId === product.id) return true;
+        if (promo.targetType === 'specific_category' && (promo.targetId === product.categoryId || (product.category && promo.targetId === product.category.id))) return true;
+        if (promo.targetType === 'specific_brand' && promo.targetId === product.brandId) return true;
+        return false;
+      });
+
+      // Calculate maximum possible discount from promotions to display on the product
+      let maxPromoDiscount = 0;
+      const basePrice = Number(product.price || 0);
+
+      applicablePromotions.forEach(promo => {
+        let calcDiscount = 0;
+        if (promo.promotionType === PromotionType.PERCENTAGE) {
+          calcDiscount = (basePrice * Number(promo.value)) / 100;
+        } else if (promo.promotionType === PromotionType.FIXED_AMOUNT) {
+          calcDiscount = Number(promo.value);
+        }
+        if (calcDiscount > maxPromoDiscount) {
+          maxPromoDiscount = calcDiscount;
+        }
+      });
+
+      // Apply whichever is higher: direct product discount (if any) or promotional discount
+      const originalDiscount = Number(product.discountAmount || 0);
+      const finalDiscount = Math.max(originalDiscount, maxPromoDiscount);
+
+      return {
+        ...product,
+        applicablePromotions,
+        discountAmount: finalDiscount
+      };
+    } catch (error) {
+      console.error("Error attaching promotions", error);
+      return product;
+    }
+  }
+
+  private async attachPromotionsMany(products: any[], tenantId: string) {
+    if (!products || products.length === 0) return products;
+    try {
+      const activePromos = await this.promotionService.findActivePromotions(tenantId);
+      if (!activePromos || activePromos.length === 0) return products;
+
+      return products.map(product => {
+        const applicablePromotions = activePromos.filter(promo => {
+          if (promo.targetType === 'specific_product' && promo.targetId === product.id) return true;
+          if (promo.targetType === 'specific_category' && (promo.targetId === product.categoryId || (product.category && promo.targetId === product.category.id))) return true;
+          if (promo.targetType === 'specific_brand' && promo.targetId === product.brandId) return true;
+          return false;
+        });
+
+        // Calculate maximum possible discount from promotions to display on the product
+        let maxPromoDiscount = 0;
+        const basePrice = Number(product.price || 0);
+
+        applicablePromotions.forEach(promo => {
+          let calcDiscount = 0;
+          if (promo.promotionType === PromotionType.PERCENTAGE) {
+            calcDiscount = (basePrice * Number(promo.value)) / 100;
+          } else if (promo.promotionType === PromotionType.FIXED_AMOUNT) {
+            calcDiscount = Number(promo.value);
+          }
+          if (calcDiscount > maxPromoDiscount) {
+            maxPromoDiscount = calcDiscount;
+          }
+        });
+
+        const originalDiscount = Number(product.discountAmount || 0);
+        const finalDiscount = Math.max(originalDiscount, maxPromoDiscount);
+
+        return {
+          ...product,
+          applicablePromotions,
+          discountAmount: finalDiscount
+        };
+      });
+    } catch (error) {
+      console.error("Error attaching promotions many", error);
+      return products;
+    }
+  }
+
+
+  async findAll(filterDto: any, tenantId: string) {
+    const page = Math.max(1, parseInt(filterDto.page) || 1)
+    const limit = Math.max(1, parseInt(filterDto.limit) || 10)
+    const { q, status, categoryId, brandId } = filterDto
+
+
+    const query = this.productRepository
+      .createQueryBuilder('product')
+      .leftJoin('product.category', 'category')
+      .leftJoin('product.variants', 'variants')
+      .where('product.tenantId = :tenantId', { tenantId })
+      .select([
+        'product',
+        'category',
+        'variants',
+      ])
+    if (status) {
+      query.andWhere('product.status = :status', { status })
+    }
+
+    if (filterDto.categoryId) {
+      query.andWhere('product.categoryId = :categoryId', { categoryId: filterDto.categoryId })
+    }
+
+    if (filterDto.brandId) {
+      query.andWhere('product.brandId = :brandId', { brandId: filterDto.brandId })
+    }
+
+    if (filterDto.minPrice !== undefined && filterDto.minPrice !== null) {
+      query.andWhere('product.price >= :minPrice', { minPrice: Number(filterDto.minPrice) })
+    }
+
+    if (filterDto.maxPrice !== undefined && filterDto.maxPrice !== null) {
+      query.andWhere('product.price <= :maxPrice', { maxPrice: Number(filterDto.maxPrice) })
+    }
+
+    if (q) {
+      query.andWhere('(product.name ILIKE :q OR product.description ILIKE :q)', { q: `%${q}%` })
+    }
+
+    const [products, total] = await query
+      .orderBy(this.getSortOptions(filterDto.sort))
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount()
+
+    const productsWithPromotions = await this.attachPromotionsMany(products, tenantId)
+
+    return { products: productsWithPromotions, total }
+  }
+
+  async findBySlug(slug: string, tenantId: string) {
+    const product = await this.productRepository.findOne({
+      where: { slug, tenantId },
+      relations: ['faqs', 'category', 'attributes', 'variants', 'reviews'],
+    })
+
+    if (!product) {
+      throw new NotFoundException('Product not found')
+    }
+
+    return await this.attachPromotions(product, tenantId)
+  }
 
   async create(createProductDto: CreateProductDto, tenantId: string) {
     // Check if slug exists for this tenant
@@ -121,64 +278,20 @@ export class ProductService {
       await this.purchaseOrderService.updateStatus(po.id, { status: PurchaseOrderStatus.RECEIVED }, tenantId)
     }
 
-    return await this.findOne(savedProduct.id, tenantId)
+    const newProduct = await this.findOne(savedProduct.id, tenantId)
+    return newProduct // Promos are already attached in findOne
   }
 
-  async findAll(filterDto: any, tenantId: string) {
-    const page = Math.max(1, parseInt(filterDto.page) || 1)
-    const limit = Math.max(1, parseInt(filterDto.limit) || 10)
-    const { q, status, categoryId, brandId } = filterDto
-
-
-    const query = this.productRepository
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.variants', 'variants')
-      // .leftJoinAndSelect('product.landingPage', 'landingPage')
-      .where('product.tenantId = :tenantId', { tenantId })
-
-    if (status) {
-      query.andWhere('product.status = :status', { status })
-    }
-
-    if (filterDto.categoryId) {
-      query.andWhere('product.categoryId = :categoryId', { categoryId: filterDto.categoryId })
-    }
-
-    if (filterDto.brandId) {
-      query.andWhere('product.brandId = :brandId', { brandId: filterDto.brandId })
-    }
-
-    if (filterDto.minPrice !== undefined && filterDto.minPrice !== null) {
-      query.andWhere('product.price >= :minPrice', { minPrice: Number(filterDto.minPrice) })
-    }
-
-    if (filterDto.maxPrice !== undefined && filterDto.maxPrice !== null) {
-      query.andWhere('product.price <= :maxPrice', { maxPrice: Number(filterDto.maxPrice) })
-    }
-
-    if (q) {
-      query.andWhere('(product.name ILIKE :q OR product.description ILIKE :q)', { q: `%${q}%` })
-    }
-
-    const [products, total] = await query
-      .orderBy(this.getSortOptions(filterDto.sort))
-      // .orderBy('product.createdAt', 'DESC')
-
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount()
-
-    return { products, total }
-  }
 
   async findLatest(tenantId: string, limit: number = 10) {
-    return await this.productRepository.find({
+    const products = await this.productRepository.find({
       where: { tenantId },
       relations: ['variants', 'category'],
       order: { createdAt: 'DESC' },
       take: limit,
     })
+
+    return await this.attachPromotionsMany(products, tenantId)
   }
 
   async findOne(id: string, tenantId: string) {
@@ -204,21 +317,10 @@ export class ProductService {
 
     await this.cache.set(cacheKey, product, 300, tenantId)
 
-    return product
+    return await this.attachPromotions(product, tenantId)
   }
 
-  async findBySlug(slug: string, tenantId: string) {
-    const product = await this.productRepository.findOne({
-      where: { slug, tenantId },
-      relations: ['faqs', 'category', 'attributes', 'variants', 'reviews'],
-    })
 
-    if (!product) {
-      throw new NotFoundException('Product not found')
-    }
-
-    return product
-  }
 
   async update(id: string, updateProductDto: UpdateProductDto, tenantId: string) {
     const product: any = await this.findOne(id, tenantId)
@@ -399,7 +501,7 @@ export class ProductService {
         return { 'product.createdAt': 'DESC' }
     }
   }
-
+  // this function for system plateform
   async productOverview() {
     const totalProducts = await this.productRepository.count()
     const activeProducts = await this.productRepository.count({

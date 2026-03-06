@@ -11,6 +11,7 @@ import { ProductController } from './product.controller'
 import { ProductService } from './product.service'
 import { InventoryTransactionModule } from '../others/inventory-transaction/inventory-transaction.module'
 import { PurchaseModule } from '../others/purchase/purchase.module'
+import { PromotionModule } from '../promotion/promotion.module'
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { PurchaseModule } from '../others/purchase/purchase.module'
     CacheModule,
     InventoryTransactionModule,
     PurchaseModule,
+    PromotionModule,
   ],
   controllers: [ProductController],
   providers: [ProductService],

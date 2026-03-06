@@ -97,6 +97,7 @@ export default async function Products({
 
     const { products, total } = productsData;
 
+
     return (
         <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
             <Suspense fallback={null}>

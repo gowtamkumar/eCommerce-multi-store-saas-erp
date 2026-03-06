@@ -172,18 +172,30 @@ export default function ProductList({ products, total, onOpenMobileFilters }: Pr
                     )}
 
                     {/* Badges */}
-                    <div className="absolute top-3 left-3 flex flex-col gap-2">
-                      {product.stock <= 0 && (
-                        <span className="bg-red-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                          Out of Stock
-                        </span>
-                      )}
-                      {product.discountAmount > 0 && (
-                        <span className="bg-brand-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                          Sale
-                        </span>
-                      )}
-                    </div>
+                    {(() => {
+                      const discountAmt = Number(product.discountAmount || 0);
+                      const basePrice = Number(product.price || 0);
+                      const discountPct = discountAmt > 0 ? Math.round((discountAmt / basePrice) * 100) : 0;
+                      return (
+                        <div className="absolute top-3 left-3 flex flex-col gap-2">
+                          {product.stock <= 0 && (
+                            <span className="bg-red-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                              Out of Stock
+                            </span>
+                          )}
+                          {discountAmt > 0 && (
+                            <span className="bg-rose-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                              -{discountPct}%
+                            </span>
+                          )}
+                          {(product as any).applicablePromotions?.filter((p: any) => p.isActive).length > 0 && (
+                            <span className="bg-brand-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                              {(product as any).applicablePromotions.filter((p: any) => p.isActive)[0].name}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="p-5 flex flex-col justify-between flex-1">
@@ -201,17 +213,23 @@ export default function ProductList({ products, total, onOpenMobileFilters }: Pr
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-700/50 mt-auto">
-                      <Price
-                        amount={product.price}
-                        className="text-lg text-brand-600 dark:text-brand-400"
-                        showOriginal={product.discountAmount > 0}
-                        originalAmount={+product.price + +product.discountAmount}
-                      />
-                      <span className="text-xs font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg group-hover:bg-brand-600 group-hover:text-white transition-colors">
-                        View Details
-                      </span>
-                    </div>
+                    {(() => {
+                      const discountAmt = Number(product.discountAmount || 0);
+                      const basePrice = Number(product.price || 0);
+                      return (
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-700/50 mt-auto">
+                          <Price
+                            amount={discountAmt > 0 ? basePrice - discountAmt : basePrice}
+                            className="text-lg text-brand-600 dark:text-brand-400"
+                            showOriginal={discountAmt > 0}
+                            originalAmount={basePrice}
+                          />
+                          <span className="text-xs font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                            View Details
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </Link>
               </motion.div>

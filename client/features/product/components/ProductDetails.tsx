@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   ShoppingBag,
   Star,
-  X
+  X,
+  Tag
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -125,10 +126,15 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
     }
   };
 
+  const discountAmt = Number(product.discountAmount || 0);
+  const basePrice = Number(product.price || 0);
+
   const discountPercent =
-    product.discountAmount > 0
-      ? Math.round((product.discountAmount / product.price) * 100)
+    discountAmt > 0
+      ? Math.round((discountAmt / basePrice) * 100)
       : 0;
+
+  const validPromotions = product.applicablePromotions?.filter((p: any) => p.isActive) || [];
 
   const handleAttributeChange = (name: string, value: string) => {
     setSelectedAttributes((prev) => ({ ...prev, [name]: value }));
@@ -263,6 +269,28 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 </div>
               </div>
 
+              {/* Promotions Banners */}
+              {validPromotions.length > 0 && (
+                <div className="flex flex-col gap-2 mb-6">
+                  {validPromotions.map((promo: any) => (
+                    <div key={promo.id} className="flex items-center gap-3 p-3 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-2xl">
+                      <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-800 flex items-center justify-center shrink-0">
+                        <Tag className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-brand-900 dark:text-brand-100">{promo.name}</p>
+                        {promo.description && <p className="text-xs text-brand-700 dark:text-brand-300">{promo.description}</p>}
+                      </div>
+                      <div className="px-3 py-1 bg-brand-600 text-white text-xs font-black uppercase rounded-full">
+                        {promo.promotionType === 'percentage' && `${promo.value}% OFF`}
+                        {promo.promotionType === 'fixed_amount' && `${promo.value} OFF`}
+                        {promo.promotionType === 'free_shipping' && `FREE SHIP`}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {product.shortDescription && (
                 <p
                   dangerouslySetInnerHTML={{ __html: product.shortDescription }}
@@ -276,20 +304,23 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
 
               <div className="space-y-2 relative z-10">
                 <div className="flex items-baseline gap-3">
-                  {product.discountAmount > 0 ? (
+                  {discountAmt > 0 ? (
                     <>
                       <Price
-                        amount={currentPrice - product.discountAmount}
+                        amount={Number(currentPrice) - discountAmt}
                         className="text-5xl font-black text-brand-600 dark:text-brand-400 tracking-tight"
                       />
                       <Price
-                        amount={currentPrice}
+                        amount={Number(currentPrice)}
                         className="text-xl text-slate-400 line-through font-bold"
                       />
+                      <span className="px-2 py-1 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 text-xs font-black rounded-full">
+                        -{discountPercent}% OFF
+                      </span>
                     </>
                   ) : (
                     <Price
-                      amount={currentPrice}
+                      amount={Number(currentPrice)}
                       className="text-5xl font-black text-slate-900 dark:text-white tracking-tight"
                     />
                   )}

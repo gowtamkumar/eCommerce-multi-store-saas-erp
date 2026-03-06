@@ -13,7 +13,7 @@ export class ProductController {
   constructor(
     private readonly productService: ProductService,
     private readonly reviewService: ReviewService,
-  ) {}
+  ) { }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -24,6 +24,8 @@ export class ProductController {
   @Get()
   async findAll(@Query() filterDto: FilterProductDto, @TenantId() tenantId: string) {
     const { products, total } = await this.productService.findAll(filterDto, tenantId)
+    console.log("products server", products);
+    console.log("total", total);
     return {
       success: true,
       statusCode: 200,

@@ -39,9 +39,15 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
     setAdding(false);
   };
 
-  const discountPercentage = product.discountAmount > 0
-    ? Math.round((product.discountAmount / (product.price + product.discountAmount)) * 100)
+  const discountAmt = Number(product.discountAmount || 0);
+  const basePrice = Number(product.price || 0);
+
+  const discountPercentage = discountAmt > 0
+    ? Math.round((discountAmt / basePrice) * 100)
     : 0;
+
+  // Show promo tag name if there are valid active promotions beyond a direct product discount
+  const validPromotions = product.applicablePromotions?.filter((p: any) => p.isActive);
 
 
 
@@ -77,6 +83,11 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
               {discountPercentage > 0 && (
                 <span className="px-3 py-1 bg-rose-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm">
                   -{discountPercentage}%
+                </span>
+              )}
+              {validPromotions && validPromotions.length > 0 && (
+                <span className="px-3 py-1 bg-brand-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm">
+                  {validPromotions[0].name}
                 </span>
               )}
             </>
@@ -115,10 +126,10 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
 
         <div className="mt-auto pt-2 flex items-center justify-between">
           <Price
-            amount={product.price}
+            amount={discountAmt > 0 ? basePrice - discountAmt : basePrice}
             className="text-lg font-bold text-slate-900 dark:text-white"
-            showOriginal={product.discountAmount > 0}
-            originalAmount={+product.price + +product.discountAmount}
+            showOriginal={discountAmt > 0}
+            originalAmount={basePrice}
           />
 
           {/* Add to Cart Button */}
