@@ -503,4 +503,62 @@ export class ReportController {
       }
     };
   }
+
+  @Get('/finance-summary')
+  async getFinanceSummary(@Request() req: any) {
+    const tenantId = req.user.tenantId;
+
+    const [customerPayments, expenses, supplierPayments] = await Promise.all([
+      this.paymentService.findAll(tenantId),
+      this.expenseService.findAll(tenantId),
+      this.purchaseOrderService.findAllPayments(tenantId),
+    ]);
+
+    const inflow = customerPayments.filter((p: any) => p.status === 'SUCCESS');
+    const totalRevenue = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0);
+    const totalOpExpenses = expenses.reduce((sum, e) => sum + (+e.amount || 0), 0);
+    const totalSupplierPayments = supplierPayments.reduce((sum, sp) => sum + (+sp.amount || 0), 0);
+    const totalExpenses = totalOpExpenses + totalSupplierPayments;
+
+    // Monthly Trend (Last 6 Months)
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      return d.toISOString().substring(0, 7); // YYYY-MM
+    }).reverse();
+
+    const chartData = months.map(month => {
+      const monthInflow = inflow.filter(p => p.createdAt.toString().startsWith(month)).reduce((sum, p) => sum + (+p.amount || 0), 0);
+      const monthOpEx = expenses.filter(e => e.expenseDate.toString().startsWith(month)).reduce((sum, e) => sum + (+e.amount || 0), 0);
+      const monthSuppEx = supplierPayments.filter(sp => sp.paymentDate.toString().startsWith(month)).reduce((sum, sp) => sum + (+sp.amount || 0), 0);
+
+      return {
+        name: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' }),
+        revenue: monthInflow,
+        expense: monthOpEx + monthSuppEx,
+        profit: monthInflow - (monthOpEx + monthSuppEx)
+      };
+    });
+
+    // Categorized Expenses
+    const categories: Record<string, number> = {};
+    expenses.forEach(e => {
+      categories[e.category] = (categories[e.category] || 0) + (+e.amount || 0);
+    });
+    categories['Supplier Payouts'] = totalSupplierPayments;
+
+    return {
+      success: true,
+      data: {
+        kpis: {
+          totalRevenue,
+          totalExpenses,
+          netProfit: totalRevenue - totalExpenses,
+          margin: totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue) * 100 : 0
+        },
+        chartData,
+        expenseBreakdown: Object.entries(categories).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
+      }
+    };
+  }
 }
