@@ -157,4 +157,19 @@ export class PurchaseOrderService {
             await queryRunner.release();
         }
     }
+
+    async findAllBySupplier(supplierId: string, tenantId: string) {
+        return await this.repository.find({
+            where: { supplierId, tenantId },
+            relations: ['items'],
+            order: { createdAt: 'DESC' },
+        });
+    }
+
+    async findAllPaymentsBySupplier(supplierId: string, tenantId: string) {
+        return await this.paymentRepository.find({
+            where: { supplierId, tenantId },
+            order: { paymentDate: 'DESC' },
+        });
+    }
 }

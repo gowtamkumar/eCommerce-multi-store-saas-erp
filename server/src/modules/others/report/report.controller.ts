@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common'
+import { Controller, Get, Param, Query, Request, UseGuards } from '@nestjs/common'
 import { OrderStatus } from 'src/common/enums/order-status.enum'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { OrderService } from 'src/modules/order/order.service'
@@ -287,6 +287,70 @@ export class ReportController {
         },
         netProfit,
         profitMargin
+      }
+    };
+  }
+
+  @Get('/supplier-ledger/:supplierId')
+  async getSupplierLedger(@Request() req: any, @Param('supplierId') supplierId: string) {
+    const tenantId = req.user.tenantId;
+
+    const [supplier, pos, payments] = await Promise.all([
+      this.supplierService.findOne(supplierId, tenantId),
+      this.purchaseOrderService.findAllBySupplier(supplierId, tenantId),
+      this.purchaseOrderService.findAllPaymentsBySupplier(supplierId, tenantId),
+    ]);
+
+    // Combine and sort chronologically
+    const transactions: any[] = [
+      ...pos.map((po: any) => ({
+        id: po.id,
+        date: po.createdAt,
+        type: 'PURCHASE_ORDER',
+        reference: po.referenceNumber,
+        amount: +po.totalAmount,
+        debit: +po.totalAmount, // PO increases due amount
+        credit: 0,
+        status: po.status,
+      })),
+      ...payments.map((p: any) => ({
+        id: p.id,
+        date: p.paymentDate,
+        type: 'PAYMENT',
+        reference: p.transactionId || 'Payment',
+        amount: +p.amount,
+        debit: 0,
+        credit: +p.amount, // Payment decreases due amount
+        method: p.paymentMethod,
+        note: p.note
+      }))
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Calculate running balance and summary
+    let runningBalance = 0;
+    const ledger = transactions.map(tx => {
+      runningBalance += (tx.debit - tx.credit);
+      return { ...tx, balance: runningBalance };
+    });
+
+    const totalOrders = pos.reduce((sum, po) => sum + (+po.totalAmount || 0), 0);
+    const totalPaid = payments.reduce((sum, p) => sum + (+p.amount || 0), 0);
+
+    return {
+      success: true,
+      data: {
+        supplier: {
+          id: supplier.id,
+          name: supplier.name,
+          email: supplier.email,
+          phone: supplier.phone
+        },
+        summary: {
+          totalOrders,
+          totalPaid,
+          balance: runningBalance
+        },
+        ledger: ledger.reverse() // Newest first for UI
       }
     };
   }
