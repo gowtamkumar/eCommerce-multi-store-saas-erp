@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { CacheModule } from './cache/cache.module'
 import { PathaoModule } from './courier/pathao/pathao.module'
 import { SteadfastModule } from './courier/steadfast/steadfast.module'
+import { ExpenseModule } from './expense/expense.module'
 import { InventoryTransactionModule } from './inventory-transaction/inventory-transaction.module'
 import { InvoiceModule } from './invoice/invoice.module'
 import { MailModule } from './mail/mail.module'
@@ -22,7 +23,8 @@ import { SupplierModule } from './supplier/supplier.module'
     SupplierModule,
     PurchaseModule,
     InvoiceModule,
+    ExpenseModule,
   ],
-  exports: [InventoryTransactionModule, SupplierModule, PurchaseModule, InvoiceModule],
+  exports: [InventoryTransactionModule, SupplierModule, PurchaseModule, InvoiceModule, ExpenseModule],
 })
 export class OthersModule { }

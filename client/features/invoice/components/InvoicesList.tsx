@@ -6,6 +6,7 @@ import { Download, Eye, Receipt } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useDownloadInvoice } from '@/lib/handleDownloadInvoice';
+import { fetchAPI } from '@/services/api';
 
 export default function InvoicesList() {
     const { formatPrice } = useSettings();
@@ -19,13 +20,8 @@ export default function InvoicesList() {
 
     const fetchInvoices = async () => {
         try {
-            const res = await fetch('/api/v1/invoices');
-            const result = await res.json();
-            if (res.ok) {
-                setInvoices(result);
-            } else {
-                toast.error(result.message || 'Failed to fetch invoices');
-            }
+            const data = await fetchAPI('/invoices');
+            setInvoices(data.data);
         } catch (error) {
             toast.error('Something went wrong');
         } finally {
