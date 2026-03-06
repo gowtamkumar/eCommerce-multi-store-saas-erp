@@ -9,6 +9,8 @@ import { SuperAdminModule } from 'src/modules/system-platform/super-admin/super-
 
 import { PurchaseModule } from '../purchase/purchase.module';
 import { SupplierModule } from '../supplier/supplier.module';
+import { ExpenseModule } from '../expense/expense.module';
+import { InvoiceModule } from '../invoice/invoice.module';
 
 @Module({
     imports: [
@@ -20,6 +22,8 @@ import { SupplierModule } from '../supplier/supplier.module';
         PaymentModule,
         PurchaseModule,
         SupplierModule,
+        ExpenseModule,
+        InvoiceModule,
     ],
     controllers: [ReportController],
 })

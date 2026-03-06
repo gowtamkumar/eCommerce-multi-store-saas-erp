@@ -59,10 +59,12 @@ export default function AdminLayout({
 
     const navGroups = [
         {
-            title: 'Overview',
+            title: 'Analytics & Reports',
             items: [
                 { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-                { icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
+                { icon: BarChart3, label: 'Sales Report', href: '/admin/reports/sales' },
+                { icon: BarChart3, label: 'P&L Report', href: '/admin/reports/profit-loss' },
+                { icon: Globe, label: 'Traffic', href: '/admin/analytics' },
             ]
         },
         {

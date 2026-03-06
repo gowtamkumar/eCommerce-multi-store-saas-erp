@@ -9,6 +9,8 @@ import { TrafficService } from 'src/modules/system-platform/super-admin/traffic.
 import { UserService } from '../../admin/user/services/user.service'
 import { SupplierService } from '../supplier/supplier.service'
 import { PurchaseOrderService } from '../purchase/purchase-order.service'
+import { ExpenseService } from '../expense/expense.service'
+import { InvoiceService } from '../invoice/invoice.service'
 
 @Controller('report')
 @UseGuards(JwtAuthGuard)
@@ -22,6 +24,8 @@ export class ReportController {
     private readonly paymentService: PaymentService,
     private readonly supplierService: SupplierService,
     private readonly purchaseOrderService: PurchaseOrderService,
+    private readonly expenseService: ExpenseService,
+    private readonly invoiceService: InvoiceService,
   ) { }
 
   @Get('/analytics')
@@ -198,5 +202,92 @@ export class ReportController {
           .slice(0, 5),
       },
     }
+  }
+
+  @Get('/profit-loss')
+  async getProfitLossReport(@Request() req: any, @Query('startDate') startDateStr?: string, @Query('endDate') endDateStr?: string) {
+    const tenantId = req.user.tenantId;
+
+    const [orders, payments, expenses, purchaseOrders] = await Promise.all([
+      this.orderService.findAll({ page: 1, limit: 1000 }, tenantId),
+      this.paymentService.findAll(tenantId),
+      this.expenseService.findAll(tenantId),
+      this.purchaseOrderService.findAll(tenantId),
+    ]);
+
+    const ordersData = orders.orders || [];
+    const paymentsData = payments || [];
+    const expensesData = expenses || [];
+    const purchaseOrdersData = purchaseOrders || [];
+
+    let startDate = startDateStr ? new Date(startDateStr) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    let endDate = endDateStr ? new Date(endDateStr) : new Date();
+
+    // Set end date to end of day to include full day
+    endDate.setHours(23, 59, 59, 999);
+
+    // Filter data by date range
+    const filterByDate = (item: any, dateField: string = 'createdAt') => {
+      const itemDate = new Date(item[dateField]);
+      return itemDate >= startDate && itemDate <= endDate;
+    };
+
+    const filteredOrders = ordersData.filter((o: any) => filterByDate(o));
+    const filteredPayments = paymentsData.filter((p: any) => filterByDate(p));
+    const filteredExpenses = expensesData.filter((e: any) => filterByDate(e, 'expenseDate'));
+    const filteredPurchaseOrders = purchaseOrdersData.filter((po: any) => filterByDate(po));
+
+    // Calculate Sales Revenue
+    // Revenue can be either Total Value of Completed/Delivered Orders or sum of Payments depending on accounting logic.
+    // Using Payment amounts (completed transactions) is standard for cash-based accounting.
+    const revenue = filteredPayments.reduce((sum: number, p: any) => sum + (+p.amount || 0), 0);
+
+    // Calculate COGS (Cost of Goods Sold)
+    // Using actual Purchase Orders that are completed or approved
+    const cogs = filteredPurchaseOrders
+      .filter((po: any) => po.status !== 'CANCELLED')
+      .reduce((sum: number, po: any) => sum + (+po.totalAmount || 0), 0);
+
+    const grossProfit = revenue - cogs;
+
+    // Calculate Operating Expenses
+    const categorizedExpenses = filteredExpenses.reduce((acc: Record<string, number>, exp: any) => {
+      const cat = exp.category;
+      acc[cat] = (acc[cat] || 0) + Number(exp.amount || 0);
+      return acc;
+    }, {});
+
+    const totalOperatingExpenses = filteredExpenses.reduce((sum: number, exp: any) => sum + (+exp.amount || 0), 0);
+
+    const netProfit = grossProfit - totalOperatingExpenses;
+    const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
+
+    return {
+      success: true,
+      data: {
+        period: {
+          startDate,
+          endDate
+        },
+        revenue: {
+          total: revenue,
+          orderCount: filteredOrders.length
+        },
+        cogs: {
+          total: cogs,
+          purchaseOrderCount: filteredPurchaseOrders.length
+        },
+        grossProfit,
+        operatingExpenses: {
+          total: totalOperatingExpenses,
+          breakdown: Object.keys(categorizedExpenses).map(category => ({
+            category,
+            amount: categorizedExpenses[category]
+          })).sort((a, b) => b.amount - a.amount)
+        },
+        netProfit,
+        profitMargin
+      }
+    };
   }
 }
