@@ -172,4 +172,12 @@ export class PurchaseOrderService {
             order: { paymentDate: 'DESC' },
         });
     }
+
+    async findAllPayments(tenantId: string) {
+        return await this.paymentRepository.find({
+            where: { tenantId },
+            relations: ['supplier', 'purchaseOrder'],
+            order: { paymentDate: 'DESC' },
+        });
+    }
 }

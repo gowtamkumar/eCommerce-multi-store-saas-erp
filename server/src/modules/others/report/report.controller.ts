@@ -354,4 +354,153 @@ export class ReportController {
       }
     };
   }
+
+  @Get('/cash-flow')
+  async getCashFlow(@Request() req: any, @Query('period') period: string = 'last30days') {
+    const tenantId = req.user.tenantId;
+
+    const [customerPayments, expenses, supplierPayments] = await Promise.all([
+      this.paymentService.findAll(tenantId),
+      this.expenseService.findAll(tenantId),
+      this.purchaseOrderService.findAllPayments(tenantId),
+    ]);
+
+    const inflow = customerPayments.filter((p: any) => p.status === 'SUCCESS');
+    const outflowExpenses = expenses;
+    const outflowSuppliers = supplierPayments;
+
+    // Combine all movements
+    const movements: any[] = [
+      ...inflow.map(p => ({
+        date: p.createdAt,
+        amount: +p.amount,
+        type: 'INFLOW',
+        category: 'Sales',
+        reference: p.transactionId
+      })),
+      ...outflowExpenses.map(e => ({
+        date: e.expenseDate,
+        amount: +e.amount,
+        type: 'OUTFLOW',
+        category: e.category,
+        reference: e.description
+      })),
+      ...outflowSuppliers.map(sp => ({
+        date: sp.paymentDate,
+        amount: +sp.amount,
+        type: 'OUTFLOW',
+        category: 'Supplier Payment',
+        reference: sp.transactionId || 'Vendor Payout'
+      }))
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Group by day for the last 30 days
+    const last30Days = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      return d.toISOString().split('T')[0];
+    }).reverse();
+
+    const chartData = last30Days.map(date => {
+      const dayMovements = movements.filter(m => {
+        const d = m.date instanceof Date ? m.date.toISOString() : m.date;
+        return typeof d === 'string' && d.startsWith(date);
+      });
+
+      const dayInflow = dayMovements.filter(m => m.type === 'INFLOW').reduce((sum, m) => sum + m.amount, 0);
+      const dayOutflow = dayMovements.filter(m => m.type === 'OUTFLOW').reduce((sum, m) => sum + m.amount, 0);
+
+      return {
+        date,
+        displayDate: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        inflow: dayInflow,
+        outflow: dayOutflow,
+        net: dayInflow - dayOutflow
+      };
+    });
+
+    const totalInflow = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0);
+    const totalOutflow = outflowExpenses.reduce((sum, e) => sum + (+e.amount || 0), 0) +
+      outflowSuppliers.reduce((sum, sp) => sum + (+sp.amount || 0), 0);
+
+    return {
+      success: true,
+      data: {
+        summary: {
+          totalInflow,
+          totalOutflow,
+          netCashFlow: totalInflow - totalOutflow
+        },
+        chartData,
+        recentMovements: movements.reverse().slice(0, 10)
+      }
+    };
+  }
+
+  @Get('/export/:type')
+  async exportReport(
+    @Request() req: any,
+    @Param('type') type: string,
+    @Query('startDate') startDateStr?: string,
+    @Query('endDate') endDateStr?: string,
+    @Query('supplierId') supplierId?: string
+  ) {
+    const tenantId = req.user.tenantId;
+    const startDate = startDateStr ? new Date(startDateStr) : new Date(0);
+    const endDate = endDateStr ? new Date(endDateStr) : new Date();
+    endDate.setHours(23, 59, 59, 999);
+
+    let csvContent = '';
+    let filename = `report-${type}-${new Date().toISOString().split('T')[0]}.csv`;
+
+    switch (type) {
+      case 'sales': {
+        const payments = await this.paymentService.findAll(tenantId);
+        const filtered = payments.filter((p: any) => p.status === 'SUCCESS' && new Date(p.createdAt) >= startDate && new Date(p.createdAt) <= endDate);
+        csvContent = 'Date,Transaction ID,Order ID,Amount,Currency,Method\n';
+        filtered.forEach((p: any) => {
+          csvContent += `${p.createdAt},${p.transactionId},${p.orderId},${p.amount},${p.currency},${p.method}\n`;
+        });
+        break;
+      }
+      case 'expenses': {
+        const expenses = await this.expenseService.findAll(tenantId);
+        const filtered = expenses.filter((e: any) => new Date(e.expenseDate) >= startDate && new Date(e.expenseDate) <= endDate);
+        csvContent = 'Date,Category,Description,Amount,Tenant ID\n';
+        filtered.forEach((e: any) => {
+          csvContent += `${e.expenseDate},${e.category},"${e.description || ''}",${e.amount},${e.tenantId}\n`;
+        });
+        break;
+      }
+      case 'supplier-ledger': {
+        if (!supplierId) return { success: false, message: 'Supplier ID required' };
+        const res = await this.getSupplierLedger(req, supplierId);
+        const data = res.data;
+        csvContent = `Supplier: ${data.supplier.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`;
+        data.ledger.forEach((tx: any) => {
+          csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`;
+        });
+        break;
+      }
+      case 'cash-flow': {
+        const res = await this.getCashFlow(req);
+        const data = res.data;
+        csvContent = 'Date,Type,Category,Reference,Amount\n';
+        data.recentMovements.forEach((m: any) => {
+          csvContent += `${m.date},${m.type},${m.category},"${m.reference || ''}",${m.amount}\n`;
+        });
+        break;
+      }
+      default:
+        return { success: false, message: 'Invalid export type' };
+    }
+
+    return {
+      success: true,
+      data: {
+        csv: csvContent,
+        filename
+      }
+    };
+  }
 }
