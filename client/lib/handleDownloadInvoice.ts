@@ -25,7 +25,8 @@ export const useDownloadInvoice = () => {
     // Order Info
     doc.setTextColor(0);
     doc.setFontSize(10);
-    doc.text(`Order ID: ${order?.id?.slice(-6).toUpperCase()}`, 140, 22);
+    const displayInvoiceNum = order?.invoiceNumber || order?.id?.slice(-6).toUpperCase();
+    doc.text(`Invoice #: ${displayInvoiceNum}`, 140, 22);
     doc.text(`Date: ${new Date().toLocaleDateString()}`, 140, 28);
 
     // Customer Details

@@ -79,6 +79,7 @@ export default function AdminLayout({
                 { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
                 { icon: RotateCcw, label: 'Returns', href: '/admin/returns' },
                 { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
+                { icon: FileText, label: 'Invoices', href: '/admin/invoices' },
                 { icon: Tag, label: 'Coupons', href: '/admin/coupons' },
                 { icon: Megaphone, label: 'Promotions', href: '/admin/promotions' },
             ]
