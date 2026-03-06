@@ -7,12 +7,14 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useDownloadInvoice } from '@/lib/handleDownloadInvoice';
 import { fetchAPI } from '@/services/api';
+import InvoiceDetailsModal from './InvoiceDetailsModal';
 
 export default function InvoicesList() {
     const { formatPrice } = useSettings();
     const { downloadInvoice } = useDownloadInvoice();
     const [invoices, setInvoices] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
 
     useEffect(() => {
         fetchInvoices();
@@ -102,6 +104,13 @@ export default function InvoicesList() {
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end gap-2">
                                                 <button
+                                                    onClick={() => setSelectedInvoice(invoice)}
+                                                    className="p-2 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                                                    title="View Details"
+                                                >
+                                                    <Eye className="w-5 h-5" />
+                                                </button>
+                                                <button
                                                     onClick={() => downloadInvoice({
                                                         ...invoice.order,
                                                         invoiceNumber: invoice.invoiceNumber
@@ -120,6 +129,13 @@ export default function InvoicesList() {
                     </table>
                 </div>
             </div>
+
+            {selectedInvoice && (
+                <InvoiceDetailsModal
+                    invoice={selectedInvoice}
+                    onClose={() => setSelectedInvoice(null)}
+                />
+            )}
         </div>
     );
 }
