@@ -6,6 +6,7 @@ import { TenantStatus } from 'src/common/enums/tenant/tenant-status.enum';
 import { SubscriptionPlanEntity } from 'src/modules/system-platform/subscription-plan/entities/subscription-plan.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 @Entity('tenants')
 export class TenantEntity extends BaseEntity {
 
@@ -70,4 +71,11 @@ export class TenantEntity extends BaseEntity {
 
   @Column({ name: 'subscription_ends_at', type: 'timestamptz', nullable: true })
   subscriptionEndsAt: Date
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

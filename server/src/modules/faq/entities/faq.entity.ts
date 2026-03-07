@@ -3,7 +3,8 @@ import { FaqStatus } from 'src/common/enums/faq-status.enum';
 import { PageEntity } from 'src/modules/page/entities/page.entity';
 import { ProductEntity } from 'src/modules/product/entities/product.entity';
 import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
-import {
+
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';import {
   Column,
   Entity,
   JoinColumn,
@@ -51,4 +52,11 @@ export class FaqEntity extends BaseEntity {
     @ManyToOne(() => PageEntity, { onDelete: 'CASCADE', nullable: true })
     @JoinColumn({ name: 'page_id' })
     page: PageEntity;
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

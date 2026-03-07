@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 @Entity('pages')
 @Index(['slug', 'tenantId'], { unique: true })
 export class PageEntity extends BaseEntity {
@@ -70,4 +71,11 @@ export class PageEntity extends BaseEntity {
 
 
 
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

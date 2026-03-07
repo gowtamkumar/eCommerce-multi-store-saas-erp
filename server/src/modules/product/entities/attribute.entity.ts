@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { ProductEntity } from './product.entity';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 @Entity('product_attributes')
 export class ProductAttributeEntity extends BaseEntity {
 
@@ -27,4 +28,11 @@ export class ProductAttributeEntity extends BaseEntity {
     tenantId: string;
 
 
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

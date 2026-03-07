@@ -2,6 +2,7 @@ import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { TenantEntity } from '../../../tenant/entities/tenant.entity';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 @Entity('suppliers')
 export class SupplierEntity extends BaseEntity {
     @Column({ type: 'varchar', length: 255 })
@@ -25,4 +26,11 @@ export class SupplierEntity extends BaseEntity {
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

@@ -4,6 +4,7 @@ import { ProductEntity } from '../../../product/entities/product.entity';
 import { ProductVariantEntity } from '../../../product/entities/variant.entity';
 import { PurchaseOrderEntity } from './purchase-order.entity';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 @Entity('purchase_order_items')
 export class PurchaseOrderItemEntity extends BaseEntity {
     @Column({ type: 'uuid', name: 'purchase_order_id' })
@@ -32,4 +33,11 @@ export class PurchaseOrderItemEntity extends BaseEntity {
 
     @Column({ type: 'decimal', precision: 10, scale: 2, name: 'unit_price' })
     unitPrice: number;
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

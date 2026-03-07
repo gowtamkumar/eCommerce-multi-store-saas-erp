@@ -8,6 +8,7 @@ import {
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from '../dto/index';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 
 @Entity('site_settings')
 export class SiteSettingsEntity extends BaseEntity {
@@ -83,4 +84,11 @@ export class SiteSettingsEntity extends BaseEntity {
     tenant: TenantEntity;
 
 
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

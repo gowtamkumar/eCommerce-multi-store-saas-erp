@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { ProductEntity } from './product.entity';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 @Entity('product_variants')
 export class ProductVariantEntity extends BaseEntity {
 
@@ -36,4 +37,11 @@ export class ProductVariantEntity extends BaseEntity {
     tenantId: string;
 
 
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

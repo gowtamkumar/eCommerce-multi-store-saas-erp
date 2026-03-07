@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { CartEntity } from './cart.entity';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 @Entity('cart_items')
 export class CartItemEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'cart_id' })
@@ -42,5 +43,12 @@ export class CartItemEntity extends BaseEntity {
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity;
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }
 

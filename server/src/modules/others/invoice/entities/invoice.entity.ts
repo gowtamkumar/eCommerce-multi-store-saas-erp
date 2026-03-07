@@ -4,6 +4,7 @@ import { OrderEntity } from 'src/modules/order/entities/order.entity';
 import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 @Entity('invoices')
 export class InvoiceEntity extends BaseEntity {
     @Column({ type: 'varchar', name: 'invoice_number', unique: true, length: 100 })
@@ -35,4 +36,11 @@ export class InvoiceEntity extends BaseEntity {
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

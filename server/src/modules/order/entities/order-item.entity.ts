@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { OrderEntity } from './order.entity';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 @Entity('order_items')
 export class OrderItemEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'order_id' })
@@ -54,5 +55,12 @@ export class OrderItemEntity extends BaseEntity {
   @ManyToOne(() => TenantEntity)
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity;
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }
 

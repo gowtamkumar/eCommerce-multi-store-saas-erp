@@ -1,7 +1,8 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import { ProductEntity } from 'src/modules/product/entities/product.entity';
 import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
-import {
+
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';import {
   Column,
   Entity,
   JoinColumn,
@@ -33,5 +34,12 @@ export class CategoryEntity extends BaseEntity {
 
   @OneToMany(() => ProductEntity, (product) => product.category)
   products: ProductEntity[];
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }
 

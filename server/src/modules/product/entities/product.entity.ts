@@ -1,22 +1,21 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 import { ReviewEntity } from 'src/modules/review/entities/review.entity';
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
-  OneToOne,
+  OneToMany
 } from 'typeorm';
 import { ProductStatus } from '../../../common/enums/product-status.enum';
 import { BrandEntity } from '../../brand/entities/brand.entity';
 import { CategoryEntity } from '../../category/entities/category.entity';
 import { FaqEntity } from '../../faq/entities/faq.entity';
-import { PageEntity } from '../../page/entities/page.entity';
+import { SupplierEntity } from '../../others/supplier/entities/supplier.entity';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 import { ProductAttributeEntity } from './attribute.entity';
 import { ProductVariantEntity } from './variant.entity';
-import { SupplierEntity } from '../../others/supplier/entities/supplier.entity';
 
 @Entity('products')
 export class ProductEntity extends BaseEntity {
@@ -112,6 +111,13 @@ export class ProductEntity extends BaseEntity {
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 
 
 }

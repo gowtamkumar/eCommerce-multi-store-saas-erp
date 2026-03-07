@@ -12,6 +12,7 @@ import { TenantEntity } from '../../../tenant/entities/tenant.entity';
 import { ProductVariantEntity } from '../../../product/entities/variant.entity';
 import { SupplierEntity } from '../../supplier/entities/supplier.entity';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 @Entity('inventory_transactions')
 export class InventoryTransactionEntity extends BaseEntity {
 
@@ -61,4 +62,11 @@ export class InventoryTransactionEntity extends BaseEntity {
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

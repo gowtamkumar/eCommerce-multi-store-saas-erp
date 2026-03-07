@@ -10,6 +10,7 @@ import { ReviewStatus } from '../../../common/enums/review-status.enum';
 import { ProductEntity } from '../../product/entities/product.entity';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 @Entity('reviews')
 @Index(['productId', 'status'])
 export class ReviewEntity extends BaseEntity {
@@ -49,4 +50,11 @@ export class ReviewEntity extends BaseEntity {
 
 
 
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

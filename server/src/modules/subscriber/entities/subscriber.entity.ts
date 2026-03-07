@@ -1,8 +1,7 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
-import {
-  Column,
-  Entity,
-} from 'typeorm';
+
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
+import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
 
 @Entity('subscribers')
 export class SubscriberEntity extends BaseEntity {
@@ -16,4 +15,11 @@ export class SubscriberEntity extends BaseEntity {
 
 
 
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

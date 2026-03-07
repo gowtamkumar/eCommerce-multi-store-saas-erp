@@ -1,10 +1,8 @@
 import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import { TenantEntity } from 'src/modules/tenant/entities/tenant.entity';
-import {
-    Column,
-    Entity,
-    OneToMany,
-} from 'typeorm';
+
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
+import { Column, Entity, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 
 @Entity('subscription_plans')
 export class SubscriptionPlanEntity extends BaseEntity {
@@ -28,4 +26,11 @@ export class SubscriptionPlanEntity extends BaseEntity {
     tenants: TenantEntity[]
 
 
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }

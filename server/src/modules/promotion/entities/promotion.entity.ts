@@ -2,6 +2,7 @@ import { BaseEntity } from 'src/common/base-entity/BaseEntity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
 
+import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 export enum PromotionType {
     PERCENTAGE = 'percentage',
     FIXED_AMOUNT = 'fixed_amount',
@@ -55,4 +56,11 @@ export class PromotionEntity extends BaseEntity {
     @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'tenant_id' })
     tenant: TenantEntity;
+
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
 }
