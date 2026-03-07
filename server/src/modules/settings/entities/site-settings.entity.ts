@@ -6,7 +6,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
-import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, NavbarSettingsDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from '../dto/index';
+import { CurrenciesDto, FooterSectionDto, FooterSettingsDto, MarketingDto, NavbarLinkDto, NavbarSettingsDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from '../dto/index';
 
 import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 
@@ -65,14 +65,8 @@ export class SiteSettingsEntity extends BaseEntity {
   @Column({ type: 'jsonb', name: 'navbar', nullable: true })
   navbar?: NavbarSettingsDto;
 
-  @Column({ name: 'footer_description', nullable: true })
-  footerDescription?: string;
-
-  @Column({ name: 'footer_copyright', nullable: true })
-  footerCopyright?: string;
-
-  @Column({ type: 'jsonb', name: 'footer_sections', nullable: true })
-  footerSections?: FooterSectionDto[]
+  @Column({ type: 'jsonb', name: 'footer', nullable: true })
+  footer?: FooterSettingsDto;
 
   @Column({ type: 'jsonb', name: 'trust_badges', nullable: true })
   trustBadges?: TrustBadgeDto[]

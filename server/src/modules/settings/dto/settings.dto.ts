@@ -1,14 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsEmail, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, NavbarSettingsDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from './index';
-// import { FooterSectionDto } from './footerSection.dto';
-// import { MarketingDto } from './marketing.dto';
-// import { NavbarLinkDto } from './navbarLink.dto';
-// import { PathaoCourierDto } from './pathaoCourier.dto';
-// import { PaymentDto } from './payment.dto';
-// import { SmtpDto } from './smtp.dto';
-// import { SocialLinkDto } from './socialLink.dto';
+import { CurrenciesDto } from './currencies.dto';
+import { FooterSettingsDto } from './footerSection.dto';
+import { MarketingDto } from './marketing.dto';
+import { NavbarSettingsDto } from './navbarLink.dto';
+import { PathaoCourierDto } from './pathaoCourier.dto';
+import { PaymentDto } from './payment.dto';
+import { SmtpDto } from './smtp.dto';
+import { SocialLinkDto } from './socialLink.dto';
+import { SteadfastCourierDto } from './steadfastCourier.dto';
+import { TrustBadgeDto } from './trust-badge.dto';
 
 export class UpdateSiteSettingsDto {
     @ApiProperty({ required: false })
@@ -100,18 +102,10 @@ export class UpdateSiteSettingsDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
-    @IsString()
-    footerDescription?: string;
-
-    @ApiProperty({ required: false })
-    @IsOptional()
-    @IsString()
-    footerCopyright?: string;
-
-    @ApiProperty({ required: false })
-    @IsOptional()
-    @IsArray()
-    footerSections?: FooterSectionDto[]
+    @IsObject()
+    @ValidateNested()
+    @Type(() => FooterSettingsDto)
+    footer?: FooterSettingsDto;
 
     @ApiProperty({ required: false })
     @IsOptional()

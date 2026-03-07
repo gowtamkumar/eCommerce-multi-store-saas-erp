@@ -23,6 +23,39 @@ export const DEFAULT_SETTINGS = {
     facebookPixelId: "",
     facebookDomainVerification: "",
   },
+  navbar: {
+    layout: "default",
+    template: "classic",
+    backgroundColor: "",
+    textColor: "",
+    shadowIntensity: "subtle",
+    hoverEffect: "underline",
+    borderRadius: "xl",
+    sticky: true,
+    maxWidth: "standard",
+    bottomShape: "none",
+    backgroundPattern: "none",
+    transparent: false,
+    links: [],
+  },
+  footer: {
+    template: "classic",
+    backgroundColor: "",
+    textColor: "",
+    brandColor: "",
+    borderColor: "",
+    shadowIntensity: "none",
+    borderRadius: "none",
+    topShape: "none",
+    backgroundPattern: "none",
+    glassEffect: false,
+    columns: "4",
+    showSocialLinks: true,
+    showNewsletter: true,
+    description: "",
+    copyright: "",
+    sections: [],
+  },
 };
 
 export async function getSiteSettings() {
@@ -60,6 +93,8 @@ export async function getSiteSettings() {
           ...settings?.socialLinks,
         },
         marketing: { ...DEFAULT_SETTINGS.marketing, ...settings?.marketing },
+        navbar: { ...DEFAULT_SETTINGS.navbar, ...settings?.navbar },
+        footer: { ...DEFAULT_SETTINGS.footer, ...settings?.footer },
       };
     }
 

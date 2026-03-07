@@ -2,7 +2,7 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
-import { Facebook, Heart, Instagram, Linkedin, Twitter } from 'lucide-react';
+import { Facebook, Heart, Instagram, Linkedin, Twitter, Mail, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -11,13 +11,17 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
 
   // Use prop settings if available (e.g. from SaaSLanding), otherwise fall back to context
   const settings = propSettings || contextSettings;
+  const footerSettings = settings?.footer;
+  const footerTemplate = footerSettings?.template || 'classic';
 
   const brandName = settings?.brandName || "LuxeAudio";
-  const footerDescription = settings?.footerDescription || settings?.siteDescription;
-  const footerCopyright = settings?.footerCopyright || `© ${new Date().getFullYear()} ${brandName}. Made with Heart by Gowtam Kumar.`;
+  const footerDescription = footerSettings?.description || settings?.siteDescription;
+  const footerCopyright = footerSettings?.copyright || `© ${new Date().getFullYear()} ${brandName}. Made with Heart by Gowtam Kumar.`;
   const social: any = settings?.socialLinks || {};
 
+
   const [pages, setPages] = useState<any[]>([]);
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
     fetchPages();
@@ -34,47 +38,225 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
     }
   };
 
+  const getPatternStyles = () => {
+    const pattern = footerSettings?.backgroundPattern;
+    if (!pattern || pattern === 'none') return {};
+
+    const color = (footerTemplate === 'glass' || footerTemplate === 'elegant' || (footerSettings?.backgroundColor && footerSettings.backgroundColor !== '#ffffff'))
+      ? 'rgba(255,255,255,0.03)'
+      : 'rgba(0,0,0,0.02)';
+
+    switch (pattern) {
+      case 'dots':
+        return { backgroundImage: `radial-gradient(${color} 1px, transparent 0)`, backgroundSize: '10px 10px' };
+      case 'mesh':
+        return { backgroundImage: `linear-gradient(45deg, ${color} 25%, transparent 25%), linear-gradient(-45deg, ${color} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${color} 75%), linear-gradient(-45deg, transparent 75%, ${color} 75%)`, backgroundSize: '16px 16px' };
+      case 'grid':
+        return { backgroundImage: `linear-gradient(${color} 1px, transparent 1px), linear-gradient(90deg, ${color} 1px, transparent 1px)`, backgroundSize: '20px 20px' };
+      case 'stripes':
+        return { backgroundImage: `repeating-linear-gradient(45deg, ${color}, ${color} 2px, transparent 2px, transparent 10px)` };
+      default:
+        return {};
+    }
+  };
+
+  const TopShape = () => {
+    const shape = footerSettings?.topShape;
+    if (!shape || shape === 'none') return null;
+
+    let color = footerSettings?.backgroundColor || '#0f172a';
+
+    // Adjust shape color for specific templates if no custom bg is set
+    if (!footerSettings?.backgroundColor) {
+      if (footerTemplate === 'elegant') color = '#1e1b4b'; // deep indigo
+      if (footerTemplate === 'corporate') color = '#ffffff';
+      if (footerTemplate === 'glass') color = 'transparent';
+    }
+
+    if (footerTemplate === 'glass' || footerTemplate === 'floating') return null;
+
+    return (
+      <div className="absolute bottom-[99%] left-0 w-full overflow-hidden leading-[0] z-[1] pointer-events-none">
+        {shape === 'wave' && (
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full sm:h-[40px] h-[25px]" fill={color}>
+            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V0C48.1,6,110,24.49,168.69,37.23,212.06,46.67,265,56.44,321.39,56.44Z" transform="rotate(180 600 60)"></path>
+          </svg>
+        )}
+        {shape === 'curve' && (
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full sm:h-[50px] h-[30px]" fill={color}>
+            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" transform="rotate(180 600 60)"></path>
+          </svg>
+        )}
+        {shape === 'slant' && (
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full sm:h-[50px] h-[30px]" fill={color}>
+            <path d="M1200 120L0 16.48V0h1200v120z" transform="rotate(180 600 60)"></path>
+          </svg>
+        )}
+        {shape === 'notch' && (
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full sm:h-[30px] h-[18px]" fill={color}>
+            <path d="M0 0h450l50 30h200l50-30h450v120H0z" transform="rotate(180 600 60)"></path>
+          </svg>
+        )}
+      </div>
+    );
+  };
+
+  const radiusClasses: Record<string, string> = {
+    none: 'rounded-none',
+    md: 'rounded-md',
+    xl: 'rounded-xl',
+    '3xl': 'rounded-[2rem]',
+    full: 'rounded-[4rem]'
+  };
+
+  const getFooterBaseStyles = () => {
+    let baseStyles = "relative py-24 transition-all duration-700 ";
+    const radiusClass = radiusClasses[footerSettings?.borderRadius || 'none'];
+
+    switch (footerTemplate) {
+      case 'floating':
+        baseStyles += `mx-4 sm:mx-8 mb-8 mt-20 ${radiusClass} bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border border-white/20 shadow-2xl `;
+        break;
+      case 'glass':
+        baseStyles += "bg-white/10 dark:bg-slate-900/40 backdrop-blur-2xl border-t border-white/10 ";
+        break;
+      case 'elegant':
+        baseStyles += "bg-gradient-to-b from-slate-900 to-indigo-950 text-slate-100 border-t border-indigo-500/30 ";
+        break;
+      case 'modern':
+        baseStyles += "bg-slate-950 text-white border-t border-slate-800 ";
+        break;
+      case 'corporate':
+        baseStyles += "bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-t border-slate-200 dark:border-slate-800 ";
+        break;
+      case 'classic':
+      default:
+        baseStyles += "bg-slate-900 text-white border-t border-slate-800 ";
+        break;
+    }
+
+    return baseStyles;
+  };
+
+  const footerCustomStyle = {
+    backgroundColor: footerSettings?.backgroundColor || undefined,
+    color: footerSettings?.textColor || undefined,
+    borderTopColor: footerSettings?.borderColor || undefined,
+    ...getPatternStyles()
+  };
+
+  const shadowClasses: Record<string, string> = {
+    none: '',
+    subtle: 'shadow-[0_-5px_15px_rgba(0,0,0,0.05)]',
+    medium: 'shadow-[0_-15px_30px_rgba(0,0,0,0.1)]',
+    strong: 'shadow-[0_-25px_50px_rgba(0,0,0,0.2)]'
+  };
+
+  const shadowClass = shadowClasses[footerSettings?.shadowIntensity || 'none'];
+
+  const brandColorStyle = { color: footerSettings?.brandColor || footerSettings?.textColor || undefined };
+  const brandBgStyle = { backgroundColor: footerSettings?.brandColor || undefined };
+
+  // Newsletter Section
+  const Newsletter = () => {
+    if (footerSettings?.showNewsletter === false) return null;
+
+    return (
+      <div className="mb-20 p-8 sm:p-12 rounded-[2.5rem] bg-white/5 dark:bg-slate-800/30 border border-white/10 dark:border-slate-700/50 relative overflow-hidden group">
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-brand-500/10 blur-[80px] rounded-full group-hover:bg-brand-500/20 transition-all duration-700 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
+          <div className="max-w-xl space-y-4">
+            <h4 className="text-3xl font-black tracking-tight" style={{ color: footerSettings?.textColor || undefined }}>Stay in the Loop</h4>
+            <p className="text-base opacity-60 leading-relaxed font-medium">
+              Join our community and get exclusive early access to new arrivals, limited editions, and curated audio experiences.
+            </p>
+          </div>
+          <form
+            onSubmit={(e) => e.preventDefault()}
+            className="flex-1 max-w-lg flex flex-col sm:flex-row gap-3"
+          >
+            <input
+              type="email"
+              placeholder="Your email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-white/10 dark:bg-slate-900/50 border-white/10 dark:border-slate-700 focus:ring-2 focus:ring-brand-500 rounded-2xl text-sm flex-1 px-6 py-4 outline-none transition-all placeholder:text-slate-500"
+            />
+            <button
+              type="submit"
+              style={brandBgStyle}
+              className={`px-8 py-4 ${!footerSettings?.brandColor ? 'bg-brand-600 hover:bg-brand-500' : ''} text-white font-bold rounded-2xl transition-all active:scale-95 shadow-xl shadow-brand-500/20 flex items-center justify-center gap-2 group/btn whitespace-nowrap`}
+            >
+              Subscribe
+              <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const colCount = parseInt(footerSettings?.columns || '4') || 4;
+
+  const gridColsClass = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-1 sm:grid-cols-2',
+    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+    4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+  }[colCount] || 'lg:grid-cols-4';
+
+  const brandClasses = footerTemplate === 'elegant' ? "font-serif" : "font-black";
+
+
   return (
-    <footer className="bg-slate-900 text-white py-16 border-t border-slate-800">
+    <footer
+      className={`${getFooterBaseStyles()} ${shadowClass}`}
+      style={footerCustomStyle}
+    >
+      {TopShape()}
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-4 gap-12 mb-12">
-          <div className="col-span-1 md:col-span-2">
-            <Link href="/" className="text-3xl font-bold text-white mb-6 block tracking-tight">
+        {Newsletter()}
+
+        <div className={`grid ${gridColsClass} gap-12 lg:gap-16 mb-20`}>
+          <div className="space-y-8">
+            <Link href="/" className={`text-5xl ${brandClasses} tracking-tighter hover:opacity-80 transition-opacity inline-block`} style={brandColorStyle}>
               {brandName}
             </Link>
-            <p className="text-slate-400 max-w-sm leading-relaxed mb-8">
+            <p className="opacity-60 max-w-sm leading-relaxed text-sm font-medium">
               {footerDescription}
             </p>
-            <div className="flex space-x-4">
-              {social.facebook && (
-                <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all duration-300">
-                  <Facebook className="w-5 h-5" />
-                </a>
-              )}
-              {social.twitter && (
-                <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-blue-400 hover:text-white transition-all duration-300">
-                  <Twitter className="w-5 h-5" />
-                </a>
-              )}
-              {social.instagram && (
-                <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-pink-600 hover:text-white transition-all duration-300">
-                  <Instagram className="w-5 h-5" />
-                </a>
-              )}
-              {social.linkedin && (
-                <a href={social.linkedin} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-blue-700 hover:text-white transition-all duration-300">
-                  <Linkedin className="w-5 h-5" />
-                </a>
-              )}
-            </div>
+
+            {(footerSettings?.showSocialLinks !== false) && (
+              <div className="flex gap-4">
+                {[
+                  { name: social.facebook, icon: Facebook, color: 'hover:bg-blue-600' },
+                  { name: social.twitter, icon: Twitter, color: 'hover:bg-sky-500' },
+                  { name: social.instagram, icon: Instagram, color: 'hover:bg-pink-600' },
+                  { name: social.linkedin, icon: Linkedin, color: 'hover:bg-blue-700' }
+                ].map((item, id) => item.name && (
+                  <a
+                    key={id}
+                    href={item.name}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`w-11 h-11 rounded-2xl bg-white/5 dark:bg-slate-800/50 flex items-center justify-center border border-white/10 dark:border-slate-700/50 ${item.color} hover:border-transparent transition-all duration-300 group hover:-translate-y-1 hover:shadow-lg`}
+                  >
+                    <item.icon className="w-5 h-5 opacity-60 group-hover:opacity-100 group-hover:text-white transition-all" />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
-          {settings?.footerSections && settings.footerSections.length > 0 ? (
-            settings.footerSections
+
+          {footerSettings?.sections && footerSettings.sections.length > 0 ? (
+            footerSettings.sections
               .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
               .map((section: any, idx: number) => (
-                <div key={idx}>
-                  <h4 className="font-bold text-lg mb-6 text-white">{section.title}</h4>
-                  <ul className="space-y-4 text-slate-400">
+                <div key={idx} className="space-y-8">
+                  <h4 className="font-bold text-lg tracking-tight uppercase" style={{ color: footerSettings?.textColor || undefined }}>{section.title}</h4>
+                  <ul className="space-y-4 opacity-70 font-medium text-sm">
                     {section.links
                       ?.filter((link: any) => link.isActive !== false)
                       .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
@@ -84,9 +266,12 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
                             href={link.href}
                             target={link.isOpenInNewTab ? "_blank" : undefined}
                             rel={link.isOpenInNewTab ? "noopener noreferrer" : undefined}
-                            className="hover:text-brand-400 transition-colors"
+                            className="hover:text-brand-500 hover:translate-x-1.5 transition-all inline-block group"
                           >
-                            {link.label}
+                            <span className="relative">
+                              {link.label}
+                              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-500 transition-all group-hover:w-full opacity-50"></span>
+                            </span>
                           </Link>
                         </li>
                       ))}
@@ -94,14 +279,14 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
                 </div>
               ))
           ) : (
-            <div>
-              <h4 className="font-bold text-lg mb-6 text-white">Pages</h4>
-              <ul className="space-y-4 text-slate-400">
+            <div className="space-y-8">
+              <h4 className="font-bold text-lg tracking-tight uppercase" style={{ color: footerSettings?.textColor || undefined }}>Quick Links</h4>
+              <ul className="space-y-4 opacity-70 font-medium text-sm">
                 {pages.map((page: any) => (
                   <li key={page.id}>
                     <Link
                       href={page.isHomePage ? "/" : `/${page.slug}`}
-                      className="hover:text-brand-400 transition-colors"
+                      className="hover:text-brand-500 hover:translate-x-1.5 transition-all inline-block"
                     >
                       {page.title}
                     </Link>
@@ -111,21 +296,22 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
             </div>
           )}
         </div>
-        <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm">
-          <div className="flex items-center gap-1">
+
+        <div className="border-t border-white/10 dark:border-slate-800 pt-12 flex flex-col md:flex-row justify-between items-center opacity-40 text-[10px] font-black gap-8 uppercase tracking-[0.2em]">
+          <div className="flex items-center gap-2">
             {footerCopyright.includes('Heart') ? (
-              <>
-                &copy; {new Date().getFullYear()} {brandName}. Made with <Heart className="w-4 h-4 text-red-500 fill-current" /> by Gowtam Kumar.
-              </>
+              <span className="flex items-center gap-2">
+                &copy; {new Date().getFullYear()} {brandName}. Crafted with <Heart className="w-4 h-4 text-red-500 fill-current animate-pulse" /> by Gowtam Kumar.
+              </span>
             ) : (
               footerCopyright
             )}
           </div>
-          <div className="flex space-x-8 mt-4 md:mt-0">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
-            <Link href="/doc" className="hover:text-white transition-colors">Doc</Link>
+          <div className="flex flex-wrap justify-center gap-x-10 gap-y-4">
+            <a href="#" className="hover:opacity-100 transition-opacity">Privacy Policy</a>
+            <a href="#" className="hover:opacity-100 transition-opacity">Terms of Service</a>
+            <a href="#" className="hover:opacity-100 transition-opacity">Cookies</a>
+            <Link href="/doc" className="hover:opacity-100 transition-opacity">Documentation</Link>
           </div>
         </div>
       </div>

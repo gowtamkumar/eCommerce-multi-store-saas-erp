@@ -115,19 +115,34 @@ function SettingsContent() {
                 isActive: boolean;
             }>,
         },
-        footerDescription: "",
-        footerCopyright: "",
-        footerSections: [] as Array<{
-            title: string;
-            order: number;
-            links: Array<{
-                label: string;
-                href: string;
+        footer: {
+            template: 'classic',
+            backgroundColor: '',
+            textColor: '',
+            brandColor: '',
+            borderColor: '',
+            shadowIntensity: 'none',
+            borderRadius: 'none',
+            topShape: 'none',
+            backgroundPattern: 'none',
+            glassEffect: false,
+            columns: '4',
+            showSocialLinks: true,
+            showNewsletter: true,
+            description: '',
+            copyright: '',
+            sections: [] as Array<{
+                title: string;
                 order: number;
-                isOpenInNewTab: boolean;
-                isActive: boolean;
-            }>;
-        }>,
+                links: Array<{
+                    label: string;
+                    href: string;
+                    order: number;
+                    isOpenInNewTab: boolean;
+                    isActive: boolean;
+                }>;
+            }>,
+        },
         trustBadges: [] as Array<{
             icon: string;
             title: string;
@@ -221,9 +236,24 @@ function SettingsContent() {
                             transparent: false,
                             links: []
                         },
-                        footerDescription: data.footerDescription || "",
-                        footerCopyright: data.footerCopyright || "",
-                        footerSections: data.footerSections || [],
+                        footer: data.footer || {
+                            template: 'classic',
+                            backgroundColor: '',
+                            textColor: '',
+                            brandColor: '',
+                            borderColor: '',
+                            shadowIntensity: 'none',
+                            borderRadius: 'none',
+                            topShape: 'none',
+                            backgroundPattern: 'none',
+                            glassEffect: false,
+                            columns: '4',
+                            showSocialLinks: true,
+                            showNewsletter: true,
+                            description: '',
+                            copyright: '',
+                            sections: []
+                        },
                         trustBadges: data.trustBadges || [],
                     });
                 }
