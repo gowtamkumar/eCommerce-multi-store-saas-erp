@@ -104,6 +104,8 @@ function SettingsContent() {
             borderRadius: "xl",
             sticky: true,
             maxWidth: "standard",
+            bottomShape: "none",
+            backgroundPattern: "none",
             transparent: false,
             links: [] as Array<{
                 label: string;
@@ -214,6 +216,8 @@ function SettingsContent() {
                             borderRadius: "xl",
                             sticky: true,
                             maxWidth: "standard",
+                            bottomShape: "none",
+                            backgroundPattern: "none",
                             transparent: false,
                             links: []
                         },

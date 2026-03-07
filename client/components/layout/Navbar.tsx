@@ -295,6 +295,60 @@ const Navbar = () => {
     </div>
   );
 
+  const BottomShape = () => {
+    const shape = navbarSettings?.bottomShape;
+    if (!shape || shape === 'none') return null;
+
+    const color = navbarSettings?.backgroundColor || (navbarTemplate === 'gradient' ? '#4f46e5' : '#ffffff');
+
+    return (
+      <div className="absolute top-[98%] left-0 w-full overflow-hidden leading-[0] z-[-1] pointer-events-none">
+        {shape === 'wave' && (
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[30px]" fill={color}>
+            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V0C48.1,6,110,24.49,168.69,37.23,212.06,46.67,265,56.44,321.39,56.44Z"></path>
+          </svg>
+        )}
+        {shape === 'curve' && (
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[40px]" fill={color}>
+            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"></path>
+          </svg>
+        )}
+        {shape === 'slant' && (
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[40px]" fill={color}>
+            <path d="M1200 120L0 16.48V0h1200v120z"></path>
+          </svg>
+        )}
+        {shape === 'notch' && (
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[20px]" fill={color}>
+            <path d="M0 0h450l50 30h200l50-30h450v120H0z"></path>
+          </svg>
+        )}
+      </div>
+    );
+  };
+
+  const getPatternStyles = () => {
+    const pattern = navbarSettings?.backgroundPattern;
+    if (!pattern || pattern === 'none') return {};
+
+    const color = (navbarTemplate === 'gradient' || (navbarSettings?.backgroundColor && navbarSettings.backgroundColor !== '#ffffff'))
+      ? 'rgba(255,255,255,0.05)'
+      : 'rgba(0,0,0,0.03)';
+
+    switch (pattern) {
+      case 'dots':
+        return { backgroundImage: `radial-gradient(${color} 1px, transparent 0)`, backgroundSize: '10px 10px' };
+      case 'mesh':
+        return { backgroundImage: `linear-gradient(45deg, ${color} 25%, transparent 25%), linear-gradient(-45deg, ${color} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${color} 75%), linear-gradient(-45deg, transparent 75%, ${color} 75%)`, backgroundSize: '16px 16px' };
+      case 'grid':
+        return { backgroundImage: `linear-gradient(${color} 1px, transparent 1px), linear-gradient(90deg, ${color} 1px, transparent 1px)`, backgroundSize: '20px 20px' };
+      case 'stripes':
+        return { backgroundImage: `repeating-linear-gradient(45deg, ${color}, ${color} 2px, transparent 2px, transparent 10px)` };
+      default:
+        return {};
+    }
+  };
+
   // Determine background and container styles based on template
   const getNavStyles = () => {
     const isSticky = navbarSettings?.sticky !== false;
@@ -346,13 +400,15 @@ const Navbar = () => {
 
   const navCustomStyle = {
     backgroundColor: (navbarSettings?.backgroundColor && (!navbarSettings?.transparent || isScrolled)) ? navbarSettings.backgroundColor : undefined,
-    color: navbarSettings?.textColor || undefined
+    color: navbarSettings?.textColor || undefined,
+    ...getPatternStyles()
   };
 
   return (
     <>
       <nav className={getNavStyles()} style={navCustomStyle}>
         <div className={getContainerStyles()}>
+          <BottomShape />
 
           {/* Layout Switcing logic */}
           {navbarLayout === 'centered' ? (

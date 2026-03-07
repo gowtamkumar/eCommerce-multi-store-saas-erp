@@ -61,6 +61,14 @@ export class NavbarSettingsDto {
     maxWidth?: string;
 
     @IsOptional()
+    @IsString()
+    bottomShape?: string;
+
+    @IsOptional()
+    @IsString()
+    backgroundPattern?: string;
+
+    @IsOptional()
     @IsBoolean()
     transparent?: boolean;
 

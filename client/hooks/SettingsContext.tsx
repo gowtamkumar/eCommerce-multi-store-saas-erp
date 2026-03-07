@@ -34,6 +34,8 @@ interface SiteSettings {
     borderRadius?: string;
     sticky?: boolean;
     maxWidth?: 'standard' | 'full';
+    bottomShape?: 'none' | 'wave' | 'curve' | 'slant' | 'notch';
+    backgroundPattern?: 'none' | 'dots' | 'mesh' | 'grid' | 'stripes';
     transparent?: boolean;
     links?: {
       label: string;

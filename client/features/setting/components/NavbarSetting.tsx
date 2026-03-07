@@ -309,8 +309,8 @@ export default function NavbarSetting({
                                             navbar: { ...(formData.navbar || {}), shadowIntensity: intensity }
                                         })}
                                         className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-lg transition-all ${formData.navbar?.shadowIntensity === intensity
-                                                ? 'bg-white dark:bg-slate-800 text-brand-600 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-700'
+                                            ? 'bg-white dark:bg-slate-800 text-brand-600 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-700'
                                             }`}
                                     >
                                         {intensity}
@@ -338,8 +338,8 @@ export default function NavbarSetting({
                                             navbar: { ...(formData.navbar || {}), hoverEffect: effect.id }
                                         })}
                                         className={`py-3 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${formData.navbar?.hoverEffect === effect.id
-                                                ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600'
-                                                : 'border-slate-100 dark:border-slate-800 text-slate-500'
+                                            ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600'
+                                            : 'border-slate-100 dark:border-slate-800 text-slate-500'
                                             }`}
                                     >
                                         {effect.label}
@@ -361,8 +361,8 @@ export default function NavbarSetting({
                                             navbar: { ...(formData.navbar || {}), borderRadius: radius }
                                         })}
                                         className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-lg transition-all ${formData.navbar?.borderRadius === radius
-                                                ? 'bg-white dark:bg-slate-800 text-brand-600 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-700'
+                                            ? 'bg-white dark:bg-slate-800 text-brand-600 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-700'
                                             }`}
                                     >
                                         {radius}
@@ -370,6 +370,80 @@ export default function NavbarSetting({
                                 ))}
                             </div>
                             <p className="text-[10px] text-slate-500 italic">Rounding is mostly visible on 'Floating' and 'Capsule' styles.</p>
+                        </div>
+                    </div>
+
+                    <div className="h-px bg-slate-100 dark:bg-slate-700 mx-auto w-1/2" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Bottom Shape */}
+                        <div className="space-y-4">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Bottom Shape</h4>
+                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                                {[
+                                    { id: 'none', label: 'None' },
+                                    { id: 'wave', label: 'Wave' },
+                                    { id: 'curve', label: 'Curve' },
+                                    { id: 'slant', label: 'Slant' },
+                                    { id: 'notch', label: 'Notch' }
+                                ].map((shape) => (
+                                    <button
+                                        key={shape.id}
+                                        type="button"
+                                        onClick={() => setFormData({
+                                            ...formData,
+                                            navbar: { ...(formData.navbar || {}), bottomShape: shape.id }
+                                        })}
+                                        className={`flex flex-col items-center gap-2 p-2 rounded-xl border-2 transition-all ${formData.navbar?.bottomShape === shape.id
+                                                ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600'
+                                                : 'border-slate-100 dark:border-slate-800 text-slate-500'
+                                            }`}
+                                    >
+                                        <div className={`w-8 h-4 rounded-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden relative`}>
+                                            {shape.id === 'wave' && <div className="absolute bottom-0 w-full h-2 bg-brand-200 rounded-t-full" />}
+                                            {shape.id === 'curve' && <div className="absolute bottom-0 w-full h-2 bg-brand-200 rounded-[100%]" />}
+                                            {shape.id === 'slant' && <div className="absolute bottom-0 w-full h-2 bg-brand-200 -skew-y-6 origin-bottom-left" />}
+                                            {shape.id === 'notch' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-2 bg-brand-200 rounded-t-lg" />}
+                                        </div>
+                                        <span className="text-[9px] font-bold uppercase">{shape.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Background Pattern */}
+                        <div className="space-y-4">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Background Pattern</h4>
+                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                                {[
+                                    { id: 'none', label: 'None' },
+                                    { id: 'dots', label: 'Dots' },
+                                    { id: 'mesh', label: 'Mesh' },
+                                    { id: 'grid', label: 'Grid' },
+                                    { id: 'stripes', label: 'Stripes' }
+                                ].map((pattern) => (
+                                    <button
+                                        key={pattern.id}
+                                        type="button"
+                                        onClick={() => setFormData({
+                                            ...formData,
+                                            navbar: { ...(formData.navbar || {}), backgroundPattern: pattern.id }
+                                        })}
+                                        className={`flex flex-col items-center gap-2 p-2 rounded-xl border-2 transition-all ${formData.navbar?.backgroundPattern === pattern.id
+                                                ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600'
+                                                : 'border-slate-100 dark:border-slate-800 text-slate-500'
+                                            }`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden relative`}>
+                                            {pattern.id === 'dots' && <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 0)', backgroundSize: '4px 4px' }} />}
+                                            {pattern.id === 'mesh' && <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(45deg, #000 25%, transparent 25%), linear-gradient(-45deg, #000 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #000 75%), linear-gradient(-45deg, transparent 75%, #000 75%)', backgroundSize: '8px 8px' }} />}
+                                            {pattern.id === 'grid' && <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '8px 8px' }} />}
+                                            {pattern.id === 'stripes' && <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #000, #000 2px, transparent 2px, transparent 8px)' }} />}
+                                        </div>
+                                        <span className="text-[9px] font-bold uppercase">{pattern.label}</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
