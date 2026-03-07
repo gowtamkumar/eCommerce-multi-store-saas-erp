@@ -24,13 +24,19 @@ interface SiteSettings {
     instagram: string;
     linkedin: string;
   };
-  navbarLinks: {
-    label: string;
-    href: string;
-    order: number;
-    isOpenInNewTab: boolean;
-    isActive: boolean;
-  }[];
+  navbar?: {
+    layout?: 'default' | 'centered' | 'minimal' | 'sidebar';
+    sticky?: boolean;
+    maxWidth?: 'standard' | 'full';
+    transparent?: boolean;
+    links?: {
+      label: string;
+      href: string;
+      order: number;
+      isOpenInNewTab: boolean;
+      isActive: boolean;
+    }[];
+  };
   trustBadges?: Array<{
     icon: string;
     title: string;

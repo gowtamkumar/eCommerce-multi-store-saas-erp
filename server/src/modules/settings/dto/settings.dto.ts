@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsEmail, IsObject, IsOptional, IsString } from 'class-validator';
-import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from './index';
+import { Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsEmail, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { CurrenciesDto, FooterSectionDto, MarketingDto, NavbarLinkDto, NavbarSettingsDto, PathaoCourierDto, PaymentDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from './index';
 // import { FooterSectionDto } from './footerSection.dto';
 // import { MarketingDto } from './marketing.dto';
 // import { NavbarLinkDto } from './navbarLink.dto';
@@ -92,9 +93,10 @@ export class UpdateSiteSettingsDto {
 
     @ApiProperty({ required: false })
     @IsOptional()
-    @IsArray()
-    navbarLinks?: NavbarLinkDto[];
-
+    @IsObject()
+    @ValidateNested()
+    @Type(() => NavbarSettingsDto)
+    navbar?: NavbarSettingsDto;
 
     @ApiProperty({ required: false })
     @IsOptional()

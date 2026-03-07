@@ -1,4 +1,5 @@
-import { IsBoolean, IsNumber, IsOptional, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 
 export class NavbarLinkDto {
     @IsString()
@@ -20,4 +21,28 @@ export class NavbarLinkDto {
     @IsBoolean()
     @IsOptional()
     isActive?: boolean;
+}
+
+export class NavbarSettingsDto {
+    @IsOptional()
+    @IsString()
+    layout?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    sticky?: boolean;
+
+    @IsOptional()
+    @IsString()
+    maxWidth?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    transparent?: boolean;
+
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => NavbarLinkDto)
+    links?: NavbarLinkDto[];
 }

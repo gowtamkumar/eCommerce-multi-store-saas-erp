@@ -94,13 +94,19 @@ function SettingsContent() {
             apiKey: "",
             secretKey: "",
         },
-        navbarLinks: [] as Array<{
-            label: string;
-            href: string;
-            order: number;
-            isOpenInNewTab: boolean;
-            isActive: boolean;
-        }>,
+        navbar: {
+            layout: "default",
+            sticky: true,
+            maxWidth: "standard",
+            transparent: false,
+            links: [] as Array<{
+                label: string;
+                href: string;
+                order: number;
+                isOpenInNewTab: boolean;
+                isActive: boolean;
+            }>,
+        },
         footerDescription: "",
         footerCopyright: "",
         footerSections: [] as Array<{
@@ -192,7 +198,13 @@ function SettingsContent() {
                             apiKey: data.steadfastCourier?.apiKey || "",
                             secretKey: data.steadfastCourier?.secretKey || "",
                         },
-                        navbarLinks: data.navbarLinks || [],
+                        navbar: data.navbar || {
+                            layout: "default",
+                            sticky: true,
+                            maxWidth: "standard",
+                            transparent: false,
+                            links: []
+                        },
                         footerDescription: data.footerDescription || "",
                         footerCopyright: data.footerCopyright || "",
                         footerSections: data.footerSections || [],

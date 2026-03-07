@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Menu, Plus, X } from "lucide-react";
+import { Layout, Menu, Move, Plus, Search, X } from "lucide-react";
 
 export default function NavbarSetting({
     formData,
@@ -15,6 +15,88 @@ export default function NavbarSetting({
         exit={{ opacity: 0 }}
         className="space-y-6"
     >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-slate-900/30 p-6 rounded-3xl border border-slate-100 dark:border-slate-800">
+            <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                    <Layout className="w-5 h-5 text-brand-600" />
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                        Layout Style
+                    </h3>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                    {[
+                        { id: 'default', label: 'Default' },
+                        { id: 'centered', label: 'Centered' },
+                        { id: 'minimal', label: 'Minimal' }
+                    ].map((layout) => (
+                        <button
+                            key={layout.id}
+                            type="button"
+                            onClick={() => setFormData({
+                                ...formData,
+                                navbar: { ...(formData.navbar || {}), layout: layout.id }
+                            })}
+                            className={`px-4 py-3 rounded-xl border-2 transition-all text-sm font-bold ${formData.navbar?.layout === layout.id
+                                ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600'
+                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:border-slate-300'
+                                }`}
+                        >
+                            {layout.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                    <Move className="w-5 h-5 text-brand-600" />
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                        Configuration
+                    </h3>
+                </div>
+                <label className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer group">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Sticky Navbar</span>
+                    <input
+                        type="checkbox"
+                        checked={formData.navbar?.sticky !== false}
+                        onChange={(e) => setFormData({
+                            ...formData,
+                            navbar: { ...(formData.navbar || {}), sticky: e.target.checked }
+                        })}
+                        className="w-5 h-5 text-brand-600 rounded-lg border-slate-300 focus:ring-brand-500"
+                    />
+                </label>
+                <label className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer group">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Transparent on Hero</span>
+                    <input
+                        type="checkbox"
+                        checked={formData.navbar?.transparent}
+                        onChange={(e) => setFormData({
+                            ...formData,
+                            navbar: { ...(formData.navbar || {}), transparent: e.target.checked }
+                        })}
+                        className="w-5 h-5 text-brand-600 rounded-lg border-slate-300 focus:ring-brand-500"
+                    />
+                </label>
+                <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Container Width</span>
+                    <select
+                        value={formData.navbar?.maxWidth || 'standard'}
+                        onChange={(e) => setFormData({
+                            ...formData,
+                            navbar: { ...(formData.navbar || {}), maxWidth: e.target.value }
+                        })}
+                        className="bg-slate-100 dark:bg-slate-900 border-none text-xs font-bold rounded-lg px-2 py-1 outline-none"
+                    >
+                        <option value="standard">Standard</option>
+                        <option value="full">Full Width</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div className="h-px bg-slate-200 dark:bg-slate-800 my-8" />
+
         <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
                 <Menu className="w-5 h-5 text-brand-600" />
@@ -25,18 +107,22 @@ export default function NavbarSetting({
             <button
                 type="button"
                 onClick={() => {
+                    const currentLinks = formData.navbar?.links || [];
                     setFormData({
                         ...formData,
-                        navbarLinks: [
-                            ...formData.navbarLinks,
-                            {
-                                label: "",
-                                href: "",
-                                order: formData.navbarLinks.length,
-                                isOpenInNewTab: false,
-                                isActive: true,
-                            },
-                        ],
+                        navbar: {
+                            ...(formData.navbar || {}),
+                            links: [
+                                ...currentLinks,
+                                {
+                                    label: "",
+                                    href: "",
+                                    order: currentLinks.length,
+                                    isOpenInNewTab: false,
+                                    isActive: true,
+                                },
+                            ],
+                        }
                     });
                 }}
                 className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-brand-500/20 flex items-center gap-2"
@@ -52,7 +138,7 @@ export default function NavbarSetting({
         </p>
 
         <div className="space-y-4">
-            {formData.navbarLinks.length === 0 ? (
+            {(formData.navbar?.links || []).length === 0 ? (
                 <div className="text-center py-12 bg-slate-50 dark:bg-slate-900/40 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
                     <Menu className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                     <p className="text-slate-500 font-medium">
@@ -63,29 +149,32 @@ export default function NavbarSetting({
                         onClick={() => {
                             setFormData({
                                 ...formData,
-                                navbarLinks: [
-                                    {
-                                        label: "Home",
-                                        href: "/",
-                                        order: 0,
-                                        isOpenInNewTab: false,
-                                        isActive: true,
-                                    },
-                                    {
-                                        label: "Shop",
-                                        href: "/products",
-                                        order: 1,
-                                        isOpenInNewTab: false,
-                                        isActive: true,
-                                    },
-                                    {
-                                        label: "Contact",
-                                        href: "/contact",
-                                        order: 2,
-                                        isOpenInNewTab: false,
-                                        isActive: true,
-                                    },
-                                ],
+                                navbar: {
+                                    ...(formData.navbar || {}),
+                                    links: [
+                                        {
+                                            label: "Home",
+                                            href: "/",
+                                            order: 0,
+                                            isOpenInNewTab: false,
+                                            isActive: true,
+                                        },
+                                        {
+                                            label: "Shop",
+                                            href: "/products",
+                                            order: 1,
+                                            isOpenInNewTab: false,
+                                            isActive: true,
+                                        },
+                                        {
+                                            label: "Contact",
+                                            href: "/contact",
+                                            order: 2,
+                                            isOpenInNewTab: false,
+                                            isActive: true,
+                                        },
+                                    ],
+                                }
                             });
                         }}
                         className="mt-4 text-brand-600 font-bold hover:underline"
@@ -95,8 +184,8 @@ export default function NavbarSetting({
                 </div>
             ) : (
                 <div className="grid gap-4">
-                    {[...formData.navbarLinks]
-                        .sort((a, b) => a.order - b.order)
+                    {[...(formData.navbar?.links || [])]
+                        .sort((a, b) => (a.order || 0) - (b.order || 0))
                         .map((link, index) => (
                             <div
                                 key={index}
@@ -105,12 +194,15 @@ export default function NavbarSetting({
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        const next = formData.navbarLinks.filter(
+                                        const next = (formData.navbar?.links || []).filter(
                                             (_: any, i: number) => i !== index,
                                         );
                                         setFormData({
                                             ...formData,
-                                            navbarLinks: next,
+                                            navbar: {
+                                                ...(formData.navbar || {}),
+                                                links: next
+                                            }
                                         });
                                     }}
                                     className="absolute -top-2 -right-2 p-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
@@ -127,11 +219,14 @@ export default function NavbarSetting({
                                             type="text"
                                             value={link.label}
                                             onChange={(e) => {
-                                                const next = [...formData.navbarLinks];
+                                                const next = [...(formData.navbar?.links || [])];
                                                 next[index].label = e.target.value;
                                                 setFormData({
                                                     ...formData,
-                                                    navbarLinks: next,
+                                                    navbar: {
+                                                        ...(formData.navbar || {}),
+                                                        links: next
+                                                    }
                                                 });
                                             }}
                                             placeholder="e.g. Products"
@@ -146,11 +241,14 @@ export default function NavbarSetting({
                                             type="text"
                                             value={link.href}
                                             onChange={(e) => {
-                                                const next = [...formData.navbarLinks];
+                                                const next = [...(formData.navbar?.links || [])];
                                                 next[index].href = e.target.value;
                                                 setFormData({
                                                     ...formData,
-                                                    navbarLinks: next,
+                                                    navbar: {
+                                                        ...(formData.navbar || {}),
+                                                        links: next
+                                                    }
                                                 });
                                             }}
                                             placeholder="e.g. /products"
@@ -165,12 +263,15 @@ export default function NavbarSetting({
                                             type="number"
                                             value={link.order}
                                             onChange={(e) => {
-                                                const next = [...formData.navbarLinks];
+                                                const next = [...(formData.navbar?.links || [])];
                                                 next[index].order =
                                                     parseInt(e.target.value) || 0;
                                                 setFormData({
                                                     ...formData,
-                                                    navbarLinks: next,
+                                                    navbar: {
+                                                        ...(formData.navbar || {}),
+                                                        links: next
+                                                    }
                                                 });
                                             }}
                                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all duration-200"
@@ -185,14 +286,15 @@ export default function NavbarSetting({
                                                 type="checkbox"
                                                 checked={link.isOpenInNewTab}
                                                 onChange={(e) => {
-                                                    const next = [
-                                                        ...formData.navbarLinks,
-                                                    ];
+                                                    const next = [...(formData.navbar?.links || [])];
                                                     next[index].isOpenInNewTab =
                                                         e.target.checked;
                                                     setFormData({
                                                         ...formData,
-                                                        navbarLinks: next,
+                                                        navbar: {
+                                                            ...(formData.navbar || {}),
+                                                            links: next
+                                                        }
                                                     });
                                                 }}
                                                 className="w-4 h-4 text-brand-600 rounded focus:ring-brand-500"
@@ -206,14 +308,15 @@ export default function NavbarSetting({
                                                 type="checkbox"
                                                 checked={link.isActive !== false}
                                                 onChange={(e) => {
-                                                    const next = [
-                                                        ...formData.navbarLinks,
-                                                    ];
+                                                    const next = [...(formData.navbar?.links || [])];
                                                     next[index].isActive =
                                                         e.target.checked;
                                                     setFormData({
                                                         ...formData,
-                                                        navbarLinks: next,
+                                                        navbar: {
+                                                            ...(formData.navbar || {}),
+                                                            links: next
+                                                        }
                                                     });
                                                 }}
                                                 className="w-4 h-4 text-brand-600 rounded focus:ring-brand-500"
