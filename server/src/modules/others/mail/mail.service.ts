@@ -58,42 +58,44 @@ export class MailService {
   }
 
   async sendVerificationEmail(email: string, token: string, tenantId: string) {
-    const baseUrl = await this.getTenantBaseUrl(tenantId)
-    const verificationLink = `${baseUrl}/verify-email?token=${token}`
+      this.logger.log(`${this.sendVerificationEmail.name} Service Called`);
+      const baseUrl = await this.getTenantBaseUrl(tenantId)
+      const verificationLink = `${baseUrl}/verify-email?token=${token}`
 
-    const { transporter, from } = await this.getTransporter(tenantId)
+      const { transporter, from } = await this.getTransporter(tenantId)
 
-    const mailOptions = {
-      from: from,
-      to: email,
-      subject: 'Verify Your Email',
-      html: `
+      const mailOptions = {
+        from: from,
+        to: email,
+        subject: 'Verify Your Email',
+        html: `
         <h1>Email Verification</h1>
         <p>Please click the link below to verify your email address:</p>
         <a href="${verificationLink}">${verificationLink}</a>
         <p>If you didn't request this, please ignore this email.</p>
       `,
-    }
+      }
 
-    try {
-      await transporter.sendMail(mailOptions)
-      this.logger.log(`Verification email sent to ${email}`)
-    } catch (error) {
-      this.logger.error(`Failed to send verification email to ${email}`, error)
+      try {
+        await transporter.sendMail(mailOptions)
+        this.logger.log(`Verification email sent to ${email}`)
+      } catch (error) {
+        this.logger.error(`Failed to send verification email to ${email}`, error)
+      }
     }
-  }
 
   async sendResetPasswordEmail(email: string, token: string, tenantId: string) {
-    const baseUrl = await this.getTenantBaseUrl(tenantId)
-    const resetLink = `${baseUrl}/reset-password?token=${token}`
+      this.logger.log(`${this.sendResetPasswordEmail.name} Service Called`);
+      const baseUrl = await this.getTenantBaseUrl(tenantId)
+      const resetLink = `${baseUrl}/reset-password?token=${token}`
 
-    const { transporter, from } = await this.getTransporter(tenantId)
+      const { transporter, from } = await this.getTransporter(tenantId)
 
-    const mailOptions = {
-      from: from,
-      to: email,
-      subject: 'Reset Your Password',
-      html: `
+      const mailOptions = {
+        from: from,
+        to: email,
+        subject: 'Reset Your Password',
+        html: `
         <h1>Password Reset Request</h1>
         <p>You are receiving this email because you (or someone else) have requested the reset of the password for your account.</p>
         <p>Please click on the following link to complete the process:</p>
@@ -101,15 +103,15 @@ export class MailService {
         <p>This link will expire in 1 hour.</p>
         <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
       `,
-    }
+      }
 
-    try {
-      await transporter.sendMail(mailOptions)
-      this.logger.log(`Password reset email sent to ${email}`)
-    } catch (error) {
-      this.logger.error(`Failed to send password reset email to ${email}`, error)
+      try {
+        await transporter.sendMail(mailOptions)
+        this.logger.log(`Password reset email sent to ${email}`)
+      } catch (error) {
+        this.logger.error(`Failed to send password reset email to ${email}`, error)
+      }
     }
-  }
 
   private async getTenantBaseUrl(tenantId: string): Promise<string> {
       this.logger.log(`${this.getTenantBaseUrl.name} Service Called`);

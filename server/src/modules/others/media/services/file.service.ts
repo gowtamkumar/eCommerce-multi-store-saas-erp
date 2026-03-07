@@ -40,30 +40,32 @@ export class FilesService {
   }
 
   async createFile(createFile: CreateFileDto, tenantId: string) {
-    this.logger.log(`${this.createFile.name} service Called`)
+      this.logger.log(`${this.createFile.name} Service Called`);
+      this.logger.log(`${this.createFile.name} service Called`)
 
-    const fileCreate = this.fileRepo.create({ ...createFile, tenantId })
-    return this.fileRepo.save(fileCreate)
-  }
+      const fileCreate = this.fileRepo.create({ ...createFile, tenantId })
+      return this.fileRepo.save(fileCreate)
+    }
 
   async createPdf(createFile: CreateFileDto) {
-    this.logger.log(`${this.createPdf.name} service Called`)
+      this.logger.log(`${this.createPdf.name} Service Called`);
+      this.logger.log(`${this.createPdf.name} service Called`)
 
-    const pdf = new PDFDocument()
-    const filename = `example_${Date.now()}.pdf`
-    const filePath = `public/uploads/${filename}`
+      const pdf = new PDFDocument()
+      const filename = `example_${Date.now()}.pdf`
+      const filePath = `public/uploads/${filename}`
 
-    // Create and save the PDF
-    pdf.pipe(fs.createWriteStream(filePath))
-    pdf.text('Hello, World! kkkd dkjasdklfa sd kljlkj lk j kljlkjkl')
-    pdf.end()
+      // Create and save the PDF
+      pdf.pipe(fs.createWriteStream(filePath))
+      pdf.text('Hello, World! kkkd dkjasdklfa sd kljlkj lk j kljlkjkl')
+      pdf.end()
 
-    const result = this.fileRepo.create({
-      pdfFile: filename,
-      fieldname: filename,
-    })
-    return this.fileRepo.save(result)
-  }
+      const result = this.fileRepo.create({
+        pdfFile: filename,
+        fieldname: filename,
+      })
+      return this.fileRepo.save(result)
+    }
 
   async updateFile(id: string, updateFile: UpdateFileDto) {
     this.logger.log(`${this.updateFile.name} Service Called`)
@@ -78,15 +80,16 @@ export class FilesService {
   }
 
   async deleteFile(id: string, tenantId: string) {
-    this.logger.log(`${this.deleteFile.name} service Called`)
-    const file = await this.fileRepo.findOne({ where: { id, tenantId } })
+      this.logger.log(`${this.deleteFile.name} Service Called`);
+      this.logger.log(`${this.deleteFile.name} service Called`)
+      const file = await this.fileRepo.findOne({ where: { id, tenantId } })
 
-    console.log('file', file)
+      console.log('file', file)
 
-    if (!file) {
-      throw new NotFoundException(`File of id ${id} not found`)
+      if (!file) {
+        throw new NotFoundException(`File of id ${id} not found`)
+      }
+
+      return this.fileRepo.remove(file)
     }
-
-    return this.fileRepo.remove(file)
-  }
 }
