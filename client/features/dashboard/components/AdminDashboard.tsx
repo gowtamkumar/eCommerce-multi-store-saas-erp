@@ -381,6 +381,63 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
+
+            {/* Low Stock Alerts */}
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
+                <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                        <Package className="w-6 h-6 text-rose-500" /> Low Stock Alerts
+                    </h3>
+                    <Link href="/admin/products?status=active" className="text-sm font-bold text-brand-600 hover:underline">Manage Inventory</Link>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {loading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="h-24 bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-2xl"></div>
+                        ))
+                    ) : stats.lowStockProducts?.length ? (
+                        stats.lowStockProducts.map((item: any) => (
+                            <Link
+                                key={item.id}
+                                href={`/admin/products/${item.id}`}
+                                className="flex items-center justify-between p-4 rounded-2xl bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 hover:border-rose-500/30 transition-all group"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 overflow-hidden border border-slate-100 dark:border-slate-700 group-hover:scale-110 transition-transform">
+                                        {item.image ? (
+                                            <img src={item.image} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <Package className="w-6 h-6 text-slate-300" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="font-black text-slate-900 dark:text-white text-sm line-clamp-1">{item.name}</p>
+                                        {item.variantName && (
+                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{item.variantName}</p>
+                                        )}
+                                        <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest mt-0.5">
+                                            Threshold: {item.threshold}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Stock</p>
+                                    <span className="px-2.5 py-1 rounded-lg text-sm font-black bg-rose-100 text-rose-600 dark:bg-rose-900/30">
+                                        {item.stock}
+                                    </span>
+                                </div>
+                            </Link>
+                        ))
+                    ) : (
+                        <div className="col-span-full py-10 text-center space-y-4 bg-slate-50 dark:bg-slate-900/30 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+                            <Package className="w-12 h-12 text-slate-200 mx-auto" strokeWidth={1} />
+                            <p className="text-sm text-slate-400 font-bold italic">No low stock alerts at the moment</p>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     )
 }

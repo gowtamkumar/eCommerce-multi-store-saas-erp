@@ -29,6 +29,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     price: initialData?.price?.toString() || '0',
     discountAmount: initialData?.discountAmount?.toString() || '0',
     stock: initialData?.stock?.toString() || '0',
+    lowStockThreshold: initialData?.lowStockThreshold?.toString() || '5',
     images: initialData?.images?.join(',') || '',
     status: initialData?.status || 'active',
     categoryId: initialData?.categoryId || initialData?.category?.id || '',
@@ -71,6 +72,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       price: parseFloat(formData.price),
       discountAmount: parseFloat(formData.discountAmount),
       stock: parseInt(formData.stock),
+      lowStockThreshold: parseInt(formData.lowStockThreshold),
       slug: formData.slug || generateSlug(formData.name),
       images: formData.images.split(',').map((s: string) => s.trim()).filter(Boolean),
       categoryId: formData.categoryId || null,
@@ -86,10 +88,12 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       variants: formData.variants.map((v: any) => {
         const p = parseFloat(v.price);
         const s = parseInt(v.stock);
+        const t = parseInt(v.lowStockThreshold || '5');
         return {
           ...v,
           price: !isNaN(p) ? p : 0,
           stock: !isNaN(s) ? s : 0,
+          lowStockThreshold: !isNaN(t) ? t : 5,
         };
       }),
     };
@@ -312,10 +316,19 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                 min="0"
                 value={formData.stock}
                 onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all mb-4"
+              />
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Low Stock Alert Threshold</label>
+              <input
+                type="number"
+                required
+                min="0"
+                value={formData.lowStockThreshold}
+                onChange={(e) => setFormData({ ...formData, lowStockThreshold: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all"
               />
               <p className="mt-2 text-[10px] text-slate-400 leading-relaxed italic">
-                * Setting initial stock will automatically generate a RECEIVED Purchase Order for the selected supplier.
+                * You will receive an alert when stock drops to or below this level.
               </p>
             </div>
           </div>

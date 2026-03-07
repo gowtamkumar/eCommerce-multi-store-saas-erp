@@ -189,18 +189,30 @@ export class ReportController {
         },
         lowStockCount: productsData.filter((p: any) => {
           if (p.variants && p.variants.length > 0) {
-            return p.variants.some((v: any) => v.stock <= 5)
+            return p.variants.some((v: any) => v.stock <= (v.lowStockThreshold || 5))
           }
-          return p.stock <= 5
+          return p.stock <= (p.lowStockThreshold || 5)
         }).length,
         lowStockProducts: productsData
           .filter((p: any) => {
             if (p.variants && p.variants.length > 0) {
-              return p.variants.some((v: any) => v.stock <= 5)
+              return p.variants.some((v: any) => v.stock <= (v.lowStockThreshold || 5))
             }
-            return p.stock <= 5
+            return p.stock <= (p.lowStockThreshold || 5)
           })
-          .slice(0, 5),
+          .map((p: any) => {
+            // For UI, determine if it's the base product or a variant that triggered the alert
+            const triggeringVariant = p.variants?.find((v: any) => v.stock <= (v.lowStockThreshold || 5));
+            return {
+              id: p.id,
+              name: p.name,
+              image: p.images?.[0],
+              stock: triggeringVariant ? triggeringVariant.stock : p.stock,
+              threshold: triggeringVariant ? (triggeringVariant.lowStockThreshold || 5) : (p.lowStockThreshold || 5),
+              variantName: triggeringVariant ? Object.values(triggeringVariant.combination).join(' / ') : null
+            };
+          })
+          .slice(0, 10),
         traffic: {
           totalHits: traffic.reduce((sum, t) => sum + t.requestCount, 0),
           recentHits: traffic.slice(0, 7)

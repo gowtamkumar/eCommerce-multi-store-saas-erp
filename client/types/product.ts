@@ -11,6 +11,7 @@ export interface ProductVariant {
   sku: string;
   price?: number;
   stock: number;
+  lowStockThreshold?: number;
   images?: string[];
   combination: Record<string, string>;
 }
@@ -36,6 +37,7 @@ export interface Product {
   images: string[];
   features?: string[];
   stock: number;
+  lowStockThreshold?: number;
   status: 'active' | 'inactive';
   categoryId?: string;
   category?: Category;

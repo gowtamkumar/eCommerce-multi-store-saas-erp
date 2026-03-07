@@ -91,6 +91,7 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
         sku,
         price: +basePrice || 0,
         stock: stock || 0,
+        lowStockThreshold: 5,
         combination: combo,
       };
     });
@@ -255,6 +256,17 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
                         type="number"
                         value={variant.stock}
                         onChange={(e) => updateVariant(idx, { stock: Number(e.target.value) })}
+                        className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                      />
+                    </div>
+
+                    {/* Threshold */}
+                    <div className="w-24">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Threshold</label>
+                      <input
+                        type="number"
+                        value={variant.lowStockThreshold || 5}
+                        onChange={(e) => updateVariant(idx, { lowStockThreshold: Number(e.target.value) })}
                         className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                       />
                     </div>

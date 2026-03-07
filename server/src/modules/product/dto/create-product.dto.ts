@@ -61,6 +61,12 @@ class ProductVariantDto {
     @IsOptional()
     images?: string[];
 
+    @ApiProperty({ required: false, default: 5 })
+    @IsNumber()
+    @IsOptional()
+    @Min(0)
+    lowStockThreshold?: number;
+
     @ApiProperty()
     @IsObject()
     combination: Record<string, string>;
@@ -113,6 +119,12 @@ export class CreateProductDto {
     @IsNumber()
     @Min(0)
     stock: number;
+
+    @ApiProperty({ required: false, default: 5 })
+    @IsNumber()
+    @IsOptional()
+    @Min(0)
+    lowStockThreshold?: number;
 
     @ApiProperty({ enum: ProductStatus })
     @IsEnum(ProductStatus)
