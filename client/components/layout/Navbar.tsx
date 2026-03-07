@@ -4,7 +4,7 @@ import { useCart } from "@/hooks/CartContext";
 import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Command, Facebook, Grid, Home, Instagram, Lock, LogOut, Menu, Phone, Search, ShoppingBag, Twitter, User, X } from "lucide-react";
+import { ArrowRight, BadgePercent, Command, Facebook, Grid, Home, Instagram, Lock, LogOut, Menu, Phone, Search, ShoppingBag, Twitter, User, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -171,6 +171,17 @@ const Navbar = () => {
           </Link>
         ))
       }
+      {/* 🔥 Offers — Always visible hardcoded link */}
+      <Link
+        href="/offers"
+        className="relative flex items-center gap-1.5 text-sm font-bold text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 transition-colors py-2 px-3 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-900/20"
+      >
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+        </span>
+        🔥 Offers
+      </Link>
     </div>
   );
 
@@ -632,6 +643,23 @@ const Navbar = () => {
                       </motion.div>
                     ))
                   }
+
+                  <div className="my-6 border-t border-slate-100 dark:border-slate-800" />
+
+                  {/* 🔥 Offers  */}
+                  <Link
+                    href="/offers"
+                    onClick={closeMobileMenu}
+                    className="flex items-center justify-between text-base font-bold text-orange-500 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 px-4 py-3 rounded-xl transition-all group"
+                  >
+                    <span className="flex items-center gap-3">
+                      <BadgePercent className="w-5 h-5" />
+                      🔥 Special Offers
+                    </span>
+                    <span className="text-[10px] bg-orange-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse">
+                      LIVE
+                    </span>
+                  </Link>
 
                   <div className="my-6 border-t border-slate-100 dark:border-slate-800" />
 

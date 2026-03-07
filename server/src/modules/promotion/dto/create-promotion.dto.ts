@@ -7,6 +7,10 @@ export class CreatePromotionDto {
 
     @IsString()
     @IsOptional()
+    slug?: string;
+
+    @IsString()
+    @IsOptional()
     description?: string;
 
     @IsEnum(PromotionType)

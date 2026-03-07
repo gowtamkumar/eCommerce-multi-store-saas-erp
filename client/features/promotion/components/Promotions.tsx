@@ -3,7 +3,7 @@
 import { useSettings } from '@/hooks/SettingsContext';
 import { formatCurrency } from '@/lib/utils';
 import { deletePromotion, getPromotions, Promotion } from '@/services/promotion';
-import { Plus, Search, Tag, Megaphone, Trash2 } from 'lucide-react';
+import { Plus, Search, Tag, Megaphone, Trash2, Copy, Check, ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import PromotionForm from './PromotionForm';
@@ -59,6 +59,16 @@ export default function Promotions() {
 
     const formatTargetType = (type: string) => {
         return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    };
+
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+
+    const copyOfferLink = (slug: string, id: string) => {
+        const url = `${window.location.origin}/offers/${slug}`;
+        navigator.clipboard.writeText(url);
+        setCopiedId(id);
+        toast.success('Offer link copied');
+        setTimeout(() => setCopiedId(null), 2000);
     };
 
     return (
@@ -127,9 +137,35 @@ export default function Promotions() {
                             ) : (
                                 promotions.map((promo) => (
                                     <tr key={promo.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <td className="p-4 cursor-pointer" onClick={() => handleEdit(promo)}>
-                                            <div className="font-bold text-slate-900 dark:text-white">
-                                                {promo.name}
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-2 group/name">
+                                                <div
+                                                    className="font-bold text-slate-900 dark:text-white cursor-pointer hover:text-brand-600 transition-colors"
+                                                    onClick={() => handleEdit(promo)}
+                                                >
+                                                    {promo.name}
+                                                </div>
+                                                <a
+                                                    href={`/offers/${promo.slug}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="opacity-0 group-hover/name:opacity-100 p-1 text-slate-400 hover:text-brand-600 transition-all"
+                                                    title="View Public Page"
+                                                >
+                                                    <ExternalLink className="w-3.5 h-3.5" />
+                                                </a>
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-1.5 py-0.5 rounded">
+                                                    {promo.slug}
+                                                </span>
+                                                <button
+                                                    onClick={() => copyOfferLink(promo.slug, promo.id)}
+                                                    className="p-1 text-slate-400 hover:text-brand-600 transition-colors"
+                                                    title="Copy Offer Link"
+                                                >
+                                                    {copiedId === promo.id ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                                </button>
                                             </div>
                                             {promo.description && (
                                                 <p className="text-xs text-slate-500 mt-1 max-w-[200px] truncate">{promo.description}</p>

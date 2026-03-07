@@ -2,6 +2,7 @@ import { fetchAPI } from "./api";
 
 export interface Promotion {
     id: string;
+    slug: string;
     name: string;
     description?: string;
     promotionType: 'percentage' | 'fixed_amount' | 'free_shipping' | 'bogo';
@@ -51,4 +52,14 @@ export const deletePromotion = async (id: string) => {
         method: "DELETE",
     });
     return response;
+};
+
+export const getOfferProducts = async () => {
+    const response = await fetchAPI('/promotions/offers');
+    return response; // { promotions, offerGroups: [{ promotion, products }] }
+};
+
+export const getPromotionBySlug = async (slug: string) => {
+    const response = await fetchAPI(`/promotions/slug/${slug}`);
+    return response; // { promotion, products }
 };

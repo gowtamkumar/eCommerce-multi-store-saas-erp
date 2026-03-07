@@ -20,44 +20,57 @@ export class PromotionController {
     @Roles(UserRole.Admin)
     createPromotion(@RequestContext() ctx: RequestContextDto, @Body() createPromotionDto: CreatePromotionDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPromotion.`);
-            return this.promotionService.createPromotion(createPromotionDto, ctx.tenantId);
-        }
+        return this.promotionService.createPromotion(createPromotionDto, ctx.tenantId);
+    }
 
     @Get()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
     findAllPromotions(@RequestContext() ctx: RequestContextDto, @Query() filterDto: any) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPromotions.`);
-            return this.promotionService.findAllPromotions(filterDto, ctx.tenantId);
-        }
+        return this.promotionService.findAllPromotions(filterDto, ctx.tenantId);
+    }
 
     @Get('active')
     findActivePromotions(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findActivePromotions.`);
-            return this.promotionService.findActivePromotions(ctx.tenantId);
-        }
+        return this.promotionService.findActivePromotions(ctx.tenantId);
+    }
+
+    // ─── Public endpoint (no auth) — used by storefront /offers page ───
+    @Get('offers')
+    getOfferProducts(@RequestContext() ctx: RequestContextDto) {
+        this.logger.verbose(`[Public] getOfferProducts called for tenant: ${ctx.tenantId}`);
+        return this.promotionService.getOfferProducts(ctx.tenantId);
+    }
+
+    @Get('slug/:slug')
+    getPromotionBySlug(@Param('slug') slug: string, @RequestContext() ctx: RequestContextDto) {
+        this.logger.verbose(`[Public] getPromotionBySlug called for slug: ${slug}, tenant: ${ctx.tenantId}`);
+        return this.promotionService.getOfferProductsBySlug(slug, ctx.tenantId);
+    }
 
     @Get(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
     findOnePromotion(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOnePromotion.`);
-            return this.promotionService.findOnePromotion(id, ctx.tenantId);
-        }
+        return this.promotionService.findOne(id, ctx.tenantId);
+    }
 
     @Patch(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
     updatePromotion(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() updatePromotionDto: UpdatePromotionDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePromotion.`);
-            return this.promotionService.updatePromotion(id, updatePromotionDto, ctx.tenantId);
-        }
+        return this.promotionService.updatePromotion(id, updatePromotionDto, ctx.tenantId);
+    }
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
     removePromotion(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePromotion.`);
-            return this.promotionService.removePromotion(id, ctx.tenantId);
-        }
+        return this.promotionService.removePromotion(id, ctx.tenantId);
+    }
 }
