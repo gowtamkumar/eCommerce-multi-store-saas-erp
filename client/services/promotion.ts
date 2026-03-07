@@ -56,10 +56,10 @@ export const deletePromotion = async (id: string) => {
 
 export const getOfferProducts = async () => {
     const response = await fetchAPI('/promotions/offers');
-    return response; // { promotions, offerGroups: [{ promotion, products }] }
+    return response; // { data: { promotions, offerGroups: [{ promotion, products }] } }
 };
 
 export const getPromotionBySlug = async (slug: string) => {
     const response = await fetchAPI(`/promotions/slug/${slug}`);
-    return response; // { promotion, products }
+    return response; // { data: { promotion, products } }
 };

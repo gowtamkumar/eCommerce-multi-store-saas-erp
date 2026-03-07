@@ -8,6 +8,7 @@ import { UpdatePromotionDto } from './dto/update-promotion.dto';
 import { PromotionService } from './promotion.service';
 import { RequestContext } from "src/common/decorators/request-context.decorator";
 import { RequestContextDto } from "src/common/dto/request-context.dto";
+import { TenantId } from 'src/common/decorators/tenant-id.decorator';
 
 @Controller('promotions')
 export class PromotionController {
@@ -32,22 +33,22 @@ export class PromotionController {
     }
 
     @Get('active')
-    findActivePromotions(@RequestContext() ctx: RequestContextDto) {
-        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findActivePromotions.`);
-        return this.promotionService.findActivePromotions(ctx.tenantId);
+    findActivePromotions(@TenantId() tenantId: string) {
+        this.logger.verbose(`User "${tenantId}" called findActivePromotions.`);
+        return this.promotionService.findActivePromotions(tenantId);
     }
 
     // ─── Public endpoint (no auth) — used by storefront /offers page ───
     @Get('offers')
-    getOfferProducts(@RequestContext() ctx: RequestContextDto) {
-        this.logger.verbose(`[Public] getOfferProducts called for tenant: ${ctx.tenantId}`);
-        return this.promotionService.getOfferProducts(ctx.tenantId);
+    getOfferProducts(@TenantId() tenantId: string) {
+        this.logger.verbose(`[Public] getOfferProducts called for tenant: ${tenantId}`);
+        return this.promotionService.getOfferProducts(tenantId);
     }
 
     @Get('slug/:slug')
-    getPromotionBySlug(@Param('slug') slug: string, @RequestContext() ctx: RequestContextDto) {
-        this.logger.verbose(`[Public] getPromotionBySlug called for slug: ${slug}, tenant: ${ctx.tenantId}`);
-        return this.promotionService.getOfferProductsBySlug(slug, ctx.tenantId);
+    getPromotionBySlug(@Param('slug') slug: string, @TenantId() tenantId: string) {
+        this.logger.verbose(`[Public] getPromotionBySlug called for slug: ${slug}, tenant: ${tenantId}`);
+        return this.promotionService.getOfferProductsBySlug(slug, tenantId);
     }
 
     @Get(':id')

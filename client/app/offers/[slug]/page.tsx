@@ -12,21 +12,23 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const settings = await getSiteSettings();
     try {
         const res = await getPromotionBySlug(params.slug);
-        if (!res || !res.promotion) return { title: settings.brandName };
+        if (!res || !res.data.promotion) return { title: settings?.brandName };
 
         return {
-            title: `${res.promotion.name} | Special Offers | ${settings.brandName || 'Store'}`,
-            description: res.promotion.description || `Grab the best deals for ${res.promotion.name}. Limited time offer!`,
+            title: `${res.data.promotion.name} | Special Offers | ${settings?.brandName || 'Store'}`,
+            description: res.data.promotion.description || `Grab the best deals for ${res.data.promotion.name}. Limited time offer!`,
         };
     } catch (e) {
-        return { title: `Offer | ${settings.brandName}` };
+        return { title: `Offer | ${settings?.brandName}` };
     }
 }
 
 async function getData(slug: string) {
+    console.log("slug", slug);
+
     try {
         const res = await getPromotionBySlug(slug);
-        return res;
+        return res.data;
     } catch (error) {
         console.error('Error fetching promotion:', error);
         return null;
@@ -34,6 +36,7 @@ async function getData(slug: string) {
 }
 
 export default async function PromotionSlugRoutePage({ params }: { params: { slug: string } }) {
+    const { slug } = await params;
     const tenantId = await getTenantId();
 
     if (!tenantId) {
@@ -47,7 +50,7 @@ export default async function PromotionSlugRoutePage({ params }: { params: { slu
         );
     }
 
-    const data = await getData(params.slug);
+    const data = await getData(slug);
 
     if (!data || !data.promotion) {
         notFound();

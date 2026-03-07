@@ -10,8 +10,8 @@ import Link from 'next/link';
 export async function generateMetadata() {
     const settings = await getSiteSettings();
     return {
-        title: `🔥 Special Offers & Deals | ${settings.brandName || 'Store'}`,
-        description: `Grab the best deals and discounts at ${settings.brandName}. Limited time promotions on top products!`,
+        title: `🔥 Special Offers & Deals | ${settings?.brandName || 'Store'}`,
+        description: `Grab the best deals and discounts at ${settings?.brandName}. Limited time promotions on top products!`,
     };
 }
 
@@ -19,8 +19,8 @@ async function getOffersData() {
     try {
         const res = await fetchAPI('/promotions/offers');
         return {
-            offerGroups: res.offerGroups || [],
-            promotions: res.promotions || [],
+            offerGroups: res.data.offerGroups || [],
+            promotions: res.data.promotions || [],
         };
     } catch (error) {
         console.error('Error fetching offers:', error);
