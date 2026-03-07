@@ -8,19 +8,19 @@ import {
   Query,
   UnauthorizedException,
   UseGuards,
-} from '@nestjs/common'
+} from '@nestjs/common';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { UserRole } from 'src/common/enums/user/user-role.enum';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { UserService } from 'src/modules/admin/user/services/user.service';
+import { OrderService } from 'src/modules/order/order.service';
+import { PageService } from 'src/modules/page/page.service';
+import { ProductService } from 'src/modules/product/product.service';
+import { ReviewService } from 'src/modules/review/review.service';
+import { TenantService } from 'src/modules/tenant/tenant.service';
 import si from 'systeminformation';
-import { Roles } from 'src/common/decorators/roles.decorator'
-import { UserRole } from 'src/common/enums/user/user-role.enum'
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
-import { RolesGuard } from 'src/common/guards/roles.guard'
-import { UserService } from 'src/modules/admin/user/services/user.service'
-import { OrderService } from 'src/modules/order/order.service'
-import { PageService } from 'src/modules/page/page.service'
-import { ProductService } from 'src/modules/product/product.service'
-import { ReviewService } from 'src/modules/review/review.service'
-import { TenantService } from 'src/modules/tenant/tenant.service'
-import { TrafficService } from './traffic.service'
+import { TrafficService } from './traffic.service';
 
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -178,7 +178,7 @@ export class SuperAdminController {
   async getAllTenants() {
     return {
       success: true,
-      data: await this.tenantService.findAll(),
+      data: await this.tenantService.findAllTenants(),
     }
   }
 
@@ -187,7 +187,7 @@ export class SuperAdminController {
   @Get('/tenants/analytics')
   async getTenantAnalytics() {
     try {
-      const tenants = await this.tenantService.findAll()
+      const tenants = await this.tenantService.findAllTenants()
       const traffic = await this.trafficService.getTrafficStats(30)
 
       const analytics = await Promise.all(
@@ -284,7 +284,7 @@ export class SuperAdminController {
   @Roles(UserRole.SuperAdmin)
   @Patch('/tenants/:id/status')
   async updateTenantStatus(@Param('id') id: string, @Body('status') status: string) {
-    const tenant = await this.tenantService.updateStatus(id, status)
+    const tenant = await this.tenantService.updateTenantStatus(id, status)
     return {
       success: true,
       message: `Tenant status updated to ${status}`,

@@ -12,7 +12,7 @@ export class TenantController {
   @Post()
   async create(@Body() createTenantDto: CreateTenantDto) {
     this.logger.log(`create`)
-    return await this.tenantService.create(createTenantDto)
+    return await this.tenantService.createTenant(createTenantDto)
   }
 
   @Get()
@@ -22,19 +22,19 @@ export class TenantController {
     // we'll handle auth logic inside the method or use a custom guard.
   ) {
     if (query.subdomain || query.customDomain) {
-      const findDomain = await this.tenantService.lookup(query.subdomain, query.customDomain)
+      const findDomain = await this.tenantService.lookupTenant(query.subdomain, query.customDomain)
       return findDomain
     }
 
     // Apply manual check or require login for listing
     // For simplicity and mirroring original logic:
-    return await this.tenantService.findAll()
+    return await this.tenantService.findAllTenants()
   }
 
   // @UseGuards(JwtAuthGuard)
   @Get('info')
   async getTenantInfo(@TenantId() tenantId: string) {
-    return await this.tenantService.findOne(tenantId)
+    return await this.tenantService.findOneTenants(tenantId)
   }
 
   // @UseGuards(JwtAuthGuard)

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,6 +11,8 @@ import { PaymentEntity } from './entities/payment.entity';
 
 @Injectable()
 export class PaymentService {
+    private readonly logger = new Logger(PaymentService.name);
+
     constructor(
         @InjectRepository(OrderEntity)
         private orderRepository: Repository<OrderEntity>,
@@ -20,7 +22,8 @@ export class PaymentService {
         private settingsService: SettingsService,
     ) { }
 
-    async init(dto: InitPaymentDto, tenantId: string) {
+    async initPayment(dto: InitPaymentDto, tenantId: string) {
+        this.logger.log(`${this.initPayment.name} Service Called`);
         const { orderId, callbackUrl } = dto;
 
         const order = await this.orderRepository.findOne({
@@ -32,7 +35,7 @@ export class PaymentService {
             throw new NotFoundException('Order not found');
         }
 
-        const settings = await this.settingsService.findByTenant(tenantId);
+        const settings = await this.settingsService.findByTenantSettings(tenantId);
         
         
         const store_id = settings.payment?.sslCommerzStoreId;
@@ -114,7 +117,8 @@ export class PaymentService {
         }
     }
 
-    async handleSuccess(tran_id: string, gatewayResponse: any) {
+    async handleSuccessPayment(tran_id: string, gatewayResponse: any) {
+        this.logger.log(`${this.handleSuccessPayment.name} Service Called`);
         const order = await this.orderRepository.findOne({ where: { transactionId: tran_id } });
         if (!order) throw new NotFoundException('Order not found');
 
@@ -138,7 +142,8 @@ export class PaymentService {
         return { success: true };
     }
 
-    async handleFail(tran_id: string, gatewayResponse: any) {
+    async handleFailPayment(tran_id: string, gatewayResponse: any) {
+        this.logger.log(`${this.handleFailPayment.name} Service Called`);
         const order = await this.orderRepository.findOne({ where: { transactionId: tran_id } });
         if (!order) throw new NotFoundException('Order not found');
 
@@ -161,7 +166,8 @@ export class PaymentService {
         return { success: false };
     }
 
-    async handleCancel(tran_id: string, gatewayResponse: any) {
+    async handleCancelPayment(tran_id: string, gatewayResponse: any) {
+        this.logger.log(`${this.handleCancelPayment.name} Service Called`);
         const order = await this.orderRepository.findOne({ where: { transactionId: tran_id } });
         if (!order) throw new NotFoundException('Order not found');
 
@@ -184,7 +190,8 @@ export class PaymentService {
         return { cancelled: true };
     }
 
-    async findAll(tenantId: string) {
+    async findAllPayments(tenantId: string) {
+        this.logger.log(`${this.findAllPayments.name} Service Called`);
         return await this.paymentRepository.find({
             where: { tenantId },
             order: { createdAt: 'DESC' },

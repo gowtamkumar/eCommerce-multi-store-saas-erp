@@ -22,12 +22,12 @@ export class ReturnController {
     constructor(private readonly returnService: ReturnService) { }
 
     @Post()
-    create(
+    createReturnRequest(
         @CurrentUser() user: UserEntity,
         @TenantId() tenantId: string,
         @Body() dto: CreateReturnDto,
     ) {
-        return this.returnService.createRequest(user.id, tenantId, dto);
+        return this.returnService.createReturnRequest(user.id, tenantId, dto);
     }
 
     @Get('my-returns')
@@ -41,8 +41,8 @@ export class ReturnController {
     @Get()
     @UseGuards(RolesGuard)
     // @Roles(Roles.ADMIN) // Uncomment if Role guard is robust
-    findAll(@TenantId() tenantId: string) {
-        return this.returnService.findAll(tenantId);
+    findAllReturns(@TenantId() tenantId: string) {
+        return this.returnService.findAllReturns(tenantId);
     }
 
     @Patch(':id/status')
@@ -53,6 +53,6 @@ export class ReturnController {
         @Body('status') status: ReturnStatus,
         @Body('comment') comment?: string,
     ) {
-        return this.returnService.updateStatus(id, tenantId, status, comment);
+        return this.returnService.updateReturnRequestStatus(id, tenantId, status, comment);
     }
 }

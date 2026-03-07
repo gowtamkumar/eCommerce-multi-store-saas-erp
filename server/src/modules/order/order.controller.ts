@@ -20,19 +20,19 @@ export class OrderController {
     constructor(private readonly orderService: OrderService) { }
 
     @Post()
-    async create(
+    async createOrder(
         @Body() createOrderDto: CreateOrderDto,
         @TenantId() tenantId: string,
     ) {
-        return await this.orderService.create(createOrderDto, tenantId);
+        return await this.orderService.createOrder(createOrderDto, tenantId);
     }
 
     @Get()
-    async findAll(
+    async findAllOrders(
         @Query() filterDto: FilterOrderDto,
         @TenantId() tenantId: string,
     ) {
-        const { orders, total } = await this.orderService.findAll(
+        const { orders, total } = await this.orderService.findAllOrders(
             filterDto,
             tenantId,
         );
@@ -53,8 +53,8 @@ export class OrderController {
     }
 
     @Get(':id')
-    async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-        const order = await this.orderService.findOne(id, tenantId);
+    async findOneOrder(@Param('id') id: string, @TenantId() tenantId: string) {
+        const order = await this.orderService.findOneOrder(id, tenantId);
         return {
             success: true,
             statusCode: 200,
@@ -78,12 +78,12 @@ export class OrderController {
 
     @Put(':id')
     @UseGuards(JwtAuthGuard)
-    async update(
+    async updateOrder(
         @Param('id') id: string,
         @Body() updateOrderDto: UpdateOrderDto,
         @TenantId() tenantId: string,
     ) {
-        const order = await this.orderService.update(id, updateOrderDto, tenantId);
+        const order = await this.orderService.updateOrder(id, updateOrderDto, tenantId);
         return {
             success: true,
             statusCode: 200,

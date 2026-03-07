@@ -11,33 +11,33 @@ export class CategoryController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@Body() createCategoryDto: CreateCategoryDto, @TenantId() tenantId: string) {
-    return await this.categoryService.create(createCategoryDto, tenantId)
+  async createCategory(@Body() createCategoryDto: CreateCategoryDto, @TenantId() tenantId: string) {
+    return await this.categoryService.createCategory(createCategoryDto, tenantId)
   }
 
   @Get()
-  async findAll(@TenantId() tenantId: string) {
-    return await this.categoryService.findAll(tenantId)
+  async findAllCategories(@TenantId() tenantId: string) {
+    return await this.categoryService.findAllCategories(tenantId)
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.categoryService.findOne(id, tenantId)
+  async findOneCategory(@Param('id') id: string, @TenantId() tenantId: string) {
+    return await this.categoryService.findOneCategory(id, tenantId)
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
-  async update(
+  async updateCategory(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
     @TenantId() tenantId: string,
   ) {
-    return await this.categoryService.update(id, updateCategoryDto, tenantId)
+    return await this.categoryService.updateCategory(id, updateCategoryDto, tenantId)
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async remove(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.categoryService.remove(id, tenantId)
+  async removeCategory(@Param('id') id: string, @TenantId() tenantId: string) {
+    return await this.categoryService.removeCategory(id, tenantId)
   }
 }

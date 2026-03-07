@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ReviewStatus } from '../../common/enums/review-status.enum'
@@ -7,17 +7,21 @@ import { ReviewEntity } from './entities/review.entity'
 
 @Injectable()
 export class ReviewService {
+    private readonly logger = new Logger(ReviewService.name);
+
   constructor(
     @InjectRepository(ReviewEntity)
     private reviewRepository: Repository<ReviewEntity>,
   ) { }
 
-  async create(dto: CreateReviewDto, tenantId: string) {
+  async createReview(dto: CreateReviewDto, tenantId: string) {
+      this.logger.log(`${this.createReview.name} Service Called`);
     const review = this.reviewRepository.create({ ...dto, tenantId })
     return await this.reviewRepository.save(review)
   }
 
-  async findAll(filterDto: any, tenantId: string) {
+  async findAllReviews(filterDto: any, tenantId: string) {
+      this.logger.log(`${this.findAllReviews.name} Service Called`);
     const { page, limit, q, status } = filterDto
     const query = this.reviewRepository
       .createQueryBuilder('review')
@@ -40,37 +44,42 @@ export class ReviewService {
     return { reviews, total }
   }
 
-  async findPublic(tenantId: string) {
+  async findPublicReviews(tenantId: string) {
+      this.logger.log(`${this.findPublicReviews.name} Service Called`);
     return await this.reviewRepository.find({
       where: { tenantId, status: ReviewStatus.APPROVED },
       order: { createdAt: 'DESC' },
     })
   }
 
-  async findByProduct(productId: string, tenantId: string) {
+  async findByProductReviews(productId: string, tenantId: string) {
+      this.logger.log(`${this.findByProductReviews.name} Service Called`);
     return await this.reviewRepository.find({
       where: { productId, tenantId },
       order: { createdAt: 'DESC' },
     })
   }
 
-  async update(id: string, dto: UpdateReviewDto, tenantId: string) {
+  async updateReview(id: string, dto: UpdateReviewDto, tenantId: string) {
+      this.logger.log(`${this.updateReview.name} Service Called`);
     const review = await this.reviewRepository.findOne({ where: { id, tenantId } })
     if (!review) throw new NotFoundException('Review not found')
     Object.assign(review, dto)
     return await this.reviewRepository.save(review)
   }
 
-  async remove(id: string, tenantId: string) {
+  async removeReview(id: string, tenantId: string) {
+      this.logger.log(`${this.removeReview.name} Service Called`);
     const review = await this.reviewRepository.findOne({ where: { id, tenantId } })
     if (!review) throw new NotFoundException('Review not found')
     await this.reviewRepository.remove(review)
     return { success: true }
   }
 
-  async findAllReviews() {
-    return await this.reviewRepository.find({
-      order: { createdAt: 'DESC' },
-    })
-  }
+  // async findAllReviews() {
+  //     this.logger.log(`${this.findAllReviews.name} Service Called`);
+  //   return await this.reviewRepository.find({
+  //     order: { createdAt: 'DESC' },
+  //   })
+  // }
 }

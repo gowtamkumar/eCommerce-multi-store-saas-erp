@@ -9,13 +9,13 @@ export class LeadController {
     constructor(private readonly leadService: LeadService) { }
 
     @Post()
-    async create(@Body() dto: CreateLeadDto, @TenantId() tenantId: string) {
-        return await this.leadService.create(dto, tenantId);
+    async createLead(@Body() dto: CreateLeadDto, @TenantId() tenantId: string) {
+        return await this.leadService.createLead(dto, tenantId);
     }
 
     @Get()
-    async findAll(@Query() filterDto: FilterLeadDto, @TenantId() tenantId: string) {
-        const { leads, total } = await this.leadService.findAll(filterDto, tenantId);
+    async findAllLeads(@Query() filterDto: FilterLeadDto, @TenantId() tenantId: string) {
+        const { leads, total } = await this.leadService.findAllLeads(filterDto, tenantId);
         return {
             success: true,
             statusCode: 200,
@@ -32,7 +32,7 @@ export class LeadController {
     }
 
     @Patch(':id')
-    async update(@Param('id') id: string, @Body() dto: UpdateLeadDto, @TenantId() tenantId: string) {
-        return await this.leadService.update(id, dto, tenantId);
+    async updateLead(@Param('id') id: string, @Body() dto: UpdateLeadDto, @TenantId() tenantId: string) {
+        return await this.leadService.updateLead(id, dto, tenantId);
     }
 }

@@ -10,16 +10,16 @@ export class PageController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@Body() dto: CreatePageDto, @TenantId() tenantId: string) {
-    const page = await this.pageService.create(dto, tenantId);
+  async createPage(@Body() dto: CreatePageDto, @TenantId() tenantId: string) {
+    const page = await this.pageService.createPage(dto, tenantId);
     return { success: true, data: page };
   }
 
   @Get()
-  async findAll(@TenantId() tenantId: string) {
+  async findAllPages(@TenantId() tenantId: string) {
     return {
       success: true,
-      data: await this.pageService.findAll(tenantId),
+      data: await this.pageService.findAllPages(tenantId),
     }
   }
 
@@ -35,24 +35,24 @@ export class PageController {
   }
 
   @Get('slug/:slug')
-  async findBySlug(@Param('slug') slug: string, @TenantId() tenantId: string) {
-    return await this.pageService.findBySlug(slug, tenantId)
+  async findBySlugPage(@Param('slug') slug: string, @TenantId() tenantId: string) {
+    return await this.pageService.findBySlugPage(slug, tenantId)
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.pageService.findOne(id, tenantId)
+  async findOnePage(@Param('id') id: string, @TenantId() tenantId: string) {
+    return await this.pageService.findOnePage(id, tenantId)
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
-  async update(@Param('id') id: string, @Body() dto: UpdatePageDto, @TenantId() tenantId: string) {
-    return await this.pageService.update(id, dto, tenantId)
+  async updatePage(@Param('id') id: string, @Body() dto: UpdatePageDto, @TenantId() tenantId: string) {
+    return await this.pageService.updatePage(id, dto, tenantId)
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async remove(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.pageService.remove(id, tenantId)
+  async removePage(@Param('id') id: string, @TenantId() tenantId: string) {
+    return await this.pageService.removePage(id, tenantId)
   }
 }

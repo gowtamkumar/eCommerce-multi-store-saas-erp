@@ -14,7 +14,7 @@ export class TenantStatusGuard implements CanActivate {
     }
 
     try {
-      const tenant = await this.tenantService.findOne(tenantId)
+      const tenant = await this.tenantService.findOneTenants(tenantId)
 
       if (tenant.status === 'suspended') {
         throw new ForbiddenException({

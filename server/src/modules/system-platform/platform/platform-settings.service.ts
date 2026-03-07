@@ -1,16 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PlatformSettingsEntity } from './entities/platform-settings.entity';
 
 @Injectable()
 export class PlatformSettingsService {
+    private readonly logger = new Logger(PlatformSettingsService.name);
+
   constructor(
     @InjectRepository(PlatformSettingsEntity)
     private platformSettingsRepository: Repository<PlatformSettingsEntity>,
   ) {}
 
-  async getSettings(): Promise<PlatformSettingsEntity> {
+  async getPlatformSettings(): Promise<PlatformSettingsEntity> {
+      this.logger.log(`${this.getPlatformSettings.name} Service Called`);
     let settings = await this.platformSettingsRepository.findOne({ where: {} });
 
     if (!settings) {
@@ -53,8 +56,9 @@ export class PlatformSettingsService {
     return settings;
   }
 
-  async updateSettings(data: any): Promise<PlatformSettingsEntity> {
-    const settings = await this.getSettings();
+  async updatePlatformSettings(data: any): Promise<PlatformSettingsEntity> {
+      this.logger.log(`${this.updatePlatformSettings.name} Service Called`);
+    const settings = await this.getPlatformSettings();
     Object.assign(settings, data);
     return await this.platformSettingsRepository.save(settings);
   }

@@ -1,12 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
-import { PromotionService } from './promotion.service';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { UserRole } from 'src/common/enums/user/user-role.enum';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { TenantId } from '../../common/decorators/tenant-id.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { CreatePromotionDto } from './dto/create-promotion.dto';
 import { UpdatePromotionDto } from './dto/update-promotion.dto';
-import { UserRole } from 'src/common/enums/user/user-role.enum';
+import { PromotionService } from './promotion.service';
 
 @Controller('promotions')
 export class PromotionController {
@@ -15,15 +15,15 @@ export class PromotionController {
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
-    create(@Body() createPromotionDto: CreatePromotionDto, @TenantId() tenantId: string) {
-        return this.promotionService.create(createPromotionDto, tenantId);
+    createPromotion(@Body() createPromotionDto: CreatePromotionDto, @TenantId() tenantId: string) {
+        return this.promotionService.createPromotion(createPromotionDto, tenantId);
     }
 
     @Get()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
-    findAll(@Query() filterDto: any, @TenantId() tenantId: string) {
-        return this.promotionService.findAll(filterDto, tenantId);
+    findAllPromotions(@Query() filterDto: any, @TenantId() tenantId: string) {
+        return this.promotionService.findAllPromotions(filterDto, tenantId);
     }
 
     @Get('active')
@@ -34,21 +34,21 @@ export class PromotionController {
     @Get(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
-    findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.promotionService.findOne(id, tenantId);
+    findOnePromotion(@Param('id') id: string, @TenantId() tenantId: string) {
+        return this.promotionService.findOnePromotion(id, tenantId);
     }
 
     @Patch(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
-    update(@Param('id') id: string, @Body() updatePromotionDto: UpdatePromotionDto, @TenantId() tenantId: string) {
-        return this.promotionService.update(id, updatePromotionDto, tenantId);
+    updatePromotion(@Param('id') id: string, @Body() updatePromotionDto: UpdatePromotionDto, @TenantId() tenantId: string) {
+        return this.promotionService.updatePromotion(id, updatePromotionDto, tenantId);
     }
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
-    remove(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.promotionService.remove(id, tenantId);
+    removePromotion(@Param('id') id: string, @TenantId() tenantId: string) {
+        return this.promotionService.removePromotion(id, tenantId);
     }
 }

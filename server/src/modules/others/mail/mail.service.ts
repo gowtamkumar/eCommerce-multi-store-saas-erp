@@ -30,6 +30,7 @@ export class MailService {
   }
 
   private async getTransporter(tenantId: string) {
+      this.logger.log(`${this.getTransporter.name} Service Called`);
     if (!tenantId)
       return {
         transporter: this.transporter,
@@ -111,6 +112,7 @@ export class MailService {
   }
 
   private async getTenantBaseUrl(tenantId: string): Promise<string> {
+      this.logger.log(`${this.getTenantBaseUrl.name} Service Called`);
     const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000')
 
     if (!tenantId) return appUrl

@@ -1,11 +1,15 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { OrderStatus } from 'src/common/enums/order-status.enum'
 import { PaymentStatus } from 'src/common/enums/payment-status.enum'
-import { Brackets, Repository } from 'typeorm'
+import { Brackets, DataSource, Repository } from 'typeorm'
+import { InventoryTransactionReferenceType } from '../../common/enums/inventory-transaction-reference-type.enum'
+import { InventoryTransactionType } from '../../common/enums/inventory-transaction-type.enum'
 import { UserEntity } from '../admin/user/entities/user.entity'
 import { CartService } from '../cart/cart.service'
+import { CouponService } from '../coupon/coupon.service'
 import { LeadEntity } from '../lead/entities/lead.entity'
+import { InventoryTransactionService } from '../others/inventory-transaction/inventory-transaction.service'
 import { PaymentEntity } from '../payment/entities/payment.entity'
 import { ProductEntity } from '../product/entities/product.entity'
 import { ProductVariantEntity } from '../product/entities/variant.entity'
@@ -14,14 +18,11 @@ import { CreateOrderDto } from './dto/create-order.dto'
 import { UpdateOrderDto } from './dto/update-order.dto'
 import { OrderItemEntity } from './entities/order-item.entity'
 import { OrderEntity } from './entities/order.entity'
-import { CouponService } from '../coupon/coupon.service'
-import { InventoryTransactionService } from '../others/inventory-transaction/inventory-transaction.service'
-import { InventoryTransactionType } from '../../common/enums/inventory-transaction-type.enum'
-import { InventoryTransactionReferenceType } from '../../common/enums/inventory-transaction-reference-type.enum'
-import { DataSource } from 'typeorm'
 
 @Injectable()
 export class OrderService {
+    private readonly logger = new Logger(OrderService.name);
+
   constructor(
     @InjectRepository(OrderEntity)
     private orderRepository: Repository<OrderEntity>,
@@ -43,7 +44,8 @@ export class OrderService {
     private readonly couponService: CouponService,
   ) { }
 
-  async create(createOrderDto: CreateOrderDto, tenantId: string) {
+  async createOrder(createOrderDto: CreateOrderDto, tenantId: string) {
+      this.logger.log(`${this.createOrder.name} Service Called`);
     const {
       customerName,
       customerEmail,
@@ -257,9 +259,9 @@ export class OrderService {
     return { message: 'Order created successfully', success: true, order: savedOrder }
   }
 
-  async findAll(filterDto: any, tenantId: string) {
+  async findAllOrders(filterDto: any, tenantId: string) {
+      this.logger.log(`${this.findAllOrders.name} Service Called`);
     const { page, limit, search, status } = filterDto
-    console.log('filterDto', filterDto)
 
     const skip = (page - 1) * limit
 
@@ -293,7 +295,8 @@ export class OrderService {
     }
   }
 
-  async findOne(id: string, tenantId: string) {
+  async findOneOrder(id: string, tenantId: string) {
+      this.logger.log(`${this.findOneOrder.name} Service Called`);
     const order = await this.orderRepository.findOne({
       where: { id, tenantId },
       relations: ['items', 'items.product', 'items.variant', 'returns'],
@@ -307,6 +310,7 @@ export class OrderService {
   }
 
   async findOneForCourier(id: string, tenantId: string) {
+      this.logger.log(`${this.findOneForCourier.name} Service Called`);
     const order = await this.orderRepository.findOne({
       where: { id, tenantId },
       relations: ['items', 'items.product'],
@@ -320,6 +324,7 @@ export class OrderService {
   }
 
   async findByUserId(userId: string, tenantId: string, search?: string) {
+      this.logger.log(`${this.findByUserId.name} Service Called`);
     const queryBuilder = this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items')
@@ -344,8 +349,9 @@ export class OrderService {
     return await queryBuilder.orderBy('order.createdAt', 'DESC').getMany()
   }
 
-  async update(id: string, updateOrderDto: UpdateOrderDto, tenantId: string) {
-    const order = await this.findOne(id, tenantId)
+  async updateOrder(id: string, updateOrderDto: UpdateOrderDto, tenantId: string) {
+      this.logger.log(`${this.updateOrder.name} Service Called`);
+    const order = await this.findOneOrder(id, tenantId)
 
     // Using query runner for business transaction
     const queryRunner = this.dataSource.createQueryRunner()
@@ -389,7 +395,7 @@ export class OrderService {
         oldStatus !== OrderStatus.COMPLETED
       ) {
         for (const item of order.items) {
-          await this.inventoryService.create({
+          await this.inventoryService.createInventoryTransaction({
             productId: item.productId,
             variantId: item.variantId,
             quantity: item.quantity,
@@ -413,17 +419,20 @@ export class OrderService {
     }
   }
 
-  async findAllOrders() {
-    return await this.orderRepository.find({
-      order: { createdAt: 'DESC' },
-    })
-  }
+  // async findAllOrders(filterDto: any, tenantId: string) {
+  //     this.logger.log(`${this.findAllOrders.name} Service Called`);
+  //   return await this.orderRepository.find({
+  //     order: { createdAt: 'DESC' },
+  //   })
+  // }
 
   async countByTenant(tenantId: string) {
+      this.logger.log(`${this.countByTenant.name} Service Called`);
     return await this.orderRepository.count({ where: { tenantId } })
   }
 
   async orderOverview() {
+      this.logger.log(`${this.orderOverview.name} Service Called`);
     const totalOrders = await this.orderRepository.count()
     const pendingOrders = await this.orderRepository.count({
       where: { status: OrderStatus.PENDING },

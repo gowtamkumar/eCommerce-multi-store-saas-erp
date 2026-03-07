@@ -14,29 +14,27 @@ export class SubscriptionPlanController {
   constructor(private readonly planService: SubscriptionPlanService) {}
 
   @Post()
-  create(@Body() createDto: CreateSubscriptionPlanDto) {
-    return this.planService.create(createDto)
+  createSubscriptionPlan(@Body() createDto: CreateSubscriptionPlanDto) {
+    return this.planService.createSubscriptionPlan(createDto)
   }
 
   @Get()
-  findAll() {
-    return this.planService.findAll()
+  findAllSubscriptionPlans() {
+    return this.planService.findAllSubscriptionPlans()
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    console.log("testing...asdfasdf", id);
-    
-    return this.planService.findOne(id)
+  findOneSubscriptionPlan(@Param('id') id: string) {    
+    return this.planService.findOneSubscriptionPlan(id)
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDto: UpdateSubscriptionPlanDto) {
-    return this.planService.update(id, updateDto)
+  updateSubscriptionPlan(@Param('id') id: string, @Body() updateDto: UpdateSubscriptionPlanDto) {
+    return this.planService.updateSubscriptionPlan(id, updateDto)
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.planService.remove(id)
+  removeSubscriptionPlan(@Param('id') id: string) {
+    return this.planService.removeSubscriptionPlan(id)
   }
 }

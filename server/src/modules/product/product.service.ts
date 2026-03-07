@@ -1,24 +1,26 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { ProductStatus } from 'src/common/enums/product-status.enum'
+import { PurchaseOrderStatus } from 'src/common/enums/purchase-order-status.enum'
 import { Repository } from 'typeorm'
+import { InventoryTransactionReferenceType } from '../../common/enums/inventory-transaction-reference-type.enum'
+import { InventoryTransactionType } from '../../common/enums/inventory-transaction-type.enum'
 import { FaqEntity } from '../faq/entities/faq.entity'
 import { CacheService } from '../others/cache/cache.service'
+import { InventoryTransactionService } from '../others/inventory-transaction/inventory-transaction.service'
+import { PurchaseOrderService } from '../others/purchase/purchase-order.service'
+import { PromotionType } from '../promotion/entities/promotion.entity'
+import { PromotionService } from '../promotion/promotion.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductAttributeEntity } from './entities/attribute.entity'
 import { ProductEntity } from './entities/product.entity'
 import { ProductVariantEntity } from './entities/variant.entity'
-import { ProductStatus } from 'src/common/enums/product-status.enum'
-import { InventoryTransactionService } from '../others/inventory-transaction/inventory-transaction.service'
-import { InventoryTransactionType } from '../../common/enums/inventory-transaction-type.enum'
-import { InventoryTransactionReferenceType } from '../../common/enums/inventory-transaction-reference-type.enum'
-import { PurchaseOrderService } from '../others/purchase/purchase-order.service'
-import { PurchaseOrderStatus } from 'src/common/enums/purchase-order-status.enum'
-import { PromotionService } from '../promotion/promotion.service'
-import { PromotionType } from '../promotion/entities/promotion.entity'
 
 @Injectable()
 export class ProductService {
+    private readonly logger = new Logger(ProductService.name);
+
   constructor(
     @InjectRepository(ProductEntity)
     private productRepository: Repository<ProductEntity>,
@@ -35,6 +37,7 @@ export class ProductService {
   ) { }
 
   private async attachPromotions(product: any, tenantId: string) {
+      this.logger.log(`${this.attachPromotions.name} Service Called`);
     if (!product) return product;
     try {
       const activePromos = await this.promotionService.findActivePromotions(tenantId);
@@ -79,6 +82,7 @@ export class ProductService {
   }
 
   private async attachPromotionsMany(products: any[], tenantId: string) {
+      this.logger.log(`${this.attachPromotionsMany.name} Service Called`);
     if (!products || products.length === 0) return products;
     try {
       const activePromos = await this.promotionService.findActivePromotions(tenantId);
@@ -124,7 +128,8 @@ export class ProductService {
   }
 
 
-  async findAll(filterDto: any, tenantId: string) {
+  async findAllProducts(filterDto: any, tenantId: string) {
+      this.logger.log(`${this.findAllProducts.name} Service Called`);
     const page = Math.max(1, parseInt(filterDto.page) || 1)
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { q, status, categoryId, brandId } = filterDto
@@ -175,7 +180,8 @@ export class ProductService {
     return { products: productsWithPromotions, total }
   }
 
-  async findBySlug(slug: string, tenantId: string) {
+  async findBySlugProduct(slug: string, tenantId: string) {
+      this.logger.log(`${this.findBySlugProduct.name} Service Called`);
     const product = await this.productRepository.findOne({
       where: { slug, tenantId },
       relations: ['faqs', 'category', 'attributes', 'variants', 'reviews'],
@@ -188,7 +194,8 @@ export class ProductService {
     return await this.attachPromotions(product, tenantId)
   }
 
-  async create(createProductDto: CreateProductDto, tenantId: string) {
+  async createProduct(createProductDto: CreateProductDto, tenantId: string) {
+      this.logger.log(`${this.createProduct.name} Service Called`);
     // Check if slug exists for this tenant
     const existing = await this.productRepository.findOne({
       where: { slug: createProductDto.slug, tenantId },
@@ -268,22 +275,23 @@ export class ProductService {
 
     // Create a RECEIVED Purchase Order if there are items to stock
     if (poItems.length > 0 && createProductDto.supplierId) {
-      const po = await this.purchaseOrderService.create({
+      const po = await this.purchaseOrderService.createPurchaseOrder({
         supplierId: createProductDto.supplierId,
         referenceNumber: `INITIAL_${savedProduct.slug.toUpperCase()}_${Date.now()}`,
         items: poItems,
       }, tenantId)
 
       // Mark as received immediately to trigger inventory
-      await this.purchaseOrderService.updateStatus(po.id, { status: PurchaseOrderStatus.RECEIVED }, tenantId)
+      await this.purchaseOrderService.updatePurchaseOrderStatus(po.id, { status: PurchaseOrderStatus.RECEIVED }, tenantId)
     }
 
-    const newProduct = await this.findOne(savedProduct.id, tenantId)
+    const newProduct = await this.findOneProduct(savedProduct.id, tenantId)
     return newProduct // Promos are already attached in findOne
   }
 
 
-  async findLatest(tenantId: string, limit: number = 10) {
+  async findLatestProducts(tenantId: string, limit: number = 10) {
+      this.logger.log(`${this.findLatestProducts.name} Service Called`);
     const products = await this.productRepository.find({
       where: { tenantId },
       relations: ['variants', 'category'],
@@ -294,10 +302,11 @@ export class ProductService {
     return await this.attachPromotionsMany(products, tenantId)
   }
 
-  async findOne(id: string, tenantId: string) {
+  async findOneProduct(id: string, tenantId: string) {
+      this.logger.log(`${this.findOneProduct.name} Service Called`);
     const cacheKey = `product:${id}`
 
-    const cached = await this.cache.get(cacheKey, tenantId)
+    const cached = await this.cache.getCache(cacheKey, tenantId)
 
     if (cached) {
       console.log('Get from cache', cached ? 'HIT' : 'MISS')
@@ -315,15 +324,16 @@ export class ProductService {
       throw new NotFoundException('Product not found')
     }
 
-    await this.cache.set(cacheKey, product, 300, tenantId)
+    await this.cache.setCache(cacheKey, product, 300, tenantId)
 
     return await this.attachPromotions(product, tenantId)
   }
 
 
 
-  async update(id: string, updateProductDto: UpdateProductDto, tenantId: string) {
-    const product: any = await this.findOne(id, tenantId)
+  async updateProduct(id: string, updateProductDto: UpdateProductDto, tenantId: string) {
+      this.logger.log(`${this.updateProduct.name} Service Called`);
+    const product: any = await this.findOneProduct(id, tenantId)
 
     // If slug is being updated, check uniqueness
     if (updateProductDto.slug && updateProductDto.slug !== product.slug) {
@@ -428,13 +438,13 @@ export class ProductService {
 
       // Create a RECEIVED Purchase Order for new variants if there are items to stock
       if (poItems.length > 0 && product.supplierId) {
-        const po = await this.purchaseOrderService.create({
+        const po = await this.purchaseOrderService.createPurchaseOrder({
           supplierId: product.supplierId,
           referenceNumber: `INITIAL_VAR_${product.slug.toUpperCase()}_${Date.now()}`,
           items: poItems,
         }, tenantId)
 
-        await this.purchaseOrderService.updateStatus(po.id, { status: PurchaseOrderStatus.RECEIVED }, tenantId)
+        await this.purchaseOrderService.updatePurchaseOrderStatus(po.id, { status: PurchaseOrderStatus.RECEIVED }, tenantId)
       }
 
       // 5. Delete removed variants
@@ -451,25 +461,27 @@ export class ProductService {
     }
 
     // Invalidate cache after update
-    await this.cache.del(`product:${id}`, tenantId)
+    await this.cache.delCache(`product:${id}`, tenantId)
 
-    return await this.findOne(id, tenantId)
+    return await this.findOneProduct(id, tenantId)
   }
 
-  async remove(id: string, tenantId: string) {
-    const product: any = await this.findOne(id, tenantId)
+  async removeProduct(id: string, tenantId: string) {
+      this.logger.log(`${this.removeProduct.name} Service Called`);
+    const product: any = await this.findOneProduct(id, tenantId)
     await this.productRepository.remove(product)
 
     // Invalidate cache after deletion
-    await this.cache.del(`product:${id}`, tenantId)
+    await this.cache.delCache(`product:${id}`, tenantId)
 
     return { success: true, message: 'Product deleted successfully' }
   }
 
   async decrementStock(productId: string, quantity: number, tenantId: string, variantId?: string) {
+      this.logger.log(`${this.decrementStock.name} Service Called`);
     // Note: The inventory service handles updating the static stock fields (cache)
     // and logging the transaction record.
-    return await this.inventoryService.create({
+    return await this.inventoryService.createInventoryTransaction({
       productId,
       variantId,
       quantity,
@@ -479,14 +491,17 @@ export class ProductService {
   }
 
   async findAllProductsCrossTenant() {
+      this.logger.log(`${this.findAllProductsCrossTenant.name} Service Called`);
     return await this.productRepository.find()
   }
 
   async countByTenant(tenantId: string) {
+      this.logger.log(`${this.countByTenant.name} Service Called`);
     return await this.productRepository.count({ where: { tenantId } })
   }
 
   private getSortOptions(sort?: string): any {
+      this.logger.log(`${this.getSortOptions.name} Service Called`);
     switch (sort) {
       case 'price-low':
         return { 'product.price': 'ASC' }
@@ -503,6 +518,7 @@ export class ProductService {
   }
   // this function for system plateform
   async productOverview() {
+      this.logger.log(`${this.productOverview.name} Service Called`);
     const totalProducts = await this.productRepository.count()
     const activeProducts = await this.productRepository.count({
       where: { status: ProductStatus.ACTIVE },

@@ -28,7 +28,7 @@ export class AuditLogController {
      * Manually record an audit event (e.g. from client or other services).
      */
     @Post()
-    async create(
+    async createAuditLog(
         @Body() dto: CreateAuditLogDto,
         @TenantId() tenantId: string,
         @CurrentUser() user: any,
@@ -54,8 +54,8 @@ export class AuditLogController {
      * Paginated & filtered list of audit logs for the tenant.
      */
     @Get()
-    async findAll(@TenantId() tenantId: string, @Query() query: QueryAuditLogDto) {
-        return this.auditLogService.findAll(tenantId, query);
+    async findAllAuditLogs(@TenantId() tenantId: string, @Query() query: QueryAuditLogDto) {
+        return this.auditLogService.findAllAuditLogs(tenantId, query);
     }
 
     /**
@@ -63,8 +63,8 @@ export class AuditLogController {
      * Single audit log entry.
      */
     @Get(':id')
-    async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.auditLogService.findOne(id, tenantId);
+    async findOneAuditLog(@Param('id') id: string, @TenantId() tenantId: string) {
+        return this.auditLogService.findOneAuditLog(id, tenantId);
     }
 
     /**
@@ -76,6 +76,6 @@ export class AuditLogController {
         @Param('days', ParseIntPipe) days: number,
         @TenantId() tenantId: string,
     ) {
-        return this.auditLogService.deleteOlderThan(tenantId, days);
+        return this.auditLogService.deleteOlderThanAuditLogs(tenantId, days);
     }
 }

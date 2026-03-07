@@ -10,8 +10,8 @@ export class PathaoController {
   constructor(private readonly pathaoService: PathaoService) {}
 
   @Post('create-order')
-  async createOrder(@Body() createOrderDto: CreatePathaoOrderDto, @TenantId() tenantId: string) {
-    return await this.pathaoService.createOrder(createOrderDto, tenantId);
+  async createPathaoOrder(@Body() createOrderDto: CreatePathaoOrderDto, @TenantId() tenantId: string) {
+    return await this.pathaoService.createPathaoOrder(createOrderDto, tenantId);
   }
 
   // @Get('stores')

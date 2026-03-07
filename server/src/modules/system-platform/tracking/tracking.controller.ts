@@ -16,7 +16,7 @@ export class TrackingController {
 
         if (finalTenantId && body.path) {
             // Fire and forget - don't await to keep response fast
-            this.trafficService.logPageHit(finalTenantId, body.path);
+            this.trafficService.logPageTraffic(finalTenantId, body.path);
         }
 
         return { success: true };

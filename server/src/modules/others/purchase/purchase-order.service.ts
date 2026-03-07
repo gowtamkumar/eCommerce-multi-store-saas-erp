@@ -1,18 +1,20 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { PurchaseOrderEntity, PurchaseOrderPaymentStatus } from './entities/purchase-order.entity';
-import { PurchaseOrderItemEntity } from './entities/purchase-order-item.entity';
-import { SupplierPaymentEntity } from './entities/supplier-payment.entity';
-import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from './dto/purchase-order.dto';
-import { RecordSupplierPaymentDto } from './dto/record-payment.dto';
+import { DataSource, Repository } from 'typeorm';
+import { InventoryTransactionReferenceType } from '../../../common/enums/inventory-transaction-reference-type.enum';
+import { InventoryTransactionType } from '../../../common/enums/inventory-transaction-type.enum';
 import { PurchaseOrderStatus } from '../../../common/enums/purchase-order-status.enum';
 import { InventoryTransactionService } from '../inventory-transaction/inventory-transaction.service';
-import { InventoryTransactionType } from '../../../common/enums/inventory-transaction-type.enum';
-import { InventoryTransactionReferenceType } from '../../../common/enums/inventory-transaction-reference-type.enum';
+import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from './dto/purchase-order.dto';
+import { RecordSupplierPaymentDto } from './dto/record-payment.dto';
+import { PurchaseOrderItemEntity } from './entities/purchase-order-item.entity';
+import { PurchaseOrderEntity, PurchaseOrderPaymentStatus } from './entities/purchase-order.entity';
+import { SupplierPaymentEntity } from './entities/supplier-payment.entity';
 
 @Injectable()
 export class PurchaseOrderService {
+    private readonly logger = new Logger(PurchaseOrderService.name);
+
     constructor(
         @InjectRepository(PurchaseOrderEntity)
         private readonly repository: Repository<PurchaseOrderEntity>,
@@ -24,7 +26,8 @@ export class PurchaseOrderService {
         private readonly dataSource: DataSource,
     ) { }
 
-    async create(dto: CreatePurchaseOrderDto, tenantId: string) {
+    async createPurchaseOrder(dto: CreatePurchaseOrderDto, tenantId: string) {
+        this.logger.log(`${this.createPurchaseOrder.name} Service Called`);
         const totalAmount = dto.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
 
         const purchaseOrder = this.repository.create({
@@ -37,7 +40,8 @@ export class PurchaseOrderService {
         return await this.repository.save(purchaseOrder);
     }
 
-    async findAll(tenantId: string) {
+    async findAllPurchaseOrders(tenantId: string) {
+        this.logger.log(`${this.findAllPurchaseOrders.name} Service Called`);
         return await this.repository.find({
             where: { tenantId },
             relations: ['supplier'],
@@ -45,7 +49,8 @@ export class PurchaseOrderService {
         });
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOnePurchaseOrder(id: string, tenantId: string) {
+        this.logger.log(`${this.findOnePurchaseOrder.name} Service Called`);
         const order = await this.repository.findOne({
             where: { id, tenantId },
             relations: ['supplier', 'items', 'items.product', 'items.variant', 'payments'],
@@ -56,22 +61,24 @@ export class PurchaseOrderService {
         return order;
     }
 
-    async updateStatus(id: string, dto: UpdatePurchaseOrderStatusDto, tenantId: string) {
-        const order = await this.findOne(id, tenantId);
+    async updatePurchaseOrderStatus(id: string, dto: UpdatePurchaseOrderStatusDto, tenantId: string) {
+        this.logger.log(`${this.updatePurchaseOrderStatus.name} Service Called`);
+        const order = await this.findOnePurchaseOrder(id, tenantId);
 
         if (order.status === PurchaseOrderStatus.RECEIVED || order.status === PurchaseOrderStatus.CANCELLED) {
             throw new BadRequestException(`Cannot change status of a ${order.status} order`);
         }
 
         if (dto.status === PurchaseOrderStatus.RECEIVED) {
-            return await this.receiveOrder(order, tenantId);
+            return await this.receivePurchaseOrder(order, tenantId);
         }
 
         order.status = dto.status;
         return await this.repository.save(order);
     }
 
-    private async receiveOrder(order: PurchaseOrderEntity, tenantId: string) {
+    private async receivePurchaseOrder(order: PurchaseOrderEntity, tenantId: string) {
+        this.logger.log(`${this.receivePurchaseOrder.name} Service Called`);
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -85,7 +92,7 @@ export class PurchaseOrderService {
                 const productId = item.productId || (item.product as any)?.id;
                 const variantId = item.variantId || (item.variant as any)?.id;
 
-                await this.inventoryService.create({
+                await this.inventoryService.createInventoryTransaction({
                     productId,
                     variantId: variantId || null,
                     quantity: item.quantity,
@@ -106,7 +113,8 @@ export class PurchaseOrderService {
         }
     }
 
-    async recordPayment(id: string, dto: RecordSupplierPaymentDto, tenantId: string) {
+    async recordSupplierPayment(id: string, dto: RecordSupplierPaymentDto, tenantId: string) {
+        this.logger.log(`${this.recordSupplierPayment.name} Service Called`);
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -159,6 +167,7 @@ export class PurchaseOrderService {
     }
 
     async findAllBySupplier(supplierId: string, tenantId: string) {
+        this.logger.log(`${this.findAllBySupplier.name} Service Called`);
         return await this.repository.find({
             where: { supplierId, tenantId },
             relations: ['items'],
@@ -167,13 +176,15 @@ export class PurchaseOrderService {
     }
 
     async findAllPaymentsBySupplier(supplierId: string, tenantId: string) {
+        this.logger.log(`${this.findAllPaymentsBySupplier.name} Service Called`);
         return await this.paymentRepository.find({
             where: { supplierId, tenantId },
             order: { paymentDate: 'DESC' },
         });
     }
 
-    async findAllPayments(tenantId: string) {
+    async findAllPaymentsByPurchaseOrder(tenantId: string) {
+        this.logger.log(`${this.findAllPaymentsByPurchaseOrder.name} Service Called`);
         return await this.paymentRepository.find({
             where: { tenantId },
             relations: ['supplier', 'purchaseOrder'],

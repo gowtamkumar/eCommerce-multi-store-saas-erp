@@ -66,7 +66,7 @@ export class AuthService {
 
     // Check if tenant is suspended (skip for super admin who has no tenant)
     if (tenantId) {
-      const tenant = await this.tenantService.findOne(tenantId)
+      const tenant = await this.tenantService.findOneTenants(tenantId)
       if (tenant && tenant.status === 'suspended') {
         throw new UnauthorizedException('Store is suspended. Please contact support.')
       }
@@ -116,10 +116,12 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
+      this.logger.log(`${this.verifyEmail.name} Service Called`);
     return this.userService.verifyUserByToken(token)
   }
 
   async getTokens(user) {
+      this.logger.log(`${this.getTokens.name} Service Called`);
     const payload = {
       username: user.username,
       tenantId: user.tenantId,
@@ -147,6 +149,7 @@ export class AuthService {
   }
 
   async refreshTokens(userId: string, refreshToken: string) {
+      this.logger.log(`${this.refreshTokens.name} Service Called`);
     const user = await this.userService.getUserIfRefreshTokenMatches(refreshToken, userId)
     if (!user) throw new UnauthorizedException('Access Denied')
 
@@ -155,6 +158,7 @@ export class AuthService {
   }
 
   async logout(userId: string) {
+      this.logger.log(`${this.logout.name} Service Called`);
     return this.userService.removeRefreshToken(userId)
   }
 }

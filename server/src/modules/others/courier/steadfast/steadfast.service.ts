@@ -22,9 +22,10 @@ export class SteadfastService {
   ) {}
 
   private async initializeCredentials(tenantId: string) {
+      this.logger.log(`${this.initializeCredentials.name} Service Called`);
     try {
       // Try to get credentials from settings first
-      const settings = await this.settingsService.findByTenant(tenantId);
+      const settings = await this.settingsService.findByTenantSettings(tenantId);
       
       if (settings?.steadfastCourier) {
         this.baseUrl = this.configService.get<string>('STEADFAST_BASE_URL');
@@ -39,7 +40,7 @@ export class SteadfastService {
     }
   }
 
-  async createOrder(createOrderDto: CreateSteadfastOrderDto, tenantId: string) {
+  async createSteadfastOrder(createOrderDto: CreateSteadfastOrderDto, tenantId: string) {
     await this.initializeCredentials(tenantId);
     const { orderId } = createOrderDto;
 
@@ -88,7 +89,7 @@ export class SteadfastService {
       const trackingId = responseData.order?.tracking_code;
 
       // Update order status to SHIPPED and save tracking info
-      await this.orderService.update(order.id, { 
+      await this.orderService.updateOrder(order.id, { 
         status: OrderStatus.SHIPPED,
         courierStatus: 'Steadfast',
         trackingId: trackingId?.toString()

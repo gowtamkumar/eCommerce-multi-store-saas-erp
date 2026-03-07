@@ -14,6 +14,7 @@ import { AdminModule } from './modules/admin/admin.module'
 import { BrandModule } from './modules/brand/brand.module'
 import { CartModule } from './modules/cart/cart.module'
 import { CategoryModule } from './modules/category/category.module'
+import { CouponModule } from './modules/coupon/coupon.module'
 import { FaqModule } from './modules/faq/faq.module'
 import { LeadModule } from './modules/lead/lead.module'
 import { OrderModule } from './modules/order/order.module'
@@ -21,14 +22,13 @@ import { OthersModule } from './modules/others/others.module'
 import { PageModule } from './modules/page/page.module'
 import { PaymentModule } from './modules/payment/payment.module'
 import { ProductModule } from './modules/product/product.module'
+import { PromotionModule } from './modules/promotion/promotion.module'
 import { ReviewModule } from './modules/review/review.module'
 import { SettingsModule } from './modules/settings/settings.module'
 import { SubscriberModule } from './modules/subscriber/subscriber.module'
 import { AuditLogModule } from './modules/system-platform/audit-log/audit-log.module'
 import { SystemPlatformModule } from './modules/system-platform/system-platform.module'
 import { TenantModule } from './modules/tenant/tenant.module'
-import { CouponModule } from './modules/coupon/coupon.module';
-import { PromotionModule } from './modules/promotion/promotion.module';
 
 @Module({
   imports: [

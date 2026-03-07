@@ -7,10 +7,10 @@ import { PaymentService } from 'src/modules/payment/payment.service'
 import { ProductService } from 'src/modules/product/product.service'
 import { TrafficService } from 'src/modules/system-platform/super-admin/traffic.service'
 import { UserService } from '../../admin/user/services/user.service'
-import { SupplierService } from '../supplier/supplier.service'
-import { PurchaseOrderService } from '../purchase/purchase-order.service'
 import { ExpenseService } from '../expense/expense.service'
 import { InvoiceService } from '../invoice/invoice.service'
+import { PurchaseOrderService } from '../purchase/purchase-order.service'
+import { SupplierService } from '../supplier/supplier.service'
 
 @Controller('report')
 @UseGuards(JwtAuthGuard)
@@ -66,12 +66,12 @@ export class ReportController {
 
     // Fetch all data in parallel for backend processing
     const [orders, products, payments, pages, suppliers, purchaseOrders, traffic] = await Promise.all([
-      this.orderService.findAll({ page: 1, limit: 1000 }, tenantId),
-      this.productService.findAll({ page: 1, limit: 1000 }, tenantId),
-      this.paymentService.findAll(tenantId),
-      this.pageService.findAll(tenantId),
-      this.supplierService.findAll(tenantId),
-      this.purchaseOrderService.findAll(tenantId),
+      this.orderService.findAllOrders({ page: 1, limit: 1000 }, tenantId),
+      this.productService.findAllProducts({ page: 1, limit: 1000 }, tenantId),
+      this.paymentService.findAllPayments(tenantId),
+      this.pageService.findAllPages(tenantId),
+      this.supplierService.findAllSuppliers(tenantId),
+      this.purchaseOrderService.findAllPurchaseOrders(tenantId),
       this.trafficService.getGlobalTrafficStats(7),
     ])
 
@@ -214,10 +214,10 @@ export class ReportController {
     const tenantId = req.user.tenantId;
 
     const [orders, payments, expenses, purchaseOrders] = await Promise.all([
-      this.orderService.findAll({ page: 1, limit: 1000 }, tenantId),
-      this.paymentService.findAll(tenantId),
-      this.expenseService.findAll(tenantId),
-      this.purchaseOrderService.findAll(tenantId),
+      this.orderService.findAllOrders({ page: 1, limit: 1000 }, tenantId),
+      this.paymentService.findAllPayments(tenantId),
+      this.expenseService.findAllExpenses(tenantId),
+      this.purchaseOrderService.findAllPurchaseOrders(tenantId),
     ]);
 
     const ordersData = orders.orders || [];
@@ -301,7 +301,7 @@ export class ReportController {
     const tenantId = req.user.tenantId;
 
     const [supplier, pos, payments] = await Promise.all([
-      this.supplierService.findOne(supplierId, tenantId),
+      this.supplierService.findOneSupplier(supplierId, tenantId),
       this.purchaseOrderService.findAllBySupplier(supplierId, tenantId),
       this.purchaseOrderService.findAllPaymentsBySupplier(supplierId, tenantId),
     ]);
@@ -365,9 +365,9 @@ export class ReportController {
     const tenantId = req.user.tenantId;
 
     const [customerPayments, expenses, supplierPayments] = await Promise.all([
-      this.paymentService.findAll(tenantId),
-      this.expenseService.findAll(tenantId),
-      this.purchaseOrderService.findAllPayments(tenantId),
+      this.paymentService.findAllPayments(tenantId),
+      this.expenseService.findAllExpenses(tenantId),
+      this.purchaseOrderService.findAllPaymentsByPurchaseOrder(tenantId),
     ]);
 
     const inflow = customerPayments.filter((p: any) => p.status === 'SUCCESS');
@@ -460,7 +460,7 @@ export class ReportController {
 
     switch (type) {
       case 'sales': {
-        const payments = await this.paymentService.findAll(tenantId);
+        const payments = await this.paymentService.findAllPayments(tenantId);
         const filtered = payments.filter((p: any) => p.status === 'SUCCESS' && new Date(p.createdAt) >= startDate && new Date(p.createdAt) <= endDate);
         csvContent = 'Date,Transaction ID,Order ID,Amount,Currency,Method\n';
         filtered.forEach((p: any) => {
@@ -469,7 +469,7 @@ export class ReportController {
         break;
       }
       case 'expenses': {
-        const expenses = await this.expenseService.findAll(tenantId);
+        const expenses = await this.expenseService.findAllExpenses(tenantId);
         const filtered = expenses.filter((e: any) => new Date(e.expenseDate) >= startDate && new Date(e.expenseDate) <= endDate);
         csvContent = 'Date,Category,Description,Amount,Tenant ID\n';
         filtered.forEach((e: any) => {
@@ -514,10 +514,10 @@ export class ReportController {
     const tenantId = req.user.tenantId;
 
     const [customerPayments, expenses, supplierPayments, purchaseOrders] = await Promise.all([
-      this.paymentService.findAll(tenantId),
-      this.expenseService.findAll(tenantId),
-      this.purchaseOrderService.findAllPayments(tenantId),
-      this.purchaseOrderService.findAll(tenantId),
+      this.paymentService.findAllPayments(tenantId),
+      this.expenseService.findAllExpenses(tenantId),
+      this.purchaseOrderService.findAllPaymentsByPurchaseOrder(tenantId),
+      this.purchaseOrderService.findAllPurchaseOrders(tenantId),
     ]);
 
     const inflow = customerPayments.filter((p: any) => p.status === 'SUCCESS');
@@ -567,7 +567,7 @@ export class ReportController {
         chartData,
         expenseBreakdown: Object.entries(categories).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value),
         supplierStats: {
-          totalSuppliers: (await this.supplierService.findAll(tenantId)).length,
+          totalSuppliers: (await this.supplierService.findAllSuppliers(tenantId)).length,
           totalPurchaseOrders: purchaseOrders.length,
           recentPurchaseOrders: purchaseOrders.slice(0, 5)
         }

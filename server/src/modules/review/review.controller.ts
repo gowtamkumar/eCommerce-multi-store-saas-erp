@@ -11,14 +11,14 @@ export class ReviewController {
 
     @Post()
     @UseGuards(JwtAuthGuard)
-    async create(@Body() dto: CreateReviewDto, @TenantId() tenantId: string) {
-        return await this.reviewService.create(dto, tenantId);
+    async createReview(@Body() dto: CreateReviewDto, @TenantId() tenantId: string) {
+        return await this.reviewService.createReview(dto, tenantId);
     }
 
     @Get()
     @UseGuards(JwtAuthGuard)
-    async findAll(@Query() filterDto: FilterReviewDto, @TenantId() tenantId: string) {
-        const { reviews, total } = await this.reviewService.findAll(filterDto, tenantId);
+    async findAllReviews(@Query() filterDto: FilterReviewDto, @TenantId() tenantId: string) {
+        const { reviews, total } = await this.reviewService.findAllReviews(filterDto, tenantId);
         return {
             success: true,
             statusCode: 200,
@@ -35,24 +35,24 @@ export class ReviewController {
     }
 
     @Get('public')
-    async findPublic(@TenantId() tenantId: string) {
-        return await this.reviewService.findPublic(tenantId);
+    async findPublicReviews(@TenantId() tenantId: string) {
+        return await this.reviewService.findPublicReviews(tenantId);
     }
 
     @Get('product/:productId')
-    async findByProduct(@Param('productId') productId: string, @TenantId() tenantId: string) {
-        return await this.reviewService.findByProduct(productId, tenantId);
+    async findByProductReviews(@Param('productId') productId: string, @TenantId() tenantId: string) {
+        return await this.reviewService.findByProductReviews(productId, tenantId);
     }
 
     @Put(':id')
     @UseGuards(JwtAuthGuard)
-    async update(@Param('id') id: string, @Body() dto: UpdateReviewDto, @TenantId() tenantId: string) {
-        return await this.reviewService.update(id, dto, tenantId);
+    async updateReview(@Param('id') id: string, @Body() dto: UpdateReviewDto, @TenantId() tenantId: string) {
+        return await this.reviewService.updateReview(id, dto, tenantId);
     }
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard)
-    async remove(@Param('id') id: string, @TenantId() tenantId: string) {
-        return await this.reviewService.remove(id, tenantId);
+    async removeReview(@Param('id') id: string, @TenantId() tenantId: string) {
+        return await this.reviewService.removeReview(id, tenantId);
     }
 }

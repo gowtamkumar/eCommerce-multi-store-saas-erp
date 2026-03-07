@@ -9,13 +9,13 @@ export class SubscriberController {
     constructor(private readonly subscriberService: SubscriberService) { }
 
     @Post()
-    create(@Body() createSubscriberDto: CreateSubscriberDto) {
-        return this.subscriberService.create(createSubscriberDto);
+    createSubscriber(@Body() createSubscriberDto: CreateSubscriberDto) {
+        return this.subscriberService.createSubscriber(createSubscriberDto);
     }
     
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Get()
-    findAll() {
-        return this.subscriberService.findAll();
+    findAllSubscribers() {
+        return this.subscriberService.findAllSubscribers();
     }
 }

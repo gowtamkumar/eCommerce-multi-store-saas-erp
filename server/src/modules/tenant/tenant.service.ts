@@ -1,7 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
 import * as crypto from 'crypto'
+import { CustomDomainStatus } from 'src/common/enums/tenant/custom-domain-status'
+import { TenantStatus } from 'src/common/enums/tenant/tenant-status.enum'
 import { Repository } from 'typeorm'
 import { SubscriptionBillingCycle } from '../../common/enums/subscription/billing-cycle.enum'
 import { SubscriptionStatus } from '../../common/enums/subscription/subscription-status.enum'
@@ -12,11 +14,11 @@ import { SettingsService } from '../settings/settings.service'
 import { SubscriptionPlanService } from '../system-platform/subscription-plan/subscription-plan.service'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantEntity } from './entities/tenant.entity'
-import { CustomDomainStatus } from 'src/common/enums/tenant/custom-domain-status'
-import { TenantStatus } from 'src/common/enums/tenant/tenant-status.enum'
 
 @Injectable()
 export class TenantService {
+    private readonly logger = new Logger(TenantService.name);
+
   constructor(
     @InjectRepository(TenantEntity)
     private tenantRepository: Repository<TenantEntity>,
@@ -27,7 +29,8 @@ export class TenantService {
     private readonly subscriptionPlanService: SubscriptionPlanService,
   ) { }
 
-  async create(createTenantDto: CreateTenantDto) {
+  async createTenant(createTenantDto: CreateTenantDto) {
+      this.logger.log(`${this.createTenant.name} Service Called`);
     const { storeName, subdomain, planId, name, username, email, password } = createTenantDto
     // Check if subdomain already exists
     const existingTenant = await this.tenantRepository.findOne({
@@ -40,11 +43,8 @@ export class TenantService {
 
     let subscriptionPlan = null
     if (planId) {
-      subscriptionPlan = await this.subscriptionPlanService.findOne(planId)
+      subscriptionPlan = await this.subscriptionPlanService.findOneSubscriptionPlan(planId)
     }
-
-    console.log('plan checking..')
-
     // Create tenant
     const now = new Date()
     const endsAt = new Date()
@@ -87,7 +87,7 @@ export class TenantService {
     )
 
     // Initialize Site Settings
-    const res = await this.settingsService.update(savedTenant.id, {
+    const res = await this.settingsService.updateSettings(savedTenant.id, {
       brandName: storeName,
       siteDescription: `Welcome to ${storeName}! Premium products and excellent service.`,
       contactEmail: email,
@@ -104,13 +104,15 @@ export class TenantService {
     }
   }
 
-  async findAll() {
+  async findAllTenants() {
+      this.logger.log(`${this.findAllTenants.name} Service Called`);
     return await this.tenantRepository.find({
       order: { createdAt: 'DESC' },
     })
   }
 
-  async findOne(id: string) {
+  async findOneTenants(id: string) {
+      this.logger.log(`${this.findOneTenants.name} Service Called`);
     const tenant = await this.tenantRepository.findOne({ where: { id } })
     if (!tenant) {
       throw new NotFoundException('Tenant not found')
@@ -119,6 +121,7 @@ export class TenantService {
   }
 
   async findBySubdomain(subdomain: string) {
+      this.logger.log(`${this.findBySubdomain.name} Service Called`);
     const tenant = await this.tenantRepository.findOne({ where: { subdomain } })
     // if (!tenant) {
     //   throw new NotFoundException('Tenant not found')
@@ -127,6 +130,7 @@ export class TenantService {
   }
 
   async findByCustomDomain(customDomain: string) {
+      this.logger.log(`${this.findByCustomDomain.name} Service Called`);
     const tenant = await this.tenantRepository.findOne({
       where: { customDomain },
     })
@@ -137,7 +141,8 @@ export class TenantService {
     return tenant
   }
 
-  async lookup(subdomain?: string, customDomain?: string) {
+  async lookupTenant(subdomain?: string, customDomain?: string) {
+      this.logger.log(`${this.lookupTenant.name} Service Called`);
     let domain = {} as any
 
     if (customDomain) {
@@ -155,7 +160,8 @@ export class TenantService {
   }
 
   async updateCustomDomain(id: string, customDomain: string) {
-    const tenant = await this.findOne(id)
+      this.logger.log(`${this.updateCustomDomain.name} Service Called`);
+    const tenant = await this.findOneTenants(id)
     tenant.customDomain = customDomain
     tenant.customDomainStatus = CustomDomainStatus.PENDING
     tenant.customDomainVerifiedAt = null
@@ -163,21 +169,24 @@ export class TenantService {
   }
 
   async verifyCustomDomain(id: string) {
-    const tenant = await this.findOne(id)
+      this.logger.log(`${this.verifyCustomDomain.name} Service Called`);
+    const tenant = await this.findOneTenants(id)
     // Mock verification: in a real app, you'd check DNS records here
     tenant.customDomainStatus = CustomDomainStatus.ACTIVE
     tenant.customDomainVerifiedAt = new Date()
     return await this.tenantRepository.save(tenant)
   }
 
-  async updateStatus(id: string, status: string) {
-    const tenant = await this.findOne(id)
+  async updateTenantStatus(id: string, status: string) {
+      this.logger.log(`${this.updateTenantStatus.name} Service Called`);
+    const tenant = await this.findOneTenants(id)
     tenant.status = status as TenantStatus
     return await this.tenantRepository.save(tenant)
   }
 
 
   async tenantOverview() {
+      this.logger.log(`${this.tenantOverview.name} Service Called`);
     const totalTenants = await this.tenantRepository.count()
     const activeTenants = await this.tenantRepository.count({
       where: { status: TenantStatus.ACTIVE },

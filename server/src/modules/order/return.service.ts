@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReturnStatus } from '../../common/enums/return-status.enum';
@@ -10,6 +10,8 @@ import { OrderEntity } from './entities/order.entity';
 
 @Injectable()
 export class ReturnService {
+    private readonly logger = new Logger(ReturnService.name);
+
     constructor(
         @InjectRepository(OrderReturnEntity)
         private returnRepository: Repository<OrderReturnEntity>,
@@ -21,7 +23,8 @@ export class ReturnService {
         private variantRepository: Repository<ProductVariantEntity>,
     ) { }
 
-    async createRequest(userId: string, tenantId: string, dto: CreateReturnDto) {
+    async createReturnRequest(userId: string, tenantId: string, dto: CreateReturnDto) {
+        this.logger.log(`${this.createReturnRequest.name} Service Called`);
         const { orderId, items, reason } = dto;
 
         const order = await this.orderRepository.findOne({
@@ -70,7 +73,8 @@ export class ReturnService {
         return await this.returnRepository.save(returnRequest);
     }
 
-    async findAll(tenantId: string) {
+    async findAllReturns(tenantId: string) {
+        this.logger.log(`${this.findAllReturns.name} Service Called`);
         console.log('Fetching returns for tenant:', tenantId);
         const returns = await this.returnRepository.find({
             where: { tenantId },
@@ -83,6 +87,7 @@ export class ReturnService {
     }
 
     async findByUser(userId: string, tenantId: string) {
+        this.logger.log(`${this.findByUser.name} Service Called`);
         return await this.returnRepository.find({
             where: { userId, tenantId },
             order: { createdAt: 'DESC' },
@@ -90,12 +95,13 @@ export class ReturnService {
         });
     }
 
-    async updateStatus(
+    async updateReturnRequestStatus(
         id: string,
         tenantId: string,
         status: ReturnStatus,
         adminComment?: string,
     ) {
+        this.logger.log(`${this.updateReturnRequestStatus.name} Service Called`);
         const returnRequest = await this.returnRepository.findOne({
             where: { id, tenantId },
         });
@@ -125,6 +131,7 @@ export class ReturnService {
     }
 
     private async restockItems(items: any[], tenantId: string) {
+        this.logger.log(`${this.restockItems.name} Service Called`);
         for (const item of items) {
             const { productId, variantId, quantity } = item;
             

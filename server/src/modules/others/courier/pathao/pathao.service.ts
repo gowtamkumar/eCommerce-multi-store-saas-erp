@@ -18,7 +18,8 @@ export class PathaoService {
     private orderService: OrderService,
   ) {}
 
-  private async getAccessToken(credentials: any) {    
+  private async getAccessToken(credentials: any) {
+      this.logger.log(`${this.getAccessToken.name} Service Called`);    
     try {
       const response = await firstValueFrom(
         this.httpService.post(
@@ -46,6 +47,7 @@ export class PathaoService {
   }
 
   private async fetchCredentials(tenantId: string) {
+      this.logger.log(`${this.fetchCredentials.name} Service Called`);
     let baseURL: string
     let clientId: string
     let clientSecret: string
@@ -54,7 +56,7 @@ export class PathaoService {
     let pathaoStoreId: number
 
     try {
-      const settings = await this.settingsService.findByTenant(tenantId)
+      const settings = await this.settingsService.findByTenantSettings(tenantId)
       
       if (settings?.pathaoCourier) {
         const courier = settings.pathaoCourier
@@ -81,7 +83,8 @@ export class PathaoService {
     return { baseURL, clientId, clientSecret, username, password, pathaoStoreId }
   }
 
-  async createOrder(createOrderDto: CreatePathaoOrderDto, tenantId: string) {
+  async createPathaoOrder(createOrderDto: CreatePathaoOrderDto, tenantId: string) {
+      this.logger.log(`${this.createPathaoOrder.name} Service Called`);
     const {orderId} = createOrderDto
     const creds = await this.fetchCredentials(tenantId)
     const accessToken = await this.getAccessToken(creds)    
@@ -149,7 +152,7 @@ export class PathaoService {
       const trackingId = responseData.data?.consignment_id;
 
       // Update order status to SHIPPED and save tracking info
-      await this.orderService.update(order.id, { 
+      await this.orderService.updateOrder(order.id, { 
         status: OrderStatus.SHIPPED,
         courierStatus: 'Pathao',
         trackingId: trackingId?.toString()

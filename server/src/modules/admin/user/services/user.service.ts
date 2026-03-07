@@ -1,10 +1,10 @@
 import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
+import { UserStatus } from 'src/common/enums/user/user-status.enum'
 import { Repository } from 'typeorm'
 import { CreateUserDto, FilterUserDto, UpdatePasswordDto, UpdateUserDto } from '../dtos'
 import { UserEntity } from '../entities/user.entity'
-import { UserStatus } from 'src/common/enums/user/user-status.enum'
 
 @Injectable()
 export class UserService {
@@ -151,16 +151,19 @@ export class UserService {
   }
 
   validateUser(user: UserEntity, password: string): Promise<boolean> {
+      this.logger.log(`${this.validateUser.name} Service Called`);
     return bcrypt.compare(password, user.password)
   }
 
   async verifyUser(id: string): Promise<UserEntity> {
+      this.logger.log(`${this.verifyUser.name} Service Called`);
     const user = await this.getUser(id)
     user.isEmailVerified = true
     return this.userRepo.save(user)
   }
 
   async verifyUserByToken(token: string): Promise<UserEntity> {
+      this.logger.log(`${this.verifyUserByToken.name} Service Called`);
     const user = await this.userRepo.findOne({ where: { emailVerificationToken: token } })
     if (!user) {
       throw new NotFoundException('Invalid or expired verification token')
@@ -171,6 +174,7 @@ export class UserService {
   }
 
   async updateResetToken(userId: string, token: string, expires: Date) {
+      this.logger.log(`${this.updateResetToken.name} Service Called`);
     const user = await this.getUser(userId)
     user.resetPasswordToken = token
     user.resetPasswordExpires = expires
@@ -178,6 +182,7 @@ export class UserService {
   }
 
   async resetUserPasswordByToken(token: string, password: string): Promise<UserEntity> {
+      this.logger.log(`${this.resetUserPasswordByToken.name} Service Called`);
     const user = await this.userRepo.findOne({
       where: { resetPasswordToken: token },
     })
@@ -193,10 +198,12 @@ export class UserService {
   }
 
   async countByTenant(tenantId: string) {
+      this.logger.log(`${this.countByTenant.name} Service Called`);
     return await this.userRepo.count({ where: { tenantId } })
   }
 
   async setCurrentRefreshToken(refreshToken: string, userId: string) {
+      this.logger.log(`${this.setCurrentRefreshToken.name} Service Called`);
     const currentRefreshToken = await bcrypt.hash(refreshToken, 10)
     await this.userRepo.update(userId, {
       refreshToken: currentRefreshToken,
@@ -204,6 +211,7 @@ export class UserService {
   }
 
   async getUserIfRefreshTokenMatches(refreshToken: string, userId: string) {
+      this.logger.log(`${this.getUserIfRefreshTokenMatches.name} Service Called`);
     const user = await this.userRepo
       .createQueryBuilder('user')
       .addSelect('user.refreshToken')
@@ -222,12 +230,14 @@ export class UserService {
   }
 
   async removeRefreshToken(userId: string) {
+      this.logger.log(`${this.removeRefreshToken.name} Service Called`);
     return this.userRepo.update(userId, {
       refreshToken: null,
     })
   }
 
   async userOverview() {
+      this.logger.log(`${this.userOverview.name} Service Called`);
     const totalUsers = await this.userRepo.count()
     const activeUsers = await this.userRepo.count({
       where: { status: UserStatus.Active },

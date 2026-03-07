@@ -16,6 +16,7 @@ export class FilesService {
   ) {}
 
   getFiles(filterFile: FilterFileDto, tenantId: string): Promise<FileEntity[]> {
+      this.logger.log(`${this.getFiles.name} Service Called`);
     const { filename, originalname } = filterFile
 
     const newQuery: any = { tenantId }

@@ -1,18 +1,21 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Repository } from 'typeorm';
-import { CouponEntity, DiscountType } from './entities/coupon.entity';
 import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
+import { CouponEntity, DiscountType } from './entities/coupon.entity';
 
 @Injectable()
 export class CouponService {
+    private readonly logger = new Logger(CouponService.name);
+
     constructor(
         @InjectRepository(CouponEntity)
         private couponRepository: Repository<CouponEntity>,
     ) { }
 
-    async create(createCouponDto: CreateCouponDto, tenantId: string) {
+    async createCoupon(createCouponDto: CreateCouponDto, tenantId: string) {
+        this.logger.log(`${this.createCoupon.name} Service Called`);
         const existing = await this.couponRepository.findOne({
             where: { code: ILike(createCouponDto.code), tenantId },
         });
@@ -30,7 +33,8 @@ export class CouponService {
         return await this.couponRepository.save(coupon);
     }
 
-    async findAll(filterDto: any, tenantId: string) {
+    async findAllCoupons(filterDto: any, tenantId: string) {
+        this.logger.log(`${this.findAllCoupons.name} Service Called`);
         const page = Math.max(1, parseInt(filterDto.page) || 1);
         const limit = Math.max(1, parseInt(filterDto.limit) || 10);
         const { search, isActive } = filterDto;
@@ -55,7 +59,8 @@ export class CouponService {
         return { coupons, total };
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOneCoupon(id: string, tenantId: string) {
+        this.logger.log(`${this.findOneCoupon.name} Service Called`);
         const coupon = await this.couponRepository.findOne({
             where: { id, tenantId },
         });
@@ -67,7 +72,8 @@ export class CouponService {
         return coupon;
     }
 
-    async findByCode(code: string, tenantId: string) {
+    async findByCodeCoupon(code: string, tenantId: string) {
+        this.logger.log(`${this.findByCodeCoupon.name} Service Called`);
         const coupon = await this.couponRepository.findOne({
             where: { code: ILike(code), tenantId },
         });
@@ -79,8 +85,9 @@ export class CouponService {
         return coupon;
     }
 
-    async update(id: string, updateCouponDto: UpdateCouponDto, tenantId: string) {
-        const coupon = await this.findOne(id, tenantId);
+    async updateCoupon(id: string, updateCouponDto: UpdateCouponDto, tenantId: string) {
+        this.logger.log(`${this.updateCoupon.name} Service Called`);
+        const coupon = await this.findOneCoupon(id, tenantId);
 
         if (updateCouponDto.code && updateCouponDto.code.toUpperCase() !== coupon.code) {
             const existing = await this.couponRepository.findOne({
@@ -100,15 +107,17 @@ export class CouponService {
         return await this.couponRepository.save(coupon);
     }
 
-    async remove(id: string, tenantId: string) {
-        const coupon = await this.findOne(id, tenantId);
+    async removeCoupon(id: string, tenantId: string) {
+        this.logger.log(`${this.removeCoupon.name} Service Called`);
+        const coupon = await this.findOneCoupon(id, tenantId);
         await this.couponRepository.remove(coupon);
         return { success: true, message: 'Coupon deleted successfully' };
     }
 
     async validateCoupon(code: string, orderTotal: number, tenantId: string) {
+        this.logger.log(`${this.validateCoupon.name} Service Called`);
         try {
-            const coupon = await this.findByCode(code, tenantId);
+            const coupon = await this.findByCodeCoupon(code, tenantId);
 
             if (!coupon.isActive) {
                 throw new BadRequestException('Coupon is inactive');
@@ -156,7 +165,8 @@ export class CouponService {
     }
 
     async incrementUsage(id: string, tenantId: string) {
-        const coupon = await this.findOne(id, tenantId);
+        this.logger.log(`${this.incrementUsage.name} Service Called`);
+        const coupon = await this.findOneCoupon(id, tenantId);
         coupon.usedCount += 1;
         await this.couponRepository.save(coupon);
     }

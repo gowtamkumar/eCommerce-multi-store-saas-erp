@@ -1,17 +1,21 @@
-import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Inject, Injectable } from '@nestjs/common'
-import { Cache } from 'cache-manager'
-import { CACHE_PREFIX } from 'src/common/constants/cache.'
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Cache } from 'cache-manager';
+import { CACHE_PREFIX } from 'src/common/constants/cache.';
 
 @Injectable()
 export class CacheService {
+    private readonly logger = new Logger(CacheService.name);
+
   constructor(@Inject(CACHE_MANAGER) private cache: Cache) {}
 
   private buildKey(key: string, tenantId?: string) {
+      this.logger.log(`${this.buildKey.name} Service Called`);
     return tenantId ? `${CACHE_PREFIX}:tenant:${tenantId}:${key}` : `${CACHE_PREFIX}:${key}`
   }
 
-  async get<T>(key: string, tenantId?: string): Promise<T | null> {
+  async getCache<T>(key: string, tenantId?: string): Promise<T | null> {
+      this.logger.log(`${this.getCache.name} Service Called`);
     try {
       const fullKey = this.buildKey(key, tenantId)
       const data = await this.cache.get<T>(fullKey)
@@ -21,7 +25,8 @@ export class CacheService {
     }
   }
 
-  async set(key: string, value: any, ttl: number = 300, tenantId?: string) {
+  async setCache(key: string, value: any, ttl: number = 300, tenantId?: string) {
+      this.logger.log(`${this.setCache.name} Service Called`);
     try {
       const fullKey = this.buildKey(key, tenantId)
       const ttlMs = ttl * 1000 // Convert seconds to milliseconds for cache-manager-redis-yet
@@ -31,7 +36,8 @@ export class CacheService {
     }
   }
 
-  async del(key: string, tenantId?: string) {
+  async delCache(key: string, tenantId?: string) {
+      this.logger.log(`${this.delCache.name} Service Called`);
     try {
       const fullKey = this.buildKey(key, tenantId)
       await this.cache.del(fullKey)
@@ -40,7 +46,8 @@ export class CacheService {
     }
   }
 
-  async reset() {
+  async resetCache() {
+      this.logger.log(`${this.resetCache.name} Service Called`);
     try {
       await this.cache.clear()
     } catch (error) {
@@ -49,17 +56,18 @@ export class CacheService {
   }
 
   // Smart "remember" helper
-  async remember<T>(
+  async rememberCache<T>(
     key: string,
     fetcher: () => Promise<T>,
     ttl: number = 300,
     tenantId?: string,
   ): Promise<T> {
-    const cached = await this.get<T>(key, tenantId)
+      this.logger.log(`${this.rememberCache.name} Service Called`);
+    const cached = await this.getCache<T>(key, tenantId)
     if (cached) return cached
 
     const fresh = await fetcher()
-    await this.set(key, fresh, ttl, tenantId)
+    await this.setCache(key, fresh, ttl, tenantId)
     return fresh
   }
 }

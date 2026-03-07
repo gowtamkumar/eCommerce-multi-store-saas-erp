@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Raw, Repository } from 'typeorm'
 import { PageTrafficEntity } from './entities/page-traffic.entity'
@@ -6,6 +6,8 @@ import { TenantTrafficEntity } from './entities/tenant-traffic.entity'
 
 @Injectable()
 export class TrafficService {
+    private readonly logger = new Logger(TrafficService.name);
+
   constructor(
     @InjectRepository(TenantTrafficEntity)
     private trafficRepository: Repository<TenantTrafficEntity>,
@@ -13,7 +15,8 @@ export class TrafficService {
     private pageTrafficRepository: Repository<PageTrafficEntity>,
   ) { }
 
-  async logRequest(tenantId: string) {
+  async logRequestTraffic(tenantId: string) {
+      this.logger.log(`${this.logRequestTraffic.name} Service Called`);
     if (!tenantId) return
 
     const today = new Date()
@@ -32,7 +35,8 @@ export class TrafficService {
     }
   }
 
-  async logPageHit(tenantId: string, path: string) {
+  async logPageTraffic(tenantId: string, path: string) {
+      this.logger.log(`${this.logPageTraffic.name} Service Called`);
     if (!tenantId || !path) return
 
     const today = new Date()
@@ -52,6 +56,7 @@ export class TrafficService {
   }
 
   async getTrafficStats(days: number = 7) {
+      this.logger.log(`${this.getTrafficStats.name} Service Called`);
     const sinceDate = new Date()
     sinceDate.setHours(0, 0, 0, 0)
     sinceDate.setDate(sinceDate.getDate() - days)
@@ -65,6 +70,7 @@ export class TrafficService {
   }
 
   async getGlobalTrafficStats(days: number = 7) {
+      this.logger.log(`${this.getGlobalTrafficStats.name} Service Called`);
     const sinceDate = new Date()
     sinceDate.setHours(0, 0, 0, 0)
     sinceDate.setDate(sinceDate.getDate() - days)
@@ -85,6 +91,7 @@ export class TrafficService {
   }
 
   async getPageTrafficStats(tenantId: string, days: number = 30, excludePrefixes: string[] = []) {
+      this.logger.log(`${this.getPageTrafficStats.name} Service Called`);
     const sinceDate = new Date()
     sinceDate.setDate(sinceDate.getDate() - days)
 

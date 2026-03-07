@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { FaqService } from '../faq/faq.service'
@@ -8,6 +8,8 @@ import { PageEntity } from './entities/page.entity'
 
 @Injectable()
 export class PageService {
+    private readonly logger = new Logger(PageService.name);
+
   constructor(
     @InjectRepository(PageEntity)
     private pageRepository: Repository<PageEntity>,
@@ -15,7 +17,8 @@ export class PageService {
             private readonly faqService: FaqService,
   ) { }
 
-  async create(dto: CreatePageDto, tenantId: string) {
+  async createPage(dto: CreatePageDto, tenantId: string) {
+      this.logger.log(`${this.createPage.name} Service Called`);
     // Check slug uniqueness within tenant
     const existing = await this.pageRepository.findOne({ where: { slug: dto.slug, tenantId } })
     if (existing) throw new ConflictException('Slug already exists for this tenant')
@@ -29,32 +32,37 @@ export class PageService {
     return await this.pageRepository.save(page)
   }
 
-  async findAll(tenantId: string) {
+  async findAllPages(tenantId: string) {
+      this.logger.log(`${this.findAllPages.name} Service Called`);
     return await this.pageRepository.find({
       where: { tenantId },
       order: { createdAt: 'DESC' },
     })
   }
 
-  async findOne(id: string, tenantId: string) {
+  async findOnePage(id: string, tenantId: string) {
+      this.logger.log(`${this.findOnePage.name} Service Called`);
     const page = await this.pageRepository.findOne({ where: { id, tenantId } })
     if (!page) throw new NotFoundException('Page not found')
     return page
   }
 
-  async findBySlug(slug: string, tenantId: string) {
+  async findBySlugPage(slug: string, tenantId: string) {
+      this.logger.log(`${this.findBySlugPage.name} Service Called`);
     const page = await this.pageRepository.findOne({ where: { slug, tenantId } })
     if (!page) throw new NotFoundException('Page not found')
     return JSON.parse(JSON.stringify(page));
   }
 
   async findHomePage(tenantId: string) {
+      this.logger.log(`${this.findHomePage.name} Service Called`);
     const homePage = await this.pageRepository.findOne({ where: { isHomePage: true, tenantId } })
     return homePage;
   }
 
-  async update(id: string, dto: UpdatePageDto, tenantId: string) {
-    const page = await this.findOne(id, tenantId)
+  async updatePage(id: string, dto: UpdatePageDto, tenantId: string) {
+      this.logger.log(`${this.updatePage.name} Service Called`);
+    const page = await this.findOnePage(id, tenantId)
 
     if (dto.slug && dto.slug !== page.slug) {
       const existing = await this.pageRepository.findOne({ where: { slug: dto.slug, tenantId } })
@@ -69,18 +77,21 @@ export class PageService {
     return await this.pageRepository.save(page)
   }
 
-  async remove(id: string, tenantId: string) {
-    const page = await this.findOne(id, tenantId)
+  async removePage(id: string, tenantId: string) {
+      this.logger.log(`${this.removePage.name} Service Called`);
+    const page = await this.findOnePage(id, tenantId)
     await this.pageRepository.remove(page)
     return { success: true }
   }
 
   async findAllPagesCrossTenant() {
+      this.logger.log(`${this.findAllPagesCrossTenant.name} Service Called`);
     return await this.pageRepository.find()
   }
 
   // Load FAQs for a page with faq-section
   async enrichPageWithFaqs(page: PageEntity) {
+      this.logger.log(`${this.enrichPageWithFaqs.name} Service Called`);
     if (!page.sections || page.sections.length === 0) return page;
 
     const enrichedSections = await Promise.all(
@@ -91,7 +102,7 @@ export class PageService {
           let faqs = [];
           if (source === 'page') {
             // Load FAQs linked to this page
-            faqs = await this.faqService.findByPage(page.id, page.tenantId);
+            faqs = await this.faqService.findByPageFaq(page.id, page.tenantId);
           } else if (source === 'global') {
             // Load global FAQs (not linked to any page or product)
             faqs = await this.faqService.findGlobalFaqs(page.tenantId);
@@ -110,6 +121,7 @@ export class PageService {
   }
 
   async countByTenant(tenantId: string) {
+      this.logger.log(`${this.countByTenant.name} Service Called`);
     return await this.pageRepository.count({ where: { tenantId } });
   }
 }

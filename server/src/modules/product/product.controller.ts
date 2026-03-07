@@ -18,14 +18,12 @@ export class ProductController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(@Body() createProductDto: CreateProductDto, @TenantId() tenantId: string) {
-    return await this.productService.create(createProductDto, tenantId)
+    return await this.productService.createProduct(createProductDto, tenantId)
   }
 
   @Get()
-  async findAll(@Query() filterDto: FilterProductDto, @TenantId() tenantId: string) {
-    const { products, total } = await this.productService.findAll(filterDto, tenantId)
-    console.log("products server", products);
-    console.log("total", total);
+  async findAllProducts(@Query() filterDto: FilterProductDto, @TenantId() tenantId: string) {
+    const { products, total } = await this.productService.findAllProducts(filterDto, tenantId)
     return {
       success: true,
       statusCode: 200,
@@ -42,50 +40,50 @@ export class ProductController {
   }
 
   @Get('latest')
-  async findLatest(@TenantId() tenantId: string, @Query('limit') limit?: number) {
-    return await this.productService.findLatest(tenantId, limit)
+  async findLatestProducts(@TenantId() tenantId: string, @Query('limit') limit?: number) {
+    return await this.productService.findLatestProducts(tenantId, limit)
   }
 
   @Get('slug/:slug')
-  async findBySlug(@Param('slug') slug: string, @TenantId() tenantId: string) {
-    return await this.productService.findBySlug(slug, tenantId)
+  async findBySlugProduct(@Param('slug') slug: string, @TenantId() tenantId: string) {
+    return await this.productService.findBySlugProduct(slug, tenantId)
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.productService.findOne(id, tenantId)
+  async findOneProduct(@Param('id') id: string, @TenantId() tenantId: string) {
+    return await this.productService.findOneProduct(id, tenantId)
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
-  async update(
+  async updateProduct(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
     @TenantId() tenantId: string,
   ) {
-    return await this.productService.update(id, updateProductDto, tenantId)
+    return await this.productService.updateProduct(id, updateProductDto, tenantId)
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async remove(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.productService.remove(id, tenantId)
+  async removeProduct(@Param('id') id: string, @TenantId() tenantId: string) {
+    return await this.productService.removeProduct(id, tenantId)
   }
 
   @Get(':id/reviews')
-  async getReviews(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.reviewService.findByProduct(id, tenantId)
+  async getReviewsProduct(@Param('id') id: string, @TenantId() tenantId: string) {
+    return await this.reviewService.findByProductReviews(id, tenantId)
   }
 
   @Post(':id/reviews')
   @UseGuards(JwtAuthGuard)
-  async createReview(
+  async createReviewProduct(
     @Param('id') productId: string,
     @Body() createReviewDto: CreateReviewDto,
     @TenantId() tenantId: string,
   ) {
     // Ensure the productId in the body matches the URL param
     createReviewDto.productId = productId
-    return await this.reviewService.create(createReviewDto, tenantId)
+    return await this.reviewService.createReview(createReviewDto, tenantId)
   }
 }

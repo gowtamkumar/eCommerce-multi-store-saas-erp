@@ -5,15 +5,15 @@ import { SettingsService } from './settings.service'
 
 @Controller('settings')
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(private readonly settingsService: SettingsService) { }
 
   @Get()
-  async getSettings(@TenantId() tenantId: string) {
-    return await this.settingsService.findByTenant(tenantId)
+  async findByTenantSettings(@TenantId() tenantId: string) {
+    return await this.settingsService.findByTenantSettings(tenantId)
   }
 
   @Put()
   async updateSettings(@TenantId() tenantId: string, @Body() dto: UpdateSiteSettingsDto) {
-    return await this.settingsService.update(tenantId, dto)
+    return await this.settingsService.updateSettings(tenantId, dto)
   }
 }

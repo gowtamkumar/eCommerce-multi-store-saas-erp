@@ -11,7 +11,7 @@ export class SteadfastController {
 
   @Post('create-order')
   @ApiOperation({ summary: 'Create a Steadfast courier order' })
-  async createOrder(@Body() createOrderDto: CreateSteadfastOrderDto, @TenantId() tenantId: string) {
-    return this.steadfastService.createOrder(createOrderDto, tenantId);
+  async createSteadfastOrder(@Body() createOrderDto: CreateSteadfastOrderDto, @TenantId() tenantId: string) {
+    return this.steadfastService.createSteadfastOrder(createOrderDto, tenantId);
   }
 }

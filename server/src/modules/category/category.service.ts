@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -7,12 +7,15 @@ import { CategoryEntity } from './entities/category.entity';
 
 @Injectable()
 export class CategoryService {
+    private readonly logger = new Logger(CategoryService.name);
+
     constructor(
         @InjectRepository(CategoryEntity)
         private categoryRepository: Repository<CategoryEntity>,
     ) { }
 
-    async create(createCategoryDto: CreateCategoryDto, tenantId: string) {
+    async createCategory(createCategoryDto: CreateCategoryDto, tenantId: string) {
+        this.logger.log(`${this.createCategory.name} Service Called`);
         const existing = await this.categoryRepository.findOne({
             where: { slug: createCategoryDto.slug, tenantId },
         });
@@ -29,14 +32,16 @@ export class CategoryService {
         return await this.categoryRepository.save(category);
     }
 
-    async findAll(tenantId: string) {
+    async findAllCategories(tenantId: string) {
+        this.logger.log(`${this.findAllCategories.name} Service Called`);
         return await this.categoryRepository.find({
             where: { tenantId },
             order: { name: 'ASC' },
         });
     }
 
-    async findOne(id: string, tenantId: string) {
+    async findOneCategory(id: string, tenantId: string) {
+        this.logger.log(`${this.findOneCategory.name} Service Called`);
         const category = await this.categoryRepository.findOne({
             where: { id, tenantId },
         });
@@ -48,8 +53,9 @@ export class CategoryService {
         return category;
     }
 
-    async update(id: string, updateCategoryDto: UpdateCategoryDto, tenantId: string) {
-        const category = await this.findOne(id, tenantId);
+    async updateCategory(id: string, updateCategoryDto: UpdateCategoryDto, tenantId: string) {
+        this.logger.log(`${this.updateCategory.name} Service Called`);
+        const category = await this.findOneCategory(id, tenantId);
 
         if (updateCategoryDto.slug && updateCategoryDto.slug !== category.slug) {
             const existing = await this.categoryRepository.findOne({
@@ -65,8 +71,9 @@ export class CategoryService {
         return await this.categoryRepository.save(category);
     }
 
-    async remove(id: string, tenantId: string) {
-        const category = await this.findOne(id, tenantId);
+    async removeCategory(id: string, tenantId: string) {
+        this.logger.log(`${this.removeCategory.name} Service Called`);
+        const category = await this.findOneCategory(id, tenantId);
         await this.categoryRepository.remove(category);
         return { success: true, message: 'Category deleted successfully' };
     }

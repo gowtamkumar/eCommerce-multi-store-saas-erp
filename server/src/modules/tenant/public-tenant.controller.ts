@@ -8,7 +8,7 @@ export class OnboardController {
 
   @Post()
   async onboard(@Body() createTenantDto: CreateTenantDto) {
-    const result = await this.tenantService.create(createTenantDto as CreateTenantDto)
+    const result = await this.tenantService.createTenant(createTenantDto as CreateTenantDto)
     return {
       success: true,
       message: 'Store created successfully',

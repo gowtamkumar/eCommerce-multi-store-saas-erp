@@ -1,14 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { InventoryTransactionEntity } from './entities/inventory-transaction.entity';
-import { CreateInventoryTransactionDto } from './dto/create-inventory-transaction.dto';
+import { InventoryTransactionType } from '../../../common/enums/inventory-transaction-type.enum';
 import { ProductEntity } from '../../product/entities/product.entity';
 import { ProductVariantEntity } from '../../product/entities/variant.entity';
-import { InventoryTransactionType } from '../../../common/enums/inventory-transaction-type.enum';
+import { CreateInventoryTransactionDto } from './dto/create-inventory-transaction.dto';
+import { InventoryTransactionEntity } from './entities/inventory-transaction.entity';
 
 @Injectable()
 export class InventoryTransactionService {
+    private readonly logger = new Logger(InventoryTransactionService.name);
+
     constructor(
         @InjectRepository(InventoryTransactionEntity)
         private readonly repository: Repository<InventoryTransactionEntity>,
@@ -18,7 +20,8 @@ export class InventoryTransactionService {
         private readonly variantRepository: Repository<ProductVariantEntity>,
     ) { }
 
-    async create(dto: CreateInventoryTransactionDto, tenantId: string) {
+    async createInventoryTransaction(dto: CreateInventoryTransactionDto, tenantId: string) {
+        this.logger.log(`${this.createInventoryTransaction.name} Service Called`);
         const product = await this.productRepository.findOne({
             where: { id: dto.productId, tenantId },
         });
@@ -60,7 +63,8 @@ export class InventoryTransactionService {
         return await this.repository.save(transaction);
     }
 
-    async findAll(tenantId: string) {
+    async findAllInventoryTransactions(tenantId: string) {
+        this.logger.log(`${this.findAllInventoryTransactions.name} Service Called`);
         return await this.repository.find({
             where: { tenantId },
             order: { createdAt: 'DESC' },
@@ -68,14 +72,16 @@ export class InventoryTransactionService {
         });
     }
 
-    async findByProduct(productId: string, tenantId: string) {
+    async findByProductInventoryTransactions(productId: string, tenantId: string) {
+        this.logger.log(`${this.findByProductInventoryTransactions.name} Service Called`);
         return await this.repository.find({
             where: { productId, tenantId },
             order: { createdAt: 'DESC' },
         });
     }
 
-    async getStockSummary(tenantId: string) {
+    async getStockSummaryInventoryTransactions(tenantId: string) {
+        this.logger.log(`${this.getStockSummaryInventoryTransactions.name} Service Called`);
         const products = await this.productRepository.find({
             where: { tenantId },
             relations: ['variants', 'category', 'supplier'],

@@ -11,14 +11,14 @@ export class FaqController {
 
     @Post()
     @UseGuards(JwtAuthGuard)
-    async create(@Body() dto: CreateFaqDto, @TenantId() tenantId: string) {
-        const data = await this.faqService.create(dto, tenantId);
+    async createFaq(@Body() dto: CreateFaqDto, @TenantId() tenantId: string) {
+        const data = await this.faqService.createFaq(dto, tenantId);
         return { success: true, data };
     }
 
     @Get()
-    async findAll(@Query() filterDto: FilterFaqDto, @TenantId() tenantId: string) {
-        const { faqs, total } = await this.faqService.findAll(filterDto, tenantId);
+    async findAllFaqs(@Query() filterDto: FilterFaqDto, @TenantId() tenantId: string) {
+        const { faqs, total } = await this.faqService.findAllFaqs(filterDto, tenantId);
         return {
             success: true,
             statusCode: 200,
@@ -36,21 +36,28 @@ export class FaqController {
 
     @Put(':id')
     @UseGuards(JwtAuthGuard)
-    async update(@Param('id') id: string, @Body() dto: UpdateFaqDto, @TenantId() tenantId: string) {
-        const data = await this.faqService.update(id, dto, tenantId);
+    async updateFaq(@Param('id') id: string, @Body() dto: UpdateFaqDto, @TenantId() tenantId: string) {
+        const data = await this.faqService.updateFaq(id, dto, tenantId);
         return { success: true, data };
     }
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard)
-    async remove(@Param('id') id: string, @TenantId() tenantId: string) {
-        return await this.faqService.remove(id, tenantId);
+    async removeFaq(@Param('id') id: string, @TenantId() tenantId: string) {
+        return await this.faqService.removeFaq(id, tenantId);
     }
 
     @Post('multiple')
     @UseGuards(JwtAuthGuard)
-    async findMultiple(@Body() body: { ids: string[] }, @TenantId() tenantId: string) {
-        const faqs = await this.faqService.findByIds(body.ids, tenantId);
+    async findMultipleFaqs(@Body() body: { ids: string[] }, @TenantId() tenantId: string) {
+        const faqs = await this.faqService.findByIdsFaq(body.ids, tenantId);
+        return { success: true, data: faqs };
+    }
+
+    @Post('page')
+    @UseGuards(JwtAuthGuard)
+    async findByPageFaq(@Body() body: { pageId: string }, @TenantId() tenantId: string) {
+        const faqs = await this.faqService.findByPageFaq(body.pageId, tenantId);
         return { success: true, data: faqs };
     }
 }

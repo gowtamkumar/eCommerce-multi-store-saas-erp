@@ -6,7 +6,7 @@ export class PublicSubscriptionPlanController {
     constructor(private readonly planService: SubscriptionPlanService) { }
 
     @Get()
-    findActive() {
-        return this.planService.findActive()
+    findActiveSubscriptionPlans() {
+        return this.planService.findActiveSubscriptionPlans()
     }
 }

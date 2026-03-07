@@ -6,12 +6,12 @@ export class PlatformSettingsController {
   constructor(private readonly platformSettingsService: PlatformSettingsService) {}
 
   @Get()
-  async getSettings() {
-    return await this.platformSettingsService.getSettings();
+  async getPlatformSettings() {
+    return await this.platformSettingsService.getPlatformSettings();
   }
 
   @Put()
-  async updateSettings(@Body() data: any) {
-    return await this.platformSettingsService.updateSettings(data);
+  async updatePlatformSettings(@Body() data: any) {
+    return await this.platformSettingsService.updatePlatformSettings(data);
   }
 }

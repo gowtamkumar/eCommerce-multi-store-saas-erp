@@ -1,18 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CouponService } from '../coupon/coupon.service';
 import { ProductEntity } from '../product/entities/product.entity';
+import { PromotionTargetType, PromotionType } from '../promotion/entities/promotion.entity';
+import { PromotionService } from '../promotion/promotion.service';
 import { SiteSettingsEntity } from '../settings/entities/site-settings.entity';
 import { CreateCartItemDto } from './dto/create-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { CartItemEntity } from './entities/cart-item.entity';
 import { CartEntity } from './entities/cart.entity';
-import { CouponService } from '../coupon/coupon.service';
-import { PromotionService } from '../promotion/promotion.service';
-import { PromotionType, PromotionTargetType } from '../promotion/entities/promotion.entity';
 
 @Injectable()
 export class CartService {
+    private readonly logger = new Logger(CartService.name);
+
     constructor(
         @InjectRepository(CartEntity)
         private readonly cartRepository: Repository<CartEntity>,
@@ -27,11 +29,13 @@ export class CartService {
     ) { }
 
     async createOrGetCart(userId: string, tenantId: string): Promise<any> {
-        const cart = await this.findOrCreateCartEntity(userId, tenantId);
+        this.logger.log(`${this.createOrGetCart.name} Service Called`);
+        const cart = await this.findOrCreateCart(userId, tenantId);
         return this.transformCart(cart, tenantId);
     }
 
-    private async findOrCreateCartEntity(userId: string, tenantId: string): Promise<CartEntity> {
+    private async findOrCreateCart(userId: string, tenantId: string): Promise<CartEntity> {
+        this.logger.log(`${this.findOrCreateCart.name} Service Called`);
         let cart = await this.cartRepository.findOne({
             where: { userId, tenantId },
             relations: ['items', 'items.product', 'items.variant'],
@@ -50,6 +54,7 @@ export class CartService {
     }
 
     private async transformCart(cart: CartEntity, tenantId: string): Promise<any> {
+        this.logger.log(`${this.transformCart.name} Service Called`);
         // Fetch site settings for currency
         const settings = await this.siteSettingsRepository.findOne({
             where: { tenantId },
@@ -194,7 +199,8 @@ export class CartService {
     }
 
     async addToCart(userId: string, tenantId: string, createCartItemDto: CreateCartItemDto): Promise<any> {
-        const cart = await this.findOrCreateCartEntity(userId, tenantId);
+        this.logger.log(`${this.addToCart.name} Service Called`);
+        const cart = await this.findOrCreateCart(userId, tenantId);
         let { productId, variantId, quantity } = createCartItemDto;
 
         // If variantId is not provided, check if the product has variants and pick the first one
@@ -240,6 +246,7 @@ export class CartService {
         cartItemId: string,
         updateCartItemDto: UpdateCartItemDto,
     ): Promise<any> {
+        this.logger.log(`${this.updateCartItem.name} Service Called`);
         const cartItem = await this.cartItemRepository.findOne({
             where: { id: cartItemId, tenantId },
             relations: ['cart'],
@@ -260,6 +267,7 @@ export class CartService {
     }
 
     async removeFromCart(userId: string, tenantId: string, cartItemId: string): Promise<any> {
+        this.logger.log(`${this.removeFromCart.name} Service Called`);
         const cartItem = await this.cartItemRepository.findOne({
             where: { id: cartItemId, tenantId },
             relations: ['cart'],
@@ -279,12 +287,14 @@ export class CartService {
     }
 
     async clearCart(userId: string, tenantId: string): Promise<void> {
-        const cart = await this.findOrCreateCartEntity(userId, tenantId);
+        this.logger.log(`${this.clearCart.name} Service Called`);
+        const cart = await this.findOrCreateCart(userId, tenantId);
         await this.cartItemRepository.remove(cart.items);
     }
 
     async syncCart(userId: string, tenantId: string, items: CreateCartItemDto[]): Promise<any> {
-        const cart = await this.findOrCreateCartEntity(userId, tenantId);
+        this.logger.log(`${this.syncCart.name} Service Called`);
+        const cart = await this.findOrCreateCart(userId, tenantId);
 
         // Clear existing items
         if (cart.items && cart.items.length > 0) {
@@ -322,7 +332,8 @@ export class CartService {
     }
 
     async applyCoupon(userId: string, tenantId: string, code: string): Promise<any> {
-        const cart = await this.findOrCreateCartEntity(userId, tenantId);
+        this.logger.log(`${this.applyCoupon.name} Service Called`);
+        const cart = await this.findOrCreateCart(userId, tenantId);
 
         // Calculate current subtotal/payable before coupon to validate it
         const currentCart = await this.transformCart(cart, tenantId);
@@ -338,7 +349,8 @@ export class CartService {
     }
 
     async removeCoupon(userId: string, tenantId: string): Promise<any> {
-        const cart = await this.findOrCreateCartEntity(userId, tenantId);
+        this.logger.log(`${this.removeCoupon.name} Service Called`);
+        const cart = await this.findOrCreateCart(userId, tenantId);
         cart.appliedCouponCode = null;
         await this.cartRepository.save(cart);
 

@@ -7,10 +7,10 @@ export class PaymentController {
     constructor(private readonly paymentService: PaymentService) { }
 
     @Get()
-    async findAll(@TenantId() tenantId: string) {
+    async findAllPayments(@TenantId() tenantId: string) {
         return {
             success: true,
-            data: await this.paymentService.findAll(tenantId),
+            data: await this.paymentService.findAllPayments(tenantId),
         };
     }
 }

@@ -27,7 +27,7 @@ export class AdminMediaController {
   constructor(private readonly filesService: FilesService) {}
 
   @Get()
-  async findAll(@Query() filterDto: FilterFileDto, @TenantId() tenantId: string) {
+  async findAllFiles(@Query() filterDto: FilterFileDto, @TenantId() tenantId: string) {
     const files = await this.filesService.getFiles(filterDto, tenantId)
     return {
       success: true,
@@ -50,7 +50,7 @@ export class AdminMediaController {
       }),
     }),
   )
-  async upload(
+  async uploadFile(
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -75,7 +75,7 @@ export class AdminMediaController {
   }
 
   @Delete(':id')
-  async remove(@Param('id', ParseUUIDPipe) id: string, @TenantId() tenantId: string) {
+  async removeFile(@Param('id', ParseUUIDPipe) id: string, @TenantId() tenantId: string) {
     await this.filesService.deleteFile(id, tenantId)
     return {
       success: true,

@@ -1,10 +1,10 @@
-import { Body, Controller, Get, Param, Post, Patch, UseGuards } from '@nestjs/common';
-import { PurchaseOrderService } from './purchase-order.service';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { TenantId } from '../../../common/decorators/tenant-id.decorator';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from './dto/purchase-order.dto';
 import { RecordSupplierPaymentDto } from './dto/record-payment.dto';
-import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-import { TenantId } from '../../../common/decorators/tenant-id.decorator';
-import { ApiTags } from '@nestjs/swagger';
+import { PurchaseOrderService } from './purchase-order.service';
 
 @ApiTags('Purchase Orders')
 @Controller('purchase-orders')
@@ -13,35 +13,35 @@ export class PurchaseOrderController {
     constructor(private readonly service: PurchaseOrderService) { }
 
     @Post()
-    async create(@Body() dto: CreatePurchaseOrderDto, @TenantId() tenantId: string) {
-        return await this.service.create(dto, tenantId);
+    async createPurchaseOrder(@Body() dto: CreatePurchaseOrderDto, @TenantId() tenantId: string) {
+        return await this.service.createPurchaseOrder(dto, tenantId);
     }
 
     @Get()
-    async findAll(@TenantId() tenantId: string) {
-        return await this.service.findAll(tenantId);
+    async findAllPurchaseOrder(@TenantId() tenantId: string) {
+        return await this.service.findAllPurchaseOrders(tenantId);
     }
 
     @Get(':id')
-    async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-        return await this.service.findOne(id, tenantId);
+    async findOnePurchaseOrder(@Param('id') id: string, @TenantId() tenantId: string) {
+        return await this.service.findOnePurchaseOrder(id, tenantId);
     }
 
     @Patch(':id/status')
-    async updateStatus(
+    async updatePurchaseOrderStatus(
         @Param('id') id: string,
         @Body() dto: UpdatePurchaseOrderStatusDto,
         @TenantId() tenantId: string,
     ) {
-        return await this.service.updateStatus(id, dto, tenantId);
+        return await this.service.updatePurchaseOrderStatus(id, dto, tenantId);
     }
 
     @Post(':id/payments')
-    async recordPayment(
+    async recordSupplierPayment(
         @Param('id') id: string,
         @Body() dto: RecordSupplierPaymentDto,
         @TenantId() tenantId: string,
     ) {
-        return await this.service.recordPayment(id, dto, tenantId);
+        return await this.service.recordSupplierPayment(id, dto, tenantId);
     }
 }

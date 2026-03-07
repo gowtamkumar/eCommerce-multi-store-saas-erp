@@ -29,6 +29,9 @@ export class UserController {
 
   @Get('/')
   async getUsers(@Query() filterUserDto: FilterUserDto, @TenantId() tenantId: string) {
+    this.logger.log(`${this.getUsers.name} Controller Called`)
+    // this.logger.verbose(`User "${ctx.user?.username}" retieving users.`)
+
     const { users, total } = await this.userService.getUsers(filterUserDto, tenantId)
 
     return {
@@ -49,11 +52,13 @@ export class UserController {
 
   @Get('/profile')
   async getProfile(@CurrentUser() user: any) {
+    this.logger.log(`${this.getProfile.name} Controller Called`)
     return this.userService.getUser(user.id)
   }
 
   @Get('/:id')
   async getUser(@Param('id', ParseUUIDPipe) id: string) {
+    this.logger.log(`${this.getUser.name} Controller Called`)
     const user = await this.userService.getUser(id)
 
     return {
@@ -66,6 +71,7 @@ export class UserController {
 
   @Post('/')
   async createUser(@Body() createUserDto: CreateUserDto, @TenantId() tenantId: string) {
+    this.logger.log(`${this.createUser.name} Controller Called`)
     const user = await this.userService.createUser(createUserDto, tenantId)
 
     return {
@@ -78,6 +84,7 @@ export class UserController {
 
   @Patch('/:id')
   async updateUser(@Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: UpdateUserDto) {
+    this.logger.log(`${this.updateUser.name} Controller Called`)
     const user = await this.userService.updateUser(id, updateUserDto)
 
     return {
@@ -93,6 +100,7 @@ export class UserController {
     @Param('id', ParseUUIDPipe) userId: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
+    this.logger.log(`${this.updatePassword.name} Controller Called`)
     const user = await this.userService.updatePassword(userId, updatePasswordDto)
 
     return {
@@ -105,6 +113,7 @@ export class UserController {
 
   @Delete('/:id')
   async deleteUser(@Param('id', ParseUUIDPipe) userId: string) {
+    this.logger.log(`${this.deleteUser.name} Controller Called`)
     const user = await this.userService.deleteUser(userId)
 
     return {

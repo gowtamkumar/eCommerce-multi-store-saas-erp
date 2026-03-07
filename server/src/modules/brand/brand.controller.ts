@@ -23,39 +23,39 @@ export class BrandController {
     @Post()
     @UseGuards(JwtAuthGuard)
     @Audit({ entity: 'Brand', action: 'CREATE' })
-    async create(@Body() createBrandDto: CreateBrandDto, @CurrentUser() user: any) {
-        const data = await this.brandService.create(createBrandDto, user.tenantId);
+    async createBrand(@Body() createBrandDto: CreateBrandDto, @CurrentUser() user: any) {
+        const data = await this.brandService.createBrand(createBrandDto, user.tenantId);
         return { success: true, data };
     }
 
     @Get()
-    async findAll(@TenantId() tenantId: string) {
-        const data = await this.brandService.findAll(tenantId);
+    async findAllBrands(@TenantId() tenantId: string) {
+        const data = await this.brandService.findAllBrands(tenantId);
         return { success: true, data };
     }
 
     @Get(':id')
-    async findOne(@Param('id') id: string, @TenantId() tenantId: string) {
-        const data = await this.brandService.findOne(id, tenantId);
+    async findOneBrand(@Param('id') id: string, @TenantId() tenantId: string) {
+        const data = await this.brandService.findOneBrand(id, tenantId);
         return { success: true, data };
     }
 
     @Put(':id')
     @UseGuards(JwtAuthGuard)
     @Audit({ entity: 'Brand', action: 'UPDATE' })
-    async update(
+    async updateBrand(
         @Param('id') id: string,
         @Body() updateBrandDto: UpdateBrandDto,
         @CurrentUser() user: any,
     ) {
-        const data = await this.brandService.update(id, updateBrandDto, user.tenantId);
+        const data = await this.brandService.updateBrand(id, updateBrandDto, user.tenantId);
         return { success: true, data };
     }
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard)
     @Audit({ entity: 'Brand', action: 'DELETE' })
-    async remove(@Param('id') id: string, @CurrentUser() user: any) {
-        return await this.brandService.remove(id, user.tenantId);
+    async removeBrand(@Param('id') id: string, @CurrentUser() user: any) {
+        return await this.brandService.removeBrand(id, user.tenantId);
     }
 }

@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
-import { InvoiceService } from './invoice.service';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { InvoiceService } from './invoice.service';
 
 @Controller('invoices')
 @UseGuards(JwtAuthGuard)
@@ -10,27 +10,27 @@ export class InvoiceController {
     constructor(private readonly invoiceService: InvoiceService) { }
 
     @Post()
-    create(@Body() createInvoiceDto: CreateInvoiceDto, @Request() req: any) {
-        return this.invoiceService.create(createInvoiceDto, req.user.tenantId);
+    createInvoice(@Body() createInvoiceDto: CreateInvoiceDto, @Request() req: any) {
+        return this.invoiceService.createInvoice(createInvoiceDto, req.user.tenantId);
     }
 
     @Get()
-    findAll(@Request() req: any) {
-        return this.invoiceService.findAll(req.user.tenantId);
+    findAllInvoices(@Request() req: any) {
+        return this.invoiceService.findAllInvoices(req.user.tenantId);
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string, @Request() req: any) {
-        return this.invoiceService.findOne(id, req.user.tenantId);
+    findOneInvoice(@Param('id') id: string, @Request() req: any) {
+        return this.invoiceService.findOneInvoice(id, req.user.tenantId);
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateInvoiceDto: UpdateInvoiceDto, @Request() req: any) {
-        return this.invoiceService.update(id, updateInvoiceDto, req.user.tenantId);
+    updateInvoice(@Param('id') id: string, @Body() updateInvoiceDto: UpdateInvoiceDto, @Request() req: any) {
+        return this.invoiceService.updateInvoice(id, updateInvoiceDto, req.user.tenantId);
     }
 
     @Delete(':id')
-    remove(@Param('id') id: string, @Request() req: any) {
-        return this.invoiceService.remove(id, req.user.tenantId);
+    removeInvoice(@Param('id') id: string, @Request() req: any) {
+        return this.invoiceService.removeInvoice(id, req.user.tenantId);
     }
 }
