@@ -4,13 +4,14 @@ import { useCart } from "@/hooks/CartContext";
 import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
 import { AnimatePresence, motion } from "framer-motion";
-import { Command, Lock, LogOut, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { ArrowRight, Command, Facebook, Grid, Home, Instagram, Lock, LogOut, Menu, Phone, Search, ShoppingBag, Twitter, User, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import CurrencySwitcher from "../shared/CurrencySwitcher";
+import UserDropdown from "./UserDropdown";
 
 const Navbar = () => {
   const { data: session } = useSession();
@@ -20,6 +21,7 @@ const Navbar = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { settings } = useSettings();
@@ -61,7 +63,10 @@ const Navbar = () => {
   // Close search when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      const isOutsideDesktop = searchRef.current && !searchRef.current.contains(event.target as Node);
+      const isOutsideMobile = mobileSearchRef.current && !mobileSearchRef.current.contains(event.target as Node);
+
+      if (isOutsideDesktop && isOutsideMobile) {
         setIsSearchFocused(false);
       }
     };
@@ -120,8 +125,8 @@ const Navbar = () => {
   };
 
   // Shared Components to avoid repetition
-  const Brand = () => (
-    <Link href="/" className="flex-shrink-0 flex items-center gap-2 group">
+  const Brand = (onClick?: () => void) => (
+    <Link href="/" onClick={onClick} className="flex-shrink-0 flex items-center gap-2 group">
       {settings?.logo ? (
         <Image src={settings.logo} height={500} width={500} priority unoptimized alt={brandName} className="h-10 sm:h-12 w-auto object-contain" />
       ) : (
@@ -239,7 +244,7 @@ const Navbar = () => {
 
   const UserActions = () => (
     <div className="flex items-center gap-1 sm:gap-2">
-      <div className="hidden sm:block">
+      <div className="hidden md:block">
         <CurrencySwitcher />
       </div>
 
@@ -256,33 +261,9 @@ const Navbar = () => {
         )}
       </button>
 
-      <Link
-        href="/profile"
-        className="hidden sm:block p-2 rounded-full hover:bg-white/10 transition-colors group"
-        title="Profile"
-      >
-        <User className={`w-5 h-5 transition-colors ${iconColorClass}`} />
-      </Link>
-
-      {session?.user?.role === "Admin" && (
-        <Link
-          href="/admin"
-          className="hidden sm:block p-2 rounded-full hover:bg-white/10 transition-colors group"
-          title="Admin"
-        >
-          <Lock className={`w-5 h-5 transition-colors ${iconColorClass}`} />
-        </Link>
-      )}
-
-      {session && (
-        <button
-          onClick={handleLogout}
-          className="hidden sm:block p-2 rounded-full hover:bg-white/10 transition-colors group"
-          title="Logout"
-        >
-          <LogOut className={`w-5 h-5 transition-colors ${iconColorClass}`} />
-        </button>
-      )}
+      <div className="hidden md:block">
+        <UserDropdown navbarTemplate={navbarTemplate} iconColorClass={iconColorClass} />
+      </div>
 
       {/* Mobile Menu Button */}
       <button
@@ -295,6 +276,50 @@ const Navbar = () => {
     </div>
   );
 
+  const MobileTabBar = () => (
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 z-50 transition-all duration-300 safe-area-inset-bottom">
+      <div className="flex justify-around items-center h-16 px-2">
+        <Link href="/" className="flex flex-col items-center justify-center gap-1 transition-all active:scale-90 flex-1 group">
+          <Home className="w-5 h-5 text-slate-400 group-hover:text-brand-600" />
+          <span className="text-[10px] font-bold text-slate-500">Home</span>
+        </Link>
+        <button
+          onClick={() => {
+            setIsMobileMenuOpen(true);
+            setTimeout(() => {
+              setIsSearchFocused(true);
+            }, 500);
+          }}
+          className="flex flex-col items-center justify-center gap-1 transition-all active:scale-90 flex-1"
+        >
+          <Search className="w-5 h-5 text-slate-400" />
+          <span className="text-[10px] font-bold text-slate-500">Search</span>
+        </button>
+        <div className="relative -top-3">
+          <button
+            onClick={openCart}
+            className="w-14 h-14 bg-brand-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-brand-500/40 border-4 border-white dark:border-slate-900 active:scale-91 transition-transform"
+          >
+            <ShoppingBag className="w-6 h-6" />
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-white dark:border-slate-900 text-[9px] font-bold flex items-center justify-center rounded-full">
+                {totalItems}
+              </span>
+            )}
+          </button>
+        </div>
+        <button onClick={toggleMobileMenu} className="flex flex-col items-center justify-center gap-1 transition-all active:scale-90 flex-1">
+          <Grid className="w-5 h-5 text-slate-400" />
+          <span className="text-[10px] font-bold text-slate-500">Links</span>
+        </button>
+        <Link href={session ? "/profile" : "/auth/login"} className="flex flex-col items-center justify-center gap-1 transition-all active:scale-90 flex-1">
+          <User className="w-5 h-5 text-slate-400" />
+          <span className="text-[10px] font-bold text-slate-500">{session ? "Profile" : "Login"}</span>
+        </Link>
+      </div>
+    </div>
+  );
+
   const BottomShape = () => {
     const shape = navbarSettings?.bottomShape;
     if (!shape || shape === 'none') return null;
@@ -304,22 +329,22 @@ const Navbar = () => {
     return (
       <div className="absolute top-[98%] left-0 w-full overflow-hidden leading-[0] z-[-1] pointer-events-none">
         {shape === 'wave' && (
-          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[30px]" fill={color}>
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full sm:h-[30px] h-[20px]" fill={color}>
             <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V0C48.1,6,110,24.49,168.69,37.23,212.06,46.67,265,56.44,321.39,56.44Z"></path>
           </svg>
         )}
         {shape === 'curve' && (
-          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[40px]" fill={color}>
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full sm:h-[40px] h-[25px]" fill={color}>
             <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"></path>
           </svg>
         )}
         {shape === 'slant' && (
-          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[40px]" fill={color}>
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full sm:h-[40px] h-[25px]" fill={color}>
             <path d="M1200 120L0 16.48V0h1200v120z"></path>
           </svg>
         )}
         {shape === 'notch' && (
-          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[20px]" fill={color}>
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full sm:h-[20px] h-[12px]" fill={color}>
             <path d="M0 0h450l50 30h200l50-30h450v120H0z"></path>
           </svg>
         )}
@@ -408,49 +433,50 @@ const Navbar = () => {
     <>
       <nav className={getNavStyles()} style={navCustomStyle}>
         <div className={getContainerStyles()}>
-          <BottomShape />
+          {BottomShape()}
 
           {/* Layout Switcing logic */}
           {navbarLayout === 'centered' ? (
             <div className="grid grid-cols-3 items-center w-full">
               <div className="flex justify-start">
-                <NavigationLinks />
+                {NavigationLinks()}
                 <div className="md:hidden">
-                  <Menu className="w-6 h-6 text-slate-700 dark:text-slate-200" onClick={toggleMobileMenu} />
+                  <Menu className={`w-6 h-6 ${iconColorClass}`} onClick={toggleMobileMenu} />
                 </div>
               </div>
               <div className="flex justify-center">
-                <Brand />
+                {Brand()}
               </div>
               <div className="flex justify-end items-center gap-4">
-                <SearchBar />
-                <UserActions />
+                {SearchBar()}
+                {UserActions()}
               </div>
             </div>
           ) : navbarLayout === 'minimal' ? (
             <div className="flex justify-between items-center w-full">
-              <Brand />
+              {Brand()}
               <div className="flex items-center gap-6">
-                <NavigationLinks />
+                {NavigationLinks()}
                 <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 hidden md:block"></div>
-                <UserActions />
+                {UserActions()}
               </div>
             </div>
           ) : (
             /* Default Layout */
             <div className="flex justify-between items-center w-full">
               <div className="flex items-center gap-8 lg:gap-12">
-                <Brand />
-                <NavigationLinks />
+                {Brand()}
+                {NavigationLinks()}
               </div>
               <div className="flex items-center gap-4 lg:gap-6">
-                <SearchBar />
-                <UserActions />
+                {SearchBar()}
+                {UserActions()}
               </div>
             </div>
           )}
         </div>
       </nav>
+      {MobileTabBar()}
 
       {/* Mobile Menu (unchanged logic, just ensuring props match) */}
       <AnimatePresence>
@@ -468,10 +494,13 @@ const Navbar = () => {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-[280px] sm:w-80 bg-white dark:bg-slate-900 z-[70] md:hidden shadow-2xl flex flex-col"
+              className={`fixed top-0 right-0 h-full w-[280px] sm:w-80 z-[70] md:hidden shadow-2xl flex flex-col ${navbarTemplate === 'glass'
+                ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl'
+                : 'bg-white dark:bg-slate-900'
+                }`}
             >
               <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-800">
-                <span className="text-xl font-black text-slate-900 dark:text-white">{brandName}</span>
+                {Brand(closeMobileMenu)}
                 <button
                   onClick={closeMobileMenu}
                   className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -480,66 +509,209 @@ const Navbar = () => {
                 </button>
               </div>
 
-              <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-800 relative" ref={mobileSearchRef}>
                 <form onSubmit={(e) => { e.preventDefault(); handleSearchSubmit(e); closeMobileMenu(); }}>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => {
+                        console.log("Mobile search query updated:", e.target.value);
+                        setSearchQuery(e.target.value);
+                        setIsSearchFocused(true);
+                      }}
+                      onFocus={() => {
+                        console.log("Mobile search focused");
+                        setIsSearchFocused(true);
+                      }}
                       placeholder="Search products..."
-                      className="w-full pl-10 pr-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-brand-500 transition-all text-sm outline-none"
+                      className="w-full pl-10 pr-10 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-brand-500 transition-all text-sm outline-none font-bold"
                     />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setSearchResults([]);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"
+                      >
+                        <X className="w-3 h-3 text-slate-400" />
+                      </button>
+                    )}
                   </div>
                 </form>
+
+                {/* Mobile Search Results */}
+                {isSearchFocused && searchQuery.length >= 2 && (
+                  <div className="absolute top-full left-4 right-4 mt-2 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[350px] overflow-y-auto z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                    {searchResults.length > 0 ? (
+                      <div className="flex flex-col py-2">
+                        <div className="px-4 py-2 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
+                          Products Found ({searchResults.length})
+                        </div>
+                        {searchResults.map((product) => (
+                          <Link
+                            key={product.id}
+                            href={`/products/${product.slug}`}
+                            onClick={() => {
+                              console.log("Mobile search result clicked:", product.name);
+                              handleSearchResultClick();
+                              closeMobileMenu();
+                            }}
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-[0.98]"
+                          >
+                            <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0 border border-slate-100 dark:border-slate-800">
+                              {product.images?.[0] ? (
+                                <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                                  <ShoppingBag className="w-5 h-5 text-slate-400" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-xs font-black truncate text-slate-900 dark:text-white group-hover:text-brand-600">
+                                {product.name}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-xs font-bold text-brand-600">{settings?.currencySymbol || "৳"}{product.price}</span>
+                                {product.oldPrice && (
+                                  <span className="text-[10px] text-slate-400 line-through">{settings?.currencySymbol || "৳"}{product.oldPrice}</span>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                        <Link
+                          href={`/products?search=${encodeURIComponent(searchQuery)}`}
+                          onClick={closeMobileMenu}
+                          className="mt-2 mx-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-center text-[10px] font-bold text-slate-500 hover:text-brand-600 transition-colors"
+                        >
+                          View all results for "{searchQuery}"
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/20">
+                        <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Search className="w-6 h-6 text-slate-300" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">No products found</p>
+                        <p className="text-[10px] text-slate-500 mt-1">Try a different keyword</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 overflow-y-auto py-4">
-                <nav className="flex flex-col space-y-1 px-4">
+                <nav className="flex flex-col space-y-1 px-4 mb-8">
+                  <div className="px-4 py-2 text-[10px] uppercase font-black tracking-widest text-slate-400 mb-2">Main Navigation</div>
                   {navbarSettings?.links
                     ?.filter((link: any) => link.isActive !== false)
                     ?.sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
                     ?.map((link: any, index: number) => (
-                      <Link
+                      <motion.div
                         key={index}
-                        href={link.href}
-                        onClick={closeMobileMenu}
-                        target={link.isOpenInNewTab ? "_blank" : undefined}
-                        className="text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 + index * 0.05 }}
                       >
-                        {link.label}
-                      </Link>
+                        <Link
+                          href={link.href}
+                          onClick={closeMobileMenu}
+                          target={link.isOpenInNewTab ? "_blank" : undefined}
+                          className="flex items-center justify-between text-base font-bold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 px-4 py-3 rounded-xl transition-all group"
+                        >
+                          {link.label}
+                          <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ArrowRight className="w-3 h-3" />
+                          </span>
+                        </Link>
+                      </motion.div>
                     ))
                   }
-                  <div className="my-4 border-t border-slate-200 dark:border-slate-800" />
-                  <Link href="/profile" onClick={closeMobileMenu} className="flex items-center gap-3 text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
-                    <User className="w-5 h-5" />
-                    My Profile
-                  </Link>
-                  {session?.user?.role === "Admin" && (
-                    <Link href="/admin" onClick={closeMobileMenu} className="flex items-center gap-3 text-base font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 py-3 rounded-xl transition-all">
-                      <Lock className="w-5 h-5" />
-                      Admin Panel
-                    </Link>
-                  )}
+
+                  <div className="my-6 border-t border-slate-100 dark:border-slate-800" />
+
                   {session && (
-                    <button
-                      onClick={() => {
-                        closeMobileMenu();
-                        handleLogout();
-                      }}
-                      className="flex items-center gap-3 text-base font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-3 rounded-xl transition-all w-full text-left"
+                    <div className="px-4 py-4 mb-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center text-brand-600">
+                          {session.user?.image ? (
+                            <img src={session.user.image} alt="" className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            <User className="w-6 h-6" />
+                          )}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-black text-slate-900 dark:text-white">{session.user?.name}</span>
+                          <span className="text-[10px] text-slate-500 truncate max-w-[150px]">{session.user?.email}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Link href="/profile" onClick={closeMobileMenu} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-300 hover:text-brand-600 px-3 py-2 rounded-xl transition-all">
+                          <User className="w-4 h-4" />
+                          My Profile
+                        </Link>
+                        {session?.user?.role === "Admin" && (
+                          <Link href="/admin" onClick={closeMobileMenu} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-300 hover:text-brand-600 px-3 py-2 rounded-xl transition-all">
+                            <Lock className="w-4 h-4" />
+                            Admin Panel
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => {
+                            closeMobileMenu();
+                            handleLogout();
+                          }}
+                          className="flex items-center gap-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-xl transition-all w-full text-left"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {!session && (
+                    <Link
+                      href="/auth/login"
+                      onClick={closeMobileMenu}
+                      className="flex items-center justify-center gap-2 m-4 px-4 py-3 bg-brand-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-brand-500/20"
                     >
-                      <LogOut className="w-5 h-5" />
-                      Logout
-                    </button>
+                      <User className="w-4 h-4" />
+                      Sign In
+                    </Link>
                   )}
                 </nav>
               </div>
 
-              <div className="p-4 border-t border-slate-200 dark:border-slate-800">
-                <CurrencySwitcher />
+              <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 mt-auto">
+                <div className="flex justify-between items-center mb-6">
+                  <CurrencySwitcher />
+                  <div className="flex items-center gap-3">
+                    <button className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700">
+                      <Facebook className="w-4 h-4 text-brand-600" />
+                    </button>
+                    <button className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700">
+                      <Instagram className="w-4 h-4 text-brand-600" />
+                    </button>
+                    <button className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700">
+                      <Twitter className="w-4 h-4 text-brand-600" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                  <div className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center text-brand-600">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Support 24/7</span>
+                    <span className="text-xs font-bold">+880 1234 567890</span>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </>
