@@ -1,40 +1,47 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
-import { TenantId } from '../../../common/decorators/tenant-id.decorator';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, Logger } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { CreateSupplierDto, UpdateSupplierDto } from './dto/supplier.dto';
 import { SupplierService } from './supplier.service';
+import { RequestContext } from "src/common/decorators/request-context.decorator";
+import { RequestContextDto } from "src/common/dto/request-context.dto";
 
 @Controller('suppliers')
 @UseGuards(JwtAuthGuard)
 export class SupplierController {
+    private readonly logger = new Logger(SupplierController.name);
+
     constructor(private readonly service: SupplierService) { }
 
     @Post()
-    async createSupplier(@Body() dto: CreateSupplierDto, @TenantId() tenantId: string) {
-        return await this.service.createSupplier(dto, tenantId);
-    }
+    async createSupplier(@RequestContext() ctx: RequestContextDto, @Body() dto: CreateSupplierDto) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createSupplier.`);
+            return await this.service.createSupplier(dto, ctx.tenantId);
+        }
 
     @Get()
-    async findAllSuppliers(@TenantId() tenantId: string) {
-        return await this.service.findAllSuppliers(tenantId);
-    }
+    async findAllSuppliers(@RequestContext() ctx: RequestContextDto) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllSuppliers.`);
+            return await this.service.findAllSuppliers(ctx.tenantId);
+        }
 
     @Get(':id')
-    async findOneSupplier(@Param('id') id: string, @TenantId() tenantId: string) {
-        return await this.service.findOneSupplier(id, tenantId);
-    }
+    async findOneSupplier(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneSupplier.`);
+            return await this.service.findOneSupplier(id, ctx.tenantId);
+        }
 
     @Put(':id')
     async updateSupplier(
-        @Param('id') id: string,
-        @Body() dto: UpdateSupplierDto,
-        @TenantId() tenantId: string,
+        @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
+        @Body() dto: UpdateSupplierDto
     ) {
-        return await this.service.updateSupplier(id, dto, tenantId);
-    }
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateSupplier.`);
+            return await this.service.updateSupplier(id, dto, ctx.tenantId);
+        }
 
     @Delete(':id')
-    async removeSupplier(@Param('id') id: string, @TenantId() tenantId: string) {
-        return await this.service.removeSupplier(id, tenantId);
-    }
+    async removeSupplier(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeSupplier.`);
+            return await this.service.removeSupplier(id, ctx.tenantId);
+        }
 }

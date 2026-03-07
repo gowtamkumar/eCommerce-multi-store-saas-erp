@@ -6,56 +6,61 @@ import {
     Param,
     Post,
     Put,
-    UseGuards,
-} from '@nestjs/common';
+    UseGuards, Logger } from '@nestjs/common';
 import { Audit } from 'src/common/decorators/audit.decorator';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { TenantId } from 'src/common/decorators/tenant-id.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { BrandService } from './brand.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
+import { RequestContext } from "src/common/decorators/request-context.decorator";
+import { RequestContextDto } from "src/common/dto/request-context.dto";
 
 @Controller('brands')
 export class BrandController {
+    private readonly logger = new Logger(BrandController.name);
+
     constructor(private readonly brandService: BrandService) { }
 
     @Post()
     @UseGuards(JwtAuthGuard)
     @Audit({ entity: 'Brand', action: 'CREATE' })
-    async createBrand(@Body() createBrandDto: CreateBrandDto, @CurrentUser() user: any) {
-        const data = await this.brandService.createBrand(createBrandDto, user.tenantId);
-        return { success: true, data };
-    }
+    async createBrand(@RequestContext() ctx: RequestContextDto, @Body() createBrandDto: CreateBrandDto) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createBrand.`);
+            const data = await this.brandService.createBrand(createBrandDto, ctx.user.tenantId);
+            return { success: true, data };
+        }
 
     @Get()
-    async findAllBrands(@TenantId() tenantId: string) {
-        const data = await this.brandService.findAllBrands(tenantId);
-        return { success: true, data };
-    }
+    async findAllBrands(@RequestContext() ctx: RequestContextDto) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllBrands.`);
+            const data = await this.brandService.findAllBrands(ctx.tenantId);
+            return { success: true, data };
+        }
 
     @Get(':id')
-    async findOneBrand(@Param('id') id: string, @TenantId() tenantId: string) {
-        const data = await this.brandService.findOneBrand(id, tenantId);
-        return { success: true, data };
-    }
+    async findOneBrand(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneBrand.`);
+            const data = await this.brandService.findOneBrand(id, ctx.tenantId);
+            return { success: true, data };
+        }
 
     @Put(':id')
     @UseGuards(JwtAuthGuard)
     @Audit({ entity: 'Brand', action: 'UPDATE' })
     async updateBrand(
-        @Param('id') id: string,
-        @Body() updateBrandDto: UpdateBrandDto,
-        @CurrentUser() user: any,
+        @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
+        @Body() updateBrandDto: UpdateBrandDto
     ) {
-        const data = await this.brandService.updateBrand(id, updateBrandDto, user.tenantId);
-        return { success: true, data };
-    }
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateBrand.`);
+            const data = await this.brandService.updateBrand(id, updateBrandDto, ctx.user.tenantId);
+            return { success: true, data };
+        }
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard)
     @Audit({ entity: 'Brand', action: 'DELETE' })
-    async removeBrand(@Param('id') id: string, @CurrentUser() user: any) {
-        return await this.brandService.removeBrand(id, user.tenantId);
-    }
+    async removeBrand(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeBrand.`);
+            return await this.brandService.removeBrand(id, ctx.user.tenantId);
+        }
 }

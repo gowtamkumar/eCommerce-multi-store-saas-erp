@@ -1,18 +1,23 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Logger } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { TenantId } from 'src/common/decorators/tenant-id.decorator';
 import { CreatePathaoOrderDto } from './dto/create-order.dto';
 import { PathaoService } from './pathao.service';
+import { RequestContext } from "src/common/decorators/request-context.decorator";
+import { RequestContextDto } from "src/common/dto/request-context.dto";
 
 @ApiTags('courier/pathao')
 @Controller('courier/pathao')
 export class PathaoController {
+    private readonly logger = new Logger(PathaoController.name);
+
   constructor(private readonly pathaoService: PathaoService) {}
 
   @Post('create-order')
-  async createPathaoOrder(@Body() createOrderDto: CreatePathaoOrderDto, @TenantId() tenantId: string) {
-    return await this.pathaoService.createPathaoOrder(createOrderDto, tenantId);
-  }
+  async createPathaoOrder(@RequestContext() ctx: RequestContextDto, @Body() createOrderDto: CreatePathaoOrderDto) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPathaoOrder.`);
+      return await this.pathaoService.createPathaoOrder(createOrderDto, ctx.tenantId);
+    }
 
   // @Get('stores')
   // async getStores(@TenantId() tenantId: string) {

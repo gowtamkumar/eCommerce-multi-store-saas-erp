@@ -1,34 +1,35 @@
-import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Post, Res, UseGuards, Logger } from '@nestjs/common'
 import { Response } from 'express'
-import { CurrentUser } from '../../../../common/decorators/current-user.decorator'
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard'
 import { UserDto } from '../../user/dtos'
 import { RegisterCredentialDto } from '../dtos'
 import { AuthService } from '../services/auth.service'
-
-import { TenantId } from '../../../../common/decorators/tenant-id.decorator'
+import { RequestContext } from "src/common/decorators/request-context.decorator";
+import { RequestContextDto } from "src/common/dto/request-context.dto";
 
 @Controller('auth')
 export class AuthController {
+    private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   @Post('/register')
   async register(
-    @Body() registerCredentialDto: RegisterCredentialDto,
-    @TenantId() tenantId: string,
+    @RequestContext() ctx: RequestContextDto, @Body() registerCredentialDto: RegisterCredentialDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const authPayload = await this.authService.register(registerCredentialDto, tenantId)
-    // set cookies token
-    this.cookiesBuildTokenResponsive(res, authPayload.accessToken)
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called register.`);
+      const authPayload = await this.authService.register(registerCredentialDto, ctx.tenantId)
+      // set cookies token
+      this.cookiesBuildTokenResponsive(res, authPayload.accessToken)
 
-    return {
-      success: true,
-      statusCode: 200,
-      message: `Registration successful`,
-      data: authPayload,
+      return {
+        success: true,
+        statusCode: 200,
+        message: `Registration successful`,
+        data: authPayload,
+      }
     }
-  }
 
   @Post('/refresh')
   async refresh(
@@ -48,15 +49,16 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('/logout')
-  async logout(@CurrentUser() user: UserDto, @Res({ passthrough: true }) res: Response) {
-    await this.authService.logout(user.id)
-    res.clearCookie('token')
-    return {
-      success: true,
-      statusCode: 200,
-      message: `Logout successful`,
+  async logout(@RequestContext() ctx: RequestContextDto, @Res({ passthrough: true }) res: Response) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called logout.`);
+      await this.authService.logout(ctx.userId)
+      res.clearCookie('token')
+      return {
+        success: true,
+        statusCode: 200,
+        message: `Logout successful`,
+      }
     }
-  }
 
   @Post('/verify')
   async verify(@Body() body: { token: string }) {
@@ -70,15 +72,16 @@ export class AuthController {
   }
 
   @Post('/forgot-password')
-  async forgotPassword(@Body() body: { email: string }, @TenantId() tenantId: string) {
-    const { email } = body
-    await this.authService.forgotPassword(email, tenantId)
-    return {
-      success: true,
-      statusCode: 200,
-      message: `If an account is associated with this email, you will receive a reset link shortly.`,
+  async forgotPassword(@RequestContext() ctx: RequestContextDto, @Body() body: { email: string }) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called forgotPassword.`);
+      const { email } = body
+      await this.authService.forgotPassword(email, ctx.tenantId)
+      return {
+        success: true,
+        statusCode: 200,
+        message: `If an account is associated with this email, you will receive a reset link shortly.`,
+      }
     }
-  }
 
   @Post('/reset-password')
   async resetPassword(@Body() body: { token: string; password: string }) {
@@ -93,9 +96,10 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('/me')
-  getMe(@CurrentUser() user: UserDto) {
-    return this.authService.getMe(user)
-  }
+  getMe(@RequestContext() ctx: RequestContextDto) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getMe.`);
+      return this.authService.getMe(ctx.user)
+    }
 
   private cookiesBuildTokenResponsive(response: Response, token: string) {
     const cookiesOptions = {

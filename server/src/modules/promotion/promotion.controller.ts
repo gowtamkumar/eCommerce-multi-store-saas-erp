@@ -1,54 +1,63 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, Logger } from '@nestjs/common';
 import { UserRole } from 'src/common/enums/user/user-role.enum';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { TenantId } from '../../common/decorators/tenant-id.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CreatePromotionDto } from './dto/create-promotion.dto';
 import { UpdatePromotionDto } from './dto/update-promotion.dto';
 import { PromotionService } from './promotion.service';
+import { RequestContext } from "src/common/decorators/request-context.decorator";
+import { RequestContextDto } from "src/common/dto/request-context.dto";
 
 @Controller('promotions')
 export class PromotionController {
+    private readonly logger = new Logger(PromotionController.name);
+
     constructor(private readonly promotionService: PromotionService) { }
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
-    createPromotion(@Body() createPromotionDto: CreatePromotionDto, @TenantId() tenantId: string) {
-        return this.promotionService.createPromotion(createPromotionDto, tenantId);
-    }
+    createPromotion(@RequestContext() ctx: RequestContextDto, @Body() createPromotionDto: CreatePromotionDto) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPromotion.`);
+            return this.promotionService.createPromotion(createPromotionDto, ctx.tenantId);
+        }
 
     @Get()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
-    findAllPromotions(@Query() filterDto: any, @TenantId() tenantId: string) {
-        return this.promotionService.findAllPromotions(filterDto, tenantId);
-    }
+    findAllPromotions(@RequestContext() ctx: RequestContextDto, @Query() filterDto: any) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPromotions.`);
+            return this.promotionService.findAllPromotions(filterDto, ctx.tenantId);
+        }
 
     @Get('active')
-    findActivePromotions(@TenantId() tenantId: string) {
-        return this.promotionService.findActivePromotions(tenantId);
-    }
+    findActivePromotions(@RequestContext() ctx: RequestContextDto) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findActivePromotions.`);
+            return this.promotionService.findActivePromotions(ctx.tenantId);
+        }
 
     @Get(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
-    findOnePromotion(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.promotionService.findOnePromotion(id, tenantId);
-    }
+    findOnePromotion(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOnePromotion.`);
+            return this.promotionService.findOnePromotion(id, ctx.tenantId);
+        }
 
     @Patch(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
-    updatePromotion(@Param('id') id: string, @Body() updatePromotionDto: UpdatePromotionDto, @TenantId() tenantId: string) {
-        return this.promotionService.updatePromotion(id, updatePromotionDto, tenantId);
-    }
+    updatePromotion(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() updatePromotionDto: UpdatePromotionDto) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePromotion.`);
+            return this.promotionService.updatePromotion(id, updatePromotionDto, ctx.tenantId);
+        }
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin)
-    removePromotion(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.promotionService.removePromotion(id, tenantId);
-    }
+    removePromotion(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePromotion.`);
+            return this.promotionService.removePromotion(id, ctx.tenantId);
+        }
 }

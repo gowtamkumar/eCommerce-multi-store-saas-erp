@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
-import { TenantId } from '../../common/decorators/tenant-id.decorator'
+import { Body, Controller, Delete, Get, Logger, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
+import { RequestContext } from "src/common/decorators/request-context.decorator"
+import { RequestContextDto } from "src/common/dto/request-context.dto"
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { CreateReviewDto } from '../review/dto/review.dto'
 import { ReviewService } from '../review/review.service'
@@ -10,6 +11,8 @@ import { ProductService } from './product.service'
 
 @Controller('products')
 export class ProductController {
+    private readonly logger = new Logger(ProductController.name);
+
   constructor(
     private readonly productService: ProductService,
     private readonly reviewService: ReviewService,
@@ -17,73 +20,80 @@ export class ProductController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@Body() createProductDto: CreateProductDto, @TenantId() tenantId: string) {
-    return await this.productService.createProduct(createProductDto, tenantId)
-  }
+  async create(@RequestContext() ctx: RequestContextDto, @Body() createProductDto: CreateProductDto) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called create.`);
+      return await this.productService.createProduct(createProductDto, ctx.tenantId)
+    }
 
   @Get()
-  async findAllProducts(@Query() filterDto: FilterProductDto, @TenantId() tenantId: string) {
-    const { products, total } = await this.productService.findAllProducts(filterDto, tenantId)
-    return {
-      success: true,
-      statusCode: 200,
-      data: {
-        products,
-        pagination: {
-          total,
-          page: filterDto.page,
-          limit: filterDto.limit,
-          totalPages: Math.ceil(total / filterDto.limit),
+  async findAllProducts(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterProductDto) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllProducts.`);
+      const { products, total } = await this.productService.findAllProducts(filterDto, ctx.tenantId)
+      return {
+        success: true,
+        statusCode: 200,
+        data: {
+          products,
+          pagination: {
+            total,
+            page: filterDto.page,
+            limit: filterDto.limit,
+            totalPages: Math.ceil(total / filterDto.limit),
+          },
         },
-      },
+      }
     }
-  }
 
   @Get('latest')
-  async findLatestProducts(@TenantId() tenantId: string, @Query('limit') limit?: number) {
-    return await this.productService.findLatestProducts(tenantId, limit)
-  }
+  async findLatestProducts(@RequestContext() ctx: RequestContextDto, @Query('limit') limit?: number) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findLatestProducts.`);
+      return await this.productService.findLatestProducts(ctx.tenantId, limit)
+    }
 
   @Get('slug/:slug')
-  async findBySlugProduct(@Param('slug') slug: string, @TenantId() tenantId: string) {
-    return await this.productService.findBySlugProduct(slug, tenantId)
-  }
+  async findBySlugProduct(@RequestContext() ctx: RequestContextDto, @Param('slug') slug: string) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findBySlugProduct.`);
+      return await this.productService.findBySlugProduct(slug, ctx.tenantId)
+    }
 
   @Get(':id')
-  async findOneProduct(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.productService.findOneProduct(id, tenantId)
-  }
+  async findOneProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneProduct.`);
+      return await this.productService.findOneProduct(id, ctx.tenantId)
+    }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   async updateProduct(
-    @Param('id') id: string,
-    @Body() updateProductDto: UpdateProductDto,
-    @TenantId() tenantId: string,
+    @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto
   ) {
-    return await this.productService.updateProduct(id, updateProductDto, tenantId)
-  }
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateProduct.`);
+      return await this.productService.updateProduct(id, updateProductDto, ctx.tenantId)
+    }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async removeProduct(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.productService.removeProduct(id, tenantId)
-  }
+  async removeProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeProduct.`);
+      return await this.productService.removeProduct(id, ctx.tenantId)
+    }
 
   @Get(':id/reviews')
-  async getReviewsProduct(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.reviewService.findByProductReviews(id, tenantId)
-  }
+  async getReviewsProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getReviewsProduct.`);
+      return await this.reviewService.findByProductReviews(id, ctx.tenantId)
+    }
 
   @Post(':id/reviews')
   @UseGuards(JwtAuthGuard)
   async createReviewProduct(
-    @Param('id') productId: string,
-    @Body() createReviewDto: CreateReviewDto,
-    @TenantId() tenantId: string,
+    @RequestContext() ctx: RequestContextDto, @Param('id') productId: string,
+    @Body() createReviewDto: CreateReviewDto
   ) {
-    // Ensure the productId in the body matches the URL param
-    createReviewDto.productId = productId
-    return await this.reviewService.createReview(createReviewDto, tenantId)
-  }
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createReviewProduct.`);
+      // Ensure the productId in the body matches the URL param
+      createReviewDto.productId = productId
+      return await this.reviewService.createReview(createReviewDto, ctx.tenantId)
+    }
 }

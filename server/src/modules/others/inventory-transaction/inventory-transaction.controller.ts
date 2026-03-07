@@ -1,44 +1,49 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { TenantId } from '../../../common/decorators/tenant-id.decorator';
+import { Body, Controller, Get, Param, Post, UseGuards, Logger } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { CreateInventoryTransactionDto } from './dto/create-inventory-transaction.dto';
 import { InventoryTransactionService } from './inventory-transaction.service';
+import { RequestContext } from "src/common/decorators/request-context.decorator";
+import { RequestContextDto } from "src/common/dto/request-context.dto";
 
 @Controller('inventory-transactions')
 export class InventoryTransactionController {
+    private readonly logger = new Logger(InventoryTransactionController.name);
+
     constructor(private readonly service: InventoryTransactionService) { }
 
     @Post()
     @UseGuards(JwtAuthGuard)
     async createInventoryTransaction(
-        @Body() dto: CreateInventoryTransactionDto,
-        @TenantId() tenantId: string,
+        @RequestContext() ctx: RequestContextDto, @Body() dto: CreateInventoryTransactionDto
     ) {
-        const transaction = await this.service.createInventoryTransaction(dto, tenantId);
-        return { success: true, data: transaction };
-    }
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createInventoryTransaction.`);
+            const transaction = await this.service.createInventoryTransaction(dto, ctx.tenantId);
+            return { success: true, data: transaction };
+        }
 
     @Get()
     @UseGuards(JwtAuthGuard)
-    async findAllInventoryTransactions(@TenantId() tenantId: string) {
-        const transactions = await this.service.findAllInventoryTransactions(tenantId);
-        return { success: true, data: transactions };
-    }
+    async findAllInventoryTransactions(@RequestContext() ctx: RequestContextDto) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllInventoryTransactions.`);
+            const transactions = await this.service.findAllInventoryTransactions(ctx.tenantId);
+            return { success: true, data: transactions };
+        }
 
     @Get('product/:productId')
     @UseGuards(JwtAuthGuard)
     async findByProductInventoryTransactions(
-        @Param('productId') productId: string,
-        @TenantId() tenantId: string,
+        @RequestContext() ctx: RequestContextDto, @Param('productId') productId: string
     ) {
-        const transactions = await this.service.findByProductInventoryTransactions(productId, tenantId);
-        return { success: true, data: transactions };
-    }
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByProductInventoryTransactions.`);
+            const transactions = await this.service.findByProductInventoryTransactions(productId, ctx.tenantId);
+            return { success: true, data: transactions };
+        }
 
     @Get('stock-summary')
     @UseGuards(JwtAuthGuard)
-    async getStockSummaryInventoryTransactions(@TenantId() tenantId: string) {
-        const data = await this.service.getStockSummaryInventoryTransactions(tenantId);
-        return { success: true, data };
-    }
+    async getStockSummaryInventoryTransactions(@RequestContext() ctx: RequestContextDto) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getStockSummaryInventoryTransactions.`);
+            const data = await this.service.getStockSummaryInventoryTransactions(ctx.tenantId);
+            return { success: true, data };
+        }
 }

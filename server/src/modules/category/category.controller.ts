@@ -1,43 +1,50 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common'
-import { TenantId } from 'src/common/decorators/tenant-id.decorator'
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, Logger } from '@nestjs/common'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { CategoryService } from './category.service'
 import { CreateCategoryDto } from './dto/create-category.dto'
 import { UpdateCategoryDto } from './dto/update-category.dto'
+import { RequestContext } from "src/common/decorators/request-context.decorator";
+import { RequestContextDto } from "src/common/dto/request-context.dto";
 
 @Controller('categories')
 export class CategoryController {
+    private readonly logger = new Logger(CategoryController.name);
+
   constructor(private readonly categoryService: CategoryService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async createCategory(@Body() createCategoryDto: CreateCategoryDto, @TenantId() tenantId: string) {
-    return await this.categoryService.createCategory(createCategoryDto, tenantId)
-  }
+  async createCategory(@RequestContext() ctx: RequestContextDto, @Body() createCategoryDto: CreateCategoryDto) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createCategory.`);
+      return await this.categoryService.createCategory(createCategoryDto, ctx.tenantId)
+    }
 
   @Get()
-  async findAllCategories(@TenantId() tenantId: string) {
-    return await this.categoryService.findAllCategories(tenantId)
-  }
+  async findAllCategories(@RequestContext() ctx: RequestContextDto) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllCategories.`);
+      return await this.categoryService.findAllCategories(ctx.tenantId)
+    }
 
   @Get(':id')
-  async findOneCategory(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.categoryService.findOneCategory(id, tenantId)
-  }
+  async findOneCategory(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneCategory.`);
+      return await this.categoryService.findOneCategory(id, ctx.tenantId)
+    }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   async updateCategory(
-    @Param('id') id: string,
-    @Body() updateCategoryDto: UpdateCategoryDto,
-    @TenantId() tenantId: string,
+    @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
+    @Body() updateCategoryDto: UpdateCategoryDto
   ) {
-    return await this.categoryService.updateCategory(id, updateCategoryDto, tenantId)
-  }
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateCategory.`);
+      return await this.categoryService.updateCategory(id, updateCategoryDto, ctx.tenantId)
+    }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async removeCategory(@Param('id') id: string, @TenantId() tenantId: string) {
-    return await this.categoryService.removeCategory(id, tenantId)
-  }
+  async removeCategory(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCategory.`);
+      return await this.categoryService.removeCategory(id, ctx.tenantId)
+    }
 }

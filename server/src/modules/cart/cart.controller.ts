@@ -1,78 +1,75 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
-import { CurrentUser } from 'src/common/decorators/current-user.decorator'
-import { TenantId } from 'src/common/decorators/tenant-id.decorator'
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, Logger } from '@nestjs/common'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { UserEntity } from 'src/modules/admin/user/entities/user.entity'
 import { CartService } from './cart.service'
 import { CreateCartItemDto } from './dto/create-cart-item.dto'
 import { UpdateCartItemDto } from './dto/update-cart-item.dto'
+import { RequestContext } from "src/common/decorators/request-context.decorator";
+import { RequestContextDto } from "src/common/dto/request-context.dto";
 
 @UseGuards(JwtAuthGuard)
 @Controller('cart')
 export class CartController {
+    private readonly logger = new Logger(CartController.name);
+
   constructor(private readonly cartService: CartService) { }
 
   @Get()
-  getCart(@CurrentUser() user: UserEntity, @TenantId() tenantId: string) {
-    return this.cartService.createOrGetCart(user.id, tenantId)
-  }
+  getCart(@RequestContext() ctx: RequestContextDto) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCart.`);
+      return this.cartService.createOrGetCart(ctx.userId, ctx.tenantId)
+    }
 
   @Post('items')
   addToCart(
-    @CurrentUser() user: UserEntity,
-    @TenantId() tenantId: string,
-    @Body() createCartItemDto: CreateCartItemDto,
+    @RequestContext() ctx: RequestContextDto, @Body() createCartItemDto: CreateCartItemDto,
   ) {
-    return this.cartService.addToCart(user.id, tenantId, createCartItemDto)
-  }
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called addToCart.`);
+      return this.cartService.addToCart(ctx.userId, ctx.tenantId, createCartItemDto)
+    }
 
   @Post('sync')
   syncCart(
-    @CurrentUser() user: UserEntity,
-    @TenantId() tenantId: string,
-    @Body() items: CreateCartItemDto[],
+    @RequestContext() ctx: RequestContextDto, @Body() items: CreateCartItemDto[],
   ) {
-    return this.cartService.syncCart(user.id, tenantId, items)
-  }
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called syncCart.`);
+      return this.cartService.syncCart(ctx.userId, ctx.tenantId, items)
+    }
 
   @Patch('items/:id')
   updateCartItem(
-    @CurrentUser() user: UserEntity,
-    @TenantId() tenantId: string,
-    @Param('id') id: string,
+    @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
     @Body() updateCartItemDto: UpdateCartItemDto,
   ) {
-    return this.cartService.updateCartItem(user.id, tenantId, id, updateCartItemDto)
-  }
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateCartItem.`);
+      return this.cartService.updateCartItem(ctx.userId, ctx.tenantId, id, updateCartItemDto)
+    }
 
   @Delete('items/:id')
   removeFromCart(
-    @CurrentUser() user: UserEntity,
-    @TenantId() tenantId: string,
-    @Param('id') id: string,
+    @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
   ) {
-    return this.cartService.removeFromCart(user.id, tenantId, id)
-  }
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFromCart.`);
+      return this.cartService.removeFromCart(ctx.userId, ctx.tenantId, id)
+    }
 
   @Delete()
-  clearCart(@CurrentUser() user: UserEntity, @TenantId() tenantId: string) {
-    return this.cartService.clearCart(user.id, tenantId)
-  }
+  clearCart(@RequestContext() ctx: RequestContextDto) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called clearCart.`);
+      return this.cartService.clearCart(ctx.userId, ctx.tenantId)
+    }
 
   @Post('coupon/apply')
   applyCoupon(
-    @CurrentUser() user: UserEntity,
-    @TenantId() tenantId: string,
-    @Body('code') code: string,
+    @RequestContext() ctx: RequestContextDto, @Body('code') code: string,
   ) {
-    return this.cartService.applyCoupon(user.id, tenantId, code)
-  }
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called applyCoupon.`);
+      return this.cartService.applyCoupon(ctx.userId, ctx.tenantId, code)
+    }
 
   @Post('coupon/remove')
-  removeCoupon(
-    @CurrentUser() user: UserEntity,
-    @TenantId() tenantId: string,
-  ) {
-    return this.cartService.removeCoupon(user.id, tenantId)
-  }
+  removeCoupon(@RequestContext() ctx: RequestContextDto) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCoupon.`);
+      return this.cartService.removeCoupon(ctx.userId, ctx.tenantId)
+    }
 }

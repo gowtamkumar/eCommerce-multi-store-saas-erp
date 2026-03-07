@@ -11,30 +11,33 @@ import {
   Query,
   UploadedFile,
   UseGuards,
-  UseInterceptors,
-} from '@nestjs/common'
+  UseInterceptors, Logger } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
-import { TenantId } from 'src/common/decorators/tenant-id.decorator'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { RolesGuard } from 'src/common/guards/roles.guard'
 import { FilterFileDto } from '../dtos'
 import { FilesService } from '../services/file.service'
+import { RequestContext } from "src/common/decorators/request-context.decorator";
+import { RequestContextDto } from "src/common/dto/request-context.dto";
 
 @Controller('admin/media')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminMediaController {
+    private readonly logger = new Logger(AdminMediaController.name);
+
   constructor(private readonly filesService: FilesService) {}
 
   @Get()
-  async findAllFiles(@Query() filterDto: FilterFileDto, @TenantId() tenantId: string) {
-    const files = await this.filesService.getFiles(filterDto, tenantId)
-    return {
-      success: true,
-      statusCode: 200,
-      data: files,
+  async findAllFiles(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterFileDto) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllFiles.`);
+      const files = await this.filesService.getFiles(filterDto, ctx.tenantId)
+      return {
+        success: true,
+        statusCode: 200,
+        data: files,
+      }
     }
-  }
 
   @Post()
   @UseInterceptors(
@@ -51,7 +54,7 @@ export class AdminMediaController {
     }),
   )
   async uploadFile(
-    @UploadedFile(
+    @RequestContext() ctx: RequestContextDto, @UploadedFile(
       new ParseFilePipe({
         validators: [
           new FileTypeValidator({
@@ -62,25 +65,26 @@ export class AdminMediaController {
         ],
       }),
     )
-    file: Express.Multer.File,
-    @TenantId() tenantId: string,
+    file: Express.Multer.File
   ) {
-    const newFile = await this.filesService.createFile(file, tenantId)
-    return {
-      success: true,
-      statusCode: 201,
-      message: 'File uploaded successfully',
-      data: newFile,
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called uploadFile.`);
+      const newFile = await this.filesService.createFile(file, ctx.tenantId)
+      return {
+        success: true,
+        statusCode: 201,
+        message: 'File uploaded successfully',
+        data: newFile,
+      }
     }
-  }
 
   @Delete(':id')
-  async removeFile(@Param('id', ParseUUIDPipe) id: string, @TenantId() tenantId: string) {
-    await this.filesService.deleteFile(id, tenantId)
-    return {
-      success: true,
-      statusCode: 200,
-      message: 'File deleted successfully',
+  async removeFile(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string) {
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFile.`);
+      await this.filesService.deleteFile(id, ctx.tenantId)
+      return {
+        success: true,
+        statusCode: 200,
+        message: 'File deleted successfully',
+      }
     }
-  }
 }

@@ -8,19 +8,20 @@ import {
     Post,
     Query,
     Req,
-    UseGuards,
-} from '@nestjs/common';
+    UseGuards, Logger } from '@nestjs/common';
 import { Request } from 'express';
-import { CurrentUser } from '../../../common/decorators/current-user.decorator';
-import { TenantId } from '../../../common/decorators/tenant-id.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { AuditLogService } from './audit-log.service';
 import { CreateAuditLogDto } from './dto/create-audit-log.dto';
 import { QueryAuditLogDto } from './dto/query-audit-log.dto';
+import { RequestContext } from "src/common/decorators/request-context.decorator";
+import { RequestContextDto } from "src/common/dto/request-context.dto";
 
 @Controller('audit-logs')
 @UseGuards(JwtAuthGuard)
 export class AuditLogController {
+    private readonly logger = new Logger(AuditLogController.name);
+
     constructor(private readonly auditLogService: AuditLogService) {}
 
     /**
@@ -29,43 +30,44 @@ export class AuditLogController {
      */
     @Post()
     async createAuditLog(
-        @Body() dto: CreateAuditLogDto,
-        @TenantId() tenantId: string,
-        @CurrentUser() user: any,
+        @RequestContext() ctx: RequestContextDto, @Body() dto: CreateAuditLogDto,
         @Req() req: Request,
     ) {
-        // Auto-fill userId from the JWT if not provided in body
-        if (!dto.userId && user?.id) {
-            dto.userId = user.id;
-        }
+            this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createAuditLog.`);
+                // Auto-fill userId from the JWT if not provided in body
+                if (!dto.userId && ctx.user?.id) {
+                    dto.userId = ctx.userId;
+                }
 
-        const ipAddress =
-            (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-            req.socket?.remoteAddress;
+                const ipAddress =
+                    (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+                    req.socket?.remoteAddress;
 
-        const userAgent = req.headers['user-agent'];
+                const userAgent = req.headers['ctx.user-agent'];
 
-        await this.auditLogService.log(tenantId, dto, ipAddress, userAgent);
-        return { success: true, message: 'Audit log recorded' };
-    }
+                await this.auditLogService.log(ctx.tenantId, dto, ipAddress as string, userAgent as string);
+                return { success: true, message: 'Audit log recorded' };
+            }
 
     /**
      * GET /audit-logs
      * Paginated & filtered list of audit logs for the tenant.
      */
     @Get()
-    async findAllAuditLogs(@TenantId() tenantId: string, @Query() query: QueryAuditLogDto) {
-        return this.auditLogService.findAllAuditLogs(tenantId, query);
-    }
+    async findAllAuditLogs(@RequestContext() ctx: RequestContextDto, @Query() query: QueryAuditLogDto) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllAuditLogs.`);
+            return this.auditLogService.findAllAuditLogs(ctx.tenantId, query);
+        }
 
     /**
      * GET /audit-logs/:id
      * Single audit log entry.
      */
     @Get(':id')
-    async findOneAuditLog(@Param('id') id: string, @TenantId() tenantId: string) {
-        return this.auditLogService.findOneAuditLog(id, tenantId);
-    }
+    async findOneAuditLog(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneAuditLog.`);
+            return this.auditLogService.findOneAuditLog(id, ctx.tenantId);
+        }
 
     /**
      * DELETE /audit-logs/retention/:days
@@ -73,9 +75,9 @@ export class AuditLogController {
      */
     @Delete('retention/:days')
     async purgeOldLogs(
-        @Param('days', ParseIntPipe) days: number,
-        @TenantId() tenantId: string,
+        @RequestContext() ctx: RequestContextDto, @Param('days', ParseIntPipe) days: number
     ) {
-        return this.auditLogService.deleteOlderThanAuditLogs(tenantId, days);
-    }
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called purgeOldLogs.`);
+            return this.auditLogService.deleteOlderThanAuditLogs(ctx.tenantId, days);
+        }
 }

@@ -52,48 +52,56 @@ export class UserController {
 
   @Get('/profile')
   async getProfile(@RequestContext() ctx: RequestContextDto) {
-    this.logger.log(`${this.getProfile.name} Controller Called`)
-    return this.userService.getUser(ctx.userId)
-  }
+      this.logger.log(`${this.getProfile.name} Controller Called`)
+
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getProfile.`);
+      return this.userService.getUser(ctx.userId)
+    }
 
   @Get('/:id')
   async getUser(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string) {
-    this.logger.log(`${this.getUser.name} Controller Called`)
-    const user = await this.userService.getUser(id)
+      this.logger.log(`${this.getUser.name} Controller Called`)
 
-    return {
-      success: true,
-      statusCode: 200,
-      message: `User of ID: ${id}`,
-      data: user,
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getUser.`);
+      const user = await this.userService.getUser(id)
+
+      return {
+        success: true,
+        statusCode: 200,
+        message: `User of ID: ${id}`,
+        data: user,
+      }
     }
-  }
 
   @Post('/')
   async createUser(@Body() createUserDto: CreateUserDto, @RequestContext() ctx: RequestContextDto) {
-    this.logger.log(`${this.createUser.name} Controller Called`)
-    const user = await this.userService.createUser(createUserDto, ctx.tenantId)
+      this.logger.log(`${this.createUser.name} Controller Called`)
 
-    return {
-      success: true,
-      statusCode: 201,
-      message: `New user created`,
-      data: user,
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createUser.`);
+      const user = await this.userService.createUser(createUserDto, ctx.tenantId)
+
+      return {
+        success: true,
+        statusCode: 201,
+        message: `New user created`,
+        data: user,
+      }
     }
-  }
 
   @Patch('/:id')
   async updateUser(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: UpdateUserDto) {
-    this.logger.log(`${this.updateUser.name} Controller Called`)
-    const user = await this.userService.updateUser(id, updateUserDto)
+      this.logger.log(`${this.updateUser.name} Controller Called`)
 
-    return {
-      success: true,
-      statusCode: 200,
-      message: `User of ID ${user.id} updated`,
-      data: user,
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateUser.`);
+      const user = await this.userService.updateUser(id, updateUserDto)
+
+      return {
+        success: true,
+        statusCode: 200,
+        message: `User of ID ${user.id} updated`,
+        data: user,
+      }
     }
-  }
 
   @Patch('/update-password/:id')
   async updatePassword(
@@ -101,16 +109,18 @@ export class UserController {
     @Param('id', ParseUUIDPipe) userId: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
-    this.logger.log(`${this.updatePassword.name} Controller Called`)
-    const user = await this.userService.updatePassword(userId, updatePasswordDto)
+      this.logger.log(`${this.updatePassword.name} Controller Called`)
 
-    return {
-      success: true,
-      statusCode: 200,
-      message: `User password of id ${user.id} updated`,
-      data: user,
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePassword.`);
+      const user = await this.userService.updatePassword(userId, updatePasswordDto)
+
+      return {
+        success: true,
+        statusCode: 200,
+        message: `User password of id ${user.id} updated`,
+        data: user,
+      }
     }
-  }
 
   @Delete('/:id')
   async deleteUser(@Param('id', ParseUUIDPipe) userId: string) {

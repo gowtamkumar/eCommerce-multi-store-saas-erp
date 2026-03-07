@@ -1,36 +1,39 @@
-import { Body, Controller, Delete, Post, Req, Res, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Post, Req, Res, UseGuards, Logger } from '@nestjs/common'
 import { Request, Response } from 'express'
-import { TenantId } from 'src/common/decorators/tenant-id.decorator'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { LoginCredentialDto } from '../dtos'
 import { AuthService } from '../services/auth.service'
+import { RequestContext } from "src/common/decorators/request-context.decorator";
+import { RequestContextDto } from "src/common/dto/request-context.dto";
 
 @Controller('admin')
 export class AdminAuthController {
+    private readonly logger = new Logger(AdminAuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   @Post('/login')
   async login(
-    @Body() loginCredentialDto: LoginCredentialDto,
-    @TenantId() tenantId: string,
+    @RequestContext() ctx: RequestContextDto, @Body() loginCredentialDto: LoginCredentialDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    try {
-      const authPayload = await this.authService.login(loginCredentialDto, tenantId)
-      // set cookies token
-      this.cookiesBuildTokenResponsive(res, authPayload.accessToken)
+      this.logger.verbose(`User "${ctx.user?.username || 'System'}" called login.`);
+      try {
+        const authPayload = await this.authService.login(loginCredentialDto, ctx.tenantId)
+        // set cookies token
+        this.cookiesBuildTokenResponsive(res, authPayload.accessToken)
 
-      return {
-        success: true,
-        statusCode: 200,
-        message: `Admin Login successful`,
-        data: authPayload,
+        return {
+          success: true,
+          statusCode: 200,
+          message: `Admin Login successful`,
+          data: authPayload,
+        }
+      } catch (error) {
+        console.error('Login Error:', error)
+        throw error
       }
-    } catch (error) {
-      console.error('Login Error:', error)
-      throw error
     }
-  }
 
   @UseGuards(JwtAuthGuard)
   @Delete('/logout')
