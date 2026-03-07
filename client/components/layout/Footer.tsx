@@ -157,9 +157,36 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
   const brandColorStyle = { color: footerSettings?.brandColor || footerSettings?.textColor || undefined };
   const brandBgStyle = { backgroundColor: footerSettings?.brandColor || undefined };
 
-  // Newsletter Section
   const Newsletter = () => {
     if (footerSettings?.showNewsletter === false) return null;
+    const [subscribing, setSubscribing] = useState(false);
+    const [message, setMessage] = useState({ text: '', type: '' });
+
+    const handleSubscribe = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!email) return;
+
+      setSubscribing(true);
+      setMessage({ text: '', type: '' });
+
+      try {
+        const res = await fetchAPI('/subscribers', {
+          method: 'POST',
+          body: JSON.stringify({ email }),
+        });
+
+        if (res.success) {
+          setMessage({ text: 'Successfully subscribed!', type: 'success' });
+          setEmail('');
+        } else {
+          setMessage({ text: res.message || 'Failed to subscribe.', type: 'error' });
+        }
+      } catch (error) {
+        setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
+      } finally {
+        setSubscribing(false);
+      }
+    };
 
     return (
       <div className="mb-20 p-8 sm:p-12 rounded-[2.5rem] bg-white/5 dark:bg-slate-800/30 border border-white/10 dark:border-slate-700/50 relative overflow-hidden group">
@@ -172,30 +199,40 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
               Join our community and get exclusive early access to new arrivals, limited editions, and curated audio experiences.
             </p>
           </div>
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className="flex-1 max-w-lg flex flex-col sm:flex-row gap-3"
-          >
-            <input
-              type="email"
-              placeholder="Your email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/10 dark:bg-slate-900/50 border-white/10 dark:border-slate-700 focus:ring-2 focus:ring-brand-500 rounded-2xl text-sm flex-1 px-6 py-4 outline-none transition-all placeholder:text-slate-500"
-            />
-            <button
-              type="submit"
-              style={brandBgStyle}
-              className={`px-8 py-4 ${!footerSettings?.brandColor ? 'bg-brand-600 hover:bg-brand-500' : ''} text-white font-bold rounded-2xl transition-all active:scale-95 shadow-xl shadow-brand-500/20 flex items-center justify-center gap-2 group/btn whitespace-nowrap`}
+          <div className="flex-1 max-w-lg flex flex-col gap-2">
+            <form
+              onSubmit={handleSubscribe}
+              className="flex flex-col sm:flex-row gap-3"
             >
-              Subscribe
-              <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
-            </button>
-          </form>
+              <input
+                type="email"
+                required
+                placeholder="Your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-white/10 dark:bg-slate-900/50 border border-white/10 dark:border-slate-700 focus:ring-2 focus:ring-brand-500 rounded-2xl text-sm flex-1 px-6 py-4 outline-none transition-all placeholder:text-slate-500 text-slate-900 dark:text-white"
+              />
+              <button
+                type="submit"
+                disabled={subscribing}
+                style={brandBgStyle}
+                className={`px-8 py-4 ${!footerSettings?.brandColor ? 'bg-brand-600 hover:bg-brand-500' : ''} text-white font-bold rounded-2xl transition-all active:scale-95 shadow-xl shadow-brand-500/20 flex items-center justify-center gap-2 group/btn whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed`}
+              >
+                {subscribing ? 'Subscribing...' : 'Subscribe'}
+                {!subscribing && <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />}
+              </button>
+            </form>
+            {message.text && (
+              <p className={`text-sm font-medium pl-2 ${message.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {message.text}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     );
   };
+
 
   const colCount = parseInt(footerSettings?.columns || '4') || 4;
 
