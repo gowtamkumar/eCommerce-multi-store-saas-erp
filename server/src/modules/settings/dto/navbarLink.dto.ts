@@ -29,6 +29,30 @@ export class NavbarSettingsDto {
     layout?: string;
 
     @IsOptional()
+    @IsString()
+    template?: string;
+
+    @IsOptional()
+    @IsString()
+    backgroundColor?: string;
+
+    @IsOptional()
+    @IsString()
+    textColor?: string;
+
+    @IsOptional()
+    @IsString()
+    shadowIntensity?: string;
+
+    @IsOptional()
+    @IsString()
+    hoverEffect?: string;
+
+    @IsOptional()
+    @IsString()
+    borderRadius?: string;
+
+    @IsOptional()
     @IsBoolean()
     sticky?: boolean;
 

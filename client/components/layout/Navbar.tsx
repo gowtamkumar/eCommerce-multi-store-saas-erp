@@ -27,6 +27,7 @@ const Navbar = () => {
   const brandName = settings?.brandName || "LuxeAudio";
   const navbarSettings = settings?.navbar;
   const navbarLayout = navbarSettings?.layout || "default";
+  const navbarTemplate = navbarSettings?.template || "classic";
 
 
   useEffect(() => {
@@ -130,7 +131,9 @@ const Navbar = () => {
               {brandName.charAt(0)}
             </span>
           </div>
-          <span className="hidden lg:block text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+          <span
+            style={{ color: navbarSettings?.textColor || undefined }}
+            className={`hidden lg:block text-xl sm:text-2xl font-black tracking-tight ${!navbarSettings?.textColor ? (navbarTemplate === 'gradient' ? 'text-white' : 'text-slate-900 dark:text-white') : ''}`}>
             {brandName}
           </span>
         </>
@@ -148,10 +151,18 @@ const Navbar = () => {
             key={index}
             href={link.href}
             target={link.isOpenInNewTab ? "_blank" : undefined}
-            className="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors relative group"
+            style={{ color: navbarSettings?.textColor || undefined }}
+            className={`text-sm font-semibold transition-all relative group py-2 px-3 rounded-${navbarSettings?.borderRadius || 'xl'} ${navbarSettings?.hoverEffect === 'background' ? 'hover:bg-white/10' : ''
+              } ${navbarSettings?.hoverEffect === 'glow' ? 'hover:text-brand-500 hover:drop-shadow-[0_0_8px_rgba(var(--brand-500-rgb),0.5)]' : ''
+              }`}
           >
             {link.label}
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand-600 dark:bg-brand-400 transition-all group-hover:w-full"></span>
+            {navbarSettings?.hoverEffect === 'underline' && (
+              <span
+                style={{ backgroundColor: navbarSettings?.textColor || undefined }}
+                className={`absolute -bottom-1 left-0 w-0 h-0.5 transition-all group-hover:w-full ${!navbarSettings?.textColor ? (navbarTemplate === 'gradient' ? 'bg-white' : 'bg-brand-600') : ''}`}
+              ></span>
+            )}
           </Link>
         ))
       }
@@ -161,7 +172,7 @@ const Navbar = () => {
   const SearchBar = () => (
     <div className="hidden md:block relative" ref={searchRef}>
       <form onSubmit={handleSearchSubmit} className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
+        <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none z-10 ${iconColorClass}`} />
         <input
           ref={searchInputRef}
           type="text"
@@ -169,6 +180,7 @@ const Navbar = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsSearchFocused(true)}
           placeholder="Search..."
+          style={{ color: navbarSettings?.textColor || undefined }}
           className="w-48 lg:w-64 pl-10 pr-12 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-brand-500 focus:bg-white dark:focus:bg-slate-900 transition-all text-sm outline-none"
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
@@ -180,7 +192,10 @@ const Navbar = () => {
 
       {/* Search Results Dropdown remains same content-wise */}
       {isSearchFocused && (searchQuery.length >= 2 || searchResults.length > 0) && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden max-h-[400px] overflow-y-auto z-50">
+        <div className={`absolute top-full left-0 right-0 mt-2 rounded-2xl shadow-2xl border overflow-hidden max-h-[400px] overflow-y-auto z-50 transition-all ${navbarTemplate === 'gradient'
+          ? 'bg-brand-700/95 backdrop-blur-xl border-brand-400/30'
+          : 'bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-slate-200 dark:border-slate-800'
+          }`}>
           {searchResults.length > 0 ? (
             <div className="divide-y divide-slate-100 dark:divide-slate-700">
               {searchResults.map((product) => (
@@ -200,10 +215,14 @@ const Navbar = () => {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                    <h4 className={`text-xs font-bold truncate transition-colors ${navbarTemplate === 'gradient' ? 'text-white' : 'text-slate-900 dark:text-white group-hover:text-brand-600'
+                      }`}>
                       {product.name}
                     </h4>
-                    <span className="text-xs font-bold text-brand-600">${product.price}</span>
+                    <span className={`text-xs font-bold ${navbarTemplate === 'gradient' ? 'text-white/80' : 'text-brand-600'
+                      }`}>
+                      {settings?.currencySymbol || "৳"}{product.price}
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -226,10 +245,10 @@ const Navbar = () => {
 
       <button
         onClick={openCart}
-        className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative group"
+        className="p-2 rounded-full hover:bg-white/10 transition-colors relative group"
         title="Cart"
       >
-        <ShoppingBag className="w-5 h-5 text-slate-700 dark:text-slate-200 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors" />
+        <ShoppingBag className={`w-5 h-5 transition-colors ${iconColorClass}`} />
         {totalItems > 0 && (
           <span className="absolute -top-1 -right-1 w-4 h-4 bg-brand-600 text-white text-[9px] font-bold flex items-center justify-center rounded-full">
             {totalItems}
@@ -239,52 +258,101 @@ const Navbar = () => {
 
       <Link
         href="/profile"
-        className="hidden sm:block p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+        className="hidden sm:block p-2 rounded-full hover:bg-white/10 transition-colors group"
         title="Profile"
       >
-        <User className="w-5 h-5 text-slate-700 dark:text-slate-200 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors" />
+        <User className={`w-5 h-5 transition-colors ${iconColorClass}`} />
       </Link>
 
       {session?.user?.role === "Admin" && (
         <Link
           href="/admin"
-          className="hidden sm:block p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+          className="hidden sm:block p-2 rounded-full hover:bg-white/10 transition-colors group"
           title="Admin"
         >
-          <Lock className="w-5 h-5 text-slate-700 dark:text-slate-200 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors" />
+          <Lock className={`w-5 h-5 transition-colors ${iconColorClass}`} />
         </Link>
       )}
 
       {session && (
         <button
           onClick={handleLogout}
-          className="hidden sm:block p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors group"
+          className="hidden sm:block p-2 rounded-full hover:bg-white/10 transition-colors group"
           title="Logout"
         >
-          <LogOut className="w-5 h-5 text-slate-700 dark:text-slate-200 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors" />
+          <LogOut className={`w-5 h-5 transition-colors ${iconColorClass}`} />
         </button>
       )}
 
       {/* Mobile Menu Button */}
       <button
         onClick={toggleMobileMenu}
-        className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
         aria-label="Toggle menu"
       >
-        <Menu className="w-6 h-6 text-slate-700 dark:text-slate-200" />
+        <Menu className={`w-6 h-6 ${iconColorClass}`} />
       </button>
     </div>
   );
 
+  // Determine background and container styles based on template
+  const getNavStyles = () => {
+    const isSticky = navbarSettings?.sticky !== false;
+    const isTransparent = navbarSettings?.transparent && !isScrolled;
+
+    let baseStyles = isSticky ? 'fixed' : 'absolute';
+    baseStyles += ' top-0 w-full z-50 transition-all duration-500 flex items-center ';
+
+    switch (navbarTemplate) {
+      case 'glass':
+        return `${baseStyles} bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/20 h-16 sm:h-20 shadow-sm`;
+      case 'gradient':
+        return `${baseStyles} bg-gradient-to-r from-brand-600 to-brand-500 dark:from-brand-700 dark:to-brand-600 h-16 sm:h-20 shadow-lg border-none text-white`;
+      case 'floating':
+        return `${baseStyles} ${isScrolled ? 'top-2' : 'top-4'} w-full px-4 sm:px-6 pointer-events-none transition-all`;
+      default:
+        return `${baseStyles} ${isScrolled ? 'bg-white/95 dark:bg-slate-900/95 h-16 sm:h-20' : 'bg-white dark:bg-slate-900 h-20 sm:h-24'} backdrop-blur-md shadow-sm border-b border-slate-200 dark:border-slate-800`;
+    }
+  };
+
+  const shadowClasses: Record<string, string> = {
+    none: 'shadow-none',
+    subtle: 'shadow-sm',
+    medium: 'shadow-md',
+    strong: 'shadow-xl'
+  };
+
+  const radiusClasses: Record<string, string> = {
+    none: 'rounded-none',
+    md: 'rounded-md',
+    xl: 'rounded-xl',
+    '3xl': 'rounded-3xl',
+    full: 'rounded-full'
+  };
+
+  const getContainerStyles = () => {
+    const shadowClass = shadowClasses[navbarSettings?.shadowIntensity || ''] || '';
+    const radiusClass = radiusClasses[navbarSettings?.borderRadius || ''] || 'rounded-2xl sm:rounded-3xl';
+
+    if (navbarTemplate === 'floating') {
+      return `w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 h-16 sm:h-20 pointer-events-auto transition-all flex items-center ${isScrolled ? 'scale-95' : 'scale-100'} ${shadowClass} ${radiusClass}`;
+    }
+    return `${navbarSettings?.maxWidth === 'full' ? 'max-w-full px-4 sm:px-8' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'} w-full flex items-center h-full transition-all ${shadowClass}`;
+  };
+
+  const iconColorClass = navbarSettings?.textColor
+    ? ""
+    : (navbarTemplate === 'gradient' ? 'text-white hover:text-white/80' : 'text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-400');
+
+  const navCustomStyle = {
+    backgroundColor: (navbarSettings?.backgroundColor && (!navbarSettings?.transparent || isScrolled)) ? navbarSettings.backgroundColor : undefined,
+    color: navbarSettings?.textColor || undefined
+  };
+
   return (
     <>
-      <nav className={`${navbarSettings?.sticky !== false ? 'fixed' : 'absolute'} top-0 w-full z-50 transition-all duration-300 ${isScrolled
-        ? 'bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-lg h-16 sm:h-20'
-        : navbarSettings?.transparent && !isScrolled
-          ? 'bg-transparent h-20 sm:h-24'
-          : 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl h-20 sm:h-24'
-        } border-b border-slate-200 dark:border-slate-800 flex items-center`}>
-        <div className={`${navbarSettings?.maxWidth === 'full' ? 'max-w-full px-4 sm:px-8' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'} w-full`}>
+      <nav className={getNavStyles()} style={navCustomStyle}>
+        <div className={getContainerStyles()}>
 
           {/* Layout Switcing logic */}
           {navbarLayout === 'centered' ? (

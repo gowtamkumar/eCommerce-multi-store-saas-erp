@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Layout, Menu, Move, Plus, Search, X } from "lucide-react";
+import { ChevronDown, Layout, Menu, Move, Palette, Plus, Search, Settings2, X } from "lucide-react";
+import { useState } from "react";
 
 export default function NavbarSetting({
     formData,
@@ -8,6 +9,8 @@ export default function NavbarSetting({
     formData: any;
     setFormData: any;
 }) {
+    const [showAdvanced, setShowAdvanced] = useState(false);
+
     return <motion.div
         key="navbar"
         initial={{ opacity: 0 }}
@@ -15,6 +18,80 @@ export default function NavbarSetting({
         exit={{ opacity: 0 }}
         className="space-y-6"
     >
+        <div className="space-y-4">
+            <div className="flex items-center gap-2">
+                <Layout className="w-5 h-5 text-brand-600" />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    Navbar Presets
+                </h3>
+            </div>
+            <p className="text-sm text-slate-500">
+                Choose a pre-designed navbar style to instantly update your store's header.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                    {
+                        id: 'modern-digital',
+                        label: 'Modern Digital',
+                        desc: 'Glass effect with default layout',
+                        settings: { layout: 'default', template: 'glass', sticky: true }
+                    },
+                    {
+                        id: 'elegant-boutique',
+                        label: 'Elegant Boutique',
+                        desc: 'Centered logo with classic feel',
+                        settings: { layout: 'centered', template: 'classic', sticky: true }
+                    },
+                    {
+                        id: 'minimalist-store',
+                        label: 'Minimalist Store',
+                        desc: 'Clean minimal layout',
+                        settings: { layout: 'minimal', template: 'classic', sticky: true }
+                    },
+                    {
+                        id: 'creative-floating',
+                        label: 'Creative Floating',
+                        desc: 'Detached floating header',
+                        settings: { layout: 'centered', template: 'floating', sticky: true }
+                    },
+                    {
+                        id: 'bold-identity',
+                        label: 'Bold Identity',
+                        desc: 'Full-width gradient style',
+                        settings: { layout: 'default', template: 'gradient', sticky: true }
+                    }
+                ].map((preset) => {
+                    const isActive = formData.navbar?.layout === preset.settings.layout &&
+                        formData.navbar?.template === preset.settings.template;
+
+                    return (
+                        <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => setFormData({
+                                ...formData,
+                                navbar: {
+                                    ...(formData.navbar || {}),
+                                    ...preset.settings
+                                }
+                            })}
+                            className={`flex flex-col text-left p-4 rounded-2xl border-2 transition-all ${isActive
+                                ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-900/10 ring-2 ring-brand-500/20'
+                                : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-200'
+                                }`}
+                        >
+                            <span className="text-sm font-bold text-slate-900 dark:text-white">{preset.label}</span>
+                            <span className="text-xs text-slate-500 mt-1">{preset.desc}</span>
+                            <div className="mt-3 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div className={`h-full bg-brand-500 transition-all duration-500 ${isActive ? 'w-full' : 'w-0'}`} />
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+
+        <div className="h-px bg-slate-200 dark:bg-slate-800 my-8" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-slate-900/30 p-6 rounded-3xl border border-slate-100 dark:border-slate-800">
             <div className="space-y-4">
                 <div className="flex items-center gap-2">
@@ -93,6 +170,210 @@ export default function NavbarSetting({
                     </select>
                 </div>
             </div>
+        </div>
+
+        <div className="space-y-4">
+            <div className="flex items-center gap-2">
+                <Palette className="w-5 h-5 text-brand-600" />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    Design Template
+                </h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                    { id: 'classic', label: 'Classic', desc: 'Solid & Professional', preview: 'bg-white border-b' },
+                    { id: 'glass', label: 'Glassmorphism', desc: 'Modern & Blurred', preview: 'bg-white/40 backdrop-blur-md' },
+                    { id: 'floating', label: 'Floating', desc: 'Creative & Detached', preview: 'bg-white shadow-xl rounded-2xl mx-2' },
+                    { id: 'gradient', label: 'Modern Gradient', desc: 'Vibrant & Bold', preview: 'bg-gradient-to-r from-brand-600 to-brand-400' }
+                ].map((item) => (
+                    <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setFormData({
+                            ...formData,
+                            navbar: { ...(formData.navbar || {}), template: item.id }
+                        })}
+                        className={`flex flex-col gap-3 p-3 rounded-2xl border-2 transition-all group ${formData.navbar?.template === item.id
+                            ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-900/10'
+                            : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-200'
+                            }`}
+                    >
+                        <div className={`w-full h-16 rounded-xl overflow-hidden relative border border-slate-100 dark:border-slate-800 ${item.id === 'gradient' ? item.preview : 'bg-slate-100 dark:bg-slate-800'}`}>
+                            {item.id !== 'gradient' && (
+                                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-6 border transition-all ${item.preview} ${formData.navbar?.template === item.id ? 'border-brand-200' : 'border-slate-200 dark:border-slate-700'}`}></div>
+                            )}
+                            {item.id === 'gradient' && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-12 h-1 bg-white/40 rounded-full"></div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="text-left">
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">{item.label}</p>
+                            <p className="text-[10px] text-slate-500">{item.desc}</p>
+                        </div>
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        <div className="h-px bg-slate-200 dark:bg-slate-800 my-8" />
+
+        {/* Advanced Designer Section */}
+        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
+            <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="w-full flex items-center justify-between p-6 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"
+            >
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-brand-100 dark:bg-brand-900/30 rounded-xl">
+                        <Settings2 className="w-5 h-5 text-brand-600" />
+                    </div>
+                    <div className="text-left">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Advanced Designer</h3>
+                        <p className="text-xs text-slate-500">Fine-tune colors, shadows, and effects</p>
+                    </div>
+                </div>
+                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${showAdvanced ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showAdvanced && (
+                <div className="p-6 pt-0 space-y-8 border-t border-slate-100 dark:border-slate-700">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                        {/* Custom Colors */}
+                        <div className="space-y-4">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Custom Colors</h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-slate-500">Background Color</label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="color"
+                                            value={formData.navbar?.backgroundColor || "#ffffff"}
+                                            onChange={(e) => setFormData({
+                                                ...formData,
+                                                navbar: { ...(formData.navbar || {}), backgroundColor: e.target.value }
+                                            })}
+                                            className="w-10 h-10 rounded-lg cursor-pointer border-none p-0"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={formData.navbar?.backgroundColor || ""}
+                                            onChange={(e) => setFormData({
+                                                ...formData,
+                                                navbar: { ...(formData.navbar || {}), backgroundColor: e.target.value }
+                                            })}
+                                            placeholder="Default (Auto)"
+                                            className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-slate-500">Text Color</label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="color"
+                                            value={formData.navbar?.textColor || "#000000"}
+                                            onChange={(e) => setFormData({
+                                                ...formData,
+                                                navbar: { ...(formData.navbar || {}), textColor: e.target.value }
+                                            })}
+                                            className="w-10 h-10 rounded-lg cursor-pointer border-none p-0"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={formData.navbar?.textColor || ""}
+                                            onChange={(e) => setFormData({
+                                                ...formData,
+                                                navbar: { ...(formData.navbar || {}), textColor: e.target.value }
+                                            })}
+                                            placeholder="Default (Auto)"
+                                            className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Shadow Intensity */}
+                        <div className="space-y-4">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Shadow Intensity</h4>
+                            <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+                                {['none', 'subtle', 'medium', 'strong'].map((intensity) => (
+                                    <button
+                                        key={intensity}
+                                        type="button"
+                                        onClick={() => setFormData({
+                                            ...formData,
+                                            navbar: { ...(formData.navbar || {}), shadowIntensity: intensity }
+                                        })}
+                                        className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-lg transition-all ${formData.navbar?.shadowIntensity === intensity
+                                                ? 'bg-white dark:bg-slate-800 text-brand-600 shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-700'
+                                            }`}
+                                    >
+                                        {intensity}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Hover Effect */}
+                        <div className="space-y-4">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Link Hover Effect</h4>
+                            <div className="grid grid-cols-3 gap-2">
+                                {[
+                                    { id: 'underline', label: 'Underline' },
+                                    { id: 'glow', label: 'Glow' },
+                                    { id: 'background', label: 'Capsule' }
+                                ].map((effect) => (
+                                    <button
+                                        key={effect.id}
+                                        type="button"
+                                        onClick={() => setFormData({
+                                            ...formData,
+                                            navbar: { ...(formData.navbar || {}), hoverEffect: effect.id }
+                                        })}
+                                        className={`py-3 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${formData.navbar?.hoverEffect === effect.id
+                                                ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600'
+                                                : 'border-slate-100 dark:border-slate-800 text-slate-500'
+                                            }`}
+                                    >
+                                        {effect.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Rounding / Border Radius */}
+                        <div className="space-y-4">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Corner Rounding</h4>
+                            <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
+                                {['none', 'md', 'xl', '3xl', 'full'].map((radius) => (
+                                    <button
+                                        key={radius}
+                                        type="button"
+                                        onClick={() => setFormData({
+                                            ...formData,
+                                            navbar: { ...(formData.navbar || {}), borderRadius: radius }
+                                        })}
+                                        className={`flex-1 py-2 text-[10px] font-bold uppercase rounded-lg transition-all ${formData.navbar?.borderRadius === radius
+                                                ? 'bg-white dark:bg-slate-800 text-brand-600 shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-700'
+                                            }`}
+                                    >
+                                        {radius}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-[10px] text-slate-500 italic">Rounding is mostly visible on 'Floating' and 'Capsule' styles.</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
 
         <div className="h-px bg-slate-200 dark:bg-slate-800 my-8" />

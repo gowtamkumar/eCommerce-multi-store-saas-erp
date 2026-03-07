@@ -26,6 +26,12 @@ interface SiteSettings {
   };
   navbar?: {
     layout?: 'default' | 'centered' | 'minimal' | 'sidebar';
+    template?: 'classic' | 'glass' | 'floating' | 'gradient';
+    backgroundColor?: string;
+    textColor?: string;
+    shadowIntensity?: 'none' | 'subtle' | 'medium' | 'strong';
+    hoverEffect?: 'underline' | 'glow' | 'background';
+    borderRadius?: string;
     sticky?: boolean;
     maxWidth?: 'standard' | 'full';
     transparent?: boolean;
