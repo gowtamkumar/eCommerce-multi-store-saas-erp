@@ -11,8 +11,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
-import { CurrentUser } from 'src/common/decorators/current-user.decorator'
-import { TenantId } from 'src/common/decorators/tenant-id.decorator'
+import { RequestContext } from 'src/common/decorators/request-context.decorator'
+import { RequestContextDto } from 'src/common/dto/request-context.dto'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { CreateUserDto } from '../dtos/create-user.dto'
 import { FilterUserDto } from '../dtos/filter-user.dto'
@@ -28,11 +28,11 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('/')
-  async getUsers(@Query() filterUserDto: FilterUserDto, @TenantId() tenantId: string) {
+  async getUsers(@RequestContext() ctx: RequestContextDto, @Query() filterUserDto: FilterUserDto) {
     this.logger.log(`${this.getUsers.name} Controller Called`)
-    // this.logger.verbose(`User "${ctx.user?.username}" retieving users.`)
+    this.logger.verbose(`User "${ctx.user?.username}" retieving users.`)
 
-    const { users, total } = await this.userService.getUsers(filterUserDto, tenantId)
+    const { users, total } = await this.userService.getUsers(filterUserDto, ctx.tenantId)
 
     return {
       success: true,
@@ -51,13 +51,13 @@ export class UserController {
   }
 
   @Get('/profile')
-  async getProfile(@CurrentUser() user: any) {
+  async getProfile(@RequestContext() ctx: RequestContextDto) {
     this.logger.log(`${this.getProfile.name} Controller Called`)
-    return this.userService.getUser(user.id)
+    return this.userService.getUser(ctx.userId)
   }
 
   @Get('/:id')
-  async getUser(@Param('id', ParseUUIDPipe) id: string) {
+  async getUser(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string) {
     this.logger.log(`${this.getUser.name} Controller Called`)
     const user = await this.userService.getUser(id)
 
@@ -70,9 +70,9 @@ export class UserController {
   }
 
   @Post('/')
-  async createUser(@Body() createUserDto: CreateUserDto, @TenantId() tenantId: string) {
+  async createUser(@Body() createUserDto: CreateUserDto, @RequestContext() ctx: RequestContextDto) {
     this.logger.log(`${this.createUser.name} Controller Called`)
-    const user = await this.userService.createUser(createUserDto, tenantId)
+    const user = await this.userService.createUser(createUserDto, ctx.tenantId)
 
     return {
       success: true,
@@ -83,7 +83,7 @@ export class UserController {
   }
 
   @Patch('/:id')
-  async updateUser(@Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: UpdateUserDto) {
+  async updateUser(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: UpdateUserDto) {
     this.logger.log(`${this.updateUser.name} Controller Called`)
     const user = await this.userService.updateUser(id, updateUserDto)
 
@@ -97,6 +97,7 @@ export class UserController {
 
   @Patch('/update-password/:id')
   async updatePassword(
+    @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) userId: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
