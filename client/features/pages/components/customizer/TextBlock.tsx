@@ -1,17 +1,8 @@
 
 export default function TextBlock({ html, headline, styles }: { html: string, headline: string, styles: any }) {
     return (
-        <section
-            style={{
-                ...styles,
-                paddingTop: styles?.paddingTop,
-                paddingBottom: styles?.paddingBottom,
-                backgroundColor: styles?.backgroundColor,
-                color: styles?.color
-            }}
-            className={`px-4 md:px-10 ${!styles?.paddingTop && !styles?.paddingBottom ? 'py-16 md:py-24' : ''}`}
-        >
-            <div className={`max-w-7xl mx-auto w-full flex ${styles.textAlign === 'left' ? 'justify-start text-left' : styles.textAlign === 'right' ? 'justify-end text-right' : 'justify-center text-center'}`}>
+        <div className="w-full overflow-hidden">
+            <div className={`w-full flex ${styles.textAlign === 'left' ? 'justify-start text-left' : styles.textAlign === 'right' ? 'justify-end text-right' : 'justify-center text-center'}`}>
                 <div
                     className="max-w-3xl w-full prose dark:prose-invert prose-brand lg:prose-2xl"
                     style={{ color: styles?.color }}
@@ -39,7 +30,6 @@ export default function TextBlock({ html, headline, styles }: { html: string, he
 
                 </div>
             </div>
-        </section>
+        </div>
     )
-
 }

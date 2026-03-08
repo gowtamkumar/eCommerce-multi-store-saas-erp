@@ -471,20 +471,22 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                   </select>
                 </div>
 
-                {settings?.layout === 'grid' && (
-                  <div className="space-y-1.5">
+                <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-1.5 mb-1.5">
                     <label className="text-[10px] font-bold text-slate-500 uppercase">Items per row</label>
-                    <select
-                      value={settings?.columns || 4}
-                      onChange={(e) => updateSetting('columns', parseInt(e.target.value))}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                    >
-                      <option value={2}>2 Columns</option>
-                      <option value={3}>3 Columns</option>
-                      <option value={4}>4 Columns</option>
-                    </select>
+                    {viewMode === 'mobile' ? <Smartphone className="w-2.5 h-2.5 text-brand-500" /> : <Monitor className="w-2.5 h-2.5 text-slate-300" />}
                   </div>
-                )}
+                  <select
+                    value={viewMode === 'mobile' ? (settings?.mobileColumns || 1) : (settings?.columns || 4)}
+                    onChange={(e) => updateSetting(viewMode === 'mobile' ? 'mobileColumns' : 'columns', parseInt(e.target.value))}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value={1}>1 Column</option>
+                    <option value={2}>2 Columns</option>
+                    <option value={3}>3 Columns</option>
+                    <option value={4}>4 Columns</option>
+                  </select>
+                </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Max Products Count</label>
@@ -583,13 +585,17 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                   </div>
                 )}
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Items per row</label>
+                <div className="space-y-1.5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Items per row</label>
+                    {viewMode === 'mobile' ? <Smartphone className="w-2.5 h-2.5 text-brand-500" /> : <Monitor className="w-2.5 h-2.5 text-slate-300" />}
+                  </div>
                   <select
-                    value={settings?.columns || 3}
-                    onChange={(e) => updateSetting('columns', parseInt(e.target.value))}
+                    value={viewMode === 'mobile' ? (settings?.mobileColumns || 2) : (settings?.columns || 3)}
+                    onChange={(e) => updateSetting(viewMode === 'mobile' ? 'mobileColumns' : 'columns', parseInt(e.target.value))}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   >
+                    <option value={1}>1 Column</option>
                     <option value={2}>2 Columns</option>
                     <option value={3}>3 Columns</option>
                     <option value={4}>4 Columns</option>
@@ -723,13 +729,17 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                   </div>
                 )}
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Items per row</label>
+                <div className="space-y-1.5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Items per row</label>
+                    {viewMode === 'mobile' ? <Smartphone className="w-2.5 h-2.5 text-brand-500" /> : <Monitor className="w-2.5 h-2.5 text-slate-300" />}
+                  </div>
                   <select
-                    value={settings?.columns || 3}
-                    onChange={(e) => updateSetting('columns', parseInt(e.target.value))}
+                    value={viewMode === 'mobile' ? (settings?.mobileColumns || 2) : (settings?.columns || 3)}
+                    onChange={(e) => updateSetting(viewMode === 'mobile' ? 'mobileColumns' : 'columns', parseInt(e.target.value))}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   >
+                    <option value={1}>1 Column</option>
                     <option value={2}>2 Columns</option>
                     <option value={3}>3 Columns</option>
                     <option value={4}>4 Columns</option>

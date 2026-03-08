@@ -11,6 +11,7 @@ interface CategoryGridProps {
   source?: 'all' | 'manual';
   items?: any[];
   columns?: number;
+  mobileColumns?: number;
   styles?: any;
 }
 
@@ -20,6 +21,7 @@ export default function CategoryGrid({
   source = 'all',
   items = [],
   columns = 3,
+  mobileColumns = 2,
   styles
 }: CategoryGridProps) {
   const [categories, setCategories] = useState<any[]>([]);
@@ -56,17 +58,8 @@ export default function CategoryGrid({
   }
 
   return (
-    <section
-      style={{
-        ...styles, // Spread ALL styles including CSS custom properties
-        paddingTop: styles?.paddingTop,
-        paddingBottom: styles?.paddingBottom,
-        backgroundColor: styles?.backgroundColor,
-        color: styles?.color
-      }}
-      className={`px-4 md:px-10 ${!styles?.paddingTop && !styles?.paddingBottom ? 'py-16 md:py-24' : ''}`}
-    >
-      <div className="max-w-7xl mx-auto">
+    <div className="w-full overflow-hidden">
+      <div className="w-full">
         <div className={`mb-16 space-y-4
           ${styles?.textAlign === 'center' ? 'text-center' : ''}
           ${styles?.textAlign === 'right' ? 'text-right' : ''}
@@ -89,13 +82,13 @@ export default function CategoryGrid({
         </div>
 
         {loading ? (
-          <div className={`grid gap-8 grid-cols-1 sm:grid-cols-2 ${columns === 2 ? 'md:grid-cols-2' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+          <div className={`grid gap-8 ${mobileColumns === 1 ? 'grid-cols-1' : 'grid-cols-2'} ${columns === 2 ? 'md:grid-cols-2' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
             {[...Array(count)].map((_, i) => (
               <div key={i} className="aspect-[4/5] bg-slate-200 dark:bg-slate-800 rounded-[3rem] animate-pulse" />
             ))}
           </div>
         ) : displayedCategories.length > 0 ? (
-          <div className={`grid gap-8 grid-cols-1 sm:grid-cols-2 ${columns === 2 ? 'md:grid-cols-2' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+          <div className={`grid gap-8 ${mobileColumns === 1 ? 'grid-cols-1' : 'grid-cols-2'} ${columns === 2 ? 'md:grid-cols-2' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
             {displayedCategories.map((category) => (
               <Link
                 key={category.id}
@@ -135,6 +128,6 @@ export default function CategoryGrid({
           </div>
         )}
       </div>
-    </section>
+    </div>
   );
 }

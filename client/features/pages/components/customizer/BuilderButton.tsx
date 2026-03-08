@@ -22,15 +22,7 @@ export default function BuilderButton({ variant, size, text, styles, link }: { v
     `;
 
     return (
-        <div
-            style={{
-                ...styles, // Spread ALL styles including CSS custom properties
-                paddingTop: styles?.paddingTop,
-                paddingBottom: styles?.paddingBottom,
-                backgroundColor: styles?.backgroundColor
-            }}
-            className={`px-4 md:px-10 flex ${alignment} ${!styles?.paddingTop && !styles?.paddingBottom ? 'py-12' : ''}`}
-        >
+        <div className={`w-full flex ${alignment}`}>
             {link ? (
                 <Link href={link} style={buttonStyle} className={buttonClasses}>
                     <span>{text || 'Shop The Look'}</span>

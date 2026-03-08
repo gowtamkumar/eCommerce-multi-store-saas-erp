@@ -151,228 +151,131 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
     else if (!mobile && !desktop) visibilityClasses = 'hidden';
   }
 
+  const structuralStyle = buildStructuralStyle();
+  const nodeId = `el-${section.id}`;
+  const responsiveStyles = generateResponsiveCSS(nodeId, s);
+
   const renderContent = () => {
-    const nodeId = `el-${section.id}`;
-    const responsiveStyles = generateResponsiveCSS(nodeId, s);
-
-
-
     switch (section.type) {
       case "banner":
-        return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <BannerSlider settings={settings} styles={styles} />
-            </div>
-          </>
-        );
+        return <BannerSlider settings={settings} styles={styles} />;
 
       case "product-slider":
         return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <ProductSlider
-                headline={settings?.headline}
-                count={settings?.count}
-                source={settings?.source}
-                productIds={settings?.productIds}
-                collectionId={settings?.source === 'collection' ? settings?.collectionId : undefined}
-                layout={settings?.layout}
-                columns={settings?.columns}
-                styles={styles}
-              />
-            </div>
-          </>
+          <ProductSlider
+            headline={settings?.headline}
+            count={settings?.count}
+            source={settings?.source}
+            productIds={settings?.productIds}
+            collectionId={settings?.source === 'collection' ? settings?.collectionId : undefined}
+            layout={settings?.layout}
+            columns={settings?.columns}
+            mobileColumns={settings?.mobileColumns}
+            styles={styles}
+          />
         );
 
       case "category-grid":
         return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <CategoryGrid
-                title={settings?.title}
-                count={settings?.count}
-                source={settings?.source}
-                items={settings?.items}
-                columns={settings?.columns}
-                styles={styles}
-              />
-            </div>
-          </>
+          <CategoryGrid
+            title={settings?.title}
+            count={settings?.count}
+            source={settings?.source}
+            items={settings?.items}
+            columns={settings?.columns}
+            mobileColumns={settings?.mobileColumns}
+            styles={styles}
+          />
         );
 
       case "offer-banner":
-        return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <OfferBanner settings={settings} styles={styles} />
-            </div>
-          </>
-        );
+        return <OfferBanner settings={settings} styles={styles} />;
 
       case "review-slider":
-        return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <ReviewSection settings={settings} styles={styles} />
-            </div>
-          </>
-        );
+        return <ReviewSection settings={settings} styles={styles} />;
 
       case "text-block":
-        return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <TextBlock html={settings?.html} headline={settings?.headline} styles={styles} />
-            </div>
-          </>
-        );
+        return <TextBlock html={settings?.html} headline={settings?.headline} styles={styles} />;
 
       case "image-block":
-        return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <ImageBlock settings={settings} styles={styles} />
-            </div>
-          </>
-        );
+        return <ImageBlock settings={settings} styles={styles} />;
 
       case "button":
-        return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <BuilderButton variant={settings?.variant} size={settings?.size} text={settings?.text} styles={styles} link={settings?.link} />
-            </div>
-          </>
-        );
+        return <BuilderButton variant={settings?.variant} size={settings?.size} text={settings?.text} styles={styles} link={settings?.link} />;
 
       case "faq-section":
         return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <FAQSection
-                items={settings?.items}
-                headline={settings?.title}
-                subline={settings?.subline}
-                styles={styles}
-                buttonText={settings?.buttonText}
-                faqIds={settings?.faqIds}
-                source={settings?.source}
-              />
-            </div>
-          </>
+          <FAQSection
+            items={settings?.items}
+            headline={settings?.title}
+            subline={settings?.subline}
+            styles={styles}
+            buttonText={settings?.buttonText}
+            faqIds={settings?.faqIds}
+            source={settings?.source}
+          />
         );
       case "brand-grid":
         return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <BrandGrid
-                title={settings?.title}
-                count={settings?.count}
-                source={settings?.source}
-                items={settings?.items}
-                columns={settings?.columns}
-                styles={styles}
-              />
-            </div>
-          </>
+          <BrandGrid
+            title={settings?.title}
+            count={settings?.count}
+            source={settings?.source}
+            items={settings?.items}
+            columns={settings?.columns}
+            mobileColumns={settings?.mobileColumns}
+            styles={styles}
+          />
         );
       case "newsletter":
         return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <Newsletter
-                title={settings?.title}
-                description={settings?.description}
-                buttonText={settings?.buttonText}
-                placeholder={settings?.placeholder}
-                styles={styles}
-              />
-            </div>
-          </>
+          <Newsletter
+            title={settings?.title}
+            description={settings?.description}
+            buttonText={settings?.buttonText}
+            placeholder={settings?.placeholder}
+            styles={styles}
+          />
         );
       case "stats-counter":
-        return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <StatsCounter stats={settings?.items} settings={settings} styles={styles} />
-            </div>
-          </>
-        );
+        return <StatsCounter stats={settings?.items} settings={settings} styles={styles} />;
+
       case "video-block":
-        return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <VideoBlock settings={settings} styles={styles} />
-            </div>
-          </>
-        );
+        return <VideoBlock settings={settings} styles={styles} />;
+
       case "contact":
+        return <ContactSection settings={settings} styles={styles} />;
+
+      case "section":
         return (
           <>
-            {responsiveStyles}
-            <div id={nodeId} className="w-full">
-              <ContactSection settings={settings} styles={styles} />
-            </div>
+            {section.children?.map(child => <SectionRenderer key={child.id} section={child} onSelect={onSelect} selectedId={selectedId} />)}
+            {(!section.children || section.children.length === 0) && (
+              <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 m-4 text-center text-slate-400">Drop a Row here</div>
+            )}
           </>
         );
-      case "section": {
-        const structuralStyle = buildStructuralStyle();
+
+      case "row":
         return (
           <>
-            {responsiveStyles}
-            <section id={nodeId} className="relative w-full overflow-hidden" style={structuralStyle}>
-              {section.children?.map(child => <SectionRenderer key={child.id} section={child} onSelect={onSelect} selectedId={selectedId} />)}
-              {(!section.children || section.children.length === 0) && (
-                <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 m-4 text-center text-slate-400">Drop a Row here</div>
-              )}
-            </section>
+            {section.children?.map(child => <SectionRenderer key={child.id} section={child} onSelect={onSelect} selectedId={selectedId} />)}
+            {(!section.children || section.children.length === 0) && (
+              <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 m-4 w-full text-center text-slate-400">Drop Columns here</div>
+            )}
           </>
         );
-      }
-      case "row": {
-        const structuralStyle = buildStructuralStyle();
-        const defaultRowStyle: React.CSSProperties = { display: 'flex', flexDirection: 'row', width: '100%', ...structuralStyle };
+
+      case "column":
         return (
           <>
-            {responsiveStyles}
-            <div id={nodeId} className="container mx-auto relative" style={defaultRowStyle}>
-              {section.children?.map(child => <SectionRenderer key={child.id} section={child} onSelect={onSelect} selectedId={selectedId} />)}
-              {(!section.children || section.children.length === 0) && (
-                <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 m-4 w-full text-center text-slate-400">Drop Columns here</div>
-              )}
-            </div>
+            {section.children?.map(child => <SectionRenderer key={child.id} section={child} onSelect={onSelect} selectedId={selectedId} />)}
+            {(!section.children || section.children.length === 0) && (
+              <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 m-4 w-full text-center text-slate-400">Drop Content here</div>
+            )}
           </>
         );
-      }
-      case "column": {
-        const structuralStyle = buildStructuralStyle();
-        const resolvedStyle: React.CSSProperties = { flex: 1, ...structuralStyle };
-        return (
-          <>
-            {responsiveStyles}
-            <div id={nodeId} className="flex flex-col relative" style={resolvedStyle}>
-              {section.children?.map(child => <SectionRenderer key={child.id} section={child} onSelect={onSelect} selectedId={selectedId} />)}
-              {(!section.children || section.children.length === 0) && (
-                <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 m-4 w-full text-center text-slate-400">Drop Content here</div>
-              )}
-            </div>
-          </>
-        );
-      }
+
       default:
         return null;
     }
@@ -381,6 +284,22 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
   const isStructural = ['section', 'row', 'column'].includes(section.type);
   const isSelected = selectedId === section.id;
   const isEditorMode = !!onSelect;
+
+  // Wrapper tag and classes
+  const Tag = section.type === "section" ? "section" : "div";
+  const wrapperClasses = `
+    ${section.type === 'section' ? 'relative w-full overflow-hidden' : ''}
+    ${section.type === 'row' ? 'container mx-auto relative' : ''}
+    ${section.type === 'column' ? 'flex flex-col relative' : ''}
+    ${!isStructural ? 'w-full' : ''}
+  `;
+
+  // Merge defaults for Row/Col
+  const finalStyle: React.CSSProperties = {
+    ...(section.type === 'row' ? { display: 'flex', flexDirection: 'row', width: '100%' } : {}),
+    ...(section.type === 'column' ? { flex: 1, display: 'flex' } : {}),
+    ...structuralStyle
+  };
 
   return (
     <div
@@ -402,7 +321,11 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
           {section.type.replace('-', ' ')}
         </div>
       )}
-      {renderContent()}
+
+      {responsiveStyles}
+      <Tag id={nodeId} className={wrapperClasses} style={finalStyle}>
+        {renderContent()}
+      </Tag>
     </div>
   );
 };

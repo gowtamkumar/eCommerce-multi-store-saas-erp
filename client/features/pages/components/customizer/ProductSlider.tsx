@@ -15,6 +15,7 @@ export default function ProductSlider({
   collectionId,
   layout = 'slider',
   columns = 4,
+  mobileColumns = 1,
   styles
 }: ProductSliderProps) {
   const [products, setProducts] = useState<any[]>([]);
@@ -50,41 +51,28 @@ export default function ProductSlider({
   }, [count, collectionId, source, JSON.stringify(productIds)]);
 
   return (
-    <div
-      style={{
-        ...styles, // Spread ALL styles including CSS custom properties
-        paddingTop: styles?.paddingTop,
-        paddingBottom: styles?.paddingBottom,
-        backgroundColor: styles?.backgroundColor,
-        color: styles?.color
-      }}
-      className="px-4 md:px-10 bg-slate-50 dark:bg-slate-900/40 overflow-hidden"
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className={`flex items-center justify-between mb-10 md:mb-16
+    <div className="overflow-hidden">
+      <div className="w-full">
+        <div className={`flex items-center justify-between mb-8 md:mb-12
           ${styles?.textAlign === 'center' ? 'justify-center text-center' : ''}
           ${styles?.textAlign === 'right' ? 'justify-end text-right' : ''}
           ${!styles?.textAlign || styles?.textAlign === 'left' ? 'justify-start text-left' : ''}
         `}>
           <div className="space-y-1">
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight"
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight"
               style={{ color: styles?.headlineColor }}
             >{headline || 'Trending Products'}</h2>
-            <div className={`h-1.5 bg-brand-500 rounded-full w-20
+            <div className={`h-1.5 bg-brand-500 rounded-full w-16
                ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
                ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
                ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
             `} />
           </div>
-          {/* <div className="hidden md:flex gap-3">
-            <button className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm">←</button>
-            <button className="w-14 h-14 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm">→</button>
-          </div> */}
         </div>
 
         {loading ? (
           <div className={layout === 'grid'
-            ? `grid gap-6 md:gap-10 grid-cols-1 sm:grid-cols-2 ${columns === 2 ? 'md:grid-cols-2' : columns === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'}`
+            ? `grid gap-6 md:gap-10 ${mobileColumns === 1 ? 'grid-cols-1' : 'grid-cols-2'} ${columns === 2 ? 'md:grid-cols-2' : columns === 3 ? 'md:grid-cols-3' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-1'}`
             : "flex gap-6 md:gap-10 overflow-x-hidden pb-8"
           }>
             {[...Array(count)].map((_, i) => (
@@ -97,7 +85,7 @@ export default function ProductSlider({
           </div>
         ) : products.length > 0 ? (
           <div className={layout === 'grid'
-            ? `grid gap-6 md:gap-10 grid-cols-1 sm:grid-cols-2 ${columns === 2 ? 'md:grid-cols-2' : columns === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'}`
+            ? `grid gap-6 md:gap-10 ${mobileColumns === 1 ? 'grid-cols-1' : 'grid-cols-2'} ${columns === 2 ? 'md:grid-cols-2' : columns === 3 ? 'md:grid-cols-3' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-1'}`
             : "flex gap-6 md:gap-10 overflow-x-auto pb-8 scrollbar-hide"
           }>
             {products.map((product) => (

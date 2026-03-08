@@ -17,6 +17,7 @@ export interface ProductSliderProps {
     collectionId?: string; // This is the category id
     layout?: 'slider' | 'grid';
     columns?: number;
+    mobileColumns?: number;
     styles?: any;
 }
 

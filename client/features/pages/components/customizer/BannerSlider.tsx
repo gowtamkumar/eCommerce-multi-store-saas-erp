@@ -38,17 +38,7 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
   const currentContent = slides[currentSlide];
 
   return (
-    <section
-      style={{
-        ...styles, // Spread ALL styles including CSS custom properties
-        height: styles?.height ? `${styles.height}px` : '600px',
-        paddingTop: styles?.paddingTop,
-        paddingBottom: styles?.paddingBottom,
-        backgroundColor: styles?.backgroundColor,
-        color: styles?.color
-      }}
-      className="relative group overflow-hidden bg-slate100 dark:bg-slate-800"
-    >
+    <div className="relative group overflow-hidden w-full h-full">
       <AnimatePresence mode='wait'>
         <motion.div
           key={currentSlide}
@@ -155,6 +145,6 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
           </div>
         </>
       )}
-    </section>
+    </div>
   );
 }

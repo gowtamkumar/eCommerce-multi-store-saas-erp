@@ -14,17 +14,8 @@ export default function StatsCounter({
   if (!stats?.length) return null;
 
   return (
-    <section
-      style={{
-        ...styles,
-        paddingTop: styles?.paddingTop,
-        paddingBottom: styles?.paddingBottom,
-        backgroundColor: styles?.backgroundColor,
-        color: styles?.color
-      }}
-      className={`px-4 md:px-10 ${!styles?.paddingTop && !styles?.paddingBottom ? 'py-16 md:py-24' : ''}`}
-    >
-      <div className="max-w-7xl mx-auto">
+    <div className="w-full overflow-hidden">
+      <div className="w-full">
         {(settings?.title || settings?.subline) && (
           <div className={`mb-12 md:mb-16 max-w-3xl mx-auto space-y-4 text-${styles?.textAlign || 'center'}`}>
             {settings?.title && (
@@ -107,6 +98,6 @@ export default function StatsCounter({
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 }

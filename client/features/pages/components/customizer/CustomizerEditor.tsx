@@ -182,7 +182,7 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
         </aside>
 
         {/* Center - Preview Canvas */}
-        <main className="flex-1 bg-slate-100 dark:bg-slate-950 p-8 flex items-center justify-center overflow-hidden">
+        <main className="flex-1 bg-slate-100 dark:bg-slate-950 p-6 flex items-center justify-center overflow-hidden">
           <Preview
             sections={data.content.sections}
             viewMode={viewMode}

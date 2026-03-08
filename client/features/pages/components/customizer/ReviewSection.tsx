@@ -85,17 +85,8 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
   };
 
   return (
-    <section
-      style={{
-        ...styles, // Spread ALL styles including CSS custom properties
-        paddingTop: styles?.paddingTop,
-        paddingBottom: styles?.paddingBottom,
-        backgroundColor: styles?.backgroundColor || '#020617', // slate-950 default
-        color: styles?.color
-      }}
-      className={`px-4 md:px-10 border-y border-white/5 overflow-hidden ${!styles?.paddingTop && !styles?.paddingBottom ? 'py-16 md:py-24' : ''}`}
-    >
-      <div className="max-w-7xl mx-auto">
+    <div className="w-full overflow-hidden">
+      <div className="w-full">
         <div className={`flex justify-between items-end mb-16
            ${styles?.textAlign === 'center' ? 'flex-col items-center justify-center gap-6 text-center' : ''}
            ${styles?.textAlign === 'right' ? 'flex-row-reverse text-right' : ''} 
@@ -253,6 +244,6 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
           </motion.div>
         )}
       </div>
-    </section>
+    </div>
   );
 }

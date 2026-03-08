@@ -61,8 +61,8 @@ const VideoBlock: React.FC<VideoBlockProps> = ({ settings, styles }) => {
   }[aspectRatio] || 'aspect-video';
 
   return (
-    <div style={styles} className="w-full">
-      <div className={fullWidth ? 'w-full' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'}>
+    <div className="w-full overflow-hidden">
+      <div className="w-full">
         {headline && (
           <h2
             className="text-2xl md:text-3xl font-bold mb-6"
