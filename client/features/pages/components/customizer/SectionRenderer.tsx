@@ -1,3 +1,5 @@
+"use client";
+
 import BrandGrid from "@/features/brand/components/BrandGrid";
 import FAQSection from "@/features/faq/components/FAQSection";
 import BannerSlider from "@/features/pages/components/customizer/BannerSlider";
@@ -17,45 +19,127 @@ import { CustomizerSection } from "@/types/customizer";
 
 interface SectionRendererProps {
   section: CustomizerSection;
+  onSelect?: (id: string | null) => void;
+  selectedId?: string | null;
 }
 
-const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
+const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, selectedId }) => {
   if (!section) return null;
 
-  const settings = section.settings as any;
+  const s = section.styles as any || {};
+
   const styles = {
-    paddingTop: `${section.styles?.paddingTop || 0}px`,
-    paddingBottom: `${section.styles?.paddingBottom || 0}px`,
-    backgroundColor: section.styles?.backgroundColor,
-    color: section.styles?.textColor,
-    height: section.styles?.height,
-    overlayOpacity: section.styles?.overlayOpacity,
-    textAlign: section.styles?.textAlign,
-    headlineColor: section.styles?.headlineColor,
-    sublineColor: section.styles?.sublineColor,
-    iconColor: section.styles?.iconColor,
-    iconBgColor: section.styles?.iconBgColor,
-    iconBorder: section.styles?.iconBorder,
-    buttonColor: section.styles?.buttonColor,
-    buttonTextColor: section.styles?.buttonTextColor,
-    imageRadius: section.styles?.imageRadius,
-    imageBorder: section.styles?.imageBorder,
-    imageShadow: section.styles?.imageShadow,
-    cardRadius: section.styles?.cardRadius,
-    cardBorder: section.styles?.cardBorder,
-    cardShadow: section.styles?.cardShadow,
-    // Section-specific typography CSS custom properties
-    ...(section.styles?.headingFontFamily && { '--heading-font-family': section.styles.headingFontFamily } as React.CSSProperties),
-    ...(section.styles?.headingFontWeight && { '--heading-font-weight': section.styles.headingFontWeight } as React.CSSProperties),
-    ...(section.styles?.headingFontSize && { '--heading-font-size': section.styles.headingFontSize } as React.CSSProperties),
-    ...(section.styles?.headingLineHeight && { '--heading-line-height': section.styles.headingLineHeight } as React.CSSProperties),
-    ...(section.styles?.paragraphFontFamily && { '--paragraph-font-family': section.styles.paragraphFontFamily } as React.CSSProperties),
-    ...(section.styles?.paragraphFontWeight && { '--paragraph-font-weight': section.styles.paragraphFontWeight } as React.CSSProperties),
-    ...(section.styles?.paragraphFontSize && { '--paragraph-font-size': section.styles.paragraphFontSize } as React.CSSProperties),
-    ...(section.styles?.paragraphLineHeight && { '--paragraph-line-height': section.styles.paragraphLineHeight } as React.CSSProperties),
+    // Legacy named props (for non-structural blocks)
+    paddingTop: s.paddingTop !== undefined ? (typeof s.paddingTop === 'number' ? `${s.paddingTop}px` : s.paddingTop) : undefined,
+    paddingBottom: s.paddingBottom !== undefined ? (typeof s.paddingBottom === 'number' ? `${s.paddingBottom}px` : s.paddingBottom) : undefined,
+    backgroundColor: s.backgroundColor,
+    color: s.color || s.textColor,
+    height: s.height ? (typeof s.height === 'number' ? `${s.height}px` : s.height) : undefined,
+    textAlign: s.textAlign as any,
+    // Content block specialty
+    overlayOpacity: s.overlayOpacity,
+    headlineColor: s.headlineColor,
+    sublineColor: s.sublineColor,
+    iconColor: s.iconColor,
+    iconBgColor: s.iconBgColor,
+    iconBorder: s.iconBorder,
+    buttonColor: s.buttonColor,
+    buttonTextColor: s.buttonTextColor,
+    imageRadius: s.imageRadius,
+    imageBorder: s.imageBorder,
+    imageShadow: s.imageShadow,
+    cardRadius: s.cardRadius,
+    cardBorder: s.cardBorder,
+    cardShadow: s.cardShadow,
+    ...(s.headingFontFamily && { '--heading-font-family': s.headingFontFamily } as React.CSSProperties),
+    ...(s.headingFontWeight && { '--heading-font-weight': s.headingFontWeight } as React.CSSProperties),
+    ...(s.headingFontSize && { '--heading-font-size': s.headingFontSize } as React.CSSProperties),
+    ...(s.headingLineHeight && { '--heading-line-height': s.headingLineHeight } as React.CSSProperties),
+    ...(s.paragraphFontFamily && { '--paragraph-font-family': s.paragraphFontFamily } as React.CSSProperties),
+    ...(s.paragraphFontWeight && { '--paragraph-font-weight': s.paragraphFontWeight } as React.CSSProperties),
+    ...(s.paragraphFontSize && { '--paragraph-font-size': s.paragraphFontSize } as React.CSSProperties),
+    ...(s.paragraphLineHeight && { '--paragraph-line-height': s.paragraphLineHeight } as React.CSSProperties),
+  };
+
+  // Build full structural CSS from StylesEditor fields
+  const buildStructuralStyle = (): React.CSSProperties => {
+    const css: Record<string, any> = {};
+    const pick = (cssKey: string, sKey: string) => { if (s[sKey]) css[cssKey] = s[sKey]; };
+    pick('display', 'display');
+    pick('position', 'position');
+    pick('overflow', 'overflow');
+    pick('zIndex', 'zIndex');
+    pick('top', 'top'); pick('right', 'right'); pick('bottom', 'bottom'); pick('left', 'left');
+    pick('flexDirection', 'flexDirection'); pick('flexWrap', 'flexWrap');
+    pick('justifyContent', 'justifyContent'); pick('alignItems', 'alignItems');
+    pick('gap', 'gap'); pick('flexGrow', 'flexGrow'); pick('flexShrink', 'flexShrink'); pick('flexBasis', 'flexBasis');
+    pick('gridTemplateColumns', 'gridTemplateColumns'); pick('gridTemplateRows', 'gridTemplateRows');
+    pick('gap', 'gridGap'); pick('columnGap', 'columnGap'); pick('rowGap', 'rowGap');
+    pick('gridColumn', 'gridColumn'); pick('gridRow', 'gridRow');
+    if (s.paddingTop) css.paddingTop = s.paddingTop;
+    if (s.paddingRight) css.paddingRight = s.paddingRight;
+    if (s.paddingBottom) css.paddingBottom = s.paddingBottom;
+    if (s.paddingLeft) css.paddingLeft = s.paddingLeft;
+    if (s.marginTop) css.marginTop = s.marginTop;
+    if (s.marginRight) css.marginRight = s.marginRight;
+    if (s.marginBottom) css.marginBottom = s.marginBottom;
+    if (s.marginLeft) css.marginLeft = s.marginLeft;
+    pick('width', 'width'); pick('height', 'height');
+    pick('minWidth', 'minWidth'); pick('maxWidth', 'maxWidth');
+    pick('minHeight', 'minHeight'); pick('maxHeight', 'maxHeight');
+    pick('fontFamily', 'fontFamily'); pick('fontSize', 'fontSize');
+    pick('fontWeight', 'fontWeight'); pick('lineHeight', 'lineHeight');
+    pick('letterSpacing', 'letterSpacing'); pick('textAlign', 'textAlign');
+    pick('textTransform', 'textTransform'); pick('color', 'color');
+    pick('backgroundColor', 'backgroundColor');
+    if (s.backgroundImage) css.backgroundImage = s.backgroundImage.startsWith('url(') ? s.backgroundImage : `url(${s.backgroundImage})`;
+    pick('backgroundSize', 'backgroundSize'); pick('backgroundPosition', 'backgroundPosition'); pick('backgroundRepeat', 'backgroundRepeat');
+    pick('borderWidth', 'borderWidth'); pick('borderStyle', 'borderStyle');
+    pick('borderColor', 'borderColor'); pick('borderRadius', 'borderRadius');
+    pick('boxShadow', 'boxShadow'); pick('opacity', 'opacity'); pick('filter', 'filter');
+    pick('transition', 'transition'); pick('transform', 'transform');
+    return css as React.CSSProperties;
   };
 
 
+
+  // Responsive Style Generator
+  const generateResponsiveCSS = (id: string, s: any) => {
+    const props: string[] = [];
+    const add = (cssKey: string, sKey: string) => {
+      if (s[sKey] !== undefined && s[sKey] !== '') {
+        props.push(`${cssKey}:${s[sKey]} !important;`);
+      }
+    };
+
+    add('display', 'mobileDisplay');
+    add('flex-direction', 'mobileFlexDirection');
+    add('width', 'mobileWidth');
+    add('height', 'mobileHeight');
+    add('text-align', 'mobileTextAlign');
+    add('font-size', 'mobileFontSize');
+    add('justify-content', 'mobileJustifyContent');
+    add('align-items', 'mobileAlignItems');
+    add('gap', 'mobileGap');
+    add('grid-template-columns', 'mobileGridTemplateColumns');
+    add('padding-top', 'mobilePaddingTop');
+    add('padding-bottom', 'mobilePaddingBottom');
+    add('margin-top', 'mobileMarginTop');
+    add('margin-bottom', 'mobileMarginBottom');
+
+    if (props.length === 0) return null;
+
+    const cssString = props.join('');
+    // We target BOTH the standard media query AND a specific class for the editor preview
+    return (
+      <style>{`
+        @media (max-width: 768px) { #${id} { ${cssString} } }
+        .is-mobile-preview #${id} { ${cssString} }
+      `}</style>
+    );
+  };
+
+  const settings = section.settings as any;
 
   // Visibility Logic
   let visibilityClasses = 'block';
@@ -68,125 +152,256 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section }) => {
   }
 
   const renderContent = () => {
+    const nodeId = `el-${section.id}`;
+    const responsiveStyles = generateResponsiveCSS(nodeId, s);
+
+
+
     switch (section.type) {
       case "banner":
         return (
-          <BannerSlider settings={settings} styles={styles} />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <BannerSlider settings={settings} styles={styles} />
+            </div>
+          </>
         );
 
       case "product-slider":
         return (
-          <ProductSlider
-            headline={settings?.headline}
-            count={settings?.count}
-            source={settings?.source}
-            productIds={settings?.productIds}
-            collectionId={settings?.source === 'collection' ? settings?.collectionId : undefined}
-            layout={settings?.layout}
-            columns={settings?.columns}
-            styles={styles}
-          />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <ProductSlider
+                headline={settings?.headline}
+                count={settings?.count}
+                source={settings?.source}
+                productIds={settings?.productIds}
+                collectionId={settings?.source === 'collection' ? settings?.collectionId : undefined}
+                layout={settings?.layout}
+                columns={settings?.columns}
+                styles={styles}
+              />
+            </div>
+          </>
         );
 
       case "category-grid":
         return (
-          <CategoryGrid
-            title={settings?.title}
-            count={settings?.count}
-            source={settings?.source}
-            items={settings?.items}
-            columns={settings?.columns}
-            styles={styles}
-          />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <CategoryGrid
+                title={settings?.title}
+                count={settings?.count}
+                source={settings?.source}
+                items={settings?.items}
+                columns={settings?.columns}
+                styles={styles}
+              />
+            </div>
+          </>
         );
 
       case "offer-banner":
         return (
-          <OfferBanner settings={settings} styles={styles} />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <OfferBanner settings={settings} styles={styles} />
+            </div>
+          </>
         );
 
       case "review-slider":
         return (
-          <ReviewSection
-            settings={settings}
-            styles={styles}
-          />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <ReviewSection settings={settings} styles={styles} />
+            </div>
+          </>
         );
 
       case "text-block":
         return (
-          <TextBlock html={settings?.html} headline={settings?.headline} styles={styles} />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <TextBlock html={settings?.html} headline={settings?.headline} styles={styles} />
+            </div>
+          </>
         );
 
       case "image-block":
         return (
-          <ImageBlock
-            settings={settings}
-            styles={styles}
-          />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <ImageBlock settings={settings} styles={styles} />
+            </div>
+          </>
         );
 
       case "button":
         return (
-          <BuilderButton variant={settings?.variant} size={settings?.size} text={settings?.text} styles={styles} link={settings?.link} />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <BuilderButton variant={settings?.variant} size={settings?.size} text={settings?.text} styles={styles} link={settings?.link} />
+            </div>
+          </>
         );
 
       case "faq-section":
         return (
-          <FAQSection
-            items={settings?.items}
-            headline={settings?.title}
-            subline={settings?.subline}
-            styles={styles}
-            buttonText={settings?.buttonText}
-            faqIds={settings?.faqIds}
-            source={settings?.source}
-          />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <FAQSection
+                items={settings?.items}
+                headline={settings?.title}
+                subline={settings?.subline}
+                styles={styles}
+                buttonText={settings?.buttonText}
+                faqIds={settings?.faqIds}
+                source={settings?.source}
+              />
+            </div>
+          </>
         );
       case "brand-grid":
         return (
-          <BrandGrid
-            title={settings?.title}
-            count={settings?.count}
-            source={settings?.source}
-            items={settings?.items}
-            columns={settings?.columns}
-            styles={styles}
-          />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <BrandGrid
+                title={settings?.title}
+                count={settings?.count}
+                source={settings?.source}
+                items={settings?.items}
+                columns={settings?.columns}
+                styles={styles}
+              />
+            </div>
+          </>
         );
       case "newsletter":
         return (
-          <Newsletter
-            title={settings?.title}
-            description={settings?.description}
-            buttonText={settings?.buttonText}
-            placeholder={settings?.placeholder}
-            styles={styles}
-          />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <Newsletter
+                title={settings?.title}
+                description={settings?.description}
+                buttonText={settings?.buttonText}
+                placeholder={settings?.placeholder}
+                styles={styles}
+              />
+            </div>
+          </>
         );
       case "stats-counter":
         return (
-          <StatsCounter
-            stats={settings?.items}
-            settings={settings}
-            styles={styles}
-          />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <StatsCounter stats={settings?.items} settings={settings} styles={styles} />
+            </div>
+          </>
         );
       case "video-block":
         return (
-          <VideoBlock settings={settings} styles={styles} />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <VideoBlock settings={settings} styles={styles} />
+            </div>
+          </>
         );
       case "contact":
         return (
-          <ContactSection settings={settings} styles={styles} />
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="w-full">
+              <ContactSection settings={settings} styles={styles} />
+            </div>
+          </>
         );
+      case "section": {
+        const structuralStyle = buildStructuralStyle();
+        return (
+          <>
+            {responsiveStyles}
+            <section id={nodeId} className="relative w-full overflow-hidden" style={structuralStyle}>
+              {section.children?.map(child => <SectionRenderer key={child.id} section={child} onSelect={onSelect} selectedId={selectedId} />)}
+              {(!section.children || section.children.length === 0) && (
+                <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 m-4 text-center text-slate-400">Drop a Row here</div>
+              )}
+            </section>
+          </>
+        );
+      }
+      case "row": {
+        const structuralStyle = buildStructuralStyle();
+        const defaultRowStyle: React.CSSProperties = { display: 'flex', flexDirection: 'row', width: '100%', ...structuralStyle };
+        return (
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="container mx-auto relative" style={defaultRowStyle}>
+              {section.children?.map(child => <SectionRenderer key={child.id} section={child} onSelect={onSelect} selectedId={selectedId} />)}
+              {(!section.children || section.children.length === 0) && (
+                <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 m-4 w-full text-center text-slate-400">Drop Columns here</div>
+              )}
+            </div>
+          </>
+        );
+      }
+      case "column": {
+        const structuralStyle = buildStructuralStyle();
+        const resolvedStyle: React.CSSProperties = { flex: 1, ...structuralStyle };
+        return (
+          <>
+            {responsiveStyles}
+            <div id={nodeId} className="flex flex-col relative" style={resolvedStyle}>
+              {section.children?.map(child => <SectionRenderer key={child.id} section={child} onSelect={onSelect} selectedId={selectedId} />)}
+              {(!section.children || section.children.length === 0) && (
+                <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 m-4 w-full text-center text-slate-400">Drop Content here</div>
+              )}
+            </div>
+          </>
+        );
+      }
       default:
         return null;
     }
   };
 
+  const isStructural = ['section', 'row', 'column'].includes(section.type);
+  const isSelected = selectedId === section.id;
+  const isEditorMode = !!onSelect;
+
   return (
-    <div key={section.id} className={`responsive-section ${visibilityClasses}`}>
+    <div
+      key={section.id}
+      onClick={(e) => {
+        if (onSelect) {
+          e.stopPropagation();
+          onSelect(section.id);
+        }
+      }}
+      className={`responsive-section relative group transition-all duration-200 ${visibilityClasses} 
+        ${(isStructural && isEditorMode) ? 'min-h-[50px]' : ''}
+        ${isEditorMode ? 'cursor-pointer' : ''}
+        ${(isSelected && isEditorMode) ? 'outline outline-2 outline-brand-500 outline-offset-[-2px] z-[5]' : (isEditorMode ? 'hover:outline hover:outline-2 hover:outline-brand-500/30 hover:outline-offset-[-2px]' : '')}
+      `}
+    >
+      {isSelected && isEditorMode && (
+        <div className="absolute top-0 left-0 bg-brand-500 text-white text-[9px] font-bold px-1.5 py-0.5 z-[10] uppercase tracking-wider rounded-br shadow-sm pointer-events-none">
+          {section.type.replace('-', ' ')}
+        </div>
+      )}
       {renderContent()}
     </div>
   );

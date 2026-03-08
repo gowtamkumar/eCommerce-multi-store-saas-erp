@@ -4,7 +4,7 @@ import { fetchAPI } from '@/services/api';
 import { CustomizerSection, PageData } from '@/types/customizer';
 import { ArrowLeft, Eye, Layout, Monitor, Save, Settings, Smartphone } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import PageSettings from './PageSettings';
 import Preview from './Preview';
@@ -16,12 +16,38 @@ interface CustomizerEditorProps {
   initialData: PageData;
 }
 
+// Recursively find a node by id inside the nested sections tree
+function findSectionDeep(sections: CustomizerSection[], id: string): CustomizerSection | undefined {
+  for (const section of sections) {
+    if (section.id === id) return section;
+    if (section.children?.length) {
+      const found = findSectionDeep(section.children, id);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+// Recursively replace a node by id anywhere in the nested tree
+function replaceSectionDeep(sections: CustomizerSection[], updated: CustomizerSection): CustomizerSection[] {
+  return sections.map(s => {
+    if (s.id === updated.id) return updated;
+    if (s.children?.length) return { ...s, children: replaceSectionDeep(s.children, updated) };
+    return s;
+  });
+}
+
 export default function CustomizerEditor({ pageId, initialData }: CustomizerEditorProps) {
   const [data, setData] = useState<PageData>(initialData);
   const [activeTab, setActiveTab] = useState<'sections' | 'settings'>('sections');
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Sync internal state if initialData changes (loaded from API)
+  useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -69,7 +95,9 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
     }
   };
 
-  const selectedSection = data.content.sections.find(s => s.id === selectedSectionId);
+  const selectedSection = selectedSectionId
+    ? findSectionDeep(data.content.sections, selectedSectionId)
+    : undefined;
 
   return (
     <div className="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100">
@@ -169,9 +197,10 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
           {selectedSection && (
             <SettingsPanel
               section={selectedSection}
+              viewMode={viewMode}
               onClose={() => setSelectedSectionId(null)}
               onUpdate={(updated: CustomizerSection) => {
-                const newSections = data.content.sections.map(s => s.id === updated.id ? updated : s);
+                const newSections = replaceSectionDeep(data.content.sections, updated);
                 setData({ ...data, content: { ...data.content, sections: newSections } });
               }}
             />

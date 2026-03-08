@@ -51,7 +51,8 @@ export default function Preview({ sections, viewMode, selectedId, onSelect, typo
 
       {/* Actual Content Area */}
       <div
-        className="flex-1 overflow-y-auto scrollbar-hide flex flex-col"
+        className={`flex-1 overflow-y-auto scrollbar-hide flex flex-col ${viewMode === 'mobile' ? 'is-mobile-preview' : ''}`}
+
         style={{
           fontFamily: typography?.fontFamily || 'Inter, sans-serif',
           fontSize: `${typography?.baseFontSize || 18}px`,
@@ -72,20 +73,8 @@ export default function Preview({ sections, viewMode, selectedId, onSelect, typo
             ref={(el) => {
               if (el) sectionRefs.current[section.id] = el;
             }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(section.id);
-            }}
-            className={`relative group cursor-pointer border-2 transition-all ${selectedId === section.id ? 'border-brand-500 z-10 scale-[1.01] shadow-lg' : 'border-transparent hover:border-brand-500/30'}`}
           >
-            {/* Selection Label */}
-            {selectedId === section.id && (
-              <div className="absolute top-0 left-0 bg-brand-500 text-white text-[10px] font-bold px-2 py-0.5 z-20 uppercase tracking-wider rounded-br-lg">
-                Selected: {(section.type as string).replace('-', ' ')}
-              </div>
-            )}
-
-            <SectionRenderer section={section} />
+            <SectionRenderer section={section} onSelect={onSelect} selectedId={selectedId} />
           </div>
         ))}
 

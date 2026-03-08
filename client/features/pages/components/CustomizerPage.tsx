@@ -2,7 +2,7 @@
 
 import CustomizerEditor from "@/features/pages/components/customizer/CustomizerEditor";
 import { fetchAPI } from "@/services/api";
-import { PageData } from "@/types/customizer";
+import { CustomizerSection, PageData } from "@/types/customizer";
 import { Loader2 } from "lucide-react";
 import { use, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -32,15 +32,18 @@ export default function CustomizerPage({ params }: { params: Promise<{ id: strin
       if (res.success) {
         const page = res.data;
         // The entity has 'sections' column, but Customizer expects data.content.sections
-        const sections = page.sections || [];
+        const adaptSections = (sections: any[]): CustomizerSection[] => {
+          return sections.map((s: any) => ({
+            id: s.id,
+            type: s.type === 'hero' ? 'hero-banner' : s.type, // Migration support
+            settings: s.settings || s.content || {}, // Handle renamed content field
+            styles: s.styles || { paddingTop: 40, paddingBottom: 40 },
+            disabled: s.disabled || false,
+            children: s.children ? adaptSections(s.children) : (['section', 'row', 'column'].includes(s.type) ? [] : undefined)
+          }));
+        };
 
-        const adaptedSections = sections.map((s: any) => ({
-          id: s.id,
-          type: s.type === 'hero' ? 'hero-banner' : s.type, // Migration support
-          settings: s.settings || s.content || {}, // Handle renamed content field
-          styles: s.styles || { paddingTop: 40, paddingBottom: 40 },
-          disabled: s.disabled || false,
-        }));
+        const adaptedSections = adaptSections(page.sections || []);
 
         setData({
           id: page.id,

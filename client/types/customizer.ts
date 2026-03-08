@@ -3,6 +3,9 @@
  */
 
 export type SectionType =
+  | 'section'     // Structural Node
+  | 'row'         // Structural Node
+  | 'column'      // Structural Node
   | 'banner'
   | 'product-slider'
   | 'category-grid'
@@ -246,6 +249,7 @@ export interface CustomizerSection {
     mobile: boolean;
   };
   disabled?: boolean;
+  children?: CustomizerSection[]; // Allow recursive nesting
 }
 
 export interface CustomizerData {
