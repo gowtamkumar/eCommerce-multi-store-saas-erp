@@ -6,11 +6,15 @@ import BannerSlider from "@/features/pages/components/customizer/BannerSlider";
 import BuilderButton from "@/features/pages/components/customizer/BuilderButton";
 import CategoryGrid from "@/features/pages/components/customizer/CategoryGrid";
 import ContactSection from "@/features/pages/components/customizer/ContactSection";
+import Divider from "@/features/pages/components/customizer/Divider";
+import Heading from "@/features/pages/components/customizer/Heading";
 import ImageBlock from "@/features/pages/components/customizer/ImageBlock";
 import Newsletter from "@/features/pages/components/customizer/Newsletter";
 import OfferBanner from "@/features/pages/components/customizer/OfferBanner";
+import Paragraph from "@/features/pages/components/customizer/Paragraph";
 import ProductSlider from "@/features/pages/components/customizer/ProductSlider";
 import ReviewSection from "@/features/pages/components/customizer/ReviewSection";
+import Spacer from "@/features/pages/components/customizer/Spacer";
 import StatsCounter from "@/features/pages/components/customizer/StatsCounter";
 import TextBlock from "@/features/pages/components/customizer/TextBlock";
 import VideoBlock from "@/features/pages/components/customizer/VideoBlock";
@@ -202,6 +206,18 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
 
       case "button":
         return <BuilderButton variant={settings?.variant} size={settings?.size} text={settings?.text} styles={styles} link={settings?.link} />;
+
+      case "heading":
+        return <Heading settings={settings} styles={styles} />;
+
+      case "paragraph":
+        return <Paragraph settings={settings} styles={styles} />;
+
+      case "divider":
+        return <Divider settings={settings} styles={styles} />;
+
+      case "spacer":
+        return <Spacer settings={settings} />;
 
       case "faq-section":
         return (

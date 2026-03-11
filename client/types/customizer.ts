@@ -19,7 +19,11 @@ export type SectionType =
   | 'newsletter'
   | 'stats-counter'
   | 'video-block'
-  | 'contact';
+  | 'contact'
+  | 'heading'
+  | 'paragraph'
+  | 'divider'
+  | 'spacer';
 
 export interface SectionStyles {
   paddingTop: number | string;
@@ -210,6 +214,28 @@ export interface FAQSectionSettings {
   items: FAQItem[];
 }
 
+export interface HeadingSettings {
+  text?: string;
+  level?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+  alignment?: 'left' | 'center' | 'right';
+}
+
+export interface ParagraphSettings {
+  content?: string;
+  alignment?: 'left' | 'center' | 'right';
+}
+
+export interface DividerSettings {
+  thickness?: number;
+  width?: string;
+  color?: string;
+  style?: 'solid' | 'dashed' | 'dotted';
+}
+
+export interface SpacerSettings {
+  height?: number;
+}
+
 export interface ContactSectionSettings {
   title?: string;
   subline?: string;
@@ -237,6 +263,10 @@ export type SectionSettings =
   | StatsCounterSettings
   | VideoBlockSettings
   | ContactSectionSettings
+  | HeadingSettings
+  | ParagraphSettings
+  | DividerSettings
+  | SpacerSettings
   | Record<string, any>;
 
 export interface CustomizerSection {

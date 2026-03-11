@@ -31,7 +31,9 @@ import {
   LayoutTemplate,
   Mail,
   MessageSquare,
+  Minus,
   MousePointer2,
+  MoveVertical,
   Plus,
   Rows,
   Sliders,
@@ -68,6 +70,10 @@ const SECTION_ICONS: Record<SectionType, any> = {
   'faq-section': HelpCircle,
   'video-block': Video,
   'contact': Mail,
+  'heading': Type,
+  'paragraph': MessageSquare,
+  'divider': Minus,
+  'spacer': MoveVertical,
 };
 
 const getLabel = (type: SectionType) => {

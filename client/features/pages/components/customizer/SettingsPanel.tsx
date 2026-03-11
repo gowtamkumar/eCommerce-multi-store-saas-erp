@@ -967,6 +967,146 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
               </div>
             )}
 
+            {section.type === 'heading' && (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Heading Text</label>
+                  <input
+                    type="text"
+                    value={settings?.text || ''}
+                    onChange={(e) => updateSetting('text', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="Enter heading..."
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Heading Level</label>
+                  <select
+                    value={settings?.level || 'h2'}
+                    onChange={(e) => updateSetting('level', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="h1">Heading 1</option>
+                    <option value="h2">Heading 2</option>
+                    <option value="h3">Heading 3</option>
+                    <option value="h4">Heading 4</option>
+                    <option value="h5">Heading 5</option>
+                    <option value="h6">Heading 6</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Alignment</label>
+                  <select
+                    value={settings?.alignment || 'left'}
+                    onChange={(e) => updateSetting('alignment', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {section.type === 'paragraph' && (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Content</label>
+                  <textarea
+                    value={settings?.content || ''}
+                    onChange={(e) => updateSetting('content', e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="Enter paragraph text..."
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Alignment</label>
+                  <select
+                    value={settings?.alignment || 'left'}
+                    onChange={(e) => updateSetting('alignment', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {section.type === 'divider' && (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Thickness (px)</label>
+                  <input
+                    type="number"
+                    value={settings?.thickness || 1}
+                    onChange={(e) => updateSetting('thickness', parseInt(e.target.value))}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    min="1"
+                    max="20"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Width (%)</label>
+                  <input
+                    type="text"
+                    value={settings?.width || '100%'}
+                    onChange={(e) => updateSetting('width', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="e.g. 50% or 200px"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Style</label>
+                  <select
+                    value={settings?.style || 'solid'}
+                    onChange={(e) => updateSetting('style', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Color</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={settings?.color || '#e2e8f0'}
+                      onChange={(e) => updateSetting('color', e.target.value)}
+                      className="h-10 w-12 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={settings?.color || '#e2e8f0'}
+                      onChange={(e) => updateSetting('color', e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {section.type === 'spacer' && (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Height (px)</label>
+                  <input
+                    type="number"
+                    value={settings?.height || 40}
+                    onChange={(e) => updateSetting('height', parseInt(e.target.value))}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    min="0"
+                    max="500"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Visibility Settings - Global */}
             <section className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2 text-slate-400 mb-2">
