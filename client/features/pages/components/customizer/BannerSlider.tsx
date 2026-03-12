@@ -7,6 +7,7 @@ import { BannerSliderProps } from "../../type";
 
 
 export default function BannerSlider({ settings, styles }: BannerSliderProps) {
+
   const [currentSlide, setCurrentSlide] = useState(0);
   const slides = settings?.slides?.length > 0 ? settings.slides : [{
     id: 'default',
@@ -18,10 +19,6 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
     secondaryButtonText: settings?.secondaryButtonText,
     secondaryButtonLink: settings?.secondaryButtonLink,
   }];
-
-  console.log("settings", settings);
-  console.log("styles", styles);
-
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -98,13 +95,13 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
           ${styles?.textAlign === 'right' ? 'justify-end text-right' : ''}
           ${!styles?.textAlign || styles?.textAlign === 'left' ? 'justify-start text-left' : ''}
         `}
-      // style={{
-      //   paddingTop: styles?.paddingTop || 0,
-      //   paddingBottom: styles?.paddingBottom || 0,
-      //   paddingLeft: styles?.paddingLeft || '1.5rem',
-      //   paddingRight: styles?.paddingRight || '1.5rem',
-      //   boxSizing: 'border-box'
-      // } as any}
+        style={{
+          paddingTop: styles?.paddingTop || 0,
+          paddingBottom: styles?.paddingBottom || 0,
+          paddingLeft: styles?.paddingLeft || '2rem',
+          paddingRight: styles?.paddingRight || '2rem',
+          boxSizing: 'border-box'
+        } as any}
       >
         <AnimatePresence mode='wait'>
           <motion.div
@@ -114,7 +111,6 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
             exit={{ y: -30, opacity: 0 }}
             transition={{ duration: 0.8, ease: "circOut" }}
             className="w-full max-w-2xl px-0 md:px-14"
-
           >
             <h1
               className="text-5xl md:text-8xl font-black mb-6 leading-[1.1] tracking-tight drop-shadow-2xl"

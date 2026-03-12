@@ -33,13 +33,24 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
   const s = section.styles as any || {};
 
   const styles = {
-    // Legacy named props (for non-structural blocks)
+    ...s, // Pass all raw styles for maximum compatibility
     paddingTop: s.paddingTop !== undefined ? (typeof s.paddingTop === 'number' ? `${s.paddingTop}px` : s.paddingTop) : undefined,
     paddingBottom: s.paddingBottom !== undefined ? (typeof s.paddingBottom === 'number' ? `${s.paddingBottom}px` : s.paddingBottom) : undefined,
+    paddingLeft: s.paddingLeft !== undefined ? (typeof s.paddingLeft === 'number' ? `${s.paddingLeft}px` : s.paddingLeft) : undefined,
+    paddingRight: s.paddingRight !== undefined ? (typeof s.paddingRight === 'number' ? `${s.paddingRight}px` : s.paddingRight) : undefined,
+    marginTop: s.marginTop !== undefined ? (typeof s.marginTop === 'number' ? `${s.marginTop}px` : s.marginTop) : undefined,
+    marginBottom: s.marginBottom !== undefined ? (typeof s.marginBottom === 'number' ? `${s.marginBottom}px` : s.marginBottom) : undefined,
     backgroundColor: s.backgroundColor,
     color: s.color || s.textColor,
     height: s.height ? (typeof s.height === 'number' ? `${s.height}px` : s.height) : undefined,
+    width: s.width ? (typeof s.width === 'number' ? `${s.width}px` : s.width) : undefined,
+    maxWidth: s.maxWidth ? (typeof s.maxWidth === 'number' ? `${s.maxWidth}px` : s.maxWidth) : undefined,
     textAlign: s.textAlign as any,
+    borderRadius: s.borderRadius,
+    borderWidth: s.borderWidth,
+    borderStyle: s.borderStyle,
+    borderColor: s.borderColor,
+    boxShadow: s.boxShadow,
     // Content block specialty
     overlayOpacity: s.overlayOpacity,
     headlineColor: s.headlineColor,
@@ -80,10 +91,15 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
     pick('gridTemplateColumns', 'gridTemplateColumns'); pick('gridTemplateRows', 'gridTemplateRows');
     pick('gap', 'gridGap'); pick('columnGap', 'columnGap'); pick('rowGap', 'rowGap');
     pick('gridColumn', 'gridColumn'); pick('gridRow', 'gridRow');
-    if (s.paddingTop) css.paddingTop = s.paddingTop;
-    if (s.paddingRight) css.paddingRight = s.paddingRight;
-    if (s.paddingBottom) css.paddingBottom = s.paddingBottom;
-    if (s.paddingLeft) css.paddingLeft = s.paddingLeft;
+    const isFullBleed = ['banner', 'offer-banner'].includes(section.type);
+
+    if (!isFullBleed) {
+      if (s.paddingTop) css.paddingTop = s.paddingTop;
+      if (s.paddingRight) css.paddingRight = s.paddingRight;
+      if (s.paddingBottom) css.paddingBottom = s.paddingBottom;
+      if (s.paddingLeft) css.paddingLeft = s.paddingLeft;
+    }
+
     if (s.marginTop) css.marginTop = s.marginTop;
     if (s.marginRight) css.marginRight = s.marginRight;
     if (s.marginBottom) css.marginBottom = s.marginBottom;
