@@ -88,20 +88,26 @@ export default function BrandGrid({
   }
 
   useEffect(() => {
-    if (carouselRef.current) {
-      setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
-    }
-  }, [displayedBrands, loading, layout]);
+    const updateWidth = () => {
+      if (carouselRef.current) {
+        setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
+      }
+    };
+    
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, [displayedBrands, loading, layout, columns, mobileColumns]);
 
   const slideLeft = () => {
     const current = x.get();
-    const newPos = Math.min(current + 400, 0); // clamp to 0 (start)
+    const newPos = Math.min(current + (carouselRef.current?.offsetWidth || 400), 0);
     animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
   };
 
   const slideRight = () => {
     const current = x.get();
-    const newPos = Math.max(current - 400, -width); // clamp to -width (end)
+    const newPos = Math.max(current - (carouselRef.current?.offsetWidth || 400), -width);
     animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
   };
 
@@ -127,7 +133,9 @@ export default function BrandGrid({
       borderRadius: radius,
       border: border,
       boxShadow: shadow,
-      backgroundColor: styles?.cardBackgroundColor || (styles?.backgroundColor ? 'rgba(255,255,255,0.05)' : 'white'),
+      backgroundColor: styles?.cardBackgroundColor || 'rgba(255, 255, 255, 0.02)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
     };
   };
 
