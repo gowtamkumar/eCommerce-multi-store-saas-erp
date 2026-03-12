@@ -260,6 +260,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
             columns={settings?.columns}
             mobileColumns={settings?.mobileColumns}
             styles={styles}
+            layout={settings?.layout}
           />
         );
       case "newsletter":

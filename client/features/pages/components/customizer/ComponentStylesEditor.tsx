@@ -184,6 +184,50 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
                 </>
             )}
 
+            {/* Card Layout Styles */}
+            {['category-grid', 'brand-grid', 'review-slider', 'stats-counter'].includes(nodeType) && (
+                <>
+                    <div>
+                        <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <span className="text-base">🎴</span> Card & Item Styles
+                        </p>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Card Background</Label>
+                                    <ColorInput value={s.cardBackgroundColor || ''} onChange={v => onChange('cardBackgroundColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Card Radius</Label>
+                                    <NumberInput value={s.cardRadius || ''} onChange={v => onChange('cardRadius', v)} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Card Border</Label>
+                                    <Select value={s.cardBorder || 'none'} onChange={v => onChange('cardBorder', v)} options={[
+                                        { value: 'none', label: 'None' },
+                                        { value: 'thin', label: 'Thin (1px)' },
+                                        { value: 'medium', label: 'Medium (2px)' },
+                                        { value: 'thick', label: 'Thick (4px)' },
+                                    ]} />
+                                </div>
+                                <div>
+                                    <Label>Card Shadow</Label>
+                                    <Select value={s.cardShadow || 'none'} onChange={v => onChange('cardShadow', v)} options={[
+                                        { value: 'none', label: 'None' },
+                                        { value: 'small', label: 'Small' },
+                                        { value: 'medium', label: 'Medium' },
+                                        { value: 'large', label: 'Large' },
+                                    ]} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                </>
+            )}
+
             {/* Component Special Styles */}
             {isHeroType && (
                 <>
@@ -246,72 +290,75 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
             <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
             {/* Text */}
-            <div>
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <span className="text-base">✍️</span> Typography
-                </p>
-                <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <Label>Base Color</Label>
-                            <ColorInput value={s.color || s.textColor || ''} onChange={v => { onChange('color', v); onChange('textColor', v); }} />
-                        </div>
-                        <div>
-                            {(() => {
-                                const { value } = getProp('textAlign');
-                                return (
-                                    <>
-                                        <Label isResponsive viewMode={viewMode}>Align</Label>
-                                        <Select value={value} onChange={v => handleUpdate('textAlign', v)} options={[
-                                            { value: 'left', label: 'Left' },
-                                            { value: 'center', label: 'Center' },
-                                            { value: 'right', label: 'Right' },
-                                        ]} />
-                                    </>
-                                );
-                            })()}
+            {!['brand-grid'].includes(nodeType) && (
+                <>
+                    <div>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <span className="text-base">✍️</span> Typography
+                        </p>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Base Color</Label>
+                                    <ColorInput value={s.color || s.textColor || ''} onChange={v => { onChange('color', v); onChange('textColor', v); }} />
+                                </div>
+                                <div>
+                                    {(() => {
+                                        const { value } = getProp('textAlign');
+                                        return (
+                                            <>
+                                                <Label isResponsive viewMode={viewMode}>Align</Label>
+                                                <Select value={value} onChange={v => handleUpdate('textAlign', v)} options={[
+                                                    { value: 'left', label: 'Left' },
+                                                    { value: 'center', label: 'Center' },
+                                                    { value: 'right', label: 'Right' },
+                                                ]} />
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    {(() => {
+                                        const { value } = getProp('fontSize');
+                                        return (
+                                            <>
+                                                <Label isResponsive viewMode={viewMode}>Font Size</Label>
+                                                <NumberInput value={value || ''} onChange={v => handleUpdate('fontSize', v)} />
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+                                <div>
+                                    <Label>Font Weight</Label>
+                                    <Select value={s.fontWeight} onChange={v => onChange('fontWeight', v)} options={[
+                                        { value: '400', label: 'Normal' },
+                                        { value: '500', label: 'Medium' },
+                                        { value: '600', label: 'SemiBold' },
+                                        { value: '700', label: 'Bold' },
+                                        { value: '800', label: 'ExtraBold' },
+                                        { value: '900', label: 'Black' },
+                                    ]} />
+                                </div>
+                                <div>
+                                    <Label>Line Height</Label>
+                                    <NumberInput value={s.lineHeight || ''} onChange={v => onChange('lineHeight', v)} unit="" />
+                                </div>
+                                <div>
+                                    <Label>Uppercase</Label>
+                                    <Select value={s.textTransform} onChange={v => onChange('textTransform', v)} options={[
+                                        { value: 'none', label: 'None' },
+                                        { value: 'uppercase', label: 'Yes' },
+                                    ]} />
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            {(() => {
-                                const { value } = getProp('fontSize');
-                                return (
-                                    <>
-                                        <Label isResponsive viewMode={viewMode}>Font Size</Label>
-                                        <NumberInput value={value || ''} onChange={v => handleUpdate('fontSize', v)} />
-                                    </>
-                                );
-                            })()}
-                        </div>
-                        <div>
-                            <Label>Font Weight</Label>
-                            <Select value={s.fontWeight} onChange={v => onChange('fontWeight', v)} options={[
-                                { value: '400', label: 'Normal' },
-                                { value: '500', label: 'Medium' },
-                                { value: '600', label: 'SemiBold' },
-                                { value: '700', label: 'Bold' },
-                                { value: '800', label: 'ExtraBold' },
-                                { value: '900', label: 'Black' },
-                            ]} />
-                        </div>
-                        <div>
-                            <Label>Line Height</Label>
-                            <NumberInput value={s.lineHeight || ''} onChange={v => onChange('lineHeight', v)} unit="" />
-                        </div>
-                        <div>
-                            <Label>Uppercase</Label>
-                            <Select value={s.textTransform} onChange={v => onChange('textTransform', v)} options={[
-                                { value: 'none', label: 'None' },
-                                { value: 'uppercase', label: 'Yes' },
-                            ]} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                </>
+            )}
 
             {/* Background */}
             <div>
@@ -319,7 +366,7 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
                     <span className="text-base">🎨</span> Background
                 </p>
                 <div className="space-y-2">
-                    <Label>Background Color</Label>
+                    <Label>Section Background</Label>
                     <ColorInput value={s.backgroundColor || ''} onChange={v => onChange('backgroundColor', v)} />
                 </div>
             </div>
@@ -327,67 +374,74 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
             <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
             {/* Border */}
-            <div>
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <span className="text-base">🔲</span> Border & Radius
-                </p>
-                <div className="grid grid-cols-2 gap-2">
+            {!['brand-grid'].includes(nodeType) && (
+                <>
                     <div>
-                        <Label>Radius</Label>
-                        <NumberInput value={s.borderRadius || ''} onChange={v => onChange('borderRadius', v)} />
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <span className="text-base">🔲</span> Border & Radius
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <Label>Radius</Label>
+                                <NumberInput value={s.borderRadius || ''} onChange={v => onChange('borderRadius', v)} />
+                            </div>
+                            <div>
+                                <Label>Width</Label>
+                                <NumberInput value={s.borderWidth || ''} onChange={v => onChange('borderWidth', v)} />
+                            </div>
+                        </div>
+                        <div className="mt-4 space-y-3">
+                            <div>
+                                <Label>Border Color</Label>
+                                <ColorInput value={s.borderColor || ''} onChange={v => onChange('borderColor', v)} />
+                            </div>
+                            <div>
+                                <Label>Border Style</Label>
+                                <Select value={s.borderStyle} onChange={v => onChange('borderStyle', v)} options={[
+                                    { value: 'solid', label: 'Solid' },
+                                    { value: 'dashed', label: 'Dashed' },
+                                    { value: 'dotted', label: 'Dotted' },
+                                    { value: 'none', label: 'None' },
+                                ]} />
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <Label>Width</Label>
-                        <NumberInput value={s.borderWidth || ''} onChange={v => onChange('borderWidth', v)} />
-                    </div>
-                </div>
-                <div className="mt-4 space-y-3">
-                    <div>
-                        <Label>Border Color</Label>
-                        <ColorInput value={s.borderColor || ''} onChange={v => onChange('borderColor', v)} />
-                    </div>
-                    <div>
-                        <Label>Border Style</Label>
-                        <Select value={s.borderStyle} onChange={v => onChange('borderStyle', v)} options={[
-                            { value: 'solid', label: 'Solid' },
-                            { value: 'dashed', label: 'Dashed' },
-                            { value: 'dotted', label: 'Dotted' },
-                            { value: 'none', label: 'None' },
-                        ]} />
-                    </div>
-                </div>
-            </div>
-
-            <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                </>
+            )}
 
             {/* Effects */}
-            <div>
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <span className="text-base">✨</span> Visual Effects
-                </p>
-                <div className="space-y-4">
+            {!['brand-grid'].includes(nodeType) && (
+                <>
                     <div>
-                        <Label>Box Shadow</Label>
-                        <input
-                            type="text"
-                            value={s.boxShadow || ''}
-                            onChange={e => onChange('boxShadow', e.target.value)}
-                            placeholder="0 4px 24px rgba(0,0,0,0.1)"
-                            className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all shadow-inner"
-                        />
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <span className="text-base">✨</span> Visual Effects
+                        </p>
+                        <div className="space-y-4">
+                            <div>
+                                <Label>Box Shadow</Label>
+                                <input
+                                    type="text"
+                                    value={s.boxShadow || ''}
+                                    onChange={e => onChange('boxShadow', e.target.value)}
+                                    placeholder="0 4px 24px rgba(0,0,0,0.1)"
+                                    className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all shadow-inner"
+                                />
+                            </div>
+                            <div>
+                                <Label>Opacity — {Math.round((s.opacity ?? 1) * 100)}%</Label>
+                                <input
+                                    type="range"
+                                    min={0} max={1} step={0.01}
+                                    value={s.opacity ?? 1}
+                                    onChange={e => onChange('opacity', parseFloat(e.target.value))}
+                                    className="w-full accent-brand-600"
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <Label>Opacity — {Math.round((s.opacity ?? 1) * 100)}%</Label>
-                        <input
-                            type="range"
-                            min={0} max={1} step={0.01}
-                            value={s.opacity ?? 1}
-                            onChange={e => onChange('opacity', parseFloat(e.target.value))}
-                            className="w-full accent-brand-600"
-                        />
-                    </div>
-                </div>
-            </div>
+                </>
+            )}
 
         </div>
     );
