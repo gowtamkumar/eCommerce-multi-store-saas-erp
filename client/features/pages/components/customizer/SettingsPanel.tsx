@@ -174,7 +174,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
         {activeTab === 'styles' && (
           isStructural
             ? <StylesEditor styles={section.styles as Record<string, any> || {}} onChange={(key, value) => updateStyle(key, value)} onBatchChange={updateStyles} nodeType={section.type} viewMode={viewMode} />
-            : <ComponentStylesEditor styles={section.styles as Record<string, any> || {}} onChange={(key, value) => updateStyle(key, value)} viewMode={viewMode} />
+            : <ComponentStylesEditor styles={section.styles as Record<string, any> || {}} onChange={(key, value) => updateStyle(key, value)} viewMode={viewMode} nodeType={section.type} />
         )}
 
         {/* Visibility Tab */}

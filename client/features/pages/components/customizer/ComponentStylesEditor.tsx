@@ -4,6 +4,7 @@ interface ComponentStylesEditorProps {
     styles: Record<string, any>;
     onChange: (key: string, value: any) => void;
     viewMode: 'desktop' | 'mobile';
+    nodeType: string;
 }
 
 function Label({ children, isResponsive, viewMode }: { children: React.ReactNode; isResponsive?: boolean; viewMode?: 'desktop' | 'mobile' }) {
@@ -78,7 +79,7 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
     );
 }
 
-export default function ComponentStylesEditor({ styles, onChange, viewMode }: ComponentStylesEditorProps) {
+export default function ComponentStylesEditor({ styles, onChange, viewMode, nodeType }: ComponentStylesEditorProps) {
     const s = styles || {};
 
     const getProp = (baseKey: string) => {
@@ -101,13 +102,81 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode }: Co
         }
     };
 
+    const isHeroType = nodeType === 'banner' || nodeType === 'offer-banner';
+
     return (
         <div className="space-y-5 pb-4">
+
+            {/* Sizing */}
+            <div>
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <span className="text-base">📏</span> Size & Dimension
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                    {([
+                        ['height', 'Height'],
+                        ['width', 'Width'],
+                        ['maxWidth', 'Max Width'],
+                    ] as [string, string][]).map(([key, label]) => {
+                        const { value } = getProp(key);
+                        return (
+                            <div key={key}>
+                                <Label isResponsive viewMode={viewMode}>{label}</Label>
+                                <NumberInput value={value || ''} onChange={v => handleUpdate(key, v)} unit={key === 'width' ? '%' : 'px'} />
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className="h-px bg-slate-100 dark:bg-slate-800" />
+
+            {/* Hero Specific Styles */}
+            {isHeroType && (
+                <>
+                    <div>
+                        <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <span className="text-base">💎</span> Hero Special Styles
+                        </p>
+                        <div className="space-y-4">
+                            <div>
+                                <Label>Overlay Opacity ({s.overlayOpacity ?? 40}%)</Label>
+                                <input
+                                    type="range"
+                                    min={0} max={100}
+                                    value={s.overlayOpacity ?? 40}
+                                    onChange={e => onChange('overlayOpacity', parseInt(e.target.value))}
+                                    className="w-full accent-brand-600"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Headline Color</Label>
+                                    <ColorInput value={s.headlineColor || '#ffffff'} onChange={v => onChange('headlineColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Subline Color</Label>
+                                    <ColorInput value={s.sublineColor || 'rgba(255, 255, 255, 0.9)'} onChange={v => onChange('sublineColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Button Color</Label>
+                                    <ColorInput value={s.buttonColor || '#ffffff'} onChange={v => onChange('buttonColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Button Text</Label>
+                                    <ColorInput value={s.buttonTextColor || '#2563eb'} onChange={v => onChange('buttonTextColor', v)} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                </>
+            )}
 
             {/* Spacing */}
             <div>
                 <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <span className="text-base">📏</span> Spacing
+                    <span className="text-base">🚀</span> Spacing
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                     {([
@@ -131,6 +200,74 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode }: Co
 
             <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
+            {/* Text */}
+            <div>
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <span className="text-base">✍️</span> Typography
+                </p>
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <Label>Base Color</Label>
+                            <ColorInput value={s.color || s.textColor || ''} onChange={v => { onChange('color', v); onChange('textColor', v); }} />
+                        </div>
+                        <div>
+                            {(() => {
+                                const { value } = getProp('textAlign');
+                                return (
+                                    <>
+                                        <Label isResponsive viewMode={viewMode}>Align</Label>
+                                        <Select value={value} onChange={v => handleUpdate('textAlign', v)} options={[
+                                            { value: 'left', label: 'Left' },
+                                            { value: 'center', label: 'Center' },
+                                            { value: 'right', label: 'Right' },
+                                        ]} />
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            {(() => {
+                                const { value } = getProp('fontSize');
+                                return (
+                                    <>
+                                        <Label isResponsive viewMode={viewMode}>Font Size</Label>
+                                        <NumberInput value={value || ''} onChange={v => handleUpdate('fontSize', v)} />
+                                    </>
+                                );
+                            })()}
+                        </div>
+                        <div>
+                            <Label>Font Weight</Label>
+                            <Select value={s.fontWeight} onChange={v => onChange('fontWeight', v)} options={[
+                                { value: '400', label: 'Normal' },
+                                { value: '500', label: 'Medium' },
+                                { value: '600', label: 'SemiBold' },
+                                { value: '700', label: 'Bold' },
+                                { value: '800', label: 'ExtraBold' },
+                                { value: '900', label: 'Black' },
+                            ]} />
+                        </div>
+                        <div>
+                            <Label>Line Height</Label>
+                            <NumberInput value={s.lineHeight || ''} onChange={v => onChange('lineHeight', v)} unit="" />
+                        </div>
+                        <div>
+                            <Label>Uppercase</Label>
+                            <Select value={s.textTransform} onChange={v => onChange('textTransform', v)} options={[
+                                { value: 'none', label: 'None' },
+                                { value: 'uppercase', label: 'Yes' },
+                            ]} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="h-px bg-slate-100 dark:bg-slate-800" />
+
             {/* Background */}
             <div>
                 <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
@@ -144,76 +281,35 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode }: Co
 
             <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
-            {/* Text */}
-            <div>
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <span className="text-base">✍️</span> Text
-                </p>
-                <div className="space-y-3">
-                    <div>
-                        <Label>Text Color</Label>
-                        <ColorInput value={s.color || s.textColor || ''} onChange={v => { onChange('color', v); onChange('textColor', v); }} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                        <div>
-                            {(() => {
-                                const { value } = getProp('fontSize');
-                                return (
-                                    <>
-                                        <Label isResponsive viewMode={viewMode}>Font Size</Label>
-                                        <NumberInput value={value || ''} onChange={v => handleUpdate('fontSize', v)} />
-                                    </>
-                                );
-                            })()}
-                        </div>
-                        <div>
-                            {(() => {
-                                const { value } = getProp('textAlign');
-                                return (
-                                    <>
-                                        <Label isResponsive viewMode={viewMode}>Text Align</Label>
-                                        <Select value={value} onChange={v => handleUpdate('textAlign', v)} options={[
-                                            { value: 'left', label: 'Left' },
-                                            { value: 'center', label: 'Center' },
-                                            { value: 'right', label: 'Right' },
-                                        ]} />
-                                    </>
-                                );
-                            })()}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="h-px bg-slate-100 dark:bg-slate-800" />
-
             {/* Border */}
             <div>
                 <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <span className="text-base">🔲</span> Border
+                    <span className="text-base">🔲</span> Border & Radius
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                     <div>
-                        <Label>Border Radius</Label>
+                        <Label>Radius</Label>
                         <NumberInput value={s.borderRadius || ''} onChange={v => onChange('borderRadius', v)} />
                     </div>
                     <div>
-                        <Label>Border Width</Label>
+                        <Label>Width</Label>
                         <NumberInput value={s.borderWidth || ''} onChange={v => onChange('borderWidth', v)} />
                     </div>
                 </div>
-                <div className="mt-2 space-y-2">
-                    <Label>Border Color</Label>
-                    <ColorInput value={s.borderColor || ''} onChange={v => onChange('borderColor', v)} />
-                </div>
-                <div className="mt-2">
-                    <Label>Border Style</Label>
-                    <Select value={s.borderStyle} onChange={v => onChange('borderStyle', v)} options={[
-                        { value: 'solid', label: 'Solid' },
-                        { value: 'dashed', label: 'Dashed' },
-                        { value: 'dotted', label: 'Dotted' },
-                        { value: 'none', label: 'None' },
-                    ]} />
+                <div className="mt-4 space-y-3">
+                    <div>
+                        <Label>Border Color</Label>
+                        <ColorInput value={s.borderColor || ''} onChange={v => onChange('borderColor', v)} />
+                    </div>
+                    <div>
+                        <Label>Border Style</Label>
+                        <Select value={s.borderStyle} onChange={v => onChange('borderStyle', v)} options={[
+                            { value: 'solid', label: 'Solid' },
+                            { value: 'dashed', label: 'Dashed' },
+                            { value: 'dotted', label: 'Dotted' },
+                            { value: 'none', label: 'None' },
+                        ]} />
+                    </div>
                 </div>
             </div>
 
@@ -222,9 +318,9 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode }: Co
             {/* Effects */}
             <div>
                 <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <span className="text-base">✨</span> Effects
+                    <span className="text-base">✨</span> Visual Effects
                 </p>
-                <div className="space-y-3">
+                <div className="space-y-4">
                     <div>
                         <Label>Box Shadow</Label>
                         <input
@@ -232,7 +328,7 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode }: Co
                             value={s.boxShadow || ''}
                             onChange={e => onChange('boxShadow', e.target.value)}
                             placeholder="0 4px 24px rgba(0,0,0,0.1)"
-                            className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                            className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all shadow-inner"
                         />
                     </div>
                     <div>
