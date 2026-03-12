@@ -21,35 +21,45 @@ export default function ContactSection({ settings, styles }: ContactSectionProps
     const showForm = settings?.showForm !== false;
     const cardLayout = settings?.cardLayout || 'left';
 
-    return (
-        <div className="w-full overflow-hidden">
-            <div className="w-full">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-3xl mx-auto mb-16">
-                        {settings?.title && (
-                            <h2
-                                className="text-4xl md:text-5xl font-bold font-display mb-6"
-                                style={{ color: styles?.headlineColor }}
-                            >
-                                {settings.title}
-                            </h2>
-                        )}
-                        {settings?.subline && (
-                            <p
-                                className="text-xl opacity-80"
-                                style={{ color: styles?.sublineColor }}
-                            >
-                                {settings.subline}
-                            </p>
-                        )}
-                    </div>
+    const cardRadiusClass = styles?.cardRadius === 'small' ? 'rounded-lg' :
+        styles?.cardRadius === 'large' ? 'rounded-[2rem]' :
+            styles?.cardRadius === 'full' ? 'rounded-full' :
+                styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-2xl';
 
-                    <div className={`grid lg:grid-cols-2 gap-12 lg:gap-24 items-start ${cardLayout === 'right' ? 'lg:grid-flow-dense' : ''}`}>
+    return (
+        <div className="w-full">
+            <div className="w-full">
+                <div className="w-full">
+                    {(settings?.title || settings?.subline) && (
+                        <div className={`mb-12 space-y-4
+                            ${styles?.textAlign === 'center' ? 'text-center' : ''}
+                            ${styles?.textAlign === 'right' ? 'text-right' : 'text-left'}
+                        `}>
+                            {settings?.title && (
+                                <h2
+                                    className="text-3xl md:text-5xl font-black uppercase tracking-tight"
+                                    style={{ color: styles?.headlineColor || styles?.color || 'inherit' }}
+                                >
+                                    {settings.title}
+                                </h2>
+                            )}
+                            {settings?.subline && (
+                                <p
+                                    className="text-lg opacity-80"
+                                    style={{ color: styles?.color || 'inherit' }}
+                                >
+                                    {settings.subline}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    <div className={`grid lg:grid-cols-2 gap-8 lg:gap-12 items-start ${cardLayout === 'right' ? 'lg:grid-flow-dense' : ''}`}>
                         {/* Contact Info */}
                         {showInfo && (
-                            <div className={`space-y-8 ${cardLayout === 'right' ? 'lg:col-start-2' : ''} ${!showForm ? 'lg:col-span-2 max-w-2xl mx-auto w-full' : ''}`}>
-                                <div className="bg-slate-50 dark:bg-slate-800/50 p-8 rounded-3xl border border-slate-100 dark:border-slate-700">
-                                    <h3 className="text-2xl font-bold mb-6" style={{ color: styles?.headlineColor }}>Contact Information</h3>
+                            <div className={`${cardLayout === 'right' ? 'lg:col-start-2' : ''} ${!showForm ? 'lg:col-span-2' : ''}`}>
+                                <div className={`bg-slate-50 dark:bg-slate-800/50 p-8 ${cardRadiusClass} border border-slate-100 dark:border-slate-700`}>
+                                    <h3 className="text-2xl font-black mb-6 uppercase tracking-tight" style={{ color: styles?.headlineColor || styles?.color || 'inherit' }}>Contact Information</h3>
                                     <div className="space-y-6">
                                         <div className="flex items-start gap-4">
                                             <div
@@ -62,9 +72,9 @@ export default function ContactSection({ settings, styles }: ContactSectionProps
                                                 <Mail className="w-6 h-6" />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold mb-1" style={{ color: styles?.headlineColor }}>Email Us</h4>
-                                                <p className="opacity-80" style={{ color: styles?.textColor }}>
-                                                    {settings?.email || siteSettings?.contactEmail || 'support@luxeaudio.com'}
+                                                <h4 className="font-bold mb-1 uppercase text-xs tracking-widest opacity-60" style={{ color: styles?.color || 'inherit' }}>Email Us</h4>
+                                                <p className="font-medium" style={{ color: styles?.color || 'inherit' }}>
+                                                    {settings?.email || siteSettings?.contactEmail || 'support@example.com'}
                                                 </p>
                                             </div>
                                         </div>
@@ -79,8 +89,8 @@ export default function ContactSection({ settings, styles }: ContactSectionProps
                                                 <Phone className="w-6 h-6" />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold mb-1" style={{ color: styles?.headlineColor }}>Call Us</h4>
-                                                <p className="opacity-80" style={{ color: styles?.textColor }}>
+                                                <h4 className="font-bold mb-1 uppercase text-xs tracking-widest opacity-60" style={{ color: styles?.color || 'inherit' }}>Call Us</h4>
+                                                <p className="font-medium" style={{ color: styles?.color || 'inherit' }}>
                                                     {settings?.phone || siteSettings?.contactPhone || '+1 (555) 000-0000'}
                                                 </p>
                                             </div>
@@ -96,8 +106,8 @@ export default function ContactSection({ settings, styles }: ContactSectionProps
                                                 <MapPin className="w-6 h-6" />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold mb-1" style={{ color: styles?.headlineColor }}>Visit Us</h4>
-                                                <p className="opacity-80" style={{ color: styles?.textColor }}>
+                                                <h4 className="font-bold mb-1 uppercase text-xs tracking-widest opacity-60" style={{ color: styles?.color || 'inherit' }}>Visit Us</h4>
+                                                <p className="font-medium" style={{ color: styles?.color || 'inherit' }}>
                                                     {settings?.address || siteSettings?.address || '123 Audio Street, Sound City, SC 90210'}
                                                 </p>
                                             </div>
@@ -109,8 +119,8 @@ export default function ContactSection({ settings, styles }: ContactSectionProps
 
                         {/* Contact Form */}
                         {showForm && (
-                            <div className={`bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 ${!showInfo ? 'lg:col-span-2 max-w-2xl mx-auto w-full' : ''}`}>
-                                <h3 className="text-2xl font-bold mb-6" style={{ color: styles?.headlineColor }}>Send us a Message</h3>
+                            <div className={`bg-white dark:bg-slate-800 p-8 ${cardRadiusClass} shadow-xl shadow-slate-200/20 dark:shadow-none border border-slate-100 dark:border-slate-700 ${!showInfo ? 'lg:col-span-2' : ''}`}>
+                                <h3 className="text-2xl font-black mb-6 uppercase tracking-tight" style={{ color: styles?.headlineColor || styles?.color || 'inherit' }}>Send us a Message</h3>
                                 <ContactForm />
                             </div>
                         )}

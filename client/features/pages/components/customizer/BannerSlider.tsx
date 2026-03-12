@@ -58,7 +58,7 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
         </motion.div>
       </AnimatePresence>
 
-      <div className={`relative z-10 h-full flex items-center px-4 md:px-10 w-full max-w-7xl mx-auto
+      <div className={`relative z-10 h-full flex items-center w-full
         ${styles?.textAlign === 'center' ? 'justify-center text-center' : ''}
         ${styles?.textAlign === 'right' ? 'justify-end text-right' : ''}
         ${!styles?.textAlign || styles?.textAlign === 'left' ? 'justify-start text-left' : ''}
@@ -72,7 +72,7 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="w-full"
           >
-            <span className="inline-block px-3 py-1 bg-brand-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-full mb-4">New Season</span>
+            {/* Removed static badge Tag */}
             <h1
               className="text-4xl md:text-7xl font-extrabold mb-4 leading-tight drop-shadow-lg"
               style={{ color: styles?.headlineColor || '#ffffff' }}
@@ -80,7 +80,7 @@ export default function BannerSlider({ settings, styles }: BannerSliderProps) {
               {currentContent?.headline || 'Summer Collection 2026'}
             </h1>
             <p
-              className={`text-lg md:text-2xl max-w-2xl mb-8 leading-relaxed font-medium
+              className={`text-lg md:text-2xl mb-8 leading-relaxed font-medium
                 ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
                 ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
               `}

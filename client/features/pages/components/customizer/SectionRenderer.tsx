@@ -167,6 +167,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
       case "product-slider":
         return (
           <ProductSlider
+            sectionId={section.id}
             headline={settings?.headline}
             count={settings?.count}
             source={settings?.source}
@@ -182,6 +183,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
       case "category-grid":
         return (
           <CategoryGrid
+            sectionId={section.id}
             title={settings?.title}
             count={settings?.count}
             source={settings?.source}
@@ -234,6 +236,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
       case "brand-grid":
         return (
           <BrandGrid
+            sectionId={section.id}
             title={settings?.title}
             count={settings?.count}
             source={settings?.source}
@@ -304,15 +307,14 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
   // Wrapper tag and classes
   const Tag = section.type === "section" ? "section" : "div";
   const wrapperClasses = `
-    ${section.type === 'section' ? 'relative w-full overflow-hidden' : ''}
-    ${section.type === 'row' ? 'container mx-auto relative' : ''}
+    ${section.type === 'section' ? 'relative overflow-hidden' : ''}
+    ${section.type === 'row' ? 'relative' : ''}
     ${section.type === 'column' ? 'flex flex-col relative' : ''}
-    ${!isStructural ? 'w-full' : ''}
   `;
 
   // Merge defaults for Row/Col
   const finalStyle: React.CSSProperties = {
-    ...(section.type === 'row' ? { display: 'flex', flexDirection: 'row', width: '100%' } : {}),
+    ...(section.type === 'row' ? { display: 'flex', flexDirection: 'row' } : {}),
     ...(section.type === 'column' ? { flex: 1, display: 'flex' } : {}),
     ...structuralStyle
   };
@@ -327,7 +329,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
         }
       }}
       className={`responsive-section relative group transition-all duration-200 ${visibilityClasses} 
-        ${(isStructural && isEditorMode) ? 'min-h-[50px]' : ''}
+        ${(isStructural && isEditorMode) ? 'min-h-[20px]' : ''}
         ${isEditorMode ? 'cursor-pointer' : ''}
         ${(isSelected && isEditorMode) ? 'outline outline-2 outline-brand-500 outline-offset-[-2px] z-[5]' : (isEditorMode ? 'hover:outline hover:outline-2 hover:outline-brand-500/30 hover:outline-offset-[-2px]' : '')}
       `}

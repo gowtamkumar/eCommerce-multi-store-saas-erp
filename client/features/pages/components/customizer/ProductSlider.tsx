@@ -8,6 +8,7 @@ import { ProductSliderProps } from "../../type";
 
 
 export default function ProductSlider({
+  sectionId,
   headline,
   source = 'all',
   productIds = [],
@@ -15,9 +16,9 @@ export default function ProductSlider({
   collectionId,
   layout = 'slider',
   columns = 4,
-  mobileColumns = 1,
+  mobileColumns = 2,
   styles
-}: ProductSliderProps) {
+}: ProductSliderProps & { sectionId?: string }) {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +34,6 @@ export default function ProductSlider({
         const res = await fetchAPI(endpoint);
         let fetchedProducts = res.data?.products || [];
         if (source === 'manual' && productIds.length > 0) {
-          // Filter to only include products in productIds, maintaining the selection order
           fetchedProducts = productIds
             .map(id => fetchedProducts.find((p: any) => p.id === id))
             .filter(Boolean);
@@ -50,57 +50,81 @@ export default function ProductSlider({
     loadProducts();
   }, [count, collectionId, source, JSON.stringify(productIds)]);
 
+  const cardRadiusClass = styles?.cardRadius === 'small' ? 'rounded-lg' :
+    styles?.cardRadius === 'large' ? 'rounded-[2rem]' :
+      styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-2xl';
+
+  const gridColsClass = layout === 'grid'
+    ? `grid gap-6`
+    : "flex gap-6 overflow-x-auto pb-8 scrollbar-hide";
+
+  const gridStyle: React.CSSProperties = layout === 'grid' ? {
+    gridTemplateColumns: `repeat(${mobileColumns}, minmax(0, 1fr))`,
+    '--md-cols': columns,
+  } as any : {};
+
   return (
-    <div className="overflow-hidden">
+    <div className="w-full">
+      <style>{`
+        @media (min-width: 768px) {
+          .product-grid-${sectionId || 'default'} {
+            grid-template-columns: repeat(var(--md-cols, ${columns}), minmax(0, 1fr)) !important;
+          }
+        }
+      `}</style>
       <div className="w-full">
-        <div className={`flex items-center justify-between mb-8 md:mb-12
-          ${styles?.textAlign === 'center' ? 'justify-center text-center' : ''}
-          ${styles?.textAlign === 'right' ? 'justify-end text-right' : ''}
-          ${!styles?.textAlign || styles?.textAlign === 'left' ? 'justify-start text-left' : ''}
-        `}>
-          <div className="space-y-1">
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight"
-              style={{ color: styles?.headlineColor }}
-            >{headline || 'Trending Products'}</h2>
-            <div className={`h-1.5 bg-brand-500 rounded-full w-16
-               ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
-               ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
-               ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
-            `} />
+        {headline && (
+          <div className={`flex items-center mb-8 md:mb-10
+            ${styles?.textAlign === 'center' ? 'justify-center text-center' : ''}
+            ${styles?.textAlign === 'right' ? 'justify-end text-right' : 'justify-start text-left'}
+          `}>
+            <div className="space-y-1">
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight"
+                style={{ color: styles?.headlineColor || 'inherit' }}
+              >
+                {headline}
+              </h2>
+              <div className={`h-1 bg-brand-500 rounded-full w-12
+                 ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
+                 ${styles?.textAlign === 'right' ? 'ml-auto' : 'mr-auto'}
+              `} />
+            </div>
           </div>
-        </div>
+        )}
 
         {loading ? (
-          <div className={layout === 'grid'
-            ? `grid gap-6 md:gap-10 ${mobileColumns === 1 ? 'grid-cols-1' : 'grid-cols-2'} ${columns === 2 ? 'md:grid-cols-2' : columns === 3 ? 'md:grid-cols-3' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-1'}`
-            : "flex gap-6 md:gap-10 overflow-x-hidden pb-8"
-          }>
+          <div
+            className={`${gridColsClass} product-grid-${sectionId || 'default'}`}
+            style={gridStyle}
+          >
             {[...Array(count)].map((_, i) => (
-              <div key={i} className={layout === 'grid' ? "" : "min-w-[280px] md:min-w-[320px] flex-1 animate-pulse"}>
-                <div className="aspect-square bg-slate-200 dark:bg-slate-800 rounded-[2.5rem] mb-6" />
+              <div key={i} className={layout === 'grid' ? "w-full" : "min-w-[280px] md:min-w-[320px] flex-1 animate-pulse"}>
+                <div className={`aspect-[4/5] bg-slate-200 dark:bg-slate-800 ${cardRadiusClass} mb-4`} />
                 <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-2" />
                 <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
               </div>
             ))}
           </div>
         ) : products.length > 0 ? (
-          <div className={layout === 'grid'
-            ? `grid gap-6 md:gap-10 ${mobileColumns === 1 ? 'grid-cols-1' : 'grid-cols-2'} ${columns === 2 ? 'md:grid-cols-2' : columns === 3 ? 'md:grid-cols-3' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-1'}`
-            : "flex gap-6 md:gap-10 overflow-x-auto pb-8 scrollbar-hide"
-          }>
+          <div
+            className={`${gridColsClass} product-grid-${sectionId || 'default'}`}
+            style={gridStyle}
+          >
             {products.map((product) => (
-              <div key={product.id} className={layout === 'grid' ? "h-full" : "min-w-[280px] md:min-w-[320px] flex-1 h-[450px]"}>
+              <div key={product.id} className={layout === 'grid' ? "h-full" : "min-w-[280px] md:min-w-[320px] flex-1"}>
                 <ProductCard product={product} />
               </div>
             ))}
           </div>
         ) : (
-          <div className="py-20 text-center text-slate-400 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[3rem]">
-            {source === 'collection' && collectionId
-              ? "No products found in this collection."
-              : source === 'manual'
-                ? "No products selected. Select products in the customizer settings."
-                : "No products found. Add some products in the admin dashboard."}
+          <div className={`py-20 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 ${cardRadiusClass}`}>
+            <p className="max-w-xs mx-auto text-sm font-medium">
+              {source === 'collection' && collectionId
+                ? "No products found in this collection."
+                : source === 'manual'
+                  ? "No products selected. Select products in the customizer settings."
+                  : "No products found. Add some products in the admin dashboard."}
+            </p>
           </div>
         )}
       </div>

@@ -19,13 +19,11 @@ export default function Heading({ settings, styles }: { settings: HeadingSetting
     };
 
     return (
-        <div className={`w-full ${alignmentClass}`}>
-            <Tag
-                className={`${sizeClasses[level as keyof typeof sizeClasses]}`}
-                style={{ color: styles?.color || styles?.headlineColor }}
-            >
-                {text || 'Enter your heading here'}
-            </Tag>
-        </div>
+        <Tag
+            className={`w-full ${sizeClasses[level as keyof typeof sizeClasses]} ${alignmentClass}`}
+            style={{ color: styles?.color || styles?.headlineColor || 'inherit' }}
+        >
+            {text || 'Enter your heading here'}
+        </Tag>
     );
 }

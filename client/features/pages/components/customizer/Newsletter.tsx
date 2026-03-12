@@ -57,30 +57,25 @@ export default function Newsletter({
 
   return (
     <section
-      style={{
-        ...styles,
-        paddingTop: styles?.paddingTop,
-        paddingBottom: styles?.paddingBottom,
-        backgroundColor: styles?.backgroundColor,
-        color: styles?.color
-      }}
-      className={`px-4 md:px-10 ${!styles?.paddingTop && !styles?.paddingBottom ? 'py-16 md:py-24' : ''}`}
+      style={styles}
+      className="w-full"
     >
-      <div className="max-w-4xl mx-auto">
-        <div className={`flex flex-col items-center text-center space-y-8
+      <div className="w-full h-full">
+        <div className={`flex flex-col space-y-8
+          ${styles?.textAlign === 'center' ? 'items-center text-center' : ''}
           ${styles?.textAlign === 'left' ? 'items-start text-left' : ''}
           ${styles?.textAlign === 'right' ? 'items-end text-right' : ''}
         `}>
-          <div className="space-y-4">
+          <div className="space-y-4 w-full">
             <h2
-              className="text-4xl md:text-5xl font-black tracking-tighter uppercase"
-              style={{ color: styles?.headlineColor || styles?.color }}
+              className="text-3xl md:text-5xl font-black tracking-tighter uppercase"
+              style={{ color: styles?.headlineColor || styles?.color || 'inherit' }}
             >
               {title}
             </h2>
             <p
-              className="text-lg opacity-80 max-w-2xl"
-              style={{ color: styles?.color }}
+              className="text-lg opacity-80"
+              style={{ color: styles?.color || 'inherit' }}
             >
               {description}
             </p>
@@ -88,7 +83,10 @@ export default function Newsletter({
 
           <form
             onSubmit={handleSubmit}
-            className="w-full max-w-md flex flex-col sm:flex-row gap-3"
+            className={`w-full max-w-xl flex flex-col sm:flex-row gap-3
+               ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
+               ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
+            `}
           >
             <div className="relative flex-1 group">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
@@ -104,7 +102,7 @@ export default function Newsletter({
             <button
               disabled={loading}
               type="submit"
-              className="px-8 py-4 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold transition-all flex items-center justify-center gap-2 group disabled:opacity-70"
+              className="px-8 py-4 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold transition-all flex items-center justify-center gap-2 group disabled:opacity-70 whitespace-nowrap"
               style={{
                 backgroundColor: styles?.buttonColor || styles?.headlineColor,
                 color: styles?.buttonTextColor || '#ffffff'

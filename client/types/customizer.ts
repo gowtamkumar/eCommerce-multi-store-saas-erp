@@ -32,6 +32,7 @@ export interface SectionStyles {
   mobilePaddingBottom?: number | string;
   backgroundColor?: string;
   textColor?: string;
+  color?: string;
   height?: number | string;
   overlayOpacity?: number;
   textAlign?: string;

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 interface BrandGridProps {
+  sectionId?: string;
   title?: string;
   count?: number;
   source?: 'all' | 'manual';
@@ -18,6 +19,7 @@ interface BrandGridProps {
 }
 
 export default function BrandGrid({
+  sectionId,
   title,
   count = 6,
   source = 'all',
@@ -49,6 +51,30 @@ export default function BrandGrid({
     loadBrands();
   }, []);
 
+  const getGridCols = (cols: number) => {
+    switch (cols) {
+      case 1: return 'grid-cols-1';
+      case 2: return 'grid-cols-2';
+      case 3: return 'grid-cols-3';
+      case 4: return 'grid-cols-4';
+      case 5: return 'grid-cols-5';
+      case 6: return 'grid-cols-6';
+      default: return 'grid-cols-3';
+    }
+  };
+
+  const getMdGridCols = (cols: number) => {
+    switch (cols) {
+      case 1: return 'md:grid-cols-1';
+      case 2: return 'md:grid-cols-2';
+      case 3: return 'md:grid-cols-3';
+      case 4: return 'md:grid-cols-4';
+      case 5: return 'md:grid-cols-5';
+      case 6: return 'md:grid-cols-6';
+      default: return 'md:grid-cols-3';
+    }
+  };
+
   // Determine which brands to display
   let displayedBrands = [];
   if (source === 'manual' && items.length > 0) {
@@ -78,43 +104,50 @@ export default function BrandGrid({
     animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
   };
 
+  const cardRadiusClass = styles?.cardRadius === 'small' ? 'rounded-lg' :
+    styles?.cardRadius === 'large' ? 'rounded-[2rem]' :
+      styles?.cardRadius === 'full' ? 'rounded-full' :
+        styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-3xl';
+
   return (
-    <div className="w-full overflow-hidden">
+    <div className="w-full">
       <div className="w-full">
-        <div className="max-w-7xl mx-auto">
-          <div className={`mb-16 flex justify-between items-end
+        <div className="w-full">
+          <div className={`mb-12 flex justify-between items-end
             ${styles?.textAlign === 'center' ? 'flex-col items-center text-center gap-6' : ''}
             ${styles?.textAlign === 'right' ? 'flex-row-reverse text-right' : ''}
             ${!styles?.textAlign || styles?.textAlign === 'left' ? 'text-left' : ''}
           `}>
-            <div className="space-y-4">
-              <h2
-                className="text-4xl md:text-5xl font-black tracking-tighter uppercase"
-                style={{ color: styles?.headlineColor || styles?.color }}
-              >
-                {title || 'Our Brands'}
-              </h2>
-              <div
-                className={`w-24 h-1.5 rounded-full
-                  ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
-                  ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
-                  ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
-                `}
-                style={{ backgroundColor: styles?.sublineColor || styles?.headlineColor || styles?.color || '#4f46e5' }}
-              />
-            </div>
+            {title && (
+              <div className="space-y-4">
+                <h2
+                  className="text-3xl md:text-5xl font-black tracking-tighter uppercase"
+                  style={{ color: styles?.headlineColor || styles?.color }}
+                >
+                  {title}
+                </h2>
+                <div
+                  className={`w-16 h-1 rounded-full
+                    ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
+                    ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
+                    ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
+                  `}
+                  style={{ backgroundColor: styles?.sublineColor || styles?.headlineColor || styles?.color || '#4f46e5' }}
+                />
+              </div>
+            )}
 
-            {layout !== 'grid' && (
-              <div className="flex gap-4">
+            {layout !== 'grid' && displayedBrands.length > 0 && (
+              <div className="flex gap-3">
                 <button
                   onClick={slideLeft}
-                  className="w-12 h-12 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white dark:hover:text-black transition-all"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white dark:hover:text-black transition-all"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <button
                   onClick={slideRight}
-                  className="w-12 h-12 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white dark:hover:text-black transition-all"
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white dark:hover:text-black transition-all"
                 >
                   <ArrowRight className="w-5 h-5" />
                 </button>
@@ -124,31 +157,31 @@ export default function BrandGrid({
 
           {loading ? (
             <div className={layout === 'grid'
-              ? `grid gap-8 ${mobileColumns === 1 ? 'grid-cols-1' : 'grid-cols-2'} ${columns === 2 ? 'md:grid-cols-2' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`
-              : "flex gap-8 overflow-hidden pb-4"
-            }>
+              ? `grid gap-6 ${getGridCols(mobileColumns)} ${getMdGridCols(columns)}`
+              : "flex gap-6 overflow-hidden pb-4"}
+            >
               {[...Array(count)].map((_, i) => (
                 <div key={i} className={layout === 'grid'
-                  ? "aspect-[3/2] bg-slate-200 dark:bg-slate-800 rounded-3xl animate-pulse"
-                  : "min-w-[200px] md:min-w-[240px] aspect-[3/2] bg-slate-200 dark:bg-slate-800 rounded-3xl animate-pulse"
+                  ? `aspect-[3/2] bg-slate-200 dark:bg-slate-800 ${cardRadiusClass} animate-pulse`
+                  : `min-w-[200px] md:min-w-[240px] aspect-[3/2] bg-slate-200 dark:bg-slate-800 ${cardRadiusClass} animate-pulse`
                 } />
               ))}
             </div>
           ) : displayedBrands.length > 0 ? (
             layout === 'grid' ? (
-              <div className={`grid gap-8 ${mobileColumns === 1 ? 'grid-cols-1' : 'grid-cols-2'} ${columns === 2 ? 'md:grid-cols-2' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+              <div className={`grid gap-6 ${getGridCols(mobileColumns)} ${getMdGridCols(columns)}`}>
                 {displayedBrands.map((brand) => (
                   <Link
                     key={brand.id}
                     href={`/products?brandId=${brand.id}`}
-                    className="relative aspect-[3/2] rounded-3xl bg-white dark:bg-slate-800 flex flex-col items-center justify-center group overflow-hidden border border-slate-200 dark:border-slate-700 transition-all hover:border-brand-500 hover:shadow-xl dark:hover:shadow-brand-500/10"
+                    className={`relative aspect-[3/2] ${cardRadiusClass} bg-white dark:bg-slate-800 flex flex-col items-center justify-center group overflow-hidden border border-slate-200 dark:border-slate-700 transition-all hover:border-brand-500 hover:shadow-xl dark:hover:shadow-brand-500/10`}
                   >
                     {brand.image ? (
-                      <img src={brand.image} alt={brand.name} className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-110" />
+                      <img src={brand.image} alt={brand.name} className="w-full h-full object-contain p-6 md:p-8 transition-transform duration-500 group-hover:scale-110" />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-                        <span className="text-4xl mb-2 opacity-30 group-hover:opacity-100 transition-opacity">🏷️</span>
-                        <span className="text-xl font-bold text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-tight">{brand.name}</span>
+                        <span className="text-3xl md:text-4xl mb-2 opacity-30 group-hover:opacity-100 transition-opacity">🏷️</span>
+                        <span className="text-lg md:text-xl font-bold text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-tight line-clamp-1">{brand.name}</span>
                       </div>
                     )}
 
@@ -163,21 +196,21 @@ export default function BrandGrid({
                   dragConstraints={{ right: 0, left: -width }}
                   whileTap={{ cursor: "grabbing" }}
                   style={{ x }}
-                  className="flex gap-8"
+                  className="flex gap-6"
                 >
                   {displayedBrands.map((brand) => (
                     <motion.div key={brand.id} className="min-w-[200px] md:min-w-[280px] shrink-0">
                       <Link
                         href={`/products?brandId=${brand.id}`}
                         draggable={false}
-                        className="block relative aspect-[3/2] rounded-3xl bg-white dark:bg-slate-800 flex flex-col items-center justify-center group overflow-hidden border border-slate-200 dark:border-slate-700 transition-all hover:border-brand-500 hover:shadow-xl dark:hover:shadow-brand-500/10 pointer-events-auto select-none"
+                        className={`block relative aspect-[3/2] ${cardRadiusClass} bg-white dark:bg-slate-800 flex flex-col items-center justify-center group overflow-hidden border border-slate-200 dark:border-slate-700 transition-all hover:border-brand-500 hover:shadow-xl dark:hover:shadow-brand-500/10 pointer-events-auto select-none`}
                       >
                         {brand.image ? (
-                          <img src={brand.image} alt={brand.name} draggable={false} className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-110" />
+                          <img src={brand.image} alt={brand.name} draggable={false} className="w-full h-full object-contain p-6 md:p-8 transition-transform duration-500 group-hover:scale-110" />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-                            <span className="text-4xl mb-2 opacity-30 group-hover:opacity-100 transition-opacity">🏷️</span>
-                            <span className="text-xl font-bold text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-tight">{brand.name}</span>
+                            <span className="text-3xl md:text-4xl mb-2 opacity-30 group-hover:opacity-100 transition-opacity">🏷️</span>
+                            <span className="text-lg md:text-xl font-bold text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-tight line-clamp-1">{brand.name}</span>
                           </div>
                         )}
 
@@ -189,8 +222,8 @@ export default function BrandGrid({
               </motion.div>
             )
           ) : (
-            <div className="col-span-full py-16 text-center text-slate-400 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-3xl">
-              No brands available. Add brands in the admin dashboard.
+            <div className={`col-span-full py-16 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 ${cardRadiusClass}`}>
+              No brands available.
             </div>
           )}
         </div>
