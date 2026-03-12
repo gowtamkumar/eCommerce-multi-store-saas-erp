@@ -4,6 +4,7 @@ import { fetchAPI } from "@/services/api";
 import { Loader2, Mail, Send } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import SectionHeader from "./SectionHeader";
 
 interface NewsletterProps {
   title?: string;
@@ -67,15 +68,14 @@ export default function Newsletter({
           ${styles?.textAlign === 'right' ? 'items-end text-right' : ''}
         `}>
           <div className="space-y-4 w-full">
-            <h2
-              className="text-3xl md:text-5xl font-black tracking-tighter uppercase"
-              style={{ color: styles?.headlineColor || styles?.color || 'inherit' }}
-            >
-              {title}
-            </h2>
+            <SectionHeader title={title} styles={styles} className="!mb-0 !px-0" />
             <p
               className="text-lg opacity-80"
-              style={{ color: styles?.color || 'inherit' }}
+              style={{ 
+                color: styles?.color || 'inherit',
+                fontSize: styles?.fontSize ? (typeof styles.fontSize === 'number' ? `${styles.fontSize}px` : styles.fontSize) : undefined,
+                lineHeight: styles?.lineHeight || '1.6',
+              }}
             >
               {description}
             </p>

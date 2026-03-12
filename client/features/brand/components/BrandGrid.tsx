@@ -1,5 +1,6 @@
 "use client";
 
+import SectionHeader from "@/features/pages/components/customizer/SectionHeader";
 import { fetchAPI } from "@/services/api";
 import { animate, motion, useMotionValue } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -109,34 +110,16 @@ export default function BrandGrid({
       styles?.cardRadius === 'full' ? 'rounded-full' :
         styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-3xl';
 
+
   return (
     <div className="w-full">
       <div className="w-full">
         <div className="w-full">
-          <div className={`mb-12 flex justify-between items-end
-            ${styles?.textAlign === 'center' ? 'flex-col items-center text-center gap-6' : ''}
-            ${styles?.textAlign === 'right' ? 'flex-row-reverse text-right' : ''}
-            ${!styles?.textAlign || styles?.textAlign === 'left' ? 'text-left' : ''}
+          <SectionHeader title={title} styles={styles} />
+          <div className={`mb-12 flex justify-end items-end
+            ${styles?.textAlign === 'center' ? 'justify-center' : ''}
+            ${styles?.textAlign === 'right' ? 'justify-start' : ''} 
           `}>
-            {title && (
-              <div className="space-y-4">
-                <h2
-                  className="text-3xl md:text-5xl font-black tracking-tighter uppercase"
-                  style={{ color: styles?.headlineColor || styles?.color }}
-                >
-                  {title}
-                </h2>
-                <div
-                  className={`w-16 h-1 rounded-full
-                    ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
-                    ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
-                    ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
-                  `}
-                  style={{ backgroundColor: styles?.sublineColor || styles?.headlineColor || styles?.color || '#4f46e5' }}
-                />
-              </div>
-            )}
-
             {layout !== 'grid' && displayedBrands.length > 0 && (
               <div className="flex gap-3">
                 <button

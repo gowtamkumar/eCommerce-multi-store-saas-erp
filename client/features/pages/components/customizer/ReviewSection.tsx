@@ -3,7 +3,8 @@
 import { fetchAPI } from "@/services/api";
 import { ReviewItem } from "@/types/customizer";
 import { animate, motion, useMotionValue } from "framer-motion";
-import { ArrowLeft, ArrowRight, Star } from "lucide-react";
+import { Star, ArrowLeft, ArrowRight } from "lucide-react";
+import SectionHeader from "./SectionHeader";
 import { useEffect, useRef, useState } from "react";
 
 interface ReviewSectionProps {
@@ -116,22 +117,15 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
       styles?.cardRadius === 'full' ? 'rounded-full' :
         styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-2xl';
 
+
   return (
     <div className="w-full">
       <div className="w-full">
-        <div className={`flex justify-between items-end mb-10
-           ${styles?.textAlign === 'center' ? 'flex-col items-center justify-center gap-6 text-center' : ''}
-           ${styles?.textAlign === 'right' ? 'flex-row-reverse text-right' : ''} 
-           ${!styles?.textAlign || styles?.textAlign === 'left' ? 'text-left' : ''}
+        <SectionHeader title={settings?.title} styles={styles} />
+        <div className={`flex justify-end items-end mb-10
+           ${styles?.textAlign === 'center' ? 'justify-center' : ''}
+           ${styles?.textAlign === 'right' ? 'justify-start' : ''} 
         `}>
-          {settings?.title && (
-            <h2
-              className="text-2xl md:text-3xl font-black uppercase tracking-tight"
-              style={{ color: styles?.headlineColor || styles?.color || 'inherit' }}
-            >
-              {settings?.title}
-            </h2>
-          )}
           {displayReviews.length > 0 && (
             <div className="flex gap-3">
               <button

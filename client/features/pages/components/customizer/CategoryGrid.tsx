@@ -1,9 +1,11 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { fetchAPI } from "@/services/api";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import SectionHeader from "./SectionHeader";
 
 interface CategoryGridProps {
   sectionId?: string;
@@ -49,46 +51,69 @@ export default function CategoryGrid({
   // Determine which categories to display
   let displayedCategories = [];
   if (source === 'manual' && items.length > 0) {
-    // Map manual items (using link as categoryId) to real category data
     const selectedIds = items.map(item => item.link).filter(Boolean);
     displayedCategories = selectedIds
       .map(id => categories.find(c => c.id === id))
       .filter(Boolean);
   } else {
-    // Automatic selection
     displayedCategories = categories.slice(0, count);
   }
 
-  const cardRadiusClass = styles?.cardRadius === 'small' ? 'rounded-lg' :
-    styles?.cardRadius === 'large' ? 'rounded-[2rem]' :
-      styles?.cardRadius === 'full' ? 'rounded-full' :
-        styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-2xl';
+  const borderRadius = styles?.borderRadius || 0;
+
+  const containerVariants: any = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants: any = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.5, ease: "easeOut" }
+    }
+  };
 
   return (
-    <div className="w-full">
-      <div className="w-full">
-        {title && (
-          <div className={`mb-12 space-y-4
-            ${styles?.textAlign === 'center' ? 'text-center' : ''}
-            ${styles?.textAlign === 'right' ? 'text-right' : ''}
-            ${!styles?.textAlign || styles?.textAlign === 'left' ? 'text-left' : ''}
-          `}>
-            <h2
-              className="text-3xl md:text-5xl font-black tracking-tighter uppercase"
-              style={{ color: styles?.headlineColor || styles?.color }}
-            >
-              {title}
-            </h2>
-            <div
-              className={`w-16 h-1 rounded-full
-                ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
-                ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
-                ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
-              `}
-              style={{ backgroundColor: styles?.sublineColor || styles?.headlineColor || styles?.color || '#4f46e5' }}
-            />
-          </div>
-        )}
+    <div
+      className="w-full transition-all duration-300"
+      style={{
+        marginTop: styles?.marginTop || 0,
+        marginBottom: styles?.marginBottom || 0,
+        backgroundColor: styles?.backgroundColor || 'transparent',
+        borderRadius: borderRadius,
+        borderWidth: styles?.borderWidth || 0,
+        borderColor: styles?.borderColor || 'transparent',
+        borderStyle: styles?.borderStyle || 'solid',
+        boxShadow: styles?.boxShadow || 'none',
+        width: styles?.width || '100%',
+        maxWidth: styles?.maxWidth || 'none',
+        marginLeft: styles?.textAlign === 'center' ? 'auto' : undefined,
+        marginRight: styles?.textAlign === 'center' ? 'auto' : undefined,
+
+        // Robust Clipping
+        overflow: 'hidden',
+        isolation: 'isolate',
+        WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+        transform: 'translateZ(0)',
+      } as any}
+    >
+      <div
+        className="w-full"
+        style={{
+          paddingTop: styles?.paddingTop || 0,
+          paddingBottom: styles?.paddingBottom || 0,
+          paddingLeft: styles?.paddingLeft || 0,
+          paddingRight: styles?.paddingRight || 0,
+        } as any}
+      >
+        <SectionHeader title={title} styles={styles} />
 
         <style>{`
           @media (min-width: 768px) {
@@ -100,55 +125,70 @@ export default function CategoryGrid({
 
         {loading ? (
           <div
-            className={`grid gap-6 category-grid-${sectionId || 'default'}`}
+            className={`grid gap-6 px-6 category-grid-${sectionId || 'default'}`}
             style={{
               gridTemplateColumns: `repeat(${mobileColumns}, minmax(0, 1fr))`,
               '--md-cols': columns
             } as any}
           >
             {[...Array(count)].map((_, i) => (
-              <div key={i} className={`aspect-[4/5] bg-slate-200 dark:bg-slate-800 ${cardRadiusClass} animate-pulse`} />
+              <div key={i} className={`aspect-[4/5] bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse`} />
             ))}
           </div>
         ) : displayedCategories.length > 0 ? (
-          <div
-            className={`grid gap-6 category-grid-${sectionId || 'default'}`}
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className={`grid gap-6 px-6 category-grid-${sectionId || 'default'}`}
             style={{
               gridTemplateColumns: `repeat(${mobileColumns}, minmax(0, 1fr))`,
               '--md-cols': columns
             } as any}
           >
             {displayedCategories.map((category) => (
-              <Link
-                key={category.id}
-                href={`/products?categoryId=${category.id}`}
-                className={`relative aspect-[4/5] bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center group overflow-hidden transition-all hover:-translate-y-2 ${cardRadiusClass}
-                  ${styles?.cardBorder === 'thin' ? 'border border-slate-200 dark:border-slate-700' : ''}
-                  ${styles?.cardBorder === 'medium' ? 'border-2 border-slate-200 dark:border-slate-700' : ''}
-                  ${styles?.cardBorder === 'thick' ? 'border-4 border-slate-200 dark:border-slate-700' : ''}
-                  ${styles?.cardShadow === 'small' ? 'shadow-lg' : ''}
-                  ${styles?.cardShadow === 'medium' ? 'shadow-xl' : ''}
-                  ${styles?.cardShadow === 'large' ? 'shadow-2xl' : ''}
-                `}
-              >
-                {category.image ? (
-                  <img src={category.image} alt={category.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000">
-                    <span className="text-8xl opacity-30 group-hover:opacity-100 transition-opacity">📦</span>
+              <motion.div key={category.id} variants={itemVariants}>
+                <Link
+                  href={`/products?categoryId=${category.id}`}
+                  className={`relative aspect-[4/5] bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center group overflow-hidden transition-all duration-500 rounded-2xl
+                    ${styles?.cardShadow !== 'none' ? 'shadow-lg hover:shadow-2xl' : ''}
+                  `}
+                  style={{
+                    borderRadius: styles?.cardRadius || '1rem',
+                    border: styles?.cardBorder && styles?.cardBorder !== 'none' ? `${styles.cardBorder === 'thin' ? '1px' : styles.cardBorder === 'medium' ? '2px' : '4px'} solid ${styles?.borderColor || 'rgba(0,0,0,0.1)'}` : undefined,
+                  }}
+                >
+                  {category.image ? (
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000">
+                      <span className="text-8xl opacity-30 group-hover:opacity-100 transition-opacity">📦</span>
+                    </div>
+                  )}
+
+                  {/* Premium Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-100 transition-all duration-500" />
+
+                  <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h3 className="text-2xl md:text-3xl font-black mb-2 uppercase tracking-tight text-white drop-shadow-md">
+                      {category.name}
+                    </h3>
+                    <div className="overflow-hidden">
+                      <span className={`text-xs font-bold uppercase tracking-[0.2em] text-white/0 group-hover:text-white transition-all duration-500 flex items-center gap-2 transform translate-y-full group-hover:translate-y-0 ${styles?.textAlign === 'center' ? 'justify-center' : styles?.textAlign === 'right' ? 'justify-end' : 'justify-start'}`}>
+                        Explore <Plus className="w-4 h-4" />
+                      </span>
+                    </div>
                   </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <h3 className="text-2xl md:text-3xl font-black mb-2 uppercase tracking-tight text-white">{category.name}</h3>
-                  <span className={`text-xs font-bold uppercase tracking-[0.2em] hover:text-brand-400 transition-colors text-white flex items-center gap-2 ${styles?.textAlign === 'center' ? 'justify-center' : styles?.textAlign === 'right' ? 'justify-end' : 'justify-start'}`}>
-                    Shop Collection <Plus className="w-4 h-4" />
-                  </span>
-                </div>
-              </Link>
+                </Link>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         ) : (
-          <div className={`col-span-full py-16 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 ${cardRadiusClass}`}>
+          <div className="col-span-full py-16 px-6 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
             No categories available.
           </div>
         )}

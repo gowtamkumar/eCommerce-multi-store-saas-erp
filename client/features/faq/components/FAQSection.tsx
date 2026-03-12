@@ -2,6 +2,7 @@
 import { fetchAPI } from "@/services/api";
 import { FAQItem } from "@/types/customizer";
 import { Plus } from "lucide-react";
+import SectionHeader from "@/features/pages/components/customizer/SectionHeader";
 import { useEffect, useState } from "react";
 
 interface FAQSectionProps {
@@ -47,38 +48,7 @@ export default function FAQSection({ items, headline, subline, styles, buttonTex
         <div className="w-full overflow-hidden">
             <div className="w-full">
                 <div className="max-w-5xl mx-auto">
-                    <div className={`mb-20 space-y-4
-                        ${styles?.textAlign === 'center' ? 'text-center' : ''}
-                        ${styles?.textAlign === 'right' ? 'text-right' : ''}
-                        ${!styles?.textAlign || styles?.textAlign === 'left' ? 'text-left' : ''}
-                    `}>
-                        <h2
-                            className="text-5xl md:text-6xl font-black uppercase tracking-tighter leading-none"
-                            style={{ color: styles?.headlineColor || styles?.color }}
-                        >
-                            {headline || 'Help Center'}
-                        </h2>
-                        <div
-                            className={`w-24 h-2 rounded-full
-                                ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
-                                ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
-                                ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
-                            `}
-                            style={{ backgroundColor: styles?.sublineColor || '#4f46e5' }}
-                        />
-                        {subline && (
-                            <p
-                                className={`text-lg leading-relaxed max-w-2xl
-                                    ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
-                                    ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
-                                    ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
-                                `}
-                                style={{ color: styles?.color }}
-                            >
-                                {subline}
-                            </p>
-                        )}
-                    </div>
+                    <SectionHeader title={headline || 'Help Center'} description={subline} styles={styles} />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {loading ? (
                             <div className="col-span-full py-20 text-center text-slate-400">

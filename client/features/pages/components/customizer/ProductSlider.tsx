@@ -2,6 +2,7 @@
 
 import { fetchAPI } from "@/services/api";
 import { useEffect, useState } from "react";
+import SectionHeader from "./SectionHeader";
 import ProductCard from "../../../product/components/ProductCard";
 import { ProductSliderProps } from "../../type";
 
@@ -73,24 +74,7 @@ export default function ProductSlider({
         }
       `}</style>
       <div className="w-full">
-        {headline && (
-          <div className={`flex items-center mb-8 md:mb-10
-            ${styles?.textAlign === 'center' ? 'justify-center text-center' : ''}
-            ${styles?.textAlign === 'right' ? 'justify-end text-right' : 'justify-start text-left'}
-          `}>
-            <div className="space-y-1">
-              <h2 className="text-2xl md:text-3xl font-black tracking-tight"
-                style={{ color: styles?.headlineColor || 'inherit' }}
-              >
-                {headline}
-              </h2>
-              <div className={`h-1 bg-brand-500 rounded-full w-12
-                 ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
-                 ${styles?.textAlign === 'right' ? 'ml-auto' : 'mr-auto'}
-              `} />
-            </div>
-          </div>
-        )}
+        <SectionHeader title={headline} styles={styles} />
 
         {loading ? (
           <div

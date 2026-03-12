@@ -1,4 +1,5 @@
 "use client";
+import SectionHeader from "./SectionHeader";
 
 interface StatsCounterProps {
   stats?: Array<{ id: string; label: string; value: string }>;
@@ -21,36 +22,7 @@ export default function StatsCounter({
   return (
     <div className="w-full">
       <div className="w-full">
-        {(settings?.title || settings?.subline) && (
-          <div className={`mb-10 space-y-4 text-${styles?.textAlign || 'left'}`}>
-            {settings?.title && (
-              <h2
-                className="text-2xl md:text-4xl font-black tracking-tight uppercase"
-                style={{
-                  color: styles?.headlineColor || styles?.color || 'inherit',
-                  fontFamily: styles?.headingFontFamily,
-                  lineHeight: styles?.headingLineHeight,
-                  fontWeight: styles?.headingFontWeight
-                }}
-              >
-                {settings.title}
-              </h2>
-            )}
-            {settings?.subline && (
-              <p
-                className="text-lg opacity-80"
-                style={{
-                  color: styles?.color || 'inherit',
-                  fontFamily: styles?.paragraphFontFamily,
-                  lineHeight: styles?.paragraphLineHeight,
-                  fontWeight: styles?.paragraphFontWeight
-                }}
-              >
-                {settings.subline}
-              </p>
-            )}
-          </div>
-        )}
+        <SectionHeader title={settings?.title} description={settings?.subline} styles={styles} />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           {stats.map((stat, index) => (

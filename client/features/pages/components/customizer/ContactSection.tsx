@@ -3,7 +3,9 @@ import ContactForm from '@/features/contact/components/ContactForm';
 import { getSiteSettings } from '@/services/getSettings';
 import { ContactSectionSettings, SectionStyles } from '@/types/customizer';
 import { Mail, MapPin, Phone } from 'lucide-react';
+import SectionHeader from "./SectionHeader";
 import { useEffect, useState } from 'react';
+
 
 interface ContactSectionProps {
     settings: ContactSectionSettings;
@@ -26,33 +28,13 @@ export default function ContactSection({ settings, styles }: ContactSectionProps
             styles?.cardRadius === 'full' ? 'rounded-full' :
                 styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-2xl';
 
+
+
     return (
         <div className="w-full">
             <div className="w-full">
                 <div className="w-full">
-                    {(settings?.title || settings?.subline) && (
-                        <div className={`mb-12 space-y-4
-                            ${styles?.textAlign === 'center' ? 'text-center' : ''}
-                            ${styles?.textAlign === 'right' ? 'text-right' : 'text-left'}
-                        `}>
-                            {settings?.title && (
-                                <h2
-                                    className="text-3xl md:text-5xl font-black uppercase tracking-tight"
-                                    style={{ color: styles?.headlineColor || styles?.color || 'inherit' }}
-                                >
-                                    {settings.title}
-                                </h2>
-                            )}
-                            {settings?.subline && (
-                                <p
-                                    className="text-lg opacity-80"
-                                    style={{ color: styles?.color || 'inherit' }}
-                                >
-                                    {settings.subline}
-                                </p>
-                            )}
-                        </div>
-                    )}
+                    <SectionHeader title={settings?.title} description={settings?.subline} styles={styles} />
 
                     <div className={`grid lg:grid-cols-2 gap-8 lg:gap-12 items-start ${cardLayout === 'right' ? 'lg:grid-flow-dense' : ''}`}>
                         {/* Contact Info */}

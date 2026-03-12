@@ -131,12 +131,65 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
 
             <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
-            {/* Hero Specific Styles */}
+            {/* Section Header Styling */}
+            {['banner', 'product-slider', 'category-grid', 'brand-grid', 'review-slider', 'newsletter', 'faq-section', 'contact'].includes(nodeType) && (
+                <>
+                    <div>
+                        <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <span className="text-base">📝</span> Section Title Styles
+                        </p>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Title Color</Label>
+                                    <ColorInput value={s.headlineColor || s.color || ''} onChange={v => onChange('headlineColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Underline Color</Label>
+                                    <ColorInput value={s.sublineColor || s.headlineColor || s.color || ''} onChange={v => onChange('sublineColor', v)} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Font Size</Label>
+                                    <NumberInput value={s.headingFontSize || ''} onChange={v => onChange('headingFontSize', v)} />
+                                </div>
+                                <div>
+                                    <Label>Font Weight</Label>
+                                    <Select value={s.headingFontWeight || '900'} onChange={v => onChange('headingFontWeight', v)} options={[
+                                        { value: '400', label: 'Normal' },
+                                        { value: '500', label: 'Medium' },
+                                        { value: '600', label: 'SemiBold' },
+                                        { value: '700', label: 'Bold' },
+                                        { value: '800', label: 'ExtraBold' },
+                                        { value: '900', label: 'Black' },
+                                    ]} />
+                                </div>
+                                <div>
+                                    <Label>Line Height</Label>
+                                    <NumberInput value={s.headingLineHeight || ''} onChange={v => onChange('headingLineHeight', v)} unit="" />
+                                </div>
+                                <div>
+                                    <Label>Transform</Label>
+                                    <Select value={s.textTransform || 'uppercase'} onChange={v => onChange('textTransform', v)} options={[
+                                        { value: 'none', label: 'None' },
+                                        { value: 'uppercase', label: 'Uppercase' },
+                                        { value: 'capitalize', label: 'Capitalize' },
+                                    ]} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                </>
+            )}
+
+            {/* Component Special Styles */}
             {isHeroType && (
                 <>
                     <div>
                         <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                            <span className="text-base">💎</span> Hero Special Styles
+                            <span className="text-base">💎</span> Component Special Styles
                         </p>
                         <div className="space-y-4">
                             <div>
@@ -150,14 +203,6 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <Label>Headline Color</Label>
-                                    <ColorInput value={s.headlineColor || '#ffffff'} onChange={v => onChange('headlineColor', v)} />
-                                </div>
-                                <div>
-                                    <Label>Subline Color</Label>
-                                    <ColorInput value={s.sublineColor || 'rgba(255, 255, 255, 0.9)'} onChange={v => onChange('sublineColor', v)} />
-                                </div>
                                 <div>
                                     <Label>Button Color</Label>
                                     <ColorInput value={s.buttonColor || '#ffffff'} onChange={v => onChange('buttonColor', v)} />
