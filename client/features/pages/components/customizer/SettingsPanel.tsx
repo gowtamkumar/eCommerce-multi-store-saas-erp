@@ -459,17 +459,6 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                   </div>
                 )}
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Layout</label>
-                  <select
-                    value={settings?.layout || 'slider'}
-                    onChange={(e) => updateSetting('layout', e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  >
-                    <option value="slider">Post Slider</option>
-                    <option value="grid">Grid View</option>
-                  </select>
-                </div>
 
                 <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-1.5 mb-1.5">

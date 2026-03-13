@@ -7,9 +7,11 @@ interface SectionHeaderProps {
     description?: string;
     styles?: any;
     className?: string;
+    noMargin?: boolean;
+    noPadding?: boolean;
 }
 
-export default function SectionHeader({ title, description, styles, className = "" }: SectionHeaderProps) {
+export default function SectionHeader({ title, description, styles, className = "", noMargin = false, noPadding = false }: SectionHeaderProps) {
     if (!title && !description) return null;
 
     const textAlign = styles?.textAlign || 'left';
@@ -18,7 +20,7 @@ export default function SectionHeader({ title, description, styles, className = 
         <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`mb-12 space-y-4 px-6 ${className}
+            className={`space-y-4 ${noMargin ? '' : 'mb-12'} ${noPadding ? '' : 'px-6'} ${className}
         ${textAlign === 'center' ? 'text-center' : ''}
         ${textAlign === 'right' ? 'text-right' : ''}
         ${textAlign === 'left' ? 'text-left' : ''}

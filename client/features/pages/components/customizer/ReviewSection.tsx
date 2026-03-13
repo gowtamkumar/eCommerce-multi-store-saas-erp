@@ -5,7 +5,7 @@ import { ReviewItem } from "@/types/customizer";
 import { animate, motion, useMotionValue } from "framer-motion";
 import { Star, ArrowLeft, ArrowRight } from "lucide-react";
 import SectionHeader from "./SectionHeader";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 
 interface ReviewSectionProps {
   settings: {
@@ -26,6 +26,8 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
   const [width, setWidth] = useState(0);
   const x = useMotionValue(0);
 
+  const uid = useMemo(() => `rs-${Math.random().toString(36).slice(2, 7)}`, []);
+
   useEffect(() => {
     async function loadData() {
       if (settings.source === 'database' || settings.source === 'all' || settings.source === 'selection') {
@@ -42,12 +44,10 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
             }));
 
             if (settings.source === 'selection' && settings.reviewIds && settings.reviewIds.length > 0) {
-              // Filter by selected IDs
               mapped = settings.reviewIds
                 .map((id: string) => mapped.find((r: any) => r.id === id))
                 .filter(Boolean);
             } else {
-              // Default to limit for 'all' or 'database'
               const limit = settings.count || 6;
               mapped = mapped.slice(0, limit);
             }
@@ -68,20 +68,29 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
   }, [settings.source, settings.reviews, settings.count, settings.reviewIds]);
 
   useEffect(() => {
-    if (carouselRef.current) {
-      setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
-    }
+    const updateWidth = () => {
+        if (carouselRef.current) {
+            setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
+        }
+    };
+    updateWidth();
+    const timer = setTimeout(updateWidth, 100);
+    window.addEventListener('resize', updateWidth);
+    return () => {
+      window.removeEventListener('resize', updateWidth);
+      clearTimeout(timer);
+    };
   }, [displayReviews]);
 
   const slideLeft = () => {
     const current = x.get();
-    const newPos = Math.min(current + 400, 0); // clamp to 0 (start)
+    const newPos = Math.min(current + 400, 0); 
     animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
   };
 
   const slideRight = () => {
     const current = x.get();
-    const newPos = Math.max(current - 400, -width); // clamp to -width (end)
+    const newPos = Math.max(current - 400, -width); 
     animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
   };
 
@@ -117,42 +126,57 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
       styles?.cardRadius === 'full' ? 'rounded-full' :
         styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-2xl';
 
+  const isSlider = settings.layout !== 'grid';
 
   return (
-    <div className="w-full">
-      <div className="w-full">
-        <SectionHeader title={settings?.title} styles={styles} />
-        <div className={`flex justify-end items-end mb-10
-           ${styles?.textAlign === 'center' ? 'justify-center' : ''}
-           ${styles?.textAlign === 'right' ? 'justify-start' : ''} 
-        `}>
-          {displayReviews.length > 0 && (
-            <div className="flex gap-3">
-              <button
+    <div className={`w-full py-10 sm:py-16 ${uid}`}>
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between mb-8 sm:mb-10 lg:gap-10">
+          <div className="flex-1 min-w-0">
+            <SectionHeader 
+                title={settings?.title} 
+                styles={styles} 
+                noMargin 
+                noPadding 
+                className="!mb-0" 
+            />
+          </div>
+
+          {isSlider && displayReviews.length > 0 && (
+            <div className="flex gap-2 sm:gap-3 shrink-0">
+               <button
                 onClick={slideLeft}
-                className="w-10 h-10 md:w-12 md:h-12 rounded-full border flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 transition-all"
-                style={{ borderColor: styles?.headlineColor || styles?.color || 'currentColor' }}
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 group shadow-sm bg-white/10"
+                style={{
+                  borderColor: styles?.borderColor || 'rgba(0,0,0,0.1)',
+                  color: styles?.headlineColor || styles?.color || 'inherit'
+                }}
+                aria-label="Slide left"
               >
-                <ArrowLeft className="w-5 h-5" style={{ color: styles?.headlineColor || styles?.color || 'inherit' }} />
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
               </button>
               <button
                 onClick={slideRight}
-                className="w-10 h-10 md:w-12 md:h-12 rounded-full border flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 transition-all"
-                style={{ borderColor: styles?.headlineColor || styles?.color || 'currentColor' }}
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 group shadow-lg"
+                style={{
+                  backgroundColor: styles?.buttonColor || styles?.headlineColor || '#000',
+                  color: '#fff'
+                }}
+                aria-label="Slide right"
               >
-                <ArrowRight className="w-5 h-5" style={{ color: styles?.headlineColor || styles?.color || 'inherit' }} />
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>
           )}
         </div>
 
         {loading ? (
-          <div className={settings.layout === 'grid'
+          <div className={!isSlider
             ? `grid gap-6 ${getGridCols(mobileColumns)} ${getMdGridCols(columns)}`
             : 'flex gap-6 overflow-hidden pb-8'
           }>
-            {[...Array(settings.layout === 'grid' ? (settings.count || 3) : 3)].map((_, i) => (
-              <div key={i} className={`${settings.layout === 'grid' ? 'w-full' : 'min-w-[300px] md:min-w-[450px] flex-1'} bg-slate-50 dark:bg-white/5 p-8 ${cardRadiusClass} border border-slate-100 dark:border-white/10 shrink-0 animate-pulse`}>
+            {[...Array(!isSlider ? (settings.count || 3) : 3)].map((_, i) => (
+              <div key={i} className={`${!isSlider ? 'w-full' : 'min-w-[300px] md:min-w-[450px] flex-1'} bg-slate-50 dark:bg-white/5 p-8 ${cardRadiusClass} border border-slate-100 dark:border-white/10 shrink-0 animate-pulse`}>
                 <div className="flex gap-1 mb-6">
                   {[...Array(5)].map((_, j) => (
                     <Star key={j} className="w-4 h-4 text-slate-200 dark:text-white/10" />
@@ -170,7 +194,7 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
               </div>
             ))}
           </div>
-        ) : settings.layout === 'grid' ? (
+        ) : !isSlider ? (
           <div className={`grid gap-6 ${getGridCols(mobileColumns)} ${getMdGridCols(columns)}`}>
             {displayReviews.length > 0 ? (
               displayReviews.map((review: any) => (
@@ -222,6 +246,7 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
             <motion.div
               drag="x"
               dragConstraints={{ right: 0, left: -width }}
+              dragElastic={0.1}
               whileTap={{ cursor: "grabbing" }}
               style={{ x }}
               className="flex gap-6"
