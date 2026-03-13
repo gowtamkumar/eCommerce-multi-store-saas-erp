@@ -317,7 +317,7 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
             )}
 
             {/* Button-specific styles */}
-            {nodeType === 'button' && (
+            {['button', 'contact'].includes(nodeType) && (
                 <>
                     <div>
                         <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
@@ -557,6 +557,89 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
                                 <div>
                                     <Label>Font Size</Label>
                                     <NumberInput value={s.fontSize || ''} onChange={v => onChange('fontSize', v)} placeholder="auto" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                </>
+            )}
+            {/* Contact-specific styles */}
+            {nodeType === 'contact' && (
+                <>
+                    <div>
+                        <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <span className="text-base">📞</span> Contact Page Styles
+                        </p>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Heading Color</Label>
+                                    <ColorInput value={s.cardHeadingColor || ''} onChange={v => onChange('cardHeadingColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Heading Size</Label>
+                                    <NumberInput value={s.cardHeadingSize || ''} onChange={v => onChange('cardHeadingSize', v)} />
+                                </div>
+                                <div>
+                                    <Label>Heading Weight</Label>
+                                    <Select value={s.cardHeadingWeight || '900'} onChange={v => onChange('cardHeadingWeight', v)} options={[
+                                        { value: '400', label: 'Normal' },
+                                        { value: '600', label: 'SemiBold' },
+                                        { value: '700', label: 'Bold' },
+                                        { value: '800', label: 'ExtraBold' },
+                                        { value: '900', label: 'Black' },
+                                    ]} />
+                                </div>
+                                <div>
+                                    <Label>Info Card Bg</Label>
+                                    <ColorInput value={s.cardBackgroundColor || ''} onChange={v => onChange('cardBackgroundColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Form Card Bg</Label>
+                                    <ColorInput value={s.formBgColor || ''} onChange={v => onChange('formBgColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Icon Color</Label>
+                                    <ColorInput value={s.iconColor || ''} onChange={v => onChange('iconColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Icon Background</Label>
+                                    <ColorInput value={s.iconBgColor || ''} onChange={v => onChange('iconBgColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Input Background</Label>
+                                    <ColorInput value={s.inputBgColor || ''} onChange={v => onChange('inputBgColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Input Border</Label>
+                                    <ColorInput value={s.inputBorderColor || ''} onChange={v => onChange('inputBorderColor', v)} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Card Radius</Label>
+                                    <NumberInput value={s.cardRadius || ''} onChange={v => onChange('cardRadius', v)} />
+                                </div>
+                                <div>
+                                    <Label>Gap Between</Label>
+                                    <NumberInput value={s.gap || ''} onChange={v => onChange('gap', v)} />
+                                </div>
+                                <div>
+                                    <Label>Title Align</Label>
+                                    <Select value={s.titleAlign || 'left'} onChange={v => onChange('titleAlign', v)} options={[
+                                        { value: 'left', label: 'Left' },
+                                        { value: 'center', label: 'Center' },
+                                        { value: 'right', label: 'Right' },
+                                    ]} />
+                                </div>
+                                <div>
+                                    <Label>Label Align</Label>
+                                    <Select value={s.labelAlign || 'left'} onChange={v => onChange('labelAlign', v)} options={[
+                                        { value: 'left', label: 'Left' },
+                                        { value: 'center', label: 'Center' },
+                                        { value: 'right', label: 'Right' },
+                                    ]} />
                                 </div>
                             </div>
                         </div>
