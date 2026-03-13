@@ -1447,6 +1447,44 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                   </select>
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Layout Style</label>
+                  <select
+                    value={settings?.layout || 'grid'}
+                    onChange={(e) => updateSetting('layout', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="grid">Grid Layout</option>
+                    <option value="accordion">Accordion Layout</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Desktop Columns</label>
+                    <select
+                      value={settings?.gridColumns || '2'}
+                      onChange={(e) => updateSetting('gridColumns', e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value="1">1 Column</option>
+                      <option value="2">2 Columns</option>
+                      <option value="3">3 Columns</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Mobile Columns</label>
+                    <select
+                      value={settings?.mobileColumns || '1'}
+                      onChange={(e) => updateSetting('mobileColumns', e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value="1">1 Column</option>
+                      <option value="2">2 Columns</option>
+                    </select>
+                  </div>
+                </div>
+
                 {settings?.source === 'selection' ? (
                   <div className="space-y-4">
                     <div className="space-y-2">

@@ -316,7 +316,108 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
                 </>
             )}
 
-            {/* Spacing */}
+            {/* Button-specific styles */}
+            {nodeType === 'button' && (
+                <>
+                    <div>
+                        <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <span className="text-base">🎨</span> Button Styles
+                        </p>
+                        <div className="space-y-4">
+
+                            {/* Colors */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Background Color</Label>
+                                    <ColorInput value={s.buttonColor || ''} onChange={v => onChange('buttonColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Text Color</Label>
+                                    <ColorInput value={s.buttonTextColor || ''} onChange={v => onChange('buttonTextColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Border / Outline Color</Label>
+                                    <ColorInput value={s.borderColor || ''} onChange={v => onChange('borderColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Border Width</Label>
+                                    <NumberInput value={s.borderWidth || ''} onChange={v => onChange('borderWidth', v)} />
+                                </div>
+                            </div>
+
+                            {/* Shape */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Border Radius</Label>
+                                    <NumberInput value={s.borderRadius || ''} onChange={v => onChange('borderRadius', v)} />
+                                </div>
+                                <div>
+                                    <Label>Alignment</Label>
+                                    <Select value={s.textAlign || 'center'} onChange={v => onChange('textAlign', v)} options={[
+                                        { value: 'left', label: 'Left' },
+                                        { value: 'center', label: 'Center' },
+                                        { value: 'right', label: 'Right' },
+                                    ]} />
+                                </div>
+                            </div>
+
+                            {/* Typography */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label isResponsive viewMode={viewMode}>Font Size</Label>
+                                    <NumberInput value={s.fontSize || ''} onChange={v => handleUpdate('fontSize', v)} />
+                                </div>
+                                <div>
+                                    <Label>Font Weight</Label>
+                                    <Select value={s.fontWeight || '800'} onChange={v => onChange('fontWeight', v)} options={[
+                                        { value: '400', label: 'Normal' },
+                                        { value: '500', label: 'Medium' },
+                                        { value: '600', label: 'SemiBold' },
+                                        { value: '700', label: 'Bold' },
+                                        { value: '800', label: 'ExtraBold' },
+                                        { value: '900', label: 'Black' },
+                                    ]} />
+                                </div>
+                                <div>
+                                    <Label>Letter Spacing</Label>
+                                    <NumberInput value={s.letterSpacing || ''} onChange={v => onChange('letterSpacing', v)} unit="em" />
+                                </div>
+                                <div>
+                                    <Label>Text Transform</Label>
+                                    <Select value={s.textTransform || 'uppercase'} onChange={v => onChange('textTransform', v)} options={[
+                                        { value: 'none', label: 'None' },
+                                        { value: 'uppercase', label: 'Uppercase' },
+                                        { value: 'capitalize', label: 'Capitalize' },
+                                    ]} />
+                                </div>
+                            </div>
+
+                            {/* Spacing overrides */}
+                            <div className="grid grid-cols-2 gap-2">
+                                {([
+                                    ['paddingTop', 'Pad Top'],
+                                    ['paddingBottom', 'Pad Bottom'],
+                                    ['paddingLeft', 'Pad Left'],
+                                    ['paddingRight', 'Pad Right'],
+                                    ['marginTop', 'Margin Top'],
+                                    ['marginBottom', 'Margin Bottom'],
+                                ] as [string, string][]).map(([key, label]) => {
+                                    const { value } = getProp(key);
+                                    return (
+                                        <div key={key}>
+                                            <Label isResponsive viewMode={viewMode}>{label}</Label>
+                                            <NumberInput value={value || ''} onChange={v => handleUpdate(key, v)} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                </>
+            )}
+
+            {/* Spacing (for non-button types) */}
             <div>
                 <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                     <span className="text-base">🚀</span> Spacing
@@ -406,6 +507,56 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
                                         { value: 'none', label: 'None' },
                                         { value: 'uppercase', label: 'Yes' },
                                     ]} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+                </>
+            )}
+
+            {/* FAQ-specific styles */}
+            {nodeType === 'faq-section' && (
+                <>
+                    <div>
+                        <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <span className="text-base">❓</span> FAQ Item Styles
+                        </p>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Question Color</Label>
+                                    <ColorInput value={s.questionColor || s.headlineColor || ''} onChange={v => onChange('questionColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Answer Color</Label>
+                                    <ColorInput value={s.answerColor || s.color || ''} onChange={v => onChange('answerColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Icon Color</Label>
+                                    <ColorInput value={s.iconColor || ''} onChange={v => onChange('iconColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Icon Background</Label>
+                                    <ColorInput value={s.iconBgColor || ''} onChange={v => onChange('iconBgColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Item Background</Label>
+                                    <ColorInput value={s.cardBackgroundColor || ''} onChange={v => onChange('cardBackgroundColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Item Border</Label>
+                                    <ColorInput value={s.borderColor || ''} onChange={v => onChange('borderColor', v)} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Item Radius</Label>
+                                    <NumberInput value={s.cardRadius || ''} onChange={v => onChange('cardRadius', v)} />
+                                </div>
+                                <div>
+                                    <Label>Font Size</Label>
+                                    <NumberInput value={s.fontSize || ''} onChange={v => onChange('fontSize', v)} placeholder="auto" />
                                 </div>
                             </div>
                         </div>

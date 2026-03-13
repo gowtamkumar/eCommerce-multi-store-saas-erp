@@ -247,6 +247,9 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
             buttonText={settings?.buttonText}
             faqIds={settings?.faqIds}
             source={settings?.source}
+            gridColumns={settings?.gridColumns}
+            mobileColumns={settings?.mobileColumns}
+            layout={settings?.layout}
           />
         );
       case "brand-grid":
