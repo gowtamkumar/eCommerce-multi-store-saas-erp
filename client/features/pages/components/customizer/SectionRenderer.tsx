@@ -1,6 +1,6 @@
 "use client";
 
-import BrandGrid from "@/features/brand/components/BrandGrid";
+import BrandGrid from "@/features/brand/components/BrandSlider";
 import FAQSection from "@/features/faq/components/FAQSection";
 import BannerSlider from "@/features/pages/components/customizer/BannerSlider";
 import BuilderButton from "@/features/pages/components/customizer/BuilderButton";
