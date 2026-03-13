@@ -10,6 +10,7 @@ import Divider from "@/features/pages/components/customizer/Divider";
 import Heading from "@/features/pages/components/customizer/Heading";
 import ImageBlock from "@/features/pages/components/customizer/ImageBlock";
 import Newsletter from "@/features/pages/components/customizer/Newsletter";
+import NewArrivals from "@/features/pages/components/customizer/NewArrivals";
 import OfferBanner from "@/features/pages/components/customizer/OfferBanner";
 import Paragraph from "@/features/pages/components/customizer/Paragraph";
 import ProductSlider from "@/features/pages/components/customizer/ProductSlider";
@@ -204,6 +205,21 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
             count={settings?.count}
             source={settings?.source}
             items={settings?.items}
+            columns={settings?.columns}
+            mobileColumns={settings?.mobileColumns}
+            styles={styles}
+          />
+        );
+
+      case "new-arrivals":
+        return (
+          <NewArrivals
+            sectionId={section.id}
+            headline={settings?.headline}
+            count={settings?.count}
+            source={settings?.source}
+            productIds={settings?.productIds}
+            collectionId={settings?.source === 'collection' ? settings?.collectionId : undefined}
             columns={settings?.columns}
             mobileColumns={settings?.mobileColumns}
             styles={styles}

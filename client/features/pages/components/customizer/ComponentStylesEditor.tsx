@@ -132,7 +132,7 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
             <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
             {/* Section Header Styling */}
-            {['banner', 'product-slider', 'category-grid', 'brand-grid', 'review-slider', 'newsletter', 'faq-section', 'contact'].includes(nodeType) && (
+            {['banner', 'product-slider', 'new-arrivals', 'category-grid', 'brand-grid', 'review-slider', 'newsletter', 'faq-section', 'contact'].includes(nodeType) && (
                 <>
                     <div>
                         <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">

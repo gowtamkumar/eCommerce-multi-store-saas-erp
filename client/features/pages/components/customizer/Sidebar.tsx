@@ -70,6 +70,7 @@ const SECTION_ICONS: Record<SectionType, any> = {
   'faq-section': HelpCircle,
   'video-block': Video,
   'contact': Mail,
+  'new-arrivals': Grid,
   'heading': Type,
   'paragraph': MessageSquare,
   'divider': Minus,
