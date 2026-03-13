@@ -233,27 +233,81 @@ export default function ComponentStylesEditor({ styles, onChange, viewMode, node
                 <>
                     <div>
                         <p className="text-[9px] font-bold text-brand-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                            <span className="text-base">💎</span> Component Special Styles
+                            <span className="text-base">💎</span> Offer Banner Styles
                         </p>
                         <div className="space-y-4">
+
+                            {/* Min Height */}
                             <div>
-                                <Label>Overlay Opacity ({s.overlayOpacity ?? 40}%)</Label>
+                                <Label isResponsive viewMode={viewMode}>Min Height</Label>
+                                <NumberInput value={s.minHeight || ''} onChange={v => handleUpdate('minHeight', v)} placeholder="200" />
+                            </div>
+
+                            {/* Overlay */}
+                            <div>
+                                <Label>Overlay Opacity ({s.overlayOpacity ?? 70}%)</Label>
                                 <input
                                     type="range"
                                     min={0} max={100}
-                                    value={s.overlayOpacity ?? 40}
+                                    value={s.overlayOpacity ?? 70}
                                     onChange={e => onChange('overlayOpacity', parseInt(e.target.value))}
                                     className="w-full accent-brand-600"
                                 />
                             </div>
+
+                            {/* Text alignment */}
+                            <div>
+                                <Label>Content Alignment</Label>
+                                <Select value={s.textAlign || 'left'} onChange={v => onChange('textAlign', v)} options={[
+                                    { value: 'left', label: 'Left' },
+                                    { value: 'center', label: 'Center' },
+                                    { value: 'right', label: 'Right' },
+                                ]} />
+                            </div>
+
+                            {/* Font size */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <Label>Button Color</Label>
-                                    <ColorInput value={s.buttonColor || '#ffffff'} onChange={v => onChange('buttonColor', v)} />
+                                    <Label isResponsive viewMode={viewMode}>Font Size</Label>
+                                    <NumberInput value={s.fontSize || ''} onChange={v => handleUpdate('fontSize', v)} placeholder="auto" />
                                 </div>
                                 <div>
-                                    <Label>Button Text</Label>
-                                    <ColorInput value={s.buttonTextColor || '#2563eb'} onChange={v => onChange('buttonTextColor', v)} />
+                                    <Label>Font Weight</Label>
+                                    <Select value={s.fontWeight || '900'} onChange={v => onChange('fontWeight', v)} options={[
+                                        { value: '400', label: 'Normal' },
+                                        { value: '600', label: 'SemiBold' },
+                                        { value: '700', label: 'Bold' },
+                                        { value: '800', label: 'ExtraBold' },
+                                        { value: '900', label: 'Black' },
+                                    ]} />
+                                </div>
+                            </div>
+
+                            {/* Colors */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>Headline Color</Label>
+                                    <ColorInput value={s.headlineColor || ''} onChange={v => onChange('headlineColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Subline Color</Label>
+                                    <ColorInput value={s.sublineColor || ''} onChange={v => onChange('sublineColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Icon Color</Label>
+                                    <ColorInput value={s.iconColor || ''} onChange={v => onChange('iconColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Icon Background</Label>
+                                    <ColorInput value={s.iconBgColor || ''} onChange={v => onChange('iconBgColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Button Color</Label>
+                                    <ColorInput value={s.buttonColor || ''} onChange={v => onChange('buttonColor', v)} />
+                                </div>
+                                <div>
+                                    <Label>Button Text Color</Label>
+                                    <ColorInput value={s.buttonTextColor || ''} onChange={v => onChange('buttonTextColor', v)} />
                                 </div>
                             </div>
                         </div>

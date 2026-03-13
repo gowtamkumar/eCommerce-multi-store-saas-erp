@@ -897,7 +897,28 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     value={settings?.headline || ''}
                     onChange={(e) => updateSetting('headline', e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="e.g. EXCLUSIVE OFFER"
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Subline / Description</label>
+                  <textarea
+                    value={settings?.subline || ''}
+                    onChange={(e) => updateSetting('subline', e.target.value)}
+                    rows={2}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="e.g. Limited time deals on top brands"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Offer End Date (Countdown)</label>
+                  <input
+                    type="datetime-local"
+                    value={settings?.endDate ? settings.endDate.slice(0, 16) : ''}
+                    onChange={(e) => updateSetting('endDate', e.target.value ? new Date(e.target.value).toISOString() : '')}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                  <p className="text-[9px] text-slate-400">Set a date to show a live countdown timer</p>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Offer Background Image</label>
@@ -906,6 +927,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     value={settings?.backgroundImage || ''}
                     onChange={(e) => updateSetting('backgroundImage', e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="https://..."
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -915,6 +937,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     value={settings?.image || ''}
                     onChange={(e) => updateSetting('image', e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="https://..."
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -924,8 +947,8 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     onChange={(e) => updateSetting('layout', e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   >
-                    <option value="left">Content Left</option>
-                    <option value="right">Content Right</option>
+                    <option value="left">Icon Left / Content Right</option>
+                    <option value="right">Content Left / Icon Right</option>
                   </select>
                 </div>
 
@@ -937,6 +960,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                       value={settings?.buttonText || ''}
                       onChange={(e) => updateSetting('buttonText', e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      placeholder="e.g. Shop Now"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -946,6 +970,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                       value={settings?.buttonLink || ''}
                       onChange={(e) => updateSetting('buttonLink', e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      placeholder="/shop"
                     />
                   </div>
                 </div>
@@ -958,6 +983,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                       value={settings?.secondaryButtonText || ''}
                       onChange={(e) => updateSetting('secondaryButtonText', e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      placeholder="e.g. Learn More"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -967,6 +993,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                       value={settings?.secondaryButtonLink || ''}
                       onChange={(e) => updateSetting('secondaryButtonLink', e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      placeholder="/about"
                     />
                   </div>
                 </div>
