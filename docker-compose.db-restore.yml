@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres_db_restore
+    # restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: multi_tenant_ecommerce
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - main_network
+  restore:
+    image: postgres:17-alpine
+    container_name: multi_tenant_postgres_restore
+    volumes:
+      - ./backups:/backups # Mount backup directory
+      - ./scripts/restore.sh:/restore.sh # Mount restore script
+    entrypoint: ["sh", "/restore.sh"] # Execute the restore script
+    environment:
+      PGPASSWORD: postgres # PostgreSQL password
+    depends_on:
+      - postgres
+    networks:
+      - main_network
+
+networks:
+  main_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
