@@ -20,13 +20,13 @@ export default function Price({ amount, className = "", showOriginal = false, or
   }
 
   return (
-    <div className={`inline-flex items-center gap-2 ${className}`}>
+    <div className={`flex flex-col gap-0.5 ${className}`}>
       {showOriginal && originalAmount && (
-        <span className="text-sm text-slate-400 line-through">
+        <span className="text-xs text-slate-400 dark:text-slate-500 line-through font-medium opacity-80">
           {formatPrice(originalAmount)}
         </span>
       )}
-      <span className="font-bold">
+      <span className="font-black tracking-tight">
         {formatPrice(amount)}
       </span>
     </div>

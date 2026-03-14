@@ -7,6 +7,7 @@ import { ArrowUpDown, Filter, Grid, List as ListIcon, Search, ShoppingBag, X } f
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import ProductCard from './ProductCard';
 
 interface Product {
   id: string;
@@ -156,87 +157,7 @@ export default function ProductList({ products, total, onOpenMobileFilters }: Pr
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
               >
-                <Link
-                  href={`/products/${product.slug}`}
-                  className={`group bg-white dark:bg-slate-800/50 rounded-3xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-slate-100 dark:border-slate-800 hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.15)] hover:-translate-y-2 transition-all duration-500 flex ${viewMode === 'list' ? 'flex-row h-52' : 'flex-col h-full'}`}
-                >
-                  <div className={`relative overflow-hidden bg-slate-50 dark:bg-slate-900/80 ${viewMode === 'list' ? 'w-52 h-full shrink-0' : 'aspect-[4/5] w-full'}`}>
-                    {product.images?.[0] ? (
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700 ease-out"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300">
-                        <ShoppingBag className="w-10 h-10 opacity-20" />
-                      </div>
-                    )}
-
-                    {/* Badges */}
-                    {(() => {
-                      const discountAmt = Number(product.discountAmount || 0);
-                      const basePrice = Number(product.price || 0);
-                      const discountPct = discountAmt > 0 ? Math.round((discountAmt / basePrice) * 100) : 0;
-                      return (
-                        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-                          {product.stock <= 0 && (
-                            <span className="bg-slate-900/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
-                              Sold Out
-                            </span>
-                          )}
-                          {discountAmt > 0 && (
-                            <span className="bg-rose-500/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
-                              {discountPct}% OFF
-                            </span>
-                          )}
-                          {(product as any).applicablePromotions?.filter((p: any) => p.isActive).length > 0 && (
-                            <span className="bg-brand-600/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
-                              {(product as any).applicablePromotions.filter((p: any) => p.isActive)[0].name}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  </div>
-
-                  <div className="p-6 flex flex-col justify-between flex-1 relative bg-white dark:bg-transparent">
-                    <div>
-                      <div className="flex items-center justify-between mb-3 text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest">
-                        {product.category?.name || "Premium Product"}
-                        <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700" />
-                      </div>
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-snug group-hover:text-brand-600 transition-colors duration-300 line-clamp-2">
-                        {product.name}
-                      </h3>
-                      <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed line-clamp-2 mb-4">
-                        {product.shortDescription || product.description?.replace(/<[^>]*>?/gm, '')}
-                      </p>
-                    </div>
-
-                    {(() => {
-                      const discountAmt = Number(product.discountAmount || 0);
-                      const basePrice = Number(product.price || 0);
-                      return (
-                        <div className="flex items-center justify-between pt-5 border-t border-slate-50 dark:border-slate-800 mt-auto">
-                          <Price
-                            amount={discountAmt > 0 ? basePrice - discountAmt : basePrice}
-                            className="text-xl font-black text-slate-900 dark:text-white"
-                            showOriginal={discountAmt > 0}
-                            originalAmount={basePrice}
-                          />
-                          <div className="flex items-center gap-2 text-brand-600 font-bold text-xs group/btn">
-                            <span className="hidden sm:inline">Details</span>
-                            <div className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center group-hover/btn:bg-brand-600 group-hover/btn:text-white transition-all">
-                              <ArrowUpDown className="w-3 h-3 rotate-90" />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </Link>
+                <ProductCard product={product} viewMode={viewMode} />
               </motion.div>
             ))}
           </AnimatePresence>
