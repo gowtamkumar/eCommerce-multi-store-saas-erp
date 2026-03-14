@@ -9,9 +9,10 @@ interface ProductsClientWrapperProps {
   brands: any[];
   products: any[];
   total: number;
+  settings?: any;
 }
 
-export default function ProductsClientWrapper({ categories, brands, products, total }: ProductsClientWrapperProps) {
+export default function ProductsClientWrapper({ categories, brands, products, total, settings }: ProductsClientWrapperProps) {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   return (
@@ -22,6 +23,7 @@ export default function ProductsClientWrapper({ categories, brands, products, to
         brands={brands}
         isMobileOpen={isMobileFiltersOpen}
         onCloseMobile={() => setIsMobileFiltersOpen(false)}
+        settings={settings}
       />
 
       {/* Product Grid */}
@@ -30,6 +32,7 @@ export default function ProductsClientWrapper({ categories, brands, products, to
           products={products}
           total={total}
           onOpenMobileFilters={() => setIsMobileFiltersOpen(true)}
+          settings={settings}
         />
       </div>
     </div>

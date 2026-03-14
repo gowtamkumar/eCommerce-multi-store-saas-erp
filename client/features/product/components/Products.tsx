@@ -89,14 +89,15 @@ export default async function Products({
         );
     }
 
-    const [productsData, categories, brands] = await Promise.all([
+    const [productsData, categories, brands, settings] = await Promise.all([
         getProductsData(searchParams),
         getCategoriesData(),
-        getBrandsData()
+        getBrandsData(),
+        getSiteSettings()
     ]);
 
     const { products, total } = productsData;
-
+    const productsPageSettings = settings?.productsPage || {};
 
     return (
         <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
@@ -106,34 +107,96 @@ export default async function Products({
 
             <Navbar />
 
-            <div className="pt-24 pb-20">
-                <div className="container mx-auto px-4">
-                    <div className="relative mb-16 py-16 px-8 rounded-[3rem] overflow-hidden">
-                        {/* Abstract Background Decoration */}
-                        <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/50 z-0" />
-                        <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl z-0" />
-                        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-brand-600/5 rounded-full blur-3xl z-0" />
-                        
-                        <div className="relative z-10 text-center max-w-3xl mx-auto">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 rounded-full text-xs font-black uppercase tracking-widest mb-6">
-                                <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
-                                Exclusive Collection
-                            </div>
-                            <h1 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white mb-6 leading-tight">
-                                Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-brand-400">Masterpieces</span>
-                            </h1>
-                            <p className="text-xl text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                                Curated premium selections designed to transcend expectations and elevate your lifestyle.
-                            </p>
-                        </div>
-                    </div>
+            <div className={`pb-20 ${productsPageSettings.bannerFullWidth ? 'pt-0' : 'pt-24'}`}>
+                <div className={`${productsPageSettings.bannerFullWidth ? 'max-w-full px-0' : 'container mx-auto px-4'}`}>
+                    {productsPageSettings.bannerShow !== false && (
+                        <div 
+                            className={`relative mb-16 overflow-hidden transition-all duration-500 ${
+                                productsPageSettings.bannerFullWidth 
+                                    ? 'py-24 px-8 md:py-32' 
+                                    : 'py-16 px-8 rounded-[3rem]'
+                            } ${
+                                productsPageSettings.bannerStyle === 'minimal' 
+                                    ? 'border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm' 
+                                    : productsPageSettings.bannerStyle === 'modern'
+                                        ? 'bg-slate-50 dark:bg-slate-800/20'
+                                        : ''
+                            }`}
+                            style={{
+                                backgroundColor: productsPageSettings.bannerBackgroundColor || undefined,
+                                backgroundImage: productsPageSettings.bannerImage ? `url(${productsPageSettings.bannerImage})` : undefined,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                color: productsPageSettings.bannerTextColor || undefined
+                            }}
+                        >
+                            {/* Abstract Background Decoration for Modern Style */}
+                            {productsPageSettings.bannerStyle === 'modern' && !productsPageSettings.bannerImage && (
+                                <>
+                                    <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/50 z-0" />
+                                    <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl z-0" />
+                                    <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-brand-600/5 rounded-full blur-3xl z-0" />
+                                </>
+                            )}
 
-                    <ProductsClientWrapper
-                        categories={categories}
-                        brands={brands}
-                        products={products}
-                        total={total}
-                    />
+                            {/* Overlay for Image Style */}
+                            {productsPageSettings.bannerImage && (
+                                <div 
+                                    className="absolute inset-0 bg-black/40 z-0" 
+                                    style={{ opacity: (productsPageSettings.bannerOverlayOpacity || 40) / 100 }}
+                                />
+                            )}
+
+                            <div className="relative z-10 text-center max-w-4xl mx-auto">
+                                <div 
+                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-6 ${
+                                        productsPageSettings.bannerImage || (productsPageSettings.bannerTextColor && productsPageSettings.bannerTextColor !== '#000000')
+                                            ? 'bg-white/10 backdrop-blur-md text-white border border-white/20'
+                                            : 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400'
+                                    }`}
+                                >
+                                    <span className={`w-2 h-2 rounded-full animate-pulse ${
+                                        productsPageSettings.bannerImage || (productsPageSettings.bannerTextColor && productsPageSettings.bannerTextColor !== '#000000')
+                                            ? 'bg-white'
+                                            : 'bg-brand-500'
+                                    }`} />
+                                    {productsPageSettings.bannerTagline || "Exclusive Collection"}
+                                </div>
+                                
+                                <h1 
+                                    className={`text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight tracking-tight ${
+                                        !productsPageSettings.bannerTextColor && (!productsPageSettings.bannerImage)
+                                            ? 'text-slate-900 dark:text-white'
+                                            : ''
+                                    }`}
+                                    style={{ color: productsPageSettings.bannerTextColor || (productsPageSettings.bannerImage ? '#ffffff' : undefined) }}
+                                >
+                                    {productsPageSettings.bannerHeadline || "Our Collection"}
+                                </h1>
+                                
+                                <p 
+                                    className={`text-xl md:text-2xl font-medium leading-relaxed max-w-2xl mx-auto ${
+                                        !productsPageSettings.bannerTextColor && (!productsPageSettings.bannerImage)
+                                            ? 'text-slate-500 dark:text-slate-400'
+                                            : ''
+                                    }`}
+                                    style={{ color: productsPageSettings.bannerTextColor ? `${productsPageSettings.bannerTextColor}cc` : (productsPageSettings.bannerImage ? 'rgba(255,255,255,0.9)' : undefined) }}
+                                >
+                                    {productsPageSettings.bannerSubheadline || "Premium products curated for you."}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className={productsPageSettings.bannerFullWidth ? 'container mx-auto px-4' : ''}>
+                        <ProductsClientWrapper
+                            categories={categories}
+                            brands={brands}
+                            products={products}
+                            total={total}
+                            settings={productsPageSettings}
+                        />
+                    </div>
                 </div>
             </div>
 

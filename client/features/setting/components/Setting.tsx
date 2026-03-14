@@ -1,4 +1,10 @@
 "use client";
+import { AnimatePresence, motion } from "framer-motion";
+import { Loader2, Save, Settings } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { TabType, TabTypeEnum } from "../types";
 import CourierSetting from "@/features/setting/components/CourierSetting";
 import CurrenciesSetting from "@/features/setting/components/CurrenciesSetting";
 import { DomainSetting } from "@/features/setting/components/DomainSetting";
@@ -10,13 +16,9 @@ import NavbarSetting from "@/features/setting/components/NavbarSetting";
 import PaymentSetting from "@/features/setting/components/PaymentSetting";
 import SocialSetting from "@/features/setting/components/SocialSetting";
 import TrustDelivery from "@/features/setting/components/Trust&Delivery";
+import ProductsPageSetting from "./ProductsPageSetting";
 import { fetchAPI } from "@/services/api";
-import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, Save, Settings } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { TabType, TabTypeEnum } from "../types";
+
 export const dynamic = "force-dynamic";
 
 
@@ -148,6 +150,19 @@ function SettingsContent() {
             title: string;
             description: string;
         }>,
+        productsPage: {
+            bannerHeadline: "",
+            bannerSubheadline: "",
+            bannerTagline: "",
+            bannerShow: true,
+            bannerStyle: "modern" as "modern" | "minimal",
+            productsPerRow: 4,
+            sidebarStyle: "modern" as "modern" | "minimal",
+            showSearch: true,
+            showCategories: true,
+            showBrands: true,
+            showPriceFilter: true,
+        },
     });
 
     const searchParams = useSearchParams();
@@ -255,6 +270,19 @@ function SettingsContent() {
                             sections: []
                         },
                         trustBadges: data.trustBadges || [],
+                        productsPage: data.productsPage || {
+                            bannerHeadline: "",
+                            bannerSubheadline: "",
+                            bannerTagline: "",
+                            bannerShow: true,
+                            bannerStyle: "modern",
+                            productsPerRow: 4,
+                            sidebarStyle: "modern",
+                            showSearch: true,
+                            showCategories: true,
+                            showBrands: true,
+                            showPriceFilter: true,
+                        },
                     });
                 }
             } catch (error) {
@@ -388,6 +416,9 @@ function SettingsContent() {
                                 )}
                                 {activeTab === "trust" && (
                                     <TrustDelivery formData={formData} setFormData={setFormData} />
+                                )}
+                                {activeTab === "productsPage" && (
+                                    <ProductsPageSetting formData={formData} setFormData={setFormData} />
                                 )}
                             </AnimatePresence>
                         </form>

@@ -56,6 +56,24 @@ export const DEFAULT_SETTINGS = {
     copyright: "",
     sections: [],
   },
+  productsPage: {
+    bannerHeadline: "Our Collection",
+    bannerSubheadline: "Premium products curated for you.",
+    bannerTagline: "Exclusive Collection",
+    bannerImage: "",
+    bannerBackgroundColor: "",
+    bannerOverlayOpacity: 40,
+    bannerTextColor: "#000000",
+    bannerFullWidth: false,
+    bannerShow: true,
+    bannerStyle: "modern",
+    productsPerRow: 4,
+    sidebarStyle: "modern",
+    showSearch: true,
+    showCategories: true,
+    showBrands: true,
+    showPriceFilter: true,
+  }
 };
 
 export async function getSiteSettings() {
@@ -95,6 +113,7 @@ export async function getSiteSettings() {
         marketing: { ...DEFAULT_SETTINGS.marketing, ...settings?.marketing },
         navbar: { ...DEFAULT_SETTINGS.navbar, ...settings?.navbar },
         footer: { ...DEFAULT_SETTINGS.footer, ...settings?.footer },
+        productsPage: { ...DEFAULT_SETTINGS.productsPage, ...settings?.productsPage },
       };
     }
 

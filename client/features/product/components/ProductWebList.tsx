@@ -28,9 +28,10 @@ interface ProductListProps {
   products: Product[];
   total: number;
   onOpenMobileFilters: () => void;
+  settings?: any;
 }
 
-export default function ProductList({ products, total, onOpenMobileFilters }: ProductListProps) {
+export default function ProductList({ products, total, onOpenMobileFilters, settings }: ProductListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
@@ -76,32 +77,34 @@ export default function ProductList({ products, total, onOpenMobileFilters }: Pr
         </button>
 
         {/* Search */}
-        <form onSubmit={handleSearch} className="relative w-full md:w-80 lg:w-96 group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-brand-500 transition-colors pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search products..."
-            className="w-full pl-11 pr-11 py-2.5 bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-0 focus:border-brand-500/50 outline-none transition-all font-medium text-sm"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchQuery('');
-                const params = new URLSearchParams(searchParams.toString());
-                params.delete('search');
-                router.push(`/products?${params.toString()}`);
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-all"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </form>
+        {settings?.showSearch !== false && (
+          <form onSubmit={handleSearch} className="relative w-full md:w-80 lg:w-96 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-brand-500 transition-colors pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="w-full pl-11 pr-11 py-2.5 bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-0 focus:border-brand-500/50 outline-none transition-all font-medium text-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.delete('search');
+                  router.push(`/products?${params.toString()}`);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-all"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </form>
+        )}
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-3 w-full md:w-auto ml-auto">
           <div className="flex-1 md:flex-none flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-2xl px-4 py-2.5 group focus-within:border-brand-500/50 transition-all">
             <ArrowUpDown className="w-4 h-4 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
             <select
@@ -144,7 +147,17 @@ export default function ProductList({ products, total, onOpenMobileFilters }: Pr
       {/* Product Grid/List */}
       {products.length > 0 ? (
         <div className={viewMode === 'grid'
-          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          ? (() => {
+            const cols = (settings?.productsPerRow || 4) as 2 | 3 | 4 | 5 | 6;
+            const gridCols = {
+              2: 'lg:grid-cols-2',
+              3: 'lg:grid-cols-3',
+              4: 'lg:grid-cols-4',
+              5: 'lg:grid-cols-5',
+              6: 'lg:grid-cols-6',
+            }[cols] || 'lg:grid-cols-4';
+            return `grid grid-cols-1 sm:grid-cols-2 ${gridCols} gap-6 sm:gap-8`;
+          })()
           : "space-y-4"
         }>
           <AnimatePresence mode="popLayout">

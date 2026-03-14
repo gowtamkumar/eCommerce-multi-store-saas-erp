@@ -8,7 +8,7 @@ import { ProductFiltersProps } from '../types';
 
 
 
-export default function ProductFilters({ categories, brands, isMobileOpen, onCloseMobile }: ProductFiltersProps) {
+export default function ProductFilters({ categories, brands, isMobileOpen, onCloseMobile, settings }: ProductFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -90,11 +90,11 @@ export default function ProductFilters({ categories, brands, isMobileOpen, onClo
       {/* Sidebar Content */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-slate-900 shadow-2xl transform transition-all duration-300 ease-in-out 
-        md:translate-x-0 md:sticky md:top-32 md:w-64 md:shadow-none md:block md:z-30
+        md:translate-x-0 md:sticky md:top-28 md:w-64 md:shadow-none md:block md:z-30
         border-r md:border border-slate-100 dark:border-slate-800 md:rounded-3xl
         ${isMobileOpen ? 'translate-x-0 opacity-100' : '-translate-x-full md:opacity-100'}
       `}>
-        <div className="h-full md:h-auto max-h-[calc(100vh-12rem)] flex flex-col p-6 overflow-y-auto custom-scrollbar">
+        <div className="h-full md:h-auto max-h-[calc(100vh-10rem)] flex flex-col p-6 overflow-y-auto custom-scrollbar">
           <div className="flex items-center justify-between mb-8 md:hidden">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Filter className="w-5 h-5" /> Filters
@@ -106,158 +106,166 @@ export default function ProductFilters({ categories, brands, isMobileOpen, onClo
 
           <div className="space-y-8">
             {/* Categories */}
-            <div>
-              <button
-                onClick={() => setIsCategoryExpanded(!isCategoryExpanded)}
-                className="flex items-center justify-between w-full mb-4 group"
-              >
-                <h3 className="font-bold text-slate-900 dark:text-white">Categories</h3>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isCategoryExpanded ? 'rotate-180' : ''}`} />
-              </button>
-
-              <AnimatePresence>
-                {isCategoryExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
+            {settings?.showCategories !== false && (
+              <>
+                <div>
+                  <button
+                    onClick={() => setIsCategoryExpanded(!isCategoryExpanded)}
+                    className="flex items-center justify-between w-full mb-4 group"
                   >
-                    <div className="space-y-1">
-                      <button
-                        onClick={() => handleCategoryClick('')}
-                        className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${!currentCategory
-                          ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-                          }`}
-                      >
-                        All Categories
-                        {!currentCategory && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
-                      </button>
-                      {categories.map((cat) => (
-                        <button
-                          key={cat.id}
-                          onClick={() => handleCategoryClick(cat.id)}
-                          className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${currentCategory === cat.id
-                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-                            }`}
-                        >
-                          {cat.name}
-                          {currentCategory === cat.id && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">Categories</h3>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${isCategoryExpanded ? 'rotate-180' : ''}`} />
+                  </button>
 
-            <div className="h-px bg-slate-200 dark:bg-slate-800" />
+                  <AnimatePresence>
+                    {isCategoryExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="space-y-1">
+                          <button
+                            onClick={() => handleCategoryClick('')}
+                            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${!currentCategory
+                              ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                              }`}
+                          >
+                            All Categories
+                            {!currentCategory && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
+                          </button>
+                          {categories.map((cat) => (
+                            <button
+                              key={cat.id}
+                              onClick={() => handleCategoryClick(cat.id)}
+                              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${currentCategory === cat.id
+                                ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                                }`}
+                            >
+                              {cat.name}
+                              {currentCategory === cat.id && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <div className="h-px bg-slate-200 dark:bg-slate-800" />
+              </>
+            )}
 
             {/* Brands */}
-            <div>
-              <button
-                onClick={() => setIsBrandExpanded(!isBrandExpanded)}
-                className="flex items-center justify-between w-full mb-4 group"
-              >
-                <h3 className="font-bold text-slate-900 dark:text-white">Brands</h3>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isBrandExpanded ? 'rotate-180' : ''}`} />
-              </button>
-
-              <AnimatePresence>
-                {isBrandExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
+            {settings?.showBrands !== false && (
+              <>
+                <div>
+                  <button
+                    onClick={() => setIsBrandExpanded(!isBrandExpanded)}
+                    className="flex items-center justify-between w-full mb-4 group"
                   >
-                    <div className="space-y-1">
-                      <button
-                        onClick={() => handleBrandClick('')}
-                        className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${!currentBrand
-                          ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-                          }`}
-                      >
-                        All Brands
-                        {!currentBrand && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
-                      </button>
-                      {brands.map((brand) => (
-                        <button
-                          key={brand.id}
-                          onClick={() => handleBrandClick(brand.id)}
-                          className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${currentBrand === brand.id
-                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
-                            }`}
-                        >
-                          {brand.name}
-                          {currentBrand === brand.id && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">Brands</h3>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${isBrandExpanded ? 'rotate-180' : ''}`} />
+                  </button>
 
-            <div className="h-px bg-slate-200 dark:bg-slate-800" />
+                  <AnimatePresence>
+                    {isBrandExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="space-y-1">
+                          <button
+                            onClick={() => handleBrandClick('')}
+                            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${!currentBrand
+                              ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                              }`}
+                          >
+                            All Brands
+                            {!currentBrand && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
+                          </button>
+                          {brands.map((brand) => (
+                            <button
+                              key={brand.id}
+                              onClick={() => handleBrandClick(brand.id)}
+                              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${currentBrand === brand.id
+                                ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                                }`}
+                            >
+                              {brand.name}
+                              {currentBrand === brand.id && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <div className="h-px bg-slate-200 dark:bg-slate-800" />
+              </>
+            )}
 
             {/* Price Filter */}
-            <div>
-              <button
-                onClick={() => setIsPriceExpanded(!isPriceExpanded)}
-                className="flex items-center justify-between w-full mb-4 group"
-              >
-                <h3 className="font-bold text-slate-900 dark:text-white">Price Range</h3>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isPriceExpanded ? 'rotate-180' : ''}`} />
-              </button>
+            {settings?.showPriceFilter !== false && (
+              <div>
+                <button
+                  onClick={() => setIsPriceExpanded(!isPriceExpanded)}
+                  className="flex items-center justify-between w-full mb-4 group"
+                >
+                  <h3 className="font-bold text-slate-900 dark:text-white">Price Range</h3>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isPriceExpanded ? 'rotate-180' : ''}`} />
+                </button>
 
-              <AnimatePresence>
-                {isPriceExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="space-y-4 px-1">
-                      <div className="flex items-center gap-2">
-                        <div className="relative flex-1 group">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold group-focus-within:text-brand-500 transition-colors">$</span>
-                          <input
-                            type="number"
-                            value={minPrice}
-                            onChange={(e) => setMinPrice(e.target.value)}
-                            className="w-full pl-7 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-brand-500/50 focus:bg-white dark:focus:bg-slate-900 transition-all font-medium"
-                            placeholder="Min"
-                          />
+                <AnimatePresence>
+                  {isPriceExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="space-y-4 px-1">
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1 group">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold group-focus-within:text-brand-500 transition-colors">$</span>
+                            <input
+                              type="number"
+                              value={minPrice}
+                              onChange={(e) => setMinPrice(e.target.value)}
+                              className="w-full pl-7 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-brand-500/50 focus:bg-white dark:focus:bg-slate-900 transition-all font-medium"
+                              placeholder="Min"
+                            />
+                          </div>
+                          <div className="w-2 h-px bg-slate-200 dark:bg-slate-700" />
+                          <div className="relative flex-1 group">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold group-focus-within:text-brand-500 transition-colors">$</span>
+                            <input
+                              type="number"
+                              value={maxPrice}
+                              onChange={(e) => setMaxPrice(e.target.value)}
+                              className="w-full pl-7 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-brand-500/50 focus:bg-white dark:focus:bg-slate-900 transition-all font-medium"
+                              placeholder="Max"
+                            />
+                          </div>
                         </div>
-                        <div className="w-2 h-px bg-slate-200 dark:bg-slate-700" />
-                        <div className="relative flex-1 group">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold group-focus-within:text-brand-500 transition-colors">$</span>
-                          <input
-                            type="number"
-                            value={maxPrice}
-                            onChange={(e) => setMaxPrice(e.target.value)}
-                            className="w-full pl-7 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-brand-500/50 focus:bg-white dark:focus:bg-slate-900 transition-all font-medium"
-                            placeholder="Max"
-                          />
-                        </div>
+                        <button
+                          onClick={applyPriceFilter}
+                          className="w-full py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-bold hover:shadow-lg active:scale-[0.98] transition-all"
+                        >
+                          Apply Filter
+                        </button>
                       </div>
-                      <button
-                        onClick={applyPriceFilter}
-                        className="w-full py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-bold hover:shadow-lg active:scale-[0.98] transition-all"
-                      >
-                        Apply Filter
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
 
           {hasActiveFilters && (

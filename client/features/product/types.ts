@@ -35,4 +35,5 @@ export interface ProductFiltersProps {
     brands: Brand[];
     isMobileOpen: boolean;
     onCloseMobile: () => void;
+    settings?: any;
 }

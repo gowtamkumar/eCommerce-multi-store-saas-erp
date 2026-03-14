@@ -10,7 +10,8 @@ export type TabType =
     | "navbar"
     | "footer"
     | "courier"
-    | "trust";
+    | "trust"
+    | "productsPage";
 
 
 export enum TabTypeEnum {
@@ -25,4 +26,5 @@ export enum TabTypeEnum {
     FOOTER = "footer",
     COURIER = "courier",
     TRUST = "trust",
+    PRODUCTS_PAGE = "productsPage",
 }

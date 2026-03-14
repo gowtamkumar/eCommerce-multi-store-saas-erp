@@ -82,4 +82,5 @@ export const settingsItems = [
     { icon: Layout, label: 'Footer Menu', tab: 'footer' },
     { icon: Truck, label: 'Courier Config', tab: 'courier' },
     { icon: Truck, label: 'Trust & Safety', tab: 'trust' },
+    { icon: Layout, label: 'Products Archive', tab: 'productsPage' },
 ];

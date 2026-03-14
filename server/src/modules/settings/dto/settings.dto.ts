@@ -11,6 +11,7 @@ import { SmtpDto } from './smtp.dto';
 import { SocialLinkDto } from './socialLink.dto';
 import { SteadfastCourierDto } from './steadfastCourier.dto';
 import { TrustBadgeDto } from './trust-badge.dto';
+import { ProductsPageSettingsDto } from './products-page.dto';
 
 export class UpdateSiteSettingsDto {
     @ApiProperty({ required: false })
@@ -111,4 +112,11 @@ export class UpdateSiteSettingsDto {
     @IsOptional()
     @IsArray()
     trustBadges?: TrustBadgeDto[]
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsObject()
+    @ValidateNested()
+    @Type(() => ProductsPageSettingsDto)
+    productsPage?: ProductsPageSettingsDto;
 }
