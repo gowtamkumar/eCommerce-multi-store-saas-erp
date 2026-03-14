@@ -631,28 +631,32 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
               <X className="w-10 h-10" />
             </button>
 
-            <div className="relative w-full h-fit max-h-full aspect-square md:aspect-video flex items-center justify-center">
-              <img
-                src={images[selectedImage]}
-                alt={product.name}
-                className="object-contain max-h-[80vh] rounded-3xl w-auto h-auto max-w-full"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
+            <div className="flex flex-col items-center justify-center max-h-full w-full max-w-5xl gap-6">
+              <div className="relative w-full aspect-square md:aspect-video flex items-center justify-center flex-1 min-h-0">
+                <img
+                  src={images[selectedImage]}
+                  alt={product.name}
+                  className="object-contain max-h-full rounded-3xl w-auto h-auto max-w-full"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
 
-            <div
-              className="mt-8 flex gap-4 overflow-x-auto max-w-full pb-4 scrollbar-none"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {images.map((img: string, i: number) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImage(i)}
-                  className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${selectedImage === i ? "border-brand-500 scale-110" : "border-transparent opacity-50 hover:opacity-100"}`}
+              {images.length > 1 && (
+                <div
+                  className="flex gap-4 overflow-x-auto max-w-full pb-4 scrollbar-none shrink-0"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <img src={img} alt="thumb" className="w-full h-full object-cover" />
-                </button>
-              ))}
+                  {images.map((img: string, i: number) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedImage(i)}
+                      className={`relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${selectedImage === i ? "border-brand-500 scale-110" : "border-transparent opacity-50 hover:opacity-100"}`}
+                    >
+                      <img src={img} alt="thumb" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         )}

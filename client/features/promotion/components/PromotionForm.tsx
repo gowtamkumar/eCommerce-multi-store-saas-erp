@@ -18,25 +18,6 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
     const { settings } = useSettings();
     const currency = settings?.currency || 'BDT';
     const [loading, setLoading] = useState(false);
-
-    // For fetching target options
-    const [brands, setBrands] = useState<{ id: string, name: string }[]>([]);
-    const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
-    const [products, setProducts] = useState<{ id: string, name: string }[]>([]);
-
-    useEffect(() => {
-        // Fetch lookup data for select fields
-        const fetchData = async () => {
-            try {
-                // Fetch brands (assuming endpoint exists, else catch soft fail)
-                fetchAPI('/brands').then(res => setBrands(res.data?.brands || res.brands || [])).catch(() => { });
-                fetchAPI('/categories').then(res => setCategories(res.data?.categories || res.categories || [])).catch(() => { });
-                fetchAPI('/products').then(res => setProducts(res.data?.products || res.products || [])).catch(() => { });
-            } catch (err) { }
-        };
-        fetchData();
-    }, []);
-
     const [formData, setFormData] = useState({
         name: '',
         slug: '',
@@ -50,6 +31,30 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
         endDate: '',
         isActive: true
     });
+
+    // For fetching target options
+    const [brands, setBrands] = useState<{ id: string, name: string }[]>([]);
+    const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
+    const [products, setProducts] = useState<{ id: string, name: string }[]>([]);
+
+    useEffect(() => {
+        // Fetch lookup data for select fields
+        const fetchData = async () => {
+            try {
+                const brand = await fetchAPI('/brands')
+                setBrands(brand.data || []);
+                const category = await fetchAPI('/categories')
+                setCategories(category.data || []);
+                const product = await fetchAPI('/products?limit=100')
+                setProducts(product?.data?.products || []);
+            } catch (err) {
+                console.log("err", err);
+            }
+        };
+        fetchData();
+    }, []);
+
+
 
     useEffect(() => {
         if (promotion) {
