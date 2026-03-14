@@ -89,10 +89,12 @@ export default function ProductFilters({ categories, brands, isMobileOpen, onClo
 
       {/* Sidebar Content */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-slate-900 shadow-2xl transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:w-64 md:shadow-none md:block border-r border-slate-100 dark:border-slate-800
-        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
+        fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-slate-900 shadow-2xl transform transition-all duration-300 ease-in-out 
+        md:translate-x-0 md:sticky md:top-32 md:w-64 md:shadow-none md:block md:z-30
+        border-r md:border border-slate-100 dark:border-slate-800 md:rounded-3xl
+        ${isMobileOpen ? 'translate-x-0 opacity-100' : '-translate-x-full md:opacity-100'}
       `}>
-        <div className="h-full flex flex-col p-6 overflow-y-auto custom-scrollbar">
+        <div className="h-full md:h-auto max-h-[calc(100vh-12rem)] flex flex-col p-6 overflow-y-auto custom-scrollbar">
           <div className="flex items-center justify-between mb-8 md:hidden">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Filter className="w-5 h-5" /> Filters
@@ -121,26 +123,28 @@ export default function ProductFilters({ categories, brands, isMobileOpen, onClo
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <button
                         onClick={() => handleCategoryClick('')}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${!currentCategory
-                          ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 font-medium'
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                        className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${!currentCategory
+                          ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
                           }`}
                       >
                         All Categories
+                        {!currentCategory && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
                       </button>
                       {categories.map((cat) => (
                         <button
                           key={cat.id}
                           onClick={() => handleCategoryClick(cat.id)}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${currentCategory === cat.id
-                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 font-medium'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${currentCategory === cat.id
+                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
                             }`}
                         >
                           {cat.name}
+                          {currentCategory === cat.id && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
                         </button>
                       ))}
                     </div>
@@ -169,26 +173,28 @@ export default function ProductFilters({ categories, brands, isMobileOpen, onClo
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <button
                         onClick={() => handleBrandClick('')}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${!currentBrand
-                          ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 font-medium'
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                        className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${!currentBrand
+                          ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
                           }`}
                       >
                         All Brands
+                        {!currentBrand && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
                       </button>
                       {brands.map((brand) => (
                         <button
                           key={brand.id}
                           onClick={() => handleBrandClick(brand.id)}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${currentBrand === brand.id
-                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 font-medium'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between ${currentBrand === brand.id
+                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-bold shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
                             }`}
                         >
                           {brand.name}
+                          {currentBrand === brand.id && <div className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
                         </button>
                       ))}
                     </div>
@@ -218,33 +224,34 @@ export default function ProductFilters({ categories, brands, isMobileOpen, onClo
                     className="overflow-hidden"
                   >
                     <div className="space-y-4 px-1">
-                      <div className="flex gap-4">
-                        <div className="w-1/2">
-                          <label className="text-xs text-slate-500 mb-1 block">Min</label>
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1 group">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold group-focus-within:text-brand-500 transition-colors">$</span>
                           <input
                             type="number"
                             value={minPrice}
                             onChange={(e) => setMinPrice(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-brand-500 transition-colors"
-                            placeholder="0"
+                            className="w-full pl-7 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-brand-500/50 focus:bg-white dark:focus:bg-slate-900 transition-all font-medium"
+                            placeholder="Min"
                           />
                         </div>
-                        <div className="w-1/2">
-                          <label className="text-xs text-slate-500 mb-1 block">Max</label>
+                        <div className="w-2 h-px bg-slate-200 dark:bg-slate-700" />
+                        <div className="relative flex-1 group">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold group-focus-within:text-brand-500 transition-colors">$</span>
                           <input
                             type="number"
                             value={maxPrice}
                             onChange={(e) => setMaxPrice(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-brand-500 transition-colors"
-                            placeholder="Any"
+                            className="w-full pl-7 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm outline-none focus:border-brand-500/50 focus:bg-white dark:focus:bg-slate-900 transition-all font-medium"
+                            placeholder="Max"
                           />
                         </div>
                       </div>
                       <button
                         onClick={applyPriceFilter}
-                        className="w-full py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                        className="w-full py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-bold hover:shadow-lg active:scale-[0.98] transition-all"
                       >
-                        Apply Price
+                        Apply Filter
                       </button>
                     </div>
                   </motion.div>
@@ -254,12 +261,12 @@ export default function ProductFilters({ categories, brands, isMobileOpen, onClo
           </div>
 
           {hasActiveFilters && (
-            <div className="mt-auto pt-8">
+            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
               <button
                 onClick={clearFilters}
-                className="w-full py-3 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-400 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                className="w-full py-3 bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 rounded-2xl text-sm font-bold hover:bg-rose-100 dark:hover:bg-rose-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
-                Clear All Filters
+                <X className="w-4 h-4" /> Clear All Filters
               </button>
             </div>
           )}

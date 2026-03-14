@@ -106,15 +106,26 @@ export default async function Products({
 
             <Navbar />
 
-            <div className="pt-32 pb-24">
+            <div className="pt-24 pb-20">
                 <div className="container mx-auto px-4">
-                    <div className=" mb-12 text-center">
-                        <h1 className="text-4xl md:text-5xl font-bold font-display text-slate-900 dark:text-white mb-4">
-                            Our <span className="text-gradient">Collection</span>
-                        </h1>
-                        <p className="text-lg text-slate-600 dark:text-slate-400">
-                            Discover premium products designed to elevate your experience.
-                        </p>
+                    <div className="relative mb-16 py-16 px-8 rounded-[3rem] overflow-hidden">
+                        {/* Abstract Background Decoration */}
+                        <div className="absolute inset-0 bg-slate-50 dark:bg-slate-800/50 z-0" />
+                        <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl z-0" />
+                        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-brand-600/5 rounded-full blur-3xl z-0" />
+                        
+                        <div className="relative z-10 text-center max-w-3xl mx-auto">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 rounded-full text-xs font-black uppercase tracking-widest mb-6">
+                                <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+                                Exclusive Collection
+                            </div>
+                            <h1 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white mb-6 leading-tight">
+                                Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-brand-400">Masterpieces</span>
+                            </h1>
+                            <p className="text-xl text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                                Curated premium selections designed to transcend expectations and elevate your lifestyle.
+                            </p>
+                        </div>
                     </div>
 
                     <ProductsClientWrapper
