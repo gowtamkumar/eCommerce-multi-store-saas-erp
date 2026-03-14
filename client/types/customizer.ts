@@ -20,6 +20,7 @@ export type SectionType =
   | 'stats-counter'
   | 'video-block'
   | 'contact'
+  | 'new-arrivals'
   | 'heading'
   | 'paragraph'
   | 'divider'
@@ -32,6 +33,7 @@ export interface SectionStyles {
   mobilePaddingBottom?: number | string;
   backgroundColor?: string;
   textColor?: string;
+  color?: string;
   height?: number | string;
   overlayOpacity?: number;
   textAlign?: string;
@@ -82,6 +84,16 @@ export interface BannerSettings {
   secondaryButtonText?: string;
   secondaryButtonLink?: string;
   overlayOpacity?: number;
+}
+
+export interface NewArrivalsSettings {
+  headline?: string;
+  source?: 'all' | 'collection' | 'manual';
+  collectionId?: string;
+  productIds?: string[];
+  count?: number;
+  columns?: number;
+  mobileColumns?: number;
 }
 
 export interface ProductSliderSettings {
@@ -255,6 +267,7 @@ export type SectionSettings =
   | StatsCounterSettings
   | VideoBlockSettings
   | ContactSectionSettings
+  | NewArrivalsSettings
   | HeadingSettings
   | ParagraphSettings
   | DividerSettings

@@ -1,25 +1,32 @@
 "use client";
 
 import { fetchAPI } from "@/services/api";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import SectionHeader from "./SectionHeader";
 import ProductCard from "../../../product/components/ProductCard";
 import { ProductSliderProps } from "../../type";
-
-
+import { animate, motion, useMotionValue } from "framer-motion";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function ProductSlider({
+  sectionId,
   headline,
   source = 'all',
   productIds = [],
-  count = 4,
+  count = 8,
   collectionId,
   layout = 'slider',
   columns = 4,
   mobileColumns = 1,
   styles
-}: ProductSliderProps) {
+}: ProductSliderProps & { sectionId?: string }) {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  const x = useMotionValue(0);
+  
+  const uid = useMemo(() => `ps-${Math.random().toString(36).substring(2, 7)}`, []);
 
   useEffect(() => {
     async function loadProducts() {
@@ -33,7 +40,6 @@ export default function ProductSlider({
         const res = await fetchAPI(endpoint);
         let fetchedProducts = res.data?.products || [];
         if (source === 'manual' && productIds.length > 0) {
-          // Filter to only include products in productIds, maintaining the selection order
           fetchedProducts = productIds
             .map(id => fetchedProducts.find((p: any) => p.id === id))
             .filter(Boolean);
@@ -50,57 +56,130 @@ export default function ProductSlider({
     loadProducts();
   }, [count, collectionId, source, JSON.stringify(productIds)]);
 
+  useEffect(() => {
+    const updateWidth = () => {
+      if (carouselRef.current) {
+        setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
+      }
+    };
+    updateWidth();
+    // Use a small timeout to ensure DOM is updated
+    const timer = setTimeout(updateWidth, 100);
+    window.addEventListener('resize', updateWidth);
+    return () => {
+      window.removeEventListener('resize', updateWidth);
+      clearTimeout(timer);
+    };
+  }, [products, loading, layout, columns, mobileColumns]);
+
+  const slideLeft = () => {
+    const current = x.get();
+    const newPos = Math.min(current + (carouselRef.current?.offsetWidth || 400), 0);
+    animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
+  };
+
+  const slideRight = () => {
+    const current = x.get();
+    const newPos = Math.max(current - (carouselRef.current?.offsetWidth || 400), -width);
+    animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
+  };
+
+  const cardRadiusClass = styles?.cardRadius === 'small' ? 'rounded-lg' :
+    styles?.cardRadius === 'large' ? 'rounded-[2rem]' :
+      styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-2xl';
+
+  const isSlider = true; 
+
   return (
-    <div className="overflow-hidden">
-      <div className="w-full">
-        <div className={`flex items-center justify-between mb-8 md:mb-12
-          ${styles?.textAlign === 'center' ? 'justify-center text-center' : ''}
-          ${styles?.textAlign === 'right' ? 'justify-end text-right' : ''}
-          ${!styles?.textAlign || styles?.textAlign === 'left' ? 'justify-start text-left' : ''}
-        `}>
-          <div className="space-y-1">
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight"
-              style={{ color: styles?.headlineColor }}
-            >{headline || 'Trending Products'}</h2>
-            <div className={`h-1.5 bg-brand-500 rounded-full w-16
-               ${styles?.textAlign === 'center' ? 'mx-auto' : ''}
-               ${styles?.textAlign === 'right' ? 'ml-auto' : ''}
-               ${!styles?.textAlign || styles?.textAlign === 'left' ? 'mr-auto' : ''}
-            `} />
+    <div className={`w-full overflow-hidden py-10 sm:py-16 ${uid}`}>
+      <style>{`
+        .${uid} .carousel-item {
+          width: calc(${100 / mobileColumns}% - ${(16 * (mobileColumns - 1)) / mobileColumns}px);
+        }
+        @media (min-width: 768px) {
+          .${uid} .carousel-item {
+            width: calc(${100 / columns}% - ${(24 * (columns - 1)) / columns}px);
+          }
+        }
+      `}</style>
+      
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between mb-6 sm:mb-10 lg:gap-10">
+          <div className="flex-1 min-w-0">
+            <SectionHeader 
+                title={headline} 
+                styles={styles} 
+                noMargin 
+                noPadding 
+                className="!mb-0" 
+            />
           </div>
+          
+          {/* Navigation Controls */}
+          {products.length > 0 && (
+            <div className="flex gap-2 sm:gap-3 shrink-0">
+              <button
+                onClick={slideLeft}
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 group shadow-sm bg-white/10"
+                style={{
+                  borderColor: styles?.borderColor || 'rgba(0,0,0,0.1)',
+                  color: styles?.headlineColor || styles?.color || 'inherit'
+                }}
+                aria-label="Previous products"
+              >
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+              </button>
+              <button
+                onClick={slideRight}
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 group shadow-lg"
+                style={{
+                  backgroundColor: styles?.buttonColor || '#000',
+                  color: styles?.buttonTextColor || '#fff'
+                }}
+                aria-label="Next products"
+              >
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </div>
+          )}
         </div>
 
         {loading ? (
-          <div className={layout === 'grid'
-            ? `grid gap-6 md:gap-10 ${mobileColumns === 1 ? 'grid-cols-1' : 'grid-cols-2'} ${columns === 2 ? 'md:grid-cols-2' : columns === 3 ? 'md:grid-cols-3' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-1'}`
-            : "flex gap-6 md:gap-10 overflow-x-hidden pb-8"
-          }>
-            {[...Array(count)].map((_, i) => (
-              <div key={i} className={layout === 'grid' ? "" : "min-w-[280px] md:min-w-[320px] flex-1 animate-pulse"}>
-                <div className="aspect-square bg-slate-200 dark:bg-slate-800 rounded-[2.5rem] mb-6" />
+          <div className="flex gap-4 sm:gap-6 overflow-hidden">
+            {[...Array(columns)].map((_, i) => (
+              <div key={i} className="carousel-item shrink-0 animate-pulse">
+                <div className={`aspect-[4/5] bg-slate-200 dark:bg-slate-800 ${cardRadiusClass} mb-4`} />
                 <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-2" />
                 <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
               </div>
             ))}
           </div>
         ) : products.length > 0 ? (
-          <div className={layout === 'grid'
-            ? `grid gap-6 md:gap-10 ${mobileColumns === 1 ? 'grid-cols-1' : 'grid-cols-2'} ${columns === 2 ? 'md:grid-cols-2' : columns === 3 ? 'md:grid-cols-3' : columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-1'}`
-            : "flex gap-6 md:gap-10 overflow-x-auto pb-8 scrollbar-hide"
-          }>
-            {products.map((product) => (
-              <div key={product.id} className={layout === 'grid' ? "h-full" : "min-w-[280px] md:min-w-[320px] flex-1 h-[450px]"}>
-                <ProductCard product={product} />
-              </div>
-            ))}
-          </div>
+          <motion.div ref={carouselRef} className="cursor-grab active:cursor-grabbing">
+            <motion.div
+              drag="x"
+              dragConstraints={{ right: 0, left: -width }}
+              dragElastic={0.1}
+              whileTap={{ cursor: "grabbing" }}
+              style={{ x }}
+              className="flex gap-4 sm:gap-6"
+            >
+              {products.map((product) => (
+                <motion.div key={product.id} className="carousel-item shrink-0 pb-4">
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
         ) : (
-          <div className="py-20 text-center text-slate-400 border-4 border-dashed border-slate-100 dark:border-slate-800 rounded-[3rem]">
-            {source === 'collection' && collectionId
-              ? "No products found in this collection."
-              : source === 'manual'
-                ? "No products selected. Select products in the customizer settings."
-                : "No products found. Add some products in the admin dashboard."}
+          <div className={`py-20 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 ${cardRadiusClass}`}>
+            <p className="max-w-xs mx-auto text-sm font-medium">
+              {source === 'collection' && collectionId
+                ? "No products found in this collection."
+                : source === 'manual'
+                  ? "No products selected. Select products in the customizer settings."
+                  : "No products found. Add some products in the admin dashboard."}
+            </p>
           </div>
         )}
       </div>

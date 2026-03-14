@@ -70,12 +70,12 @@ export default async function Home() {
   const typography = dynamicPage?.typography || {};
 
   return (
-    <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+    <main className="min-h-screen">
       <Suspense fallback={null}>
         <PaymentStatus />
       </Suspense>
       <Navbar />
-      <div className="flex flex-col"
+      <div className="flex flex-col mt-10"
         style={{
           fontFamily: typography?.fontFamily || 'Inter, sans-serif',
           fontSize: `${typography?.baseFontSize || 18}px`,

@@ -60,22 +60,27 @@ const VideoBlock: React.FC<VideoBlockProps> = ({ settings, styles }) => {
     '1/1': 'aspect-square',
   }[aspectRatio] || 'aspect-video';
 
+  const cardRadiusClass = styles?.cardRadius === 'small' ? 'rounded-lg' :
+    styles?.cardRadius === 'large' ? 'rounded-[2rem]' :
+      styles?.cardRadius === 'full' ? 'rounded-full' :
+        styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-2xl';
+
   return (
-    <div className="w-full overflow-hidden">
+    <div className="w-full">
       <div className="w-full">
         {headline && (
           <h2
-            className="text-2xl md:text-3xl font-bold mb-6"
+            className="text-2xl md:text-3xl font-black mb-6 uppercase tracking-tight"
             style={{
-              color: styles?.headlineColor,
-              textAlign: styles?.textAlign as any || 'center'
+              color: styles?.headlineColor || styles?.color || 'inherit',
+              textAlign: styles?.textAlign as any || 'left'
             }}
           >
             {headline}
           </h2>
         )}
 
-        <div className={`relative w-full overflow-hidden shadow-xl bg-slate-100 dark:bg-slate-800 ${aspectClass} ${fullWidth ? '' : 'rounded-2xl'}`}>
+        <div className={`relative w-full overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-xl ${aspectClass} ${fullWidth ? 'rounded-none' : cardRadiusClass}`}>
           {embedUrl ? (
             <iframe
               src={embedUrl}

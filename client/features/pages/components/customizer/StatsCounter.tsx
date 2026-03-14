@@ -1,4 +1,5 @@
 "use client";
+import SectionHeader from "./SectionHeader";
 
 interface StatsCounterProps {
   stats?: Array<{ id: string; label: string; value: string }>;
@@ -13,83 +14,47 @@ export default function StatsCounter({
 }: StatsCounterProps) {
   if (!stats?.length) return null;
 
-  return (
-    <div className="w-full overflow-hidden">
-      <div className="w-full">
-        {(settings?.title || settings?.subline) && (
-          <div className={`mb-12 md:mb-16 max-w-3xl mx-auto space-y-4 text-${styles?.textAlign || 'center'}`}>
-            {settings?.title && (
-              <h2
-                className="font-bold tracking-tight"
-                style={{
-                  color: styles?.textColor || styles?.color,
-                  fontFamily: styles?.headingFontFamily,
-                  fontSize: styles?.headingFontSize ? `calc(${styles.headingFontSize} * 0.8)` : '2.25rem', // Fallback or scaled
-                  lineHeight: styles?.headingLineHeight,
-                  fontWeight: styles?.headingFontWeight
-                }}
-              >
-                {settings.title}
-              </h2>
-            )}
-            {settings?.subline && (
-              <p
-                style={{
-                  color: styles?.sublineColor || styles?.color,
-                  fontFamily: styles?.paragraphFontFamily,
-                  fontSize: styles?.paragraphFontSize ? `calc(${styles.paragraphFontSize} * 1.1)` : '1.125rem',
-                  lineHeight: styles?.paragraphLineHeight,
-                  fontWeight: styles?.paragraphFontWeight
-                }}
-              >
-                {settings.subline}
-              </p>
-            )}
-          </div>
-        )}
+  const cardRadiusClass = styles?.cardRadius === 'small' ? 'rounded-lg' :
+    styles?.cardRadius === 'large' ? 'rounded-[2rem]' :
+      styles?.cardRadius === 'full' ? 'rounded-full' :
+        styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-2xl';
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+  return (
+    <div className="w-full">
+      <div className="w-full">
+        <SectionHeader title={settings?.title} description={settings?.subline} styles={styles} />
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           {stats.map((stat, index) => (
             <div
               key={stat.id || index}
-              className="text-center space-y-2 p-6"
+              className={`text-center space-y-2 p-8 ${cardRadiusClass} border`}
               style={{
-                backgroundColor: styles?.cardBackgroundColor || 'rgba(80, 64, 64, 0.05)',
-                borderRadius: styles?.cardRadius === 'full' ? '9999px' :
-                  styles?.cardRadius === 'large' ? '1.5rem' :
-                    styles?.cardRadius === 'medium' ? '1rem' :
-                      styles?.cardRadius === 'none' ? '0' : '1.5rem',
-                borderWidth: styles?.cardBorder === 'thick' ? '12px' :
-                  styles?.cardBorder === 'thin' ? '4px' :
+                backgroundColor: styles?.cardBackgroundColor || 'rgba(0, 0, 0, 0.03)',
+                borderColor: styles?.borderColor || 'rgba(0, 0, 0, 0.1)',
+                borderWidth: styles?.cardBorder === 'thick' ? '4px' :
+                  styles?.cardBorder === 'thin' ? '1px' :
                     styles?.cardBorder === 'none' ? '0' : '1px',
-                borderStyle: 'solid',
-                borderColor: styles?.borderColor || 'rgba(255,255,255,0.1)',
-                boxShadow: styles?.cardShadow === 'large' ? '0 25px 50px -12px rgba(0, 0, 0, 0.25)' :
-                  styles?.cardShadow === 'medium' ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' :
-                    styles?.cardShadow === 'small' ? '0 1px 3px 0 rgba(0, 0, 0, 0.1)' : 'none',
+                boxShadow: styles?.cardShadow === 'large' ? '0 20px 25px -5px rgb(0 0 0 / 0.1)' :
+                  styles?.cardShadow === 'medium' ? '0 10px 15px -3px rgb(0 0 0 / 0.1)' :
+                    styles?.cardShadow === 'small' ? '0 1px 2px 0 rgb(0 0 0 / 0.05)' : 'none',
               }}
             >
               <div
+                className="text-2xl md:text-3xl font-black"
                 style={{
-                  color: styles?.headlineColor || styles?.color,
+                  color: styles?.headlineColor || styles?.color || 'inherit',
                   fontFamily: styles?.headingFontFamily,
-                  fontWeight: styles?.headingFontWeight || 900,
-                  fontSize: styles?.headingFontSize || '1.75rem',
-                  lineHeight: styles?.headingLineHeight || 1,
+                  lineHeight: 1,
                 }}
               >
                 {stat.value}
               </div>
               <div
+                className="text-xs md:text-sm font-bold uppercase tracking-widest opacity-60"
                 style={{
-                  color: styles?.color,
+                  color: styles?.color || 'inherit',
                   fontFamily: styles?.paragraphFontFamily,
-                  fontWeight: styles?.paragraphFontWeight || 700,
-                  fontSize: styles?.paragraphFontSize || '0.875rem',
-                  lineHeight: styles?.paragraphLineHeight,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  opacity: 0.8
                 }}
               >
                 {stat.label}

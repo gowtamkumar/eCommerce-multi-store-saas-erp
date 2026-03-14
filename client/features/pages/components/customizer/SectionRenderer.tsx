@@ -1,6 +1,6 @@
 "use client";
 
-import BrandGrid from "@/features/brand/components/BrandGrid";
+import BrandGrid from "@/features/brand/components/BrandSlider";
 import FAQSection from "@/features/faq/components/FAQSection";
 import BannerSlider from "@/features/pages/components/customizer/BannerSlider";
 import BuilderButton from "@/features/pages/components/customizer/BuilderButton";
@@ -10,6 +10,7 @@ import Divider from "@/features/pages/components/customizer/Divider";
 import Heading from "@/features/pages/components/customizer/Heading";
 import ImageBlock from "@/features/pages/components/customizer/ImageBlock";
 import Newsletter from "@/features/pages/components/customizer/Newsletter";
+import NewArrivals from "@/features/pages/components/customizer/NewArrivals";
 import OfferBanner from "@/features/pages/components/customizer/OfferBanner";
 import Paragraph from "@/features/pages/components/customizer/Paragraph";
 import ProductSlider from "@/features/pages/components/customizer/ProductSlider";
@@ -33,13 +34,24 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
   const s = section.styles as any || {};
 
   const styles = {
-    // Legacy named props (for non-structural blocks)
+    ...s, // Pass all raw styles for maximum compatibility
     paddingTop: s.paddingTop !== undefined ? (typeof s.paddingTop === 'number' ? `${s.paddingTop}px` : s.paddingTop) : undefined,
     paddingBottom: s.paddingBottom !== undefined ? (typeof s.paddingBottom === 'number' ? `${s.paddingBottom}px` : s.paddingBottom) : undefined,
+    paddingLeft: s.paddingLeft !== undefined ? (typeof s.paddingLeft === 'number' ? `${s.paddingLeft}px` : s.paddingLeft) : undefined,
+    paddingRight: s.paddingRight !== undefined ? (typeof s.paddingRight === 'number' ? `${s.paddingRight}px` : s.paddingRight) : undefined,
+    marginTop: s.marginTop !== undefined ? (typeof s.marginTop === 'number' ? `${s.marginTop}px` : s.marginTop) : undefined,
+    marginBottom: s.marginBottom !== undefined ? (typeof s.marginBottom === 'number' ? `${s.marginBottom}px` : s.marginBottom) : undefined,
     backgroundColor: s.backgroundColor,
     color: s.color || s.textColor,
     height: s.height ? (typeof s.height === 'number' ? `${s.height}px` : s.height) : undefined,
+    width: s.width ? (typeof s.width === 'number' ? `${s.width}px` : s.width) : undefined,
+    maxWidth: s.maxWidth ? (typeof s.maxWidth === 'number' ? `${s.maxWidth}px` : s.maxWidth) : undefined,
     textAlign: s.textAlign as any,
+    borderRadius: s.borderRadius,
+    borderWidth: s.borderWidth,
+    borderStyle: s.borderStyle,
+    borderColor: s.borderColor,
+    boxShadow: s.boxShadow,
     // Content block specialty
     overlayOpacity: s.overlayOpacity,
     headlineColor: s.headlineColor,
@@ -80,10 +92,15 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
     pick('gridTemplateColumns', 'gridTemplateColumns'); pick('gridTemplateRows', 'gridTemplateRows');
     pick('gap', 'gridGap'); pick('columnGap', 'columnGap'); pick('rowGap', 'rowGap');
     pick('gridColumn', 'gridColumn'); pick('gridRow', 'gridRow');
-    if (s.paddingTop) css.paddingTop = s.paddingTop;
-    if (s.paddingRight) css.paddingRight = s.paddingRight;
-    if (s.paddingBottom) css.paddingBottom = s.paddingBottom;
-    if (s.paddingLeft) css.paddingLeft = s.paddingLeft;
+    const isFullBleed = ['banner', 'offer-banner'].includes(section.type);
+
+    if (!isFullBleed) {
+      if (s.paddingTop) css.paddingTop = s.paddingTop;
+      if (s.paddingRight) css.paddingRight = s.paddingRight;
+      if (s.paddingBottom) css.paddingBottom = s.paddingBottom;
+      if (s.paddingLeft) css.paddingLeft = s.paddingLeft;
+    }
+
     if (s.marginTop) css.marginTop = s.marginTop;
     if (s.marginRight) css.marginRight = s.marginRight;
     if (s.marginBottom) css.marginBottom = s.marginBottom;
@@ -167,6 +184,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
       case "product-slider":
         return (
           <ProductSlider
+            sectionId={section.id}
             headline={settings?.headline}
             count={settings?.count}
             source={settings?.source}
@@ -182,10 +200,26 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
       case "category-grid":
         return (
           <CategoryGrid
+            sectionId={section.id}
             title={settings?.title}
             count={settings?.count}
             source={settings?.source}
             items={settings?.items}
+            columns={settings?.columns}
+            mobileColumns={settings?.mobileColumns}
+            styles={styles}
+          />
+        );
+
+      case "new-arrivals":
+        return (
+          <NewArrivals
+            sectionId={section.id}
+            headline={settings?.headline}
+            count={settings?.count}
+            source={settings?.source}
+            productIds={settings?.productIds}
+            collectionId={settings?.source === 'collection' ? settings?.collectionId : undefined}
             columns={settings?.columns}
             mobileColumns={settings?.mobileColumns}
             styles={styles}
@@ -229,11 +263,15 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
             buttonText={settings?.buttonText}
             faqIds={settings?.faqIds}
             source={settings?.source}
+            gridColumns={settings?.gridColumns}
+            mobileColumns={settings?.mobileColumns}
+            layout={settings?.layout}
           />
         );
       case "brand-grid":
         return (
           <BrandGrid
+            sectionId={section.id}
             title={settings?.title}
             count={settings?.count}
             source={settings?.source}
@@ -241,6 +279,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
             columns={settings?.columns}
             mobileColumns={settings?.mobileColumns}
             styles={styles}
+            layout={settings?.layout}
           />
         );
       case "newsletter":
@@ -304,15 +343,14 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
   // Wrapper tag and classes
   const Tag = section.type === "section" ? "section" : "div";
   const wrapperClasses = `
-    ${section.type === 'section' ? 'relative w-full overflow-hidden' : ''}
-    ${section.type === 'row' ? 'container mx-auto relative' : ''}
+    ${section.type === 'section' ? 'relative overflow-hidden' : ''}
+    ${section.type === 'row' ? 'relative' : ''}
     ${section.type === 'column' ? 'flex flex-col relative' : ''}
-    ${!isStructural ? 'w-full' : ''}
   `;
 
   // Merge defaults for Row/Col
   const finalStyle: React.CSSProperties = {
-    ...(section.type === 'row' ? { display: 'flex', flexDirection: 'row', width: '100%' } : {}),
+    ...(section.type === 'row' ? { display: 'flex', flexDirection: 'row' } : {}),
     ...(section.type === 'column' ? { flex: 1, display: 'flex' } : {}),
     ...structuralStyle
   };
@@ -327,7 +365,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
         }
       }}
       className={`responsive-section relative group transition-all duration-200 ${visibilityClasses} 
-        ${(isStructural && isEditorMode) ? 'min-h-[50px]' : ''}
+        ${(isStructural && isEditorMode) ? 'min-h-[20px]' : ''}
         ${isEditorMode ? 'cursor-pointer' : ''}
         ${(isSelected && isEditorMode) ? 'outline outline-2 outline-brand-500 outline-offset-[-2px] z-[5]' : (isEditorMode ? 'hover:outline hover:outline-2 hover:outline-brand-500/30 hover:outline-offset-[-2px]' : '')}
       `}

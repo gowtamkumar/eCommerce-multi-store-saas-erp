@@ -8,17 +8,15 @@ export default function Paragraph({ settings, styles }: { settings: ParagraphSet
     const alignmentClass = alignment === 'center' ? 'text-center' : alignment === 'right' ? 'text-right' : 'text-left';
 
     return (
-        <div className={`w-full ${alignmentClass}`}>
-            <div
-                className="text-base md:text-lg opacity-80 leading-relaxed font-medium"
-                style={{ color: styles?.color }}
-            >
-                {content ? (
-                    <div dangerouslySetInnerHTML={{ __html: content }} />
-                ) : (
-                    <p>Add your paragraph content here. Share your story or describe your product/service to connect with your customers.</p>
-                )}
-            </div>
+        <div
+            className={`w-full text-base md:text-lg opacity-80 leading-relaxed font-medium ${alignmentClass}`}
+            style={{ color: styles?.color || 'inherit' }}
+        >
+            {content ? (
+                <div dangerouslySetInnerHTML={{ __html: content as string }} />
+            ) : (
+                <p>Add your paragraph content here. Share your story or describe your product/service to connect with your customers.</p>
+            )}
         </div>
     );
 }

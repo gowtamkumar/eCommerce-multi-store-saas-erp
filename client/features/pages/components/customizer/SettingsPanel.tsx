@@ -174,7 +174,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
         {activeTab === 'styles' && (
           isStructural
             ? <StylesEditor styles={section.styles as Record<string, any> || {}} onChange={(key, value) => updateStyle(key, value)} onBatchChange={updateStyles} nodeType={section.type} viewMode={viewMode} />
-            : <ComponentStylesEditor styles={section.styles as Record<string, any> || {}} onChange={(key, value) => updateStyle(key, value)} viewMode={viewMode} />
+            : <ComponentStylesEditor styles={section.styles as Record<string, any> || {}} onChange={(key, value) => updateStyle(key, value)} viewMode={viewMode} nodeType={section.type} />
         )}
 
         {/* Visibility Tab */}
@@ -368,6 +368,131 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
               </div>
             )}
 
+            {section.type === 'new-arrivals' && (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Heading Title</label>
+                  <input
+                    type="text"
+                    placeholder="New Arrivals"
+                    value={settings?.headline || ''}
+                    onChange={(e) => updateSetting('headline', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Product Source</label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {['all', 'collection', 'manual'].map((s: any) => (
+                      <button
+                        key={s}
+                        onClick={() => updateSetting('source', s)}
+                        className={`py-2 text-[9px] font-bold uppercase rounded-md border transition-all ${settings?.source === s ? 'bg-brand-600 border-brand-600 text-white shadow-lg shadow-brand-500/20' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-brand-200'}`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {settings?.source === 'collection' && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Select Collection</label>
+                    <select
+                      value={settings?.collectionId || ''}
+                      onChange={(e) => updateSetting('collectionId', e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value="">Select a collection...</option>
+                      {categories.map((cat: any) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {settings?.source === 'manual' && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Selected Products</label>
+                      <div className="space-y-2">
+                        {(settings?.productIds || []).map((id: string, idx: number) => {
+                          const product = products.find(p => p.id === id);
+                          return (
+                            <div key={`${id}-${idx}`} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                              <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center overflow-hidden">
+                                {product?.images?.[0] ? <img src={product.images[0]} alt="" className="w-full h-full object-cover" /> : <span>📦</span>}
+                              </div>
+                              <span className="text-xs flex-1 truncate">{product?.name || 'Unknown Product'}</span>
+                              <button
+                                onClick={() => {
+                                  const newIds = (settings.productIds || []).filter((_: any, i: number) => i !== idx);
+                                  updateSetting('productIds', newIds);
+                                }}
+                                className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (!e.target.value) return;
+                          const currentIds = settings.productIds || [];
+                          if (!currentIds.includes(e.target.value)) {
+                            updateSetting('productIds', [...currentIds, e.target.value]);
+                          }
+                        }}
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      >
+                        <option value="">+ Add a product...</option>
+                        {products
+                          .filter(p => !(settings.productIds || []).includes(p.id))
+                          .map((p: any) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Items per row</label>
+                    {viewMode === 'mobile' ? <Smartphone className="w-2.5 h-2.5 text-brand-500" /> : <Monitor className="w-2.5 h-2.5 text-slate-300" />}
+                  </div>
+                  <select
+                    value={viewMode === 'mobile' ? (settings?.mobileColumns || 2) : (settings?.columns || 4)}
+                    onChange={(e) => updateSetting(viewMode === 'mobile' ? 'mobileColumns' : 'columns', parseInt(e.target.value))}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value={1}>1 Column</option>
+                    <option value={2}>2 Columns</option>
+                    <option value={3}>3 Columns</option>
+                    <option value={4}>4 Columns</option>
+                    <option value={5}>5 Columns</option>
+                    <option value={6}>6 Columns</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Max Products Count</label>
+                  <input
+                    type="number"
+                    value={settings?.count || 8}
+                    onChange={(e) => updateSetting('count', parseInt(e.target.value))}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                </div>
+              </div>
+            )}
+
             {section.type === 'product-slider' && (
               <div className="space-y-4">
                 <div className="space-y-1.5">
@@ -459,17 +584,6 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                   </div>
                 )}
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Layout</label>
-                  <select
-                    value={settings?.layout || 'slider'}
-                    onChange={(e) => updateSetting('layout', e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  >
-                    <option value="slider">Post Slider</option>
-                    <option value="grid">Grid View</option>
-                  </select>
-                </div>
 
                 <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-1.5 mb-1.5">
@@ -477,7 +591,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     {viewMode === 'mobile' ? <Smartphone className="w-2.5 h-2.5 text-brand-500" /> : <Monitor className="w-2.5 h-2.5 text-slate-300" />}
                   </div>
                   <select
-                    value={viewMode === 'mobile' ? (settings?.mobileColumns || 1) : (settings?.columns || 4)}
+                    value={viewMode === 'mobile' ? (settings?.mobileColumns || 2) : (settings?.columns || 4)}
                     onChange={(e) => updateSetting(viewMode === 'mobile' ? 'mobileColumns' : 'columns', parseInt(e.target.value))}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   >
@@ -485,6 +599,8 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     <option value={2}>2 Columns</option>
                     <option value={3}>3 Columns</option>
                     <option value={4}>4 Columns</option>
+                    <option value={5}>5 Columns</option>
+                    <option value={6}>6 Columns</option>
                   </select>
                 </div>
 
@@ -599,6 +715,8 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     <option value={2}>2 Columns</option>
                     <option value={3}>3 Columns</option>
                     <option value={4}>4 Columns</option>
+                    <option value={5}>5 Columns</option>
+                    <option value={6}>6 Columns</option>
                   </select>
                 </div>
 
@@ -743,6 +861,8 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     <option value={2}>2 Columns</option>
                     <option value={3}>3 Columns</option>
                     <option value={4}>4 Columns</option>
+                    <option value={5}>5 Columns</option>
+                    <option value={6}>6 Columns</option>
                   </select>
                 </div>
               </div>
@@ -891,7 +1011,28 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     value={settings?.headline || ''}
                     onChange={(e) => updateSetting('headline', e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="e.g. EXCLUSIVE OFFER"
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Subline / Description</label>
+                  <textarea
+                    value={settings?.subline || ''}
+                    onChange={(e) => updateSetting('subline', e.target.value)}
+                    rows={2}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="e.g. Limited time deals on top brands"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Offer End Date (Countdown)</label>
+                  <input
+                    type="datetime-local"
+                    value={settings?.endDate ? settings.endDate.slice(0, 16) : ''}
+                    onChange={(e) => updateSetting('endDate', e.target.value ? new Date(e.target.value).toISOString() : '')}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  />
+                  <p className="text-[9px] text-slate-400">Set a date to show a live countdown timer</p>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Offer Background Image</label>
@@ -900,6 +1041,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     value={settings?.backgroundImage || ''}
                     onChange={(e) => updateSetting('backgroundImage', e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="https://..."
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -909,6 +1051,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     value={settings?.image || ''}
                     onChange={(e) => updateSetting('image', e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    placeholder="https://..."
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -918,8 +1061,8 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     onChange={(e) => updateSetting('layout', e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   >
-                    <option value="left">Content Left</option>
-                    <option value="right">Content Right</option>
+                    <option value="left">Icon Left / Content Right</option>
+                    <option value="right">Content Left / Icon Right</option>
                   </select>
                 </div>
 
@@ -931,6 +1074,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                       value={settings?.buttonText || ''}
                       onChange={(e) => updateSetting('buttonText', e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      placeholder="e.g. Shop Now"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -940,6 +1084,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                       value={settings?.buttonLink || ''}
                       onChange={(e) => updateSetting('buttonLink', e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      placeholder="/shop"
                     />
                   </div>
                 </div>
@@ -952,6 +1097,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                       value={settings?.secondaryButtonText || ''}
                       onChange={(e) => updateSetting('secondaryButtonText', e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      placeholder="e.g. Learn More"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -961,6 +1107,7 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                       value={settings?.secondaryButtonLink || ''}
                       onChange={(e) => updateSetting('secondaryButtonLink', e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                      placeholder="/about"
                     />
                   </div>
                 </div>
@@ -1278,20 +1425,28 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                   </select>
                 </div>
 
-                {settings?.layout === 'grid' && (
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Items per row</label>
+                <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="space-y-1.5 px-4 pb-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5">
+                        Items visible
+                      </label>
+                      {viewMode === 'mobile' ? <Smartphone className="w-2.5 h-2.5 text-brand-500" /> : <Monitor className="w-2.5 h-2.5 text-slate-300" />}
+                    </div>
                     <select
-                      value={settings?.columns || 3}
-                      onChange={(e) => updateSetting('columns', parseInt(e.target.value))}
+                      value={viewMode === 'mobile' ? (settings?.mobileColumns || 1) : (settings?.columns || 3)}
+                      onChange={(e) => updateSetting(viewMode === 'mobile' ? 'mobileColumns' : 'columns', parseInt(e.target.value))}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                     >
                       <option value={1}>1 Column</option>
                       <option value={2}>2 Columns</option>
                       <option value={3}>3 Columns</option>
+                      <option value={4}>4 Columns</option>
+                      <option value={5}>5 Columns</option>
+                      <option value={6}>6 Columns</option>
                     </select>
                   </div>
-                )}
+                </div>
               </div>
             )}
 
@@ -1404,6 +1559,44 @@ export default function SettingsPanel({ section, viewMode, onUpdate, onClose }: 
                     <option value="manual">Manual Entry</option>
                     <option value="selection">Specific FAQs (DB)</option>
                   </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Layout Style</label>
+                  <select
+                    value={settings?.layout || 'grid'}
+                    onChange={(e) => updateSetting('layout', e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                  >
+                    <option value="grid">Grid Layout</option>
+                    <option value="accordion">Accordion Layout</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Desktop Columns</label>
+                    <select
+                      value={settings?.gridColumns || '2'}
+                      onChange={(e) => updateSetting('gridColumns', e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value="1">1 Column</option>
+                      <option value="2">2 Columns</option>
+                      <option value="3">3 Columns</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Mobile Columns</label>
+                    <select
+                      value={settings?.mobileColumns || '1'}
+                      onChange={(e) => updateSetting('mobileColumns', e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value="1">1 Column</option>
+                      <option value="2">2 Columns</option>
+                    </select>
+                  </div>
                 </div>
 
                 {settings?.source === 'selection' ? (

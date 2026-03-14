@@ -70,6 +70,7 @@ const SECTION_ICONS: Record<SectionType, any> = {
   'faq-section': HelpCircle,
   'video-block': Video,
   'contact': Mail,
+  'new-arrivals': Grid,
   'heading': Type,
   'paragraph': MessageSquare,
   'divider': Minus,
@@ -289,11 +290,41 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
   );
 
   const addNode = (type: SectionType, parentId: string | null = null) => {
+    let settings: any = {};
+    let styles: any = { paddingTop: type === 'section' ? 40 : 0, paddingBottom: type === 'section' ? 40 : 0 };
+
+    if (type === 'banner') {
+      settings = {
+        slides: [
+          {
+            id: generateId(),
+            headline: 'Summer Collection 2026',
+            subline: 'Discover the latest trends in luxury fashion and accessories.',
+            backgroundImage: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop',
+            primaryButtonText: 'Shop Now',
+            primaryButtonLink: '/products',
+            secondaryButtonText: 'Learn More',
+            secondaryButtonLink: '/about'
+          }
+        ]
+      };
+      styles = {
+        ...styles,
+        height: 600,
+        textAlign: 'center',
+        overlayOpacity: 40,
+        headlineColor: '#ffffff',
+        sublineColor: 'rgba(255, 255, 255, 0.9)',
+        buttonColor: '#ffffff',
+        buttonTextColor: '#2563eb'
+      };
+    }
+
     const newNode: CustomizerSection = {
       id: generateId(),
       type,
-      settings: {},
-      styles: { paddingTop: type === 'section' ? 40 : 0, paddingBottom: type === 'section' ? 40 : 0 },
+      settings,
+      styles,
       children: ['section', 'row', 'column'].includes(type) ? [] : undefined
     };
 

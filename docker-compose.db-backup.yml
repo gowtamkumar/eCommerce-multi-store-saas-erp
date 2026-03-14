@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: multi_tenant_ecommerce
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - main_network
+  backup:
+    image: postgres:17-alpine
+    container_name: db_backup
+    entrypoint: ["sh", "-c", "/backup.sh"]
+    volumes:
+      - ./backups:/backups # Mount local folder to store backups
+      - ./scripts/backup.sh:/backup.sh
+    environment:
+      PGPASSWORD: postgres # match your DB password
+    depends_on:
+      - postgres
+    networks:
+      - main_network
+networks:
+  main_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

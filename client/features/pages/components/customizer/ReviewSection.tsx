@@ -3,8 +3,9 @@
 import { fetchAPI } from "@/services/api";
 import { ReviewItem } from "@/types/customizer";
 import { animate, motion, useMotionValue } from "framer-motion";
-import { ArrowLeft, ArrowRight, Star } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Star, ArrowLeft, ArrowRight } from "lucide-react";
+import SectionHeader from "./SectionHeader";
+import { useEffect, useRef, useState, useMemo } from "react";
 
 interface ReviewSectionProps {
   settings: {
@@ -25,6 +26,8 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
   const [width, setWidth] = useState(0);
   const x = useMotionValue(0);
 
+  const uid = useMemo(() => `rs-${Math.random().toString(36).slice(2, 7)}`, []);
+
   useEffect(() => {
     async function loadData() {
       if (settings.source === 'database' || settings.source === 'all' || settings.source === 'selection') {
@@ -41,12 +44,10 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
             }));
 
             if (settings.source === 'selection' && settings.reviewIds && settings.reviewIds.length > 0) {
-              // Filter by selected IDs
               mapped = settings.reviewIds
                 .map((id: string) => mapped.find((r: any) => r.id === id))
                 .filter(Boolean);
             } else {
-              // Default to limit for 'all' or 'database'
               const limit = settings.count || 6;
               mapped = mapped.slice(0, limit);
             }
@@ -67,97 +68,153 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
   }, [settings.source, settings.reviews, settings.count, settings.reviewIds]);
 
   useEffect(() => {
-    if (carouselRef.current) {
-      setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
-    }
+    const updateWidth = () => {
+        if (carouselRef.current) {
+            setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
+        }
+    };
+    updateWidth();
+    const timer = setTimeout(updateWidth, 100);
+    window.addEventListener('resize', updateWidth);
+    return () => {
+      window.removeEventListener('resize', updateWidth);
+      clearTimeout(timer);
+    };
   }, [displayReviews]);
 
   const slideLeft = () => {
     const current = x.get();
-    const newPos = Math.min(current + 400, 0); // clamp to 0 (start)
+    const newPos = Math.min(current + 400, 0); 
     animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
   };
 
   const slideRight = () => {
     const current = x.get();
-    const newPos = Math.max(current - 400, -width); // clamp to -width (end)
+    const newPos = Math.max(current - 400, -width); 
     animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
   };
 
+  const getGridCols = (cols: number) => {
+    switch (cols) {
+      case 1: return 'grid-cols-1';
+      case 2: return 'grid-cols-2';
+      case 3: return 'grid-cols-3';
+      case 4: return 'grid-cols-4';
+      case 5: return 'grid-cols-5';
+      case 6: return 'grid-cols-6';
+      default: return 'grid-cols-3';
+    }
+  };
+
+  const getMdGridCols = (cols: number) => {
+    switch (cols) {
+      case 1: return 'md:grid-cols-1';
+      case 2: return 'md:grid-cols-2';
+      case 3: return 'md:grid-cols-3';
+      case 4: return 'md:grid-cols-4';
+      case 5: return 'md:grid-cols-5';
+      case 6: return 'md:grid-cols-6';
+      default: return 'md:grid-cols-3';
+    }
+  };
+
+  const columns = settings.columns || 3;
+  const mobileColumns = settings.mobileColumns || 1;
+
+  const cardRadiusClass = styles?.cardRadius === 'small' ? 'rounded-lg' :
+    styles?.cardRadius === 'large' ? 'rounded-[2rem]' :
+      styles?.cardRadius === 'full' ? 'rounded-full' :
+        styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-2xl';
+
+  const isSlider = settings.layout !== 'grid';
+
   return (
-    <div className="w-full overflow-hidden">
-      <div className="w-full">
-        <div className={`flex justify-between items-end mb-16
-           ${styles?.textAlign === 'center' ? 'flex-col items-center justify-center gap-6 text-center' : ''}
-           ${styles?.textAlign === 'right' ? 'flex-row-reverse text-right' : ''} 
-           ${!styles?.textAlign || styles?.textAlign === 'left' ? 'text-left' : ''}
-        `}>
-          <h2
-            className="text-3xl font-black uppercase tracking-widest"
-            style={{ color: styles?.headlineColor || styles?.color || 'white' }}
-          >
-            {settings?.title || 'Client Feedback'}
-          </h2>
-          <div className="flex gap-4">
-            <button
-              onClick={slideLeft}
-              className="w-12 h-12 rounded-full border flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
-              style={{ borderColor: styles?.headlineColor || styles?.color || 'rgba(255,255,255,0.1)' }}
-            >
-              <ArrowLeft className="w-5 h-5" style={{ color: styles?.headlineColor || styles?.color || 'white' }} />
-            </button>
-            <button
-              onClick={slideRight}
-              className="w-12 h-12 rounded-full border flex items-center justify-center text-white hover:bg-white hover:text-black transition-all"
-              style={{ borderColor: styles?.headlineColor || styles?.color || 'rgba(255,255,255,0.1)' }}
-            >
-              <ArrowRight className="w-5 h-5" style={{ color: styles?.headlineColor || styles?.color || 'white' }} />
-            </button>
+    <div className={`w-full py-10 sm:py-16 ${uid}`}>
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between mb-8 sm:mb-10 lg:gap-10">
+          <div className="flex-1 min-w-0">
+            <SectionHeader 
+                title={settings?.title} 
+                styles={styles} 
+                noMargin 
+                noPadding 
+                className="!mb-0" 
+            />
           </div>
+
+          {isSlider && displayReviews.length > 0 && (
+            <div className="flex gap-2 sm:gap-3 shrink-0">
+               <button
+                onClick={slideLeft}
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 group shadow-sm bg-white/10"
+                style={{
+                  borderColor: styles?.borderColor || 'rgba(0,0,0,0.1)',
+                  color: styles?.headlineColor || styles?.color || 'inherit'
+                }}
+                aria-label="Slide left"
+              >
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+              </button>
+              <button
+                onClick={slideRight}
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 group shadow-lg"
+                style={{
+                  backgroundColor: styles?.buttonColor || styles?.headlineColor || '#000',
+                  color: '#fff'
+                }}
+                aria-label="Slide right"
+              >
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </div>
+          )}
         </div>
 
         {loading ? (
-          <div className={`grid gap-8 ${settings.layout === 'grid' ? (settings.columns === 1 ? 'grid-cols-1' : settings.columns === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3') : 'flex overflow-hidden pb-8'}`}>
-            {[...Array(settings.layout === 'grid' ? (settings.count || 3) : 3)].map((_, i) => (
-              <div key={i} className={`${settings.layout === 'grid' ? 'w-full' : 'min-w-[400px] md:min-w-[500px]'} bg-white/5 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shrink-0 animate-pulse`}>
-                <div className="flex gap-1 mb-8">
+          <div className={!isSlider
+            ? `grid gap-6 ${getGridCols(mobileColumns)} ${getMdGridCols(columns)}`
+            : 'flex gap-6 overflow-hidden pb-8'
+          }>
+            {[...Array(!isSlider ? (settings.count || 3) : 3)].map((_, i) => (
+              <div key={i} className={`${!isSlider ? 'w-full' : 'min-w-[300px] md:min-w-[450px] flex-1'} bg-slate-50 dark:bg-white/5 p-8 ${cardRadiusClass} border border-slate-100 dark:border-white/10 shrink-0 animate-pulse`}>
+                <div className="flex gap-1 mb-6">
                   {[...Array(5)].map((_, j) => (
-                    <Star key={j} className="w-5 h-5 text-white/10" />
+                    <Star key={j} className="w-4 h-4 text-slate-200 dark:text-white/10" />
                   ))}
                 </div>
-                <div className="h-4 bg-white/10 rounded w-3/4 mb-4"></div>
-                <div className="h-4 bg-white/10 rounded w-1/2 mb-10"></div>
-                <div className="flex items-center gap-5">
-                  <div className="w-16 h-16 rounded-full bg-slate-800"></div>
-                  <div>
-                    <div className="h-4 bg-white/10 rounded w-24 mb-2"></div>
-                    <div className="h-3 bg-white/10 rounded w-32"></div>
+                <div className="h-4 bg-slate-200 dark:bg-white/10 rounded w-3/4 mb-4" />
+                <div className="h-4 bg-slate-200 dark:bg-white/10 rounded w-1/2 mb-10" />
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="flex-1">
+                    <div className="h-4 bg-slate-200 dark:bg-white/10 rounded w-24 mb-2" />
+                    <div className="h-3 bg-slate-200 dark:bg-white/10 rounded w-32" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        ) : settings.layout === 'grid' ? (
-          <div className={`grid gap-8 ${settings.columns === 1 ? 'grid-cols-1' : settings.columns === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+        ) : !isSlider ? (
+          <div className={`grid gap-6 ${getGridCols(mobileColumns)} ${getMdGridCols(columns)}`}>
             {displayReviews.length > 0 ? (
               displayReviews.map((review: any) => (
                 <div
                   key={review.id}
-                  className="w-full bg-white/5 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10"
+                  className={`w-full bg-slate-50 dark:bg-white/5 p-8 ${cardRadiusClass} border border-slate-100 dark:border-white/10`}
                 >
-                  <div className="flex gap-1 mb-8">
+                  <div className="flex gap-1 mb-6">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-5 h-5 ${i < (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-white/10'}`} />
+                      <Star key={i} className={`w-4 h-4 ${i < (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-white/10'}`} />
                     ))}
                   </div>
                   <blockquote
-                    className="text-xl md:text-2xl mb-10 italic leading-snug"
-                    style={{ color: styles?.color || 'rgba(255, 255, 255, 0.9)' }}
+                    className="text-lg md:text-xl mb-8 italic leading-snug"
+                    style={{ color: styles?.color || 'inherit' }}
                   >
                     "{review.text}"
                   </blockquote>
-                  <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-3xl overflow-hidden shadow-lg border-2 border-slate-700">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700">
                       {review.avatar && !review.avatar.startsWith('bg-') ? (
                         <img src={review.avatar} alt={review.author} className="w-full h-full object-cover" />
                       ) : (
@@ -166,12 +223,12 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
                     </div>
                     <div>
                       <p
-                        className="text-lg md:text-xl font-black uppercase tracking-tight"
+                        className="text-base font-black uppercase tracking-tight"
                         style={{ color: styles?.sublineColor || '#3b82f6' }}
                       >
                         {review.author}
                       </p>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-bold">
+                      <p className="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold">
                         {settings.source === 'database' ? 'Verified Purchase' : 'Verified Client'}
                       </p>
                     </div>
@@ -179,7 +236,7 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
                 </div>
               ))
             ) : (
-              <div className="col-span-full py-20 text-center text-white/10 border-4 border-dashed border-white/5 rounded-[3rem]">
+              <div className={`col-span-full py-16 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 ${cardRadiusClass}`}>
                 No reviews found
               </div>
             )}
@@ -189,29 +246,30 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
             <motion.div
               drag="x"
               dragConstraints={{ right: 0, left: -width }}
+              dragElastic={0.1}
               whileTap={{ cursor: "grabbing" }}
               style={{ x }}
-              className="flex gap-8"
+              className="flex gap-6"
             >
               {displayReviews.length > 0 ? (
                 displayReviews.map((review: any) => (
                   <motion.div
                     key={review.id}
-                    className="min-w-[350px] md:min-w-[500px] bg-white/5 backdrop-blur-xl p-10 rounded-[3rem] border border-white/10 shrink-0 select-none pointer-events-auto"
+                    className={`min-w-[300px] md:min-w-[450px] bg-slate-50 dark:bg-white/5 p-8 ${cardRadiusClass} border border-slate-100 dark:border-white/10 shrink-0 select-none pointer-events-auto`}
                   >
-                    <div className="flex gap-1 mb-8">
+                    <div className="flex gap-1 mb-6">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-5 h-5 ${i < (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-white/10'}`} />
+                        <Star key={i} className={`w-4 h-4 ${i < (review.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-slate-200 dark:text-white/10'}`} />
                       ))}
                     </div>
                     <blockquote
-                      className="text-xl md:text-2xl mb-10 italic leading-snug"
-                      style={{ color: styles?.color || 'rgba(255, 255, 255, 0.9)' }}
+                      className="text-lg md:text-xl mb-8 italic leading-snug"
+                      style={{ color: styles?.color || 'inherit' }}
                     >
                       "{review.text}"
                     </blockquote>
-                    <div className="flex items-center gap-5">
-                      <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-3xl overflow-hidden shadow-lg border-2 border-slate-700">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700">
                         {review.avatar && !review.avatar.startsWith('bg-') ? (
                           <img src={review.avatar} alt={review.author} className="w-full h-full object-cover" />
                         ) : (
@@ -220,12 +278,12 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
                       </div>
                       <div>
                         <p
-                          className="text-lg md:text-xl font-black uppercase tracking-tight"
-                          style={{ color: styles?.sublineColor || '#3b82f6' }} // brand-500 ish default
+                          className="text-base font-black uppercase tracking-tight"
+                          style={{ color: styles?.sublineColor || '#3b82f6' }}
                         >
                           {review.author}
                         </p>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-bold">
+                        <p className="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold">
                           {settings.source === 'database' ? 'Verified Purchase' : 'Verified Client'}
                         </p>
                       </div>
@@ -233,10 +291,10 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
                   </motion.div>
                 ))
               ) : (
-                <div className="w-full py-20 text-center text-white/10 border-4 border-dashed border-white/5 rounded-[3rem]">
+                <div className={`w-full py-16 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 ${cardRadiusClass}`}>
                   {settings.source === 'database'
                     ? 'No reviews found in database'
-                    : 'Add social proof in the customizer settings panel'
+                    : 'Add social proof in the customizer'
                   }
                 </div>
               )}

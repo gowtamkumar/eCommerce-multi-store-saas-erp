@@ -9,13 +9,13 @@ export default function Divider({ settings, styles }: { settings: DividerSetting
         height: 0,
         borderTopWidth: `${thickness}px`,
         borderTopStyle: style,
-        borderTopColor: color || styles?.sublineColor || '#e2e8f0',
+        borderTopColor: color || styles?.borderColor || styles?.color || '#e2e8f0',
         width: width,
         margin: styles?.textAlign === 'center' ? '0 auto' : styles?.textAlign === 'right' ? '0 0 0 auto' : '0 auto 0 0',
     };
 
     return (
-        <div className="w-full py-4">
+        <div className="w-full py-2">
             <div style={dividerStyle} />
         </div>
     );
