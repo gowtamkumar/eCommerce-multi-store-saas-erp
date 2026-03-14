@@ -175,6 +175,7 @@ function SettingsContent() {
             showRelatedProducts: true,
             showProductReviews: true,
             showProductFAQs: true,
+            relatedProductsPerRow: 4,
         },
     });
 
@@ -307,6 +308,7 @@ function SettingsContent() {
                             showRelatedProducts: true,
                             showProductReviews: true,
                             showProductFAQs: true,
+                            relatedProductsPerRow: 4,
                         },
                     });
                 }

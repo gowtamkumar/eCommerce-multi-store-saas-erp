@@ -51,4 +51,8 @@ export class SingleProductPageSettingsDto {
   @IsBoolean()
   @IsOptional()
   showProductFAQs?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  relatedProductsPerRow?: number;
 }

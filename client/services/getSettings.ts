@@ -85,6 +85,7 @@ export const DEFAULT_SETTINGS = {
     showRelatedProducts: true,
     showProductReviews: true,
     showProductFAQs: true,
+    relatedProductsPerRow: 4,
   }
 };
 

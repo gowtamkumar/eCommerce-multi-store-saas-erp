@@ -18,8 +18,9 @@ export default function RelatedProducts({ currentProductId }: RelatedProductsPro
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                // Fetch products excluding the current one, limit to 3
-                const data = await fetchAPI(`/products?exclude=${currentProductId}&limit=3&status=active`);
+                // Fetch products excluding the current one, limit to user preference
+                const limit = settings?.singleProductPage?.relatedProductsPerRow || 4;
+                const data = await fetchAPI(`/products?exclude=${currentProductId}&limit=${limit}&status=active`);
                 if (data.success && data.data?.products) {
                     setProducts(data.data.products);
                 }
@@ -55,7 +56,15 @@ export default function RelatedProducts({ currentProductId }: RelatedProductsPro
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className={`grid grid-cols-1 sm:grid-cols-2 ${
+                    {
+                        2: 'lg:grid-cols-2',
+                        3: 'lg:grid-cols-3',
+                        4: 'lg:grid-cols-4',
+                        5: 'lg:grid-cols-5',
+                        6: 'lg:grid-cols-6',
+                    }[settings?.singleProductPage?.relatedProductsPerRow || 4] || 'lg:grid-cols-4'
+                } gap-8`}>
                     {products.map((product, index) => (
                         <motion.div
                             key={product.id}

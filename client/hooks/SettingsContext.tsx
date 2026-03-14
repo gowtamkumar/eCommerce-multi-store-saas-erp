@@ -117,6 +117,7 @@ interface SiteSettings {
     showRelatedProducts?: boolean;
     showProductReviews?: boolean;
     showProductFAQs?: boolean;
+    relatedProductsPerRow?: number;
   };
 }
 
