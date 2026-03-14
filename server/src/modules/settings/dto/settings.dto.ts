@@ -12,6 +12,7 @@ import { SocialLinkDto } from './socialLink.dto';
 import { SteadfastCourierDto } from './steadfastCourier.dto';
 import { TrustBadgeDto } from './trust-badge.dto';
 import { ProductsPageSettingsDto } from './products-page.dto';
+import { SingleProductPageSettingsDto } from './single-product-page.dto';
 
 export class UpdateSiteSettingsDto {
     @ApiProperty({ required: false })
@@ -119,4 +120,11 @@ export class UpdateSiteSettingsDto {
     @ValidateNested()
     @Type(() => ProductsPageSettingsDto)
     productsPage?: ProductsPageSettingsDto;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsObject()
+    @ValidateNested()
+    @Type(() => SingleProductPageSettingsDto)
+    singleProductPage?: SingleProductPageSettingsDto;
 }

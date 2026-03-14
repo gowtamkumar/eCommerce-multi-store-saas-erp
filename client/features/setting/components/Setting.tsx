@@ -17,6 +17,7 @@ import PaymentSetting from "@/features/setting/components/PaymentSetting";
 import SocialSetting from "@/features/setting/components/SocialSetting";
 import TrustDelivery from "@/features/setting/components/Trust&Delivery";
 import ProductsPageSetting from "./ProductsPageSetting";
+import SingleProductPageSetting from "./SingleProductPageSetting";
 import { fetchAPI } from "@/services/api";
 
 export const dynamic = "force-dynamic";
@@ -163,6 +164,18 @@ function SettingsContent() {
             showBrands: true,
             showPriceFilter: true,
         },
+        singleProductPage: {
+            showBreadcrumb: true,
+            showRating: true,
+            showStock: true,
+            showFeatures: true,
+            showShare: true,
+            showPromotions: true,
+            showStickyCart: true,
+            showRelatedProducts: true,
+            showProductReviews: true,
+            showProductFAQs: true,
+        },
     });
 
     const searchParams = useSearchParams();
@@ -282,6 +295,18 @@ function SettingsContent() {
                             showCategories: true,
                             showBrands: true,
                             showPriceFilter: true,
+                        },
+                        singleProductPage: data.singleProductPage || {
+                            showBreadcrumb: true,
+                            showRating: true,
+                            showStock: true,
+                            showFeatures: true,
+                            showShare: true,
+                            showPromotions: true,
+                            showStickyCart: true,
+                            showRelatedProducts: true,
+                            showProductReviews: true,
+                            showProductFAQs: true,
                         },
                     });
                 }
@@ -419,6 +444,9 @@ function SettingsContent() {
                                 )}
                                 {activeTab === "productsPage" && (
                                     <ProductsPageSetting formData={formData} setFormData={setFormData} />
+                                )}
+                                {activeTab === "singleProductPage" && (
+                                    <SingleProductPageSetting formData={formData} setFormData={setFormData} />
                                 )}
                             </AnimatePresence>
                         </form>

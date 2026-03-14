@@ -88,6 +88,36 @@ interface SiteSettings {
       }>;
     }>;
   };
+  productsPage?: {
+    bannerHeadline?: string;
+    bannerSubheadline?: string;
+    bannerTagline?: string;
+    bannerShow?: boolean;
+    bannerStyle?: "modern" | "minimal" | "image" | string;
+    productsPerRow?: number;
+    sidebarStyle?: "modern" | "minimal" | string;
+    showSearch?: boolean;
+    showCategories?: boolean;
+    showBrands?: boolean;
+    showPriceFilter?: boolean;
+    bannerImage?: string;
+    bannerBackgroundColor?: string;
+    bannerOverlayOpacity?: number;
+    bannerTextColor?: string;
+    bannerFullWidth?: boolean;
+  };
+  singleProductPage?: {
+    showBreadcrumb?: boolean;
+    showRating?: boolean;
+    showStock?: boolean;
+    showFeatures?: boolean;
+    showShare?: boolean;
+    showPromotions?: boolean;
+    showStickyCart?: boolean;
+    showRelatedProducts?: boolean;
+    showProductReviews?: boolean;
+    showProductFAQs?: boolean;
+  };
 }
 
 interface SettingsContextType {

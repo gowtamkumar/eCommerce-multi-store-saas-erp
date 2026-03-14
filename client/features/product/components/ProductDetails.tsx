@@ -199,36 +199,37 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
           <div className="space-y-8">
             <div>
               {/* Breadcrumb */}
-              <nav
-                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-6"
-                aria-label="Breadcrumb"
-              >
-                <Link
-                  href="/"
-                  className="hover:text-brand-600 transition-colors"
+              {settings?.singleProductPage?.showBreadcrumb !== false && (
+                <nav
+                  className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-6"
+                  aria-label="Breadcrumb"
                 >
-                  Home
-                </Link>
-                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                <Link
-                  href="/products"
-                  className="hover:text-brand-600 transition-colors"
-                >
-                  Products
-                </Link>
-                {product.category && (
-                  <>
-                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                    <Link
-                      href={`/products?category=${product.category.slug || product.category.id}`}
-                      className="hover:text-brand-600 transition-colors"
-                    >
-                      {product.category.name}
-                    </Link>
-                  </>
-                )}
-              </nav>
-
+                  <Link
+                    href="/"
+                    className="hover:text-brand-600 transition-colors"
+                  >
+                    Home
+                  </Link>
+                  <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                  <Link
+                    href="/products"
+                    className="hover:text-brand-600 transition-colors"
+                  >
+                    Products
+                  </Link>
+                  {product.category && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                      <Link
+                        href={`/products?category=${product.category.slug || product.category.id}`}
+                        className="hover:text-brand-600 transition-colors"
+                      >
+                        {product.category.name}
+                      </Link>
+                    </>
+                  )}
+                </nav>
+              )}
               <div className="flex items-start justify-between gap-4 mb-4">
                 <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white leading-tight">
                   {product.name}
@@ -239,38 +240,40 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
               </div>
 
               {/* Ratings & Real-time Info */}
-              <div className="flex items-center gap-6 mb-8">
-                <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
-                  <div className="flex -space-x-1">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star
-                        key={s}
-                        className={`w-3 h-3 ${s <= Math.floor(averageRating)
-                          ? 'text-orange-400 fill-orange-400'
-                          : s - 0.5 <= averageRating
-                            ? 'text-orange-400 fill-orange-400/50'
-                            : 'text-slate-300 dark:text-slate-600'
-                          }`}
-                      />
-                    ))}
+              {(settings?.singleProductPage?.showRating !== false) && (
+                <div className="flex items-center gap-6 mb-8">
+                  <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
+                    <div className="flex -space-x-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={`w-3 h-3 ${s <= Math.floor(averageRating)
+                            ? 'text-orange-400 fill-orange-400'
+                            : s - 0.5 <= averageRating
+                              ? 'text-orange-400 fill-orange-400/50'
+                              : 'text-slate-300 dark:text-slate-600'
+                            }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase leading-none mt-0.5">
+                      {averageRating > 0 ? `${averageRating.toFixed(1)} / 5.0` : 'No reviews yet'}
+                    </span>
                   </div>
-                  <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase leading-none mt-0.5">
-                    {averageRating > 0 ? `${averageRating.toFixed(1)} / 5.0` : 'No reviews yet'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+                    </div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                      {product.reviews?.length} Reviews
+                    </span>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                    {product.reviews?.length} Reviews
-                  </span>
                 </div>
-              </div>
+              )}
 
               {/* Promotions Banners */}
-              {validPromotions.length > 0 && (
+              {validPromotions.length > 0 && settings?.singleProductPage?.showPromotions !== false && (
                 <div className="flex flex-col gap-2 mb-6">
                   {validPromotions.map((promo: any) => (
                     <div key={promo.id} className="flex items-center gap-3 p-3 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-2xl">
@@ -333,25 +336,27 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 </div>
               </div>
 
-              <div className="flex flex-col items-end">
-                <span
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider ${currentStock > 10
-                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                    : currentStock > 0
-                      ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
-                      : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                    }`}
-                >
+              {settings?.singleProductPage?.showStock !== false && (
+                <div className="flex flex-col items-end">
                   <span
-                    className={`w-2 h-2 rounded-full animate-pulse ${currentStock > 10 ? "bg-green-500" : currentStock > 0 ? "bg-orange-500" : "bg-red-500"}`}
-                  />
-                  {currentStock > 10
-                    ? "Available"
-                    : currentStock > 0
-                      ? `Only ${currentStock} Left`
-                      : "Sold Out"}
-                </span>
-              </div>
+                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider ${currentStock > 10
+                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                      : currentStock > 0
+                        ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
+                        : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                      }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full animate-pulse ${currentStock > 10 ? "bg-green-500" : currentStock > 0 ? "bg-orange-500" : "bg-red-500"}`}
+                    />
+                    {currentStock > 10
+                      ? "Available"
+                      : currentStock > 0
+                        ? `Only ${currentStock} Left`
+                        : "Sold Out"}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Attribute Selection */}
@@ -445,16 +450,18 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 }
               </button>
 
-              <button
-                onClick={handleShare}
-                className="p-4 border-2 border-slate-100 dark:border-slate-800 hover:border-brand-600 hover:text-brand-600 rounded-2xl transition-all active:scale-90"
-              >
-                <Share2 className="w-6 h-6" />
-              </button>
+              {settings?.singleProductPage?.showShare !== false && (
+                <button
+                  onClick={handleShare}
+                  className="p-4 border-2 border-slate-100 dark:border-slate-800 hover:border-brand-600 hover:text-brand-600 rounded-2xl transition-all active:scale-90"
+                >
+                  <Share2 className="w-6 h-6" />
+                </button>
+              )}
             </div>
 
             {/* Features List */}
-            {product.features && product.features.length > 0 && (
+            {product.features && product.features.length > 0 && settings?.singleProductPage?.showFeatures !== false && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {product.features.map((feature: string, idx: number) => (
                   <div
@@ -653,7 +660,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
 
       {/* Sticky Mobile Bar */}
       <AnimatePresence>
-        {isStickyVisible && (
+        {isStickyVisible && settings?.singleProductPage?.showStickyCart !== false && (
           <motion.div
             initial={{ y: 100 }}
             animate={{ y: 0 }}

@@ -6,7 +6,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { TenantEntity } from '../../tenant/entities/tenant.entity';
-import { CurrenciesDto, FooterSectionDto, FooterSettingsDto, MarketingDto, NavbarLinkDto, NavbarSettingsDto, PathaoCourierDto, PaymentDto, ProductsPageSettingsDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from '../dto/index';
+import { CurrenciesDto, FooterSectionDto, FooterSettingsDto, MarketingDto, NavbarLinkDto, NavbarSettingsDto, PathaoCourierDto, PaymentDto, ProductsPageSettingsDto, SingleProductPageSettingsDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from '../dto/index';
 
 import { UserEntity } from 'src/modules/admin/user/entities/user.entity';
 
@@ -73,6 +73,9 @@ export class SiteSettingsEntity extends BaseEntity {
 
   @Column({ type: 'jsonb', name: 'products_page', nullable: true })
   productsPage?: ProductsPageSettingsDto;
+
+  @Column({ type: 'jsonb', name: 'single_product_page', nullable: true })
+  singleProductPage?: SingleProductPageSettingsDto;
 
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string;

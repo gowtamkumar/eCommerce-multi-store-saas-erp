@@ -9,6 +9,7 @@ import ProductDetails from '@/features/product/components/ProductDetails';
 import RelatedProducts from '@/features/product/components/RelatedProducts';
 import Reviews from '@/features/profile/components/Reviews';
 import { fetchAPI } from "@/services/api";
+import { getSiteSettings } from '@/services/getSettings';
 
 async function getProduct(slug: string) {
     try {
@@ -69,12 +70,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function Product({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const product = await getProduct(slug);
-
+    const [product, settings] = await Promise.all([
+        getProduct(slug),
+        getSiteSettings()
+    ]);
 
     if (!product) {
         notFound();
     }
+
+    const showReviews = settings?.singleProductPage?.showProductReviews !== false;
+    const showRelated = settings?.singleProductPage?.showRelatedProducts !== false;
+    const showFAQ = settings?.singleProductPage?.showProductFAQs !== false;
 
     return (
         <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
@@ -82,12 +89,12 @@ export default async function Product({ params }: { params: Promise<{ slug: stri
             <Navbar />
             <ProductDetails product={product} />
             {
-                product.reviews && product.reviews.length && product.isReview && (
+                showReviews && product.reviews && product.reviews.length > 0 && product.isReview && (
                     <Reviews reviews={product.reviews} />
                 )
             }
-            <RelatedProducts currentProductId={product.id} />
-            <FAQ faqs={product.faqs} />
+            {showRelated && <RelatedProducts currentProductId={product.id} />}
+            {showFAQ && <FAQ faqs={product.faqs} />}
             <Footer />
         </main>
     );

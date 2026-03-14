@@ -10,4 +10,4 @@ export * from './socialLink.dto';
 export * from './steadfastCourier.dto';
 export * from './trust-badge.dto';
 export * from './products-page.dto';
-
+export * from './single-product-page.dto';

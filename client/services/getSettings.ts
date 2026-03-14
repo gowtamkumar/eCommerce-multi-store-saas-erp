@@ -73,6 +73,18 @@ export const DEFAULT_SETTINGS = {
     showCategories: true,
     showBrands: true,
     showPriceFilter: true,
+  },
+  singleProductPage: {
+    showBreadcrumb: true,
+    showRating: true,
+    showStock: true,
+    showFeatures: true,
+    showShare: true,
+    showPromotions: true,
+    showStickyCart: true,
+    showRelatedProducts: true,
+    showProductReviews: true,
+    showProductFAQs: true,
   }
 };
 
@@ -114,6 +126,7 @@ export async function getSiteSettings() {
         navbar: { ...DEFAULT_SETTINGS.navbar, ...settings?.navbar },
         footer: { ...DEFAULT_SETTINGS.footer, ...settings?.footer },
         productsPage: { ...DEFAULT_SETTINGS.productsPage, ...settings?.productsPage },
+        singleProductPage: { ...DEFAULT_SETTINGS.singleProductPage, ...settings?.singleProductPage },
       };
     }
 
