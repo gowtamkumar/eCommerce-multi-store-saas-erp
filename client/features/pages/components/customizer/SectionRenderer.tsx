@@ -368,7 +368,7 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
           onSelect(section.id);
         }
       }}
-      className={`responsive-section relative group transition-all duration-200 ${visibilityClasses} 
+      className={`responsive-section relative transition-all duration-200 ${visibilityClasses} 
         ${(isStructural && isEditorMode) ? 'min-h-[20px]' : ''}
         ${isEditorMode ? 'cursor-pointer' : ''}
         ${(isSelected && isEditorMode) ? 'outline outline-2 outline-brand-500 outline-offset-[-2px] z-[5]' : (isEditorMode ? 'hover:outline hover:outline-2 hover:outline-brand-500/30 hover:outline-offset-[-2px]' : '')}
