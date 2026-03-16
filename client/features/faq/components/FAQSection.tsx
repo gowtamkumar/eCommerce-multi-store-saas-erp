@@ -2,7 +2,7 @@
 
 import { fetchAPI } from "@/services/api";
 import { FAQItem } from "@/types/customizer";
-import { HelpCircle, Sparkles, Plus, Minus } from "lucide-react";
+import { HelpCircle, Sparkles, Plus, Minus, ArrowRight } from "lucide-react";
 import SectionHeader from "@/features/pages/components/customizer/SectionHeader";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -63,8 +63,8 @@ export default function FAQSection({
     };
 
     const containerStyle: React.CSSProperties = {
-        paddingTop: resolvePx(styles?.paddingTop),
-        paddingBottom: resolvePx(styles?.paddingBottom),
+        paddingTop: resolvePx(styles?.paddingTop) || '80px',
+        paddingBottom: resolvePx(styles?.paddingBottom) || '80px',
         paddingLeft: resolvePx(styles?.paddingLeft),
         paddingRight: resolvePx(styles?.paddingRight),
         marginTop: resolvePx(styles?.marginTop),
@@ -73,76 +73,95 @@ export default function FAQSection({
     };
 
     const itemStyle = (isActive: boolean): React.CSSProperties => ({
-        backgroundColor: styles?.cardBackgroundColor || (isActive && layout === 'accordion' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)'),
+        backgroundColor: styles?.cardBackgroundColor || (isActive && layout === 'accordion' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)'),
         borderColor: styles?.borderColor || 'rgba(255,255,255,0.1)',
-        borderRadius: resolvePx(styles?.cardRadius) || '2rem',
+        borderRadius: resolvePx(styles?.cardRadius) || '1.5rem',
         borderWidth: styles?.borderWidth ? resolvePx(styles.borderWidth) : '1px',
     });
 
     const questionStyle: React.CSSProperties = {
-        color: styles?.questionColor || styles?.headlineColor || '#ffffff',
-        fontSize: resolvePx(styles?.fontSize) || (layout === 'accordion' ? 'clamp(1rem, 2vw, 1.25rem)' : 'clamp(1.1rem, 2.5vw, 1.4rem)'),
-        fontWeight: styles?.fontWeight || 800,
+        color: styles?.questionColor || styles?.headlineColor || 'inherit',
+        fontSize: resolvePx(styles?.fontSize) || (layout === 'accordion' ? 'clamp(1.1rem, 2vw, 1.25rem)' : 'clamp(1.2rem, 2.5vw, 1.5rem)'),
+        fontWeight: styles?.fontWeight || 700,
     };
 
     const answerStyle: React.CSSProperties = {
-        color: styles?.answerColor || styles?.color || 'rgba(255,255,255,0.65)',
+        color: styles?.answerColor || styles?.color || 'rgba(255,255,255,0.7)',
+        fontSize: '1.05rem',
+        lineHeight: '1.7',
     };
 
     const iconStyle = (isActive: boolean): React.CSSProperties => ({
-        backgroundColor: styles?.iconBgColor || (isActive && layout === 'accordion' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)'),
-        color: styles?.iconColor || 'inherit',
+        backgroundColor: styles?.iconBgColor || (isActive ? 'var(--brand-600, #4f46e5)' : 'rgba(255,255,255,0.05)'),
+        color: styles?.iconColor || (isActive ? '#ffffff' : 'inherit'),
     });
 
     /* ── Grid Layout Classes ─────────────────────────────────────── */
     const getGridCols = () => {
-        if (layout === 'accordion') return 'grid-cols-1 max-w-4xl mx-auto';
+        if (layout === 'accordion') return 'flex flex-col max-w-3xl mx-auto gap-4';
         
         const desktop = gridColumns?.toString() || '2';
         const mobile = mobileColumns?.toString() || '1';
         const mobileClass = mobile === '2' ? 'grid-cols-2' : 'grid-cols-1';
         const desktopClass = desktop === '3' ? 'md:grid-cols-3' : desktop === '1' ? 'md:grid-cols-1' : 'md:grid-cols-2';
 
-        return `${mobileClass} ${desktopClass} max-w-7xl mx-auto`;
+        return `grid ${mobileClass} ${desktopClass} max-w-7xl mx-auto gap-6 lg:gap-8`;
     };
 
     return (
-        <section className="w-full relative overflow-hidden" style={containerStyle}>
-            {/* Background Decorative Blobs */}
-            <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-brand-500/10 blur-[120px] rounded-full pointer-events-none" />
-            <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
+        <section className="w-full relative overflow-hidden group/faq" style={containerStyle}>
+            {/* Background Decorative Elements */}
+            <div className="absolute top-1/4 -right-24 w-96 h-96 bg-brand-500/10 blur-[120px] rounded-full pointer-events-none animate-pulse" />
+            <div className="absolute bottom-1/4 -left-24 w-96 h-96 bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none animate-pulse" style={{ animationDelay: '2s' }} />
 
-            <div className="px-4 relative z-10 w-full">
-                <div className={layout === 'accordion' ? 'max-w-4xl mx-auto' : 'max-w-7xl mx-auto'}>
-                    <SectionHeader title={headline || 'Frequently Asked Questions'} description={subline} styles={styles} />
+            <div className="px-6 relative z-10 w-full">
+                <div className="mb-12 md:mb-16">
+                    <SectionHeader 
+                        title={headline || 'Common Questions'} 
+                        description={subline || 'Everything you need to know about our services'} 
+                        styles={styles} 
+                    />
                 </div>
 
-                <div className={`grid gap-6 lg:gap-8 transition-all duration-700 ${getGridCols()}`}>
+                <div className={`transition-all duration-700 ${getGridCols()}`}>
                     {loading ? (
-                        <div className="col-span-full py-24 text-center">
-                            <div className="animate-spin w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full mx-auto mb-6" />
-                            <p className="text-slate-400 font-medium">Fetching help articles...</p>
+                        <div className="col-span-full py-32 text-center">
+                            <motion.div 
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                className="w-14 h-14 border-4 border-brand-500 border-t-transparent rounded-full mx-auto mb-8 shadow-[0_0_20px_rgba(79,70,229,0.3)]" 
+                            />
+                            <p className="text-slate-400 font-bold tracking-tight text-lg">Loading knowledge base...</p>
                         </div>
                     ) : (faqs || []).length > 0 ? (
                         faqs.map((faq: FAQItem, index: number) => {
                             const isActive = layout === 'accordion' ? activeIndex === index : true;
+                            
                             return (
-                                <div
+                                <motion.div
                                     key={faq.id || index}
-                                    className={`group/card relative flex flex-col transition-all duration-500 border ${layout === 'accordion' ? 'cursor-pointer' : 'hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-1'}`}
+                                    layout={layout === 'accordion'}
+                                    initial={{ opacity: 0, y: 30 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: index * 0.05, duration: 0.5 }}
+                                    className={`group/card relative flex flex-col transition-all duration-500 border backdrop-blur-xl
+                                        ${layout === 'accordion' ? 'cursor-pointer hover:bg-white/[0.06] dark:hover:bg-white/[0.08]' : 'hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.4)] hover:-translate-y-2'}
+                                        ${isActive && layout === 'accordion' ? 'ring-2 ring-brand-500/30' : ''}
+                                    `}
                                     style={itemStyle(isActive)}
                                     onClick={layout === 'accordion' ? () => toggleAccordion(index) : undefined}
                                 >
-                                    {/* Grid layout decorations */}
+                                    {/* Grid layout sparkle */}
                                     {layout === 'grid' && (
                                         <div className="absolute top-6 right-6 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500">
-                                            <Sparkles className="w-5 h-5 text-brand-400/50" />
+                                            <Sparkles className="w-6 h-6 text-brand-400/40" />
                                         </div>
                                     )}
 
-                                    <div className={`flex items-start gap-5 ${layout === 'accordion' ? 'p-6 md:p-8' : 'p-8 md:p-10 pb-6 md:pb-6'}`}>
+                                    <div className={`flex items-center gap-6 ${layout === 'accordion' ? 'p-6 md:p-7' : 'p-8 md:p-10 pb-6'}`}>
                                         <div 
-                                            className="shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center border border-white/10 shadow-lg backdrop-blur-md transition-all duration-500 group-hover/card:scale-110"
+                                            className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center border border-white/10 shadow-xl transition-all duration-500 group-hover/card:scale-110 group-hover/card:rotate-3"
                                             style={iconStyle(isActive)}
                                         >
                                             {layout === 'accordion' ? (
@@ -153,9 +172,8 @@ export default function FAQSection({
                                                             initial={{ rotate: -90, opacity: 0 }}
                                                             animate={{ rotate: 0, opacity: 1 }}
                                                             exit={{ rotate: 90, opacity: 0 }}
-                                                            transition={{ duration: 0.2 }}
                                                         >
-                                                            <Minus className="w-6 h-6" />
+                                                            <Minus className="w-6 h-6 stroke-[2.5px]" />
                                                         </motion.div>
                                                     ) : (
                                                         <motion.div
@@ -163,43 +181,48 @@ export default function FAQSection({
                                                             initial={{ rotate: 90, opacity: 0 }}
                                                             animate={{ rotate: 0, opacity: 1 }}
                                                             exit={{ rotate: -90, opacity: 0 }}
-                                                            transition={{ duration: 0.2 }}
                                                         >
-                                                            <Plus className="w-6 h-6" />
+                                                            <Plus className="w-6 h-6 stroke-[2.5px]" />
                                                         </motion.div>
                                                     )}
                                                 </AnimatePresence>
                                             ) : (
-                                                <HelpCircle className="w-6 h-6 opacity-80" />
+                                                <HelpCircle className="w-6 h-6" />
                                             )}
                                         </div>
-                                        <h3 className="leading-tight tracking-tight mt-1 flex-1" style={questionStyle}>
+                                        <h3 className="leading-snug tracking-tight flex-1" style={questionStyle}>
                                             {faq.question}
                                         </h3>
+                                        
+                                        {layout === 'grid' && (
+                                            <div className="shrink-0 opacity-0 group-hover/card:opacity-100 group-hover/card:translate-x-1 transition-all">
+                                                <ArrowRight className="w-5 h-5 text-brand-500" />
+                                            </div>
+                                        )}
                                     </div>
 
                                     {layout === 'grid' && (
-                                        <div className="px-8 md:p-10 pt-0">
-                                            <div className="h-px w-full bg-gradient-to-r from-white/10 via-white/5 to-transparent mb-6" />
-                                            <p className="text-base md:text-lg leading-relaxed font-medium" style={answerStyle}>
+                                        <div className="px-8 md:p-10 pt-0 pb-10">
+                                            <div className="w-12 h-1 bg-brand-500/30 rounded-full mb-8" />
+                                            <p style={answerStyle}>
                                                 {faq.answer}
                                             </p>
                                         </div>
                                     )}
 
                                     {layout === 'accordion' && (
-                                        <AnimatePresence>
+                                        <AnimatePresence initial={false}>
                                             {isActive && (
                                                 <motion.div
                                                     initial={{ height: 0, opacity: 0 }}
                                                     animate={{ height: "auto", opacity: 1 }}
                                                     exit={{ height: 0, opacity: 0 }}
-                                                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                                                    transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
                                                     className="overflow-hidden"
                                                 >
-                                                    <div className="px-6 pb-6 md:px-8 md:pb-8 pt-0 ml-16 md:ml-16">
-                                                        <div className="h-px w-full bg-white/5 mb-6" />
-                                                        <p className="text-base md:text-lg leading-relaxed font-medium" style={answerStyle}>
+                                                    <div className="px-6 pb-8 md:px-8 md:pb-10 pt-0 ml-16 md:ml-18">
+                                                        <div className="w-full h-px bg-white/10 mb-8" />
+                                                        <p style={answerStyle}>
                                                             {faq.answer}
                                                         </p>
                                                     </div>
@@ -208,24 +231,36 @@ export default function FAQSection({
                                         </AnimatePresence>
                                     )}
 
-                                    {/* Bottom highlight ring (subtle) */}
-                                    {layout === 'grid' && (
-                                        <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-brand-500/20 to-transparent scale-x-0 group-hover/card:scale-x-100 transition-transform duration-700 rounded-full" />
-                                    )}
-                                </div>
+                                    {/* Glass reflection gradient */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none opacity-50" />
+                                </motion.div>
                             );
                         })
                     ) : (
-                        <div className="col-span-full py-24 text-center border-4 border-dashed border-white/5 rounded-[3rem] backdrop-blur-sm">
-                            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <HelpCircle className="w-10 h-10 text-slate-500" />
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="col-span-full py-24 text-center border-2 border-dashed border-white/10 rounded-[3rem] backdrop-blur-xl bg-white/[0.02]"
+                        >
+                            <div className="w-24 h-24 bg-gradient-to-br from-brand-500/20 to-indigo-500/20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+                                <HelpCircle className="w-12 h-12 text-brand-400" />
                             </div>
-                            <h4 className="text-xl font-bold text-slate-300 mb-2">Knowledge Base Empty</h4>
-                            <p className="text-slate-500">Manage your FAQ content in the section settings panel</p>
-                        </div>
+                            <h4 className="text-2xl font-black text-white mb-3">No Help Articles Found</h4>
+                            <p className="text-slate-400 max-w-sm mx-auto font-medium">
+                                Configure your FAQ selection in the sidebar panel to display content here.
+                            </p>
+                        </motion.div>
                     )}
                 </div>
             </div>
+            
+            <style jsx>{`
+                .md\\:ml-18 {
+                    @media (min-width: 768px) {
+                        margin-left: 4.5rem;
+                    }
+                }
+            `}</style>
         </section>
     );
 }
