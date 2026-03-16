@@ -4,11 +4,12 @@ import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
 import {
     Package, Search, AlertTriangle, XCircle, CheckCircle,
-    TrendingDown, BarChart3, DollarSign, ChevronDown, ChevronRight
+    TrendingDown, BarChart3, DollarSign, ChevronDown, ChevronRight, Settings2
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import StockAdjustmentModal from './StockAdjustmentModal';
 
 interface VariantStock {
     id: string;
@@ -43,6 +44,8 @@ export default function InventoryDashboard() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filter, setFilter] = useState<FilterType>('all');
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+    const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
+    const [selectedAdjustmentProduct, setSelectedAdjustmentProduct] = useState<any>(null);
     const { formatPrice } = useSettings();
 
     useEffect(() => {
@@ -193,21 +196,21 @@ export default function InventoryDashboard() {
                                 <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Supplier</th>
                                 <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Stock</th>
                                 <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Stock Value</th>
-                                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Status</th>
+                                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-500 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {loading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i}>
-                                        <td colSpan={6} className="px-6 py-4">
+                                        <td colSpan={7} className="px-6 py-4">
                                             <div className="h-10 bg-slate-100 dark:bg-slate-700/50 animate-pulse rounded-xl" />
                                         </td>
                                     </tr>
                                 ))
                             ) : filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="py-24 text-center space-y-4">
+                                    <td colSpan={7} className="py-24 text-center space-y-4">
                                         <BarChart3 className="w-12 h-12 text-slate-200 mx-auto" strokeWidth={1} />
                                         <p className="text-sm text-slate-400 font-bold">No products match your filter</p>
                                     </td>
@@ -282,6 +285,21 @@ export default function InventoryDashboard() {
                                                         {s.label}
                                                     </span>
                                                 </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    {!p.hasVariants && (
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedAdjustmentProduct(p);
+                                                                setIsAdjustmentModalOpen(true);
+                                                            }}
+                                                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-brand-500 transition-colors"
+                                                            title="Adjust Stock"
+                                                        >
+                                                            <Settings2 className="w-5 h-5" />
+                                                        </button>
+                                                    )}
+                                                </td>
                                             </tr>
                                             {/* Variant rows */}
                                             {p.hasVariants && isExpanded && p.variants.map(v => (
@@ -322,6 +340,19 @@ export default function InventoryDashboard() {
                                                             {v.stock === 0 ? 'Out of stock' : v.stock <= 5 ? 'Low stock' : 'Available'}
                                                         </span>
                                                     </td>
+                                                    <td className="px-6 py-3 text-right">
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedAdjustmentProduct(p);
+                                                                setIsAdjustmentModalOpen(true);
+                                                            }}
+                                                            className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-brand-500 transition-colors"
+                                                            title="Adjust Variant Stock"
+                                                        >
+                                                            <Settings2 className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </>
@@ -331,6 +362,16 @@ export default function InventoryDashboard() {
                         </tbody>
                     </table>
                 </div>
+
+                <StockAdjustmentModal 
+                    isOpen={isAdjustmentModalOpen}
+                    initialProduct={selectedAdjustmentProduct}
+                    onClose={() => {
+                        setIsAdjustmentModalOpen(false);
+                        setSelectedAdjustmentProduct(null);
+                    }}
+                    onSuccess={fetchStock}
+                />
 
                 {/* Footer */}
                 {!loading && filtered.length > 0 && (

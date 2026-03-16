@@ -5,11 +5,13 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { Package, Search, ArrowUpCircle, ArrowDownCircle, History, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import StockAdjustmentModal from './StockAdjustmentModal';
 
 export default function InventoryList() {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
     const { formatPrice } = useSettings();
 
     useEffect(() => {
@@ -44,13 +46,19 @@ export default function InventoryList() {
                     <p className="text-slate-500 dark:text-slate-400 mt-1">Track stock movements across all products</p>
                 </div>
                 <button
-                    onClick={() => toast.success('Add transaction feature coming soon!')}
+                    onClick={() => setIsAdjustmentModalOpen(true)}
                     className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium flex items-center gap-2 transition-colors"
                 >
                     <Plus className="w-5 h-5" />
                     Log Transaction
                 </button>
             </div>
+
+            <StockAdjustmentModal 
+                isOpen={isAdjustmentModalOpen}
+                onClose={() => setIsAdjustmentModalOpen(false)}
+                onSuccess={fetchTransactions}
+            />
 
             {/* Search Bar */}
             <div className="relative">
