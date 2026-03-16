@@ -197,6 +197,8 @@ function SettingsContent() {
             Object.values(TabTypeEnum).includes(tab as TabTypeEnum)
         ) {
             setActiveTab(tab);
+        } else {
+            setActiveTab("general");
         }
     }, [searchParams]);
 

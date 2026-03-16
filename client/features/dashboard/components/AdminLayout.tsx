@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Download, FileText, Globe, HelpCircle, History as HistoryIcon, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, Receipt, RotateCcw, Settings, Share2, ShoppingBag, ShoppingCart, Star, Tag, TrendingUp, Truck, User, Users, X, Megaphone, Wallet } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function AdminLayout({
@@ -17,6 +17,7 @@ export default function AdminLayout({
     const { settings } = useSettings();
     const pathname = usePathname();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(pathname?.startsWith('/admin/settings'));
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -187,7 +188,8 @@ export default function AdminLayout({
                                     className="overflow-hidden pl-4 space-y-1"
                                 >
                                     {settingsItems.map((item, index) => {
-                                        const isActive = pathname === '/admin/settings';
+                                        const currentTab = searchParams.get('tab') || 'general';
+                                        const isActive = pathname === '/admin/settings' && currentTab === item.tab;
                                         return (
                                             <Link
                                                 key={index}
