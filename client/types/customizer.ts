@@ -24,7 +24,8 @@ export type SectionType =
   | 'heading'
   | 'paragraph'
   | 'divider'
-  | 'spacer';
+  | 'spacer'
+  | 'checkout';
 
 export interface SectionStyles {
   paddingTop: number | string;
@@ -252,6 +253,13 @@ export interface ContactSectionSettings {
   address?: string;
 }
 
+export interface CheckoutSettings {
+  productId?: string;
+  title?: string;
+  buttonText?: string;
+  showProductSummary?: boolean;
+}
+
 export type SectionSettings =
   | BannerSettings
   | ProductSliderSettings
@@ -267,11 +275,9 @@ export type SectionSettings =
   | StatsCounterSettings
   | VideoBlockSettings
   | ContactSectionSettings
-  | NewArrivalsSettings
-  | HeadingSettings
-  | ParagraphSettings
   | DividerSettings
   | SpacerSettings
+  | CheckoutSettings
   | Record<string, any>;
 
 export interface CustomizerSection {

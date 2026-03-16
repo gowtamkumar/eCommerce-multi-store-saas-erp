@@ -19,6 +19,7 @@ import Spacer from "@/features/pages/components/customizer/Spacer";
 import StatsCounter from "@/features/pages/components/customizer/StatsCounter";
 import TextBlock from "@/features/pages/components/customizer/TextBlock";
 import VideoBlock from "@/features/pages/components/customizer/VideoBlock";
+import LandingCheckout from "@/features/pages/components/customizer/LandingCheckout";
 import { CustomizerSection } from "@/types/customizer";
 
 
@@ -300,6 +301,9 @@ const SectionRenderer: React.FC<SectionRendererProps> = ({ section, onSelect, se
 
       case "contact":
         return <ContactSection settings={settings} styles={styles} />;
+
+      case "checkout":
+        return <LandingCheckout settings={settings} styles={styles} />;
 
       case "section":
         return (

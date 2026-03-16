@@ -121,52 +121,114 @@ export default function DashboardProducts() {
                                     {
                                         id: `slide-${Date.now()}`,
                                         headline: product.name,
-                                        subline: 'Experience the best quality',
-                                        buttonText: 'Shop Now',
-                                        buttonLink: `/products/${product.slug}`,
+                                        subline: 'Experience premium quality redefined.',
+                                        buttonText: 'Order Now',
+                                        buttonLink: '#landing-checkout',
                                         image: product.images?.[0] || '',
-                                        overlayOpacity: 40
+                                        overlayOpacity: 50
                                     }
                                 ]
                             },
                             styles: {
-                                paddingTop: 60,
-                                paddingBottom: 60,
+                                paddingTop: 0,
+                                paddingBottom: 0,
                                 textAlign: 'center',
                                 textColor: '#FFFFFF',
                                 headlineColor: '#FFFFFF',
                                 sublineColor: '#ECECEC',
-                                buttonColor: '#000000',
-                                buttonTextColor: '#FFFFFF'
+                                buttonColor: '#FFFFFF',
+                                buttonTextColor: '#000000'
                             }
                         },
                         {
-                            id: `section-${Date.now() + 1}`,
-                            type: 'text-block',
-                            settings: {
-                                headline: 'About this Product',
-                                html: `<p>${product.description || 'Product detailed description goes here.'}</p>`
-                            },
+                            id: `row-${Date.now()}`,
+                            type: 'row',
+                            settings: {},
                             styles: {
-                                paddingTop: 40,
-                                paddingBottom: 40,
-                                textAlign: 'left',
-                                textColor: '#333333'
-                            }
+                                paddingTop: 100,
+                                paddingBottom: 100,
+                                maxWidth: 1200,
+                                marginLeft: 'auto',
+                                marginRight: 'auto',
+                                gap: 60,
+                                alignItems: 'center'
+                            },
+                            children: [
+                                {
+                                    id: `col-img-${Date.now()}`,
+                                    type: 'column',
+                                    settings: {},
+                                    styles: { flex: 1.2 },
+                                    children: [
+                                        {
+                                            id: `img-${Date.now()}`,
+                                            type: 'image-block',
+                                            settings: { image: product.images?.[0] || '' },
+                                            styles: { 
+                                                imageRadius: '40px', 
+                                                imageShadow: '0 30px 60px rgba(0,0,0,0.12)',
+                                                borderWidth: '1px',
+                                                borderColor: '#F1F5F9'
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    id: `col-txt-${Date.now()}`,
+                                    type: 'column',
+                                    settings: {},
+                                    styles: { flex: 1 },
+                                    children: [
+                                        {
+                                            id: `badge-${Date.now()}`,
+                                            type: 'text-block',
+                                            settings: { html: '<span style="background: #E0F2FE; color: #0369A1; padding: 6px 16px; rounded: 100px; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 999px;">Premium Collection</span>' },
+                                            styles: { marginBottom: 24 }
+                                        },
+                                        {
+                                            id: `head-${Date.now()}`,
+                                            type: 'heading',
+                                            settings: { text: product.name, level: 'h1' },
+                                            styles: { marginBottom: 20, textAlign: 'left', fontWeight: '900', fontSize: '48px', lineHeight: '1.1' }
+                                        },
+                                        {
+                                            id: `txt-${Date.now()}`,
+                                            type: 'text-block',
+                                            settings: { html: `<div style="font-size: 18px; line-height: 1.8; color: #64748B; margin-bottom: 32px;">${product.description || 'Elevate your lifestyle with our premium product, designed for those who value quality and performance above all else.'}</div>` },
+                                            styles: { textAlign: 'left' }
+                                        },
+                                        {
+                                            id: `features-${Date.now()}`,
+                                            type: 'text-block',
+                                            settings: { 
+                                                html: `
+                                                    <ul style="list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                                        <li style="display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1E293B;"><span style="color: #0EA5E9;">✓</span> Premium Quality</li>
+                                                        <li style="display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1E293B;"><span style="color: #0EA5E9;">✓</span> Fast Shipping</li>
+                                                        <li style="display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1E293B;"><span style="color: #0EA5E9;">✓</span> 24/7 Support</li>
+                                                        <li style="display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1E293B;"><span style="color: #0EA5E9;">✓</span> Secure Payment</li>
+                                                    </ul>
+                                                ` 
+                                            },
+                                            styles: { textAlign: 'left', paddingTop: 24, borderTop: '1px solid #F1F5F9' }
+                                        }
+                                    ]
+                                }
+                            ]
                         },
                         {
-                            id: `section-${Date.now() + 2}`,
-                            type: 'button',
+                            id: `section-checkout`,
+                            type: 'checkout',
                             settings: {
-                                text: 'Buy Now',
-                                link: `/products/${product.slug}`,
-                                variant: 'primary',
-                                size: 'lg'
+                                productId: product.id,
+                                title: 'Get Yours Today',
+                                buttonText: 'Confirm Your Order',
+                                showProductSummary: true
                             },
                             styles: {
-                                paddingTop: 20,
-                                paddingBottom: 40,
-                                textAlign: 'center'
+                                paddingTop: 100,
+                                paddingBottom: 150,
+                                backgroundColor: '#F8FAFC'
                             }
                         }
                     ]
