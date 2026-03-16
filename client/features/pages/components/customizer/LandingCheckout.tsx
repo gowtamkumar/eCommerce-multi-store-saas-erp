@@ -24,7 +24,7 @@ export default function LandingCheckout({ settings, styles }: LandingCheckoutPro
   const { selectedCurrency, formatPrice } = useSettings();
   const { data: session } = useSession();
   const { downloadInvoice } = useDownloadInvoice();
-  
+
   const [loading, setLoading] = useState(false);
   const [productLoading, setProductLoading] = useState(false);
   const [localProduct, setLocalProduct] = useState<any>(null);
@@ -77,10 +77,10 @@ export default function LandingCheckout({ settings, styles }: LandingCheckoutPro
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === "phone") {
-        const cleaned = value.replace(/\D/g, "").slice(0, 11);
-        setFormData((prev) => ({ ...prev, [name]: cleaned }));
-        if (errors.phone) setErrors((prev) => ({ ...prev, phone: "" }));
-        return;
+      const cleaned = value.replace(/\D/g, "").slice(0, 11);
+      setFormData((prev) => ({ ...prev, [name]: cleaned }));
+      if (errors.phone) setErrors((prev) => ({ ...prev, phone: "" }));
+      return;
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -219,9 +219,9 @@ export default function LandingCheckout({ settings, styles }: LandingCheckoutPro
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4" style={{ paddingTop: styles?.paddingTop, paddingBottom: styles?.paddingBottom }}>
-      <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 overflow-hidden">
-        <div className="p-8 md:p-12">
+    <div className="max-w-5xl mx-auto px-4" style={{ paddingTop: styles?.paddingTop, paddingBottom: styles?.paddingBottom }}>
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800 overflow-hidden">
+        <div className="p-10 md:p-16">
           <div className="flex flex-col md:flex-row gap-12">
             {/* Form Section */}
             <div className="flex-1">
@@ -310,50 +310,50 @@ export default function LandingCheckout({ settings, styles }: LandingCheckoutPro
                 <div className="space-y-4 mb-8">
                   {productLoading ? (
                     <div className="flex justify-center py-8">
-                       <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                      <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
                     </div>
                   ) : localProduct ? (
-                      <div className="flex gap-4">
-                        <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex-shrink-0 p-1 overflow-hidden">
-                          {localProduct.images?.[0] ? (
-                            <img 
-                              src={localProduct.images[0]} 
-                              alt={localProduct.name} 
-                              className="w-full h-full object-cover rounded-xl"
-                              onError={(e) => {
-                                (e.target as any).src = 'https://via.placeholder.com/150?text=No+Image';
-                              }}
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center rounded-xl">
-                              <span className="text-[10px] text-slate-400 font-bold uppercase">No Image</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{localProduct.name}</p>
-                          <div className="flex items-center gap-3 mt-2">
-                            <button
-                              type="button"
-                              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="text-sm font-bold w-4 text-center">{quantity}</span>
-                            <button
-                              type="button"
-                              onClick={() => setQuantity(quantity + 1)}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
+                    <div className="flex gap-4">
+                      <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex-shrink-0 p-1 overflow-hidden">
+                        {localProduct.images?.[0] ? (
+                          <img
+                            src={localProduct.images[0]}
+                            alt={localProduct.name}
+                            className="w-full h-full object-cover rounded-xl"
+                            onError={(e) => {
+                              (e.target as any).src = 'https://via.placeholder.com/150?text=No+Image';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center rounded-xl">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase">No Image</span>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <Price amount={(localProduct.price - (localProduct.discountAmount || 0)) * quantity} className="text-sm font-bold text-slate-900 dark:text-white" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{localProduct.name}</p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="text-sm font-bold w-4 text-center">{quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(quantity + 1)}
+                            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
+                      <div className="text-right">
+                        <Price amount={(localProduct.price - (localProduct.discountAmount || 0)) * quantity} className="text-sm font-bold text-slate-900 dark:text-white" />
+                      </div>
+                    </div>
                   ) : (
                     <div className="text-center py-4 text-slate-500 text-sm">
                       No product selected

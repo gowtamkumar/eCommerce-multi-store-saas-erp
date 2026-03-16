@@ -111,21 +111,20 @@ export default function DashboardProducts() {
                     title: `${product.name} Landing Page`,
                     slug: `landing-${product.slug}-${Date.now().toString().slice(-4)}`, // Ensure uniqueness
                     status: 'published',
-                    isHomePage: false,
                     sections: [
                         {
-                            id: `section-${Date.now()}`,
+                            id: `section-banner`,
                             type: 'banner',
                             settings: {
                                 slides: [
                                     {
-                                        id: `slide-${Date.now()}`,
+                                        id: `slide-1`,
                                         headline: product.name,
-                                        subline: 'Experience premium quality redefined.',
+                                        subline: 'Premium quality you can trust. Limited time offer.',
                                         buttonText: 'Order Now',
                                         buttonLink: '#landing-checkout',
                                         image: product.images?.[0] || '',
-                                        overlayOpacity: 50
+                                        overlayOpacity: 40
                                     }
                                 ]
                             },
@@ -137,99 +136,128 @@ export default function DashboardProducts() {
                                 headlineColor: '#FFFFFF',
                                 sublineColor: '#ECECEC',
                                 buttonColor: '#FFFFFF',
-                                buttonTextColor: '#000000'
+                                buttonTextColor: '#000000',
+                                height: 500
                             }
                         },
                         {
-                            id: `row-${Date.now()}`,
-                            type: 'row',
+                            id: `section-main-container`,
+                            type: 'section',
                             settings: {},
                             styles: {
-                                paddingTop: 100,
+                                paddingTop: 80,
                                 paddingBottom: 100,
-                                maxWidth: 1200,
-                                marginLeft: 'auto',
-                                marginRight: 'auto',
-                                gap: 60,
-                                alignItems: 'center'
+                                backgroundColor: '#F9FAFB' // Light grey background for the whole container area
                             },
                             children: [
                                 {
-                                    id: `col-img-${Date.now()}`,
-                                    type: 'column',
+                                    id: `row-inner`,
+                                    type: 'row',
                                     settings: {},
-                                    styles: { flex: 1.2 },
+                                    styles: {
+                                        maxWidth: 1100,
+                                        marginLeft: 'auto',
+                                        marginRight: 'auto',
+                                        gap: 40,
+                                        alignItems: 'stretch',
+                                        paddingLeft: 20,
+                                        paddingRight: 20
+                                    },
                                     children: [
                                         {
-                                            id: `img-${Date.now()}`,
-                                            type: 'image-block',
-                                            settings: { image: product.images?.[0] || '' },
+                                            id: `col-product-image`,
+                                            type: 'column',
+                                            settings: {},
                                             styles: { 
-                                                imageRadius: '40px', 
-                                                imageShadow: '0 30px 60px rgba(0,0,0,0.12)',
-                                                borderWidth: '1px',
-                                                borderColor: '#F1F5F9'
-                                            }
+                                                flex: 1,
+                                                backgroundColor: '#FFFFFF',
+                                                borderRadius: '32px',
+                                                padding: 40,
+                                                boxShadow: '0 10px 40px rgba(0,0,0,0.03)',
+                                                border: '1px solid #F1F5F9'
+                                            },
+                                            children: [
+                                                {
+                                                    id: `img-block`,
+                                                    type: 'image-block',
+                                                    settings: { image: product.images?.[0] || '' },
+                                                    styles: { 
+                                                        imageRadius: '24px', 
+                                                        imageShadow: '0 15px 35px rgba(0,0,0,0.08)'
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            id: `col-product-info`,
+                                            type: 'column',
+                                            settings: {},
+                                            styles: { 
+                                                flex: 1.2,
+                                                backgroundColor: '#FFFFFF',
+                                                borderRadius: '32px',
+                                                padding: 50,
+                                                boxShadow: '0 10px 40px rgba(0,0,0,0.03)',
+                                                border: '1px solid #F1F5F9',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'center'
+                                            },
+                                            children: [
+                                                {
+                                                    id: `badge-text`,
+                                                    type: 'text-block',
+                                                    settings: { html: '<span style="background: #EEF2FF; color: #4F46E5; padding: 8px 16px; border-radius: 999px; font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;">Special Offer</span>' },
+                                                    styles: { marginBottom: 24 }
+                                                },
+                                                {
+                                                    id: `product-heading`,
+                                                    type: 'heading',
+                                                    settings: { text: product.name, level: 'h1' },
+                                                    styles: { marginBottom: 20, textAlign: 'left', fontWeight: '900', fontSize: '46px', lineHeight: '1.2', color: '#111827' }
+                                                },
+                                                {
+                                                    id: `product-desc`,
+                                                    type: 'text-block',
+                                                    settings: { html: `<div style="font-size: 18px; line-height: 1.8; color: #4B5563; margin-bottom: 32px;">${product.description || 'Elevate your daily experience with our premium product, crafted with precision and care.'}</div>` },
+                                                    styles: { textAlign: 'left' }
+                                                },
+                                                {
+                                                    id: `product-features`,
+                                                    type: 'text-block',
+                                                    settings: { 
+                                                        html: `
+                                                            <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+                                                                <div style="display: flex; align-items: center; gap: 14px; font-weight: 600; color: #1F2937; font-size: 16px;"><div style="min-width: 26px; height: 26px; background: #10B981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</div> Authentic Quality Assured</div>
+                                                                <div style="display: flex; align-items: center; gap: 14px; font-weight: 600; color: #1F2937; font-size: 16px;"><div style="min-width: 26px; height: 26px; background: #10B981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</div> Fast Doorstep Delivery</div>
+                                                                <div style="display: flex; align-items: center; gap: 14px; font-weight: 600; color: #1F2937; font-size: 16px;"><div style="min-width: 26px; height: 26px; background: #10B981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</div> Cash on Delivery Available</div>
+                                                            </div>
+                                                        ` 
+                                                    },
+                                                    styles: { textAlign: 'left' }
+                                                }
+                                            ]
                                         }
                                     ]
                                 },
                                 {
-                                    id: `col-txt-${Date.now()}`,
-                                    type: 'column',
-                                    settings: {},
-                                    styles: { flex: 1 },
-                                    children: [
-                                        {
-                                            id: `badge-${Date.now()}`,
-                                            type: 'text-block',
-                                            settings: { html: '<span style="background: #E0F2FE; color: #0369A1; padding: 6px 16px; rounded: 100px; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 999px;">Premium Collection</span>' },
-                                            styles: { marginBottom: 24 }
-                                        },
-                                        {
-                                            id: `head-${Date.now()}`,
-                                            type: 'heading',
-                                            settings: { text: product.name, level: 'h1' },
-                                            styles: { marginBottom: 20, textAlign: 'left', fontWeight: '900', fontSize: '48px', lineHeight: '1.1' }
-                                        },
-                                        {
-                                            id: `txt-${Date.now()}`,
-                                            type: 'text-block',
-                                            settings: { html: `<div style="font-size: 18px; line-height: 1.8; color: #64748B; margin-bottom: 32px;">${product.description || 'Elevate your lifestyle with our premium product, designed for those who value quality and performance above all else.'}</div>` },
-                                            styles: { textAlign: 'left' }
-                                        },
-                                        {
-                                            id: `features-${Date.now()}`,
-                                            type: 'text-block',
-                                            settings: { 
-                                                html: `
-                                                    <ul style="list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                                                        <li style="display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1E293B;"><span style="color: #0EA5E9;">✓</span> Premium Quality</li>
-                                                        <li style="display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1E293B;"><span style="color: #0EA5E9;">✓</span> Fast Shipping</li>
-                                                        <li style="display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1E293B;"><span style="color: #0EA5E9;">✓</span> 24/7 Support</li>
-                                                        <li style="display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1E293B;"><span style="color: #0EA5E9;">✓</span> Secure Payment</li>
-                                                    </ul>
-                                                ` 
-                                            },
-                                            styles: { textAlign: 'left', paddingTop: 24, borderTop: '1px solid #F1F5F9' }
-                                        }
-                                    ]
+                                    id: `checkout-container`,
+                                    type: 'checkout',
+                                    settings: {
+                                        productId: product.id,
+                                        title: 'Complete Your Order',
+                                        buttonText: 'Order Now - Cash on Delivery',
+                                        showProductSummary: true
+                                    },
+                                    styles: {
+                                        paddingTop: 60,
+                                        paddingBottom: 0,
+                                        maxWidth: 950,
+                                        marginLeft: 'auto',
+                                        marginRight: 'auto'
+                                    }
                                 }
                             ]
-                        },
-                        {
-                            id: `section-checkout`,
-                            type: 'checkout',
-                            settings: {
-                                productId: product.id,
-                                title: 'Get Yours Today',
-                                buttonText: 'Confirm Your Order',
-                                showProductSummary: true
-                            },
-                            styles: {
-                                paddingTop: 100,
-                                paddingBottom: 150,
-                                backgroundColor: '#F8FAFC'
-                            }
                         }
                     ]
                 })
