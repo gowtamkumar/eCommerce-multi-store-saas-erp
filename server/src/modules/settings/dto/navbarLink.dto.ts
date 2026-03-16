@@ -73,6 +73,10 @@ export class NavbarSettingsDto {
     transparent?: boolean;
 
     @IsOptional()
+    @IsBoolean()
+    showCurrency?: boolean;
+
+    @IsOptional()
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => NavbarLinkDto)

@@ -39,6 +39,7 @@ interface SiteSettings {
     bottomShape?: 'none' | 'wave' | 'curve' | 'slant' | 'notch';
     backgroundPattern?: 'none' | 'dots' | 'mesh' | 'grid' | 'stripes';
     transparent?: boolean;
+    showCurrency?: boolean;
     links?: {
       label: string;
       href: string;

@@ -255,9 +255,11 @@ const Navbar = () => {
 
   const UserActions = () => (
     <div className="flex items-center gap-1 sm:gap-2">
-      <div className="hidden md:block">
-        <CurrencySwitcher />
-      </div>
+      {navbarSettings?.showCurrency !== false && (
+        <div className="hidden md:block">
+          <CurrencySwitcher />
+        </div>
+      )}
 
       <button
         onClick={openCart}
@@ -718,7 +720,7 @@ const Navbar = () => {
 
               <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 mt-auto">
                 <div className="flex justify-between items-center mb-6">
-                  <CurrencySwitcher />
+                  {navbarSettings?.showCurrency !== false && <CurrencySwitcher />}
                   <div className="flex items-center gap-3">
                     <button className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700">
                       <Facebook className="w-4 h-4 text-brand-600" />

@@ -155,6 +155,18 @@ export default function NavbarSetting({
                         className="w-5 h-5 text-brand-600 rounded-lg border-slate-300 focus:ring-brand-500"
                     />
                 </label>
+                <label className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer group">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Show Currency Switcher</span>
+                    <input
+                        type="checkbox"
+                        checked={formData.navbar?.showCurrency !== false}
+                        onChange={(e) => setFormData({
+                            ...formData,
+                            navbar: { ...(formData.navbar || {}), showCurrency: e.target.checked }
+                        })}
+                        className="w-5 h-5 text-brand-600 rounded-lg border-slate-300 focus:ring-brand-500"
+                    />
+                </label>
                 <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Container Width</span>
                     <select

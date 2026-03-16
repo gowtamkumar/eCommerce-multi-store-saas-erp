@@ -36,6 +36,7 @@ export const DEFAULT_SETTINGS = {
     bottomShape: "none",
     backgroundPattern: "none",
     transparent: false,
+    showCurrency: true,
     links: [],
   },
   footer: {

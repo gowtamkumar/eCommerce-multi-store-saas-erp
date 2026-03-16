@@ -111,6 +111,7 @@ function SettingsContent() {
             bottomShape: "none",
             backgroundPattern: "none",
             transparent: false,
+            showCurrency: true,
             links: [] as Array<{
                 label: string;
                 href: string;
@@ -271,7 +272,8 @@ function SettingsContent() {
                             bottomShape: "none",
                             backgroundPattern: "none",
                             transparent: false,
-                            links: []
+                            showCurrency: data.navbar?.showCurrency !== false,
+                            links: data.navbar?.links || []
                         },
                         footer: data.footer || {
                             template: 'classic',
