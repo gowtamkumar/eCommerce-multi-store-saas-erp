@@ -119,6 +119,18 @@ interface SiteSettings {
     showProductFAQs?: boolean;
     relatedProductsPerRow?: number;
   };
+  offersPage?: {
+    bannerShow?: boolean;
+    bannerHeadline?: string;
+    bannerSubheadline?: string;
+    showFilters?: boolean;
+    productsPerRow?: number;
+    bannerHeight?: number;
+    bannerFullWidth?: boolean;
+    bannerImage?: string;
+    bannerBackgroundColor?: string;
+    bannerTextColor?: string;
+  };
 }
 
 interface SettingsContextType {
@@ -164,6 +176,9 @@ export function SettingsProvider({
           marketing: { ...DEFAULT_SETTINGS.marketing, ...settings?.marketing },
           navbar: { ...DEFAULT_SETTINGS.navbar, ...settings?.navbar },
           footer: { ...DEFAULT_SETTINGS.footer, ...settings?.footer },
+          productsPage: { ...DEFAULT_SETTINGS.productsPage, ...settings?.productsPage },
+          singleProductPage: { ...DEFAULT_SETTINGS.singleProductPage, ...settings?.singleProductPage },
+          offersPage: { ...DEFAULT_SETTINGS.offersPage, ...settings?.offersPage },
         };
         setSettings(mergedSettings);
 

@@ -84,4 +84,5 @@ export const settingsItems = [
     { icon: Truck, label: 'Trust & Safety', tab: 'trust' },
     { icon: Layout, label: 'Products Archive', tab: 'productsPage' },
     { icon: Layout, label: 'Single Product Page', tab: 'singleProductPage' },
+    { icon: Tag, label: 'Offers Page', tab: 'offersPage' },
 ];

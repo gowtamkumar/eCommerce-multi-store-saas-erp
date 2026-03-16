@@ -12,7 +12,8 @@ export type TabType =
     | "courier"
     | "trust"
     | "productsPage"
-    | "singleProductPage";
+    | "singleProductPage"
+    | "offersPage";
 
 
 export enum TabTypeEnum {
@@ -29,4 +30,5 @@ export enum TabTypeEnum {
     TRUST = "trust",
     PRODUCTS_PAGE = "productsPage",
     SINGLE_PRODUCT_PAGE = "singleProductPage",
+    OFFERS_PAGE = "offersPage",
 }

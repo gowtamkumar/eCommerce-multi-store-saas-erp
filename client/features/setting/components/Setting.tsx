@@ -18,6 +18,7 @@ import SocialSetting from "@/features/setting/components/SocialSetting";
 import TrustDelivery from "@/features/setting/components/Trust&Delivery";
 import ProductsPageSetting from "./ProductsPageSetting";
 import SingleProductPageSetting from "./SingleProductPageSetting";
+import OffersPageSetting from "./OffersPageSetting";
 import { fetchAPI } from "@/services/api";
 
 export const dynamic = "force-dynamic";
@@ -177,6 +178,13 @@ function SettingsContent() {
             showProductFAQs: true,
             relatedProductsPerRow: 4,
         },
+        offersPage: {
+            bannerShow: true,
+            bannerHeadline: "",
+            bannerSubheadline: "",
+            showFilters: true,
+            productsPerRow: 5,
+        },
     });
 
     const searchParams = useSearchParams();
@@ -309,6 +317,13 @@ function SettingsContent() {
                             showProductReviews: true,
                             showProductFAQs: true,
                             relatedProductsPerRow: 4,
+                        },
+                        offersPage: data.offersPage || {
+                            bannerShow: true,
+                            bannerHeadline: "",
+                            bannerSubheadline: "",
+                            showFilters: true,
+                            productsPerRow: 5,
                         },
                     });
                 }
@@ -449,6 +464,9 @@ function SettingsContent() {
                                 )}
                                 {activeTab === "singleProductPage" && (
                                     <SingleProductPageSetting formData={formData} setFormData={setFormData} />
+                                )}
+                                {activeTab === "offersPage" && (
+                                    <OffersPageSetting formData={formData} setFormData={setFormData} />
                                 )}
                             </AnimatePresence>
                         </form>

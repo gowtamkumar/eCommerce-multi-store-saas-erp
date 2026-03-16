@@ -86,6 +86,18 @@ export const DEFAULT_SETTINGS = {
     showProductReviews: true,
     showProductFAQs: true,
     relatedProductsPerRow: 4,
+  },
+  offersPage: {
+    bannerShow: true,
+    bannerHeadline: "Special Deals & Offers",
+    bannerSubheadline: "Save big on our hottest promotions — grab these deals before they're gone!",
+    showFilters: true,
+    productsPerRow: 5,
+    bannerHeight: 400,
+    bannerFullWidth: false,
+    bannerImage: "",
+    bannerBackgroundColor: "",
+    bannerTextColor: "#ffffff",
   }
 };
 
@@ -128,6 +140,7 @@ export async function getSiteSettings() {
         footer: { ...DEFAULT_SETTINGS.footer, ...settings?.footer },
         productsPage: { ...DEFAULT_SETTINGS.productsPage, ...settings?.productsPage },
         singleProductPage: { ...DEFAULT_SETTINGS.singleProductPage, ...settings?.singleProductPage },
+        offersPage: { ...DEFAULT_SETTINGS.offersPage, ...settings?.offersPage },
       };
     }
 

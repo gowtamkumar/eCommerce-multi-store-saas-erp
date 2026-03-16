@@ -322,6 +322,15 @@ function PromotionSection({ group }: { group: OfferGroup }) {
 }
 
 export default function OffersPage({ offerGroups, promotions }: OffersPageProps) {
+    const { settings } = useSettings();
+    const offersSettings = settings?.offersPage || {
+        bannerShow: true,
+        bannerHeadline: "Special Deals & Offers",
+        bannerSubheadline: "Save big on our hottest promotions — grab these deals before they're gone!",
+        showFilters: true,
+        productsPerRow: 5
+    };
+
     const [activeTab, setActiveTab] = useState<string>('all');
 
     const filteredGroups = activeTab === 'all'
@@ -330,65 +339,98 @@ export default function OffersPage({ offerGroups, promotions }: OffersPageProps)
 
     const totalProducts = offerGroups.reduce((sum, g) => sum + g.products.length, 0);
 
+    const gridCols = {
+        2: 'grid-cols-2 lg:grid-cols-2',
+        3: 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3',
+        4: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+        5: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+        6: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6'
+    }[offersSettings.productsPerRow || 5] || 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
+
+    const bannerStyle = {
+        height: offersSettings.bannerShow ? `${offersSettings.bannerHeight || 400}px` : '0px',
+        backgroundColor: offersSettings.bannerBackgroundColor || undefined,
+        backgroundImage: offersSettings.bannerImage ? `url(${offersSettings.bannerImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        color: offersSettings.bannerTextColor || '#ffffff'
+    };
+
     return (
         <div className="pt-32 pb-24">
-            <div className="container mx-auto px-4">
+            <div className={`${offersSettings.bannerFullWidth ? 'w-full' : 'container mx-auto px-4'}`}>
                 {/* Hero Banner */}
-                <div className="relative overflow-hidden rounded-3xl mb-12 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 p-8 md:p-12 text-center">
-                    {/* Glowing background blobs */}
-                    <div className="absolute top-0 left-1/4 w-72 h-72 bg-violet-600/30 rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-rose-600/20 rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 bg-brand-500/20 rounded-full blur-3xl pointer-events-none" />
+                {offersSettings.bannerShow && (
+                    <div 
+                        style={bannerStyle}
+                        className={`relative overflow-hidden ${offersSettings.bannerFullWidth ? '' : 'rounded-3xl'} mb-12 flex flex-col items-center justify-center p-8 md:p-12 text-center ${!offersSettings.bannerBackgroundColor && !offersSettings.bannerImage ? 'bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900' : ''}`}
+                    >
+                        {/* Glowing background blobs - only show if no image */}
+                        {!offersSettings.bannerImage && (
+                            <>
+                                <div className="absolute top-0 left-1/4 w-72 h-72 bg-violet-600/30 rounded-full blur-3xl pointer-events-none" />
+                                <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-rose-600/20 rounded-full blur-3xl pointer-events-none" />
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 bg-brand-500/20 rounded-full blur-3xl pointer-events-none" />
+                            </>
+                        )}
 
-                    <div className="relative z-10">
-                        <motion.div
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 text-white/80 text-sm font-semibold mb-4"
-                        >
-                            <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
-                            Limited Time Offers
-                        </motion.div>
-                        <motion.h1
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-4xl md:text-6xl font-bold text-white mb-4"
-                        >
-                            🔥 Special{' '}
-                            <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 bg-clip-text text-transparent">
-                                Deals & Offers
-                            </span>
-                        </motion.h1>
-                        <motion.p
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="text-slate-400 text-lg max-w-xl mx-auto mb-6"
-                        >
-                            Save big on our hottest promotions — grab these deals before they're gone!
-                        </motion.p>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                            className="flex items-center justify-center gap-6 text-sm text-white/60"
-                        >
-                            <span className="flex items-center gap-1.5">
-                                <BadgePercent className="w-4 h-4 text-violet-400" />
-                                {promotions.length} Active Promotions
-                            </span>
-                            <span className="w-px h-4 bg-white/20" />
-                            <span className="flex items-center gap-1.5">
-                                <Package className="w-4 h-4 text-amber-400" />
-                                {totalProducts} Offer Products
-                            </span>
-                        </motion.div>
+                        {/* Overlay for better text readability if there's an image */}
+                        {offersSettings.bannerImage && (
+                            <div className="absolute inset-0 bg-black/40 z-0" />
+                        )}
+
+                        <div className="relative z-10">
+                            <motion.div
+                                initial={{ opacity: 0, y: -20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 text-current opacity-80 text-sm font-semibold mb-4"
+                            >
+                                <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+                                Limited Time Offers
+                            </motion.div>
+                            <motion.h1
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                className="text-4xl md:text-6xl font-bold mb-4"
+                                style={{ color: 'inherit' }}
+                            >
+                                {(offersSettings.bannerHeadline || '').includes('🔥') ? (offersSettings.bannerHeadline || '').split(' ')[0] : '🔥'} {(offersSettings.bannerHeadline || '').replace(/🔥/g, '')}
+                            </motion.h1>
+                            <motion.p
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                                className="text-lg max-w-xl mx-auto mb-6 opacity-80"
+                                style={{ color: 'inherit' }}
+                            >
+                                {offersSettings.bannerSubheadline || ''}
+                            </motion.p>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.3 }}
+                                className="flex items-center justify-center gap-6 text-sm opacity-60"
+                                style={{ color: 'inherit' }}
+                            >
+                                <span className="flex items-center gap-1.5">
+                                    <BadgePercent className="w-4 h-4" />
+                                    {promotions.length} Active Promotions
+                                </span>
+                                <span className="w-px h-4 bg-current opacity-20" />
+                                <span className="flex items-center gap-1.5">
+                                    <Package className="w-4 h-4" />
+                                    {totalProducts} Offer Products
+                                </span>
+                            </motion.div>
+                        </div>
                     </div>
-                </div>
+                )}
+            </div>
 
+            <div className="container mx-auto px-4">
                 {/* Promotion Filter Tabs */}
-                {offerGroups.length > 1 && (
+                {offersSettings.showFilters && offerGroups.length > 1 && (
                     <div className="flex flex-wrap gap-2 mb-10">
                         <button
                             onClick={() => setActiveTab('all')}
@@ -443,10 +485,109 @@ export default function OffersPage({ offerGroups, promotions }: OffersPageProps)
                             transition={{ duration: 0.2 }}
                         >
                             {filteredGroups.map((group) => (
-                                <PromotionSection key={group.promotion.id} group={group} />
+                                <section key={group.promotion.id} className="mb-16">
+                                    {/* Promotion Header Card from PromotionSection (simplified for grid layout adjustment) */}
+                                    <PromotionSectionHeader group={group} />
+
+                                    {/* Products Grid */}
+                                    <div className={`grid ${gridCols} gap-4`}>
+                                        <AnimatePresence>
+                                            {group.products.map((product) => (
+                                                <OfferProductCard key={`${group.promotion.id}-${product.id}`} product={product} />
+                                            ))}
+                                        </AnimatePresence>
+                                    </div>
+                                </section>
                             ))}
                         </motion.div>
                     </AnimatePresence>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// Separate helper for promotion header to keep OffersPage clean
+function PromotionSectionHeader({ group }: { group: OfferGroup }) {
+    const timeLeft = useCountdown(group.promotion.endDate);
+    const hasEndDate = !!group.promotion.endDate;
+    const isExpiringSoon = hasEndDate && timeLeft.days < 2;
+
+    return (
+        <div className={`relative overflow-hidden rounded-2xl mb-6 p-6 ${isExpiringSoon
+            ? 'bg-gradient-to-r from-rose-600 via-orange-500 to-amber-500'
+            : 'bg-gradient-to-r from-brand-600 via-violet-600 to-purple-700'
+            }`}>
+            {/* Decorative circles */}
+            <div className="absolute -top-8 -right-8 w-36 h-36 rounded-full bg-white/10" />
+            <div className="absolute -bottom-12 -left-6 w-48 h-48 rounded-full bg-white/5" />
+
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <BadgePercent className="w-5 h-5 text-white/80" />
+                        <PromotionTypeBadge type={group.promotion.targetType} />
+                    </div>
+                    <Link href={`/offers/${group.promotion.slug}`} className="group/title">
+                        <h2 className="text-xl md:text-2xl font-bold text-white mt-1 flex items-center gap-2 group-hover/title:translate-x-1 transition-transform">
+                            {group.promotion.name}
+                            <ArrowRight className="w-5 h-5 opacity-0 group-hover/title:opacity-100 transition-opacity" />
+                        </h2>
+                    </Link>
+                    {group.promotion.description && (
+                        <p className="text-white/70 text-sm mt-1">{group.promotion.description}</p>
+                    )}
+                    <div className="flex flex-wrap gap-3 mt-3">
+                        {group.promotion.promotionType === 'percentage' && group.promotion.value && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
+                                <Percent className="w-4 h-4" />
+                                {group.promotion.value}% OFF
+                            </span>
+                        )}
+                        {group.promotion.promotionType === 'fixed_amount' && group.promotion.value && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
+                                <Tag className="w-4 h-4" />
+                                Flat Discount — {group.promotion.value} OFF
+                            </span>
+                        )}
+                        {group.promotion.promotionType === 'free_shipping' && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
+                                🚚 Free Shipping
+                            </span>
+                        )}
+                        {group.promotion.minOrderValue && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
+                                Min. Order: {group.promotion.minOrderValue}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Countdown Timer */}
+                {hasEndDate && (
+                    <div className="shrink-0">
+                        <p className="text-white/60 text-xs font-medium mb-2 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {isExpiringSoon ? '⚡ Expiring Soon!' : 'Ends In'}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            {[
+                                { v: timeLeft.days, l: 'Days' },
+                                { v: timeLeft.hours, l: 'Hrs' },
+                                { v: timeLeft.minutes, l: 'Min' },
+                                { v: timeLeft.seconds, l: 'Sec' },
+                            ].map(({ v, l }) => (
+                                <div key={l} className="flex flex-col items-center">
+                                    <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
+                                        <span className="text-xl font-bold text-white tabular-nums">
+                                            {String(v).padStart(2, '0')}
+                                        </span>
+                                    </div>
+                                    <span className="text-[10px] text-white/60 mt-1 font-medium">{l}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

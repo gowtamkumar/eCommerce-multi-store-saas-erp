@@ -11,3 +11,4 @@ export * from './steadfastCourier.dto';
 export * from './trust-badge.dto';
 export * from './products-page.dto';
 export * from './single-product-page.dto';
+export * from './offers-page.dto';

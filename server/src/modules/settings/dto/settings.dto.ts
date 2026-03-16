@@ -13,6 +13,7 @@ import { SteadfastCourierDto } from './steadfastCourier.dto';
 import { TrustBadgeDto } from './trust-badge.dto';
 import { ProductsPageSettingsDto } from './products-page.dto';
 import { SingleProductPageSettingsDto } from './single-product-page.dto';
+import { OffersPageSettingsDto } from './offers-page.dto';
 
 export class UpdateSiteSettingsDto {
     @ApiProperty({ required: false })
@@ -127,4 +128,11 @@ export class UpdateSiteSettingsDto {
     @ValidateNested()
     @Type(() => SingleProductPageSettingsDto)
     singleProductPage?: SingleProductPageSettingsDto;
+
+    @ApiProperty({ required: false })
+    @IsOptional()
+    @IsObject()
+    @ValidateNested()
+    @Type(() => OffersPageSettingsDto)
+    offersPage?: OffersPageSettingsDto;
 }
