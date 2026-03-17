@@ -113,6 +113,39 @@ export class MailService {
       }
     }
 
+  async sendStaffInvitationEmail(email: string, token: string, role: string, tenantId: string) {
+    this.logger.log(`${this.sendStaffInvitationEmail.name} Service Called`);
+    const baseUrl = await this.getTenantBaseUrl(tenantId);
+    const invitationLink = `${baseUrl}/accept-invitation?token=${token}`;
+
+    const { transporter, from } = await this.getTransporter(tenantId);
+
+    const mailOptions = {
+      from: from,
+      to: email,
+      subject: "You've been invited to join the team",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #1e293b;">Team Invitation</h1>
+          <p>You have been invited to join as a <strong>${role}</strong>.</p>
+          <p>Click the button below to accept the invitation and set up your account:</p>
+          <a href="${invitationLink}" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">
+            Accept Invitation
+          </a>
+          <p style="color: #64748b; font-size: 14px;">This invitation link will expire in 48 hours.</p>
+          <p style="color: #64748b; font-size: 14px;">If you didn't expect this invitation, please ignore this email.</p>
+        </div>
+      `,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      this.logger.log(`Staff invitation email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send invitation email to ${email}`, error);
+    }
+  }
+
   private async getTenantBaseUrl(tenantId: string): Promise<string> {
       this.logger.log(`${this.getTenantBaseUrl.name} Service Called`);
     const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000')

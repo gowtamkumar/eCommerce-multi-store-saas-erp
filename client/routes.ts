@@ -1,4 +1,4 @@
-import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Download, FileText, Globe, HelpCircle, History as HistoryIcon, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, Receipt, RotateCcw, Settings, Share2, ShoppingBag, ShoppingCart, Star, Tag, TrendingUp, Truck, User, Users, X, Megaphone, Wallet } from 'lucide-react';
+import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Download, FileText, Globe, HelpCircle, History as HistoryIcon, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, Receipt, RotateCcw, Settings, Share2, ShieldCheck, ShoppingBag, ShoppingCart, Star, Tag, TrendingUp, Truck, User, Users, X, Megaphone, Wallet } from 'lucide-react';
 
 export const navGroups = [
     {
@@ -67,7 +67,13 @@ export const navGroups = [
             { icon: User, label: 'Media', href: '/admin/media' },
             { icon: HelpCircle, label: 'FAQs', href: '/admin/faqs' },
         ]
-    }
+    },
+    {
+        title: 'Team & Access',
+        items: [
+            { icon: ShieldCheck, label: 'Team Management', href: '/admin/team' },
+        ]
+    },
 ];
 
 export const settingsItems = [

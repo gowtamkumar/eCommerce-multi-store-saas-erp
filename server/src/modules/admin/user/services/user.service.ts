@@ -1,10 +1,15 @@
-import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
+import * as crypto from 'crypto'
 import { UserStatus } from 'src/common/enums/user/user-status.enum'
+import { UserRole } from 'src/common/enums/user/user-role.enum'
+import { MailService } from 'src/modules/others/mail/mail.service'
 import { Repository } from 'typeorm'
 import { CreateUserDto, FilterUserDto, UpdatePasswordDto, UpdateUserDto } from '../dtos'
+import { InviteStaffDto, AcceptInvitationDto } from '../dtos/invite-staff.dto'
 import { UserEntity } from '../entities/user.entity'
+import { StaffInvitationEntity, InvitationStatus } from '../entities/staff-invitation.entity'
 
 @Injectable()
 export class UserService {
@@ -13,6 +18,9 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(StaffInvitationEntity)
+    private readonly invitationRepo: Repository<StaffInvitationEntity>,
+    private readonly mailService: MailService,
   ) { }
 
   async getUsers(
@@ -66,7 +74,6 @@ export class UserService {
 
   async findUserById(id: string) {
     this.logger.log(`${this.findUserById.name} Service Called`)
-
     return this.userRepo.findOne({ where: { id } })
   }
 
@@ -102,14 +109,9 @@ export class UserService {
     this.logger.log(`${this.updateUser.name} Service Called`)
 
     const user = await this.userRepo.findOne({ where: { id } })
-
     if (!user) {
       throw new NotFoundException(`User of id ${id} not found`)
     }
-
-    console.log('updateUserDto', updateUserDto)
-    console.log('user', user)
-
     this.userRepo.merge(user, updateUserDto)
     return this.userRepo.save(user)
   }
@@ -134,7 +136,6 @@ export class UserService {
 
   async resetPassword(id: string, password: string): Promise<UserEntity> {
     this.logger.log(`${this.resetPassword.name} Service Called`)
-
     const user = await this.getUser(id)
     user.password = await bcrypt.hash(password, 10)
     return this.userRepo.save(user)
@@ -151,19 +152,19 @@ export class UserService {
   }
 
   validateUser(user: UserEntity, password: string): Promise<boolean> {
-      this.logger.log(`${this.validateUser.name} Service Called`);
+    this.logger.log(`${this.validateUser.name} Service Called`);
     return bcrypt.compare(password, user.password)
   }
 
   async verifyUser(id: string): Promise<UserEntity> {
-      this.logger.log(`${this.verifyUser.name} Service Called`);
+    this.logger.log(`${this.verifyUser.name} Service Called`);
     const user = await this.getUser(id)
     user.isEmailVerified = true
     return this.userRepo.save(user)
   }
 
   async verifyUserByToken(token: string): Promise<UserEntity> {
-      this.logger.log(`${this.verifyUserByToken.name} Service Called`);
+    this.logger.log(`${this.verifyUserByToken.name} Service Called`);
     const user = await this.userRepo.findOne({ where: { emailVerificationToken: token } })
     if (!user) {
       throw new NotFoundException('Invalid or expired verification token')
@@ -174,7 +175,7 @@ export class UserService {
   }
 
   async updateResetToken(userId: string, token: string, expires: Date) {
-      this.logger.log(`${this.updateResetToken.name} Service Called`);
+    this.logger.log(`${this.updateResetToken.name} Service Called`);
     const user = await this.getUser(userId)
     user.resetPasswordToken = token
     user.resetPasswordExpires = expires
@@ -182,7 +183,7 @@ export class UserService {
   }
 
   async resetUserPasswordByToken(token: string, password: string): Promise<UserEntity> {
-      this.logger.log(`${this.resetUserPasswordByToken.name} Service Called`);
+    this.logger.log(`${this.resetUserPasswordByToken.name} Service Called`);
     const user = await this.userRepo.findOne({
       where: { resetPasswordToken: token },
     })
@@ -198,12 +199,12 @@ export class UserService {
   }
 
   async countByTenant(tenantId: string) {
-      this.logger.log(`${this.countByTenant.name} Service Called`);
+    this.logger.log(`${this.countByTenant.name} Service Called`);
     return await this.userRepo.count({ where: { tenantId } })
   }
 
   async setCurrentRefreshToken(refreshToken: string, userId: string) {
-      this.logger.log(`${this.setCurrentRefreshToken.name} Service Called`);
+    this.logger.log(`${this.setCurrentRefreshToken.name} Service Called`);
     const currentRefreshToken = await bcrypt.hash(refreshToken, 10)
     await this.userRepo.update(userId, {
       refreshToken: currentRefreshToken,
@@ -211,7 +212,7 @@ export class UserService {
   }
 
   async getUserIfRefreshTokenMatches(refreshToken: string, userId: string) {
-      this.logger.log(`${this.getUserIfRefreshTokenMatches.name} Service Called`);
+    this.logger.log(`${this.getUserIfRefreshTokenMatches.name} Service Called`);
     const user = await this.userRepo
       .createQueryBuilder('user')
       .addSelect('user.refreshToken')
@@ -230,14 +231,14 @@ export class UserService {
   }
 
   async removeRefreshToken(userId: string) {
-      this.logger.log(`${this.removeRefreshToken.name} Service Called`);
+    this.logger.log(`${this.removeRefreshToken.name} Service Called`);
     return this.userRepo.update(userId, {
       refreshToken: null,
     })
   }
 
   async userOverview() {
-      this.logger.log(`${this.userOverview.name} Service Called`);
+    this.logger.log(`${this.userOverview.name} Service Called`);
     const totalUsers = await this.userRepo.count()
     const activeUsers = await this.userRepo.count({
       where: { status: UserStatus.Active },
@@ -250,5 +251,133 @@ export class UserService {
       activeUsers,
       inactiveUsers,
     }
+  }
+
+  // ─── Team / Staff Invitation Methods ───────────────────────────────────────
+
+  async inviteStaff(dto: InviteStaffDto, tenantId: string, invitedBy: string) {
+    this.logger.log(`${this.inviteStaff.name} Service Called`);
+
+    // Prevent re-inviting an existing active user
+    const existingUser = await this.findUserByEmail(dto.email, tenantId)
+    if (existingUser) {
+      throw new BadRequestException('A user with this email already exists in your team.')
+    }
+
+    // Expire any old pending invitation for same email+tenant
+    await this.invitationRepo.update(
+      { email: dto.email, tenantId, status: InvitationStatus.Pending },
+      { status: InvitationStatus.Expired },
+    )
+
+    const token = crypto.randomBytes(32).toString('hex')
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48 hours
+
+    const invitation = this.invitationRepo.create({
+      email: dto.email,
+      role: dto.role,
+      tenantId,
+      token,
+      expiresAt,
+      invitedBy,
+      status: InvitationStatus.Pending,
+    })
+
+    await this.invitationRepo.save(invitation)
+
+    // Send email (non-blocking – errors are logged internally)
+    this.mailService.sendStaffInvitationEmail(dto.email, token, dto.role, tenantId)
+
+    return { message: `Invitation sent to ${dto.email}`, invitation }
+  }
+
+  async acceptInvitation(dto: AcceptInvitationDto) {
+    this.logger.log(`${this.acceptInvitation.name} Service Called`);
+
+    const invitation = await this.invitationRepo.findOne({ where: { token: dto.token } })
+
+    if (!invitation) {
+      throw new NotFoundException('Invalid or expired invitation token.')
+    }
+    if (invitation.status !== InvitationStatus.Pending) {
+      throw new BadRequestException('This invitation has already been used or expired.')
+    }
+    if (invitation.expiresAt < new Date()) {
+      invitation.status = InvitationStatus.Expired
+      await this.invitationRepo.save(invitation)
+      throw new BadRequestException('This invitation has expired.')
+    }
+
+    // Check username uniqueness
+    const existingUsername = await this.findUserByUsername(dto.username, invitation.tenantId)
+    if (existingUsername) {
+      throw new BadRequestException('This username is already taken.')
+    }
+
+    const user = await this.createUser(
+      {
+        name: dto.name,
+        username: dto.username,
+        password: dto.password,
+        email: invitation.email,
+        role: invitation.role,
+        emailVerificationToken: null,
+      },
+      invitation.tenantId,
+    )
+
+    invitation.status = InvitationStatus.Accepted
+    await this.invitationRepo.save(invitation)
+
+    return { message: 'Account created successfully. You can now log in.', user }
+  }
+
+  async getInvitations(tenantId: string) {
+    this.logger.log(`${this.getInvitations.name} Service Called`);
+    return this.invitationRepo.find({
+      where: { tenantId },
+      order: { createdAt: 'DESC' },
+    })
+  }
+
+  async revokeInvitation(invitationId: string, tenantId: string) {
+    this.logger.log(`${this.revokeInvitation.name} Service Called`);
+    const invitation = await this.invitationRepo.findOne({
+      where: { id: invitationId, tenantId },
+    })
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found.')
+    }
+    if (invitation.status !== InvitationStatus.Pending) {
+      throw new BadRequestException('Only pending invitations can be revoked.')
+    }
+    invitation.status = InvitationStatus.Expired
+    return this.invitationRepo.save(invitation)
+  }
+
+  async getTeamMembers(tenantId: string) {
+    this.logger.log(`${this.getTeamMembers.name} Service Called`);
+
+    const [members, invitations] = await Promise.all([
+      this.userRepo.find({
+        where: { tenantId },
+        order: { createdAt: 'DESC' },
+        select: ['id', 'name', 'username', 'email', 'role', 'status', 'image', 'createdAt'],
+      }),
+      this.invitationRepo.find({
+        where: { tenantId, status: InvitationStatus.Pending },
+        order: { createdAt: 'DESC' },
+      }),
+    ])
+
+    return { members, pendingInvitations: invitations }
+  }
+
+  async updateTeamMemberRole(memberId: string, role: UserRole, tenantId: string) {
+    this.logger.log(`${this.updateTeamMemberRole.name} Service Called`);
+    const user = await this.userRepo.findOne({ where: { id: memberId, tenantId } })
+    if (!user) throw new NotFoundException('Team member not found.')
+    user.role = role
+    return this.userRepo.save(user)
   }
 }
