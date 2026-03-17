@@ -49,6 +49,7 @@ export class ReportController {
           orders,
           pages,
         },
+        topPages: [], // Removed page tracking feature, return empty array for backwards compatibility
       },
     }
   }

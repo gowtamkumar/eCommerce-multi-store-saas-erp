@@ -246,6 +246,7 @@ export class SuperAdminController {
             orders,
             pages,
           },
+          topPages: [], // Page tracking disabled per user request
         },
       }
     } catch (error) {
