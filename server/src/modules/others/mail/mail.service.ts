@@ -39,16 +39,18 @@ export class MailService {
 
     const settings = await this.settingsRepo.findOne({ where: { tenantId } })
     if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
+      const port = Number(settings.smtp.port) || 587;
+      
       const tenantTransporter = nodemailer.createTransport({
         host: settings.smtp.host,
-        port: settings.smtp.port,
-        secure: settings.smtp.secure,
+        port: port,
+        secure: port === 465, // force true for port 465 to avoid socket close errors
         auth: {
           user: settings.smtp.user,
           pass: settings.smtp.pass,
         },
       })
-      return { transporter: tenantTransporter, from: settings.smtp.from }
+      return { transporter: tenantTransporter, from: settings.smtp.from || settings.smtp.user }
     }
 
     return {
