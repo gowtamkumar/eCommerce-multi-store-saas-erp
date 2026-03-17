@@ -33,13 +33,11 @@ export class ReportController {
     const tenantId = req.user.tenantId
 
     // Parallelize for performance
-    const [users, products, orders, pages, pageTraffic] = await Promise.all([
+    const [users, products, orders, pages] = await Promise.all([
       this.userService.countByTenant(tenantId),
       this.productService.countByTenant(tenantId),
       this.orderService.countByTenant(tenantId),
       this.pageService.countByTenant(tenantId),
-      // Filter out API and Admin routes for Tenant Admin view
-      this.trafficService.getPageTrafficStats(tenantId, 30, ['/api', '/admin', '/super-admin']),
     ])
 
     return {
@@ -51,11 +49,6 @@ export class ReportController {
           orders,
           pages,
         },
-        topPages: pageTraffic.map((pt) => ({
-          path: pt.path,
-          hits: pt.requestCount,
-          lastUpdated: pt.lastUpdated,
-        })),
       },
     }
   }

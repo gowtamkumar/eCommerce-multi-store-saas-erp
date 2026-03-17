@@ -230,12 +230,11 @@ export class SuperAdminController {
   @Get('/tenants/:id/analytics')
   async getDetailedTenantAnalytics(@Param('id') id: string) {
     try {
-      const [users, products, orders, pages, pageTraffic] = await Promise.all([
+      const [users, products, orders, pages] = await Promise.all([
         this.userService.countByTenant(id),
         this.productService.countByTenant(id),
         this.orderService.countByTenant(id),
         this.pageService.countByTenant(id),
-        this.trafficService.getPageTrafficStats(id, 30),
       ])
 
       return {
@@ -247,11 +246,6 @@ export class SuperAdminController {
             orders,
             pages,
           },
-          topPages: pageTraffic.map((pt) => ({
-            path: pt.path,
-            hits: pt.requestCount,
-            lastUpdated: pt.lastUpdated,
-          })),
         },
       }
     } catch (error) {

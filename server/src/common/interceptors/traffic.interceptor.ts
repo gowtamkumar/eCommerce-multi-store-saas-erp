@@ -11,14 +11,10 @@ export class TrafficInterceptor implements NestInterceptor {
     const tenantId = request.tenantId || request.headers['x-tenant-id']
 
     if (tenantId) {
-      const path = request.url.split('?')[0]
       // Log traffic asynchronously to not block the request
       this.trafficService
         .logRequestTraffic(tenantId)
         .catch((err) => console.error('Traffic log failed:', err))
-      this.trafficService
-        .logPageTraffic(tenantId, path)
-        .catch((err) => console.error('Page traffic log failed:', err))
     }
 
     return next.handle()

@@ -8,14 +8,13 @@ import { PageModule } from 'src/modules/page/page.module';
 import { ProductModule } from 'src/modules/product/product.module';
 import { ReviewModule } from 'src/modules/review/review.module';
 import { TenantModule } from 'src/modules/tenant/tenant.module';
-import { PageTrafficEntity } from './entities/page-traffic.entity';
 import { TenantTrafficEntity } from './entities/tenant-traffic.entity';
 import { SuperAdminController } from './super-admin.controller';
 import { TrafficService } from './traffic.service';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([TenantTrafficEntity, PageTrafficEntity]),
+        TypeOrmModule.forFeature([TenantTrafficEntity]),
         UserModule,
         TenantModule,
         OrderModule,
