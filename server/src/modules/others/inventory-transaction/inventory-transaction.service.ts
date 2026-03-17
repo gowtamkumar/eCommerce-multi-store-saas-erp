@@ -20,9 +20,14 @@ export class InventoryTransactionService {
         private readonly variantRepository: Repository<ProductVariantEntity>,
     ) { }
 
-    async createInventoryTransaction(dto: CreateInventoryTransactionDto, tenantId: string) {
+    async createInventoryTransaction(dto: CreateInventoryTransactionDto, tenantId: string, manager?: any) {
         this.logger.log(`${this.createInventoryTransaction.name} Service Called`);
-        const product = await this.productRepository.findOne({
+        
+        const productRepo = manager ? manager.getRepository(ProductEntity) : this.productRepository;
+        const variantRepo = manager ? manager.getRepository(ProductVariantEntity) : this.variantRepository;
+        const transactionRepo = manager ? manager.getRepository(InventoryTransactionEntity) : this.repository;
+
+        const product = await productRepo.findOne({
             where: { id: dto.productId, tenantId },
         });
 
@@ -35,32 +40,32 @@ export class InventoryTransactionService {
         const absQty = Math.abs(dto.quantity);
 
         if (dto.variantId) {
-            const variant = await this.variantRepository.findOne({
+            const variant = await variantRepo.findOne({
                 where: { id: dto.variantId, tenantId }
             });
             if (variant) {
                 if (isIncrement) {
-                    await this.variantRepository.increment({ id: variant.id, tenantId }, 'stock', absQty);
+                    await variantRepo.increment({ id: variant.id, tenantId }, 'stock', absQty);
                 } else {
-                    await this.variantRepository.decrement({ id: variant.id, tenantId }, 'stock', absQty);
+                    await variantRepo.decrement({ id: variant.id, tenantId }, 'stock', absQty);
                 }
             } else {
                 throw new NotFoundException(`Variant with ID ${dto.variantId} not found`);
             }
         } else {
             if (isIncrement) {
-                await this.productRepository.increment({ id: product.id, tenantId }, 'stock', absQty);
+                await productRepo.increment({ id: product.id, tenantId }, 'stock', absQty);
             } else {
-                await this.productRepository.decrement({ id: product.id, tenantId }, 'stock', absQty);
+                await productRepo.decrement({ id: product.id, tenantId }, 'stock', absQty);
             }
         }
 
-        const transaction = this.repository.create({
+        const transaction = transactionRepo.create({
             ...dto,
             tenantId,
         });
 
-        return await this.repository.save(transaction);
+        return await transactionRepo.save(transaction);
     }
 
     async findAllInventoryTransactions(tenantId: string) {
