@@ -209,7 +209,8 @@ export class ReportController {
           .slice(0, 10),
         traffic: {
           totalHits: traffic.reduce((sum, t) => sum + t.requestCount, 0),
-          recentHits: traffic.slice(0, 7)
+          recentHits: traffic.slice(0, 7),
+          topPages: [], // Page tracking disabled per user request
         }
       },
     }

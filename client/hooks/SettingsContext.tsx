@@ -211,21 +211,27 @@ export function SettingsProvider({
   };
 
   useEffect(() => {
-    if (!initialSettings) {
+    let mounted = true;
+
+    if (!initialSettings && !settings) {
       fetchSettings();
-    } else {
+    } else if (initialSettings) {
       // Even if we have initial settings, we should check for local currency preference
       const savedCurrency = localStorage.getItem('selectedCurrency');
       if (savedCurrency) {
         try {
           const parsed = JSON.parse(savedCurrency);
           const exists = initialSettings.supportedCurrencies?.find((c: any) => c.code === parsed.code);
-          if (exists) {
+          if (exists && mounted) {
             setSelectedCurrency(exists);
           }
         } catch (e) { }
       }
     }
+
+    return () => {
+        mounted = false;
+    };
   }, [initialSettings]);
 
   const setCurrency = (code: string) => {

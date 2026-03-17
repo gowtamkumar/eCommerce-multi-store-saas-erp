@@ -19,5 +19,12 @@ export interface DashboardStats {
     traffic?: {
         totalHits: number;
         recentHits: any[];
+        topPages: any[];
+    };
+    counts?: {
+        users: number;
+        products: number;
+        orders: number;
+        pages: number;
     };
 }

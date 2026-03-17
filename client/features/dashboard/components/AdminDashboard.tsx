@@ -3,12 +3,15 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
 import { FileText, Package, ShoppingBag, TrendingUp, History as HistoryIcon, Plus, Truck, Globe } from 'lucide-react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import TenantAnalytics from '@/features/system-platform/components/TenantAnalytics';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { DashboardStats } from '../types';
 
 
 export default function AdminDashboard() {
+    const { data: session } = useSession();
     const { formatPrice, selectedCurrency } = useSettings();
     const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
     const [stats, setStats] = useState<DashboardStats>({
@@ -48,7 +51,9 @@ export default function AdminDashboard() {
                     monthlyGrowth,
                     supplierStats,
                     lowStockCount,
-                    lowStockProducts
+                    lowStockProducts,
+                    counts,
+                    traffic
                 } = response.data;
 
                 setStats({
@@ -63,7 +68,9 @@ export default function AdminDashboard() {
                     monthlyGrowth,
                     supplierStats,
                     lowStockCount,
-                    lowStockProducts
+                    lowStockProducts,
+                    counts,
+                    traffic
                 });
                 setRecentProducts(recentProducts);
             }
@@ -256,10 +263,10 @@ export default function AdminDashboard() {
                                 <ShoppingBag className="w-6 h-6 text-blue-600 mb-2 group-hover:scale-110 transition-transform mx-auto" />
                                 <p className="text-[10px] font-black uppercase tracking-widest">Manage Orders</p>
                             </Link>
-                            <Link href="/admin/analytics" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-cyan-50 dark:hover:bg-cyan-900/20 group transition-all text-center">
+                            <button onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })} className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-cyan-50 dark:hover:bg-cyan-900/20 group transition-all text-center">
                                 <Globe className="w-6 h-6 text-cyan-600 mb-2 group-hover:scale-110 transition-transform mx-auto" />
                                 <p className="text-[10px] font-black uppercase tracking-widest">View Traffic</p>
-                            </Link>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -438,8 +445,20 @@ export default function AdminDashboard() {
                     )}
                 </div>
             </div>
+
+            {/* Global Analytics Section */}
+            {stats.counts && (
+                <div className="pt-8 border-t border-slate-100 dark:border-slate-700">
+                    <TenantAnalytics 
+                        tenantId={session?.user?.tenantId || "current"} 
+                        data={{ 
+                            counts: stats.counts, 
+                            topPages: stats.traffic?.topPages || [] 
+                        }} 
+                        tenantName={session?.user?.name || "Your Store"} 
+                    />
+                </div>
+            )}
         </div>
     )
 }
-
-

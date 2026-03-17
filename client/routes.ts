@@ -5,7 +5,6 @@ export const navGroups = [
         title: 'Business Insights',
         items: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-            { icon: Globe, label: 'Real-time Traffic', href: '/admin/analytics' },
         ]
     },
 
