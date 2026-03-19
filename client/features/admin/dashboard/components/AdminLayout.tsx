@@ -19,7 +19,7 @@ export default function AdminLayout({
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isSettingsOpen, setIsSettingsOpen] = useState(pathname?.startsWith('/admin/settings'));
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const { data: session, status }: any = useSession();
 
@@ -37,15 +37,37 @@ export default function AdminLayout({
     }, [status, session, router]);
 
     useEffect(() => {
-        if (pathname?.startsWith('/admin/settings')) {
-            setIsSettingsOpen(true);
+        // Find which group contains the current pathname
+        const activeGroup = navGroups.find(group => 
+            group.items.some(item => {
+                const isMatch = item.href.includes('?') 
+                    ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
+                    : pathname === item.href;
+                return isMatch;
+            })
+        );
+
+        if (activeGroup) {
+            setExpandedGroups(prev => new Set(prev).add(activeGroup.title));
         }
 
         // Auto-collapse sidebar when in Page Builder
         if (pathname?.startsWith('/admin/pages/') && pathname.split('/').length > 3) {
             setIsSidebarCollapsed(true);
         }
-    }, [pathname]);
+    }, [pathname, searchParams]);
+
+    const toggleGroup = (title: string) => {
+        setExpandedGroups(prev => {
+            const next = new Set(prev);
+            if (next.has(title)) {
+                next.delete(title);
+            } else {
+                next.add(title);
+            }
+            return next;
+        });
+    };
 
     if (status === 'loading') {
         return (
@@ -129,37 +151,62 @@ export default function AdminLayout({
                 </div>
 
                 <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
-                    {navGroups.map((group, groupIndex) => (
-                        <div key={groupIndex} className="space-y-2">
-                            {!isSidebarCollapsed && (
-                                <h3 className="px-4 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                                    {group.title}
-                                </h3>
-                            )}
-                            <div className="space-y-1">
-                                {group.items.map((item, index) => {
-                                    const isActive = item.href.includes('?') 
-                                        ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
-                                        : pathname === item.href;
-                                    return (
-                                        <Link
-                                            key={`${groupIndex}-${index}`}
-                                            href={item.href}
-                                            onClick={() => setIsMobileMenuOpen(false)}
-                                            title={isSidebarCollapsed ? item.label : ''}
-                                            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${isActive
-                                                ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-semibold'
-                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
-                                                } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                    {navGroups.map((group, groupIndex) => {
+                        const isExpanded = expandedGroups.has(group.title);
+                        const hasActive = group.items.some(item => {
+                            const isMatch = item.href.includes('?') 
+                                ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
+                                : pathname === item.href;
+                            return isMatch;
+                        });
+
+                        return (
+                            <div key={groupIndex} className="space-y-1">
+                                {!isSidebarCollapsed && (
+                                    <button
+                                        onClick={() => toggleGroup(group.title)}
+                                        className="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider hover:text-slate-600 dark:hover:text-slate-300 transition-colors group"
+                                    >
+                                        <span>{group.title}</span>
+                                        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} ${hasActive ? 'text-brand-500' : ''}`} />
+                                    </button>
+                                )}
+                                
+                                <AnimatePresence initial={false}>
+                                    {(isExpanded || isSidebarCollapsed) && (
+                                        <motion.div
+                                            initial={isSidebarCollapsed ? undefined : { height: 0, opacity: 0 }}
+                                            animate={isSidebarCollapsed ? undefined : { height: 'auto', opacity: 1 }}
+                                            exit={isSidebarCollapsed ? undefined : { height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                                            className="overflow-hidden space-y-1"
                                         >
-                                            <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                                            {!isSidebarCollapsed && <span>{item.label}</span>}
-                                        </Link>
-                                    );
-                                })}
+                                            {group.items.map((item, index) => {
+                                                const isActive = item.href.includes('?') 
+                                                    ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
+                                                    : pathname === item.href;
+                                                return (
+                                                    <Link
+                                                        key={`${groupIndex}-${index}`}
+                                                        href={item.href}
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        title={isSidebarCollapsed ? item.label : ''}
+                                                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${isActive
+                                                            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 font-semibold'
+                                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
+                                                            } ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                                                    >
+                                                        <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                                                        {!isSidebarCollapsed && <span>{item.label}</span>}
+                                                    </Link>
+                                                );
+                                            })}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </nav>
 
                 <div className="p-4 border-t border-slate-200 dark:border-slate-700">

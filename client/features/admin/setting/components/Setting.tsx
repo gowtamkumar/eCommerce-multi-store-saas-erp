@@ -20,6 +20,7 @@ import SingleProductPageSetting from "./SingleProductPageSetting";
 import OffersPageSetting from "./OffersPageSetting";
 import { fetchAPI } from "@/services/api";
 import { TabType, TabTypeEnum } from "../types";
+import LabelSetting from "./LabelSetting";
 
 export const dynamic = "force-dynamic";
 
@@ -186,6 +187,10 @@ function SettingsContent() {
             showFilters: true,
             productsPerRow: 5,
         },
+        labelSettings: {
+            newArrivalText: "New",
+            bestSellerText: "Best Seller",
+        },
     });
 
     const searchParams = useSearchParams();
@@ -329,6 +334,10 @@ function SettingsContent() {
                             showFilters: true,
                             productsPerRow: 5,
                         },
+                        labelSettings: data.labelSettings || {
+                            newArrivalText: "New",
+                            bestSellerText: "Best Seller",
+                        },
                     });
                 }
             } catch (error) {
@@ -471,6 +480,9 @@ function SettingsContent() {
                                 )}
                                 {activeTab === "offersPage" && (
                                     <OffersPageSetting formData={formData} setFormData={setFormData} />
+                                )}
+                                {activeTab === "label" && (
+                                    <LabelSetting formData={formData} setFormData={setFormData} />
                                 )}
                             </AnimatePresence>
                         </form>
