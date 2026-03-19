@@ -1,7 +1,7 @@
 import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { JsonWebTokenError } from 'jsonwebtoken'
-import { AuthStrategy } from '../enums/auth/auth-strategy.enum'
+import { AuthStrategy } from '@/common/enums/auth/auth-strategy.enum'
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard(AuthStrategy.JwtAuth) {

@@ -1,9 +1,9 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common'
-import { TenantService } from '../../modules/tenant/tenant.service'
+import { TenantService } from '@/modules/system/tenant/tenant.service'
 
 @Injectable()
 export class TenantStatusGuard implements CanActivate {
-  constructor(private readonly tenantService: TenantService) {}
+  constructor(private readonly tenantService: TenantService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
