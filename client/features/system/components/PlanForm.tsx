@@ -52,7 +52,7 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
 
             if (res.success) {
                 toast.success(`Plan ${isEditing ? 'updated' : 'created'} successfully`);
-                router.push('/system-platform/plans');
+                router.push('/system/plans');
                 router.refresh();
             }
         } catch (error: any) {

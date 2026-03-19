@@ -36,7 +36,7 @@ export default function TenantAnalytics({ tenantId, data, tenantName }: TenantAn
         <div className="space-y-10 pb-12">
             <div className="flex items-center gap-6">
                 <Link
-                    href="/system-platform"
+                    href="/system"
                     className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 hover:shadow-xl hover:scale-110 transition-all group"
                 >
                     <ArrowLeft className="w-5 h-5 text-slate-500 group-hover:text-brand-600 transition-colors" />
@@ -60,7 +60,7 @@ export default function TenantAnalytics({ tenantId, data, tenantName }: TenantAn
                         className={`bg-white dark:bg-slate-800 p-8 rounded-[40px] border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-2xl transition-all group relative overflow-hidden active:scale-95`}
                     >
                         <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-slate-50 to-transparent dark:from-slate-700/20 pointer-events-none opacity-50" />
-                        
+
                         <div className={`w-14 h-14 ${s.bg} dark:bg-slate-900/50 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-12 transition-transform shadow-sm`}>
                             <s.icon className={`w-7 h-7 ${s.color}`} />
                         </div>
@@ -168,7 +168,7 @@ export default function TenantAnalytics({ tenantId, data, tenantName }: TenantAn
                             <div className="flex items-start gap-3 bg-slate-50 dark:bg-slate-900/30 p-6 rounded-3xl border border-slate-100 dark:border-slate-800">
                                 <Activity className="w-5 h-5 text-brand-500 mt-0.5" />
                                 <p className="text-[10px] text-slate-500 font-bold leading-relaxed uppercase tracking-tight">
-                                    Metrics are calculated based on active store partition resource allocation. 
+                                    Metrics are calculated based on active store partition resource allocation.
                                     Usage beyond <span className="text-brand-600 font-black italic">85% threshold</span> may require horizontal scaling or partition migration.
                                 </p>
                             </div>

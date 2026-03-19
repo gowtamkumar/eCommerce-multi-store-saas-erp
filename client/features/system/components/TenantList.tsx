@@ -202,7 +202,7 @@ export default function TenantList({ initialTenants }: TenantListProps) {
                             </button>
                           )}
                           <Link
-                            href={`/system-platform/tenants/${tenant.id}/analytics`}
+                            href={`/system/tenants/${tenant.id}/analytics`}
                             className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
                             title="Detailed Analytics"
                           >
