@@ -1,5 +1,5 @@
 'use client';
-import { Pagination } from '@/features/customer/type';
+import { Pagination } from '@/features/admin/customer/type';
 import { useSettings } from '@/hooks/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { fetchAPI } from '@/services/api';

@@ -5,8 +5,8 @@ import { fetchAPI } from '@/services/api';
 import { Check, ChevronLeft, ChevronRight, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { MediaItem } from '../type';
-import { Pagination } from '../../customer/type';
+import { MediaItem } from '../../../type';
+import { Pagination } from '../../../../customer/type';
 
 
 

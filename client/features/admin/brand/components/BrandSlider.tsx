@@ -5,7 +5,7 @@ import { animate, motion, useMotionValue } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, useMemo } from "react";
-import SectionHeader from "../../pages/components/customizer/SectionHeader";
+import SectionHeader from "@/features/admin/pages/components/customizer/SectionHeader";
 
 interface BrandGridProps {
   sectionId?: string;

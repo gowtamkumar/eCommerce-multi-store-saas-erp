@@ -1,14 +1,11 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Check, Download, Loader2, ShieldCheck, Truck, CreditCard, Plus, Minus } from "lucide-react";
-import { useCart } from "@/hooks/CartContext";
 import { useSettings } from "@/hooks/SettingsContext";
 import { PaymentMethod } from "@/lib/enums/payment-method";
 import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
 import { fetchAPI } from "@/services/api";
-import * as cartApi from "@/services/cart";
 import { getSession, signIn, useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import Price from "@/components/shared/Price";

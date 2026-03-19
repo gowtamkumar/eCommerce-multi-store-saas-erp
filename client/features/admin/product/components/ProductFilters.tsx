@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Filter, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ProductFiltersProps } from '../types';
+import { ProductFiltersProps } from '../../../types';
 
 
 

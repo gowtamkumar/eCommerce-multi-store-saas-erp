@@ -1,16 +1,15 @@
 "use client";
 
-import ProfileForm from '@/features/profile/components/ProfileForm';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
-import CustomerOrders from '@/features/profile/components/CustomerOrders';
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Calendar, Loader2, LogOut, Package, ShieldCheck, User } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useSettings } from '@/hooks/SettingsContext';
+import CustomerOrders from './CustomerOrders';
+import ProfileForm from './ProfileForm';
 
 export default function Profile() {
     const { data: session, status } = useSession();

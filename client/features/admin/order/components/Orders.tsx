@@ -12,7 +12,7 @@ import { ChevronLeft, ChevronRight, Eye, Loader2, Plus, Search } from 'lucide-re
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Pagination } from '../../customer/type';
+import { Pagination } from '../../../../customer/type';
 
 
 

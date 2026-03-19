@@ -15,4 +15,4 @@ import { TrackingModule } from './tracking/tracking.module';
     TrackingModule
   ]
 })
-export class SystemPlatformModule {}
+export class SystemModule { }

@@ -80,7 +80,7 @@ export const settingsItems = [
     { icon: Globe, label: 'Custom Domain', tab: 'domain' },
     { icon: Mail, label: 'Email Settings', tab: 'email' },
     { icon: CreditCard, label: 'Payment Credentials', tab: 'payment' },
-    { icon: Banknote, label: 'Localization', tab: 'currencies' },
+    // { icon: Banknote, label: 'Localization', tab: 'currencies' },
     { icon: Share2, label: 'Social Links', tab: 'social' },
     { icon: TrendingUp, label: 'Marketing & SEO', tab: 'marketing' },
     { icon: Menu, label: 'Navbar Menu', tab: 'navbar' },

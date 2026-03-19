@@ -26,6 +26,12 @@ interface SiteSettings {
     instagram: string;
     linkedin: string;
   };
+  marketing?: {
+    googleAnalyticsId?: string;
+    facebookPixelId?: string;
+    googleSiteVerification?: string;
+    facebookDomainVerification?: string;
+  };
   navbar?: {
     layout?: 'default' | 'centered' | 'minimal' | 'sidebar';
     template?: 'classic' | 'glass' | 'floating' | 'gradient';
@@ -230,7 +236,7 @@ export function SettingsProvider({
     }
 
     return () => {
-        mounted = false;
+      mounted = false;
     };
   }, [initialSettings]);
 

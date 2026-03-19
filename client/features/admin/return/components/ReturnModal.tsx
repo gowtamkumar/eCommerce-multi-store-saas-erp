@@ -4,7 +4,7 @@ import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { ReturnModalProps } from "../types";
+import { ReturnModalProps } from "../../../types";
 
 
 

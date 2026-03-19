@@ -5,7 +5,7 @@ import { fetchAPI } from "@/services/api";
 import { Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { ReturnRequest } from "../types";
+import { ReturnRequest } from "../../../types";
 
 
 

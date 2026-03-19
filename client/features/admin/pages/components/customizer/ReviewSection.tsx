@@ -69,9 +69,9 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
 
   useEffect(() => {
     const updateWidth = () => {
-        if (carouselRef.current) {
-            setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
-        }
+      if (carouselRef.current) {
+        setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth);
+      }
     };
     updateWidth();
     const timer = setTimeout(updateWidth, 100);
@@ -84,13 +84,13 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
 
   const slideLeft = () => {
     const current = x.get();
-    const newPos = Math.min(current + 400, 0); 
+    const newPos = Math.min(current + 400, 0);
     animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
   };
 
   const slideRight = () => {
     const current = x.get();
-    const newPos = Math.max(current - 400, -width); 
+    const newPos = Math.max(current - 400, -width);
     animate(x, newPos, { type: "spring", stiffness: 300, damping: 30 });
   };
 
@@ -133,18 +133,18 @@ export default function ReviewSection({ settings, styles }: ReviewSectionProps) 
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between mb-8 sm:mb-10 lg:gap-10">
           <div className="flex-1 min-w-0">
-            <SectionHeader 
-                title={settings?.title} 
-                styles={styles} 
-                noMargin 
-                noPadding 
-                className="!mb-0" 
+            <SectionHeader
+              title={settings?.title}
+              styles={styles}
+              noMargin
+              noPadding
+              className="!mb-0"
             />
           </div>
 
           {isSlider && displayReviews.length > 0 && (
             <div className="flex gap-2 sm:gap-3 shrink-0">
-               <button
+              <button
                 onClick={slideLeft}
                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 group shadow-sm bg-white/10"
                 style={{

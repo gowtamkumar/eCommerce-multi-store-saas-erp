@@ -1,13 +1,13 @@
 'use client';
 
-import ProductCard from '@/features/product/components/ProductCard';
+import ProductCard from '@/features/admin/product/components/ProductCard';
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Product, RelatedProductsProps } from '../types';
+import { Product, RelatedProductsProps } from '../../../types';
 
 
 export default function RelatedProducts({ currentProductId }: RelatedProductsProps) {

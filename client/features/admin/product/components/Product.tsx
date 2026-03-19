@@ -4,10 +4,10 @@ import PaymentStatus from '@/components/shared/PaymentStatus';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
-import FAQ from '@/features/faq/components/FAQ';
-import ProductDetails from '@/features/product/components/ProductDetails';
-import RelatedProducts from '@/features/product/components/RelatedProducts';
-import Reviews from '@/features/profile/components/Reviews';
+import FAQ from '@/features/admin/faq/components/FAQ';
+import ProductDetails from '@/features/admin/product/components/ProductDetails';
+import RelatedProducts from '@/features/admin/product/components/RelatedProducts';
+import Reviews from '@/features/user/profile/components/Reviews';
 import { fetchAPI } from "@/services/api";
 import { getSiteSettings } from '@/services/getSettings';
 

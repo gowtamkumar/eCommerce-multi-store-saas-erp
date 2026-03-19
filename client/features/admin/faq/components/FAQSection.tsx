@@ -5,7 +5,7 @@ import { FAQItem } from "@/types/customizer";
 import { HelpCircle, Sparkles, Plus, Minus, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import SectionHeader from "../../pages/components/customizer/SectionHeader";
+import SectionHeader from "@/features/admin/pages/components/customizer/SectionHeader";
 
 interface FAQSectionProps {
     items?: FAQItem[];

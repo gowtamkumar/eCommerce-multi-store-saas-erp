@@ -1,6 +1,6 @@
 "use client";
 
-import SectionRenderer from '@/features/pages/components/customizer/SectionRenderer';
+import SectionRenderer from '@/features/admin/pages/components/customizer/SectionRenderer';
 import { CustomizerSection } from '@/types/customizer';
 import { useEffect, useRef } from 'react';
 

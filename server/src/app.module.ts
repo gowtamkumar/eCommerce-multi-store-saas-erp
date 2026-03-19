@@ -27,7 +27,7 @@ import { ReviewModule } from './modules/admin/review/review.module'
 import { SettingsModule } from './modules/admin/settings/settings.module'
 import { SubscriberModule } from './modules/admin/subscriber/subscriber.module'
 import { AuditLogModule } from './modules/system/audit-log/audit-log.module'
-import { SystemPlatformModule } from './modules/system/system-platform.module'
+import { SystemModule } from './modules/system/system.module'
 import { TenantModule } from './modules/system/tenant/tenant.module'
 
 @Module({
@@ -57,7 +57,7 @@ import { TenantModule } from './modules/system/tenant/tenant.module'
     OthersModule,
     SubscriberModule,
     AuditLogModule,
-    SystemPlatformModule,
+    SystemModule,
     CouponModule,
     PromotionModule,
   ],

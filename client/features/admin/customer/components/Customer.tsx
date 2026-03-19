@@ -7,7 +7,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { ChevronLeft, ChevronRight, Loader2, Search, Trash2, User as UserIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Pagination, User } from '../type';
+import { Pagination, User } from '../../../type';
 
 
 export default function Customer() {

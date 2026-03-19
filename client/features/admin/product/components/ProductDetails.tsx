@@ -20,7 +20,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { ProductDetailsProps } from "../types";
+import { ProductDetailsProps } from "../../../types";
 
 
 const ProductDetails = ({ product }: ProductDetailsProps) => {

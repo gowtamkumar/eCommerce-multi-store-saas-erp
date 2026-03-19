@@ -3,8 +3,8 @@
 import { fetchAPI } from "@/services/api";
 import { useEffect, useState, useMemo } from "react";
 import SectionHeader from "./SectionHeader";
-import ProductCard from "../../../product/components/ProductCard";
 import { motion } from "framer-motion";
+import ProductCard from "@/features/admin/product/components/ProductCard";
 
 interface NewArrivalsProps {
   sectionId?: string;
@@ -31,7 +31,7 @@ export default function NewArrivals({
 }: NewArrivalsProps) {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const uid = useMemo(() => `na-${Math.random().toString(36).substring(2, 7)}`, []);
 
   useEffect(() => {
@@ -45,13 +45,13 @@ export default function NewArrivals({
         }
         const res = await fetchAPI(endpoint);
         let fetchedProducts = res.data?.products || [];
-        
+
         if (source === 'manual' && productIds.length > 0) {
           fetchedProducts = productIds
             .map(id => fetchedProducts.find((p: any) => p.id === id || p._id === id))
             .filter(Boolean);
         } else {
-            fetchedProducts = fetchedProducts.slice(0, count);
+          fetchedProducts = fetchedProducts.slice(0, count);
         }
 
         setProducts(fetchedProducts);
@@ -93,19 +93,19 @@ export default function NewArrivals({
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between mb-6 sm:mb-10 lg:gap-10">
           <div className="flex-1 min-w-0">
-            <SectionHeader 
-                title={headline} 
-                styles={styles} 
-                noMargin 
-                noPadding 
-                className="!mb-0" 
+            <SectionHeader
+              title={headline}
+              styles={styles}
+              noMargin
+              noPadding
+              className="!mb-0"
             />
           </div>
         </div>
 
         {loading ? (
-          <div className={`grid gap-4 sm:gap-6`} style={{ 
-            gridTemplateColumns: `repeat(${mobileColumns}, minmax(0, 1fr))` 
+          <div className={`grid gap-4 sm:gap-6`} style={{
+            gridTemplateColumns: `repeat(${mobileColumns}, minmax(0, 1fr))`
           } as any}>
             <style>{`
               @media (min-width: 768px) {
@@ -114,26 +114,26 @@ export default function NewArrivals({
                 }
               }
             `}</style>
-            <div className={`grid-container grid gap-4 sm:gap-6 col-span-full`} style={{ 
-                gridTemplateColumns: `repeat(${mobileColumns}, minmax(0, 1fr))` 
+            <div className={`grid-container grid gap-4 sm:gap-6 col-span-full`} style={{
+              gridTemplateColumns: `repeat(${mobileColumns}, minmax(0, 1fr))`
             } as any}>
-                {[...Array(columns)].map((_, i) => (
+              {[...Array(columns)].map((_, i) => (
                 <div key={i} className="shrink-0 animate-pulse">
-                    <div className={`aspect-[4/5] bg-slate-200 dark:bg-slate-800 ${cardRadiusClass} mb-4`} />
-                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-2" />
-                    <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
+                  <div className={`aspect-[4/5] bg-slate-200 dark:bg-slate-800 ${cardRadiusClass} mb-4`} />
+                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-2" />
+                  <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
                 </div>
-                ))}
+              ))}
             </div>
           </div>
         ) : products.length > 0 ? (
-          <motion.div 
+          <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
             className={`grid gap-4 sm:gap-6 ${uid}-grid`}
-            style={{ 
-                gridTemplateColumns: `repeat(${mobileColumns}, minmax(0, 1fr))` 
+            style={{
+              gridTemplateColumns: `repeat(${mobileColumns}, minmax(0, 1fr))`
             } as any}
           >
             <style>{`

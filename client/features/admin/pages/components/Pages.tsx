@@ -5,7 +5,7 @@ import { Eye, Home, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Page } from "../type";
+import { Page } from "../../../type";
 
 
 export default function PagesList() {

@@ -3,10 +3,10 @@
 import { fetchAPI } from "@/services/api";
 import { useEffect, useRef, useState, useMemo } from "react";
 import SectionHeader from "./SectionHeader";
-import ProductCard from "../../../product/components/ProductCard";
-import { ProductSliderProps } from "../../type";
 import { animate, motion, useMotionValue } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import ProductCard from "@/features/admin/product/components/ProductCard";
+import { ProductSliderProps } from "../../../type";
 
 export default function ProductSlider({
   sectionId,
@@ -25,7 +25,7 @@ export default function ProductSlider({
   const carouselRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const x = useMotionValue(0);
-  
+
   const uid = useMemo(() => `ps-${Math.random().toString(36).substring(2, 7)}`, []);
 
   useEffect(() => {
@@ -88,7 +88,7 @@ export default function ProductSlider({
     styles?.cardRadius === 'large' ? 'rounded-[2rem]' :
       styles?.cardRadius === 'none' ? 'rounded-none' : 'rounded-2xl';
 
-  const isSlider = true; 
+  const isSlider = true;
 
   return (
     <div className={`w-full overflow-hidden py-10 sm:py-16 ${uid}`}>
@@ -102,19 +102,19 @@ export default function ProductSlider({
           }
         }
       `}</style>
-      
+
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between mb-6 sm:mb-10 lg:gap-10">
           <div className="flex-1 min-w-0">
-            <SectionHeader 
-                title={headline} 
-                styles={styles} 
-                noMargin 
-                noPadding 
-                className="!mb-0" 
+            <SectionHeader
+              title={headline}
+              styles={styles}
+              noMargin
+              noPadding
+              className="!mb-0"
             />
           </div>
-          
+
           {/* Navigation Controls */}
           {products.length > 0 && (
             <div className="flex gap-2 sm:gap-3 shrink-0">

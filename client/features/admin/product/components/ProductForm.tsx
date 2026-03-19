@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import ProductVariants from './ProductVariants';
-import RichEditor from '../../../components/shared/RichEditor';
+import RichEditor from '../../../../../components/shared/RichEditor';
 
 interface ProductFormProps {
   initialData?: any;

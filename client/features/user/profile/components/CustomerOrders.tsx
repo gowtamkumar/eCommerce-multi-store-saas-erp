@@ -3,7 +3,6 @@
 import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
 import { OrderStatus } from "@/lib/enums/order-status";
-import ReturnModal from "../../return/components/ReturnModal";
 
 import { getOrderStatusStyles } from "@/lib/utils";
 import { Eye, Package, RotateCcw, Search, ShoppingBag, Star, Truck } from "lucide-react";
@@ -11,6 +10,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Order, OrderItem } from "@/types/order";
+import ReturnModal from "@/features/admin/return/components/ReturnModal";
 
 
 const CustomerOrders = () => {
