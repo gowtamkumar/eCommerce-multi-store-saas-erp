@@ -1,4 +1,4 @@
-import Pages from '@/features/pages/components/Pages'
+import Pages from '@/features/admin/pages/components/Pages'
 
 function page() {
     return (

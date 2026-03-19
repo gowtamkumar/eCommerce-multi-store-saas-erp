@@ -1,4 +1,4 @@
-import InvoicesList from '@/features/invoice/components/InvoicesList';
+import InvoicesList from '@/features/admin/invoice/components/InvoicesList';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

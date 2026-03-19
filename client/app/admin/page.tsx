@@ -1,4 +1,4 @@
-import AdminDashboard from "@/features/dashboard/components/AdminDashboard"
+import AdminDashboard from "@/features/admin/dashboard/components/AdminDashboard"
 
 export default function page() {
   return <AdminDashboard />

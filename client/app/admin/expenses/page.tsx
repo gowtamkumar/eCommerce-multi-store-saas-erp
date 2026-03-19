@@ -1,4 +1,4 @@
-import ExpensesList from '@/features/expense/components/ExpensesList';
+import ExpensesList from '@/features/admin/expense/components/ExpensesList';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

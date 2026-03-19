@@ -1,4 +1,4 @@
-import Leads from "@/features/leads/components/Leads"
+import Leads from "@/features/admin/leads/components/Leads"
 
 export default function page() {
     return (

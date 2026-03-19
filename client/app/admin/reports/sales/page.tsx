@@ -1,4 +1,4 @@
-import SalesReport from '@/features/report/components/SalesReport';
+import SalesReport from '@/features/admin/report/components/SalesReport';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

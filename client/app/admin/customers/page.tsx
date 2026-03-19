@@ -1,4 +1,4 @@
-import Customer from "@/features/customer/components/Customer";
+import Customer from "@/features/admin/customer/components/Customer"
 
 function page() {
     return (

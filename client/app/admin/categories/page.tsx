@@ -1,4 +1,4 @@
-import Category from '@/features/category/components/Category'
+import Category from '@/features/admin/category/components/Category'
 
 function page() {
   return (

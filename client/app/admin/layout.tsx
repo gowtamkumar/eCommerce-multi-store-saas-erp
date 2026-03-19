@@ -1,4 +1,4 @@
-import AdminLayout from "@/features/dashboard/components/AdminLayout";
+import AdminLayout from "@/features/admin/dashboard/components/AdminLayout";
 
 export default function page({
   children,

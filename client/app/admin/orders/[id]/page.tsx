@@ -1,4 +1,4 @@
-import OrderDetailsPage from '@/features/order/components/OrderDetailsPage'
+import OrderDetailsPage from '@/features/admin/order/components/OrderDetailsPage'
 
 export default function page({ params }: { params: Promise<{ id: string; }> }) {
   return (

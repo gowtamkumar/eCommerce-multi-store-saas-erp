@@ -1,4 +1,4 @@
-import Orders from "@/features/order/components/Orders";
+import Orders from "@/features/admin/order/components/Orders";
 
 export default function page() {
   return (

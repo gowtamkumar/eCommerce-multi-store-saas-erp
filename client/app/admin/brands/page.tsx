@@ -1,8 +1,8 @@
-import Brand from '@/features/brand/components/Brand'
+import BrandGrid from "@/features/admin/brand/components/BrandSlider"
 
 function page() {
   return (
-    <Brand />
+    <BrandGrid />
   )
 }
 

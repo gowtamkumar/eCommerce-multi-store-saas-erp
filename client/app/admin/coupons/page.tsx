@@ -1,6 +1,6 @@
 'use client';
 
-import Coupons from "@/features/coupon/components/Coupons";
+import Coupons from "@/features/admin/coupon/components/Coupons";
 
 export default function CouponsPage() {
     return (

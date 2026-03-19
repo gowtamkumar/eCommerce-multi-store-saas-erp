@@ -1,7 +1,7 @@
 'use client';
 
-import InventoryDashboard from '@/features/inventory/components/InventoryDashboard';
-import InventoryList from '@/features/inventory/components/InventoryList';
+import InventoryDashboard from '@/features/admin/inventory/components/InventoryDashboard';
+import InventoryList from '@/features/admin/inventory/components/InventoryList';
 import { BarChart3, History } from 'lucide-react';
 import { useState } from 'react';
 

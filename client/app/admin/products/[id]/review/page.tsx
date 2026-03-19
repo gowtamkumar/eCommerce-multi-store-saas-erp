@@ -1,4 +1,4 @@
-import ProductReviewPage from '@/features/product/components/ProductReviewPage'
+import ProductReviewPage from '@/features/admin/product/components/ProductReviewPage'
 
 export default function page({ params }: { params: Promise<{ id: string }> }) {
     return (

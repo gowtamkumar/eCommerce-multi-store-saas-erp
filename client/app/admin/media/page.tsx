@@ -1,4 +1,4 @@
-import Media from '@/features/media/components/Media'
+import Media from '@/features/admin/media/components/Media'
 
 function page() {
     return (

@@ -1,4 +1,4 @@
-import Reviews from "@/features/review/components/Reviews";
+import Reviews from "@/features/admin/review/components/Reviews";
 
 export default function page() {
     return (

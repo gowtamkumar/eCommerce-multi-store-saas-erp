@@ -1,4 +1,4 @@
-import Promotions from "@/features/promotion/components/Promotions";
+import Promotions from "@/features/admin/promotion/components/Promotions";
 import React from 'react';
 
 export default function PromotionsPage() {

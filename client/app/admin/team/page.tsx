@@ -1,6 +1,6 @@
 'use client';
 
-import TeamList from '@/features/team/components/TeamList';
+import TeamList from '@/features/admin/team/components/TeamList';
 
 export default function TeamPage() {
     return (

@@ -1,4 +1,4 @@
-import PurchaseOrderForm from '@/features/purchase/components/PurchaseOrderForm';
+import PurchaseOrderForm from '@/features/admin/purchase/components/PurchaseOrderForm';
 
 export default function NewPurchasePage() {
     return (

@@ -1,4 +1,4 @@
-import FAQs from '@/features/faq/components/Faqs'
+import FAQs from "@/features/admin/faq/components/Faqs";
 
 export default function page() {
   return (

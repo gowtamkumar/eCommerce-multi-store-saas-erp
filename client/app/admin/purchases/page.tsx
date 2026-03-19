@@ -1,4 +1,4 @@
-import PurchaseOrderList from '@/features/purchase/components/PurchaseOrderList';
+import PurchaseOrderList from '@/features/admin/purchase/components/PurchaseOrderList';
 
 export default function page() {
     return (

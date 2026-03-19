@@ -1,4 +1,4 @@
-import SupplierLedger from '@/features/report/components/SupplierLedger';
+import SupplierLedger from '@/features/admin/report/components/SupplierLedger';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

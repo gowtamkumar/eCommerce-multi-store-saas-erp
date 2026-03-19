@@ -1,4 +1,4 @@
-import Subscribers from "@/features/subscriber/components/Subscribers";
+import Subscribers from "@/features/admin/subscriber/components/Subscribers";
 
 export default function page() {
     return (

@@ -1,4 +1,4 @@
-import ProfitLossReport from '@/features/report/components/ProfitLossReport';
+import ProfitLossReport from '@/features/admin/report/components/ProfitLossReport';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

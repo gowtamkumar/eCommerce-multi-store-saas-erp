@@ -1,4 +1,4 @@
-import CashFlowReport from '@/features/report/components/CashFlowReport';
+import CashFlowReport from '@/features/admin/report/components/CashFlowReport';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
