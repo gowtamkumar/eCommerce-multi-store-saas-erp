@@ -3,12 +3,14 @@ import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard
 export const navGroups = [
     {
         title: 'Insights',
+        roles: ['Admin', 'Operator', 'SuperAdmin'],
         items: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
         ]
     },
     {
         title: 'Catalog',
+        roles: ['Admin', 'Operator', 'SuperAdmin'],
         items: [
             { icon: Package, label: 'Products', href: '/admin/products' },
             { icon: Tag, label: 'Categories', href: '/admin/categories' },
@@ -19,6 +21,7 @@ export const navGroups = [
     },
     {
         title: 'Sales & CRM',
+        roles: ['Admin', 'Operator', 'SuperAdmin'],
         items: [
             { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
             { icon: RotateCcw, label: 'Returns', href: '/admin/returns' },
@@ -29,6 +32,7 @@ export const navGroups = [
     },
     {
         title: 'Operations',
+        roles: ['Admin', 'Operator', 'SuperAdmin'],
         items: [
             { icon: Package, label: 'Inventory', href: '/admin/inventory' },
             { icon: Users, label: 'Suppliers', href: '/admin/suppliers' },
@@ -39,6 +43,7 @@ export const navGroups = [
     },
     {
         title: 'Marketing',
+        roles: ['Admin', 'Operator', 'SuperAdmin'],
         items: [
             { icon: Tag, label: 'Coupons', href: '/admin/coupons' },
             { icon: Megaphone, label: 'Promotions', href: '/admin/promotions' },
@@ -48,6 +53,7 @@ export const navGroups = [
     },
     {
         title: 'Reports',
+        roles: ['Admin', 'Operator', 'SuperAdmin'],
         items: [
             { icon: BarChart3, label: 'Sales Analysis', href: '/admin/reports/sales' },
             { icon: TrendingUp, label: 'Finance Summary', href: '/admin/reports/finance' },
@@ -59,12 +65,14 @@ export const navGroups = [
     },
     {
         title: 'Access Control',
+        roles: ['Admin', 'SuperAdmin'],
         items: [
             { icon: ShieldCheck, label: 'Staff Accounts', href: '/admin/team' },
         ]
     },
     {
         title: 'System Settings',
+        roles: ['Admin', 'SuperAdmin'],
         items: [
             { icon: Globe, label: 'General Info', href: '/admin/settings?tab=general' },
             { icon: Globe, label: 'Custom Domain', href: '/admin/settings?tab=domain' },
@@ -79,6 +87,7 @@ export const navGroups = [
     },
     {
         title: 'Storefront & UI',
+        roles: ['Admin', 'SuperAdmin'],
         items: [
             { icon: Layout, label: 'Pages Builder', href: '/admin/pages' },
             { icon: Menu, label: 'Navbar Menu', href: '/admin/settings?tab=navbar' },
@@ -89,7 +98,6 @@ export const navGroups = [
             { icon: HelpCircle, label: 'FAQs', href: '/admin/faqs' },
         ]
     },
-
 ];
 
 export const settingsItems: any[] = [];

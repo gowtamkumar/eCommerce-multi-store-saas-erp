@@ -7,7 +7,7 @@ import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function AdminLayout({
     children,
@@ -30,15 +30,30 @@ export default function AdminLayout({
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.replace('/login');
-        } else if (status === 'authenticated' && session?.user?.role !== 'Admin') {
-            console.warn("User is not an admin, redirecting to home");
-            router.replace('/');
+        } else if (status === 'authenticated') {
+            const role = session?.user?.role;
+            const allowedRoles = ['Admin', 'Operator', 'SuperAdmin'];
+            if (!allowedRoles.includes(role)) {
+                console.warn(`User role ${role} is not authorized for admin access`);
+                router.replace('/');
+            }
         }
     }, [status, session, router]);
 
+    // Filter nav groups based on user role
+    const filteredNavGroups = useMemo(() => {
+        return navGroups.filter(group => {
+            const userRole = session?.user?.role;
+            if ((group as any).roles) {
+                return (group as any).roles.includes(userRole) || userRole === 'SuperAdmin';
+            }
+            return true;
+        });
+    }, [session?.user?.role]);
+
     useEffect(() => {
         // Find which group contains the current pathname
-        const activeGroup = navGroups.find(group =>
+        const activeGroup = filteredNavGroups.find(group =>
             group.items.some((item: any) => {
                 if (!item.href) return false;
                 const isMatch = item.href.includes('?')
@@ -56,7 +71,7 @@ export default function AdminLayout({
         if (pathname?.startsWith('/admin/pages/') && pathname.split('/').length > 3) {
             setIsSidebarCollapsed(true);
         }
-    }, [pathname, searchParams]);
+    }, [pathname, searchParams, filteredNavGroups]);
 
     const toggleGroup = (title: string) => {
         setExpandedGroups(prev => {
@@ -152,7 +167,7 @@ export default function AdminLayout({
                 </div>
 
                 <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
-                    {navGroups.map((group, groupIndex) => {
+                    {filteredNavGroups.map((group, groupIndex) => {
                         const isExpanded = expandedGroups.has(group.title);
                         const hasActive = group.items.some((item: any) => {
                             if (!item.href) return false;

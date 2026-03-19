@@ -1,12 +1,12 @@
 'use client';
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
-import { FileText, Package, ShoppingBag, TrendingUp, History as HistoryIcon, Plus, Truck, Globe } from 'lucide-react';
+import { FileText, Package, ShoppingBag, TrendingUp, History as HistoryIcon, Plus, Truck, Globe, Users, Activity, MousePointer2, Clock, BarChart3, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
-import TenantAnalytics from '@/features/system/components/TenantAnalytics';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { motion } from 'framer-motion';
 import { DashboardStats } from '../types';
 
 
@@ -83,121 +83,147 @@ export default function AdminDashboard() {
 
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 pb-12">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display">Dashboard Overview</h1>
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white font-display flex items-center gap-3">
+                        Dashboard <span className="text-brand-600 italic">Overview</span>
+                    </h1>
+                    <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-1">Real-time performance metrics</p>
+                </div>
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner">
                         {(['day', 'week', 'month'] as const).map((p) => (
                             <button
                                 key={p}
                                 onClick={() => setPeriod(p)}
-                                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${period === p
+                                className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${period === p
                                     ? 'bg-white dark:bg-slate-700 text-brand-600 shadow-sm'
                                     : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                                     }`}
                             >
-                                {p.charAt(0).toUpperCase() + p.slice(1)}
+                                {p}
                             </button>
                         ))}
-                    </div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">
-                        {new Date().toLocaleTimeString()}
                     </div>
                 </div>
             </div>
 
+            {/* Operational Status Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-md">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:border-brand-500/20 group">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">
-                                {period.charAt(0).toUpperCase() + period.slice(1)} Sales
+                            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">
+                                {period} Sales
                             </p>
                             {loading ? (
                                 <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
                             ) : (
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{formatPrice(stats.periodSales)}</h3>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white font-mono">{formatPrice(stats.periodSales)}</h3>
                             )}
                         </div>
-                        <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                            <span className="text-green-600 dark:text-green-400 font-bold">{selectedCurrency.symbol}</span>
+                        <div className="p-3 bg-brand-50 dark:bg-brand-900/20 rounded-2xl group-hover:scale-110 transition-transform">
+                            <TrendingUp className="w-5 h-5 text-brand-600 dark:text-brand-400" />
                         </div>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
                         {stats.periodOrders} orders this {period}
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-md">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:border-blue-500/20 group">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Active Orders</p>
+                            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Active Orders</p>
                             {loading ? (
                                 <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
                             ) : (
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{stats.activeOrders}</h3>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white font-mono">{stats.activeOrders}</h3>
                             )}
                         </div>
-                        <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl group-hover:scale-110 transition-transform">
                             <ShoppingBag className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         </div>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
                         Awaiting fulfillment
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-md">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:border-cyan-500/20 group">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Traffic (7D)</p>
+                            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Traffic (7D)</p>
                             {loading ? (
                                 <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
                             ) : (
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{(stats.traffic as any)?.totalHits || 0}</h3>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white font-mono">{(stats.traffic as any)?.totalHits || 0}</h3>
                             )}
                         </div>
-                        <div className="p-3 bg-cyan-100 dark:bg-cyan-900/30 rounded-xl">
+                        <div className="p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl group-hover:scale-110 transition-transform">
                             <Globe className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
                         </div>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
                         Total hits this week
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-md">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:border-rose-500/20 group">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Inventory Alert</p>
+                            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Inventory Alert</p>
                             {loading ? (
                                 <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
                             ) : (
-                                <h3 className="text-2xl font-bold text-rose-600">{stats.lowStockCount || 0}</h3>
+                                <h3 className="text-2xl font-black text-rose-500 font-mono">{stats.lowStockCount || 0}</h3>
                             )}
                         </div>
-                        <div className="p-3 bg-rose-100 dark:bg-rose-900/30 rounded-xl">
+                        <div className="p-3 bg-rose-50 dark:bg-rose-900/20 rounded-2xl group-hover:scale-110 transition-transform">
                             <Package className="w-5 h-5 text-rose-600 dark:text-rose-400" />
                         </div>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
                         Items with low stock
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                {/* Sales Chart */}
-                <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
-                    <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                            <TrendingUp className="w-6 h-6 text-brand-500" /> Fulfillment Velocity
-                        </h3>
+            {/* Platform Analytics Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                    { label: 'Merchant Users', value: stats.counts?.users || 0, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-500/20' },
+                    { label: 'Total Products', value: stats.counts?.products || 0, icon: Store, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-500/20' },
+                    { label: 'Customer Orders', value: stats.counts?.orders || 0, icon: BarChart3, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-500/20' },
+                    { label: 'Store Pages', value: stats.counts?.pages || 0, icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-500/20' },
+                ].map((s) => (
+                    <div key={s.label} className={`bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:${s.border} group`}>
+                        <div className="flex items-center justify-between mb-2">
+                            <div className={`p-2.5 ${s.bg} dark:bg-slate-900/50 rounded-xl group-hover:rotate-12 transition-transform`}>
+                                <s.icon className={`w-4 h-4 ${s.color}`} />
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white font-mono">{s.value}</h3>
+                        </div>
+                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{s.label}</p>
                     </div>
-                    <div className="h-[350px] w-full">
+                ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                {/* Sales Chart */}
+                <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-2xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter italic">
+                                <TrendingUp className="w-6 h-6 text-brand-500" /> Sales Velocity
+                            </h3>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Transaction flow performance</p>
+                        </div>
+                    </div>
+                    <div className="h-[400px] w-full mt-4">
                         {loading ? (
-                            <div className="w-full h-full bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-2xl"></div>
+                            <div className="w-full h-full bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-[32px]"></div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={stats.salesData}>
@@ -212,33 +238,34 @@ export default function AdminDashboard() {
                                         dataKey="name"
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
-                                        dy={10}
+                                        tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
+                                        dy={15}
                                     />
                                     <YAxis
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
+                                        tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
                                     />
                                     <Tooltip
                                         contentStyle={{
-                                            backgroundColor: '#1e293b',
-                                            borderRadius: '16px',
+                                            backgroundColor: '#0f172a',
+                                            borderRadius: '24px',
                                             border: 'none',
-                                            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                                            boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.5)',
                                             color: '#fff',
-                                            padding: '12px'
+                                            padding: '20px'
                                         }}
-                                        itemStyle={{ color: '#fff', fontWeight: 800 }}
-                                        labelStyle={{ color: '#94a3b8', marginBottom: '4px', fontWeight: 600 }}
+                                        itemStyle={{ color: '#3b82f6', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                                        labelStyle={{ color: '#94a3b8', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase' }}
                                     />
                                     <Area
                                         type="monotone"
                                         dataKey="sales"
                                         stroke="#3b82f6"
-                                        strokeWidth={4}
+                                        strokeWidth={6}
                                         fillOpacity={1}
                                         fill="url(#colorSales)"
+                                        animationDuration={1500}
                                     />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -246,219 +273,199 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                <div className="lg:col-span-1 flex flex-col gap-6">
+                <div className="flex flex-col gap-6">
+                    {/* Activity Distribution */}
+                    <div className="bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-xl border border-slate-100 dark:border-slate-700">
+                        <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6 uppercase tracking-tighter italic">Platform Health</h3>
+                        <div className="space-y-6">
+                            {[
+                                { label: 'Users', val: stats.counts?.users || 0, color: 'bg-indigo-500' },
+                                { label: 'Products', val: stats.counts?.products || 0, color: 'bg-emerald-500' },
+                                { label: 'Orders', val: stats.counts?.orders || 0, color: 'bg-amber-500' },
+                                { label: 'Pages', val: stats.counts?.pages || 0, color: 'bg-blue-500' },
+                            ].map((item) => (
+                                <div key={item.label}>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
+                                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono">{item.val}</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-slate-50 dark:bg-slate-900 rounded-full overflow-hidden">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${Math.min((item.val / (Math.max(item.val, 1) * 1.5)) * 100, 100)}%` }}
+                                            className={`h-full ${item.color}`}
+                                            transition={{ duration: 1, ease: 'easeOut' }}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Quick Actions */}
-                    <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700 h-full flex flex-col justify-center">
-                        <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6">Quick Actions</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <Link href="/admin/products/new" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-brand-50 dark:hover:bg-brand-900/20 group transition-all text-center">
-                                <Plus className="w-6 h-6 text-brand-600 mb-2 group-hover:scale-110 transition-transform mx-auto" />
-                                <p className="text-[10px] font-black uppercase tracking-widest">New Product</p>
+                    <div className="bg-brand-600 p-8 rounded-[40px] shadow-xl shadow-brand-200 flex flex-col justify-center">
+                        <h3 className="text-lg font-black text-white mb-6 uppercase tracking-tighter italic">Command Center</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Link href="/admin/products/new" className="p-4 bg-white/10 hover:bg-white/20 rounded-3xl transition-all text-center group">
+                                <Plus className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform mx-auto" />
+                                <p className="text-[9px] font-black uppercase tracking-widest text-white/80">New Item</p>
                             </Link>
-                            <Link href="/admin/purchases/new" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 group transition-all text-center">
-                                <Truck className="w-6 h-6 text-emerald-600 mb-2 group-hover:scale-110 transition-transform mx-auto" />
-                                <p className="text-[10px] font-black uppercase tracking-widest">New Purchase</p>
+                            <Link href="/admin/purchases/new" className="p-4 bg-white/10 hover:bg-white/20 rounded-3xl transition-all text-center group">
+                                <Truck className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform mx-auto" />
+                                <p className="text-[9px] font-black uppercase tracking-widest text-white/80">Purchase</p>
                             </Link>
-                            <Link href="/admin/orders" className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-900/20 group transition-all text-center">
-                                <ShoppingBag className="w-6 h-6 text-blue-600 mb-2 group-hover:scale-110 transition-transform mx-auto" />
-                                <p className="text-[10px] font-black uppercase tracking-widest">Manage Orders</p>
-                            </Link>
-                            <button onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })} className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-cyan-50 dark:hover:bg-cyan-900/20 group transition-all text-center">
-                                <Globe className="w-6 h-6 text-cyan-600 mb-2 group-hover:scale-110 transition-transform mx-auto" />
-                                <p className="text-[10px] font-black uppercase tracking-widest">View Traffic</p>
-                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Recent Purchases */}
-                <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
-                    <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                            <HistoryIcon className="w-6 h-6 text-brand-500" /> Recent Purchases
-                        </h3>
-                        <Link href="/admin/purchases" className="text-sm font-bold text-brand-600 hover:underline">View all</Link>
-                    </div>
-                    <div className="space-y-4">
-                        {loading ? (
-                            Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="h-20 bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-2xl"></div>
-                            ))
-                        ) : stats.supplierStats?.recentPurchaseOrders?.length ? (
-                            stats.supplierStats.recentPurchaseOrders.map((po: any) => (
-                                <Link
-                                    key={po.id}
-                                    href={`/admin/purchases/${po.id}`}
-                                    className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 hover:border-brand-500/30 transition-all group"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:scale-110 transition-transform">
-                                            <Package className="w-6 h-6 text-slate-400" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Recent Items Grid */}
+                <div className="grid grid-cols-1 gap-8">
+                    {/* Recent Purchases */}
+                    <div className="bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-sm border border-slate-100 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter italic">
+                                <HistoryIcon className="w-6 h-6 text-brand-500" /> Recent Activity
+                            </h3>
+                            <Link href="/admin/purchases" className="text-xs font-black text-brand-600 uppercase tracking-widest hover:underline">View Ledger</Link>
+                        </div>
+                        <div className="space-y-4">
+                            {loading ? (
+                                Array.from({ length: 3 }).map((_, i) => (
+                                    <div key={i} className="h-20 bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-2xl"></div>
+                                ))
+                            ) : stats.supplierStats?.recentPurchaseOrders?.length ? (
+                                stats.supplierStats.recentPurchaseOrders.map((po: any) => (
+                                    <Link key={po.id} href={`/admin/purchases/${po.id}`} className="flex items-center justify-between p-4 rounded-3xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 hover:border-brand-500/30 transition-all group">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:rotate-12 transition-transform">
+                                                <Package className="w-6 h-6 text-slate-400" />
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-slate-900 dark:text-white text-sm">{po.referenceNumber}</p>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{po.supplier?.name}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-black text-slate-900 dark:text-white">{po.referenceNumber}</p>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{po.supplier?.name}</p>
+                                        <div className="text-right">
+                                            <p className="font-black text-slate-900 dark:text-white font-mono text-sm">{formatPrice(po.totalAmount)}</p>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-brand-500">{po.status}</span>
                                         </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="font-black text-slate-900 dark:text-white font-mono">{formatPrice(po.totalAmount)}</p>
-                                        <span className={`text-[10px] font-black uppercase tracking-widest ${po.status === 'RECEIVED' ? 'text-emerald-500' : 'text-orange-500'
-                                            }`}>
-                                            {po.status}
-                                        </span>
-                                    </div>
-                                </Link>
-                            ))
-                        ) : (
-                            <div className="py-20 text-center space-y-4">
-                                <Truck className="w-12 h-12 text-slate-200 mx-auto" strokeWidth={1} />
-                                <p className="text-sm text-slate-400 font-bold italic">No purchase orders found</p>
-                            </div>
-                        )}
+                                    </Link>
+                                ))
+                            ) : (
+                                <div className="py-20 text-center bg-slate-50 dark:bg-slate-900/20 rounded-[32px] border border-dashed border-slate-200 dark:border-slate-800">
+                                    <Truck className="w-12 h-12 text-slate-200 mx-auto" strokeWidth={1} />
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-4">Empty active pool</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                {/* Recent Products */}
-                <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
-                    <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                            <Plus className="w-6 h-6 text-brand-500" /> Recent Products
-                        </h3>
-                        <Link href="/admin/products" className="text-sm font-bold text-brand-600 hover:underline">View all</Link>
+                {/* Top Visited Pages (Moved from TenantAnalytics) */}
+                <div className="bg-white dark:bg-slate-800 rounded-[40px] border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
+                    <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/20">
+                        <div>
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Traffic Hotspots</h2>
+                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">High engagement resource paths</p>
+                        </div>
+                        <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-[20px]">
+                            <MousePointer2 className="w-5 h-5 text-indigo-600" />
+                        </div>
                     </div>
-                    <div className="space-y-4">
-                        {loading ? (
-                            Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="h-20 bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-2xl"></div>
-                            ))
-                        ) : recentProducts.map((product: any) => (
-                            <div key={product.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 group transition-all">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 overflow-hidden border border-slate-100 dark:border-slate-700 group-hover:scale-110 transition-transform">
-                                        {product.images?.[0] && (
-                                            <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="font-black text-slate-900 dark:text-white text-sm line-clamp-1">{product.name}</p>
-                                        <p className="text-[10px] font-bold text-slate-500 font-mono tracking-tighter">{formatPrice(product.price)}</p>
-                                    </div>
-                                </div>
-                                <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${product.status === 'active' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'
-                                    }`}>
-                                    {product.status}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Recent Pages */}
-                <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
-                    <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                            <FileText className="w-6 h-6 text-brand-500" /> Recent Pages
-                        </h3>
-                        <Link href="/admin/pages" className="text-sm font-bold text-brand-600 hover:underline">View all</Link>
-                    </div>
-                    <div className="space-y-4">
-                        {loading ? (
-                            Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="h-20 bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-2xl"></div>
-                            ))
-                        ) : stats.recentPages.map((page: any) => (
-                            <div key={page.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 group transition-all">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:rotate-12 transition-transform">
-                                        <FileText className="w-6 h-6 text-slate-400" />
-                                    </div>
-                                    <div>
-                                        <p className="font-black text-slate-900 dark:text-white text-sm line-clamp-1">{page.title}</p>
-                                        <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">/{page.isHomePage ? 'index' : page.slug}</p>
-                                    </div>
-                                </div>
-                                <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${page.status === 'published' ? 'bg-cyan-100 text-cyan-600' : 'bg-yellow-100 text-yellow-600'
-                                    }`}>
-                                    {page.status}
-                                </div>
-                            </div>
-                        ))}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-white dark:bg-slate-800 border-b border-slate-50 dark:border-slate-700">
+                                    <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest">Route</th>
+                                    <th className="px-6 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Hits</th>
+                                    <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Activity</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
+                                {!(stats.traffic as any)?.topPages?.length ? (
+                                    <tr>
+                                        <td colSpan={3} className="px-8 py-16 text-center">
+                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest italic">No pulse detected</p>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    (stats.traffic as any).topPages.map((page: any, i: number) => (
+                                        <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                                            <td className="px-8 py-5">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-[10px] font-black text-slate-300">{(i + 1).toString().padStart(2, '0')}</span>
+                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">/{page.path}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-5 text-center">
+                                                <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black font-mono">
+                                                    {page.hits.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-5 text-right">
+                                                <div className="flex items-center justify-end gap-1.5 text-[9px] font-black text-slate-400 uppercase">
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                    {new Date(page.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
             {/* Low Stock Alerts */}
-            <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-sm border border-slate-100 dark:border-slate-700">
                 <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                        <Package className="w-6 h-6 text-rose-500" /> Low Stock Alerts
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter italic">
+                        <Package className="w-6 h-6 text-rose-500" /> Stock Deficiency
                     </h3>
-                    <Link href="/admin/products?status=active" className="text-sm font-bold text-brand-600 hover:underline">Manage Inventory</Link>
+                    <Link href="/admin/products?status=active" className="text-[10px] font-black text-brand-600 uppercase tracking-widest hover:underline">Replenish Inventory</Link>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {loading ? (
                         Array.from({ length: 3 }).map((_, i) => (
-                            <div key={i} className="h-24 bg-slate-50 dark:bg-slate-900/50 animate-pulse rounded-2xl"></div>
+                            <div key={i} className="h-24 bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-3xl"></div>
                         ))
                     ) : stats.lowStockProducts?.length ? (
                         stats.lowStockProducts.map((item: any) => (
-                            <Link
-                                key={item.id}
-                                href={`/admin/products/${item.id}`}
-                                className="flex items-center justify-between p-4 rounded-2xl bg-rose-50/50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30 hover:border-rose-500/30 transition-all group"
-                            >
+                            <Link key={item.id} href={`/admin/products/${item.id}`} className="flex items-center justify-between p-5 rounded-[32px] bg-rose-50/30 dark:bg-rose-900/10 border border-rose-100/50 dark:border-rose-900/20 hover:border-rose-500/30 transition-all group">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 overflow-hidden border border-slate-100 dark:border-slate-700 group-hover:scale-110 transition-transform">
+                                    <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 overflow-hidden border border-slate-100 dark:border-slate-700 group-hover:scale-110 transition-transform shadow-sm">
                                         {item.image ? (
                                             <img src={item.image} alt="" className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
-                                                <Package className="w-6 h-6 text-slate-300" />
+                                                <Package className="w-6 h-6 text-slate-200" />
                                             </div>
                                         )}
                                     </div>
                                     <div>
                                         <p className="font-black text-slate-900 dark:text-white text-sm line-clamp-1">{item.name}</p>
-                                        {item.variantName && (
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{item.variantName}</p>
-                                        )}
-                                        <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest mt-0.5">
-                                            Threshold: {item.threshold}
-                                        </p>
+                                        <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-0.5">Alert Level: {item.threshold}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Stock</p>
-                                    <span className="px-2.5 py-1 rounded-lg text-sm font-black bg-rose-100 text-rose-600 dark:bg-rose-900/30">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">In Stock</p>
+                                    <span className="px-3 py-1 rounded-xl text-xs font-black bg-rose-100 text-rose-600 font-mono">
                                         {item.stock}
                                     </span>
                                 </div>
                             </Link>
                         ))
                     ) : (
-                        <div className="col-span-full py-10 text-center space-y-4 bg-slate-50 dark:bg-slate-900/30 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
-                            <Package className="w-12 h-12 text-slate-200 mx-auto" strokeWidth={1} />
-                            <p className="text-sm text-slate-400 font-bold italic">No low stock alerts at the moment</p>
+                        <div className="col-span-full py-16 text-center bg-slate-50 dark:bg-slate-900/20 rounded-[40px] border border-dashed border-slate-200 dark:border-slate-800">
+                            <Package className="w-12 h-12 text-slate-100 mx-auto" strokeWidth={1} />
+                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-4 italic">No critical deplete detected</p>
                         </div>
                     )}
                 </div>
             </div>
-
-            {/* Global Analytics Section */}
-            {stats.counts && (
-                <div className="pt-8 border-t border-slate-100 dark:border-slate-700">
-                    <TenantAnalytics
-                        tenantId={session?.user?.tenantId || "current"}
-                        data={{
-                            counts: stats.counts,
-                            topPages: stats.traffic?.topPages || []
-                        }}
-                        tenantName={session?.user?.name || "Your Store"}
-                    />
-                </div>
-            )}
         </div>
     )
 }
