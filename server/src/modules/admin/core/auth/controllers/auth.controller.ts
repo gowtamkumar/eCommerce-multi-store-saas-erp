@@ -93,6 +93,18 @@ export class AuthController {
     }
   }
 
+  @Post('/accept-invitation')
+  async acceptInvitation(@Body() body: any) {
+    this.logger.verbose(`acceptInvitation called.`);
+    const data = await this.authService.acceptInvitation(body);
+    return {
+      success: true,
+      statusCode: 201,
+      message: data.message,
+      data: data.user,
+    }
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('/me')
   getMe(@RequestContext() ctx: RequestContextDto) {

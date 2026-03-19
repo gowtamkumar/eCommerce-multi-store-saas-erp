@@ -707,7 +707,7 @@ const Navbar = () => {
                   )}
                   {!session && (
                     <Link
-                      href="/auth/login"
+                      href="/login"
                       onClick={closeMobileMenu}
                       className="flex items-center justify-center gap-2 m-4 px-4 py-3 bg-brand-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-brand-500/20"
                     >

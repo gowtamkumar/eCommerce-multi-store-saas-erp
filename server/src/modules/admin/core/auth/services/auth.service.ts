@@ -120,6 +120,11 @@ export class AuthService {
     return this.userService.verifyUserByToken(token)
   }
 
+  async acceptInvitation(dto: any) {
+    this.logger.log(`${this.acceptInvitation.name} Service Called`);
+    return this.userService.acceptInvitation(dto);
+  }
+
   async getTokens(user) {
     this.logger.log(`${this.getTokens.name} Service Called`);
     const payload = {
