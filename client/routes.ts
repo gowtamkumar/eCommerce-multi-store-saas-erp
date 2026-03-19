@@ -58,9 +58,14 @@ export const navGroups = [
         ]
     },
     {
-        title: 'System Setup',
+        title: 'Access Control',
         items: [
-            // Core Settings
+            { icon: ShieldCheck, label: 'Staff Accounts', href: '/admin/team' },
+        ]
+    },
+    {
+        title: 'System Settings',
+        items: [
             { icon: Globe, label: 'General Info', href: '/admin/settings?tab=general' },
             { icon: Globe, label: 'Custom Domain', href: '/admin/settings?tab=domain' },
             { icon: Mail, label: 'Email Config', href: '/admin/settings?tab=email' },
@@ -70,8 +75,11 @@ export const navGroups = [
             { icon: ShieldCheck, label: 'Trust & Safety', href: '/admin/settings?tab=trust' },
             { icon: TrendingUp, label: 'SEO Settings', href: '/admin/settings?tab=marketing' },
             { icon: Tag, label: 'Label Configuration', href: '/admin/settings?tab=label' },
-
-            // Storefront Setup
+        ]
+    },
+    {
+        title: 'Storefront & UI',
+        items: [
             { icon: Layout, label: 'Pages Builder', href: '/admin/pages' },
             { icon: Menu, label: 'Navbar Menu', href: '/admin/settings?tab=navbar' },
             { icon: Layout, label: 'Footer Menu', href: '/admin/settings?tab=footer' },
@@ -81,12 +89,7 @@ export const navGroups = [
             { icon: HelpCircle, label: 'FAQs', href: '/admin/faqs' },
         ]
     },
-    {
-        title: 'Access Control',
-        items: [
-            { icon: ShieldCheck, label: 'Staff Accounts', href: '/admin/team' },
-        ]
-    },
+
 ];
 
 export const settingsItems: any[] = [];

@@ -38,9 +38,10 @@ export default function AdminLayout({
 
     useEffect(() => {
         // Find which group contains the current pathname
-        const activeGroup = navGroups.find(group => 
-            group.items.some(item => {
-                const isMatch = item.href.includes('?') 
+        const activeGroup = navGroups.find(group =>
+            group.items.some((item: any) => {
+                if (!item.href) return false;
+                const isMatch = item.href.includes('?')
                     ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
                     : pathname === item.href;
                 return isMatch;
@@ -153,8 +154,9 @@ export default function AdminLayout({
                 <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
                     {navGroups.map((group, groupIndex) => {
                         const isExpanded = expandedGroups.has(group.title);
-                        const hasActive = group.items.some(item => {
-                            const isMatch = item.href.includes('?') 
+                        const hasActive = group.items.some((item: any) => {
+                            if (!item.href) return false;
+                            const isMatch = item.href.includes('?')
                                 ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
                                 : pathname === item.href;
                             return isMatch;
@@ -171,7 +173,7 @@ export default function AdminLayout({
                                         <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} ${hasActive ? 'text-brand-500' : ''}`} />
                                     </button>
                                 )}
-                                
+
                                 <AnimatePresence initial={false}>
                                     {(isExpanded || isSidebarCollapsed) && (
                                         <motion.div
@@ -181,8 +183,22 @@ export default function AdminLayout({
                                             transition={{ duration: 0.2, ease: "easeInOut" }}
                                             className="overflow-hidden space-y-1"
                                         >
-                                            {group.items.map((item, index) => {
-                                                const isActive = item.href.includes('?') 
+                                            {group.items.map((item: any, index) => {
+                                                if (item.type === 'header') {
+                                                    return !isSidebarCollapsed && (
+                                                        <div
+                                                            key={`${groupIndex}-${index}`}
+                                                            className={`flex items-center gap-2 px-4 ${index !== 0 ? 'mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/50' : 'mt-2'}`}
+                                                        >
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-brand-500/50" />
+                                                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                                                {item.label}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                const isActive = item.href.includes('?')
                                                     ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
                                                     : pathname === item.href;
                                                 return (

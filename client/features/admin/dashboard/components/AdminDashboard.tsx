@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import TenantAnalytics from '@/features/system/components/TenantAnalytics';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { DashboardStats } from '../../../types';
+import { DashboardStats } from '../types';
 
 
 export default function AdminDashboard() {
