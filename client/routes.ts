@@ -8,15 +8,13 @@ export const navGroups = [
         ]
     },
     {
-        title: 'Catalog & Content',
+        title: 'Catalog',
         items: [
             { icon: Package, label: 'Products', href: '/admin/products' },
             { icon: Tag, label: 'Categories', href: '/admin/categories' },
             { icon: Globe, label: 'Brands', href: '/admin/brands' },
-            { icon: Layout, label: 'Pages', href: '/admin/pages' },
-            { icon: Menu, label: 'Navbar', href: '/admin/pages' },
             { icon: User, label: 'Media', href: '/admin/media' },
-            { icon: HelpCircle, label: 'FAQs', href: '/admin/faqs' },
+            { icon: Star, label: 'Reviews', href: '/admin/reviews' },
         ]
     },
     {
@@ -27,8 +25,6 @@ export const navGroups = [
             { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
             { icon: FileText, label: 'Invoices', href: '/admin/invoices' },
             { icon: Users, label: 'Customers', href: '/admin/customers' },
-            { icon: Star, label: 'Reviews', href: '/admin/reviews' },
-
         ]
     },
     {
@@ -42,16 +38,41 @@ export const navGroups = [
         ]
     },
     {
-        title: 'Marketing',
+        title: 'Storefront & UI',
+        items: [
+            { icon: Layout, label: 'Pages Builder', href: '/admin/pages' },
+            { icon: Menu, label: 'Navbar Menu', href: '/admin/settings?tab=navbar' },
+            { icon: Layout, label: 'Footer Menu', href: '/admin/settings?tab=footer' },
+            { icon: Layout, label: 'Product List UI', href: '/admin/settings?tab=productsPage' },
+            { icon: Layout, label: 'Product Detail UI', href: '/admin/settings?tab=singleProductPage' },
+            { icon: Tag, label: 'Offers Page UI', href: '/admin/settings?tab=offersPage' },
+            { icon: HelpCircle, label: 'FAQs', href: '/admin/faqs' },
+        ]
+    },
+    {
+        title: 'Marketing & SEO',
         items: [
             { icon: Tag, label: 'Coupons', href: '/admin/coupons' },
             { icon: Megaphone, label: 'Promotions', href: '/admin/promotions' },
             { icon: MessageSquare, label: 'Newsletter', href: '/admin/leads' },
             { icon: Mail, label: 'Subscribers', href: '/admin/subscribers' },
+            { icon: TrendingUp, label: 'SEO Settings', href: '/admin/settings?tab=marketing' },
         ]
     },
     {
-        title: 'Financial Reports',
+        title: 'System Setup',
+        items: [
+            { icon: Globe, label: 'General Info', href: '/admin/settings?tab=general' },
+            { icon: Globe, label: 'Custom Domain', href: '/admin/settings?tab=domain' },
+            { icon: Mail, label: 'Email Config', href: '/admin/settings?tab=email' },
+            { icon: CreditCard, label: 'Payment Methods', href: '/admin/settings?tab=payment' },
+            { icon: Truck, label: 'Courier Rules', href: '/admin/settings?tab=courier' },
+            { icon: Share2, label: 'Social Links', href: '/admin/settings?tab=social' },
+            { icon: ShieldCheck, label: 'Trust & Safety', href: '/admin/settings?tab=trust' },
+        ]
+    },
+    {
+        title: 'Reports',
         items: [
             { icon: BarChart3, label: 'Sales Analysis', href: '/admin/reports/sales' },
             { icon: TrendingUp, label: 'Finance Summary', href: '/admin/reports/finance' },
@@ -64,30 +85,9 @@ export const navGroups = [
     {
         title: 'Access Control',
         items: [
-            { icon: ShieldCheck, label: 'Team Management', href: '/admin/team' },
+            { icon: ShieldCheck, label: 'Staff Accounts', href: '/admin/team' },
         ]
     },
 ];
 
-export const settingsItems = [
-    // General
-    { icon: Globe, label: 'General Info', tab: 'general', category: 'General' },
-    { icon: Globe, label: 'Custom Domain', tab: 'domain', category: 'General' },
-    { icon: Share2, label: 'Social Links', tab: 'social', category: 'General' },
-
-    // Technical
-    { icon: Mail, label: 'Email Settings', tab: 'email', category: 'Technical' },
-    { icon: CreditCard, label: 'Payment Credentials', tab: 'payment', category: 'Technical' },
-    { icon: Truck, label: 'Courier Config', tab: 'courier', category: 'Technical' },
-    { icon: ShieldCheck, label: 'Trust & Safety', tab: 'trust', category: 'Technical' },
-
-    // Storefront
-    { icon: Menu, label: 'Navbar Menu', tab: 'navbar', category: 'Storefront' },
-    { icon: Layout, label: 'Footer Menu', tab: 'footer', category: 'Storefront' },
-    { icon: Layout, label: 'Products Archive', tab: 'productsPage', category: 'Storefront' },
-    { icon: Layout, label: 'Single Product Page', tab: 'singleProductPage', category: 'Storefront' },
-    { icon: Tag, label: 'Offers Page', tab: 'offersPage', category: 'Storefront' },
-
-    // Growth
-    { icon: TrendingUp, label: 'Marketing & SEO', tab: 'marketing', category: 'Growth' },
-];
+export const settingsItems: any[] = [];

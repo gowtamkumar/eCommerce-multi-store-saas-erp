@@ -138,7 +138,9 @@ export default function AdminLayout({
                             )}
                             <div className="space-y-1">
                                 {group.items.map((item, index) => {
-                                    const isActive = pathname === item.href;
+                                    const isActive = item.href.includes('?') 
+                                        ? pathname === item.href.split('?')[0] && searchParams.get('tab') === new URLSearchParams(item.href.split('?')[1]).get('tab')
+                                        : pathname === item.href;
                                     return (
                                         <Link
                                             key={`${groupIndex}-${index}`}
@@ -160,70 +162,7 @@ export default function AdminLayout({
                     ))}
                 </nav>
 
-                <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-1">
-                    {/* Collapsible Settings */}
-                    <div className="space-y-1">
-                        <button
-                            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                            title={isSidebarCollapsed ? 'Settings' : ''}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${pathname?.startsWith('/admin/settings')
-                                ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
-                                } ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <Settings className="w-5 h-5 flex-shrink-0" />
-                                {!isSidebarCollapsed && <span>Settings</span>}
-                            </div>
-                            {!isSidebarCollapsed && <ChevronDown className={`w-4 h-4 transition-transform ${isSettingsOpen ? 'rotate-180' : ''}`} />}
-                        </button>
-
-                        <AnimatePresence>
-                            {isSettingsOpen && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="overflow-hidden pl-4 space-y-4 py-2"
-                                >
-                                    {/* Categorized Settings */}
-                                    {['General', 'Technical', 'Storefront', 'Growth'].map((cat) => {
-                                        const items = settingsItems.filter((item: any) => item.category === cat);
-                                        if (items.length === 0) return null;
-                                        return (
-                                            <div key={cat} className="space-y-1">
-                                                {!isSidebarCollapsed && (
-                                                    <p className="px-4 text-[10px] font-black uppercase tracking-widest text-slate-400/60 mb-1">
-                                                        {cat}
-                                                    </p>
-                                                )}
-                                                {items.map((item, index) => {
-                                                    const currentTab = searchParams.get('tab') || 'general';
-                                                    const isActive = pathname === '/admin/settings' && currentTab === item.tab;
-                                                    return (
-                                                        <Link
-                                                            key={index}
-                                                            href={`/admin/settings?tab=${item.tab}`}
-                                                            onClick={() => setIsMobileMenuOpen(false)}
-                                                            className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm ${isActive
-                                                                ? 'text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-900/10 font-medium'
-                                                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
-                                                                }`}
-                                                        >
-                                                            <item.icon className="w-4 h-4" />
-                                                            {item.label}
-                                                        </Link>
-                                                    );
-                                                })}
-                                            </div>
-                                        );
-                                    })}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
+                <div className="p-4 border-t border-slate-200 dark:border-slate-700">
                     {!isSidebarCollapsed && (
                         <button
                             onClick={handleLogout}
