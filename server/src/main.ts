@@ -43,8 +43,8 @@ async function bootstrap() {
 
   const PORT = process.env.API_PORT || 3900
   await app.listen(PORT, () => {
-    logger.log(`Application listening on port mode. http://localhost:${PORT}`)
-    logger.log(`Application api docs on port mode. http://localhost:${PORT}/api/docs`)
+    logger.log(`Application listening on port mode. http://${process.env.HOST}:${PORT}`)
+    logger.log(`Application api docs on port mode. http://${process.env.HOST}:${PORT}/api/docs`)
   })
 }
 bootstrap()

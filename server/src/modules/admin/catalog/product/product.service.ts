@@ -9,13 +9,13 @@ import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchase/purchase-order.service'
-import { PromotionType } from '@/modules/admin/sales/promotion/entities/promotion.entity'
 import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductAttributeEntity } from './entities/attribute.entity'
 import { ProductEntity } from './entities/product.entity'
 import { ProductVariantEntity } from './entities/variant.entity'
+import { PromotionType } from '../../sales/promotion/enums/promotion-type.enum'
 
 @Injectable()
 export class ProductService {
