@@ -185,24 +185,38 @@ export default function AdminLayout({
                                     animate={{ height: 'auto', opacity: 1 }}
                                     exit={{ height: 0, opacity: 0 }}
                                     transition={{ duration: 0.2 }}
-                                    className="overflow-hidden pl-4 space-y-1"
+                                    className="overflow-hidden pl-4 space-y-4 py-2"
                                 >
-                                    {settingsItems.map((item, index) => {
-                                        const currentTab = searchParams.get('tab') || 'general';
-                                        const isActive = pathname === '/admin/settings' && currentTab === item.tab;
+                                    {/* Categorized Settings */}
+                                    {['General', 'Technical', 'Storefront', 'Growth'].map((cat) => {
+                                        const items = settingsItems.filter((item: any) => item.category === cat);
+                                        if (items.length === 0) return null;
                                         return (
-                                            <Link
-                                                key={index}
-                                                href={`/admin/settings?tab=${item.tab}`}
-                                                onClick={() => setIsMobileMenuOpen(false)}
-                                                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm ${isActive
-                                                    ? 'text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-900/10 font-medium'
-                                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
-                                                    }`}
-                                            >
-                                                <item.icon className="w-4 h-4" />
-                                                {item.label}
-                                            </Link>
+                                            <div key={cat} className="space-y-1">
+                                                {!isSidebarCollapsed && (
+                                                    <p className="px-4 text-[10px] font-black uppercase tracking-widest text-slate-400/60 mb-1">
+                                                        {cat}
+                                                    </p>
+                                                )}
+                                                {items.map((item, index) => {
+                                                    const currentTab = searchParams.get('tab') || 'general';
+                                                    const isActive = pathname === '/admin/settings' && currentTab === item.tab;
+                                                    return (
+                                                        <Link
+                                                            key={index}
+                                                            href={`/admin/settings?tab=${item.tab}`}
+                                                            onClick={() => setIsMobileMenuOpen(false)}
+                                                            className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm ${isActive
+                                                                ? 'text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-900/10 font-medium'
+                                                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
+                                                                }`}
+                                                        >
+                                                            <item.icon className="w-4 h-4" />
+                                                            {item.label}
+                                                        </Link>
+                                                    );
+                                                })}
+                                            </div>
                                         );
                                     })}
                                 </motion.div>
