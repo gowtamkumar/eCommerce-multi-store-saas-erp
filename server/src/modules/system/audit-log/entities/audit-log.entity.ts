@@ -1,5 +1,5 @@
-import { BaseEntity } from 'src/common/base-entity/BaseEntity';
-import { TenantEntity } from 'src/modules/system/tenant/entities/tenant.entity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity';
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
 import {
     Column,
     Entity,

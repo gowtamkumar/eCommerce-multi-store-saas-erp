@@ -1,14 +1,13 @@
-import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity';
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
 } from 'typeorm';
-import { TenantEntity } from '../../../system/tenant/entities/tenant.entity';
-import { CurrenciesDto, FooterSectionDto, FooterSettingsDto, MarketingDto, NavbarLinkDto, NavbarSettingsDto, PathaoCourierDto, PaymentDto, ProductsPageSettingsDto, SingleProductPageSettingsDto, OffersPageSettingsDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from '../dto/index';
-
-import { UserEntity } from 'src/modules/admin/core/user/entities/user.entity';
+import { CurrenciesDto, FooterSettingsDto, MarketingDto, NavbarSettingsDto, PathaoCourierDto, PaymentDto, ProductsPageSettingsDto, SingleProductPageSettingsDto, OffersPageSettingsDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from '../dto/index';
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
 
 @Entity('site_settings')
 export class SiteSettingsEntity extends BaseEntity {
@@ -86,8 +85,6 @@ export class SiteSettingsEntity extends BaseEntity {
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity;
-
-
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
   userId: string;

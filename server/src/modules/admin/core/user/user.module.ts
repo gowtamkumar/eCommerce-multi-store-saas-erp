@@ -4,7 +4,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { StaffInvitationEntity } from './entities/staff-invitation.entity';
-import { MailModule } from '@/modules/admin/others/mail/mail.module';
+import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module';
 
 @Module({
   imports: [

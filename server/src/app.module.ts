@@ -3,32 +3,25 @@ import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { join } from 'path'
-import { GlobalExceptionFilter } from './common/exception/exception-filter'
-import { TenantStatusGuard } from './common/guards/tenant-status.guard'
-import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor'
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
-import { TransformInterceptor } from './common/interceptors/transform.interceptor'
-import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware'
-import { DatabaseModule } from './database/database.module'
-import { AdminModule } from './modules/admin/core/admin.module'
-import { BrandModule } from './modules/admin/brand/brand.module'
-import { CartModule } from './modules/user/cart/cart.module'
-import { CategoryModule } from './modules/admin/category/category.module'
-import { CouponModule } from './modules/admin/coupon/coupon.module'
-import { FaqModule } from './modules/admin/faq/faq.module'
-import { LeadModule } from './modules/admin/lead/lead.module'
-import { OrderModule } from './modules/admin/order/order.module'
-import { OthersModule } from './modules/admin/others/others.module'
-import { PageModule } from './modules/admin/page/page.module'
-import { PaymentModule } from './modules/user/payment/payment.module'
-import { ProductModule } from './modules/admin/product/product.module'
-import { PromotionModule } from './modules/admin/promotion/promotion.module'
-import { ReviewModule } from './modules/admin/review/review.module'
-import { SettingsModule } from './modules/admin/settings/settings.module'
-import { SubscriberModule } from './modules/admin/subscriber/subscriber.module'
-import { AuditLogModule } from './modules/system/audit-log/audit-log.module'
-import { SystemModule } from './modules/system/system.module'
-import { TenantModule } from './modules/system/tenant/tenant.module'
+import { GlobalExceptionFilter } from '@/common/exception/exception-filter'
+import { TenantStatusGuard } from '@/common/guards/tenant-status.guard'
+import { AuditLogInterceptor } from '@/common/interceptors/audit-log.interceptor'
+import { LoggingInterceptor } from '@/common/interceptors/logging.interceptor'
+import { TransformInterceptor } from '@/common/interceptors/transform.interceptor'
+import { TenantContextMiddleware } from '@/common/middleware/tenant-context.middleware'
+import { DatabaseModule } from '@/database/database.module'
+import { AdminModule } from '@/modules/admin/core/admin.module'
+import { CatalogModule } from '@/modules/admin/catalog/catalog.module'
+import { SalesModule } from '@/modules/admin/sales/sales.module'
+import { CustomerModule } from '@/modules/admin/customer/customer.module'
+import { ContentModule } from '@/modules/admin/content/content.module'
+import { OperationsModule } from '@/modules/admin/operations/operations.module'
+import { CartModule } from '@/modules/user/cart/cart.module'
+import { PaymentModule } from '@/modules/user/payment/payment.module'
+import { SettingsModule } from '@/modules/admin/settings/settings.module'
+import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
+import { SystemModule } from '@/modules/system/system.module'
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
 
 @Module({
   imports: [
@@ -43,23 +36,16 @@ import { TenantModule } from './modules/system/tenant/tenant.module'
     AdminModule,
     DatabaseModule,
     TenantModule,
-    BrandModule,
-    ProductModule,
-    OrderModule,
-    FaqModule,
-    ReviewModule,
-    LeadModule,
-    PageModule,
+    CatalogModule,
+    SalesModule,
+    CustomerModule,
+    ContentModule,
+    OperationsModule,
     SettingsModule,
     PaymentModule,
-    CategoryModule,
     CartModule,
-    OthersModule,
-    SubscriberModule,
     AuditLogModule,
     SystemModule,
-    CouponModule,
-    PromotionModule,
   ],
   controllers: [],
   providers: [

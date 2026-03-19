@@ -1,7 +1,7 @@
 import { Controller, Get, Logger } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { RequestContext } from "src/common/decorators/request-context.decorator";
-import { RequestContextDto } from "src/common/dto/request-context.dto";
+import { RequestContext } from "@/common/decorators/request-context.decorator";
+import { RequestContextDto } from "@/common/dto/request-context.dto";
 
 @Controller('payments')
 export class PaymentController {
@@ -12,9 +12,9 @@ export class PaymentController {
     @Get()
     async findAllPayments(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPayments.`);
-            return {
-                success: true,
-                data: await this.paymentService.findAllPayments(ctx.tenantId),
-            };
-        }
+        return {
+            success: true,
+            data: await this.paymentService.findAllPayments(ctx.tenantId),
+        };
+    }
 }

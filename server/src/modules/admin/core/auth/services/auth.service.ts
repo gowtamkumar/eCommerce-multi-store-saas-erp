@@ -12,7 +12,7 @@ import { UserRole } from '@/common/enums/user/user-role.enum'
 import { CreateUserDto } from '@/modules/admin/core/user/dtos/create-user.dto'
 import { UserDto } from '@/modules/admin/core/user/dtos/user.dto'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
-import { MailService } from '@/modules/admin/others/mail/mail.service'
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 

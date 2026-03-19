@@ -1,13 +1,12 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OrderStatus } from '../../../common/enums/order-status.enum';
-import { PaymentStatus } from '../../../common/enums/payment-status.enum';
-import { OrderEntity } from '../../admin/order/entities/order.entity';
-import { SettingsService } from '../../admin/settings/settings.service';
 import { InitPaymentDto } from './dto/payment.dto';
 import { PaymentEntity } from './entities/payment.entity';
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity';
+import { SettingsService } from '@/modules/admin/settings/settings.service';
+import { PaymentStatus } from '@/common/enums/payment-status.enum';
+import { OrderStatus } from '@/common/enums/order-status.enum';
 
 @Injectable()
 export class PaymentService {
@@ -18,7 +17,6 @@ export class PaymentService {
         private orderRepository: Repository<OrderEntity>,
         @InjectRepository(PaymentEntity)
         private paymentRepository: Repository<PaymentEntity>,
-        private configService: ConfigService,
         private settingsService: SettingsService,
     ) { }
 
@@ -36,13 +34,13 @@ export class PaymentService {
         }
 
         const settings = await this.settingsService.findByTenantSettings(tenantId);
-        
-        
+
+
         const store_id = settings.payment?.sslCommerzStoreId;
         const store_passwd = settings.payment?.sslCommerzStorePassword;
         const is_live = !settings.payment?.sslCommerzIsSandbox;
         const app_url = callbackUrl
-        
+
         if (!store_id || !store_passwd) {
             throw new BadRequestException('Payment gateway not configured');
         }
@@ -51,7 +49,7 @@ export class PaymentService {
 
         // Update order with transaction ID
         order.transactionId = tran_id;
-        await this.orderRepository.save(order);        
+        await this.orderRepository.save(order);
 
         const initData: any = {
             store_id,
@@ -104,7 +102,7 @@ export class PaymentService {
             });
 
             const result: any = await response.json();
-            
+
 
             if (result.status === 'SUCCESS') {
                 return { gatewayUrl: result.GatewayPageURL };
@@ -136,7 +134,7 @@ export class PaymentService {
             status: 'SUCCESS',
             gatewayResponse,
             tenantId: order.tenantId,
-        });        
+        });
         await this.paymentRepository.save(payment);
 
         return { success: true };

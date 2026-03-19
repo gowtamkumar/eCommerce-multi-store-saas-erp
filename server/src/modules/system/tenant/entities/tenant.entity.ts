@@ -1,12 +1,12 @@
-import { BaseEntity } from 'src/common/base-entity/BaseEntity';
-import { SubscriptionBillingCycle } from 'src/common/enums/subscription/billing-cycle.enum';
-import { SubscriptionStatus } from 'src/common/enums/subscription/subscription-status.enum';
-import { CustomDomainStatus } from 'src/common/enums/tenant/custom-domain-status';
-import { TenantStatus } from 'src/common/enums/tenant/tenant-status.enum';
-import { SubscriptionPlanEntity } from 'src/modules/system/subscription-plan/entities/subscription-plan.entity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity';
+import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum';
+import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum';
+import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status';
+import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum';
+import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entities/subscription-plan.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
 
-import { UserEntity } from 'src/modules/admin/core/user/entities/user.entity';
 @Entity('tenants')
 export class TenantEntity extends BaseEntity {
 

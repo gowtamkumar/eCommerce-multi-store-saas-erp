@@ -1,7 +1,7 @@
-import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity';
 import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
 
-import { UserEntity } from 'src/modules/admin/core/user/entities/user.entity';
 @Entity('platform_settings')
 export class PlatformSettingsEntity extends BaseEntity {
 

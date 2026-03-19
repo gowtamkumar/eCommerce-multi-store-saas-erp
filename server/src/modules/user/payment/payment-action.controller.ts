@@ -2,8 +2,8 @@ import { Body, Controller, Post, Query, Res, Logger } from '@nestjs/common';
 import { Response } from 'express';
 import { InitPaymentDto } from './dto/payment.dto';
 import { PaymentService } from './payment.service';
-import { RequestContext } from "src/common/decorators/request-context.decorator";
-import { RequestContextDto } from "src/common/dto/request-context.dto";
+import { RequestContext } from "@/common/decorators/request-context.decorator";
+import { RequestContextDto } from "@/common/dto/request-context.dto";
 
 @Controller('payment')
 export class PaymentActionController {
@@ -14,8 +14,8 @@ export class PaymentActionController {
     @Post('init')
     async init(@RequestContext() ctx: RequestContextDto, @Body() dto: InitPaymentDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called init.`);
-            return await this.paymentService.initPayment(dto, ctx.tenantId);
-        }
+        return await this.paymentService.initPayment(dto, ctx.tenantId);
+    }
 
     @Post('success')
     async success(@Query('tran_id') tran_id: string, @Body() gatewayResponse: any, @Res() res: Response) {

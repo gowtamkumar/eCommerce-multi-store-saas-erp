@@ -9,16 +9,16 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { Roles } from 'src/common/decorators/roles.decorator';
-import { UserRole } from 'src/common/enums/user/user-role.enum';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { UserService } from 'src/modules/admin/core/user/services/user.service';
-import { OrderService } from 'src/modules/admin/order/order.service';
-import { PageService } from 'src/modules/admin/page/page.service';
-import { ProductService } from 'src/modules/admin/product/product.service';
-import { ReviewService } from 'src/modules/admin/review/review.service';
-import { TenantService } from 'src/modules/system/tenant/tenant.service';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { UserRole } from '@/common/enums/user/user-role.enum';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { UserService } from '@/modules/admin/core/user/services/user.service';
+import { OrderService } from '@/modules/admin/sales/order/order.service';
+import { PageService } from '@/modules/admin/content/page/page.service';
+import { ProductService } from '@/modules/admin/catalog/product/product.service';
+import { ReviewService } from '@/modules/admin/catalog/review/review.service';
+import { TenantService } from '@/modules/system/tenant/tenant.service';
 import si from 'systeminformation';
 import { TrafficService } from './traffic.service';
 

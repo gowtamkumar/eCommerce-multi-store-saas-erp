@@ -1,15 +1,16 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CouponService } from '../../admin/coupon/coupon.service';
-import { ProductEntity } from '../../admin/product/entities/product.entity';
-import { PromotionTargetType, PromotionType } from '../../admin/promotion/entities/promotion.entity';
-import { PromotionService } from '../../admin/promotion/promotion.service';
-import { SiteSettingsEntity } from '../../admin/settings/entities/site-settings.entity';
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity';
 import { CreateCartItemDto } from './dto/create-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { CartItemEntity } from './entities/cart-item.entity';
 import { CartEntity } from './entities/cart.entity';
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity';
+import { CouponService } from '@/modules/admin/sales/coupon/coupon.service';
+import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service';
+import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum';
+import { PromotionType } from '@/modules/admin/sales/promotion/enums/promotion-type.enum';
 
 @Injectable()
 export class CartService {

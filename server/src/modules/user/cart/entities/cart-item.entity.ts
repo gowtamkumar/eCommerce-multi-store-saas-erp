@@ -1,16 +1,16 @@
-import { BaseEntity } from 'src/common/base-entity/BaseEntity';
-import { ProductEntity } from 'src/modules/admin/product/entities/product.entity';
-import { ProductVariantEntity } from 'src/modules/admin/product/entities/variant.entity';
-import { TenantEntity } from 'src/modules/system/tenant/entities/tenant.entity';
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
 } from 'typeorm';
+import { BaseEntity } from '@/common/base-entity/BaseEntity';
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity';
+import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity';
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
 import { CartEntity } from './cart.entity';
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
 
-import { UserEntity } from 'src/modules/admin/core/user/entities/user.entity';
 @Entity('cart_items')
 export class CartItemEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'cart_id' })

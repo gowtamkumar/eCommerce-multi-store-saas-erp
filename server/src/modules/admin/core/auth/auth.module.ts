@@ -8,8 +8,7 @@ import { UserModule } from '@/modules/admin/core/user/user.module'
 import { AdminAuthController } from '@/modules/admin/core/auth/controllers/admin-auth.controller'
 import { AuthController } from '@/modules/admin/core/auth/controllers/auth.controller'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
-
-import { MailModule } from '@/modules/admin/others/mail/mail.module'
+import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 
 @Module({
   imports: [

@@ -1,6 +1,7 @@
-import { BaseEntity } from 'src/common/base-entity/BaseEntity';
-import { UserEntity } from 'src/modules/admin/core/user/entities/user.entity';
-import { TenantEntity } from 'src/modules/system/tenant/entities/tenant.entity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity';
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
+import { CartItemEntity } from './cart-item.entity';
 import {
   Column,
   Entity,
@@ -8,7 +9,6 @@ import {
   ManyToOne,
   OneToMany,
 } from 'typeorm';
-import { CartItemEntity } from './cart-item.entity';
 
 @Entity('carts')
 export class CartEntity extends BaseEntity {

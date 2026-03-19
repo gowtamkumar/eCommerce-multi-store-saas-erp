@@ -1,12 +1,14 @@
-import { BaseEntity } from 'src/common/base-entity/BaseEntity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity';
+import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity';
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity';
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
 } from 'typeorm';
-import { OrderEntity } from '../../../admin/order/entities/order.entity';
-import { TenantEntity } from '../../../system/tenant/entities/tenant.entity';
+
 
 @Entity('payments')
 export class PaymentEntity extends BaseEntity {
@@ -14,7 +16,7 @@ export class PaymentEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'order_id' })
   orderId: string;
 
-  @ManyToOne(() => OrderEntity, { onDelete: 'CASCADE' })
+  @ManyToOne(() => OrderItemEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
   order: OrderEntity;
 
