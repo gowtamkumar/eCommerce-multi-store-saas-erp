@@ -3,14 +3,13 @@ import { OrderStatus } from '@/common/enums/order-status.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { OrderService } from '@/modules/admin/sales/order/order.service'
 import { PageService } from '@/modules/admin/content/page/page.service'
-import { PaymentService } from '@/modules/user/payment/payment.service'
 import { ProductService } from '@/modules/admin/catalog/product/product.service'
 import { TrafficService } from '@/modules/system/super-admin/traffic.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { ExpenseService } from '@/modules/admin/operations/finance/expense/expense.service'
-import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchase/purchase-order.service'
 import { SupplierService } from '@/modules/admin/operations/finance/supplier/supplier.service'
+import { PaymentService } from '@/modules/admin/sales/payment/payment.service'
 
 @Controller('report')
 @UseGuards(JwtAuthGuard)
@@ -25,7 +24,6 @@ export class ReportController {
     private readonly supplierService: SupplierService,
     private readonly purchaseOrderService: PurchaseOrderService,
     private readonly expenseService: ExpenseService,
-    private readonly invoiceService: InvoiceService,
   ) { }
 
   @Get('/analytics')

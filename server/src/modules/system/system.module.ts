@@ -13,6 +13,13 @@ import { TrackingModule } from './tracking/tracking.module';
     SuperAdminModule,
     SubscriptionPlanModule,
     TrackingModule
+  ],
+  exports: [
+    AuditLogModule,
+    PlatformModule,
+    SuperAdminModule,
+    SubscriptionPlanModule,
+    TrackingModule
   ]
 })
 export class SystemModule { }

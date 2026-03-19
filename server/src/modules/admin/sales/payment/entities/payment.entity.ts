@@ -1,5 +1,4 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity';
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity';
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
 import {
@@ -16,7 +15,7 @@ export class PaymentEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'order_id' })
   orderId: string;
 
-  @ManyToOne(() => OrderItemEntity, { onDelete: 'CASCADE' })
+  @ManyToOne(() => OrderEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
   order: OrderEntity;
 

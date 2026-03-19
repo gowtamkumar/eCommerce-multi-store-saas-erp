@@ -16,12 +16,12 @@ import { SalesModule } from '@/modules/admin/sales/sales.module'
 import { CustomerModule } from '@/modules/admin/customer/customer.module'
 import { ContentModule } from '@/modules/admin/content/content.module'
 import { OperationsModule } from '@/modules/admin/operations/operations.module'
-import { CartModule } from '@/modules/user/cart/cart.module'
-import { PaymentModule } from '@/modules/user/payment/payment.module'
+import { CartModule } from '@/modules/store/cart/cart.module'
+import { PaymentModule } from '@/modules/admin/sales/payment/payment.module'
 import { SettingsModule } from '@/modules/admin/settings/settings.module'
-import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
 import { SystemModule } from '@/modules/system/system.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { AuthModule } from '@/modules/admin/core/auth/auth.module'
 
 @Module({
   imports: [
@@ -33,19 +33,27 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
       rootPath: join(process.cwd(), 'public/uploads'),
       serveRoot: '/uploads',
     }),
-    AdminModule,
     DatabaseModule,
+
+    // Core & System Domains
+    AdminModule,
+    SystemModule,
     TenantModule,
+
+    // Storefront Domain
+    CartModule,
+
+    // Admin Sub-Domains
     CatalogModule,
     SalesModule,
     CustomerModule,
     ContentModule,
     OperationsModule,
     SettingsModule,
+
+    // Other Features
+    AuthModule,
     PaymentModule,
-    CartModule,
-    AuditLogModule,
-    SystemModule,
   ],
   controllers: [],
   providers: [

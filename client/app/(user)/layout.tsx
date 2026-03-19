@@ -1,3 +1,5 @@
+'use client';
+
 import AnalyticsTracker from "@/components/shared/AnalyticsTracker";
 import CartDrawer from "@/components/shared/CartDrawer";
 import { CartProvider } from "@/hooks/CartContext";

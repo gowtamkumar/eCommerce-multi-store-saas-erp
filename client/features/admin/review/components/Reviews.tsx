@@ -15,7 +15,7 @@ export default function Reviews() {
         limit: 10,
         totalPages: 1
     });
-    const [statusFilter, setStatusFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('pending');
 
     useEffect(() => {
         fetchReviews(1, statusFilter);
@@ -102,7 +102,6 @@ export default function Reviews() {
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                 >
-                    <option value="">All Statuses</option>
                     <option value="pending">Pending</option>
                     <option value="approved">Approved</option>
                     <option value="rejected">Rejected</option>

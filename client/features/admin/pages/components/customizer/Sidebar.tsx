@@ -42,6 +42,8 @@ import {
   Type,
   Video,
   X,
+  CreditCard,
+  ShoppingBag,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -75,7 +77,7 @@ const SECTION_ICONS: Record<SectionType, any> = {
   'paragraph': MessageSquare,
   'divider': Minus,
   'spacer': MoveVertical,
-  "checkout": undefined
+  'checkout': CreditCard,
 };
 
 const getLabel = (type: SectionType) => {
@@ -263,7 +265,7 @@ function DraggableLibraryItem({ type, onClick }: { type: SectionType, onClick: (
     data: { isLibraryItem: true, type }
   });
 
-  const Icon = SECTION_ICONS[type];
+  const Icon = SECTION_ICONS[type] || Layout;
 
   return (
     <div
@@ -537,7 +539,7 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
             <div className="p-6 overflow-y-auto">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {(Object.keys(SECTION_ICONS) as SectionType[]).filter(t => !['section', 'row', 'column'].includes(t)).map((type) => {
-                  const Icon = SECTION_ICONS[type];
+                  const Icon = SECTION_ICONS[type] || Layout;
                   return (
                     <button
                       key={type}

@@ -6,11 +6,8 @@ import { Brackets, DataSource, Repository } from 'typeorm'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { CartService } from '@/modules/user/cart/cart.service'
 import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
-import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
-import { PaymentEntity } from '@/modules/user/payment/entities/payment.entity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
@@ -19,6 +16,8 @@ import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
 import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { PaymentEntity } from '../payment/entities/payment.entity'
+import { CartService } from '@/modules/store/cart/cart.service'
 
 @Injectable()
 export class OrderService {
@@ -27,16 +26,16 @@ export class OrderService {
   constructor(
     @InjectRepository(OrderEntity)
     private orderRepository: Repository<OrderEntity>,
-    @InjectRepository(ProductEntity)
-    private productRepository: Repository<ProductEntity>,
-    @InjectRepository(ProductVariantEntity)
-    private variantRepository: Repository<ProductVariantEntity>,
-    @InjectRepository(UserEntity)
-    private userRepository: Repository<UserEntity>,
-    @InjectRepository(LeadEntity)
-    private leadRepository: Repository<LeadEntity>,
-    @InjectRepository(SiteSettingsEntity)
-    private settingsRepository: Repository<SiteSettingsEntity>,
+    // @InjectRepository(ProductEntity)
+    // private productRepository: Repository<ProductEntity>,
+    // @InjectRepository(ProductVariantEntity)
+    // private variantRepository: Repository<ProductVariantEntity>,
+    // @InjectRepository(UserEntity)
+    // private userRepository: Repository<UserEntity>,
+    // @InjectRepository(LeadEntity)
+    // private leadRepository: Repository<LeadEntity>,
+    // @InjectRepository(SiteSettingsEntity)
+    // private settingsRepository: Repository<SiteSettingsEntity>,
     @InjectRepository(PaymentEntity)
     private paymentRepository: Repository<PaymentEntity>,
     private cartService: CartService,

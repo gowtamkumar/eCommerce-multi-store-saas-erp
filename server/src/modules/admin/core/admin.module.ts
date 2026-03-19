@@ -4,5 +4,6 @@ import { UserModule } from './user/user.module';
 
 @Module({
   imports: [UserModule, AuthModule],
+  exports: [UserModule, AuthModule],
 })
 export class AdminModule { }
