@@ -5,9 +5,17 @@ import { InventoryTransactionService } from '@/modules/admin/operations/logistic
 import { InventoryTransactionController } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.controller';
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity';
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity';
+import { CategoryEntity } from '@/modules/admin/catalog/category/entities/category.entity';
+import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([InventoryTransactionEntity, ProductEntity, ProductVariantEntity])],
+    imports: [TypeOrmModule.forFeature([
+        InventoryTransactionEntity,
+        ProductEntity,
+        ProductVariantEntity,
+        CategoryEntity,
+        SupplierEntity
+    ])],
     controllers: [InventoryTransactionController],
     providers: [InventoryTransactionService],
     exports: [InventoryTransactionService],

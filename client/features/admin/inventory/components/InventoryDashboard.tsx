@@ -1,5 +1,4 @@
 'use client';
-
 import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
 import {
@@ -10,33 +9,9 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import StockAdjustmentModal from './StockAdjustmentModal';
+import { FilterType, ProductStock } from '../type';
 
-interface VariantStock {
-    id: string;
-    sku: string;
-    combination: Record<string, string>;
-    price: number;
-    stock: number;
-}
 
-interface ProductStock {
-    id: string;
-    name: string;
-    slug: string;
-    images: string[];
-    price: number;
-    status: string;
-    categoryName: string | null;
-    supplierName: string | null;
-    hasVariants: boolean;
-    stock: number;
-    stockValue: number;
-    variants: VariantStock[];
-    lowStock: boolean;
-    outOfStock: boolean;
-}
-
-type FilterType = 'all' | 'lowStock' | 'outOfStock' | 'inStock';
 
 export default function InventoryDashboard() {
     const [products, setProducts] = useState<ProductStock[]>([]);
@@ -46,6 +21,7 @@ export default function InventoryDashboard() {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
     const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
     const [selectedAdjustmentProduct, setSelectedAdjustmentProduct] = useState<any>(null);
+    const [selectedAdjustmentVariant, setSelectedAdjustmentVariant] = useState<any>(null);
     const { formatPrice } = useSettings();
 
     useEffect(() => {
@@ -287,7 +263,7 @@ export default function InventoryDashboard() {
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     {!p.hasVariants && (
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setSelectedAdjustmentProduct(p);
@@ -341,10 +317,11 @@ export default function InventoryDashboard() {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-3 text-right">
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setSelectedAdjustmentProduct(p);
+                                                                setSelectedAdjustmentVariant(v);
                                                                 setIsAdjustmentModalOpen(true);
                                                             }}
                                                             className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-brand-500 transition-colors"
@@ -363,12 +340,14 @@ export default function InventoryDashboard() {
                     </table>
                 </div>
 
-                <StockAdjustmentModal 
+                <StockAdjustmentModal
                     isOpen={isAdjustmentModalOpen}
                     initialProduct={selectedAdjustmentProduct}
+                    initialVariant={selectedAdjustmentVariant}
                     onClose={() => {
                         setIsAdjustmentModalOpen(false);
                         setSelectedAdjustmentProduct(null);
+                        setSelectedAdjustmentVariant(null);
                     }}
                     onSuccess={fetchStock}
                 />
