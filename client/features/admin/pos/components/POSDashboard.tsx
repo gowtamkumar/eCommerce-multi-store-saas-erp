@@ -38,9 +38,10 @@ export default function POSDashboard() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
-
+    
     const [cart, setCart] = useState<CartItem[]>([]);
     const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
+    const [isCartOpen, setIsCartOpen] = useState(false);
     const [selectedCustomerId, setSelectedCustomerId] = useState('');
     const [customerName, setCustomerName] = useState('Walk-in Customer');
     const [customerPhone, setCustomerPhone] = useState('01700000000');
@@ -418,8 +419,8 @@ export default function POSDashboard() {
                         )}
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-2 md:p-2 bg-slate-50/50 dark:bg-slate-900/50">
-                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 mx-auto">
+                <div className="flex-1 overflow-y-auto p-2 md:p-3 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 mx-auto pb-24 lg:pb-0">
                         {products.map(p => {
                             let baseDiscountAmt = 0;
                             const rawDiscount = Number(p.discountAmount) || 0;
@@ -510,10 +511,39 @@ export default function POSDashboard() {
                 </div>
             </div>
 
-            {/* Right: Cart & Checkout */}
-            <div className="w-[450px] flex flex-col bg-white dark:bg-slate-800 shadow-xl border-l border-slate-200 dark:border-slate-700 shrink-0 h-full z-20">
+            {/* Mobile View Cart FAB */}
+            <div className="lg:hidden fixed bottom-6 right-6 z-30">
+                <button 
+                    onClick={() => setIsCartOpen(true)}
+                    className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-3.5 rounded-full shadow-2xl transition-transform active:scale-95"
+                >
+                    <ShoppingCart className="w-5 h-5" />
+                    <span className="font-bold text-sm tracking-wide">
+                        {cart.length > 0 ? `${cart.length} ITEMS` : 'VIEW CART'}
+                    </span>
+                    {cart.length > 0 && (
+                        <span className="ml-1 flex items-center bg-white/20 px-2 py-0.5 rounded text-xs font-bold">
+                            {formatPrice(cart.reduce((total, item) => total + ((item.price - item.discountAmount + item.taxAmount) * item.cartQuantity), 0))}
+                        </span>
+                    )}
+                </button>
+            </div>
+
+            {/* Mobile Overlay for Cart Drawer */}
+            {isCartOpen && (
+                <div 
+                    className="lg:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 transition-opacity" 
+                    onClick={() => setIsCartOpen(false)}
+                />
+            )}
+
+            {/* Right: Cart & Checkout Sidebar (Responsive Drawer) */}
+            <div className={`fixed inset-y-0 right-0 z-50 w-full sm:w-[450px] lg:w-[450px] lg:static lg:block flex-col bg-white dark:bg-slate-800 shadow-2xl lg:shadow-xl lg:border-l lg:border-slate-200 lg:dark:border-slate-700 shrink-0 h-full transform transition-transform duration-300 ease-in-out ${isCartOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} flex`}>
                 <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                     <div className="flex items-center gap-3">
+                        <button className="lg:hidden p-2 -ml-2 bg-slate-100 dark:bg-slate-700 rounded-full text-slate-500" onClick={() => setIsCartOpen(false)}>
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
                         <div className="w-10 h-10 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded-xl flex items-center justify-center shrink-0">
                             <ShoppingCart className="w-5 h-5" />
                         </div>
@@ -522,12 +552,14 @@ export default function POSDashboard() {
                             <p className="text-xs text-slate-500 font-medium">{cart.length} items</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                        <button onClick={handleNewOrder} title="Clear Cart" className="p-2 gap-2 text-sm font-bold bg-red-50 text-red-600 hover:bg-red-100 rounded-lg flex items-center justify-center transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                            Clear
-                        </button>
-                    </div>
+                    {cart.length > 0 && (
+                        <div className="flex items-center gap-1">
+                            <button onClick={handleNewOrder} title="Clear Cart" className="p-2 gap-2 text-sm font-bold bg-red-50 text-red-600 hover:bg-red-100 rounded-lg flex items-center justify-center transition-colors">
+                                <Trash2 className="w-4 h-4" />
+                                Clear
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Cart Items */}
