@@ -30,6 +30,7 @@ export interface CartSummary {
   tax?: number;
   shipping_fee?: number;
   payable: number;
+  is_free_shipping?: boolean;
 }
 
 export interface Cart {

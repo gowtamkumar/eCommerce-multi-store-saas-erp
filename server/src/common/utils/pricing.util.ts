@@ -13,6 +13,9 @@ export class PricingUtil {
     if (discountType === DiscountType.PERCENTAGE || discountType === 'percentage') {
       return (basePrice * discount) / 100;
     }
+    if (discountType === DiscountType.FREE_SHIPPING || discountType === 'free_shipping') {
+      return 0;
+    }
     return discount;
   }
 

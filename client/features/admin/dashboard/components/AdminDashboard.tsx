@@ -1,7 +1,7 @@
 'use client';
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
-import { FileText, Package, ShoppingBag, TrendingUp, History as HistoryIcon, Plus, Truck, Globe, Users, Activity, MousePointer2, Clock, BarChart3, Store } from 'lucide-react';
+import { FileText, Package, ShoppingBag, TrendingUp, History as HistoryIcon, Plus, Truck, Users, Activity, BarChart3, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
@@ -52,8 +52,7 @@ export default function AdminDashboard() {
                     supplierStats,
                     lowStockCount,
                     lowStockProducts,
-                    counts,
-                    traffic
+                    counts
                 } = response.data;
 
                 setStats({
@@ -69,8 +68,7 @@ export default function AdminDashboard() {
                     supplierStats,
                     lowStockCount,
                     lowStockProducts,
-                    counts,
-                    traffic
+                    counts
                 });
                 setRecentProducts(recentProducts);
             }
@@ -151,24 +149,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:border-cyan-500/20 group">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Traffic (7D)</p>
-                            {loading ? (
-                                <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
-                            ) : (
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-white font-mono">{(stats.traffic as any)?.totalHits || 0}</h3>
-                            )}
-                        </div>
-                        <div className="p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl group-hover:scale-110 transition-transform">
-                            <Globe className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
-                        </div>
-                    </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
-                        Total hits this week
-                    </div>
-                </div>
 
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:border-rose-500/20 group">
                     <div className="flex items-center justify-between mb-4">
@@ -363,60 +343,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Top Visited Pages (Moved from TenantAnalytics) */}
-                <div className="bg-white dark:bg-slate-800 rounded-[40px] border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
-                    <div className="p-8 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/20">
-                        <div>
-                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Traffic Hotspots</h2>
-                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">High engagement resource paths</p>
-                        </div>
-                        <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-[20px]">
-                            <MousePointer2 className="w-5 h-5 text-indigo-600" />
-                        </div>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="bg-white dark:bg-slate-800 border-b border-slate-50 dark:border-slate-700">
-                                    <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest">Route</th>
-                                    <th className="px-6 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Hits</th>
-                                    <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Activity</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-                                {!(stats.traffic as any)?.topPages?.length ? (
-                                    <tr>
-                                        <td colSpan={3} className="px-8 py-16 text-center">
-                                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest italic">No pulse detected</p>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    (stats.traffic as any).topPages.map((page: any, i: number) => (
-                                        <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                                            <td className="px-8 py-5">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-[10px] font-black text-slate-300">{(i + 1).toString().padStart(2, '0')}</span>
-                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">/{page.path}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5 text-center">
-                                                <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg text-[10px] font-black font-mono">
-                                                    {page.hits.toLocaleString()}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-5 text-right">
-                                                <div className="flex items-center justify-end gap-1.5 text-[9px] font-black text-slate-400 uppercase">
-                                                    <Clock className="w-3.5 h-3.5" />
-                                                    {new Date(page.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
 
             {/* Low Stock Alerts */}

@@ -176,47 +176,36 @@ export default function CouponForm({ coupon, onClose, onSuccess }: CouponFormPro
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-slate-900 dark:text-white">Discount Type</label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, discountType: 'percentage' })}
-                                        className={`px-4 py-2.5 rounded-xl border text-sm font-medium flex justify-center items-center gap-2 transition-all ${formData.discountType === 'percentage'
-                                            ? 'bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-900/20 dark:border-brand-800/50 dark:text-brand-400 ring-1 ring-brand-500/30'
-                                            : 'bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400'
-                                            }`}
-                                    >
-                                        <Percent className="w-4 h-4" /> Percentage
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, discountType: 'fixed' })}
-                                        className={`px-4 py-2.5 rounded-xl border text-sm font-medium flex justify-center items-center gap-2 transition-all ${formData.discountType === 'fixed'
-                                            ? 'bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-900/20 dark:border-brand-800/50 dark:text-brand-400 ring-1 ring-brand-500/30'
-                                            : 'bg-white border-slate-200 text-slate-600 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-400'
-                                            }`}
-                                    >
-                                        <span>{currency}</span> Fixed Amount
-                                    </button>
-                                </div>
+                                <select
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm"
+                                    value={formData.discountType}
+                                    onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
+                                >
+                                    <option value="percentage">Percentage (%)</option>
+                                    <option value="fixed">Fixed Amount ({currency})</option>
+                                    <option value="free_shipping">Free Shipping</option>
+                                </select>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-900 dark:text-white">Discount Value</label>
-                                <div className="relative">
-                                    <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        step="0.01"
-                                        value={formData.amount}
-                                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                                        className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm"
-                                        placeholder="0.00"
-                                    />
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
-                                        {formData.discountType === 'fixed' ? currency : <Percent className="w-4 h-4" />}
-                                    </span>
+                            {formData.discountType !== 'free_shipping' && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-900 dark:text-white">Discount Value</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            required
+                                            min="0"
+                                            step="0.01"
+                                            value={formData.amount}
+                                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                            className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm"
+                                            placeholder="0.00"
+                                        />
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
+                                            {formData.discountType === 'fixed' ? currency : <Percent className="w-4 h-4" />}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         <hr className="border-slate-200 dark:border-slate-800" />

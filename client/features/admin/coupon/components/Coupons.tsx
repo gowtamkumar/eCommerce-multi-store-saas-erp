@@ -136,7 +136,9 @@ export default function Coupons() {
                                         <td className="p-4 font-medium" onClick={() => handleEdit(coupon)}>
                                             {coupon.discountType === 'percentage'
                                                 ? `${coupon.amount}% off`
-                                                : `${formatCurrency(coupon.amount, currency)} off`}
+                                                : coupon.discountType === 'free_shipping'
+                                                    ? 'Free Shipping'
+                                                    : `${formatCurrency(coupon.amount, currency)} off`}
                                             {coupon.minPurchaseAmount > 0 && (
                                                 <span className="block text-xs font-normal text-slate-500 mt-1">
                                                     Min. {formatCurrency(coupon.minPurchaseAmount, currency)}

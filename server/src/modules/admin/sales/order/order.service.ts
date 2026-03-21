@@ -204,36 +204,46 @@ export class OrderService {
         taxAmount: processedItems.reduce((acc, item) => acc + Number(item.taxAmount) * item.quantity, 0),
       })
 
-      let couponDiscountAmount = 0
-      const finalCouponCode = appliedCouponCode || cart?.appliedCouponCode
+      let couponDiscountAmount = 0;
+      const finalCouponCode = appliedCouponCode || cart?.appliedCouponCode;
+      let isFreeShipping = false;
 
       if (finalCouponCode) {
         try {
           const validation = await this.couponService.validateCoupon(
             finalCouponCode,
             preCouponTotal,
-            tenantId
+            tenantId,
           );
           if (validation.valid) {
             couponDiscountAmount = validation.discountAmount;
             order.appliedCoupon = finalCouponCode;
             order.couponDiscountAmount = couponDiscountAmount;
+            
+            if (validation.coupon.discountType === DiscountType.FREE_SHIPPING || validation.coupon.discountType as any === 'free_shipping') {
+              isFreeShipping = true;
+            }
+
             await this.couponService.incrementUsage(validation.coupon.id, tenantId);
           }
         } catch (error) {
-          console.error('Invalid coupon at checkout', error);
+          this.logger.error('Invalid coupon at checkout', error);
         }
       }
 
-      const shippingFee = PricingUtil.calculateShippingFee(
-        shippingZone, 
-        settings?.shippingConfig, 
-        preCouponTotal - couponDiscountAmount
+      let shippingFee = PricingUtil.calculateShippingFee(
+        shippingZone,
+        settings?.shippingConfig,
+        preCouponTotal - couponDiscountAmount,
       );
 
-      order.shippingFee = shippingFee
-      order.totalAmount = preCouponTotal - couponDiscountAmount + shippingFee
-      const savedOrder = await manager.save(order)
+      if (isFreeShipping) {
+        shippingFee = 0;
+      }
+
+      order.shippingFee = shippingFee;
+      order.totalAmount = preCouponTotal - couponDiscountAmount + shippingFee;
+const savedOrder = await manager.save(order)
 
       // Update inventory transactions with order reference ID
       await manager.update(InventoryTransactionEntity,

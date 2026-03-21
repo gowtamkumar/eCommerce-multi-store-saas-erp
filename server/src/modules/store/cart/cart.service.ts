@@ -173,6 +173,7 @@ export class CartService {
         payable -= orderLevelPromoDiscount;
 
         let couponDiscountAmount = 0;
+        let isFreeShipping = false;
 
         if (cart.appliedCouponCode) {
             try {
@@ -181,6 +182,10 @@ export class CartService {
                 if (validation.valid) {
                     couponDiscountAmount = validation.discountAmount;
                     payable -= couponDiscountAmount;
+
+                    if (validation.coupon.discountType === DiscountType.FREE_SHIPPING || validation.coupon.discountType as any === 'free_shipping') {
+                        isFreeShipping = true;
+                    }
                 }
             } catch (error) {
                 // If coupon invalid (e.g., expired), we could remove it. For now, we just ignore it for calculation.
@@ -201,6 +206,7 @@ export class CartService {
                 coupon_discount: couponDiscountAmount,
                 tax: totalTax,
                 payable: payable + totalTax,
+                is_free_shipping: isFreeShipping,
             },
             appliedCouponCode: cart.appliedCouponCode,
         };

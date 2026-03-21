@@ -4,7 +4,6 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { OrderService } from '@/modules/admin/sales/order/order.service'
 import { PageService } from '@/modules/admin/content/page/page.service'
 import { ProductService } from '@/modules/admin/catalog/product/product.service'
-import { TrafficService } from '@/modules/system/super-admin/traffic.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { ExpenseService } from '@/modules/admin/operations/finance/expense/expense.service'
 import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchase/purchase-order.service'
@@ -15,7 +14,6 @@ import { PaymentService } from '@/modules/admin/sales/payment/payment.service'
 @UseGuards(JwtAuthGuard)
 export class ReportController {
   constructor(
-    private readonly trafficService: TrafficService,
     private readonly userService: UserService,
     private readonly productService: ProductService,
     private readonly orderService: OrderService,
@@ -57,14 +55,13 @@ export class ReportController {
     const tenantId = req.user.tenantId
 
     // Fetch all data in parallel for backend processing
-    const [orders, products, payments, pages, suppliers, purchaseOrders, traffic] = await Promise.all([
+    const [orders, products, payments, pages, suppliers, purchaseOrders] = await Promise.all([
       this.orderService.findAllOrders({ page: 1, limit: 1000 }, tenantId),
       this.productService.findAllProducts({ page: 1, limit: 1000 }, tenantId),
       this.paymentService.findAllPayments(tenantId),
       this.pageService.findAllPages(tenantId),
       this.supplierService.findAllSuppliers(tenantId),
       this.purchaseOrderService.findAllPurchaseOrders(tenantId),
-      this.trafficService.getGlobalTrafficStats(7),
     ])
 
     const paymentsData = payments || []
@@ -205,11 +202,6 @@ export class ReportController {
             };
           })
           .slice(0, 10),
-        traffic: {
-          totalHits: traffic.reduce((sum, t) => sum + t.requestCount, 0),
-          recentHits: traffic.slice(0, 7),
-          topPages: [], // Page tracking disabled per user request
-        }
       },
     }
   }

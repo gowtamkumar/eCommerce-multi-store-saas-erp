@@ -105,7 +105,7 @@ export default function Checkout() {
         payable: 0,
     };
 
-    const finalShippingFee = calculateShippingFee(shippingZone, settings?.shippingConfig, summary.payable);
+    const finalShippingFee = summary.is_free_shipping ? 0 : calculateShippingFee(shippingZone, settings?.shippingConfig, summary.payable);
 
     const finalPayable = summary.payable + finalShippingFee;
 

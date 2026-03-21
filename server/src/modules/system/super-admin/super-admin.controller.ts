@@ -198,7 +198,7 @@ export class SuperAdminController {
             this.pageService.countByTenant(tenant.id),
           ])
 
-          const tenantTraffic = traffic.filter((t) => t.tenantId === tenant.id)
+          const tenantTraffic = traffic.filter((t: any) => t.tenantId === tenant.id)
           const totalTraffic = tenantTraffic.reduce((acc, t) => acc + t.requestCount, 0)
 
           return {

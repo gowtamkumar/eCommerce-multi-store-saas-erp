@@ -56,6 +56,7 @@ export default function CreateOrder() {
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
     const [appliedCouponCode, setAppliedCouponCode] = useState('');
     const [couponDiscount, setCouponDiscount] = useState(0);
+    const [isFreeShippingCoupon, setIsFreeShippingCoupon] = useState(false);
     const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
     // Step 3: Shipping State
@@ -162,11 +163,17 @@ export default function CreateOrder() {
             const res = await fetchAPI(`/coupons/validate/${appliedCouponCode}?amount=${subtotal - totalProductDiscount}`);
             if (res.valid) {
                 setCouponDiscount(res.discountAmount);
+                if (res.coupon?.discountType === 'free_shipping') {
+                    setIsFreeShippingCoupon(true);
+                } else {
+                    setIsFreeShippingCoupon(false);
+                }
                 toast.success('Coupon applied successfully');
             } else {
                 toast.error(res.message || 'Invalid coupon');
                 setAppliedCouponCode('');
                 setCouponDiscount(0);
+                setIsFreeShippingCoupon(false);
             }
         } catch (err: any) {
             toast.error(err.message || 'Failed to validate coupon');
@@ -182,7 +189,8 @@ export default function CreateOrder() {
     const totalTax = selectedItems.reduce((acc, item) => acc + (item.taxAmount * item.quantity), 0);
     
     // Shipping logic
-    const finalShippingFee = calculateShippingFee(shippingZone, settings?.shippingConfig, subtotal - totalProductDiscount - couponDiscount);
+    const calculatedShippingFee = calculateShippingFee(shippingZone, settings?.shippingConfig, subtotal - totalProductDiscount - couponDiscount);
+    const finalShippingFee = isFreeShippingCoupon ? 0 : calculatedShippingFee;
     
     const payable = subtotal - totalProductDiscount - couponDiscount + totalTax + finalShippingFee;
 
