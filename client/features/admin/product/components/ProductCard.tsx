@@ -72,9 +72,13 @@ export default function ProductCard({ product, priority = false, viewMode = 'gri
 
         {/* Badges */}
         <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-          {product.stock <= 0 ? (
+          {Number(product.stock) <= 0 ? (
             <span className="bg-slate-900/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
               Sold Out
+            </span>
+          ) : Number(product.stock) <= (Number(product.lowStockThreshold) || 5) ? (
+            <span className="bg-orange-600/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
+              Low Stock
             </span>
           ) : (
             <>

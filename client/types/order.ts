@@ -26,6 +26,7 @@ export interface Order {
   customerPhone: string;
   address: string;
   totalAmount: number;
+  shippingFee?: number;
   status: string;
   paymentMethod: string;
   paymentStatus: string;
@@ -38,4 +39,26 @@ export interface Order {
   orderNotes?: string;
   currency?: string;
   currencyRate?: number;
+  deliveryZone?: string;
+}
+
+export interface ReturnRequest {
+  id: string;
+  orderId: string;
+  order?: Order;
+  userId: string;
+  user?: any;
+  status: string;
+  reason: string;
+  adminComment?: string;
+  refundAmount?: number;
+  items: Array<{
+    productId: string;
+    variantId?: string;
+    quantity: number;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+  tenantId: string;
+  users?: any; // Compatibility with existing code using 'users'
 }

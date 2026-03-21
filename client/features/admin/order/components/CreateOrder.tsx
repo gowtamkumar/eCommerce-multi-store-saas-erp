@@ -22,6 +22,7 @@ import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
 import { Product } from '@/types/product';
 import toast from 'react-hot-toast';
+import { calculateShippingFee } from '@/lib/utils';
 
 interface SelectedItem {
     product: Product;
@@ -29,12 +30,13 @@ interface SelectedItem {
     quantity: number;
     unitPrice: number;
     discountAmount: number;
+    taxAmount: number; // Added taxAmount
     totalAmount: number;
 }
 
 export default function CreateOrder() {
     const router = useRouter();
-    const { formatPrice, selectedCurrency } = useSettings();
+    const { formatPrice, selectedCurrency, settings } = useSettings();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
 
@@ -61,6 +63,7 @@ export default function CreateOrder() {
         address: '',
         notes: '',
     });
+    const [shippingZone, setShippingZone] = useState<"inside" | "outside">("inside");
 
     // Fetch customers
     useEffect(() => {
@@ -113,13 +116,17 @@ export default function CreateOrder() {
         } else {
             const unitPrice = variant?.price ? Number(variant.price) : Number(product.price);
             const discountAmount = Number(product.discountAmount) || 0;
+            const discountedPrice = unitPrice - discountAmount;
+            const taxAmount = (discountedPrice * (Number(product.taxRate) || 0)) / 100;
+            
             const newItem: SelectedItem = {
                 product,
                 variant,
                 quantity: 1,
                 unitPrice,
                 discountAmount,
-                totalAmount: (unitPrice - discountAmount)
+                taxAmount,
+                totalAmount: (discountedPrice + taxAmount)
             };
             setSelectedItems([...selectedItems, newItem]);
         }
@@ -139,7 +146,8 @@ export default function CreateOrder() {
         }
 
         item.quantity = newQty;
-        item.totalAmount = (item.unitPrice - item.discountAmount) * item.quantity;
+        const discountedPrice = item.unitPrice - item.discountAmount;
+        item.totalAmount = (discountedPrice + item.taxAmount) * item.quantity;
         setSelectedItems(newItems);
     };
 
@@ -171,7 +179,12 @@ export default function CreateOrder() {
 
     const subtotal = selectedItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
     const totalProductDiscount = selectedItems.reduce((acc, item) => acc + (item.discountAmount * item.quantity), 0);
-    const payable = subtotal - totalProductDiscount - couponDiscount;
+    const totalTax = selectedItems.reduce((acc, item) => acc + (item.taxAmount * item.quantity), 0);
+    
+    // Shipping logic
+    const finalShippingFee = calculateShippingFee(shippingZone, settings?.shippingConfig, subtotal - totalProductDiscount - couponDiscount);
+    
+    const payable = subtotal - totalProductDiscount - couponDiscount + totalTax + finalShippingFee;
 
     const handleSubmit = async () => {
         // Phone validation
@@ -197,6 +210,7 @@ export default function CreateOrder() {
                 currency: selectedCurrency.code,
                 currencyRate: selectedCurrency.rate,
                 appliedCouponCode: appliedCouponCode || undefined,
+                shippingZone,
                 items: selectedItems.map(item => ({
                     productId: item.product.id,
                     variantId: item.variant?.id,
@@ -506,6 +520,42 @@ export default function CreateOrder() {
                                             placeholder="House #, Street #, City, Area..."
                                         />
                                     </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                            <Truck className="w-4 h-4 text-brand-600" />
+                                            Delivery Zone
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <button
+                                                onClick={() => setShippingZone('inside')}
+                                                className={`p-4 rounded-2xl border-2 transition-all text-left ${shippingZone === 'inside'
+                                                    ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20'
+                                                    : 'border-slate-100 dark:border-slate-800 hover:border-brand-200'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className={`text-sm font-bold ${shippingZone === 'inside' ? 'text-brand-600' : 'text-slate-900 dark:text-white'}`}>Inside City</span>
+                                                    {shippingZone === 'inside' && <Check className="w-4 h-4 text-brand-600" />}
+                                                </div>
+                                                <p className="text-xs text-slate-500">Fast delivery within current city</p>
+                                            </button>
+                                            <button
+                                                onClick={() => setShippingZone('outside')}
+                                                className={`p-4 rounded-2xl border-2 transition-all text-left ${shippingZone === 'outside'
+                                                    ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20'
+                                                    : 'border-slate-100 dark:border-slate-800 hover:border-brand-200'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className={`text-sm font-bold ${shippingZone === 'outside' ? 'text-brand-600' : 'text-slate-900 dark:text-white'}`}>Outside City</span>
+                                                    {shippingZone === 'outside' && <Check className="w-4 h-4 text-brand-600" />}
+                                                </div>
+                                                <p className="text-xs text-slate-500">Standard delivery nationwide</p>
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Order Notes (Optional)</label>
                                         <textarea
@@ -643,9 +693,13 @@ export default function CreateOrder() {
                                     <span>-{formatPrice(couponDiscount)}</span>
                                 </div>
                             )}
-                            <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                                <span>Shipping</span>
-                                <span className="text-green-600 font-bold uppercase text-xs">Free</span>
+                             <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                                <span>Estimated Tax</span>
+                                <span>{formatPrice(totalTax)}</span>
+                             </div>
+                             <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                                <span>Delivery Zone ({shippingZone === 'inside' ? 'Inside' : 'Outside'})</span>
+                                <span>{finalShippingFee > 0 ? formatPrice(finalShippingFee) : <span className="text-green-600 font-bold uppercase text-xs">Free</span>}</span>
                             </div>
                             <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
                                 <span className="text-lg font-bold text-slate-900 dark:text-white">Total</span>

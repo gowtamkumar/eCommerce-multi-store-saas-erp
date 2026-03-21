@@ -38,6 +38,7 @@ export interface Product {
   features?: string[];
   stock: number;
   lowStockThreshold?: number;
+  taxRate?: number;
   status: 'active' | 'inactive';
   categoryId?: string;
   category?: Category;

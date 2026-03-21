@@ -121,7 +121,7 @@ export class InventoryTransactionService {
                     price: v.price || product.price,
                     stock: v.stock,
                 })) : [],
-                lowStock: totalStock <= 5 && totalStock > 0,
+                lowStock: totalStock <= (product.lowStockThreshold ?? 5) && totalStock > 0,
                 outOfStock: totalStock === 0,
             };
         });

@@ -95,6 +95,20 @@ export class ReturnService {
         });
     }
 
+    async findOneReturn(id: string, tenantId: string) {
+        this.logger.log(`${this.findOneReturn.name} Service Called`);
+        const returnRequest = await this.returnRepository.findOne({
+            where: { id, tenantId },
+            relations: ['order', 'order.items', 'order.items.product', 'order.items.variant', 'user'],
+        });
+
+        if (!returnRequest) {
+            throw new NotFoundException('Return request not found');
+        }
+
+        return returnRequest;
+    }
+
     async updateReturnRequestStatus(
         id: string,
         tenantId: string,

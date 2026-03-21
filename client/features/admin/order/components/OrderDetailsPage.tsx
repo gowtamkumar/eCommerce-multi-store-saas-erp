@@ -191,11 +191,21 @@ export default function OrderDetailsPage({
                         </p>
                         <p className="text-slate-600">{order.customerEmail}</p>
                         <p className="text-slate-600 mb-4">{order.customerPhone}</p>
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                            <p className="text-sm font-bold text-slate-400 uppercase tracking-tight mb-1">
-                                Shipping Address
-                            </p>
-                            <p className="text-slate-700 leading-relaxed">{order.address}</p>
+                        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-tight mb-3 flex items-center gap-2">
+                                <Truck className="w-4 h-4" />
+                                Delivery Details
+                            </h3>
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-slate-500">Zone</span>
+                                    <span className="font-bold text-slate-900 dark:text-white capitalize">{order.deliveryZone || 'Standard'}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-slate-500">Address</span>
+                                    <span className="text-right text-slate-700 dark:text-slate-300 max-w-[150px]">{order.address}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div className="text-right">
@@ -319,6 +329,12 @@ export default function OrderDetailsPage({
                                 </span>
                             </div>
                         )}
+                        <div className="flex justify-between text-sm text-slate-500 italic">
+                            <span>Shipping</span>
+                            <span className="font-medium text-slate-900">
+                                {Number(order.shippingFee) === 0 ? "Free" : formatPrice(order.shippingFee || 0)}
+                            </span>
+                        </div>
                         <div className="flex justify-between items-center py-4 border-t-2 border-slate-900">
                             <span className="text-lg font-bold uppercase tracking-tighter">
                                 Grand Total
@@ -605,6 +621,14 @@ export default function OrderDetailsPage({
                                         <span>-{formatPrice(totalRefunded)}</span>
                                     </div>
                                 )}
+                                <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                                    <span>Shipping</span>
+                                    <span>{Number(order.shippingFee) === 0 ? (
+                                        <span className="text-green-600">Free</span>
+                                    ) : (
+                                        formatPrice(order.shippingFee || 0)
+                                    )}</span>
+                                </div>
                                 <div className="flex justify-between text-xl font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-200 dark:border-slate-700">
                                     <span>Payable Amount</span>
                                     <span className="text-green-600">

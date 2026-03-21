@@ -44,6 +44,13 @@ export class ReturnController {
         return this.returnService.findAllReturns(ctx.tenantId);
     }
 
+    @Get(':id')
+    @UseGuards(RolesGuard)
+    findReturnById(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findReturnById.`);
+        return this.returnService.findOneReturn(id, ctx.tenantId);
+    }
+
     @Patch(':id/status')
     @UseGuards(RolesGuard) // Admin only
     updateStatus(

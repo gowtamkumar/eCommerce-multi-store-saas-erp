@@ -199,6 +199,7 @@ export class OrderService {
         orderNotes,
         userId: user?.id,
         tenantId,
+        deliveryZone: shippingZone,
       })
 
       let couponDiscountAmount = 0

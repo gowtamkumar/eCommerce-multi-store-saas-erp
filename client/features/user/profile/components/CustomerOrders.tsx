@@ -424,6 +424,18 @@ const CustomerOrders = () => {
                                             )}
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-slate-600 dark:text-slate-400">
+                                                    Shipping
+                                                </span>
+                                                <span className="font-medium text-slate-900 dark:text-white">
+                                                    {Number(selectedOrder.shippingFee) === 0 ? (
+                                                        <span className="text-green-600">Free</span>
+                                                    ) : (
+                                                        formatPrice(selectedOrder.shippingFee || 0)
+                                                    )}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-600 dark:text-slate-400">
                                                     Grand Total
                                                 </span>
                                                 <span className="font-bold text-lg text-brand-600 dark:text-brand-400">
