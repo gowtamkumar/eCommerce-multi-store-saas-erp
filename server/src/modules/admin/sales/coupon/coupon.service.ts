@@ -5,6 +5,7 @@ import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { CouponEntity } from './entities/coupon.entity';
 import { DiscountType } from '@/common/enums/discount-type.enum';
+import { PricingUtil } from '@/common/utils/pricing.util';
 
 @Injectable()
 export class CouponService {
@@ -141,12 +142,7 @@ export class CouponService {
             }
 
             // Calculate discount
-            let discountAmount = 0;
-            if (coupon.discountType === DiscountType.PERCENTAGE) {
-                discountAmount = (orderTotal * Number(coupon.amount)) / 100;
-            } else {
-                discountAmount = Number(coupon.amount);
-            }
+            let discountAmount = PricingUtil.calculateDiscountAmount(orderTotal, Number(coupon.amount), coupon.discountType);
 
             // Don't discount more than the order total
             discountAmount = Math.min(discountAmount, orderTotal);

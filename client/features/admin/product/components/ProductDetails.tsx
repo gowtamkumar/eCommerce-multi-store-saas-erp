@@ -20,7 +20,8 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { ProductDetailsProps } from "../../../types";
+import { ProductDetailsProps } from "../types";
+import { calculatePricing } from "@/lib/utils";
 
 
 const ProductDetails = ({ product }: ProductDetailsProps) => {
@@ -126,11 +127,17 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
     }
   };
 
-  const discountAmt = Number(product.discountAmount || 0);
-  const basePrice = Number(product.price || 0);
+  const { finalPrice, discountAmount: discountAmt } = calculatePricing(
+    Number(currentPrice || 0),
+    Number(product.discountAmount || 0),
+    product.discountType || 'fixed',
+    Number(product.taxRate || 0)
+  );
+
+  const basePrice = Number(currentPrice || 0);
 
   const discountPercent =
-    discountAmt > 0
+    discountAmt > 0 && basePrice > 0
       ? Math.round((discountAmt / basePrice) * 100)
       : 0;
 
@@ -310,7 +317,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                   {discountAmt > 0 ? (
                     <>
                       <Price
-                        amount={Number(currentPrice) - discountAmt}
+                        amount={finalPrice}
                         className="text-5xl font-black text-brand-600 dark:text-brand-400 tracking-tight"
                       />
                       <Price
@@ -323,7 +330,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                     </>
                   ) : (
                     <Price
-                      amount={Number(currentPrice)}
+                      amount={finalPrice}
                       className="text-5xl font-black text-slate-900 dark:text-white tracking-tight"
                     />
                   )}
@@ -677,7 +684,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                   Total Price
                 </span>
                 <Price
-                  amount={currentPrice * quantity}
+                  amount={finalPrice * quantity}
                   className="text-xl font-black text-slate-900 dark:text-white"
                 />
               </div>

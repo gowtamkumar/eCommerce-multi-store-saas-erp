@@ -11,6 +11,8 @@ import { CouponService } from '@/modules/admin/sales/coupon/coupon.service';
 import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service';
 import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum';
 import { PromotionType } from '@/modules/admin/sales/promotion/enums/promotion-type.enum';
+import { DiscountType } from '@/common/enums/discount-type.enum';
+import { PricingUtil } from '@/common/utils/pricing.util';
 
 @Injectable()
 export class CartService {
@@ -68,10 +70,13 @@ export class CartService {
         // Calculate and transform items
         let subtotal = 0;
         let totalDiscount = 0;
+        let totalTax = 0;
 
         const transformedItems = (cart.items || []).map((item) => {
+            // Apply product discount based on discountType
             const basePrice = Number(item.variant?.price || item.product?.price || 0);
-            let discount = Number(item.product?.discountAmount || 0);
+            const discountType = item.product?.discountType || DiscountType.FIXED;
+            let discount = PricingUtil.calculateDiscountAmount(basePrice, Number(item.product?.discountAmount || 0), discountType);
 
             // Check for best applicable promotional offer for this item
             let bestPromoDiscount = 0;
@@ -101,15 +106,15 @@ export class CartService {
             // Apply whichever is higher: direct product discount or promotional discount
             discount = Math.max(discount, bestPromoDiscount);
 
-            // Ensure discount doesn't exceed base price
-            discount = Math.min(discount, basePrice);
+            const taxRate = Number(item.product?.taxRate || 0);
+            const pricing = PricingUtil.calculateItemPricing(basePrice, discount, taxRate);
 
-            const finalPrice = basePrice - discount;
             const quantity = Number(item.quantity);
-            const lineTotal = finalPrice * quantity;
+            const lineTotal = pricing.finalPrice * quantity;
 
-            subtotal += basePrice * quantity;
-            totalDiscount += discount * quantity;
+            subtotal += pricing.basePrice * quantity;
+            totalDiscount += pricing.discountAmount * quantity;
+            totalTax += pricing.taxAmount * quantity;
 
             return {
                 cart_item_id: item.id,
@@ -127,9 +132,10 @@ export class CartService {
                     })) : [],
                 } : null,
                 pricing: {
-                    base_price: basePrice,
-                    discount: discount,
-                    final_price: finalPrice,
+                    base_price: pricing.basePrice,
+                    discount: pricing.discountAmount,
+                    tax: pricing.taxAmount,
+                    final_price: pricing.finalPrice,
                 },
                 quantity,
                 line_total: lineTotal,
@@ -193,7 +199,8 @@ export class CartService {
                 subtotal: subtotal,
                 offer_discount: totalDiscount, // Includes product discounts AND order level promo discounts
                 coupon_discount: couponDiscountAmount,
-                payable: payable,
+                tax: totalTax,
+                payable: payable + totalTax,
             },
             appliedCouponCode: cart.appliedCouponCode,
         };

@@ -14,6 +14,30 @@ export function formatCurrency(amount: number, currencySymbol?: string): string 
   return `${symbol}${amount.toLocaleString()}`;
 }
 
+export function calculatePricing(price: number, discountAmount: number, discountType: 'percentage' | 'fixed' | string, taxRate: number) {
+  let discountedPrice = price;
+  if (discountAmount > 0) {
+    if (discountType === 'percentage') {
+      discountedPrice = Math.max(0, price * (1 - discountAmount / 100));
+    } else {
+      discountedPrice = Math.max(0, price - discountAmount);
+    }
+  }
+
+  const taxAmount = (discountedPrice * taxRate) / 100;
+  const finalPrice = discountedPrice + taxAmount;
+
+  return {
+    price,
+    discountAmount,
+    discountType,
+    taxRate,
+    discountedPrice,
+    taxAmount,
+    finalPrice
+  };
+}
+
 
 export const handleCreatePathaoOrder = async (order: Order, setCreatingPathaoOrder: (orderId: string | null) => void) => {
   setCreatingPathaoOrder(order.id);

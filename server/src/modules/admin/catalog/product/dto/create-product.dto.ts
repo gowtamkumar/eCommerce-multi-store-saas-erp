@@ -14,6 +14,7 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { ProductStatus } from '@/common/enums/product-status.enum';
+import { DiscountType } from '@/common/enums/discount-type.enum';
 
 class ProductFaqDto {
     @ApiProperty()
@@ -103,6 +104,18 @@ export class CreateProductDto {
     @IsOptional()
     @Min(0)
     discountAmount?: number;
+
+    @ApiProperty({ enum: DiscountType, required: false })
+    @IsEnum(DiscountType)
+    @IsOptional()
+    discountType?: DiscountType;
+
+    @ApiProperty({ required: false, description: 'Tax rate as a percentage, e.g. 15 means 15%' })
+    @IsNumber()
+    @IsOptional()
+    @Min(0)
+    taxRate?: number;
+
 
     @ApiProperty()
     @IsArray()

@@ -6,6 +6,8 @@ import { Brackets, DataSource, Repository } from 'typeorm'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { DiscountType } from '@/common/enums/discount-type.enum'
+import { PricingUtil } from '@/common/utils/pricing.util'
 import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
@@ -136,17 +138,28 @@ export class OrderService {
         }, tenantId, manager)
 
         const unitPrice = variant?.price ? Number(variant.price) : Number(product.price)
-        const discountAmount = itemDto.pricing?.discount
-          ? Number(itemDto.pricing.discount)
-          : (Number(product.discountAmount) || 0)
-        const itemTotal = (unitPrice - discountAmount) * quantity
+
+        // Calculate discount respecting discountType
+        let discountAmount: number
+        if (itemDto.pricing?.discount !== undefined) {
+          discountAmount = Number(itemDto.pricing.discount)
+        } else {
+          const rawDiscount = Number(product.discountAmount || 0)
+          const discountType = product.discountType || DiscountType.FIXED
+          discountAmount = PricingUtil.calculateDiscountAmount(unitPrice, rawDiscount, discountType)
+        }
+
+        // Apply tax on discounted price
+        const taxRate = Number(product.taxRate || 0)
+        const pricing = PricingUtil.calculateItemPricing(unitPrice, discountAmount, taxRate)
+        const itemTotal = pricing.finalPrice * quantity
 
         const orderItem = new OrderItemEntity()
         orderItem.product = product
         orderItem.variant = variant
         orderItem.quantity = quantity
-        orderItem.unitPrice = unitPrice
-        orderItem.discountAmount = discountAmount
+        orderItem.unitPrice = pricing.basePrice
+        orderItem.discountAmount = pricing.discountAmount
         orderItem.totalAmount = itemTotal
         orderItem.tenantId = tenantId
         orderItem.snapshot = {

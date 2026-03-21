@@ -16,6 +16,8 @@ import { ProductAttributeEntity } from './entities/attribute.entity'
 import { ProductEntity } from './entities/product.entity'
 import { ProductVariantEntity } from './entities/variant.entity'
 import { PromotionType } from '../../sales/promotion/enums/promotion-type.enum'
+import { DiscountType } from '@/common/enums/discount-type.enum'
+import { PricingUtil } from '@/common/utils/pricing.util'
 
 @Injectable()
 export class ProductService {
@@ -66,14 +68,25 @@ export class ProductService {
         }
       });
 
-      // Apply whichever is higher: direct product discount (if any) or promotional discount
-      const originalDiscount = Number(product.discountAmount || 0);
-      const finalDiscount = Math.max(originalDiscount, maxPromoDiscount);
+      // Calculate the original discount value in flat currency
+      const originalDiscountType = product.discountType || DiscountType.FIXED;
+      const originalRawDiscount = Number(product.discountAmount || 0);
+      const originalDiscountValue = PricingUtil.calculateDiscountAmount(basePrice, originalRawDiscount, originalDiscountType);
+
+      // Determine final discount: keep original type/amount if higher, else use flat promo amount
+      let finalDiscountAmount = originalRawDiscount;
+      let finalDiscountType = originalDiscountType;
+
+      if (maxPromoDiscount > originalDiscountValue) {
+        finalDiscountAmount = maxPromoDiscount;
+        finalDiscountType = DiscountType.FIXED;
+      }
 
       return {
         ...product,
         applicablePromotions,
-        discountAmount: finalDiscount
+        discountAmount: finalDiscountAmount,
+        discountType: finalDiscountType
       };
     } catch (error) {
       console.error("Error attaching promotions", error);
@@ -112,13 +125,23 @@ export class ProductService {
           }
         });
 
-        const originalDiscount = Number(product.discountAmount || 0);
-        const finalDiscount = Math.max(originalDiscount, maxPromoDiscount);
+        const originalDiscountType = product.discountType || DiscountType.FIXED;
+        const originalRawDiscount = Number(product.discountAmount || 0);
+        const originalDiscountValue = PricingUtil.calculateDiscountAmount(basePrice, originalRawDiscount, originalDiscountType);
+
+        let finalDiscountAmount = originalRawDiscount;
+        let finalDiscountType = originalDiscountType;
+
+        if (maxPromoDiscount > originalDiscountValue) {
+          finalDiscountAmount = maxPromoDiscount;
+          finalDiscountType = DiscountType.FIXED;
+        }
 
         return {
           ...product,
           applicablePromotions,
-          discountAmount: finalDiscount
+          discountAmount: finalDiscountAmount,
+          discountType: finalDiscountType
         };
       });
     } catch (error) {

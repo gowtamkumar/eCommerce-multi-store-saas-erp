@@ -1,0 +1,45 @@
+import { DiscountType } from '../enums/discount-type.enum';
+
+export class PricingUtil {
+  /**
+   * Calculates the flat monetary value of a discount based on its type and base price.
+   */
+  static calculateDiscountAmount(
+    basePrice: number,
+    rawDiscount: number,
+    discountType: DiscountType | string
+  ): number {
+    const discount = Number(rawDiscount) || 0;
+    if (discountType === DiscountType.PERCENTAGE || discountType === 'percentage') {
+      return (basePrice * discount) / 100;
+    }
+    return discount;
+  }
+
+  /**
+   * Calculates the exhaustive item pricing breakdown given its base price, applied discount, and tax rate.
+   * Ensures the discount does not exceed the base price.
+   */
+  static calculateItemPricing(
+    basePrice: number,
+    discountAmount: number,
+    taxRate: number
+  ) {
+    // Ensure discount doesn't exceed base price
+    const actualDiscount = Math.min(Math.max(0, discountAmount), basePrice);
+    const discountedPrice = basePrice - actualDiscount;
+
+    const rate = Number(taxRate) || 0;
+    const taxAmount = (discountedPrice * rate) / 100;
+    const finalPrice = discountedPrice + taxAmount;
+
+    return {
+      basePrice,
+      discountAmount: actualDiscount,
+      discountedPrice,
+      taxRate: rate,
+      taxAmount,
+      finalPrice
+    };
+  }
+}

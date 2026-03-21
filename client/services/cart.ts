@@ -15,6 +15,7 @@ export interface CartItem {
   pricing: {
     base_price: number;
     discount: number;
+    tax?: number;
     final_price: number;
   };
   quantity: number;
@@ -26,6 +27,7 @@ export interface CartSummary {
   subtotal: number;
   offer_discount: number;
   coupon_discount: number;
+  tax?: number;
   payable: number;
 }
 

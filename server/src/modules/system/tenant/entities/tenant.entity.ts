@@ -1,16 +1,14 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum';
-import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum';
-import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status';
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum';
-import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entities/subscription-plan.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
+import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
+import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
+import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entities/subscription-plan.entity'
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('tenants')
 export class TenantEntity extends BaseEntity {
-
-
   @Column({ name: 'store_name' })
   storeName: string
 
@@ -40,8 +38,6 @@ export class TenantEntity extends BaseEntity {
 
   @Column({ name: 'ssl_enabled', default: false })
   sslEnabled: boolean
-
-
 
   @Column({ name: 'subscription_plan_id', nullable: true })
   subscriptionPlanId: string
@@ -73,9 +69,9 @@ export class TenantEntity extends BaseEntity {
   subscriptionEndsAt: Date
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 }

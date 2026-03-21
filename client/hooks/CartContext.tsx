@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import { calculatePricing } from "@/lib/utils";
 
 interface CartContextType {
   cart: Cart | null;
@@ -33,6 +34,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Helper for recalculating local guest carts
+  const recalcLocalSummary = (items: CartItem[], couponDiscount = 0) => {
+    const subtotal = items.reduce((acc, item) => acc + (item.pricing.base_price * item.quantity), 0);
+    const offer_discount = items.reduce((acc, item) => acc + (item.pricing.discount * item.quantity), 0);
+    const tax = items.reduce((acc, item) => acc + ((item.pricing.tax || 0) * item.quantity), 0);
+    const payable = items.reduce((acc, item) => acc + item.line_total, 0) - couponDiscount;
+
+    return { subtotal, offer_discount, coupon_discount: couponDiscount, tax, payable };
+  };
 
   // Initialize local cart from localStorage
   useEffect(() => {
@@ -164,9 +175,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             }
           }
 
-          // Apply discount logic if available on product
-          const discount = product.discountAmount || 0;
-          const finalPrice = Math.max(0, price - discount);
+          // Apply discount and tax logic
+          const { finalPrice, discountAmount: discount, taxAmount } = calculatePricing(
+            price,
+            Number(product.discountAmount || 0),
+            product.discountType || 'fixed',
+            Number(product.taxRate || 0)
+          );
 
           newItems.push({
             cart_item_id: `local_${Date.now()}_${Math.random()}`,
@@ -179,6 +194,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             pricing: {
               base_price: price,
               discount: discount,
+              tax: taxAmount,
               final_price: finalPrice
             },
             quantity: quantity,
@@ -188,14 +204,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Recalculate summary
-        const subtotal = newItems.reduce((acc, item) => acc + item.line_total, 0);
-        // Simplified summary for local
-        const newSummary = {
-          subtotal,
-          offer_discount: 0,
-          coupon_discount: 0,
-          payable: subtotal
-        };
+        const newSummary = recalcLocalSummary(newItems);
 
         const updatedCart = { ...currentCart, items: newItems, summary: newSummary };
         setCart(updatedCart);
@@ -241,11 +250,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
         return item;
       });
-      const subtotal = newItems.reduce((acc, item) => acc + item.line_total, 0);
       const updatedCart = {
         ...cart,
         items: newItems,
-        summary: { ...cart.summary, subtotal, payable: subtotal } // simplified
+        summary: recalcLocalSummary(newItems, cart.summary?.coupon_discount)
       };
       setCart(updatedCart);
       localStorage.setItem("temp_cart", JSON.stringify(updatedCart));
@@ -265,11 +273,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (!session?.user) {
       if (!cart) return;
       const newItems = cart.items.filter(item => item.cart_item_id !== itemId);
-      const subtotal = newItems.reduce((acc, item) => acc + item.line_total, 0);
       const updatedCart = {
         ...cart,
         items: newItems,
-        summary: { ...cart.summary, subtotal, payable: subtotal }
+        summary: recalcLocalSummary(newItems, cart.summary?.coupon_discount)
       };
       setCart(updatedCart);
       localStorage.setItem("temp_cart", JSON.stringify(updatedCart));

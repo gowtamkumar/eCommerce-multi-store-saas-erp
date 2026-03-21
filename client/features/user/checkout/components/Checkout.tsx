@@ -99,6 +99,7 @@ export default function Checkout() {
         subtotal: 0,
         offer_discount: 0,
         coupon_discount: 0,
+        tax: 0,
         payable: 0,
     };
 
@@ -612,6 +613,14 @@ export default function Checkout() {
                                             </span>
                                         </div>
                                     )}
+                                    {(summary.tax && summary.tax > 0) ? (
+                                        <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                                            <span>Tax</span>
+                                            <span>
+                                                +<Price amount={summary.tax} />
+                                            </span>
+                                        </div>
+                                    ) : null}
                                     <div className="flex justify-between text-slate-600 dark:text-slate-400">
                                         <span>Shipping</span>
                                         <span>Free</span>

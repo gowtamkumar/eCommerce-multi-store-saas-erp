@@ -9,6 +9,7 @@ import {
   OneToMany
 } from 'typeorm';
 import { ProductStatus } from '@/common/enums/product-status.enum';
+import { DiscountType } from '@/common/enums/discount-type.enum';
 import { BrandEntity } from '../../brand/entities/brand.entity';
 import { CategoryEntity } from '../../category/entities/category.entity';
 import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity';
@@ -40,6 +41,18 @@ export class ProductEntity extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'discount_amount' })
   discountAmount: number
+
+  @Column({
+    type: 'enum',
+    enum: DiscountType,
+    default: DiscountType.PERCENTAGE,
+    name: 'discount_type',
+    nullable: true,
+  })
+  discountType: DiscountType
+
+  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0, name: 'tax_rate', nullable: true })
+  taxRate: number // Percentage, e.g. 15 = 15%
 
   @Column({ type: 'simple-array' })
   images: string[]

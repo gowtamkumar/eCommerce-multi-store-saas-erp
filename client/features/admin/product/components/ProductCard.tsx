@@ -7,6 +7,7 @@ import { ArrowUpDown, Eye, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { calculatePricing } from "@/lib/utils";
 
 interface ProductCardProps {
   product: any;
@@ -37,9 +38,16 @@ export default function ProductCard({ product, priority = false, viewMode = 'gri
     setAdding(false);
   };
 
-  const discountAmt = Number(product.discountAmount || 0);
+  const { finalPrice, discountAmount } = calculatePricing(
+    Number(product.price || 0),
+    Number(product.discountAmount || 0),
+    product.discountType || 'fixed',
+    Number(product.taxRate || 0)
+  );
+
+  const discountAmt = discountAmount;
   const basePrice = Number(product.price || 0);
-  const discountPercentage = discountAmt > 0 ? Math.round((discountAmt / basePrice) * 100) : 0;
+  const discountPercentage = discountAmt > 0 && basePrice > 0 ? Math.round((discountAmt / basePrice) * 100) : 0;
 
   const validPromotions = product.applicablePromotions?.filter((p: any) => p.isActive);
 
@@ -111,7 +119,7 @@ export default function ProductCard({ product, priority = false, viewMode = 'gri
 
         <div className="flex items-center justify-between pt-5 border-t border-slate-50 dark:border-slate-800 mt-auto">
           <Price
-            amount={discountAmt > 0 ? basePrice - discountAmt : basePrice}
+            amount={finalPrice}
             className="text-xl font-black text-slate-900 dark:text-white"
             showOriginal={discountAmt > 0}
             originalAmount={basePrice}
