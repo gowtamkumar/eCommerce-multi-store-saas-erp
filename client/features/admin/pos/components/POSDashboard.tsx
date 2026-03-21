@@ -352,8 +352,8 @@ export default function POSDashboard() {
                                         onClick={() => addToCart(selectedProductForVariant, variant)}
                                         disabled={variant.stock < 1}
                                         className={`w-full flex-col p-4 rounded-2xl border-2 transition-all text-left ${variant.stock < 1
-                                                ? 'opacity-50 cursor-not-allowed border-slate-100 dark:border-slate-800'
-                                                : 'border-slate-200 hover:border-brand-500 dark:border-slate-700 dark:hover:border-brand-500 bg-slate-50 dark:bg-slate-900/50'
+                                            ? 'opacity-50 cursor-not-allowed border-slate-100 dark:border-slate-800'
+                                            : 'border-slate-200 hover:border-brand-500 dark:border-slate-700 dark:hover:border-brand-500 bg-slate-50 dark:bg-slate-900/50'
                                             }`}
                                     >
                                         <div className="flex justify-between items-start mb-3">
@@ -399,7 +399,7 @@ export default function POSDashboard() {
             )}
 
             {/* Left/Sidebar: Products Grid */}
-            <div className="flex-1 flex flex-col bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 z-10 w-full max-w-4xl min-w-0">
+            <div className="flex-1 flex flex-col bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 z-10 w-full min-w-0">
                 <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3 bg-white dark:bg-slate-800 sticky top-0 z-20">
                     <Link href="/admin" className="p-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0" title="Back to Dashboard">
                         <ArrowLeft className="w-5 h-5" />
@@ -418,8 +418,8 @@ export default function POSDashboard() {
                         )}
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/50 dark:bg-slate-900/50">
-                    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mx-auto">
+                <div className="flex-1 overflow-y-auto p-2 md:p-2 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 mx-auto">
                         {products.map(p => {
                             let baseDiscountAmt = 0;
                             const rawDiscount = Number(p.discountAmount) || 0;
@@ -440,32 +440,32 @@ export default function POSDashboard() {
                                     key={p.id}
                                     onClick={() => addToCart(p)}
                                     disabled={p.stock < 1 && (!p.variants || p.variants.length === 0)}
-                                    className={`bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm hover:border-brand-500 dark:hover:border-brand-500 transition-colors text-left flex flex-col ${p.stock < 1 && (!p.variants || p.variants.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    className={`bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-3 shadow-sm hover:border-brand-500 dark:hover:border-brand-500 transition-colors text-left flex flex-col ${p.stock < 1 && (!p.variants || p.variants.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    <div className="w-full aspect-square bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl mb-3 overflow-hidden flex items-center justify-center relative">
+                                    <div className="w-full aspect-square bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-lg mb-2 overflow-hidden flex items-center justify-center relative">
                                         {hasDiscount && (
-                                            <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                                            <div className="absolute top-1.5 left-1.5 z-10 bg-red-500 text-white text-[9px] font-bold px-1 py-0.5 rounded shadow-sm">
                                                 {isPercentage ? `-${rawDiscount}%` : 'SALE'}
                                             </div>
                                         )}
                                         {p.images?.[0] ? (
                                             <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                         ) : (
-                                            <ShoppingCart className="w-8 h-8 text-slate-300" />
+                                            <ShoppingCart className="w-6 h-6 text-slate-300" />
                                         )}
                                     </div>
-                                    <h3 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight min-h-[40px] mb-2">{p.name}</h3>
+                                    <h3 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight min-h-[32px] mb-1.5">{p.name}</h3>
 
                                     <div className="mt-auto w-full group relative">
-                                        <div className="flex items-center justify-between mt-1">
+                                        <div className="flex items-center justify-between mt-0.5">
                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span className="text-brand-600 font-black text-lg">{formatPrice(finalPrice)}</span>
+                                                <span className="text-brand-600 font-black text-sm">{formatPrice(finalPrice)}</span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1">
-                                            <span>{p.variants?.length ? 'Options Available' : `Stock: ${p.stock}`}</span>
+                                        <div className="flex items-center justify-between text-[9px] text-slate-500 mt-0.5">
+                                            <span className="truncate pr-1">{p.variants?.length ? 'Options' : `Stock: ${p.stock}`}</span>
                                             {(hasDiscount || taxRate > 0) && (
-                                                <span className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 underline underline-offset-2 decoration-dotted">Details</span>
+                                                <span className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 underline underline-offset-2 decoration-dotted shrink-0">Details</span>
                                             )}
                                         </div>
 
