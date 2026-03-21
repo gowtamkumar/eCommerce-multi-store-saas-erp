@@ -67,6 +67,11 @@ interface SiteSettings {
   steadfastCourier?: {
     apiKey?: string;
   };
+  shippingConfig?: {
+    insideCityFee?: number;
+    outsideCityFee?: number;
+    freeShippingThreshold?: number;
+  };
   footer?: {
     template?: 'classic' | 'glass' | 'modern' | 'elegant' | 'corporate';
     backgroundColor?: string;
@@ -186,6 +191,12 @@ export function SettingsProvider({
           productsPage: { ...DEFAULT_SETTINGS.productsPage, ...settings?.productsPage },
           singleProductPage: { ...DEFAULT_SETTINGS.singleProductPage, ...settings?.singleProductPage },
           offersPage: { ...DEFAULT_SETTINGS.offersPage, ...settings?.offersPage },
+          shippingConfig: { 
+            insideCityFee: 60, 
+            outsideCityFee: 120, 
+            freeShippingThreshold: 5000, 
+            ...settings?.shippingConfig 
+          },
         };
         setSettings(mergedSettings);
 

@@ -19,6 +19,7 @@ import {
     Truck,
     X,
 } from "lucide-react";
+import { calculateShippingFee } from "@/lib/utils";
 import { getSession, signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -36,7 +37,7 @@ export default function Checkout() {
         applyCoupon,
         removeCoupon,
     } = useCart();
-    const { selectedCurrency, formatPrice } = useSettings();
+    const { selectedCurrency, formatPrice, settings } = useSettings();
     const { data: session, status: sessionStatus } = useSession();
     const { downloadInvoice } = useDownloadInvoice();
     const [loading, setLoading] = useState(false);
@@ -45,6 +46,7 @@ export default function Checkout() {
     );
     const [step, setStep] = useState<"form" | "success">("form");
     const [lastOrder, setLastOrder] = useState<any>(null);
+    const [shippingZone, setShippingZone] = useState<"inside" | "outside">("inside");
 
     // Form state
     const [formData, setFormData] = useState({
@@ -102,6 +104,10 @@ export default function Checkout() {
         tax: 0,
         payable: 0,
     };
+
+    const finalShippingFee = calculateShippingFee(shippingZone, settings?.shippingConfig, summary.payable);
+
+    const finalPayable = summary.payable + finalShippingFee;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -179,7 +185,7 @@ export default function Checkout() {
             const getSessions: any = await getSession()
 
             const orderData = {
-                userId: getSessions.user.id,
+                userId: getSessions.user?.id,
                 customerName: formData.name,
                 customerEmail: formData.email,
                 customerPhone: formData.phone,
@@ -188,6 +194,7 @@ export default function Checkout() {
                 paymentMethod,
                 currency: selectedCurrency.code,
                 currencyRate: selectedCurrency.rate,
+                shippingZone,
             };
 
             // 1. Create Order
@@ -433,6 +440,24 @@ export default function Checkout() {
                                         </div>
                                     </div>
 
+                                    <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            Delivery Zone
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <label className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-start gap-1 ${shippingZone === "inside" ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20" : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"}`}>
+                                                <input type="radio" name="zone" value="inside" checked={shippingZone === "inside"} onChange={() => setShippingZone("inside")} className="sr-only" />
+                                                <span className={`font-semibold text-sm ${shippingZone === "inside" ? "text-brand-700 dark:text-brand-400" : "text-slate-700 dark:text-slate-300"}`}>Inside City</span>
+                                                <span className="text-xs text-slate-500">Standard Delivery</span>
+                                            </label>
+                                            <label className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-start gap-1 ${shippingZone === "outside" ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20" : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"}`}>
+                                                <input type="radio" name="zone" value="outside" checked={shippingZone === "outside"} onChange={() => setShippingZone("outside")} className="sr-only" />
+                                                <span className={`font-semibold text-sm ${shippingZone === "outside" ? "text-brand-700 dark:text-brand-400" : "text-slate-700 dark:text-slate-300"}`}>Outside City</span>
+                                                <span className="text-xs text-slate-500">Nationwide Delivery</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                             Order Notes (Optional)
@@ -623,11 +648,17 @@ export default function Checkout() {
                                     ) : null}
                                     <div className="flex justify-between text-slate-600 dark:text-slate-400">
                                         <span>Shipping</span>
-                                        <span>Free</span>
+                                        {finalShippingFee === 0 ? (
+                                            <span className="text-green-600 font-medium">Free</span>
+                                        ) : (
+                                            <span>
+                                                +<Price amount={finalShippingFee} />
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="flex justify-between text-lg font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-700">
                                         <span>Total</span>
-                                        <Price amount={summary.payable} />
+                                        <Price amount={finalPayable} />
                                     </div>
                                 </div>
 

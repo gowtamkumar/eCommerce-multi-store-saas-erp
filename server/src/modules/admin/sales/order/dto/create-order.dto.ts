@@ -85,4 +85,9 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   appliedCouponCode?: string
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  shippingZone?: string
 }

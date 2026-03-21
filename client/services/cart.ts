@@ -28,6 +28,7 @@ export interface CartSummary {
   offer_discount: number;
   coupon_discount: number;
   tax?: number;
+  shipping_fee?: number;
   payable: number;
 }
 

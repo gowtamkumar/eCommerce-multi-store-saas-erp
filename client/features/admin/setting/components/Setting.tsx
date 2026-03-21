@@ -99,6 +99,11 @@ function SettingsContent() {
             apiKey: "",
             secretKey: "",
         },
+        shippingConfig: {
+            insideCityFee: 60,
+            outsideCityFee: 120,
+            freeShippingThreshold: 5000,
+        },
         navbar: {
             layout: "default",
             template: "classic",
@@ -265,6 +270,11 @@ function SettingsContent() {
                         steadfastCourier: {
                             apiKey: data.steadfastCourier?.apiKey || "",
                             secretKey: data.steadfastCourier?.secretKey || "",
+                        },
+                        shippingConfig: {
+                            insideCityFee: data.shippingConfig?.insideCityFee || 60,
+                            outsideCityFee: data.shippingConfig?.outsideCityFee || 120,
+                            freeShippingThreshold: data.shippingConfig?.freeShippingThreshold || 5000,
                         },
                         navbar: data.navbar || {
                             layout: "default",

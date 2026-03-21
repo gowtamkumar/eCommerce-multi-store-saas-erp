@@ -10,6 +10,7 @@ import { PaymentDto } from './payment.dto';
 import { SmtpDto } from './smtp.dto';
 import { SocialLinkDto } from './socialLink.dto';
 import { SteadfastCourierDto } from './steadfastCourier.dto';
+import { ShippingConfigDto } from './shippingConfig.dto';
 import { TrustBadgeDto } from './trust-badge.dto';
 import { ProductsPageSettingsDto } from './products-page.dto';
 import { SingleProductPageSettingsDto } from './single-product-page.dto';
@@ -95,6 +96,13 @@ export class UpdateSiteSettingsDto {
     @IsObject()
     @IsOptional()
     steadfastCourier?: SteadfastCourierDto;
+
+    @ApiProperty({ required: false })
+    @IsObject()
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => ShippingConfigDto)
+    shippingConfig?: ShippingConfigDto;
 
     @ApiProperty({ required: false })
     @IsOptional()

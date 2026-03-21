@@ -36,6 +36,9 @@ export class OrderEntity extends BaseEntity {
     @Column({ type: 'decimal', name: 'total_amount', precision: 10, scale: 2 })
     totalAmount: number;
 
+    @Column({ type: 'decimal', name: 'shipping_fee', precision: 10, scale: 2, default: 0 })
+    shippingFee: number;
+
     @Column({ type: 'varchar', name: 'currency', length: 10, default: 'BDT' })
     currency: string;
 

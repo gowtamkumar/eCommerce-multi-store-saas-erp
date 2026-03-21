@@ -5,7 +5,7 @@ import {
   JoinColumn,
   ManyToOne,
 } from 'typeorm';
-import { CurrenciesDto, FooterSettingsDto, MarketingDto, NavbarSettingsDto, PathaoCourierDto, PaymentDto, ProductsPageSettingsDto, SingleProductPageSettingsDto, OffersPageSettingsDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto } from '../dto/index';
+import { CurrenciesDto, FooterSettingsDto, MarketingDto, NavbarSettingsDto, PathaoCourierDto, PaymentDto, ProductsPageSettingsDto, SingleProductPageSettingsDto, OffersPageSettingsDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto, ShippingConfigDto } from '../dto/index';
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
 
@@ -59,6 +59,9 @@ export class SiteSettingsEntity extends BaseEntity {
 
   @Column({ type: 'jsonb', name: 'steadfast_courier', nullable: true })
   steadfastCourier?: SteadfastCourierDto
+
+  @Column({ type: 'jsonb', name: 'shipping_config', nullable: true })
+  shippingConfig?: ShippingConfigDto
 
 
   @Column({ type: 'jsonb', name: 'navbar', nullable: true })

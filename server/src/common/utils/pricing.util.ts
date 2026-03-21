@@ -42,4 +42,31 @@ export class PricingUtil {
       finalPrice
     };
   }
+
+  /**
+   * Calculates the shipping fee based on delivery zone, configuration, and order subtotal.
+   */
+  static calculateShippingFee(
+    shippingZone: string | undefined,
+    shippingConfig: any,
+    payableSubtotal: number
+  ): number {
+    let shippingFee = 0;
+    const config = shippingConfig || {};
+    
+    if (shippingZone) {
+      if (shippingZone === 'inside') {
+        shippingFee = Number(config.insideCityFee ?? 60);
+      } else if (shippingZone === 'outside') {
+        shippingFee = Number(config.outsideCityFee ?? 120);
+      }
+
+      const threshold = Number(config.freeShippingThreshold ?? 5000);
+      if (threshold > 0 && payableSubtotal >= threshold) {
+        shippingFee = 0;
+      }
+    }
+    
+    return shippingFee;
+  }
 }

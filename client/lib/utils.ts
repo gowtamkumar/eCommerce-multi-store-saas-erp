@@ -38,6 +38,23 @@ export function calculatePricing(price: number, discountAmount: number, discount
   };
 }
 
+export function calculateShippingFee(
+  shippingZone: "inside" | "outside" | undefined,
+  shippingConfig: any,
+  payableSubtotal: number
+): number {
+  if (!shippingZone) return 0;
+  
+  const insideFee = Number(shippingConfig?.insideCityFee ?? 60);
+  const outsideFee = Number(shippingConfig?.outsideCityFee ?? 120);
+  const threshold = Number(shippingConfig?.freeShippingThreshold ?? 5000);
+
+  const rawShippingFee = shippingZone === "inside" ? insideFee : outsideFee;
+  const isFreeShipping = threshold > 0 && payableSubtotal >= threshold;
+
+  return isFreeShipping ? 0 : rawShippingFee;
+}
+
 
 export const handleCreatePathaoOrder = async (order: Order, setCreatingPathaoOrder: (orderId: string | null) => void) => {
   setCreatingPathaoOrder(order.id);

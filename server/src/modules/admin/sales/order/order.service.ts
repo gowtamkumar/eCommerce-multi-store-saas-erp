@@ -60,6 +60,7 @@ export class OrderService {
       userId,
       items: directItems,
       appliedCouponCode,
+      shippingZone,
     } = createOrderDto
 
     return await this.dataSource.transaction(async (manager) => {
@@ -221,7 +222,14 @@ export class OrderService {
         }
       }
 
-      order.totalAmount = preCouponTotal - couponDiscountAmount
+      const shippingFee = PricingUtil.calculateShippingFee(
+        shippingZone, 
+        settings?.shippingConfig, 
+        preCouponTotal - couponDiscountAmount
+      );
+
+      order.shippingFee = shippingFee
+      order.totalAmount = preCouponTotal - couponDiscountAmount + shippingFee
       const savedOrder = await manager.save(order)
 
       // Update inventory transactions with order reference ID

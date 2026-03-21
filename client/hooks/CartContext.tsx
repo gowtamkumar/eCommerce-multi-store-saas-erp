@@ -42,7 +42,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const tax = items.reduce((acc, item) => acc + ((item.pricing.tax || 0) * item.quantity), 0);
     const payable = items.reduce((acc, item) => acc + item.line_total, 0) - couponDiscount;
 
-    return { subtotal, offer_discount, coupon_discount: couponDiscount, tax, payable };
+    return { subtotal, offer_discount, coupon_discount: couponDiscount, tax, shipping_fee: 0, payable };
   };
 
   // Initialize local cart from localStorage
