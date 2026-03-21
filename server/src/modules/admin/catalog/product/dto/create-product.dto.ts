@@ -194,4 +194,19 @@ export class CreateProductDto {
     @Type(() => ProductVariantDto)
     @IsOptional()
     variants?: ProductVariantDto[];
+
+    @ApiProperty({ required: false })
+    @IsString()
+    @IsOptional()
+    metaTitle?: string;
+
+    @ApiProperty({ required: false })
+    @IsString()
+    @IsOptional()
+    metaDescription?: string;
+
+    @ApiProperty({ required: false })
+    @IsString()
+    @IsOptional()
+    ogImage?: string;
 }

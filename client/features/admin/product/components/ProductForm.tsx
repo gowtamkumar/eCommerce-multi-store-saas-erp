@@ -2,7 +2,7 @@
 
 import { fetchAPI } from '@/services/api';
 import { Category, ProductAttribute, ProductVariant } from '@/types/product';
-import { Image as ImageIcon, Layout, Loader2, MessageSquare, Plus, Save, Star, Tag, Trash2 } from 'lucide-react';
+import { Image as ImageIcon, Layout, Loader2, MessageSquare, Plus, Save, Search, Star, Tag, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -45,6 +45,9 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     faqs: initialData?.faqs || [],
     faqSource: initialData?.faqSource || 'manual',
     faqIds: initialData?.faqIds || [],
+    metaTitle: initialData?.metaTitle || '',
+    metaDescription: initialData?.metaDescription || '',
+    ogImage: initialData?.ogImage || '',
   });
 
 
@@ -102,6 +105,9 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
           lowStockThreshold: !isNaN(t) ? t : 5,
         };
       }),
+      metaTitle: formData.metaTitle || null,
+      metaDescription: formData.metaDescription || null,
+      ogImage: formData.ogImage || null,
     };
 
 
@@ -199,6 +205,45 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
               stock={formData.stock}
               onChange={(attributes, variants) => setFormData({ ...formData, attributes, variants })}
             />
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+              <Search className="w-5 h-5 text-brand-500" /> SEO & Social Sharing
+            </h3>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Meta Title</label>
+                <input
+                  type="text"
+                  placeholder="SEO Title"
+                  value={formData.metaTitle}
+                  onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Meta Description</label>
+                <textarea
+                  placeholder="SEO Description"
+                  value={formData.metaDescription}
+                  onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Custom OG Image URL</label>
+                <input
+                  type="text"
+                  placeholder="https://example.com/image.jpg"
+                  value={formData.ogImage}
+                  onChange={(e) => setFormData({ ...formData, ogImage: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                />
+                <p className="mt-1 text-[10px] text-slate-400 italic">* If left empty, the first product image will be used.</p>
+              </div>
+            </div>
           </div>
 
           <ProductFAQs

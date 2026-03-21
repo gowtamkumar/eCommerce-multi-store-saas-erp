@@ -26,10 +26,23 @@ export async function generateMetadata({
     const page = await getPage(slug);
 
     if (!page) return {};
+    const image = page.ogImage;
 
     return {
         title: page.metaTitle || `${page.title}`,
         description: page.metaDescription,
+        openGraph: {
+            title: page.metaTitle || `${page.title}`,
+            description: page.metaDescription,
+            images: image ? [image] : [],
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: page.metaTitle || `${page.title}`,
+            description: page.metaDescription,
+            images: image ? [image] : [],
+        },
     };
 }
 

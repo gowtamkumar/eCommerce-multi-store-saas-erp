@@ -127,6 +127,17 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
             />
             <p className="text-[9px] text-slate-400">Optimal: 150-160 characters. Current: {data.metaDescription?.length || 0}</p>
           </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 uppercase">OG Image URL</label>
+            <input
+              type="text"
+              value={data.ogImage || ''}
+              onChange={(e) => handleChange('ogImage', e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+              placeholder="https://example.com/og-image.jpg"
+            />
+          </div>
         </div>
       </section>
 

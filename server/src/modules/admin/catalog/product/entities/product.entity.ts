@@ -135,5 +135,12 @@ export class ProductEntity extends BaseEntity {
   @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
+  @Column({ type: 'varchar', length: 255, name: 'meta_title', nullable: true })
+  metaTitle: string
 
+  @Column({ type: 'text', name: 'meta_description', nullable: true })
+  metaDescription: string
+
+  @Column({ type: 'varchar', length: 500, name: 'og_image', nullable: true })
+  ogImage: string
 }

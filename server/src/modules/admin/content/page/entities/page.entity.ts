@@ -41,6 +41,9 @@ export class PageEntity extends BaseEntity {
   @Column({ type: 'text', name: 'meta_description', nullable: true })
   metaDescription: string;
 
+  @Column({ type: 'varchar', length: 500, name: 'og_image', nullable: true })
+  ogImage: string;
+
   @Column({ type: 'jsonb', nullable: true })
   typography: {
     fontFamily?: string;

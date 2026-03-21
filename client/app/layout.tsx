@@ -3,6 +3,7 @@ import { SettingsProvider } from "@/hooks/SettingsContext";
 import ToasterProvider from "@/hooks/ToasterProvider";
 import { getSiteSettings } from "@/services/getSettings";
 import { Inter, Outfit } from "next/font/google";
+import Script from "next/script";
 import "../styles/typography.css";
 import "./globals.css";
 
@@ -17,7 +18,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const settings = await getSiteSettings();
-  const { googleSiteVerification, facebookDomainVerification } = settings.marketing || {};
+  const { googleSiteVerification, facebookDomainVerification, googleAnalyticsId, facebookPixelId } = settings.marketing || {};
 
   return (
     <html lang="en" className="scroll-smooth">
@@ -26,6 +27,42 @@ export default async function RootLayout({
         {facebookDomainVerification && <meta name="facebook-domain-verification" content={facebookDomainVerification} />}
       </head>
       <body className={`${inter.className} ${outfit.variable} antialiased`}>
+        {/* Google Analytics */}
+        {googleAnalyticsId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${googleAnalyticsId}');
+              `}
+            </Script>
+          </>
+        )}
+
+        {/* Meta Pixel */}
+        {facebookPixelId && (
+          <Script id="fb-pixel" strategy="afterInteractive">
+            {`
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '${facebookPixelId}');
+              fbq('track', 'PageView');
+            `}
+          </Script>
+        )}
+
         <AuthProvider>
           <SettingsProvider initialSettings={settings}>
             <ToasterProvider />

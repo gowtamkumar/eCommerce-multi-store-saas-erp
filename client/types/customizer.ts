@@ -311,6 +311,7 @@ export interface PageData {
   content: CustomizerData;
   metaTitle?: string;
   metaDescription?: string;
+  ogImage?: string;
   typography?: {
     fontFamily: string;
     headingFont: string;

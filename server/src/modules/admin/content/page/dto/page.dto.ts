@@ -37,6 +37,11 @@ export class CreatePageDto {
     @IsString()
     @IsOptional()
     status?: string;
+
+    @ApiProperty({ required: false })
+    @IsString()
+    @IsOptional()
+    ogImage?: string;
 }
 
 export class UpdatePageDto extends CreatePageDto { }
