@@ -79,7 +79,7 @@ export class ReturnService {
         const returns = await this.returnRepository.find({
             where: { tenantId },
             order: { createdAt: 'DESC' },
-            relations: ['order', 'order.items', 'order.items.product', 'order.items.variant'],
+            relations: ['order', 'order.items', 'order.items.product', 'order.items.variant', 'user'],
         });
 
         console.log('Found returns:', returns.length);

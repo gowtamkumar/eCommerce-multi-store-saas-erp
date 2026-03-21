@@ -153,8 +153,6 @@ export default function Checkout() {
                         redirect: false,
                     });
 
-                    console.log("loginResult", loginResult);
-
 
                     if (loginResult?.error) {
                         throw new Error(
@@ -237,9 +235,9 @@ export default function Checkout() {
                 setStep("success");
             }
             localStorage.removeItem("temp_cart");
-        } catch (error) {
+        } catch (error: any) {
             console.error("Checkout error:", error);
-            toast.error("Something went wrong. Please try again.");
+            toast.error(error.message || "Something went wrong. Please try again.");
         } finally {
             if (paymentMethod !== (PaymentMethod.SSLCOMMERZ as any)) {
                 setLoading(false);

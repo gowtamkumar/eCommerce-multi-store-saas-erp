@@ -161,6 +161,7 @@ export class OrderService {
         orderItem.quantity = quantity
         orderItem.unitPrice = pricing.basePrice
         orderItem.discountAmount = pricing.discountAmount
+        orderItem.taxAmount = pricing.taxAmount
         orderItem.totalAmount = itemTotal
         orderItem.tenantId = tenantId
         orderItem.snapshot = {
@@ -200,6 +201,7 @@ export class OrderService {
         userId: user?.id,
         tenantId,
         deliveryZone: shippingZone,
+        taxAmount: processedItems.reduce((acc, item) => acc + Number(item.taxAmount) * item.quantity, 0),
       })
 
       let couponDiscountAmount = 0

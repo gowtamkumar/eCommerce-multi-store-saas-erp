@@ -95,7 +95,7 @@ export default function ReturnsPage() {
                                                 {req.order?.customerName || "Unknown"}
                                             </div>
                                             <div className="text-xs text-slate-500">
-                                                {req.users?.email}
+                                                {req.user?.email || req.order?.customerEmail}
                                             </div>
                                         </td>
                                         <td className="p-4 text-sm max-w-xs">

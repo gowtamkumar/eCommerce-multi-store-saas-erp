@@ -102,6 +102,14 @@ export class InventoryTransactionService {
                 ? product.variants.reduce((sum, v) => sum + (v.stock || 0) * Number(v.price || product.price), 0)
                 : product.stock * Number(product.price);
 
+            const isLowStock = hasVariants
+                ? product.variants.some(v => v.stock <= (v.lowStockThreshold ?? product.lowStockThreshold ?? 5))
+                : (product.stock <= (product.lowStockThreshold ?? 5));
+
+            const isOutOfStock = hasVariants
+                ? product.variants.some(v => v.stock === 0)
+                : product.stock === 0;
+
             return {
                 id: product.id,
                 name: product.name,
@@ -120,9 +128,10 @@ export class InventoryTransactionService {
                     combination: v.combination,
                     price: v.price || product.price,
                     stock: v.stock,
+                    lowStockThreshold: v.lowStockThreshold || product.lowStockThreshold || 5,
                 })) : [],
-                lowStock: totalStock <= (product.lowStockThreshold ?? 5) && totalStock > 0,
-                outOfStock: totalStock === 0,
+                lowStock: isLowStock,
+                outOfStock: isOutOfStock,
             };
         });
     }

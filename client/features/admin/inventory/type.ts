@@ -22,6 +22,7 @@ export interface VariantStock {
     combination: Record<string, string>;
     price: number;
     stock: number;
+    lowStockThreshold?: number;
 }
 
 export interface ProductStock {

@@ -46,6 +46,9 @@ export class OrderItemEntity extends BaseEntity {
   @Column({ type: 'decimal', name: 'discount_amount', precision: 10, scale: 2, default: 0 })
   discountAmount: number;
 
+  @Column({ type: 'decimal', name: 'tax_amount', precision: 10, scale: 2, default: 0 })
+  taxAmount: number;
+
   @Column({ type: 'decimal', name: 'total_amount', precision: 10, scale: 2 })
   totalAmount: number;
 

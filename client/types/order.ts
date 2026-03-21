@@ -3,6 +3,7 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   discountAmount: number;
+  taxAmount: number;
   totalAmount: number;
   snapshot?: any;
   product: {
@@ -27,6 +28,7 @@ export interface Order {
   address: string;
   totalAmount: number;
   shippingFee?: number;
+  taxAmount?: number;
   status: string;
   paymentMethod: string;
   paymentStatus: string;

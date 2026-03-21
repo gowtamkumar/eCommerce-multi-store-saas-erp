@@ -182,7 +182,7 @@ export default function AdminLayout({
                                 {!isSidebarCollapsed && (
                                     <button
                                         onClick={() => toggleGroup(group.title)}
-                                        className="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider hover:text-slate-600 dark:hover:text-slate-300 transition-colors group"
+                                        className="w-full flex items-center justify-between px-4 py-2  font-semibold text-slate-400 transition-colors group"
                                     >
                                         <span>{group.title}</span>
                                         <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} ${hasActive ? 'text-brand-500' : ''}`} />

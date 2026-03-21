@@ -621,14 +621,20 @@ export default function OrderDetailsPage({
                                         <span>-{formatPrice(totalRefunded)}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                                    <span>Shipping</span>
+                                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                                    <span>Shipping {order.deliveryZone && `(${order.deliveryZone})`}</span>
                                     <span>{Number(order.shippingFee) === 0 ? (
-                                        <span className="text-green-600">Free</span>
+                                        <span className="text-green-600 font-bold uppercase text-xs">Free</span>
                                     ) : (
                                         formatPrice(order.shippingFee || 0)
                                     )}</span>
                                 </div>
+                                {Number(order.taxAmount) > 0 && (
+                                    <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                                        <span>Tax</span>
+                                        <span>{formatPrice(order.taxAmount || 0)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between text-xl font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-200 dark:border-slate-700">
                                     <span>Payable Amount</span>
                                     <span className="text-green-600">

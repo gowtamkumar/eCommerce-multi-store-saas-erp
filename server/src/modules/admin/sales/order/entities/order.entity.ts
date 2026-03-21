@@ -91,6 +91,9 @@ export class OrderEntity extends BaseEntity {
     @Column({ type: 'decimal', name: 'coupon_discount_amount', precision: 10, scale: 2, default: 0 })
     couponDiscountAmount: number;
 
+    @Column({ type: 'decimal', name: 'tax_amount', precision: 10, scale: 2, default: 0 })
+    taxAmount: number;
+
     @Column({ type: 'varchar', name: 'delivery_zone', length: 50, nullable: true })
     deliveryZone: string;
 }

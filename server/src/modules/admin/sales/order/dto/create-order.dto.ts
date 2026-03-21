@@ -43,6 +43,7 @@ export class CreateOrderDto {
   @IsString()
   customerName: string
 
+  @IsOptional()
   @IsEmail()
   customerEmail: string
 

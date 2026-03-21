@@ -312,8 +312,8 @@ export default function InventoryDashboard() {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-3">
-                                                        <span className={`text-[10px] font-black uppercase tracking-widest ${v.stock === 0 ? 'text-red-500' : v.stock <= 5 ? 'text-orange-500' : 'text-emerald-500'}`}>
-                                                            {v.stock === 0 ? 'Out of stock' : v.stock <= 5 ? 'Low stock' : 'Available'}
+                                                        <span className={`text-[10px] font-black uppercase tracking-widest ${v.stock === 0 ? 'text-red-500' : v.stock <= (v.lowStockThreshold || 5) ? 'text-orange-500' : 'text-emerald-500'}`}>
+                                                            {v.stock === 0 ? 'Out of stock' : v.stock <= (v.lowStockThreshold || 5) ? 'Low stock' : 'Available'}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-3 text-right">
