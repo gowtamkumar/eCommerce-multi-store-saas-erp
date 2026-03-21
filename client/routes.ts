@@ -71,6 +71,13 @@ export const navGroups = [
         ]
     },
     {
+        title: 'User Account',
+        roles: ['Admin', 'Operator', 'SuperAdmin'],
+        items: [
+            { icon: User, label: 'My Profile', href: '/admin/profile' },
+        ]
+    },
+    {
         title: 'System Settings',
         roles: ['Admin', 'SuperAdmin'],
         items: [

@@ -164,6 +164,42 @@ export class UserController {
     }
   }
 
+  @Patch('/profile')
+  async updateProfile(@RequestContext() ctx: RequestContextDto, @Body() updateUserDto: UpdateUserDto) {
+    this.logger.log(`${this.updateProfile.name} Controller Called`)
+    this.logger.verbose(`User "${ctx.user?.username}" called updateProfile.`);
+
+    // Security check: Remove role and status if present to prevent self-elevation
+    delete updateUserDto.role;
+    delete updateUserDto.status;
+
+    const user = await this.userService.updateUser(ctx.userId, updateUserDto)
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Profile updated`,
+      data: user,
+    }
+  }
+
+  @Patch('/profile/password')
+  async updateProfilePassword(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() updatePasswordDto: UpdatePasswordDto,
+  ) {
+    this.logger.log(`${this.updateProfilePassword.name} Controller Called`)
+    this.logger.verbose(`User "${ctx.user?.username}" called updateProfilePassword.`);
+    const user = await this.userService.updatePassword(ctx.userId, updatePasswordDto)
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Password updated`,
+      data: user,
+    }
+  }
+
   @Patch('/:id')
   async updateUser(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: UpdateUserDto) {
     this.logger.log(`${this.updateUser.name} Controller Called`)
