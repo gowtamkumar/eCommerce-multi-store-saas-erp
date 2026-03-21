@@ -109,6 +109,13 @@ export default function CreateOrder() {
             item => item.product.id === product.id && item.variant?.id === variant?.id
         );
 
+        if (appliedCouponCode || couponDiscount > 0) {
+            setAppliedCouponCode('');
+            setCouponDiscount(0);
+            setIsFreeShippingCoupon(false);
+            toast('Cart changed, coupon removed. Please re-apply.', { id: 'coupon-reset' });
+        }
+
         if (existingIndex > -1) {
             const newItems = [...selectedItems];
             newItems[existingIndex].quantity += 1;
@@ -116,7 +123,15 @@ export default function CreateOrder() {
             setSelectedItems(newItems);
         } else {
             const unitPrice = variant?.price ? Number(variant.price) : Number(product.price);
-            const discountAmount = Number(product.discountAmount) || 0;
+            
+            let discountAmount = 0;
+            const rawDiscount = Number(product.discountAmount) || 0;
+            if ((product as any).discountType === 'PERCENTAGE' || (product as any).discountType === 'percentage') {
+                discountAmount = (unitPrice * rawDiscount) / 100;
+            } else {
+                discountAmount = rawDiscount;
+            }
+            
             const discountedPrice = unitPrice - discountAmount;
             const taxAmount = (discountedPrice * (Number(product.taxRate) || 0)) / 100;
             
@@ -135,6 +150,13 @@ export default function CreateOrder() {
     };
 
     const updateQuantity = (index: number, delta: number) => {
+        if (appliedCouponCode || couponDiscount > 0) {
+            setAppliedCouponCode('');
+            setCouponDiscount(0);
+            setIsFreeShippingCoupon(false);
+            toast('Cart changed, coupon removed. Please re-apply.', { id: 'coupon-reset' });
+        }
+
         const newItems = [...selectedItems];
         const item = newItems[index];
         const newQty = Math.max(1, item.quantity + delta);
@@ -153,6 +175,12 @@ export default function CreateOrder() {
     };
 
     const removeItem = (index: number) => {
+        if (appliedCouponCode || couponDiscount > 0) {
+            setAppliedCouponCode('');
+            setCouponDiscount(0);
+            setIsFreeShippingCoupon(false);
+            toast('Cart changed, coupon removed. Please re-apply.', { id: 'coupon-reset' });
+        }
         setSelectedItems(selectedItems.filter((_, i) => i !== index));
     };
 

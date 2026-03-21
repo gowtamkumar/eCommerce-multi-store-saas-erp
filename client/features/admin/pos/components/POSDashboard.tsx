@@ -3,14 +3,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
-import { Search, Plus, Minus, Trash2, User, CreditCard, Banknote, ShoppingCart, CheckCircle, Loader2 } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, User, CreditCard, Banknote, ShoppingCart, CheckCircle, Loader2, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 interface Product {
     id: string;
     name: string;
     price: number;
     discountAmount?: number;
+    discountType?: string;
     taxRate?: number;
     stock: number;
     images?: string[];
@@ -35,7 +37,8 @@ export default function POSDashboard() {
     const [customers, setCustomers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    
+    const [isSearching, setIsSearching] = useState(false);
+
     const [cart, setCart] = useState<CartItem[]>([]);
     const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
     const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -48,12 +51,14 @@ export default function POSDashboard() {
     const [paymentMethod, setPaymentMethod] = useState<'cod' | 'sslcommerz'>('cod');
     const [isProcessing, setIsProcessing] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState(false);
+    const [isCustomerExpanded, setIsCustomerExpanded] = useState(false);
 
+    // Initial Load for customers and default products
     useEffect(() => {
         const init = async () => {
             try {
                 const [prodRes, custRes] = await Promise.all([
-                    fetchAPI('/products?limit=100'),
+                    fetchAPI('/products?limit=50'),
                     fetchAPI('/users?limit=100')
                 ]);
                 if (prodRes.data?.products) setProducts(prodRes.data.products);
@@ -67,10 +72,30 @@ export default function POSDashboard() {
         init();
     }, []);
 
-    const filteredProducts = useMemo(() => {
-        if (!searchQuery) return products;
-        return products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [products, searchQuery]);
+    // Debounced search for products
+    useEffect(() => {
+        if (searchQuery.length > 1) {
+            setIsSearching(true);
+            const timer = setTimeout(async () => {
+                try {
+                    const res = await fetchAPI(`/products?search=${searchQuery}`);
+                    if (res.data?.products) {
+                        setProducts(res.data.products);
+                    }
+                } catch (err) {
+                    toast.error('Search failed');
+                } finally {
+                    setIsSearching(false);
+                }
+            }, 300);
+            return () => clearTimeout(timer);
+        } else if (searchQuery.length === 0) {
+            // Restore default view if empty
+            fetchAPI('/products?limit=50').then(res => {
+                if (res.data?.products) setProducts(res.data.products);
+            });
+        }
+    }, [searchQuery]);
 
     const addToCart = (product: Product, variant?: any) => {
         if (product.variants && product.variants.length > 0 && !variant) {
@@ -78,10 +103,16 @@ export default function POSDashboard() {
             return;
         }
 
+        if (appliedCouponCode || couponDiscount > 0) {
+            setAppliedCouponCode('');
+            setCouponDiscount(0);
+            toast('Cart changed, coupon removed. Please re-apply.', { id: 'coupon-reset' });
+        }
+
         setCart(prev => {
             const cartItemId = variant ? `${product.id}-${variant.id}` : product.id;
             const existing = prev.find(item => item.id === cartItemId);
-            
+
             const variantStock = variant ? variant.stock : product.stock;
             const variantPrice = variant?.price ?? product.price;
 
@@ -99,11 +130,19 @@ export default function POSDashboard() {
             }
 
             const variantNameSuffix = variant ? ` - ${Object.values(variant.combination).join(' / ')}` : '';
-            const discountAmt = Number(product.discountAmount) || 0;
+
+            let discountAmt = 0;
+            const rawDiscount = Number(product.discountAmount) || 0;
+            if (product.discountType === 'PERCENTAGE' || product.discountType === 'percentage') {
+                discountAmt = (variantPrice * rawDiscount) / 100;
+            } else {
+                discountAmt = rawDiscount;
+            }
+
             const discountedPrice = variantPrice - discountAmt;
             const taxAmt = (discountedPrice * (Number(product.taxRate) || 0)) / 100;
 
-            return [...prev, { 
+            return [...prev, {
                 id: cartItemId,
                 productId: product.id,
                 variantId: variant?.id,
@@ -112,17 +151,23 @@ export default function POSDashboard() {
                 discountAmount: discountAmt,
                 taxAmount: taxAmt,
                 stock: variantStock,
-                cartQuantity: 1 
+                cartQuantity: 1
             }];
         });
-        
+
         if (variant) {
             setSelectedProductForVariant(null);
-            toast.success('Variant added to cart');
         }
+        toast.success(`Added ${product.name} to cart`);
     };
 
     const updateQuantity = (id: string, delta: number) => {
+        if (appliedCouponCode || couponDiscount > 0) {
+            setAppliedCouponCode('');
+            setCouponDiscount(0);
+            toast('Cart changed, coupon removed. Please re-apply.', { id: 'coupon-reset' });
+        }
+
         setCart(prev => prev.map(item => {
             if (item.id === id) {
                 const newQ = item.cartQuantity + delta;
@@ -138,6 +183,11 @@ export default function POSDashboard() {
     };
 
     const removeFromCart = (id: string) => {
+        if (appliedCouponCode || couponDiscount > 0) {
+            setAppliedCouponCode('');
+            setCouponDiscount(0);
+            toast('Cart changed, coupon removed. Please re-apply.', { id: 'coupon-reset' });
+        }
         setCart(prev => prev.filter(item => item.id !== id));
     };
 
@@ -228,6 +278,7 @@ export default function POSDashboard() {
         setSelectedCustomerId('');
         setAppliedCouponCode('');
         setCouponDiscount(0);
+        setIsCustomerExpanded(false);
     };
 
     useEffect(() => {
@@ -266,7 +317,7 @@ export default function POSDashboard() {
     }
 
     return (
-        <div className="h-[calc(100vh-100px)] flex gap-6 relative">
+        <div className="h-screen w-full flex bg-slate-50 dark:bg-slate-900 overflow-hidden relative">
             {/* Variant Modal */}
             {selectedProductForVariant && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -277,88 +328,205 @@ export default function POSDashboard() {
                                 ✕
                             </button>
                         </div>
-                        <div className="text-sm text-slate-500 mb-4">{selectedProductForVariant.name}</div>
+                        <div className="text-sm font-bold text-slate-900 dark:text-white mb-4">{selectedProductForVariant.name}</div>
                         <div className="flex-1 overflow-y-auto space-y-3">
-                            {selectedProductForVariant.variants?.map(variant => (
-                                <button
-                                    key={variant.id}
-                                    onClick={() => addToCart(selectedProductForVariant, variant)}
-                                    disabled={variant.stock < 1}
-                                    className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left ${
-                                        variant.stock < 1 
-                                            ? 'opacity-50 cursor-not-allowed border-slate-100 dark:border-slate-800' 
-                                            : 'border-slate-200 hover:border-brand-500 dark:border-slate-700 dark:hover:border-brand-500'
-                                    }`}
-                                >
-                                    <div>
-                                        <div className="font-bold text-slate-900 dark:text-white text-sm mb-1">
-                                            {Object.values(variant.combination).join(' / ')}
+                            {selectedProductForVariant.variants?.map(variant => {
+                                const variantPrice = variant.price ?? selectedProductForVariant.price;
+                                let discountAmt = 0;
+                                const rawDiscount = Number(selectedProductForVariant.discountAmount) || 0;
+                                const isPercentage = selectedProductForVariant.discountType === 'PERCENTAGE' || selectedProductForVariant.discountType === 'percentage';
+                                if (isPercentage) {
+                                    discountAmt = (variantPrice * rawDiscount) / 100;
+                                } else {
+                                    discountAmt = rawDiscount;
+                                }
+                                const discountedPrice = variantPrice - discountAmt;
+                                const hasDiscount = discountAmt > 0;
+                                const taxRate = Number(selectedProductForVariant.taxRate) || 0;
+                                const taxAmt = (discountedPrice * taxRate) / 100;
+                                const finalPrice = discountedPrice + taxAmt;
+
+                                return (
+                                    <button
+                                        key={variant.id}
+                                        onClick={() => addToCart(selectedProductForVariant, variant)}
+                                        disabled={variant.stock < 1}
+                                        className={`w-full flex-col p-4 rounded-2xl border-2 transition-all text-left ${variant.stock < 1
+                                                ? 'opacity-50 cursor-not-allowed border-slate-100 dark:border-slate-800'
+                                                : 'border-slate-200 hover:border-brand-500 dark:border-slate-700 dark:hover:border-brand-500 bg-slate-50 dark:bg-slate-900/50'
+                                            }`}
+                                    >
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="font-bold text-slate-900 dark:text-white text-base">
+                                                {Object.values(variant.combination).join(' / ')}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-slate-500 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                                                    Stock: {variant.stock}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded-md inline-block">
-                                            Stock: {variant.stock}
+
+                                        <div className="text-xs text-slate-500 space-y-1 w-full bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700">
+                                            <div className="flex justify-between w-full">
+                                                <span>Base Price:</span>
+                                                <span className="font-medium text-slate-700 dark:text-slate-300">{formatPrice(variantPrice)}</span>
+                                            </div>
+                                            {hasDiscount && (
+                                                <div className="flex justify-between w-full text-brand-600">
+                                                    <span>Discount {isPercentage ? `(${rawDiscount}%)` : ''}:</span>
+                                                    <span>-{formatPrice(discountAmt)}</span>
+                                                </div>
+                                            )}
+                                            {taxRate > 0 && (
+                                                <div className="flex justify-between w-full text-red-500">
+                                                    <span>Tax ({taxRate}%):</span>
+                                                    <span>+{formatPrice(taxAmt)}</span>
+                                                </div>
+                                            )}
+                                            <div className="h-px w-full bg-slate-100 dark:bg-slate-700 my-1" />
+                                            <div className="flex justify-between w-full font-black text-slate-900 dark:text-white text-sm">
+                                                <span>Final Price:</span>
+                                                <span>{formatPrice(finalPrice)}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="font-black text-brand-600 text-lg">
-                                        {formatPrice(variant.price ?? selectedProductForVariant.price)}
-                                    </div>
-                                </button>
-                            ))}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
             )}
-            {/* Left: Products Grid */}
-            <div className="flex-1 flex flex-col bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700">
-                <div className="p-4 border-b border-slate-100 dark:border-slate-700">
-                    <div className="relative">
+
+            {/* Left/Sidebar: Products Grid */}
+            <div className="flex-1 flex flex-col bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 z-10 w-full max-w-4xl min-w-0">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3 bg-white dark:bg-slate-800 sticky top-0 z-20">
+                    <Link href="/admin" className="p-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0" title="Back to Dashboard">
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
+                    <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Search products..."
+                            placeholder="Search products by name or SKU..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-brand-500"
+                            className="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-brand-500 text-slate-900 dark:text-white"
                         />
+                        {isSearching && (
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-500 animate-spin" />
+                        )}
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4">
-                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {filteredProducts.map(product => {
-                            const price = product.discountAmount ? product.price - product.discountAmount : product.price;
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mx-auto">
+                        {products.map(p => {
+                            let baseDiscountAmt = 0;
+                            const rawDiscount = Number(p.discountAmount) || 0;
+                            const isPercentage = p.discountType === 'PERCENTAGE' || p.discountType === 'percentage';
+                            if (isPercentage) {
+                                baseDiscountAmt = (p.price * rawDiscount) / 100;
+                            } else {
+                                baseDiscountAmt = rawDiscount;
+                            }
+                            const baseDiscountedPrice = p.price - baseDiscountAmt;
+                            const hasDiscount = baseDiscountAmt > 0;
+                            const taxRate = Number(p.taxRate) || 0;
+                            const taxAmt = (baseDiscountedPrice * taxRate) / 100;
+                            const finalPrice = baseDiscountedPrice + taxAmt;
+
                             return (
                                 <button
-                                    key={product.id}
-                                    onClick={() => addToCart(product)}
-                                    className="flex flex-col text-left p-3 border border-slate-100 dark:border-slate-700 rounded-2xl hover:border-brand-500 transition-colors bg-slate-50 dark:bg-slate-900 group relative"
+                                    key={p.id}
+                                    onClick={() => addToCart(p)}
+                                    disabled={p.stock < 1 && (!p.variants || p.variants.length === 0)}
+                                    className={`bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm hover:border-brand-500 dark:hover:border-brand-500 transition-colors text-left flex flex-col ${p.stock < 1 && (!p.variants || p.variants.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    <div className="w-full aspect-square bg-white dark:bg-slate-800 rounded-xl mb-3 overflow-hidden flex items-center justify-center">
-                                        {product.images?.[0] ? (
-                                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                    <div className="w-full aspect-square bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl mb-3 overflow-hidden flex items-center justify-center relative">
+                                        {hasDiscount && (
+                                            <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                                                {isPercentage ? `-${rawDiscount}%` : 'SALE'}
+                                            </div>
+                                        )}
+                                        {p.images?.[0] ? (
+                                            <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                         ) : (
                                             <ShoppingCart className="w-8 h-8 text-slate-300" />
                                         )}
                                     </div>
-                                    <h3 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight">{product.name}</h3>
-                                    <div className="mt-auto pt-2 flex items-center justify-between w-full">
-                                        <span className="text-brand-600 font-black">{formatPrice(price)}</span>
-                                        <span className="text-[10px] text-slate-500 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded-full">{product.stock} left</span>
+                                    <h3 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight min-h-[40px] mb-2">{p.name}</h3>
+
+                                    <div className="mt-auto w-full group relative">
+                                        <div className="flex items-center justify-between mt-1">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-brand-600 font-black text-lg">{formatPrice(finalPrice)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1">
+                                            <span>{p.variants?.length ? 'Options Available' : `Stock: ${p.stock}`}</span>
+                                            {(hasDiscount || taxRate > 0) && (
+                                                <span className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 underline underline-offset-2 decoration-dotted">Details</span>
+                                            )}
+                                        </div>
+
+                                        {/* Hover Tooltip Breakdown */}
+                                        {(hasDiscount || taxRate > 0) && (
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-900 dark:bg-white text-white dark:text-slate-900 p-3 rounded-xl shadow-xl text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 pointer-events-none">
+                                                <div className="flex justify-between w-full mb-1">
+                                                    <span className="text-slate-300 dark:text-slate-500">Base:</span>
+                                                    <span className="font-medium">{formatPrice(p.price)}</span>
+                                                </div>
+                                                {hasDiscount && (
+                                                    <div className="flex justify-between w-full mb-1 text-green-400 dark:text-brand-500">
+                                                        <span>Dis {isPercentage ? `(${rawDiscount}%)` : ''}:</span>
+                                                        <span>-{formatPrice(baseDiscountAmt)}</span>
+                                                    </div>
+                                                )}
+                                                {taxRate > 0 && (
+                                                    <div className="flex justify-between w-full mb-1 text-red-400 dark:text-red-500">
+                                                        <span>Tax ({taxRate}%):</span>
+                                                        <span>+{formatPrice(taxAmt)}</span>
+                                                    </div>
+                                                )}
+                                                <div className="h-px bg-slate-700 dark:bg-slate-200 my-1"></div>
+                                                <div className="flex justify-between w-full font-bold">
+                                                    <span>Final:</span>
+                                                    <span>{formatPrice(finalPrice)}</span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </button>
                             );
                         })}
+
+                        {products.length === 0 && !isSearching && (
+                            <div className="text-center py-20 col-span-full">
+                                <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                <p className="text-slate-500">No products found for "{searchQuery}"</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
             {/* Right: Cart & Checkout */}
-            <div className="w-[400px] flex flex-col bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700 shrink-0">
-                <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded-xl flex items-center justify-center shrink-0">
-                        <ShoppingCart className="w-5 h-5" />
+            <div className="w-[450px] flex flex-col bg-white dark:bg-slate-800 shadow-xl border-l border-slate-200 dark:border-slate-700 shrink-0 h-full z-20">
+                <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded-xl flex items-center justify-center shrink-0">
+                            <ShoppingCart className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-black text-slate-900 dark:text-white leading-tight">Current Order</h2>
+                            <p className="text-xs text-slate-500 font-medium">{cart.length} items</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-lg font-black text-slate-900 dark:text-white leading-tight">Current Order</h2>
-                        <p className="text-xs text-slate-500 font-medium">{cart.length} items</p>
+                    <div className="flex items-center gap-1">
+                        <button onClick={handleNewOrder} title="Clear Cart" className="p-2 gap-2 text-sm font-bold bg-red-50 text-red-600 hover:bg-red-100 rounded-lg flex items-center justify-center transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                            Clear
+                        </button>
                     </div>
                 </div>
 
@@ -386,37 +554,57 @@ export default function POSDashboard() {
                     {cart.length === 0 && (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 p-8 text-center gap-3 opacity-50">
                             <ShoppingCart className="w-12 h-12" />
-                            <p className="text-sm font-medium">Cart is empty.<br/>Click products to add.</p>
+                            <p className="text-sm font-medium">Cart is empty.<br />Click products to add.</p>
                         </div>
                     )}
                 </div>
 
                 {/* Checkout Section */}
                 <div className="border-t border-slate-100 dark:border-slate-700 p-5 space-y-4 bg-slate-50 dark:bg-slate-900/50">
-                    
-                    {/* Customer Selection */}
-                    <div>
-                        <div className="flex items-center gap-2 mb-2 px-1">
-                            <User className="w-4 h-4 text-slate-400" />
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Customer</span>
-                        </div>
-                        <select 
-                            value={selectedCustomerId}
-                            onChange={(e) => setSelectedCustomerId(e.target.value)}
-                            className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-500 outline-none appearance-none"
+
+                    {/* Customer Selection (Collapsible) */}
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                        <button
+                            onClick={() => setIsCustomerExpanded(!isCustomerExpanded)}
+                            className="w-full p-3 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                         >
-                            <option value="">Walk-in Customer</option>
-                            {customers.map(c => (
-                                <option key={c.id} value={c.id}>{c.name || c.email} - {c.phone}</option>
-                            ))}
-                        </select>
-                        {!selectedCustomerId && (
-                            <div className="grid grid-cols-1 gap-2 mt-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <input type="text" placeholder="Name" value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none" />
-                                    <input type="text" placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none" />
+                            <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-brand-500" />
+                                <div className="text-left leading-tight">
+                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Customer</span>
+                                    <span className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] block">
+                                        {selectedCustomerId ? customerName : 'Walk-in Customer'}
+                                    </span>
                                 </div>
-                                <input type="email" placeholder="Email (Optional)" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none" />
+                            </div>
+                            {isCustomerExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                        </button>
+
+                        {isCustomerExpanded && (
+                            <div className="p-3 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">Search Existing User</label>
+                                    <select
+                                        value={selectedCustomerId}
+                                        onChange={(e) => setSelectedCustomerId(e.target.value)}
+                                        className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-500 outline-none appearance-none"
+                                    >
+                                        <option value="">Walk-in Customer</option>
+                                        {customers.map(c => (
+                                            <option key={c.id} value={c.id}>{c.name || c.email} - {c.phone}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {!selectedCustomerId && (
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">New Walk-In Details</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <input type="text" placeholder="Name" value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none" />
+                                            <input type="text" placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none" />
+                                        </div>
+                                        <input type="email" placeholder="Email (Optional)" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none" />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -425,12 +613,12 @@ export default function POSDashboard() {
                     <div className="mt-2">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Coupon</span>
                         <div className="flex gap-2">
-                            <input 
-                                type="text" 
-                                value={appliedCouponCode} 
-                                onChange={e => setAppliedCouponCode(e.target.value.toUpperCase())} 
-                                placeholder="Enter code" 
-                                className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none uppercase" 
+                            <input
+                                type="text"
+                                value={appliedCouponCode}
+                                onChange={e => setAppliedCouponCode(e.target.value.toUpperCase())}
+                                placeholder="Enter code"
+                                className="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none uppercase"
                             />
                             <button
                                 onClick={handleApplyCoupon}
@@ -444,14 +632,14 @@ export default function POSDashboard() {
 
                     {/* Payment Method */}
                     <div className="grid grid-cols-2 gap-2">
-                        <button 
+                        <button
                             onClick={() => setPaymentMethod('cod')}
                             className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'cod' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500'}`}
                         >
                             <Banknote className="w-5 h-5" />
                             <span className="text-xs font-bold">Cash</span>
                         </button>
-                        <button 
+                        <button
                             onClick={() => setPaymentMethod('sslcommerz')}
                             className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'sslcommerz' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500'}`}
                         >
@@ -489,7 +677,7 @@ export default function POSDashboard() {
                         </div>
                     </div>
 
-                    <button 
+                    <button
                         onClick={handleCheckout}
                         disabled={cart.length === 0 || isProcessing}
                         className="w-full py-4 bg-brand-600 hover:bg-brand-700 disabled:bg-slate-300 disabled:dark:bg-slate-700 text-white rounded-2xl font-black tracking-wide flex items-center justify-center gap-2 transition-all transform active:scale-95 shadow-lg shadow-brand-500/25"
