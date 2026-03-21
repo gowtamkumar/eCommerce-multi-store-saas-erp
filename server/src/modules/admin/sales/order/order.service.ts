@@ -263,6 +263,55 @@ const savedOrder = await manager.save(order)
     });
   }
 
+  async createPosOrder(createOrderDto: CreateOrderDto, tenantId: string) {
+    this.logger.log(`${this.createPosOrder.name} Service Called`);
+
+    // 1. Create the base order (handles inventory and item validation)
+    const result = await this.createOrder(createOrderDto, tenantId);
+
+    if (result.success && result.order) {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        const order = await queryRunner.manager.findOne(OrderEntity, { where: { id: result.order.id } });
+        if (!order) throw new Error('Order not found after creation');
+
+        const transactionId = `POS_${Date.now()}`;
+        
+        // 2. Mark as completed and paid instantly
+        order.status = OrderStatus.COMPLETED;
+        order.paymentStatus = PaymentStatus.PAID;
+        order.transactionId = transactionId;
+        await queryRunner.manager.save(order);
+
+        // 3. Register the payment to show up in ledgers and cash flow
+        const payment = queryRunner.manager.create(PaymentEntity, {
+          orderId: order.id,
+          transactionId: transactionId,
+          amount: order.totalAmount,
+          currency: order.currency,
+          method: createOrderDto.paymentMethod || 'Manual',
+          status: 'SUCCESS',
+          gatewayResponse: { note: 'POS Walk-in Sale' },
+          tenantId,
+        });
+        await queryRunner.manager.save(payment);
+
+        await queryRunner.commitTransaction();
+        result.order = order;
+      } catch (error) {
+        await queryRunner.rollbackTransaction();
+        throw error;
+      } finally {
+        await queryRunner.release();
+      }
+    }
+
+    return result;
+  }
+
   async findAllOrders(filterDto: any, tenantId: string) {
     this.logger.log(`${this.findAllOrders.name} Service Called`);
     const { page, limit, search, status } = filterDto

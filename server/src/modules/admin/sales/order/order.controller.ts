@@ -22,6 +22,14 @@ export class OrderController {
 
     constructor(private readonly orderService: OrderService) { }
 
+    @Post('pos')
+    async createPosOrder(
+        @RequestContext() ctx: RequestContextDto, @Body() createOrderDto: CreateOrderDto
+    ) {
+        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPosOrder.`);
+        return await this.orderService.createPosOrder(createOrderDto, ctx.tenantId);
+    }
+
     @Post()
     async createOrder(
         @RequestContext() ctx: RequestContextDto, @Body() createOrderDto: CreateOrderDto

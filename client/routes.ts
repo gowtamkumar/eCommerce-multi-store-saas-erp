@@ -23,6 +23,7 @@ export const navGroups = [
         title: 'Sales & CRM',
         roles: ['Admin', 'Operator', 'SuperAdmin'],
         items: [
+            { icon: ShoppingCart, label: 'POS System', href: '/admin/pos' },
             { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
             { icon: RotateCcw, label: 'Returns', href: '/admin/returns' },
             { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
