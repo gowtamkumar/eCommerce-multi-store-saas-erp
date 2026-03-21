@@ -59,6 +59,7 @@ export const navGroups = [
             { icon: TrendingUp, label: 'Finance Summary', href: '/admin/reports/finance' },
             { icon: FileText, label: 'Profit & Loss', href: '/admin/reports/profit-loss' },
             { icon: Users, label: 'Supplier Ledger', href: '/admin/reports/supplier-ledger' },
+            { icon: Users, label: 'Customer Ledger', href: '/admin/reports/customer-ledger' },
             { icon: Wallet, label: 'Cash Flow', href: '/admin/reports/cash-flow' },
             { icon: Download, label: 'Export Center', href: '/admin/reports/export' },
         ]

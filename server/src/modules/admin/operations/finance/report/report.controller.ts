@@ -357,6 +357,70 @@ export class ReportController {
     };
   }
 
+  @Get('/customer-ledger/:customerId')
+  async getCustomerLedger(@Request() req: any, @Param('customerId') customerId: string) {
+    const tenantId = req.user.tenantId;
+
+    const [customer, orders, payments] = await Promise.all([
+      this.userService.findOneUser(customerId, tenantId),
+      this.orderService.findByUserId(customerId, tenantId),
+      this.paymentService.findAllPaymentsByCustomer(customerId, tenantId),
+    ]);
+
+    // Combine and sort chronologically
+    const transactions: any[] = [
+      ...orders.map((order: any) => ({
+        id: order.id,
+        date: order.createdAt,
+        type: 'ORDER',
+        reference: `ORD-${order.id}`,
+        amount: +order.totalAmount,
+        debit: +order.totalAmount, // Order increases due amount
+        credit: 0,
+        status: order.status,
+      })),
+      ...payments.map((p: any) => ({
+        id: p.id,
+        date: p.createdAt,
+        type: 'PAYMENT',
+        reference: p.transactionId || 'Payment',
+        amount: +p.amount,
+        debit: 0,
+        credit: +p.amount, // Payment decreases due amount
+        method: p.method,
+        note: p.gatewayResponse?.note || ''
+      }))
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Calculate running balance and summary
+    let runningBalance = 0;
+    const ledger = transactions.map(tx => {
+      runningBalance += (tx.debit - tx.credit);
+      return { ...tx, balance: runningBalance };
+    });
+
+    const totalOrders = orders.reduce((sum, order) => sum + (+order.totalAmount || 0), 0);
+    const totalPaid = payments.filter((p: any) => p.status === 'SUCCESS').reduce((sum, p) => sum + (+p.amount || 0), 0);
+
+    return {
+      success: true,
+      data: {
+        customer: {
+          id: customer.id,
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone
+        },
+        summary: {
+          totalOrders,
+          totalPaid,
+          balance: runningBalance
+        },
+        ledger: ledger.reverse() // Newest first for UI
+      }
+    };
+  }
+
   @Get('/cash-flow')
   async getCashFlow(@Request() req: any, @Query('period') period: string = 'last30days') {
     const tenantId = req.user.tenantId;
@@ -445,7 +509,8 @@ export class ReportController {
     @Param('type') type: string,
     @Query('startDate') startDateStr?: string,
     @Query('endDate') endDateStr?: string,
-    @Query('supplierId') supplierId?: string
+    @Query('supplierId') supplierId?: string,
+    @Query('customerId') customerId?: string
   ) {
     const tenantId = req.user.tenantId;
     const startDate = startDateStr ? new Date(startDateStr) : new Date(0);
@@ -479,6 +544,16 @@ export class ReportController {
         const res = await this.getSupplierLedger(req, supplierId);
         const data = res.data;
         csvContent = `Supplier: ${data.supplier.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`;
+        data.ledger.forEach((tx: any) => {
+          csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`;
+        });
+        break;
+      }
+      case 'customer-ledger': {
+        if (!customerId) return { success: false, message: 'Customer ID required' };
+        const res = await this.getCustomerLedger(req, customerId);
+        const data = res.data;
+        csvContent = `Customer: ${data.customer.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`;
         data.ledger.forEach((tx: any) => {
           csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`;
         });

@@ -72,6 +72,15 @@ export class UserService {
     return user
   }
 
+  async findOneUser(id: string, tenantId: string): Promise<UserEntity> {
+    this.logger.log(`${this.findOneUser.name} Service Called`)
+    const user = await this.userRepo.findOne({ where: { id, tenantId } })
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found in this tenant.`)
+    }
+    return user
+  }
+
   async findUserById(id: string) {
     this.logger.log(`${this.findUserById.name} Service Called`)
     return this.userRepo.findOne({ where: { id } })

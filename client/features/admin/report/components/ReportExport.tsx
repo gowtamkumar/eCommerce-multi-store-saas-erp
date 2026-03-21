@@ -12,6 +12,8 @@ export default function ReportExport() {
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [suppliers, setSuppliers] = useState<any[]>([]);
     const [selectedSupplierId, setSelectedSupplierId] = useState('');
+    const [customers, setCustomers] = useState<any[]>([]);
+    const [selectedCustomerId, setSelectedCustomerId] = useState('');
 
     useEffect(() => {
         if (reportType === 'supplier-ledger') {
@@ -24,6 +26,16 @@ export default function ReportExport() {
                 }
             };
             loadSuppliers();
+        } else if (reportType === 'customer-ledger') {
+            const loadCustomers = async () => {
+                try {
+                    const res = await fetchAPI('/users?limit=100');
+                    setCustomers(res.data?.users || []);
+                } catch (error) {
+                    toast.error('Failed to load customers');
+                }
+            };
+            loadCustomers();
         }
     }, [reportType]);
 
@@ -33,6 +45,8 @@ export default function ReportExport() {
             let url = `/report/export/${reportType}?startDate=${startDate}&endDate=${endDate}`;
             if (reportType === 'supplier-ledger' && selectedSupplierId) {
                 url += `&supplierId=${selectedSupplierId}`;
+            } else if (reportType === 'customer-ledger' && selectedCustomerId) {
+                url += `&customerId=${selectedCustomerId}`;
             }
 
             const res = await fetchAPI(url);
@@ -66,6 +80,7 @@ export default function ReportExport() {
         { id: 'expenses', name: 'Expenses Log', description: 'Complete list of recorded operating expenses', icon: FileText, color: 'text-amber-600 bg-amber-50' },
         { id: 'cash-flow', name: 'Cash Flow Summary', description: 'Transaction-level unified money movement', icon: Wallet, color: 'text-emerald-600 bg-emerald-50' },
         { id: 'supplier-ledger', name: 'Supplier Ledger', description: 'Chronological history of vendor transactions', icon: Users, color: 'text-blue-600 bg-blue-50' },
+        { id: 'customer-ledger', name: 'Customer Ledger', description: 'Chronological history of customer transactions', icon: Users, color: 'text-purple-600 bg-purple-50' },
     ];
 
     return (
@@ -122,6 +137,22 @@ export default function ReportExport() {
                                 </div>
                             )}
 
+                            {reportType === 'customer-ledger' && (
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Select Customer</label>
+                                    <select
+                                        value={selectedCustomerId}
+                                        onChange={(e) => setSelectedCustomerId(e.target.value)}
+                                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/20 outline-none appearance-none"
+                                    >
+                                        <option value="">Choose a Customer</option>
+                                        {customers.map(c => (
+                                            <option key={c.id} value={c.id}>{c.name || c.email}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Format</label>
                                 <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700">
@@ -137,7 +168,7 @@ export default function ReportExport() {
 
                     <button
                         onClick={handleExport}
-                        disabled={isLoading || (reportType === 'supplier-ledger' && !selectedSupplierId)}
+                        disabled={isLoading || (reportType === 'supplier-ledger' && !selectedSupplierId) || (reportType === 'customer-ledger' && !selectedCustomerId)}
                         className="w-full py-4 bg-brand-600 hover:bg-brand-700 disabled:bg-slate-200 disabled:dark:bg-slate-700 text-white rounded-2xl font-black font-display shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2 transform active:scale-95"
                     >
                         {isLoading ? (

@@ -196,4 +196,16 @@ export class PaymentService {
             relations: ['order'],
         });
     }
+
+    async findAllPaymentsByCustomer(userId: string, tenantId: string) {
+        this.logger.log(`${this.findAllPaymentsByCustomer.name} Service Called`);
+        return await this.paymentRepository.find({
+            where: { 
+                tenantId,
+                order: { userId }
+            },
+            order: { createdAt: 'DESC' },
+            relations: ['order'],
+        });
+    }
 }
