@@ -99,7 +99,8 @@ export const DEFAULT_SETTINGS = {
     bannerImage: "",
     bannerBackgroundColor: "",
     bannerTextColor: "#ffffff",
-  }
+  },
+  robotsTxt: "",
 };
 
 export async function getSiteSettings() {

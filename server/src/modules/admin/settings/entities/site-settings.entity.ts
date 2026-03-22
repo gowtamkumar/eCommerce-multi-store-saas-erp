@@ -82,6 +82,9 @@ export class SiteSettingsEntity extends BaseEntity {
   @Column({ type: 'jsonb', name: 'offers_page', nullable: true })
   offersPage?: OffersPageSettingsDto;
 
+  @Column({ type: 'text', name: 'robots_txt', nullable: true })
+  robotsTxt?: string;
+
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string;
 

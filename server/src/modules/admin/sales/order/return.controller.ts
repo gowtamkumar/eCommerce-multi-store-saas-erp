@@ -14,6 +14,8 @@ import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.d
 import { ReturnService } from '@/modules/admin/sales/order/return.service';
 import { RequestContext } from "@/common/decorators/request-context.decorator";
 import { RequestContextDto } from "@/common/dto/request-context.dto";
+import { Roles } from '@/common/decorators/roles.decorator'
+import { UserRole } from '@/common/enums/user/user-role.enum'
 
 @Controller('returns')
 @UseGuards(JwtAuthGuard)
@@ -23,6 +25,7 @@ export class ReturnController {
     constructor(private readonly returnService: ReturnService) { }
 
     @Post()
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator, UserRole.User)
     createReturnRequest(
         @RequestContext() ctx: RequestContextDto, @Body() dto: CreateReturnDto,
     ) {
@@ -31,28 +34,28 @@ export class ReturnController {
     }
 
     @Get('my-returns')
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.Operator, UserRole.User)
     findMyReturns(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findMyReturns.`);
         return this.returnService.findByUser(ctx.userId, ctx.tenantId);
     }
 
     @Get()
-    @UseGuards(RolesGuard)
-    // @Roles(Roles.ADMIN) // Uncomment if Role guard is robust
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
     findAllReturns(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllReturns.`);
         return this.returnService.findAllReturns(ctx.tenantId);
     }
 
     @Get(':id')
-    @UseGuards(RolesGuard)
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
     findReturnById(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findReturnById.`);
         return this.returnService.findOneReturn(id, ctx.tenantId);
     }
 
     @Patch(':id/status')
-    @UseGuards(RolesGuard) // Admin only
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support)
     updateStatus(
         @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
         @Body('status') status: ReturnStatus,

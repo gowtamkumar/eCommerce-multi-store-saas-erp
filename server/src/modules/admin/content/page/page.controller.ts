@@ -1,10 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, Logger } from '@nestjs/common'
+import { Roles } from '@/common/decorators/roles.decorator'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto'
 import { PageService } from './page.service'
 import { RequestContext } from "src/common/decorators/request-context.decorator";
 import { RequestContextDto } from "src/common/dto/request-context.dto";
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('pages')
 export class PageController {
   private readonly logger = new Logger(PageController.name);
@@ -12,7 +16,7 @@ export class PageController {
   constructor(private readonly pageService: PageService) { }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async createPage(@RequestContext() ctx: RequestContextDto, @Body() dto: CreatePageDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPage.`);
     const page = await this.pageService.createPage(dto, ctx.tenantId);
@@ -20,6 +24,7 @@ export class PageController {
   }
 
   @Get()
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
   async findAllPages(@RequestContext() ctx: RequestContextDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPages.`);
     return {
@@ -53,14 +58,14 @@ export class PageController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async updatePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() dto: UpdatePageDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePage.`);
     return await this.pageService.updatePage(id, dto, ctx.tenantId)
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.Admin, UserRole.StoreManager)
   async removePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePage.`);
     return await this.pageService.removePage(id, ctx.tenantId)

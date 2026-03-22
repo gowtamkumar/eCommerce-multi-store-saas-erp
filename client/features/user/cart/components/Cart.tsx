@@ -8,6 +8,7 @@ import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import RecentlyViewedProducts from "@/components/shared/RecentlyViewedProducts";
 
 export default function Cart() {
     const { cart, items, updateQuantity, removeItem, loading } = useCart();
@@ -42,6 +43,7 @@ export default function Cart() {
                         </div>
                     </div>
                 </div>
+                <RecentlyViewedProducts />
             </div>
         );
     }
@@ -207,6 +209,7 @@ export default function Cart() {
                         </div>
                     </div>
                 </div>
+                <RecentlyViewedProducts />
             </main>
 
             <Footer />

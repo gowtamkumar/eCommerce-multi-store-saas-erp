@@ -8,6 +8,7 @@ import { getTenantId } from "@/services/tenant";
 import { Suspense } from "react";
 import SaaSLanding from "@/features/system/components/SaaSLanding";
 import SectionRenderer from "@/features/admin/pages/components/customizer/SectionRenderer";
+import RecentlyViewedProducts from "@/components/shared/RecentlyViewedProducts";
 
 
 export async function generateMetadata() {
@@ -100,6 +101,7 @@ export default async function Home() {
             <p className="text-xl text-gray-600 dark:text-gray-400">We are currently setting things up. Please check back soon!</p>
           </div>
         )}
+        <RecentlyViewedProducts />
       </div>
       <WhatsAppWidget />
       <Footer />

@@ -17,7 +17,7 @@ export default function StorefrontLayout({
   return (
     <>
       <CartProvider>
-        <AnalyticsTracker />
+        {/* <AnalyticsTracker /> */}
         <CartDrawer />
         {children}
       </CartProvider>

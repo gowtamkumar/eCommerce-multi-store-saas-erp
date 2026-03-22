@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { BrandEntity } from '../brand/entities/brand.entity'
 import { CategoryEntity } from '../category/entities/category.entity'
 import { ReviewModule } from '../review/review.module'
 import { ProductAttributeEntity } from './entities/attribute.entity'
@@ -22,6 +23,7 @@ import { PromotionModule } from '@/modules/admin/sales/promotion/promotion.modul
       ProductAttributeEntity,
       ProductVariantEntity,
       CategoryEntity,
+      BrandEntity,
     ]),
     ReviewModule,
     CacheModule,

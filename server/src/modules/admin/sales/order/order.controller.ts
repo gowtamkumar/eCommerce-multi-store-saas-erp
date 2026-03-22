@@ -8,6 +8,9 @@ import {
     Query,
     UseGuards, Logger
 } from '@nestjs/common';
+import { Roles } from '@/common/decorators/roles.decorator'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto';
 import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto';
@@ -16,6 +19,7 @@ import { OrderService } from '@/modules/admin/sales/order/order.service';
 import { RequestContext } from "@/common/decorators/request-context.decorator";
 import { RequestContextDto } from "src/common/dto/request-context.dto";
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('orders')
 export class OrderController {
     private readonly logger = new Logger(OrderController.name);
@@ -23,6 +27,7 @@ export class OrderController {
     constructor(private readonly orderService: OrderService) { }
 
     @Post('pos')
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
     async createPosOrder(
         @RequestContext() ctx: RequestContextDto, @Body() createOrderDto: CreateOrderDto
     ) {
@@ -31,6 +36,7 @@ export class OrderController {
     }
 
     @Post()
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator, UserRole.User)
     async createOrder(
         @RequestContext() ctx: RequestContextDto, @Body() createOrderDto: CreateOrderDto
     ) {
@@ -39,6 +45,7 @@ export class OrderController {
     }
 
     @Get()
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.Operator)
     async findAllOrders(
         @RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterOrderDto
     ) {
@@ -64,6 +71,7 @@ export class OrderController {
     }
 
     @Get(':id')
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.Operator)
     async findOneOrder(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneOrder.`);
         const order = await this.orderService.findOneOrder(id, ctx.tenantId);
@@ -75,6 +83,7 @@ export class OrderController {
     }
 
     @Get('user/:userId')
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.Operator)
     async getUserOrders(
         @RequestContext() ctx: RequestContextDto, @Param('userId') userId: string,
         @Query('search') search: string
@@ -89,7 +98,7 @@ export class OrderController {
     }
 
     @Put(':id')
-    @UseGuards(JwtAuthGuard)
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support)
     async updateOrder(
         @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
         @Body() updateOrderDto: UpdateOrderDto

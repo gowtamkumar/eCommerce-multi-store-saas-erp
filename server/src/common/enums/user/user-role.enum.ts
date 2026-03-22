@@ -3,4 +3,7 @@ export enum UserRole {
   Operator = 'Operator',
   User = 'User',
   SuperAdmin = 'SuperAdmin',
+  StoreManager = 'StoreManager',
+  Support = 'Support',
+  Marketing = 'Marketing',
 }

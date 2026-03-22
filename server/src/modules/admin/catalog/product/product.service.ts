@@ -15,6 +15,7 @@ import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductAttributeEntity } from './entities/attribute.entity'
 import { ProductEntity } from './entities/product.entity'
 import { ProductVariantEntity } from './entities/variant.entity'
+import { BrandEntity } from '../brand/entities/brand.entity'
 import { PromotionType } from '../../sales/promotion/enums/promotion-type.enum'
 import { DiscountType } from '@/common/enums/discount-type.enum'
 import { PricingUtil } from '@/common/utils/pricing.util'
@@ -32,6 +33,8 @@ export class ProductService {
     private attributeRepository: Repository<ProductAttributeEntity>,
     @InjectRepository(ProductVariantEntity)
     private variantRepository: Repository<ProductVariantEntity>,
+    @InjectRepository(BrandEntity)
+    private brandRepository: Repository<BrandEntity>,
     private cache: CacheService,
     private readonly inventoryService: InventoryTransactionService,
     private readonly purchaseOrderService: PurchaseOrderService,
@@ -192,6 +195,28 @@ export class ProductService {
       query.andWhere('(product.name ILIKE :q OR product.description ILIKE :q)', { q: `%${q}%` })
     }
 
+    if (filterDto.attributes) {
+      try {
+        const attrFilters = JSON.parse(filterDto.attributes);
+        const filteredEntries = Object.entries(attrFilters).filter(([_, v]) => Array.isArray(v) && v.length > 0);
+
+        if (filteredEntries.length > 0) {
+          let existsQuery = `SELECT 1 FROM product_variants v WHERE v.product_id = product.id`;
+          const params = {};
+
+          filteredEntries.forEach(([key, values], index) => {
+            existsQuery += ` AND v.combination->>:key${index} IN (:...values${index})`;
+            params[`key${index}`] = key;
+            params[`values${index}`] = values;
+          });
+
+          query.andWhere(`EXISTS (${existsQuery})`, params);
+        }
+      } catch (e) {
+        this.logger.error('Failed to parse attributes filter', e);
+      }
+    }
+
     const [products, total] = await query
       .orderBy(this.getSortOptions(filterDto.sort))
       .skip((page - 1) * limit)
@@ -201,6 +226,69 @@ export class ProductService {
     const productsWithPromotions = await this.attachPromotionsMany(products, tenantId)
 
     return { products: productsWithPromotions, total }
+  }
+
+  async getFilterOptions(tenantId: string, categoryId?: string) {
+    this.logger.log(`${this.getFilterOptions.name} Service Called`);
+
+    // 1. Fetch Min/Max Price
+    const priceQuery = this.productRepository.createQueryBuilder('product')
+      .where('product.tenantId = :tenantId', { tenantId })
+      .select('MIN(product.price)', 'min')
+      .addSelect('MAX(product.price)', 'max');
+
+    if (categoryId) {
+      priceQuery.andWhere('product.categoryId = :categoryId', { categoryId });
+    }
+    const prices = await priceQuery.getRawOne();
+
+    // 2. Fetch Unique Brands that have products in this context
+    const brandQuery = this.brandRepository.createQueryBuilder('brand')
+      .innerJoin(ProductEntity, 'product', 'product.brandId = brand.id')
+      .where('brand.tenantId = :tenantId', { tenantId })
+      .select('DISTINCT brand.id', 'id')
+      .addSelect('brand.name', 'name')
+      .addSelect('brand.slug', 'slug');
+
+    if (categoryId) {
+      brandQuery.andWhere('product.categoryId = :categoryId', { categoryId });
+    }
+    const brands = await brandQuery.getRawMany();
+
+    // 3. Fetch Unique Attributes from Variants (JSONB)
+    const variantQuery = this.variantRepository.createQueryBuilder('variant')
+      .innerJoin('variant.product', 'product')
+      .where('variant.tenantId = :tenantId', { tenantId })
+      .select('variant.combination', 'combination');
+
+    if (categoryId) {
+      variantQuery.andWhere('product.categoryId = :categoryId', { categoryId });
+    }
+    const variants = await variantQuery.getRawMany();
+
+    const attributeMap: Record<string, Set<string>> = {};
+    variants.forEach(v => {
+      if (v.combination) {
+        Object.entries(v.combination).forEach(([key, value]) => {
+          if (!attributeMap[key]) attributeMap[key] = new Set();
+          attributeMap[key].add(value as string);
+        });
+      }
+    });
+
+    const formattedAttributes = Object.entries(attributeMap).map(([name, values]) => ({
+      name,
+      values: Array.from(values)
+    }));
+
+    return {
+      priceRange: {
+        min: Number(prices?.min || 0),
+        max: Number(prices?.max || 0)
+      },
+      brands,
+      attributes: formattedAttributes
+    };
   }
 
   async findBySlugProduct(slug: string, tenantId: string) {

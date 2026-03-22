@@ -1,4 +1,7 @@
 import { Controller, Get, Param, Query, Request, UseGuards } from '@nestjs/common'
+import { Roles } from '@/common/decorators/roles.decorator'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { OrderService } from '@/modules/admin/sales/order/order.service'
@@ -25,6 +28,7 @@ export class ReportController {
   ) { }
 
   @Get('/analytics')
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async getAnalytics(@Request() req: any) {
     const tenantId = req.user.tenantId
 
@@ -51,6 +55,7 @@ export class ReportController {
   }
 
   @Get('/dashboard')
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async getDashboardReport(@Request() req: any, @Query('period') period: string = 'month') {
     const tenantId = req.user.tenantId
 
@@ -207,6 +212,7 @@ export class ReportController {
   }
 
   @Get('/profit-loss')
+  @Roles(UserRole.Admin, UserRole.StoreManager)
   async getProfitLossReport(@Request() req: any, @Query('startDate') startDateStr?: string, @Query('endDate') endDateStr?: string) {
     const tenantId = req.user.tenantId;
 
@@ -294,6 +300,7 @@ export class ReportController {
   }
 
   @Get('/supplier-ledger/:supplierId')
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support)
   async getSupplierLedger(@Request() req: any, @Param('supplierId') supplierId: string) {
     const tenantId = req.user.tenantId;
 
@@ -358,6 +365,7 @@ export class ReportController {
   }
 
   @Get('/customer-ledger/:customerId')
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support)
   async getCustomerLedger(@Request() req: any, @Param('customerId') customerId: string) {
     const tenantId = req.user.tenantId;
 
@@ -422,6 +430,7 @@ export class ReportController {
   }
 
   @Get('/cash-flow')
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async getCashFlow(@Request() req: any, @Query('period') period: string = 'last30days') {
     const tenantId = req.user.tenantId;
 
@@ -504,6 +513,7 @@ export class ReportController {
   }
 
   @Get('/export/:type')
+  @Roles(UserRole.Admin, UserRole.StoreManager)
   async exportReport(
     @Request() req: any,
     @Param('type') type: string,
@@ -582,6 +592,7 @@ export class ReportController {
   }
 
   @Get('/finance-summary')
+  @Roles(UserRole.Admin, UserRole.StoreManager)
   async getFinanceSummary(@Request() req: any) {
     const tenantId = req.user.tenantId;
 

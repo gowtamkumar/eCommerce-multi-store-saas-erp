@@ -19,8 +19,10 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { RequestContext } from "@/common/decorators/request-context.decorator";
 import { RequestContextDto } from "@/common/dto/request-context.dto";
+import { UserRole } from '@/common/enums/user/user-role.enum'
 import { FilesService } from '../services/file.service'
 import { FilterFileDto } from '../dtos'
+import { Roles } from '@/common/decorators/roles.decorator'
 
 @Controller('admin/media')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -30,6 +32,7 @@ export class AdminMediaController {
   constructor(private readonly filesService: FilesService) { }
 
   @Get()
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support)
   async findAllFiles(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterFileDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllFiles.`);
     const files = await this.filesService.getFiles(filterDto, ctx.tenantId)
@@ -41,6 +44,7 @@ export class AdminMediaController {
   }
 
   @Post()
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -79,6 +83,7 @@ export class AdminMediaController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async removeFile(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFile.`);
     await this.filesService.deleteFile(id, ctx.tenantId)

@@ -10,6 +10,8 @@ import RelatedProducts from '@/features/admin/product/components/RelatedProducts
 import Reviews from '@/features/user/profile/components/Reviews';
 import { fetchAPI } from "@/services/api";
 import { getSiteSettings } from '@/services/getSettings';
+import TrackRecentlyViewed from '@/components/shared/TrackRecentlyViewed';
+import RecentlyViewedProducts from '@/components/shared/RecentlyViewedProducts';
 
 async function getProduct(slug: string) {
     try {
@@ -87,6 +89,7 @@ export default async function Product({ params }: { params: Promise<{ slug: stri
         <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
             <PaymentStatus />
             <Navbar />
+            <TrackRecentlyViewed product={product} />
             <ProductDetails product={product} />
             {
                 showReviews && product.reviews && product.reviews.length > 0 && product.isReview && (
@@ -95,6 +98,7 @@ export default async function Product({ params }: { params: Promise<{ slug: stri
             }
             {showRelated && <RelatedProducts currentProductId={product.id} />}
             {showFAQ && <FAQ faqs={product.faqs} />}
+            <RecentlyViewedProducts />
             <Footer />
         </main>
     );

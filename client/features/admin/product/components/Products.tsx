@@ -70,11 +70,25 @@ async function getBrandsData() {
     }
 }
 
+async function getFilterMetadata(categoryId?: string) {
+    try {
+        const params = new URLSearchParams();
+        if (categoryId) params.set('categoryId', categoryId);
+        const res = await fetchAPI(`/products/filters?${params.toString()}`);
+        return res.success ? res.data : null;
+    } catch (error) {
+        console.error("Error fetching filter metadata:", error);
+        return null;
+    }
+}
+
 export default async function Products({
     searchParams,
 }: {
     searchParams: { [key: string]: string | string[] | undefined };
 }) {
+    const params = await searchParams;
+    const categoryId = params.categoryId as string | undefined;
     const tenantId = await getTenantId();
 
     if (!tenantId) {
@@ -89,10 +103,11 @@ export default async function Products({
         );
     }
 
-    const [productsData, categories, brands, settings] = await Promise.all([
-        getProductsData(searchParams),
+    const [productsData, categories, brands, filterOptions, settings] = await Promise.all([
+        getProductsData(params),
         getCategoriesData(),
         getBrandsData(),
+        getFilterMetadata(categoryId),
         getSiteSettings()
     ]);
 
@@ -194,6 +209,7 @@ export default async function Products({
                             brands={brands}
                             products={products}
                             total={total}
+                            filterOptions={filterOptions}
                             settings={productsPageSettings}
                         />
                     </div>

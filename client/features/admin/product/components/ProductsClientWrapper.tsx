@@ -9,10 +9,11 @@ interface ProductsClientWrapperProps {
   brands: any[];
   products: any[];
   total: number;
+  filterOptions?: any;
   settings?: any;
 }
 
-export default function ProductsClientWrapper({ categories, brands, products, total, settings }: ProductsClientWrapperProps) {
+export default function ProductsClientWrapper({ categories, brands, products, total, filterOptions, settings }: ProductsClientWrapperProps) {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   return (
@@ -21,6 +22,7 @@ export default function ProductsClientWrapper({ categories, brands, products, to
       <ProductFilters
         categories={categories}
         brands={brands}
+        filterOptions={filterOptions}
         isMobileOpen={isMobileFiltersOpen}
         onCloseMobile={() => setIsMobileFiltersOpen(false)}
         settings={settings}

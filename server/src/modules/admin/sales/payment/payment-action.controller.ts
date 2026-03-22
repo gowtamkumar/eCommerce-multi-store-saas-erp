@@ -1,9 +1,13 @@
-import { Body, Controller, Post, Query, Res, Logger } from '@nestjs/common';
+import { Body, Controller, Post, Query, Res, Logger, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { InitPaymentDto } from './dto/payment.dto';
 import { PaymentService } from './payment.service';
 import { RequestContext } from "@/common/decorators/request-context.decorator";
 import { RequestContextDto } from "@/common/dto/request-context.dto";
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { UserRole } from '@/common/enums/user/user-role.enum';
 
 @Controller('payment')
 export class PaymentActionController {
@@ -12,6 +16,8 @@ export class PaymentActionController {
     constructor(private readonly paymentService: PaymentService) { }
 
     @Post('init')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator, UserRole.User)
     async init(@RequestContext() ctx: RequestContextDto, @Body() dto: InitPaymentDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called init.`);
         return await this.paymentService.initPayment(dto, ctx.tenantId);

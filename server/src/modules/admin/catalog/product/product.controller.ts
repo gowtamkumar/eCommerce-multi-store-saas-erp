@@ -1,4 +1,7 @@
 import { Body, Controller, Delete, Get, Logger, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
+import { Roles } from '@/common/decorators/roles.decorator'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import { RequestContext } from "@/common/decorators/request-context.decorator"
 import { RequestContextDto } from "@/common/dto/request-context.dto"
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -8,7 +11,11 @@ import { CreateProductDto } from './dto/create-product.dto'
 import { FilterProductDto } from './dto/filter-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductService } from './product.service'
+import { ProductVariantEntity } from './entities/variant.entity'
+import { BrandEntity } from '../brand/entities/brand.entity'
+import { Brackets, Repository } from 'typeorm'
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('products')
 export class ProductController {
   private readonly logger = new Logger(ProductController.name);
@@ -19,13 +26,14 @@ export class ProductController {
   ) { }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async create(@RequestContext() ctx: RequestContextDto, @Body() createProductDto: CreateProductDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called create.`);
     return await this.productService.createProduct(createProductDto, ctx.tenantId)
   }
 
   @Get()
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
   async findAllProducts(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterProductDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllProducts.`);
     const { products, total } = await this.productService.findAllProducts(filterDto, ctx.tenantId)
@@ -41,6 +49,18 @@ export class ProductController {
           totalPages: Math.ceil(total / filterDto.limit),
         },
       },
+    }
+  }
+
+  @Get('filters')
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
+  async getFilterOptions(@RequestContext() ctx: RequestContextDto, @Query('categoryId') categoryId?: string) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFilterOptions.`);
+    const filters = await this.productService.getFilterOptions(ctx.tenantId, categoryId)
+    return {
+      success: true,
+      statusCode: 200,
+      data: filters,
     }
   }
 
@@ -63,7 +83,7 @@ export class ProductController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async updateProduct(
     @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto
@@ -73,7 +93,7 @@ export class ProductController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.Admin, UserRole.StoreManager)
   async removeProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeProduct.`);
     return await this.productService.removeProduct(id, ctx.tenantId)

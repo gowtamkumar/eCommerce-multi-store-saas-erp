@@ -22,6 +22,7 @@ import { SettingsModule } from '@/modules/admin/settings/settings.module'
 import { SystemModule } from '@/modules/system/system.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { AuthModule } from '@/modules/admin/core/auth/auth.module'
+import { SeoModule } from '@/modules/store/seo/seo.module'
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { AuthModule } from '@/modules/admin/core/auth/auth.module'
     // Other Features
     AuthModule,
     PaymentModule,
+    SeoModule,
   ],
   controllers: [],
   providers: [

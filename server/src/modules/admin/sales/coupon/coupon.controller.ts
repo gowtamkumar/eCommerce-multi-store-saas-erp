@@ -9,6 +9,7 @@ import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { RequestContext } from "@/common/decorators/request-context.decorator";
 import { RequestContextDto } from "@/common/dto/request-context.dto";
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('coupons')
 export class CouponController {
     private readonly logger = new Logger(CouponController.name);
@@ -16,16 +17,14 @@ export class CouponController {
     constructor(private readonly couponService: CouponService) { }
 
     @Post()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin)
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
     createCoupon(@RequestContext() ctx: RequestContextDto, @Body() createCouponDto: CreateCouponDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createCoupon.`);
         return this.couponService.createCoupon(createCouponDto, ctx.tenantId);
     }
 
     @Get()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin)
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
     findAllCoupons(@RequestContext() ctx: RequestContextDto, @Query() filterDto: any) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllCoupons.`);
         return this.couponService.findAllCoupons(filterDto, ctx.tenantId);
@@ -41,24 +40,21 @@ export class CouponController {
     }
 
     @Get(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin)
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
     findOneCoupon(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneCoupon.`);
         return this.couponService.findOneCoupon(id, ctx.tenantId);
     }
 
     @Patch(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin)
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
     updateCoupon(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() updateCouponDto: UpdateCouponDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateCoupon.`);
         return this.couponService.updateCoupon(id, updateCouponDto, ctx.tenantId);
     }
 
     @Delete(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin)
+    @Roles(UserRole.Admin, UserRole.StoreManager)
     removeCoupon(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCoupon.`);
         return this.couponService.removeCoupon(id, ctx.tenantId);

@@ -143,4 +143,9 @@ export class UpdateSiteSettingsDto {
     @ValidateNested()
     @Type(() => OffersPageSettingsDto)
     offersPage?: OffersPageSettingsDto;
+
+    @ApiProperty({ required: false })
+    @IsString()
+    @IsOptional()
+    robotsTxt?: string;
 }

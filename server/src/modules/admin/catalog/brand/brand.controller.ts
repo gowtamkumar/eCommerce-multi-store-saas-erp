@@ -8,6 +8,9 @@ import {
     Put,
     UseGuards, Logger
 } from '@nestjs/common';
+import { Roles } from '@/common/decorators/roles.decorator'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import { Audit } from '@/common/decorators/audit.decorator';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RequestContext } from "@/common/decorators/request-context.decorator";
@@ -16,6 +19,7 @@ import { BrandService } from './brand.service';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { CreateBrandDto } from './dto/create-brand.dto';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('brands')
 export class BrandController {
     private readonly logger = new Logger(BrandController.name);
@@ -23,7 +27,7 @@ export class BrandController {
     constructor(private readonly brandService: BrandService) { }
 
     @Post()
-    @UseGuards(JwtAuthGuard)
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
     @Audit({ entity: 'Brand', action: 'CREATE' })
     async createBrand(@RequestContext() ctx: RequestContextDto, @Body() createBrandDto: CreateBrandDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createBrand.`);
@@ -32,6 +36,7 @@ export class BrandController {
     }
 
     @Get()
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
     async findAllBrands(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllBrands.`);
         const data = await this.brandService.findAllBrands(ctx.tenantId);
@@ -46,7 +51,7 @@ export class BrandController {
     }
 
     @Put(':id')
-    @UseGuards(JwtAuthGuard)
+    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
     @Audit({ entity: 'Brand', action: 'UPDATE' })
     async updateBrand(
         @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
@@ -58,7 +63,7 @@ export class BrandController {
     }
 
     @Delete(':id')
-    @UseGuards(JwtAuthGuard)
+    @Roles(UserRole.Admin, UserRole.StoreManager)
     @Audit({ entity: 'Brand', action: 'DELETE' })
     async removeBrand(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeBrand.`);

@@ -143,6 +143,7 @@ interface SiteSettings {
     bannerBackgroundColor?: string;
     bannerTextColor?: string;
   };
+  robotsTxt?: string;
 }
 
 interface SettingsContextType {
