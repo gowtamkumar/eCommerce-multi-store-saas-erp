@@ -9,6 +9,7 @@ import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { DiscountType } from '@/common/enums/discount-type.enum'
 import { PricingUtil } from '@/common/utils/pricing.util'
 import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
+import { PaymentService } from '@/modules/admin/sales/payment/payment.service'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
@@ -44,6 +45,7 @@ export class OrderService {
     private readonly inventoryService: InventoryTransactionService,
     private readonly dataSource: DataSource,
     private readonly couponService: CouponService,
+    private readonly paymentService: PaymentService,
   ) { }
 
   async createOrder(createOrderDto: CreateOrderDto, tenantId: string) {
@@ -241,6 +243,11 @@ export class OrderService {
         shippingFee = 0;
       }
 
+      // POS/Admin manual override
+      if (typeof createOrderDto.shippingFee === 'number') {
+        shippingFee = createOrderDto.shippingFee;
+      }
+
       order.shippingFee = shippingFee;
       order.totalAmount = preCouponTotal - couponDiscountAmount + shippingFee;
 const savedOrder = await manager.save(order)
@@ -282,25 +289,49 @@ const savedOrder = await manager.save(order)
         
         // 2. Mark with selected status and payment (defaults to COMPLETED for cash sales)
         order.status = createOrderDto.initialStatus ?? OrderStatus.COMPLETED;
-        order.paymentStatus = PaymentStatus.PAID;
+        
+        // If it's an online payment, it should start as PENDING until verified
+        const isOnlinePayment = createOrderDto.paymentMethod === 'sslcommerz';
+        order.paymentStatus = isOnlinePayment ? PaymentStatus.PENDING : PaymentStatus.PAID;
         order.transactionId = transactionId;
         await queryRunner.manager.save(order);
 
-        // 3. Register the payment to show up in ledgers and cash flow
+        // 3. Register the payment record
         const payment = queryRunner.manager.create(PaymentEntity, {
           orderId: order.id,
           transactionId: transactionId,
           amount: order.totalAmount,
           currency: order.currency,
           method: createOrderDto.paymentMethod || 'Manual',
-          status: 'SUCCESS',
-          gatewayResponse: { note: 'POS Walk-in Sale' },
+          status: isOnlinePayment ? 'PENDING' : 'SUCCESS',
+          gatewayResponse: { note: 'POS Sale' },
           tenantId,
         });
         await queryRunner.manager.save(payment);
 
         await queryRunner.commitTransaction();
         result.order = order;
+
+        // 4. If SSLCommerz, initialize the gateway
+        if (isOnlinePayment) {
+          try {
+            const paymentInit = await this.paymentService.initPayment({
+              orderId: order.id,
+              callbackUrl: createOrderDto.callbackUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/pos`
+            }, tenantId);
+            return {
+              ...result,
+              gatewayUrl: paymentInit.gatewayUrl
+            };
+          } catch (paymentError) {
+            this.logger.error(`Failed to init online payment: ${paymentError.message}`);
+            // We still return success for the order creation, but without a gatewayUrl
+            return {
+              ...result,
+              message: 'Order created but failed to initiate payment gateway.'
+            };
+          }
+        }
       } catch (error) {
         await queryRunner.rollbackTransaction();
         throw error;

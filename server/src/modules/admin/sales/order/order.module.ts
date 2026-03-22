@@ -16,10 +16,12 @@ import { InventoryTransactionModule } from '@/modules/admin/operations/logistics
 import { CouponModule } from '@/modules/admin/sales/coupon/coupon.module'
 import { PaymentEntity } from '../payment/entities/payment.entity'
 import { CartModule } from '@/modules/store/cart/cart.module'
+import { PaymentModule } from '../payment/payment.module'
 
 @Module({
   imports: [
     CouponModule,
+    PaymentModule,
     TypeOrmModule.forFeature([
       OrderEntity,
       ProductEntity,

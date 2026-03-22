@@ -93,6 +93,16 @@ export class CreateOrderDto {
   @IsOptional()
   shippingZone?: string
 
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  shippingFee?: number
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  callbackUrl?: string
+
   @ApiProperty({ required: false, enum: OrderStatus })
   @IsEnum(OrderStatus)
   @IsOptional()
