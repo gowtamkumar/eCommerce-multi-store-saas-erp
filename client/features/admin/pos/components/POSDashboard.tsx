@@ -49,21 +49,31 @@ export default function POSDashboard() {
     const [appliedCouponCode, setAppliedCouponCode] = useState('');
     const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
     const [couponDiscount, setCouponDiscount] = useState(0);
-    const [paymentMethod, setPaymentMethod] = useState<'cod' | 'sslcommerz'>('cod');
+    const [paymentMethod, setPaymentMethod] = useState<'cod' | 'sslcommerz' | 'cash' | 'card' | 'bank_transfer' | 'mobile_banking'>('cash');
     const [isProcessing, setIsProcessing] = useState(false);
     const [orderSuccess, setOrderSuccess] = useState(false);
     const [isCustomerExpanded, setIsCustomerExpanded] = useState(false);
+    // New international POS fields
+    const [orderStatus, setOrderStatus] = useState<'pending' | 'processing' | 'completed'>('completed');
+    const [orderNotes, setOrderNotes] = useState('');
+    const [deliveryAddress, setDeliveryAddress] = useState('In Store / Walk-in');
+    const [selectedCourier, setSelectedCourier] = useState('none');
+    const [couriers, setCouriers] = useState<any[]>([]);
+    const [completedOrderId, setCompletedOrderId] = useState('');
+    const [completedTrackingId, setCompletedTrackingId] = useState('');
 
     // Initial Load for customers and default products
     useEffect(() => {
         const init = async () => {
             try {
-                const [prodRes, custRes] = await Promise.all([
+                const [prodRes, custRes, courierRes] = await Promise.all([
                     fetchAPI('/products?limit=50'),
-                    fetchAPI('/users?limit=100')
+                    fetchAPI('/users?limit=100'),
+                    fetchAPI('/couriers').catch(() => ({ data: [] }))
                 ]);
                 if (prodRes.data?.products) setProducts(prodRes.data.products);
                 if (custRes.data?.users) setCustomers(custRes.data.users);
+                if (Array.isArray(courierRes.data)) setCouriers(courierRes.data);
             } catch (err) {
                 toast.error('Failed to load POS data');
             } finally {
@@ -242,9 +252,11 @@ export default function POSDashboard() {
                 customerName,
                 customerPhone,
                 ...(customerEmail && { customerEmail }),
-                address: 'In Store',
+                address: deliveryAddress || 'In Store',
                 paymentMethod,
                 appliedCouponCode: appliedCouponCode || undefined,
+                orderNotes: orderNotes || undefined,
+                initialStatus: orderStatus,
                 items: cart.map(item => ({
                     productId: item.productId,
                     variantId: item.variantId,
@@ -258,6 +270,30 @@ export default function POSDashboard() {
             });
 
             if (res.success) {
+                const orderId = res.order?.id || '';
+                setCompletedOrderId(orderId);
+                let trackingId = '';
+                // Auto-dispatch to courier if selected
+                if (selectedCourier !== 'none' && orderId) {
+                    try {
+                        const courierPayload = {
+                            orderId,
+                            customerName,
+                            customerPhone,
+                            address: deliveryAddress,
+                        };
+                        const endpoint = selectedCourier === 'steadfast' ? '/courier/steadfast' : '/courier/pathao';
+                        const courierRes = await fetchAPI(endpoint, {
+                            method: 'POST',
+                            body: JSON.stringify(courierPayload)
+                        });
+                        trackingId = courierRes?.data?.trackingId || courierRes?.tracking_id || '';
+                        if (trackingId) toast.success(`Dispatched to courier. Tracking: ${trackingId}`);
+                    } catch {
+                        toast.error('Order created but courier dispatch failed. Retry from Orders.');
+                    }
+                }
+                setCompletedTrackingId(trackingId);
                 setOrderSuccess(true);
                 toast.success('Order completed successfully!');
             } else {
@@ -280,6 +316,12 @@ export default function POSDashboard() {
         setAppliedCouponCode('');
         setCouponDiscount(0);
         setIsCustomerExpanded(false);
+        setOrderNotes('');
+        setDeliveryAddress('In Store / Walk-in');
+        setSelectedCourier('none');
+        setOrderStatus('completed');
+        setCompletedOrderId('');
+        setCompletedTrackingId('');
     };
 
     useEffect(() => {
@@ -299,19 +341,53 @@ export default function POSDashboard() {
 
     if (orderSuccess) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 max-w-lg mx-auto mt-12">
-                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
-                    <CheckCircle className="w-10 h-10" />
-                </div>
-                <h2 className="text-2xl font-black font-display text-slate-900 dark:text-white mb-2">Order Completed!</h2>
-                <p className="text-slate-500 text-center mb-8">The POS transaction was successful and the payment has been recorded.</p>
-                <div className="flex gap-4 w-full">
-                    <button onClick={handleNewOrder} className="flex-1 py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-bold transition-all">
-                        New Order
-                    </button>
-                    <button onClick={() => window.print()} className="flex-1 py-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-2xl font-bold transition-all">
-                        Print Receipt
-                    </button>
+            <div className="h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
+                <div className="flex flex-col items-center justify-center p-10 bg-white dark:bg-slate-800 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-700 w-full max-w-md text-center">
+                    <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                        <CheckCircle className="w-12 h-12" />
+                    </div>
+                    <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-1">Order Complete!</h2>
+                    <p className="text-slate-500 text-sm mb-6">POS transaction recorded and payment confirmed.</p>
+                    
+                    <div className="w-full bg-slate-50 dark:bg-slate-900 rounded-2xl p-4 text-left space-y-2 mb-6 border border-slate-100 dark:border-slate-700">
+                        <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Customer:</span>
+                            <span className="font-bold text-slate-900 dark:text-white">{customerName}</span>
+                        </div>
+                        {completedOrderId && (
+                            <div className="flex justify-between text-sm">
+                                <span className="text-slate-500">Order ID:</span>
+                                <span className="font-mono text-xs font-bold text-brand-600 truncate max-w-[60%]">{completedOrderId}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Status:</span>
+                            <span className={`font-bold capitalize px-2 py-0.5 rounded-full text-xs ${
+                                orderStatus === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                orderStatus === 'processing' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                            }`}>{orderStatus}</span>
+                        </div>
+                        {completedTrackingId && (
+                            <div className="flex justify-between text-sm">
+                                <span className="text-slate-500">Tracking ID:</span>
+                                <span className="font-mono text-xs font-bold text-blue-600">{completedTrackingId}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between text-sm border-t border-slate-200 dark:border-slate-700 pt-2 mt-2">
+                            <span className="text-slate-500 font-bold">Total Paid:</span>
+                            <span className="text-xl font-black text-brand-600">{formatPrice(finalTotal)}</span>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 w-full">
+                        <button onClick={handleNewOrder} className="flex-1 py-3.5 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-bold transition-all">
+                            New Order
+                        </button>
+                        <button onClick={() => window.print()} className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-2xl font-bold transition-all">
+                            Print Receipt
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -662,22 +738,92 @@ export default function POSDashboard() {
                         </div>
                     </div>
 
-                    {/* Payment Method */}
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
-                            onClick={() => setPaymentMethod('cod')}
-                            className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'cod' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500'}`}
+                    {/* Payment Method - International Standard Grid */}
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">Payment Method</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {([
+                                { id: 'cash', label: 'Cash', icon: <Banknote className="w-4 h-4" /> },
+                                { id: 'card', label: 'Card', icon: <CreditCard className="w-4 h-4" /> },
+                                { id: 'cod', label: 'COD', icon: <Banknote className="w-4 h-4" /> },
+                                { id: 'mobile_banking', label: 'Mobile', icon: <span className="text-base">📱</span> },
+                                { id: 'bank_transfer', label: 'Bank', icon: <span className="text-base">🏦</span> },
+                                { id: 'sslcommerz', label: 'Online', icon: <CreditCard className="w-4 h-4" /> },
+                            ] as const).map(pm => (
+                                <button
+                                    key={pm.id}
+                                    onClick={() => setPaymentMethod(pm.id)}
+                                    className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all text-xs font-bold ${
+                                        paymentMethod === pm.id
+                                            ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600'
+                                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500'
+                                    }`}
+                                >
+                                    {pm.icon}
+                                    {pm.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Order Status Selector */}
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">Order Status</label>
+                        <div className="flex rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                            {(['pending', 'processing', 'completed'] as const).map(s => (
+                                <button
+                                    key={s}
+                                    onClick={() => setOrderStatus(s)}
+                                    className={`flex-1 py-2 text-xs font-bold capitalize transition-colors ${
+                                        orderStatus === s
+                                            ? s === 'completed' ? 'bg-green-500 text-white' : s === 'processing' ? 'bg-blue-500 text-white' : 'bg-yellow-500 text-white'
+                                            : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                    }`}
+                                >
+                                    {s}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Courier Dispatch */}
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">Courier / Delivery</label>
+                        <select
+                            value={selectedCourier}
+                            onChange={e => setSelectedCourier(e.target.value)}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-brand-500"
                         >
-                            <Banknote className="w-5 h-5" />
-                            <span className="text-xs font-bold">Cash</span>
-                        </button>
-                        <button
-                            onClick={() => setPaymentMethod('sslcommerz')}
-                            className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'sslcommerz' ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-brand-600' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500'}`}
-                        >
-                            <CreditCard className="w-5 h-5" />
-                            <span className="text-xs font-bold">Card (Online)</span>
-                        </button>
+                            <option value="none">In Store / No Courier</option>
+                            <option value="steadfast">Steadfast Courier</option>
+                            <option value="pathao">Pathao Courier</option>
+                        </select>
+                    </div>
+
+                    {/* Delivery Address */}
+                    {selectedCourier !== 'none' && (
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">Delivery Address</label>
+                            <input
+                                type="text"
+                                value={deliveryAddress}
+                                onChange={e => setDeliveryAddress(e.target.value)}
+                                placeholder="Full delivery address..."
+                                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                            />
+                        </div>
+                    )}
+
+                    {/* Order Notes */}
+                    <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">Order Notes (Optional)</label>
+                        <textarea
+                            value={orderNotes}
+                            onChange={e => setOrderNotes(e.target.value)}
+                            placeholder="Special instructions, kitchen notes..."
+                            rows={2}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                        />
                     </div>
 
                     <div className="pt-2 space-y-1 px-1">

@@ -34,10 +34,10 @@ export default function UserDropdown({ navbarTemplate, iconColorClass }: UserDro
     if (!session) {
         return (
             <Link
-                href="/auth/login"
+                href="/login"
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-bold text-sm ${navbarTemplate === 'gradient'
-                        ? 'bg-white/10 hover:bg-white/20 text-white'
-                        : 'bg-brand-50 hover:bg-brand-100 text-brand-600 dark:bg-brand-900/20 dark:hover:bg-brand-900/30'
+                    ? 'bg-white/10 hover:bg-white/20 text-white'
+                    : 'bg-brand-50 hover:bg-brand-100 text-brand-600 dark:bg-brand-900/20 dark:hover:bg-brand-900/30'
                     }`}
             >
                 <User className="w-4 h-4" />

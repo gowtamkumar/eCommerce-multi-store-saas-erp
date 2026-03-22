@@ -325,7 +325,7 @@ const Navbar = () => {
           <Grid className="w-5 h-5 text-slate-400" />
           <span className="text-[10px] font-bold text-slate-500">Links</span>
         </button>
-        <Link href={session ? "/profile" : "/auth/login"} className="flex flex-col items-center justify-center gap-1 transition-all active:scale-90 flex-1">
+        <Link href={session ? "/profile" : "/login"} className="flex flex-col items-center justify-center gap-1 transition-all active:scale-90 flex-1">
           <User className="w-5 h-5 text-slate-400" />
           <span className="text-[10px] font-bold text-slate-500">{session ? "Profile" : "Login"}</span>
         </Link>

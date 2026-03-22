@@ -15,6 +15,7 @@ import {
 } from 'class-validator'
 import { Type } from 'class-transformer'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
+import { OrderStatus } from '@/common/enums/order-status.enum'
 
 export class OrderItemDto {
   @ApiProperty()
@@ -91,4 +92,14 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   shippingZone?: string
+
+  @ApiProperty({ required: false, enum: OrderStatus })
+  @IsEnum(OrderStatus)
+  @IsOptional()
+  initialStatus?: OrderStatus
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  courierId?: string
 }

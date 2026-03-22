@@ -280,8 +280,8 @@ const savedOrder = await manager.save(order)
 
         const transactionId = `POS_${Date.now()}`;
         
-        // 2. Mark as completed and paid instantly
-        order.status = OrderStatus.COMPLETED;
+        // 2. Mark with selected status and payment (defaults to COMPLETED for cash sales)
+        order.status = createOrderDto.initialStatus ?? OrderStatus.COMPLETED;
         order.paymentStatus = PaymentStatus.PAID;
         order.transactionId = transactionId;
         await queryRunner.manager.save(order);
