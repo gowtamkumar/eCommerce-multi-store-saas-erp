@@ -1,11 +1,11 @@
 'use client';
-
 import { Loader2, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { getSession, signIn } from 'next-auth/react';
 import toast from 'react-hot-toast';
+import { UserRole } from '@/lib/enums/user-role';
 
 export default function Login() {
     const [username, setUsername] = useState('');
@@ -37,11 +37,9 @@ export default function Login() {
             if (session?.user) {
                 const userRole = session.user.role;
                 toast.success(`Logged in as ${userRole || 'User'}`);
-
-
-                if (userRole === 'SuperAdmin') {
+                if (userRole === UserRole.SUPERADMIN) {
                     router.push('/system');
-                } else if (['Admin', 'StoreManager', 'Operator', 'Support', 'Marketing'].includes(userRole)) {
+                } else if ([UserRole.ADMIN, UserRole.STOREMANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING].includes(userRole)) {
                     router.push('/admin');
                 } else {
                     router.push('/');

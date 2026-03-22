@@ -95,6 +95,7 @@ export const authOptions: NextAuthOptions = {
 
           if (data.success && data.data && data.data.user) {
             const user = data.data.user;
+            console.log("BACKEND /admin/login RAW USER PAYLOAD:", user);
             user.accessToken = data.data.accessToken;
             user.refreshToken = data.data.refreshToken;
             // Set expiry to 15 minutes from now (in seconds)
@@ -123,6 +124,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
+        console.log("NEXTAUTH JWT INITIAL PAYLOAD USER:", user);
         return {
           ...token,
           id: user.id,

@@ -1,5 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { UserRole } from "./lib/enums/user-role";
 
 export default withAuth(
   function middleware(req) {
@@ -26,7 +27,15 @@ export default withAuth(
     );
 
     // Admin pages - require admin role
-    if (isAdminRoute && token?.role !== "Admin") {
+    const staffRoles = [
+      UserRole.ADMIN,
+      UserRole.STOREMANAGER,
+      UserRole.OPERATOR,
+      UserRole.SUPPORT,
+      UserRole.MARKETING,
+      UserRole.SUPERADMIN,
+    ];
+    if (isAdminRoute && !staffRoles.includes(token?.role as UserRole)) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
@@ -44,7 +53,7 @@ export default withAuth(
       req.nextUrl.pathname.startsWith(route)
     );
 
-    if (isAdminOnlyRoute && token?.role !== "Admin") {
+    if (isAdminOnlyRoute && ![UserRole.ADMIN, UserRole.SUPERADMIN].includes(token?.role as UserRole)) {
       return NextResponse.json(
         { error: "Forbidden. Admin access required." },
         { status: 403 }

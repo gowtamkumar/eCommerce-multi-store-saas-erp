@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import CurrencySwitcher from "../shared/CurrencySwitcher";
 import UserDropdown from "./UserDropdown";
+import { UserRole } from "@/lib/enums/user-role";
 
 const Navbar = () => {
   const { data: session } = useSession();
@@ -686,7 +687,7 @@ const Navbar = () => {
                           <User className="w-4 h-4" />
                           My Profile
                         </Link>
-                        {session?.user?.role === "Admin" && (
+                        {session?.user?.role === UserRole.ADMIN && (
                           <Link href="/admin" onClick={closeMobileMenu} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-300 hover:text-brand-600 px-3 py-2 rounded-xl transition-all">
                             <Lock className="w-4 h-4" />
                             Admin Panel

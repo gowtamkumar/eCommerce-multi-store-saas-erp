@@ -5,6 +5,7 @@ export default function page({
 }: {
   children: React.ReactNode;
 }) {
+
   return (
     <AdminLayout>
       {children}

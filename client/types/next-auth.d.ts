@@ -1,3 +1,4 @@
+import { UserRole } from "@/lib/enums/user-role";
 import "next-auth";
 import "next-auth/jwt";
 
@@ -10,7 +11,7 @@ declare module "next-auth" {
     address: string;
     phone: string;
     image: string;
-    role: "SuperAdmin" | "Admin" | "User";
+    role: UserRole;
     tenantId: string;
     accessToken?: string;
     refreshToken?: string;
@@ -26,7 +27,7 @@ declare module "next-auth" {
       address: string;
       phone: string;
       image: string;
-      role: "SuperAdmin" | "Admin" | "User";
+      role: UserRole;
       tenantId: string;
       accessToken?: string;
       refreshToken?: string;
@@ -39,7 +40,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
-    role: "SuperAdmin" | "Admin" | "User";
+    role: UserRole;
     phone?: string;
     address?: string;
     image?: string;

@@ -1,5 +1,6 @@
 "use client";
 
+import { UserRole } from "@/lib/enums/user-role";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, LayoutDashboard, LogOut, User, UserCircle } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
@@ -108,7 +109,7 @@ export default function UserDropdown({ navbarTemplate, iconColorClass }: UserDro
                                 </div>
                             </Link>
 
-                            {session?.user?.role === "Admin" && (
+                            {session?.user?.role === UserRole.ADMIN && (
                                 <Link
                                     href="/admin"
                                     onClick={() => setIsOpen(false)}

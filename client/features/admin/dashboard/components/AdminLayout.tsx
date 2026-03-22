@@ -1,6 +1,7 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
+import { UserRole } from '@/lib/enums/user-role';
 import { navGroups } from '@/routes';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Menu, X } from 'lucide-react';
@@ -23,20 +24,18 @@ export default function AdminLayout({
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const { data: session, status }: any = useSession();
 
-
     const brandName = settings?.brandName || "Brand name";
     const logo = settings?.logo || "";
-
-    console.log("session admin", session);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.replace('/login');
         } else if (status === 'authenticated') {
-            const role = session?.user?.role;
-            const allowedRoles = ['Admin', 'StoreManager', 'Operator', 'Support', 'Marketing', 'SuperAdmin'];
-            if (!allowedRoles.includes(role)) {
-                console.warn(`User role ${role} is not authorized for admin access`);
+            const rawRole = session?.user?.role || '';
+            console.log("rawRole", rawRole);
+            const allowedRoles = [UserRole.ADMIN, UserRole.STOREMANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING, UserRole.SUPERADMIN];
+            if (!allowedRoles.includes(rawRole)) {
+                console.warn(`User role ${rawRole} is not authorized for admin access`);
                 router.replace('/');
             }
         }
@@ -44,11 +43,12 @@ export default function AdminLayout({
 
     // Filter nav groups based on user role
     const filteredNavGroups = useMemo(() => {
-        const userRole = session?.user?.role;
+        const rawRole = session?.user?.role || '';
+        const userRole = typeof rawRole === 'string' ? rawRole.toLowerCase() : '';
         return navGroups
             .filter(group => {
                 if ((group as any).roles) {
-                    return (group as any).roles.includes(userRole) || userRole === 'SuperAdmin';
+                    return (group as any).roles.map((r: string) => r.toLowerCase()).includes(userRole) || userRole === UserRole.SUPERADMIN;
                 }
                 return true;
             })
@@ -56,7 +56,7 @@ export default function AdminLayout({
                 ...group,
                 items: group.items.filter((item: any) => {
                     if (item.roles) {
-                        return item.roles.includes(userRole) || userRole === 'SuperAdmin';
+                        return item.roles.map((r: string) => r.toLowerCase()).includes(userRole) || userRole === UserRole.SUPERADMIN;
                     }
                     return true;
                 })
