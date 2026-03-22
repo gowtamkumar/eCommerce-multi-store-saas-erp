@@ -15,7 +15,6 @@ import { ProductVariantEntity } from './entities/variant.entity'
 import { BrandEntity } from '../brand/entities/brand.entity'
 import { Brackets, Repository } from 'typeorm'
 
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('products')
 export class ProductController {
   private readonly logger = new Logger(ProductController.name);
@@ -26,6 +25,7 @@ export class ProductController {
   ) { }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async create(@RequestContext() ctx: RequestContextDto, @Body() createProductDto: CreateProductDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called create.`);
@@ -33,7 +33,6 @@ export class ProductController {
   }
 
   @Get()
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
   async findAllProducts(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterProductDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllProducts.`);
     const { products, total } = await this.productService.findAllProducts(filterDto, ctx.tenantId)
@@ -53,7 +52,6 @@ export class ProductController {
   }
 
   @Get('filters')
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
   async getFilterOptions(@RequestContext() ctx: RequestContextDto, @Query('categoryId') categoryId?: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFilterOptions.`);
     const filters = await this.productService.getFilterOptions(ctx.tenantId, categoryId)
@@ -83,6 +81,7 @@ export class ProductController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async updateProduct(
     @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
@@ -93,6 +92,7 @@ export class ProductController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.Admin, UserRole.StoreManager)
   async removeProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeProduct.`);

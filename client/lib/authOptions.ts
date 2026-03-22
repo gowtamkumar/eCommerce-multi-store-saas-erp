@@ -75,7 +75,7 @@ export const authOptions: NextAuthOptions = {
                 if (tenantRes.success && tenantRes.data?.id) {
                   headers["x-tenant-id"] = tenantRes.data.id;
                 }
-              } catch (e: any) {}
+              } catch (e: any) { }
             } else {
             }
           }
@@ -92,8 +92,6 @@ export const authOptions: NextAuthOptions = {
               password: credentials.password,
             }),
           });
-
-          console.log("data", data);
 
           if (data.success && data.data && data.data.user) {
             const user = data.data.user;

@@ -1,9 +1,9 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
-import { navGroups, settingsItems } from '@/routes';
+import { navGroups } from '@/routes';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Download, FileText, Globe, HelpCircle, History as HistoryIcon, Layout, LayoutDashboard, LogOut, Mail, Menu, MessageSquare, Package, Receipt, RotateCcw, Settings, Share2, ShoppingBag, ShoppingCart, Star, Tag, TrendingUp, Truck, User, Users, X, Megaphone, Wallet } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Menu, X } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -27,13 +27,14 @@ export default function AdminLayout({
     const brandName = settings?.brandName || "Brand name";
     const logo = settings?.logo || "";
 
+    console.log("session admin", session);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.replace('/login');
         } else if (status === 'authenticated') {
             const role = session?.user?.role;
-            const allowedRoles = ['Admin', 'Operator', 'SuperAdmin'];
+            const allowedRoles = ['Admin', 'StoreManager', 'Operator', 'Support', 'Marketing', 'SuperAdmin'];
             if (!allowedRoles.includes(role)) {
                 console.warn(`User role ${role} is not authorized for admin access`);
                 router.replace('/');
@@ -43,13 +44,25 @@ export default function AdminLayout({
 
     // Filter nav groups based on user role
     const filteredNavGroups = useMemo(() => {
-        return navGroups.filter(group => {
-            const userRole = session?.user?.role;
-            if ((group as any).roles) {
-                return (group as any).roles.includes(userRole) || userRole === 'SuperAdmin';
-            }
-            return true;
-        });
+        const userRole = session?.user?.role;
+        return navGroups
+            .filter(group => {
+                if ((group as any).roles) {
+                    return (group as any).roles.includes(userRole) || userRole === 'SuperAdmin';
+                }
+                return true;
+            })
+            .map(group => ({
+                ...group,
+                items: group.items.filter((item: any) => {
+                    if (item.roles) {
+                        return item.roles.includes(userRole) || userRole === 'SuperAdmin';
+                    }
+                    return true;
+                })
+            }))
+            // Optional: Hide groups that have no items left after filtering
+            .filter(group => group.items.length > 0);
     }, [session?.user?.role]);
 
     useEffect(() => {
@@ -121,13 +134,13 @@ export default function AdminLayout({
             </AnimatePresence>
 
             {/* Sidebar */}
-                <motion.aside
-                    className={`fixed md:sticky top-0 left-0 z-50 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 ease-in-out print:hidden 
+            <motion.aside
+                className={`fixed md:sticky top-0 left-0 z-50 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 ease-in-out print:hidden 
                         ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0'}
                         ${isSidebarCollapsed ? 'md:w-20' : 'md:w-72'}
                         `}
-                >
-                    <div className={`p-6 border-b border-slate-200 dark:border-slate-700 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+            >
+                <div className={`p-6 border-b border-slate-200 dark:border-slate-700 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
                     {!isSidebarCollapsed && (
                         <Link href="/">
                             <h1 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-3 overflow-hidden whitespace-nowrap">
@@ -266,7 +279,7 @@ export default function AdminLayout({
             {/* Main Content */}
             <main className="flex-1 min-w-0">
                 {/* Mobile Header */}
-                    <div className="md:hidden p-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between sticky top-0 z-30 print:hidden">
+                <div className="md:hidden p-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between sticky top-0 z-30 print:hidden">
                     <h1 className="text-xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
                         {logo ? (
                             <img src={logo} alt={brandName} className="h-8 w-auto object-contain" />

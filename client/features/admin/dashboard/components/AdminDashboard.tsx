@@ -1,9 +1,8 @@
 'use client';
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
-import { FileText, Package, ShoppingBag, TrendingUp, History as HistoryIcon, Plus, Truck, Users, Activity, BarChart3, Store } from 'lucide-react';
+import { Package, ShoppingBag, TrendingUp, History as HistoryIcon, Plus, Truck, Users, Activity, BarChart3, Store } from 'lucide-react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { motion } from 'framer-motion';
@@ -11,8 +10,7 @@ import { DashboardStats } from '../types';
 
 
 export default function AdminDashboard() {
-    const { data: session } = useSession();
-    const { formatPrice, selectedCurrency } = useSettings();
+    const { formatPrice } = useSettings();
     const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
     const [stats, setStats] = useState<DashboardStats>({
         totalSales: 0,

@@ -38,17 +38,17 @@ export default function Login() {
                 const userRole = session.user.role;
                 toast.success(`Logged in as ${userRole || 'User'}`);
 
+
                 if (userRole === 'SuperAdmin') {
                     router.push('/system');
-                } else if (userRole === 'Admin') {
+                } else if (['Admin', 'StoreManager', 'Operator', 'Support', 'Marketing'].includes(userRole)) {
                     router.push('/admin');
                 } else {
                     router.push('/');
                 }
             } else {
                 console.error("Session missing user after login success. Session content:", JSON.stringify(session));
-                // fallback reload
-                // window.location.reload();
+
             }
 
 

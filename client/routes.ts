@@ -3,14 +3,14 @@ import { Banknote, BarChart3, ChevronDown, ChevronLeft, ChevronRight, CreditCard
 export const navGroups = [
     {
         title: 'Insights',
-        roles: ['Admin', 'Operator', 'SuperAdmin'],
+        roles: ['Admin', 'StoreManager', 'Operator', 'SuperAdmin'],
         items: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
         ]
     },
     {
         title: 'Catalog',
-        roles: ['Admin', 'Operator', 'SuperAdmin'],
+        roles: ['Admin', 'StoreManager', 'Operator', 'Marketing', 'SuperAdmin'],
         items: [
             { icon: Package, label: 'Products', href: '/admin/products' },
             { icon: Tag, label: 'Categories', href: '/admin/categories' },
@@ -21,7 +21,7 @@ export const navGroups = [
     },
     {
         title: 'Sales & CRM',
-        roles: ['Admin', 'Operator', 'SuperAdmin'],
+        roles: ['Admin', 'StoreManager', 'Operator', 'Support', 'SuperAdmin'],
         items: [
             { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
             { icon: RotateCcw, label: 'Returns', href: '/admin/returns' },
@@ -32,18 +32,18 @@ export const navGroups = [
     },
     {
         title: 'Operations',
-        roles: ['Admin', 'Operator', 'SuperAdmin'],
+        roles: ['Admin', 'StoreManager', 'Operator', 'SuperAdmin'],
         items: [
             { icon: Package, label: 'Inventory', href: '/admin/inventory' },
-            { icon: Users, label: 'Suppliers', href: '/admin/suppliers' },
-            { icon: Truck, label: 'Purchase Orders', href: '/admin/purchases' },
+            { icon: Users, label: 'Suppliers', href: '/admin/suppliers', roles: ['Admin', 'StoreManager', 'SuperAdmin'] },
+            { icon: Truck, label: 'Purchase Orders', href: '/admin/purchases', roles: ['Admin', 'StoreManager', 'SuperAdmin'] },
             { icon: Truck, label: 'Couriers', href: '/admin/couriers' },
-            { icon: Receipt, label: 'Expenses', href: '/admin/expenses' },
+            { icon: Receipt, label: 'Expenses', href: '/admin/expenses', roles: ['Admin', 'StoreManager', 'SuperAdmin'] },
         ]
     },
     {
         title: 'Marketing',
-        roles: ['Admin', 'Operator', 'SuperAdmin'],
+        roles: ['Admin', 'StoreManager', 'Marketing', 'SuperAdmin'],
         items: [
             { icon: Tag, label: 'Coupons', href: '/admin/coupons' },
             { icon: Megaphone, label: 'Promotions', href: '/admin/promotions' },
@@ -53,7 +53,7 @@ export const navGroups = [
     },
     {
         title: 'Reports',
-        roles: ['Admin', 'Operator', 'SuperAdmin'],
+        roles: ['Admin', 'StoreManager', 'SuperAdmin'],
         items: [
             { icon: BarChart3, label: 'Sales Analysis', href: '/admin/reports/sales' },
             { icon: TrendingUp, label: 'Finance Summary', href: '/admin/reports/finance' },
@@ -73,7 +73,7 @@ export const navGroups = [
     },
     {
         title: 'User Account',
-        roles: ['Admin', 'Operator', 'SuperAdmin'],
+        roles: ['Admin', 'StoreManager', 'Operator', 'Support', 'Marketing', 'SuperAdmin'],
         items: [
             { icon: User, label: 'My Profile', href: '/admin/profile' },
         ]
@@ -95,7 +95,7 @@ export const navGroups = [
     },
     {
         title: 'Storefront & UI',
-        roles: ['Admin', 'SuperAdmin'],
+        roles: ['Admin', 'StoreManager', 'Marketing', 'SuperAdmin'],
         items: [
             { icon: Layout, label: 'Pages Builder', href: '/admin/pages' },
             { icon: Menu, label: 'Navbar Menu', href: '/admin/settings?tab=navbar' },
