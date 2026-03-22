@@ -3,6 +3,7 @@
 import AnalyticsTracker from "@/components/shared/AnalyticsTracker";
 import CartDrawer from "@/components/shared/CartDrawer";
 import FloatingCartWidget from "@/components/shared/FloatingCartWidget";
+import ScrollToTop from "@/components/shared/ScrollToTop";
 import { CartProvider } from "@/hooks/CartContext";
 import { useSettings } from "@/hooks/SettingsContext";
 import Script from "next/script";
@@ -21,6 +22,7 @@ export default function StorefrontLayout({
         {/* <AnalyticsTracker /> */}
         <CartDrawer />
         <FloatingCartWidget />
+        <ScrollToTop />
         {children}
       </CartProvider>
 

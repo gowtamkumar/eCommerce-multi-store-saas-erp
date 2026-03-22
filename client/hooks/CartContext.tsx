@@ -210,7 +210,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setCart(updatedCart);
         localStorage.setItem("temp_cart", JSON.stringify(updatedCart));
         toast.success("Added to cart");
-        setIsCartOpen(true);
       } catch (e) {
         console.error("Local add to cart error", e);
         toast.error("Failed to add to cart");
@@ -228,7 +227,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       await cartApi.addToCart(productId, quantity, variantId);
       await refreshCart();
       toast.success("Added to cart");
-      setIsCartOpen(true);
     } catch (error: any) {
       console.error("Add to cart error", error);
       toast.error(error.message || "Failed to add to cart");
