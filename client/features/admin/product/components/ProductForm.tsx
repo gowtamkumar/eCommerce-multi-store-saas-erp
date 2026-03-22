@@ -48,6 +48,9 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     metaTitle: initialData?.metaTitle || '',
     metaDescription: initialData?.metaDescription || '',
     ogImage: initialData?.ogImage || '',
+    isNew: initialData?.isNew || false,
+    isHot: initialData?.isHot || false,
+    isSale: initialData?.isSale || false,
   });
 
 
@@ -108,6 +111,9 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       metaTitle: formData.metaTitle || null,
       metaDescription: formData.metaDescription || null,
       ogImage: formData.ogImage || null,
+      isNew: formData.isNew,
+      isHot: formData.isHot,
+      isSale: formData.isSale,
     };
 
 
@@ -489,6 +495,41 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                 <Star className="w-4 h-4" />
                 <span className="text-[10px] font-bold uppercase">Reviews</span>
               </button>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
+              <Tag className="w-4 h-4" /> Product Badges
+            </label>
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-all">
+                <input
+                  type="checkbox"
+                  checked={formData.isNew}
+                  onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
+                  className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">New Arrival</span>
+              </label>
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-all">
+                <input
+                  type="checkbox"
+                  checked={formData.isHot}
+                  onChange={(e) => setFormData({ ...formData, isHot: e.target.checked })}
+                  className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Hot Product</span>
+              </label>
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-all">
+                <input
+                  type="checkbox"
+                  checked={formData.isSale}
+                  onChange={(e) => setFormData({ ...formData, isSale: e.target.checked })}
+                  className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">On Sale</span>
+              </label>
             </div>
           </div>
 

@@ -23,7 +23,6 @@ export default function AdminLayout({
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const { data: session, status }: any = useSession();
 
-    const isFullScreenPos = pathname === '/admin/pos';
 
     const brandName = settings?.brandName || "Brand name";
     const logo = settings?.logo || "";
@@ -122,7 +121,6 @@ export default function AdminLayout({
             </AnimatePresence>
 
             {/* Sidebar */}
-            {!isFullScreenPos && (
                 <motion.aside
                     className={`fixed md:sticky top-0 left-0 z-50 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 ease-in-out print:hidden 
                         ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0'}
@@ -264,12 +262,10 @@ export default function AdminLayout({
                     )}
                 </div>
             </motion.aside>
-            )}
 
             {/* Main Content */}
             <main className="flex-1 min-w-0">
                 {/* Mobile Header */}
-                {!isFullScreenPos && (
                     <div className="md:hidden p-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between sticky top-0 z-30 print:hidden">
                     <h1 className="text-xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
                         {logo ? (
@@ -284,9 +280,8 @@ export default function AdminLayout({
                         <Menu className="w-6 h-6" />
                     </button>
                 </div>
-                )}
 
-                <div className={isFullScreenPos ? "" : "p-4 md:p-8 max-w-full mx-auto"}>
+                <div className="p-4 md:p-8 max-w-full mx-auto">
                     {children}
                 </div>
             </main>

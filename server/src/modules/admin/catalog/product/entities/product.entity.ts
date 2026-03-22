@@ -143,4 +143,13 @@ export class ProductEntity extends BaseEntity {
 
   @Column({ type: 'varchar', length: 500, name: 'og_image', nullable: true })
   ogImage: string
+
+  @Column({ type: 'boolean', default: false, name: 'is_new' })
+  isNew: boolean
+
+  @Column({ type: 'boolean', default: false, name: 'is_hot' })
+  isHot: boolean
+
+  @Column({ type: 'boolean', default: false, name: 'is_sale' })
+  isSale: boolean
 }

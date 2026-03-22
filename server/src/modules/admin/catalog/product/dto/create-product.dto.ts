@@ -209,4 +209,19 @@ export class CreateProductDto {
     @IsString()
     @IsOptional()
     ogImage?: string;
+
+    @ApiProperty({ required: false, default: false })
+    @IsBoolean()
+    @IsOptional()
+    isNew?: boolean;
+
+    @ApiProperty({ required: false, default: false })
+    @IsBoolean()
+    @IsOptional()
+    isHot?: boolean;
+
+    @ApiProperty({ required: false, default: false })
+    @IsBoolean()
+    @IsOptional()
+    isSale?: boolean;
 }

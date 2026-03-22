@@ -70,7 +70,6 @@ export default function ProductCard({ product, priority = false, viewMode = 'gri
           </div>
         )}
 
-        {/* Badges */}
         <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
           {Number(product.stock) <= 0 ? (
             <span className="bg-slate-900/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
@@ -82,7 +81,22 @@ export default function ProductCard({ product, priority = false, viewMode = 'gri
             </span>
           ) : (
             <>
-              {discountPercentage > 0 && (
+              {product.isNew && (
+                <span className="bg-emerald-500/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
+                  New Arrival
+                </span>
+              )}
+              {product.isHot && (
+                <span className="bg-orange-500/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
+                  Hot
+                </span>
+              )}
+              {product.isSale && (
+                <span className="bg-rose-500/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
+                  Sale
+                </span>
+              )}
+              {discountPercentage > 0 && !product.isSale && (
                 <span className="bg-rose-500/90 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
                   {discountPercentage}% OFF
                 </span>
