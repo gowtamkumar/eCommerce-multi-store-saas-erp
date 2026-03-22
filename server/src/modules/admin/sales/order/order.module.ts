@@ -17,6 +17,7 @@ import { CouponModule } from '@/modules/admin/sales/coupon/coupon.module'
 import { PaymentEntity } from '../payment/entities/payment.entity'
 import { CartModule } from '@/modules/store/cart/cart.module'
 import { PaymentModule } from '../payment/payment.module'
+import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoice.module'
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { PaymentModule } from '../payment/payment.module'
     ]),
     CartModule,
     InventoryTransactionModule,
+    InvoiceModule,
   ],
   controllers: [OrderController, ReturnController], // Registered
   providers: [OrderService, ReturnService], // Registered

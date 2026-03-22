@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { InjectRepository } from '@nestjs/typeorm'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
+import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { Brackets, DataSource, Repository } from 'typeorm'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
@@ -21,6 +22,7 @@ import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { PaymentEntity } from '../payment/entities/payment.entity'
 import { CartService } from '@/modules/store/cart/cart.service'
+import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 
 @Injectable()
 export class OrderService {
@@ -46,6 +48,7 @@ export class OrderService {
     private readonly dataSource: DataSource,
     private readonly couponService: CouponService,
     private readonly paymentService: PaymentService,
+    private readonly invoiceService: InvoiceService,
   ) { }
 
   async createOrder(createOrderDto: CreateOrderDto, tenantId: string) {
@@ -266,6 +269,17 @@ const savedOrder = await manager.save(order)
         await this.cartService.clearCart(user.id, tenantId)
       }
 
+      // Automatically create invoice record
+      try {
+        await this.invoiceService.createInvoice({
+          orderId: savedOrder.id,
+          issueDate: new Date(),
+          status: (savedOrder.paymentStatus === PaymentStatus.PAID) ? InvoiceStatus.PAID : InvoiceStatus.PENDING
+        } as any, tenantId);
+      } catch (invoiceError) {
+        this.logger.error('Failed to auto-create invoice', invoiceError);
+      }
+
       return { message: 'Order created successfully', success: true, order: savedOrder }
     });
   }
@@ -317,7 +331,7 @@ const savedOrder = await manager.save(order)
           try {
             const paymentInit = await this.paymentService.initPayment({
               orderId: order.id,
-              callbackUrl: createOrderDto.callbackUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/pos`
+              callbackUrl: createOrderDto.callbackUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/payment`
             }, tenantId);
             return {
               ...result,
@@ -491,10 +505,17 @@ const savedOrder = await manager.save(order)
         }
       }
 
-      // Check for Order Completion - removed old deduction logic here since it's now deducted at creation
+        // Check for Order Completion - removed old deduction logic here since it's now deducted at creation
 
       Object.assign(order, updateOrderDto)
       const savedOrder = await queryRunner.manager.save(order)
+
+      // Sync Invoice Status
+      if (updateOrderDto.paymentStatus === PaymentStatus.PAID) {
+        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.PAID, tenantId);
+      } else if (updateOrderDto.status === OrderStatus.CANCELLED) {
+        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.CANCELLED, tenantId);
+      }
 
       await queryRunner.commitTransaction()
       return savedOrder

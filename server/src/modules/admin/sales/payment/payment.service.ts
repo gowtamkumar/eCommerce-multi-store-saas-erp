@@ -7,6 +7,8 @@ import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity';
 import { SettingsService } from '@/modules/admin/settings/settings.service';
 import { PaymentStatus } from '@/common/enums/payment-status.enum';
 import { OrderStatus } from '@/common/enums/order-status.enum';
+import { InvoiceStatus } from '@/common/enums/invoice-status.enum';
+import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service';
 
 @Injectable()
 export class PaymentService {
@@ -18,6 +20,7 @@ export class PaymentService {
         @InjectRepository(PaymentEntity)
         private paymentRepository: Repository<PaymentEntity>,
         private settingsService: SettingsService,
+        private invoiceService: InvoiceService,
     ) { }
 
     async initPayment(dto: InitPaymentDto, tenantId: string) {
@@ -136,6 +139,9 @@ export class PaymentService {
             tenantId: order.tenantId,
         });
         await this.paymentRepository.save(payment);
+
+        // Sync Invoice Status
+        await this.invoiceService.updateInvoiceStatusByOrderId(order.id, InvoiceStatus.PAID, order.tenantId);
 
         return { success: true };
     }

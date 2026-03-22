@@ -5,12 +5,13 @@ import { fetchAPI } from "@/services/api";
 import { OrderStatus } from "@/lib/enums/order-status";
 
 import { getOrderStatusStyles } from "@/lib/utils";
-import { Eye, Package, RotateCcw, Search, ShoppingBag, Star, Truck } from "lucide-react";
+import { Eye, FileText, Package, RotateCcw, Search, ShoppingBag, Star, Truck } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Order, OrderItem } from "@/types/order";
 import ReturnModal from "@/features/admin/return/components/ReturnModal";
+import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
 
 
 const CustomerOrders = () => {
@@ -48,6 +49,7 @@ const CustomerOrders = () => {
     };
     const { data: session } = useSession();
     const { settings, formatPrice } = useSettings();
+    const { downloadInvoice } = useDownloadInvoice();
 
 
     useEffect(() => {
@@ -246,6 +248,16 @@ const CustomerOrders = () => {
                                             title="View Details"
                                         >
                                             <Eye className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                downloadInvoice(order);
+                                            }}
+                                            className="p-2 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+                                            title="Download Invoice"
+                                        >
+                                            <FileText className="w-5 h-5" />
                                         </button>
                                     </div>
                                 </div>
@@ -494,10 +506,17 @@ const CustomerOrders = () => {
                             </div>
                         </div>
 
-                        <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700/50">
+                        <div className="p-4 bg-slate-50 dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700/50 flex gap-3">
+                            <button
+                                onClick={() => downloadInvoice(selectedOrder)}
+                                className="flex-1 py-3 bg-brand-600 text-white font-semibold rounded-xl hover:bg-brand-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <FileText className="w-5 h-5" />
+                                Download Invoice
+                            </button>
                             <button
                                 onClick={() => setSelectedOrder(null)}
-                                className="w-full py-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+                                className="flex-1 py-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
                             >
                                 Close
                             </button>

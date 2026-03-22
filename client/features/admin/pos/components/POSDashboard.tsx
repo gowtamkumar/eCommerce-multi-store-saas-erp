@@ -280,6 +280,7 @@ export default function POSDashboard() {
                 shippingFee: selectedCourier !== 'none' ? shippingFee : undefined,
                 currency: selectedCurrency?.code || 'USD',
                 currencyRate: selectedCurrency?.rate || 1,
+                callbackUrl: window.location.origin + '/api/payment',
                 items: cart.map(item => ({
                     productId: item.productId,
                     variantId: item.variantId,

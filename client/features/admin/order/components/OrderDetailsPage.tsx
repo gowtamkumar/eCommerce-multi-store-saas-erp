@@ -5,6 +5,7 @@ import { fetchAPI } from "@/services/api";
 import { OrderStatus } from "@/lib/enums/order-status";
 import { PaymentStatus } from "@/lib/enums/payment-status";
 import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, updateOrderStatus } from "@/lib/utils";
+import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
 import { Order } from "@/types/order";
 import {
     ArrowLeft,
@@ -39,6 +40,7 @@ export default function OrderDetailsPage({
     const [showCourierModal, setShowCourierModal] = useState(false);
     const [creatingOrder, setCreatingOrder] = useState<string | null>(null);
     const [creatingPathaoOrder, setCreatingPathaoOrder] = useState<string | null>(null);
+    const { downloadInvoice } = useDownloadInvoice();
 
     const getItemReturnStatus = (productId: string, variantId?: string) => {
         if (!order?.returns) return null;
@@ -410,6 +412,13 @@ export default function OrderDetailsPage({
                     >
                         <FileText className="w-4 h-4" />
                         <span className="sm:inline">Print</span>
+                    </button>
+                    <button
+                        onClick={() => downloadInvoice(order)}
+                        className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors shadow-sm"
+                    >
+                        <FileText className="w-4 h-4" />
+                        <span className="sm:inline">Download Invoice</span>
                     </button>
                     <select
                         value={order.status || OrderStatus.PENDING}
