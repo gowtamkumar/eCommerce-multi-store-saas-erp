@@ -16,7 +16,7 @@ export class CategoryController {
   constructor(private readonly categoryService: CategoryService) { }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async createCategory(@RequestContext() ctx: RequestContextDto, @Body() createCategoryDto: CreateCategoryDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createCategory.`);
@@ -36,7 +36,7 @@ export class CategoryController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async updateCategory(
     @RequestContext() ctx: RequestContextDto, @Param('id') id: string,

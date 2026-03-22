@@ -25,7 +25,7 @@ import { FilterFileDto } from '../dtos'
 import { Roles } from '@/common/decorators/roles.decorator'
 
 @Controller('admin/media')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class AdminMediaController {
   private readonly logger = new Logger(AdminMediaController.name);
 
