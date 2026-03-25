@@ -18,6 +18,7 @@ import { PaymentEntity } from '../payment/entities/payment.entity'
 import { CartModule } from '@/modules/store/cart/cart.module'
 import { PaymentModule } from '../payment/payment.module'
 import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoice.module'
+import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping-address.module'
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoic
     CartModule,
     InventoryTransactionModule,
     InvoiceModule,
+    ShippingAddressModule,
   ],
   controllers: [OrderController, ReturnController], // Registered
   providers: [OrderService, ReturnService], // Registered

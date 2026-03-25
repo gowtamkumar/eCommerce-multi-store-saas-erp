@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { OrderItemEntity } from './order-item.entity';
 import { OrderReturnEntity } from './order-return.entity';
+import { ShippingAddressEntity } from '@/modules/store/shipping-address/entities/shipping-address.entity';
 
 @Entity('orders')
 export class OrderEntity extends BaseEntity {
@@ -26,6 +27,13 @@ export class OrderEntity extends BaseEntity {
 
     @Column({ type: 'text' })
     address: string;
+
+    @Column({ type: 'uuid', name: 'shipping_address_id', nullable: true })
+    shippingAddressId: string;
+
+    @ManyToOne(() => ShippingAddressEntity, { nullable: true, onDelete: 'SET NULL', eager: false })
+    @JoinColumn({ name: 'shipping_address_id' })
+    shippingAddress: ShippingAddressEntity;
 
     @OneToMany(() => OrderItemEntity, (item) => item.order, { cascade: true })
     items: OrderItemEntity[];

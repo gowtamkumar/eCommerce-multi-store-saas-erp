@@ -23,6 +23,7 @@ import { SystemModule } from '@/modules/system/system.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { AuthModule } from '@/modules/admin/core/auth/auth.module'
 import { SeoModule } from '@/modules/store/seo/seo.module'
+import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping-address.module'
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { SeoModule } from '@/modules/store/seo/seo.module'
 
     // Storefront Domain
     CartModule,
+    ShippingAddressModule,
 
     // Admin Sub-Domains
     CatalogModule,

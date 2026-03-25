@@ -103,4 +103,9 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   courierId?: string
+
+  @ApiProperty({ required: false })
+  @IsUUID()
+  @IsOptional()
+  shippingAddressId?: string
 }

@@ -24,6 +24,7 @@ import { CartService } from '@/modules/store/cart/cart.service'
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 import { ShippingStrategyFactory } from '@/common/strategies/shipping/shipping-strategy.factory'
 import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pricing-strategy.factory'
+import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
 
 @Injectable()
 export class OrderService {
@@ -39,6 +40,7 @@ export class OrderService {
     private readonly dataSource: DataSource,
     private readonly couponService: CouponService,
     private readonly invoiceService: InvoiceService,
+    private readonly shippingAddressService: ShippingAddressService,
   ) { }
 
   async createOrder(createOrderDto: CreateOrderDto, tenantId: string) {
@@ -56,6 +58,7 @@ export class OrderService {
       items: directItems,
       appliedCouponCode,
       shippingZone,
+      shippingAddressId,
     } = createOrderDto
 
     return await this.dataSource.transaction(async (manager) => {
@@ -68,6 +71,17 @@ export class OrderService {
       const user = userId ? await manager.findOne(UserEntity, {
         where: { id: userId, tenantId },
       }) : null
+
+      // Resolve shipping address if provided, populate flat address field
+      let resolvedAddress = address;
+      if (shippingAddressId && userId) {
+        try {
+          const savedAddress = await this.shippingAddressService.findShippingAddress(shippingAddressId, userId, tenantId);
+          resolvedAddress = `${savedAddress.recipientName}, ${savedAddress.address}${savedAddress.city ? ', ' + savedAddress.city : ''}`;
+        } catch {
+          // Fallback to the provided flat address if lookup fails
+        }
+      }
 
       let cart: any = null
       const processedItems: OrderItemEntity[] = []
@@ -186,7 +200,8 @@ export class OrderService {
         customerName,
         customerEmail,
         customerPhone,
-        address,
+        address: resolvedAddress,
+        shippingAddressId: shippingAddressId || undefined,
         items: processedItems,
         totalAmount: 0,
         currency: currency || settings?.currency || 'USD',

@@ -28,6 +28,9 @@ import toast from "react-hot-toast";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
+import * as shippingAddressApi from "@/services/shippingAddress";
+import type { ShippingAddress } from "@/services/shippingAddress";
+import { MapPin, Plus } from "lucide-react";
 
 export default function Checkout() {
     const {
@@ -49,6 +52,18 @@ export default function Checkout() {
     const [shippingZone, setShippingZone] = useState<"inside" | "outside">("inside");
 
     // Form state
+    const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+    const [addingNewAddress, setAddingNewAddress] = useState(false);
+    const [saveNewAddress, setSaveNewAddress] = useState(false);
+    const [newAddressForm, setNewAddressForm] = useState({
+        label: 'Home',
+        recipientName: '',
+        phone: '',
+        address: '',
+        city: '',
+        zone: 'inside' as 'inside' | 'outside',
+    });
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -60,7 +75,7 @@ export default function Checkout() {
     const [couponLoading, setCouponLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // Update form data when session loads
+    // Update form + load addresses when session loads
     useEffect(() => {
         if (session?.user) {
             setFormData((prev) => ({
@@ -70,6 +85,20 @@ export default function Checkout() {
                 phone: session.user?.phone || "",
                 address: session.user?.address || "",
             }));
+            setNewAddressForm(prev => ({ ...prev, recipientName: session.user?.name || '', phone: session.user?.phone || '' }));
+            // Load saved addresses
+            shippingAddressApi.getShippingAddresses().then(addresses => {
+                setSavedAddresses(addresses);
+                if (addresses.length > 0) {
+                    const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
+                    setSelectedAddressId(defaultAddr.id);
+                    setShippingZone((defaultAddr.zone as any) || 'inside');
+                } else {
+                    setAddingNewAddress(true);
+                }
+            }).catch(() => setAddingNewAddress(true));
+        } else {
+            setAddingNewAddress(true);
         }
     }, [session]);
 
@@ -182,7 +211,7 @@ export default function Checkout() {
 
             const getSessions: any = await getSession()
 
-            const orderData = {
+            const orderData: any = {
                 userId: getSessions.user?.id,
                 customerName: formData.name,
                 customerEmail: formData.email,
@@ -194,6 +223,45 @@ export default function Checkout() {
                 currencyRate: selectedCurrency.rate,
                 shippingZone,
             };
+
+            // If a saved address was selected, include shippingAddressId
+            if (selectedAddressId && !addingNewAddress) {
+                orderData.shippingAddressId = selectedAddressId;
+                const addr = savedAddresses.find(a => a.id === selectedAddressId);
+                if (addr) {
+                    orderData.customerName = formData.name || addr.recipientName;
+                    orderData.customerPhone = formData.phone || addr.phone;
+                    orderData.address = addr.address;
+                    orderData.shippingZone = addr.zone || shippingZone;
+                }
+            } else if (addingNewAddress) {
+                // Validate new address
+                if (!newAddressForm.address || !newAddressForm.recipientName || !newAddressForm.phone) {
+                    toast.error('Please fill in all address fields');
+                    setLoading(false);
+                    return;
+                }
+                orderData.address = newAddressForm.address;
+                orderData.customerName = formData.name || newAddressForm.recipientName;
+                orderData.customerPhone = formData.phone || newAddressForm.phone;
+                orderData.shippingZone = newAddressForm.zone;
+
+                // Optionally save address to account
+                if (saveNewAddress && session?.user) {
+                    try {
+                        const saved = await shippingAddressApi.createShippingAddress({
+                            label: newAddressForm.label || 'Home',
+                            recipientName: newAddressForm.recipientName || formData.name,
+                            phone: newAddressForm.phone || formData.phone,
+                            address: newAddressForm.address,
+                            city: newAddressForm.city,
+                            zone: newAddressForm.zone,
+                            isDefault: savedAddresses.length === 0,
+                        });
+                        if (saved?.id) orderData.shippingAddressId = saved.id;
+                    } catch { /* Save silently fails, order still proceeds */ }
+                }
+            }
 
             // 1. Create Order
             const orderJson = await fetchAPI("/orders", {
@@ -372,6 +440,54 @@ export default function Checkout() {
                                     onSubmit={handleSubmit}
                                     className="space-y-6"
                                 >
+                                    {/* Shipping Address Section */}
+                                    {session?.user && savedAddresses.length > 0 && (
+                                        <div className="mb-8 pb-6 border-b border-slate-100 dark:border-slate-700">
+                                            <h4 className="text-base font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                                                <MapPin className="w-4 h-4 text-brand-600" />
+                                                Saved Shipping Addresses
+                                            </h4>
+                                            <div className="flex flex-col gap-3">
+                                                {savedAddresses.map(addr => (
+                                                    <label key={addr.id} className={`cursor-pointer flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${
+                                                        selectedAddressId === addr.id && !addingNewAddress
+                                                            ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20'
+                                                            : 'border-slate-200 dark:border-slate-700'
+                                                    }`}>
+                                                        <input
+                                                            type="radio"
+                                                            name="savedAddress"
+                                                            className="mt-1 accent-brand-600"
+                                                            checked={selectedAddressId === addr.id && !addingNewAddress}
+                                                            onChange={() => {
+                                                                setSelectedAddressId(addr.id);
+                                                                setAddingNewAddress(false);
+                                                                if (addr.zone) setShippingZone(addr.zone as any);
+                                                            }}
+                                                        />
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-slate-900 dark:text-white">{addr.label || addr.recipientName}</p>
+                                                            <p className="text-xs text-slate-500 mt-0.5">{addr.address}{addr.city ? `, ${addr.city}` : ''}</p>
+                                                            <p className="text-xs text-slate-400">{addr.phone}</p>
+                                                        </div>
+                                                        {addr.isDefault && <span className="ml-auto text-xs bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 px-2 py-0.5 rounded-full font-medium">Default</span>}
+                                                    </label>
+                                                ))}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setAddingNewAddress(true); setSelectedAddressId(null); }}
+                                                    className={`flex items-center gap-2 p-4 rounded-xl border-2 border-dashed transition-all text-sm font-medium ${
+                                                        addingNewAddress
+                                                            ? 'border-brand-600 text-brand-600 bg-brand-50 dark:bg-brand-900/20'
+                                                            : 'border-slate-300 dark:border-slate-600 text-slate-500 hover:border-brand-400'
+                                                    }`}
+                                                >
+                                                    <Plus className="w-4 h-4" /> Use a different address
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Contact Info */}
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
@@ -423,21 +539,90 @@ export default function Checkout() {
                                                 </p>
                                             )}
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                                Shipping Address
-                                            </label>
-                                            <input
-                                                name="address"
-                                                required
-                                                value={formData.address}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                                                placeholder="123 Main St, City, Country"
-                                            />
-                                        </div>
+                                            {/* New Address Form — full fields */}
+                                            {addingNewAddress && (
+                                                <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-4">
+                                                    <h5 className="text-sm font-semibold text-slate-700 dark:text-slate-300">New Delivery Address</h5>
+                                                    <div className="grid md:grid-cols-2 gap-4">
+                                                        <div className="space-y-1">
+                                                            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Label (e.g. Home, Office)</label>
+                                                            <input
+                                                                value={newAddressForm.label}
+                                                                onChange={e => setNewAddressForm(p => ({ ...p, label: e.target.value }))}
+                                                                className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"
+                                                                placeholder="Home"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Recipient Name <span className="text-red-500">*</span></label>
+                                                            <input
+                                                                value={newAddressForm.recipientName}
+                                                                onChange={e => setNewAddressForm(p => ({ ...p, recipientName: e.target.value }))}
+                                                                required
+                                                                className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"
+                                                                placeholder="Full name"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Phone <span className="text-red-500">*</span></label>
+                                                            <input
+                                                                value={newAddressForm.phone}
+                                                                onChange={e => setNewAddressForm(p => ({ ...p, phone: e.target.value.replace(/\D/g,'').slice(0,11) }))}
+                                                                required
+                                                                placeholder="017XXXXXXXX"
+                                                                className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">City</label>
+                                                            <input
+                                                                value={newAddressForm.city}
+                                                                onChange={e => setNewAddressForm(p => ({ ...p, city: e.target.value }))}
+                                                                className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"
+                                                                placeholder="Dhaka"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Full Address <span className="text-red-500">*</span></label>
+                                                        <input
+                                                            value={newAddressForm.address}
+                                                            onChange={e => setNewAddressForm(p => ({ ...p, address: e.target.value }))}
+                                                            required
+                                                            className="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"
+                                                            placeholder="House #, Road #, Area, District"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Delivery Zone</label>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            {(['inside', 'outside'] as const).map(zone => (
+                                                                <label key={zone} className={`cursor-pointer p-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                                                                    newAddressForm.zone === zone ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400' : 'border-slate-200 dark:border-slate-600 text-slate-600'
+                                                                }`}>
+                                                                    <input type="radio" className="sr-only" checked={newAddressForm.zone === zone} onChange={() => { setNewAddressForm(p => ({ ...p, zone })); setShippingZone(zone); }} />
+                                                                    {zone === 'inside' ? 'Inside City' : 'Outside City'}
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    {session?.user && (
+                                                        <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-600 dark:text-slate-400">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={saveNewAddress}
+                                                                onChange={e => setSaveNewAddress(e.target.checked)}
+                                                                className="w-4 h-4 accent-brand-600 rounded"
+                                                            />
+                                                            Save this address for future orders
+                                                        </label>
+                                                    )}
+                                                </div>
+                                            )}
                                     </div>
 
+                                    {/* Standalone Delivery Zone — only for guests with no saved addresses */}
+                                    {!session?.user && (
                                     <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                                             Delivery Zone
@@ -455,6 +640,7 @@ export default function Checkout() {
                                             </label>
                                         </div>
                                     </div>
+                                    )}
 
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
