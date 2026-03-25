@@ -1,7 +1,7 @@
 import { DiscountStrategy } from './Discount-strategy-interface'
 
 export class FreeShippingDiscountStrategy implements DiscountStrategy {
-  calculate(): number {
+  calculate(baseAmount: number, value: number): number {
     return 0
   }
 }
