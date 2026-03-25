@@ -210,7 +210,7 @@ export class PromotionService {
 
                 if (promotion.promotionType === PromotionType.PERCENTAGE && promotion.value) {
                     promoDiscount = Math.round(basePrice * Number(promotion.value) / 100);
-                } else if (promotion.promotionType === PromotionType.FIXED_AMOUNT && promotion.value) {
+                } else if (promotion.promotionType === PromotionType.FIXED && promotion.value) {
                     promoDiscount = Number(promotion.value);
                 }
 
@@ -258,7 +258,7 @@ export class PromotionService {
 
             if (promotion.promotionType === PromotionType.PERCENTAGE && promotion.value) {
                 promoDiscount = Math.round(basePrice * Number(promotion.value) / 100);
-            } else if (promotion.promotionType === PromotionType.FIXED_AMOUNT && promotion.value) {
+            } else if (promotion.promotionType === PromotionType.FIXED && promotion.value) {
                 promoDiscount = Number(promotion.value);
             }
 

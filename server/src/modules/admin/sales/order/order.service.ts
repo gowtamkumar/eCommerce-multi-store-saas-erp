@@ -9,6 +9,7 @@ import { InventoryTransactionType } from '@/common/enums/inventory-transaction-t
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { DiscountType } from '@/common/enums/discount-type.enum'
 import { PricingUtil } from '@/common/utils/pricing.util'
+import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
 import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
 import { PaymentService } from '@/modules/admin/sales/payment/payment.service'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
@@ -152,7 +153,8 @@ export class OrderService {
         } else {
           const rawDiscount = Number(product.discountAmount || 0)
           const discountType = product.discountType || DiscountType.FIXED
-          discountAmount = PricingUtil.calculateDiscountAmount(unitPrice, rawDiscount, discountType)
+          const orderDiscountStrategy = DiscountStrategyFactory.create(discountType as string);
+          discountAmount = orderDiscountStrategy.calculate(unitPrice, rawDiscount);
         }
 
         // Apply tax on discounted price

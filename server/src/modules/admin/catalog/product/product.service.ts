@@ -19,6 +19,7 @@ import { BrandEntity } from '../brand/entities/brand.entity'
 import { PromotionType } from '../../sales/promotion/enums/promotion-type.enum'
 import { DiscountType } from '@/common/enums/discount-type.enum'
 import { PricingUtil } from '@/common/utils/pricing.util'
+import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
 
 @Injectable()
 export class ProductService {
@@ -63,7 +64,7 @@ export class ProductService {
         let calcDiscount = 0;
         if (promo.promotionType === PromotionType.PERCENTAGE) {
           calcDiscount = (basePrice * Number(promo.value)) / 100;
-        } else if (promo.promotionType === PromotionType.FIXED_AMOUNT) {
+        } else if (promo.promotionType === PromotionType.FIXED) {
           calcDiscount = Number(promo.value);
         }
         if (calcDiscount > maxPromoDiscount) {
@@ -74,7 +75,8 @@ export class ProductService {
       // Calculate the original discount value in flat currency
       const originalDiscountType = product.discountType || DiscountType.FIXED;
       const originalRawDiscount = Number(product.discountAmount || 0);
-      const originalDiscountValue = PricingUtil.calculateDiscountAmount(basePrice, originalRawDiscount, originalDiscountType);
+      const originalDiscountStrategy = DiscountStrategyFactory.create(originalDiscountType as string);
+      const originalDiscountValue = originalDiscountStrategy.calculate(basePrice, originalRawDiscount);
 
       // Determine final discount: keep original type/amount if higher, else use flat promo amount
       let finalDiscountAmount = originalRawDiscount;
@@ -120,7 +122,7 @@ export class ProductService {
           let calcDiscount = 0;
           if (promo.promotionType === PromotionType.PERCENTAGE) {
             calcDiscount = (basePrice * Number(promo.value)) / 100;
-          } else if (promo.promotionType === PromotionType.FIXED_AMOUNT) {
+          } else if (promo.promotionType === PromotionType.FIXED) {
             calcDiscount = Number(promo.value);
           }
           if (calcDiscount > maxPromoDiscount) {
@@ -130,7 +132,8 @@ export class ProductService {
 
         const originalDiscountType = product.discountType || DiscountType.FIXED;
         const originalRawDiscount = Number(product.discountAmount || 0);
-        const originalDiscountValue = PricingUtil.calculateDiscountAmount(basePrice, originalRawDiscount, originalDiscountType);
+        const originalDiscountStrategy = DiscountStrategyFactory.create(originalDiscountType as string);
+        const originalDiscountValue = originalDiscountStrategy.calculate(basePrice, originalRawDiscount);
 
         let finalDiscountAmount = originalRawDiscount;
         let finalDiscountType = originalDiscountType;

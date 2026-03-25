@@ -84,6 +84,11 @@ export class AuthService {
 
     const tokens = await this.getTokens(user)
 
+    delete user.password
+    delete user.resetPasswordToken
+    delete user.resetPasswordExpires
+    delete user.emailVerificationToken
+
     return {
       user,
       ...tokens,

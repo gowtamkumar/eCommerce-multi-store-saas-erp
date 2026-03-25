@@ -262,7 +262,7 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
                                     onChange={(e) => setFormData({ ...formData, promotionType: e.target.value })}
                                 >
                                     <option value="percentage">Percentage (%)</option>
-                                    <option value="fixed_amount">Fixed Amount ({currency})</option>
+                                    <option value="fixed">Fixed Amount ({currency})</option>
                                     <option value="free_shipping">Free Shipping</option>
                                 </select>
                             </div>
@@ -282,7 +282,7 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
                                             placeholder="0.00"
                                         />
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
-                                            {formData.promotionType === 'fixed_amount' ? currency : <Percent className="w-4 h-4" />}
+                                            {formData.promotionType === 'fixed' ? currency : <Percent className="w-4 h-4" />}
                                         </span>
                                     </div>
                                 </div>

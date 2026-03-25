@@ -5,7 +5,7 @@ export interface Promotion {
     slug: string;
     name: string;
     description?: string;
-    promotionType: 'percentage' | 'fixed_amount' | 'free_shipping' | 'bogo';
+    promotionType: 'percentage' | 'fixed' | 'free_shipping' | 'bogo';
     value?: number;
     targetType: 'entire_order' | 'specific_product' | 'specific_category' | 'specific_brand' | 'minimum_cart_value';
     targetId?: string;

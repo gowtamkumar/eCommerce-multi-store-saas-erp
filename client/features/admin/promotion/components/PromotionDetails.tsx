@@ -236,7 +236,7 @@ export default function PromotionDetails({ promotion, products }: PromotionDetai
                                         <span className="text-2xl font-bold text-white uppercase">{promotion.value}% OFF</span>
                                     </div>
                                 )}
-                                {promotion.promotionType === 'fixed_amount' && promotion.value && (
+                                {promotion.promotionType === 'fixed' && promotion.value && (
                                     <div className="flex flex-col bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 min-w-[120px]">
                                         <span className="text-white/60 text-xs font-medium mb-1">Flat Discount</span>
                                         <span className="text-2xl font-bold text-white">{promotion.value} OFF</span>

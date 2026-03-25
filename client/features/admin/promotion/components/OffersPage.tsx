@@ -261,7 +261,7 @@ function PromotionSection({ group }: { group: OfferGroup }) {
                                     {group.promotion.value}% OFF
                                 </span>
                             )}
-                            {group.promotion.promotionType === 'fixed_amount' && group.promotion.value && (
+                            {group.promotion.promotionType === 'fixed' && group.promotion.value && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
                                     <Tag className="w-4 h-4" />
                                     Flat Discount — {group.promotion.value} OFF
@@ -544,7 +544,7 @@ function PromotionSectionHeader({ group }: { group: OfferGroup }) {
                                 {group.promotion.value}% OFF
                             </span>
                         )}
-                        {group.promotion.promotionType === 'fixed_amount' && group.promotion.value && (
+                        {group.promotion.promotionType === 'fixed' && group.promotion.value && (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
                                 <Tag className="w-4 h-4" />
                                 Flat Discount — {group.promotion.value} OFF

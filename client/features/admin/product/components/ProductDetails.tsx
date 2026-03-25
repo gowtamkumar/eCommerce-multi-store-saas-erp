@@ -293,7 +293,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                       </div>
                       <div className="px-3 py-1 bg-brand-600 text-white text-xs font-black uppercase rounded-full">
                         {promo.promotionType === 'percentage' && `${promo.value}% OFF`}
-                        {promo.promotionType === 'fixed_amount' && `${promo.value} OFF`}
+                        {promo.promotionType === 'fixed' && `${promo.value} OFF`}
                         {promo.promotionType === 'free_shipping' && `FREE SHIP`}
                       </div>
                     </div>

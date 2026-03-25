@@ -6,6 +6,7 @@ import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { CouponEntity } from './entities/coupon.entity';
 import { DiscountType } from '@/common/enums/discount-type.enum';
 import { PricingUtil } from '@/common/utils/pricing.util';
+import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory';
 
 @Injectable()
 export class CouponService {
@@ -142,7 +143,8 @@ export class CouponService {
             }
 
             // Calculate discount
-            let discountAmount = PricingUtil.calculateDiscountAmount(orderTotal, Number(coupon.amount), coupon.discountType);
+            const couponDiscountStrategy = DiscountStrategyFactory.create(coupon.discountType as string);
+            let discountAmount = couponDiscountStrategy.calculate(orderTotal, Number(coupon.amount));
 
             // Don't discount more than the order total
             discountAmount = Math.min(discountAmount, orderTotal);
