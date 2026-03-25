@@ -8,10 +8,8 @@ import { InventoryTransactionReferenceType } from '@/common/enums/inventory-tran
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { DiscountType } from '@/common/enums/discount-type.enum'
-import { PricingUtil } from '@/common/utils/pricing.util'
 import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
 import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
-import { PaymentService } from '@/modules/admin/sales/payment/payment.service'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
@@ -24,6 +22,8 @@ import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { PaymentEntity } from '../payment/entities/payment.entity'
 import { CartService } from '@/modules/store/cart/cart.service'
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
+import { ShippingStrategyFactory } from '@/common/strategies/shipping/shipping-strategy.factory'
+import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pricing-strategy.factory'
 
 @Injectable()
 export class OrderService {
@@ -32,23 +32,12 @@ export class OrderService {
   constructor(
     @InjectRepository(OrderEntity)
     private orderRepository: Repository<OrderEntity>,
-    // @InjectRepository(ProductEntity)
-    // private productRepository: Repository<ProductEntity>,
-    // @InjectRepository(ProductVariantEntity)
-    // private variantRepository: Repository<ProductVariantEntity>,
-    // @InjectRepository(UserEntity)
-    // private userRepository: Repository<UserEntity>,
-    // @InjectRepository(LeadEntity)
-    // private leadRepository: Repository<LeadEntity>,
-    // @InjectRepository(SiteSettingsEntity)
-    // private settingsRepository: Repository<SiteSettingsEntity>,
     @InjectRepository(PaymentEntity)
     private paymentRepository: Repository<PaymentEntity>,
     private cartService: CartService,
     private readonly inventoryService: InventoryTransactionService,
     private readonly dataSource: DataSource,
     private readonly couponService: CouponService,
-    private readonly paymentService: PaymentService,
     private readonly invoiceService: InvoiceService,
   ) { }
 
@@ -159,7 +148,8 @@ export class OrderService {
 
         // Apply tax on discounted price
         const taxRate = Number(product.taxRate || 0)
-        const pricing = PricingUtil.calculateItemPricing(unitPrice, discountAmount, taxRate)
+        const pricingStrategy = ItemPricingStrategyFactory.create('standard')
+        const pricing = pricingStrategy.calculate(unitPrice, discountAmount, taxRate)
         const itemTotal = pricing.finalPrice * quantity
 
         const orderItem = new OrderItemEntity()
@@ -226,7 +216,7 @@ export class OrderService {
             couponDiscountAmount = validation.discountAmount;
             order.appliedCoupon = finalCouponCode;
             order.couponDiscountAmount = couponDiscountAmount;
-            
+
             if (validation.coupon.discountType === DiscountType.FREE_SHIPPING || validation.coupon.discountType as any === 'free_shipping') {
               isFreeShipping = true;
             }
@@ -238,11 +228,9 @@ export class OrderService {
         }
       }
 
-      let shippingFee = PricingUtil.calculateShippingFee(
-        shippingZone,
-        settings?.shippingConfig,
-        preCouponTotal - couponDiscountAmount,
-      );
+
+      const strategy = ShippingStrategyFactory.create(shippingZone);
+      let shippingFee = strategy.calculate(settings?.shippingConfig, preCouponTotal - couponDiscountAmount);
 
       if (isFreeShipping) {
         shippingFee = 0;
@@ -255,7 +243,7 @@ export class OrderService {
 
       order.shippingFee = shippingFee;
       order.totalAmount = preCouponTotal - couponDiscountAmount + shippingFee;
-const savedOrder = await manager.save(order)
+      const savedOrder = await manager.save(order)
 
       // Update inventory transactions with order reference ID
       await manager.update(InventoryTransactionEntity,
@@ -435,7 +423,7 @@ const savedOrder = await manager.save(order)
         }
       }
 
-        // Check for Order Completion - removed old deduction logic here since it's now deducted at creation
+      // Check for Order Completion - removed old deduction logic here since it's now deducted at creation
 
       Object.assign(order, updateOrderDto)
       const savedOrder = await queryRunner.manager.save(order)

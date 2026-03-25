@@ -7,6 +7,8 @@ import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promo
 import { PromotionType } from '@/modules/admin/sales/promotion/enums/promotion-type.enum'
 import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
+import { PromotionTargetStrategyFactory } from '@/common/strategies/promotion/promotion-target-strategy.factory'
+import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pricing-strategy.factory'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -74,15 +76,6 @@ export class CartService {
     let totalTax = 0
 
     const transformedItems = (cart.items || []).map((item) => {
-      // Apply product discount based on discountType
-      // const basePrice = Number(item.variant?.price || item.product?.price || 0)
-      // const discountType = item.product?.discountType || DiscountType.FIXED
-      // let discount = PricingUtil.calculateDiscountAmount(
-      //   basePrice,
-      //   Number(item.product?.discountAmount || 0),
-      //   discountType,
-      // )
-
       const basePrice = Number(item.variant?.price || item.product?.price || 0)
       const discountType = item.product?.discountType || DiscountType.FIXED
 
@@ -95,27 +88,15 @@ export class CartService {
         Number(item.product?.discountAmount || 0),
       );
 
-
       // Check for best applicable promotional offer for this item
       let bestPromoDiscount = 0
       for (const promo of activePromotions) {
-        let applies = false
-        if (
-          promo.targetType === PromotionTargetType.SPECIFIC_PRODUCT &&
-          promo.targetId === item.productId
-        ) {
-          applies = true
-        } else if (
-          promo.targetType === PromotionTargetType.SPECIFIC_CATEGORY &&
-          promo.targetId === item.product?.categoryId
-        ) {
-          applies = true
-        } else if (
-          promo.targetType === PromotionTargetType.SPECIFIC_BRAND &&
-          promo.targetId === item.product?.brandId
-        ) {
-          applies = true
-        }
+        const targetStrategy = PromotionTargetStrategyFactory.create(promo.targetType);
+        const applies = targetStrategy.isApplicable(promo, {
+          productId: item.productId,
+          categoryId: item.product?.categoryId,
+          brandId: item.product?.brandId,
+        });
 
         if (applies) {
           const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as PromotionType);
@@ -133,7 +114,8 @@ export class CartService {
       discount = Math.max(discount, bestPromoDiscount)
 
       const taxRate = Number(item.product?.taxRate || 0)
-      const pricing = PricingUtil.calculateItemPricing(basePrice, discount, taxRate)
+      const pricingStrategy = ItemPricingStrategyFactory.create('standard')
+      const pricing = pricingStrategy.calculate(basePrice, discount, taxRate)
 
       const quantity = Number(item.quantity)
       const lineTotal = pricing.finalPrice * quantity
@@ -179,16 +161,10 @@ export class CartService {
     // Calculate Order-Level Promotions (Entire Order / Min Cart Value)
     let orderLevelPromoDiscount = 0
     for (const promo of activePromotions) {
-      let applies = false
-      if (promo.targetType === PromotionTargetType.ENTIRE_ORDER) {
-        applies = true
-      } else if (
-        promo.targetType === PromotionTargetType.MINIMUM_CART_VALUE &&
-        promo.minOrderValue &&
-        payable >= promo.minOrderValue
-      ) {
-        applies = true
-      }
+      const targetStrategy = PromotionTargetStrategyFactory.create(promo.targetType);
+      const applies = targetStrategy.isApplicable(promo, {
+        cartTotal: payable,
+      });
 
       if (applies) {
         const orderLevelPromoStrategy = DiscountStrategyFactory.create(promo.promotionType as string);

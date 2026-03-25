@@ -4,8 +4,6 @@ import { ILike, Repository } from 'typeorm';
 import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { CouponEntity } from './entities/coupon.entity';
-import { DiscountType } from '@/common/enums/discount-type.enum';
-import { PricingUtil } from '@/common/utils/pricing.util';
 import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory';
 
 @Injectable()
