@@ -1,14 +1,9 @@
 import { DiscountType } from '@/common/enums/discount-type.enum'
-import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
-import { PricingUtil } from '@/common/utils/pricing.util'
+import { PricingEngineService } from '@/common/services/pricing-engine.service'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
-import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum'
-import { PromotionType } from '@/modules/admin/sales/promotion/enums/promotion-type.enum'
 import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
-import { PromotionTargetStrategyFactory } from '@/common/strategies/promotion/promotion-target-strategy.factory'
-import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pricing-strategy.factory'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -32,6 +27,7 @@ export class CartService {
     private readonly siteSettingsRepository: Repository<SiteSettingsEntity>,
     private readonly couponService: CouponService,
     private readonly promotionService: PromotionService,
+    private readonly pricingEngine: PricingEngineService,
   ) { }
 
   async createOrGetCart(userId: string, tenantId: string): Promise<any> {
@@ -61,133 +57,25 @@ export class CartService {
 
   private async transformCart(cart: CartEntity, tenantId: string): Promise<any> {
     this.logger.log(`${this.transformCart.name} Service Called`)
-    // Fetch site settings for currency
-    const settings = await this.siteSettingsRepository.findOne({
-      where: { tenantId },
-    })
+
+    // 1. Fetch dependencies
+    const [settings, activePromotions] = await Promise.all([
+      this.siteSettingsRepository.findOne({ where: { tenantId } }),
+      this.promotionService.findActivePromotions(tenantId),
+    ])
     const currency = settings?.currency || 'BDT'
 
-    // Fetch active promotions
-    const activePromotions = await this.promotionService.findActivePromotions(tenantId)
+    // 2. Delegate all math to the PricingEngineService (Option 1 + 2)
+    const { transformedItems, subtotal, totalDiscount, totalTax, payable: enginePayable } =
+      this.pricingEngine.calculateCart(cart.items || [], activePromotions)
 
-    // Calculate and transform items
-    let subtotal = 0
-    let totalDiscount = 0
-    let totalTax = 0
-
-    const transformedItems = (cart.items || []).map((item) => {
-      const basePrice = Number(item.variant?.price || item.product?.price || 0)
-      const discountType = item.product?.discountType || DiscountType.FIXED
-
-      // 1. Get the correct strategy based on the discount type (fixed, percentage, etc.)
-      const discountStrategy = DiscountStrategyFactory.create(discountType as DiscountType);
-
-      // 2. Calculate the discount using the strategy's calculate method
-      let discount = discountStrategy.calculate(
-        basePrice,
-        Number(item.product?.discountAmount || 0),
-      );
-
-      // Check for best applicable promotional offer for this item
-      let bestPromoDiscount = 0
-      for (const promo of activePromotions) {
-        const targetStrategy = PromotionTargetStrategyFactory.create(promo.targetType);
-        const applies = targetStrategy.isApplicable(promo, {
-          productId: item.productId,
-          categoryId: item.product?.categoryId,
-          brandId: item.product?.brandId,
-        });
-
-        if (applies) {
-          const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as PromotionType);
-          let calcDiscount = promoDiscountStrategy.calculate(
-            basePrice,
-            Number(promo.value),
-          );
-          if (calcDiscount > bestPromoDiscount) {
-            bestPromoDiscount = calcDiscount
-          }
-        }
-      }
-
-      // Apply whichever is higher: direct product discount or promotional discount
-      discount = Math.max(discount, bestPromoDiscount)
-
-      const taxRate = Number(item.product?.taxRate || 0)
-      const pricingStrategy = ItemPricingStrategyFactory.create('standard')
-      const pricing = pricingStrategy.calculate(basePrice, discount, taxRate)
-
-      const quantity = Number(item.quantity)
-      const lineTotal = pricing.finalPrice * quantity
-
-      subtotal += pricing.basePrice * quantity
-      totalDiscount += pricing.discountAmount * quantity
-      totalTax += pricing.taxAmount * quantity
-
-      return {
-        cart_item_id: item.id,
-        product: {
-          id: item.product?.id,
-          name: item.product?.name,
-          image: item.product?.images?.[0] || null,
-        },
-        variant: item.variant
-          ? {
-            id: item.variant.id,
-            sku: item.variant.sku,
-            attributes: item.variant.combination
-              ? Object.entries(item.variant.combination).map(([name, value]) => ({
-                name,
-                value: String(value),
-              }))
-              : [],
-          }
-          : null,
-        pricing: {
-          base_price: pricing.basePrice,
-          discount: pricing.discountAmount,
-          tax: pricing.taxAmount,
-          final_price: pricing.finalPrice,
-        },
-        quantity,
-        line_total: lineTotal,
-        stock_status:
-          (item.variant?.stock || item.product?.stock || 0) > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
-      }
-    })
-
-    let payable = subtotal - totalDiscount
-
-    // Calculate Order-Level Promotions (Entire Order / Min Cart Value)
-    let orderLevelPromoDiscount = 0
-    for (const promo of activePromotions) {
-      const targetStrategy = PromotionTargetStrategyFactory.create(promo.targetType);
-      const applies = targetStrategy.isApplicable(promo, {
-        cartTotal: payable,
-      });
-
-      if (applies) {
-        const orderLevelPromoStrategy = DiscountStrategyFactory.create(promo.promotionType as string);
-        let calcDiscount = orderLevelPromoStrategy.calculate(
-          payable,
-          Number(promo.value),
-        );
-        if (calcDiscount > orderLevelPromoDiscount) {
-          orderLevelPromoDiscount = calcDiscount
-        }
-      }
-    }
-
-    // Apply order-level promo discounts
-    orderLevelPromoDiscount = Math.min(orderLevelPromoDiscount, payable)
-    payable -= orderLevelPromoDiscount
-
+    // 3. Apply Coupon (async, stays in service layer)
     let couponDiscountAmount = 0
     let isFreeShipping = false
+    let payable = enginePayable - totalTax  // enginePayable already includes tax, so strip it before coupon deduction
 
     if (cart.appliedCouponCode) {
       try {
-        // We use validateCoupon to get the discount amount but we don't throw error if invalid to not break cart loading
         const validation = await this.couponService.validateCoupon(
           cart.appliedCouponCode,
           payable,
@@ -196,7 +84,6 @@ export class CartService {
         if (validation.valid) {
           couponDiscountAmount = validation.discountAmount
           payable -= couponDiscountAmount
-
           if (
             validation.coupon.discountType === DiscountType.FREE_SHIPPING ||
             (validation.coupon.discountType as any) === 'free_shipping'
@@ -206,21 +93,17 @@ export class CartService {
         }
       } catch (error) {
         this.logger.error(error)
-        // If coupon invalid (e.g., expired), we could remove it. For now, we just ignore it for calculation.
       }
     }
 
-    // We report orderLevelPromoDiscount separately or merged it with totalDiscount
-    // To keep the API interface intact, we can add it to offer_discount.
-    totalDiscount += orderLevelPromoDiscount
-
+    // 4. Format and return response
     return {
       cart_id: cart.id,
       currency,
       items: transformedItems,
       summary: {
-        subtotal: subtotal,
-        offer_discount: totalDiscount, // Includes product discounts AND order level promo discounts
+        subtotal,
+        offer_discount: totalDiscount,
         coupon_discount: couponDiscountAmount,
         tax: totalTax,
         payable: payable + totalTax,

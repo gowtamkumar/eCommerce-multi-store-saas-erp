@@ -18,8 +18,8 @@ import { ProductVariantEntity } from './entities/variant.entity'
 import { BrandEntity } from '../brand/entities/brand.entity'
 import { PromotionType } from '../../sales/promotion/enums/promotion-type.enum'
 import { DiscountType } from '@/common/enums/discount-type.enum'
-import { PricingUtil } from '@/common/utils/pricing.util'
 import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
+import { PromotionTargetType } from '../../sales/promotion/enums/promotion-target-type.enum'
 
 @Injectable()
 export class ProductService {
@@ -61,12 +61,8 @@ export class ProductService {
       const basePrice = Number(product.price || 0);
 
       applicablePromotions.forEach(promo => {
-        let calcDiscount = 0;
-        if (promo.promotionType === PromotionType.PERCENTAGE) {
-          calcDiscount = (basePrice * Number(promo.value)) / 100;
-        } else if (promo.promotionType === PromotionType.FIXED) {
-          calcDiscount = Number(promo.value);
-        }
+        const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as string);
+        const calcDiscount = promoDiscountStrategy.calculate(basePrice, Number(promo.value));
         if (calcDiscount > maxPromoDiscount) {
           maxPromoDiscount = calcDiscount;
         }
@@ -108,9 +104,9 @@ export class ProductService {
 
       return products.map(product => {
         const applicablePromotions = activePromos.filter(promo => {
-          if (promo.targetType === 'specific_product' && promo.targetId === product.id) return true;
-          if (promo.targetType === 'specific_category' && (promo.targetId === product.categoryId || (product.category && promo.targetId === product.category.id))) return true;
-          if (promo.targetType === 'specific_brand' && promo.targetId === product.brandId) return true;
+          if (promo.targetType === PromotionTargetType.SPECIFIC_PRODUCT && promo.targetId === product.id) return true;
+          if (promo.targetType === PromotionTargetType.SPECIFIC_CATEGORY && (promo.targetId === product.categoryId || (product.category && promo.targetId === product.category.id))) return true;
+          if (promo.targetType === PromotionTargetType.SPECIFIC_BRAND && promo.targetId === product.brandId) return true;
           return false;
         });
 
@@ -119,12 +115,8 @@ export class ProductService {
         const basePrice = Number(product.price || 0);
 
         applicablePromotions.forEach(promo => {
-          let calcDiscount = 0;
-          if (promo.promotionType === PromotionType.PERCENTAGE) {
-            calcDiscount = (basePrice * Number(promo.value)) / 100;
-          } else if (promo.promotionType === PromotionType.FIXED) {
-            calcDiscount = Number(promo.value);
-          }
+          const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as string);
+          const calcDiscount = promoDiscountStrategy.calculate(basePrice, Number(promo.value));
           if (calcDiscount > maxPromoDiscount) {
             maxPromoDiscount = calcDiscount;
           }

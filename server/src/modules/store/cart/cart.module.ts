@@ -4,6 +4,7 @@ import { PromotionModule } from '@/modules/admin/sales/promotion/promotion.modul
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { PricingEngineService } from '@/common/services/pricing-engine.service'
 import { CartController } from './cart.controller'
 import { CartService } from './cart.service'
 import { CartItemEntity } from './entities/cart-item.entity'
@@ -16,7 +17,7 @@ import { CartEntity } from './entities/cart.entity'
     PromotionModule,
   ],
   controllers: [CartController],
-  providers: [CartService],
+  providers: [CartService, PricingEngineService],
   exports: [CartService],
 })
 export class CartModule {}
