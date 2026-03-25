@@ -86,14 +86,29 @@ export const useDownloadInvoice = () => {
     doc.setFont('helvetica', 'normal');
     const customerDetailsX = pageWidth / 2;
     let customerY = 61;
-    if (order?.address) {
-      const height = addWrappedText(order.address, customerDetailsX, customerY, 70, 4);
+    if (order?.shippingAddress) {
+      const shipping = order.shippingAddress;
+      if (shipping.recipientName && shipping.recipientName !== order.customerName) {
+        doc.text(`Recipient: ${shipping.recipientName}`, customerDetailsX, customerY);
+        customerY += 4;
+      }
+      const height = addWrappedText(`${shipping.address}${shipping.city ? ', ' + shipping.city : ''}`, customerDetailsX, customerY, 70, 4);
       customerY += height + 1;
-    }
-    if (order?.customerPhone) {
-      doc.text(order.customerPhone, customerDetailsX, customerY);
+      doc.text(`Phone: ${shipping.phone}`, customerDetailsX, customerY);
+      customerY += 4;
+      doc.text(`Zone: ${(shipping.zone || order.deliveryZone || 'Inside').toUpperCase()}`, customerDetailsX, customerY);
+      customerY += 4;
+    } else if (order?.address) {
+      const height = addWrappedText(`${order.address}${order.city ? ', ' + order.city : ''}`, customerDetailsX, customerY, 70, 4);
+      customerY += height + 1;
+      if (order.customerPhone) {
+        doc.text(`Phone: ${order.customerPhone}`, customerDetailsX, customerY);
+        customerY += 4;
+      }
+      doc.text(`Zone: ${(order.deliveryZone || 'Inside').toUpperCase()}`, customerDetailsX, customerY);
       customerY += 4;
     }
+
     if (order?.customerEmail) {
       doc.text(order.customerEmail, customerDetailsX, customerY);
     }

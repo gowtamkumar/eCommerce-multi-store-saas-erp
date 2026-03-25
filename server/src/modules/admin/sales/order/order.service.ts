@@ -330,7 +330,7 @@ export class OrderService {
     this.logger.log(`${this.findOneOrder.name} Service Called`);
     const order = await this.orderRepository.findOne({
       where: { id, tenantId },
-      relations: ['items', 'items.product', 'items.variant', 'returns'],
+      relations: ['items', 'items.product', 'items.variant', 'returns', 'shippingAddress'],
     })
 
     if (!order) {
@@ -344,7 +344,7 @@ export class OrderService {
     this.logger.log(`${this.findOneForCourier.name} Service Called`);
     const order = await this.orderRepository.findOne({
       where: { id, tenantId },
-      relations: ['items', 'items.product'],
+      relations: ['items', 'items.product', 'shippingAddress'],
     })
 
     if (!order) {
@@ -362,6 +362,7 @@ export class OrderService {
       .leftJoinAndSelect('items.product', 'product')
       .leftJoinAndSelect('items.variant', 'variant')
       .leftJoinAndSelect('order.returns', 'returns')
+      .leftJoinAndSelect('order.shippingAddress', 'shippingAddress')
       .where('order.userId = :userId', { userId })
       .andWhere('order.tenantId = :tenantId', { tenantId })
 

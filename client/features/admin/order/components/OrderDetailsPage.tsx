@@ -200,12 +200,28 @@ export default function OrderDetailsPage({
                             </h3>
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-slate-500">Zone</span>
-                                    <span className="font-bold text-slate-900 dark:text-white capitalize">{order.deliveryZone || 'Standard'}</span>
+                                    <span className="text-slate-500">Recipient</span>
+                                    <span className="text-right text-slate-900 dark:text-white font-medium">{order.shippingAddress?.recipientName || order.customerName}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-slate-500">Phone</span>
+                                    <span className="text-right text-slate-900 dark:text-white font-medium">{order.shippingAddress?.phone || order.customerPhone}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-slate-500">Address</span>
-                                    <span className="text-right text-slate-700 dark:text-slate-300 max-w-[150px]">{order.address}</span>
+                                    <span className="text-right text-slate-900 dark:text-white font-medium max-w-[200px]">
+                                        {order.shippingAddress?.address || order.address}
+                                    </span>
+                                </div>
+                                {(order.shippingAddress?.city || order.city) && (
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-slate-500">City</span>
+                                        <span className="text-right text-slate-900 dark:text-white font-medium">{order.shippingAddress?.city || order.city}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-slate-500">Zone</span>
+                                    <span className="font-bold text-brand-600 capitalize">{order.shippingAddress?.zone || order.deliveryZone || 'Inside'}</span>
                                 </div>
                             </div>
                         </div>
@@ -580,9 +596,9 @@ export default function OrderDetailsPage({
                                             </div>
                                         </div>
                                         <div className="text-right flex flex-col items-end gap-2">
-                                            <p className="text-lg font-bold text-brand-600">
+                                            {/* <p className="text-lg font-bold text-brand-600">
                                                 {formatPrice(item.totalAmount)}
-                                            </p>
+                                            </p> */}
                                             {(() => {
                                                 const returnStatus = getItemReturnStatus(item.product?.id || "", item.variant?.id);
                                                 console.log("returnStatus", returnStatus);
@@ -630,7 +646,7 @@ export default function OrderDetailsPage({
                                         <span>-{formatPrice(totalRefunded)}</span>
                                     </div>
                                 )}
-                                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                                <div className="flex justify-between text-slate-600 dark:text-slate-400">
                                     <span>Shipping {order.deliveryZone && `(${order.deliveryZone})`}</span>
                                     <span>{Number(order.shippingFee) === 0 ? (
                                         <span className="text-green-600 font-bold uppercase text-xs">Free</span>
@@ -722,12 +738,40 @@ export default function OrderDetailsPage({
                                     <MapPin className="w-4 h-4 text-slate-500" />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">
+                                    <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">
                                         Shipping Address
                                     </p>
-                                    <p className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white leading-relaxed">
-                                        {order.address}
-                                    </p>
+                                    {order.shippingAddress ? (
+                                        <div className="space-y-0.5">
+                                            {order.shippingAddress.label && (
+                                                <span className="inline-block text-[10px] font-bold uppercase tracking-wider bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 px-2 py-0.5 rounded-full mb-1">
+                                                    {order.shippingAddress.label}
+                                                </span>
+                                            )}
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-white">{order.shippingAddress.recipientName}</p>
+                                            <p className="text-xs text-slate-500 font-medium">{order.shippingAddress.phone}</p>
+                                            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                                                {order.shippingAddress.address}
+                                            </p>
+                                            {order.shippingAddress.city && (
+                                                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+                                                    {order.shippingAddress.city}
+                                                </p>
+                                            )}
+                                            <p className="text-[10px] font-bold text-brand-600 uppercase mt-1">
+                                                Zone: {order.shippingAddress.zone || order.deliveryZone || 'Inside'}
+                                            </p>
+                                            {order.shippingAddress.zone && (
+                                                <p className="text-[10px] font-medium text-slate-400 capitalize mt-0.5">
+                                                    📍 {order.shippingAddress.zone === 'inside' ? 'Inside City' : 'Outside City'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white leading-relaxed">
+                                            {order.address || 'No address provided'}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 

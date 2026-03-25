@@ -497,12 +497,47 @@ const CustomerOrders = () => {
 
                             {/* Delivery Info */}
                             <div>
-                                <h5 className="font-semibold text-slate-900 dark:text-white mb-2 text-sm">
-                                    Shipping Details
+                                <h5 className="font-semibold text-slate-900 dark:text-white mb-2 text-sm flex items-center gap-2">
+                                    🚚 Shipping Details
                                 </h5>
-                                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-                                    {selectedOrder.address}
-                                </p>
+                                {selectedOrder.shippingAddress ? (
+                                    <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 space-y-1.5 border border-slate-100 dark:border-slate-700">
+                                        {selectedOrder.shippingAddress.label && (
+                                            <span className="inline-block text-[10px] font-bold uppercase tracking-wider bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 px-2 py-0.5 rounded-full mb-1">
+                                                {selectedOrder.shippingAddress.label}
+                                            </span>
+                                        )}
+                                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{selectedOrder.shippingAddress.recipientName}</p>
+                                        <p className="text-xs text-slate-500 font-medium">{selectedOrder.shippingAddress.phone}</p>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                            {selectedOrder.shippingAddress.address}
+                                        </p>
+                                        {selectedOrder.shippingAddress.city && (
+                                            <p className="text-xs text-slate-600 dark:text-slate-400">
+                                                {selectedOrder.shippingAddress.city}
+                                            </p>
+                                        )}
+                                        <p className="text-[10px] font-bold text-brand-600 uppercase mt-1">
+                                            Zone: {selectedOrder.shippingAddress.zone || selectedOrder.deliveryZone || 'Inside'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 space-y-1.5 border border-slate-100 dark:border-slate-700">
+                                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{selectedOrder.customerName}</p>
+                                        <p className="text-xs text-slate-500 font-medium">{selectedOrder.customerPhone}</p>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                            {selectedOrder.address}
+                                        </p>
+                                        {(selectedOrder.city) && (
+                                            <p className="text-xs text-slate-600 dark:text-slate-400">
+                                                {selectedOrder.city}
+                                            </p>
+                                        )}
+                                        <p className="text-[10px] font-bold text-brand-600 uppercase mt-1">
+                                            Zone: {selectedOrder.deliveryZone || 'Inside'}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

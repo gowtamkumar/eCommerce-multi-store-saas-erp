@@ -69,7 +69,57 @@ export default function InvoiceDetailsModal({ invoice, onClose }: any) {
                             <div className="text-slate-600 dark:text-slate-300 mt-2 space-y-1">
                                 {order?.customerEmail && <p>{order.customerEmail}</p>}
                                 {order?.customerPhone && <p>{order.customerPhone}</p>}
-                                <p className="mt-2 text-sm">{order?.shippingAddress}</p>
+                                {order?.shippingAddress ? (
+                                    <div className="mt-2 text-sm space-y-1.5 text-slate-600 dark:text-slate-300 bg-white/50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700">
+                                        <p className="font-bold text-slate-900 dark:text-white flex justify-between">
+                                            <span>Recipient:</span>
+                                            <span>{order.shippingAddress.recipientName}</span>
+                                        </p>
+                                        <p className="flex justify-between">
+                                            <span>Phone:</span>
+                                            <span>{order.shippingAddress.phone}</span>
+                                        </p>
+                                        <p className="flex justify-between gap-4">
+                                            <span>Address:</span>
+                                            <span className="text-right">{order.shippingAddress.address}</span>
+                                        </p>
+                                        {order.shippingAddress.city && (
+                                            <p className="flex justify-between">
+                                                <span>City:</span>
+                                                <span>{order.shippingAddress.city}</span>
+                                            </p>
+                                        )}
+                                        <p className="flex justify-between">
+                                            <span>Zone:</span>
+                                            <span className="font-bold text-brand-600 uppercase">{order.shippingAddress.zone || order.deliveryZone || 'Inside'}</span>
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="mt-2 text-sm space-y-1.5 text-slate-600 dark:text-slate-300 bg-white/50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700">
+                                        <p className="font-bold text-slate-900 dark:text-white flex justify-between">
+                                            <span>Recipient:</span>
+                                            <span>{order?.customerName}</span>
+                                        </p>
+                                        <p className="flex justify-between">
+                                            <span>Phone:</span>
+                                            <span>{order?.customerPhone}</span>
+                                        </p>
+                                        <p className="flex justify-between gap-4">
+                                            <span>Address:</span>
+                                            <span className="text-right">{order?.address}</span>
+                                        </p>
+                                        {order?.city && (
+                                            <p className="flex justify-between">
+                                                <span>City:</span>
+                                                <span>{order.city}</span>
+                                            </p>
+                                        )}
+                                        <p className="flex justify-between">
+                                            <span>Zone:</span>
+                                            <span className="font-bold text-brand-600 uppercase">{order?.deliveryZone || 'Inside'}</span>
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div>

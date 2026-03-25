@@ -26,6 +26,17 @@ export interface Order {
   customerEmail: string;
   customerPhone: string;
   address: string;
+  shippingAddressId?: string;
+  shippingAddress?: {
+    id: string;
+    label?: string;
+    recipientName: string;
+    phone: string;
+    address: string;
+    city?: string;
+    zone?: string;
+    isDefault: boolean;
+  };
   totalAmount: number;
   shippingFee?: number;
   taxAmount?: number;
@@ -42,6 +53,7 @@ export interface Order {
   currency?: string;
   currencyRate?: number;
   deliveryZone?: string;
+  city?: string;
 }
 
 export interface ReturnRequest {
