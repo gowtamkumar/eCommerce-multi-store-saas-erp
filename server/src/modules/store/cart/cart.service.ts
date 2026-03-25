@@ -1,18 +1,18 @@
+import { DiscountType } from '@/common/enums/discount-type.enum';
+import { PricingUtil } from '@/common/utils/pricing.util';
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity';
+import { CouponService } from '@/modules/admin/sales/coupon/coupon.service';
+import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum';
+import { PromotionType } from '@/modules/admin/sales/promotion/enums/promotion-type.enum';
+import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service';
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity';
 import { CreateCartItemDto } from './dto/create-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { CartItemEntity } from './entities/cart-item.entity';
 import { CartEntity } from './entities/cart.entity';
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity';
-import { CouponService } from '@/modules/admin/sales/coupon/coupon.service';
-import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service';
-import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum';
-import { PromotionType } from '@/modules/admin/sales/promotion/enums/promotion-type.enum';
-import { DiscountType } from '@/common/enums/discount-type.enum';
-import { PricingUtil } from '@/common/utils/pricing.util';
 
 @Injectable()
 export class CartService {
@@ -188,6 +188,7 @@ export class CartService {
                     }
                 }
             } catch (error) {
+                this.logger.error(error);
                 // If coupon invalid (e.g., expired), we could remove it. For now, we just ignore it for calculation.
             }
         }
