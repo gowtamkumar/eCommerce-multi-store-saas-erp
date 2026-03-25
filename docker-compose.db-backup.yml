@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: postgres_db
+    container_name: multi_tenant_postgres_db_dev
     restart: always
     environment:
       POSTGRES_USER: postgres
