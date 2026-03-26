@@ -241,9 +241,10 @@ export class ProductService {
     const brandQuery = this.brandRepository.createQueryBuilder('brand')
       .innerJoin(ProductEntity, 'product', 'product.brandId = brand.id')
       .where('brand.tenantId = :tenantId', { tenantId })
-      .select('DISTINCT brand.id', 'id')
+      .select('brand.id', 'id')
       .addSelect('brand.name', 'name')
-      .addSelect('brand.slug', 'slug');
+      .addSelect('brand.slug', 'slug')
+      .distinct(true);
 
     if (categoryId) {
       brandQuery.andWhere('product.categoryId = :categoryId', { categoryId });

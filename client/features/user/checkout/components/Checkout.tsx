@@ -5,6 +5,7 @@ import { useCart } from "@/hooks/CartContext";
 import { useSettings } from "@/hooks/SettingsContext";
 import { PaymentMethod } from "@/lib/enums/payment-method";
 import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
+import { calculateShippingFee } from "@/lib/utils";
 import { fetchAPI } from "@/services/api";
 import * as cartApi from "@/services/cart";
 import { motion } from "framer-motion";
@@ -19,7 +20,6 @@ import {
     Truck,
     X,
 } from "lucide-react";
-import { calculateShippingFee } from "@/lib/utils";
 import { getSession, signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -28,8 +28,8 @@ import toast from "react-hot-toast";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
-import * as shippingAddressApi from "@/services/shippingAddress";
 import type { ShippingAddress } from "@/services/shippingAddress";
+import * as shippingAddressApi from "@/services/shippingAddress";
 import { MapPin, Plus } from "lucide-react";
 
 export default function Checkout() {
@@ -535,6 +535,7 @@ export default function Checkout() {
                                                     placeholder="House #, Road #, Area, District"
                                                 />
                                             </div>
+
                                             <div className="space-y-2">
                                                 <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Delivery Zone</label>
                                                 <div className="grid grid-cols-2 gap-3">
@@ -561,26 +562,7 @@ export default function Checkout() {
                                         </div>
                                     )}
 
-                                    {/* Standalone Delivery Zone — only for guests with no saved addresses */}
-                                    {!session?.user && (
-                                        <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                                Delivery Zone
-                                            </label>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <label className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-start gap-1 ${shippingZone === "inside" ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20" : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"}`}>
-                                                    <input type="radio" name="zone" value="inside" checked={shippingZone === "inside"} onChange={() => setShippingZone("inside")} className="sr-only" />
-                                                    <span className={`font-semibold text-sm ${shippingZone === "inside" ? "text-brand-700 dark:text-brand-400" : "text-slate-700 dark:text-slate-300"}`}>Inside City</span>
-                                                    <span className="text-xs text-slate-500">Standard Delivery</span>
-                                                </label>
-                                                <label className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-start gap-1 ${shippingZone === "outside" ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20" : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"}`}>
-                                                    <input type="radio" name="zone" value="outside" checked={shippingZone === "outside"} onChange={() => setShippingZone("outside")} className="sr-only" />
-                                                    <span className={`font-semibold text-sm ${shippingZone === "outside" ? "text-brand-700 dark:text-brand-400" : "text-slate-700 dark:text-slate-300"}`}>Outside City</span>
-                                                    <span className="text-xs text-slate-500">Nationwide Delivery</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    )}
+                                    {/* Standalone Delivery Zone — removed because it's already in the address form above */}
 
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">

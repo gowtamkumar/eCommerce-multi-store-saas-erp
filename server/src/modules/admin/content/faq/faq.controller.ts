@@ -9,7 +9,6 @@ import { FaqService } from './faq.service';
 import { RequestContext } from "@/common/decorators/request-context.decorator";
 import { RequestContextDto } from "@/common/dto/request-context.dto";
 
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('faqs')
 export class FaqController {
     private readonly logger = new Logger(FaqController.name);
@@ -17,6 +16,7 @@ export class FaqController {
     constructor(private readonly faqService: FaqService) { }
 
     @Post()
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
     async createFaq(@RequestContext() ctx: RequestContextDto, @Body() dto: CreateFaqDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createFaq.`);
@@ -25,7 +25,6 @@ export class FaqController {
     }
 
     @Get()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
     async findAllFaqs(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterFaqDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllFaqs.`);
         const { faqs, total } = await this.faqService.findAllFaqs(filterDto, ctx.tenantId);
@@ -45,6 +44,7 @@ export class FaqController {
     }
 
     @Put(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
     async updateFaq(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() dto: UpdateFaqDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateFaq.`);
@@ -53,6 +53,7 @@ export class FaqController {
     }
 
     @Delete(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin, UserRole.StoreManager)
     async removeFaq(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFaq.`);
@@ -60,7 +61,6 @@ export class FaqController {
     }
 
     @Post('multiple')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
     async findMultipleFaqs(@RequestContext() ctx: RequestContextDto, @Body() body: { ids: string[] }) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findMultipleFaqs.`);
         const faqs = await this.faqService.findByIdsFaq(body.ids, ctx.tenantId);
@@ -68,7 +68,6 @@ export class FaqController {
     }
 
     @Post('page')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
     async findByPageFaq(@RequestContext() ctx: RequestContextDto, @Body() body: { pageId: string }) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByPageFaq.`);
         const faqs = await this.faqService.findByPageFaq(body.pageId, ctx.tenantId);

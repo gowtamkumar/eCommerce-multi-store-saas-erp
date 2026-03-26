@@ -5,7 +5,7 @@ import {
     Package, Search, AlertTriangle, XCircle, CheckCircle,
     TrendingDown, BarChart3, DollarSign, ChevronDown, ChevronRight, Settings2
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import StockAdjustmentModal from './StockAdjustmentModal';
@@ -196,7 +196,7 @@ export default function InventoryDashboard() {
                                     const s = stockStatus(p);
                                     const isExpanded = expandedIds.has(p.id);
                                     return (
-                                        <>
+                                        <Fragment key={p.id}>
                                             <tr
                                                 key={p.id}
                                                 className={`hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors ${p.hasVariants ? 'cursor-pointer' : ''}`}
@@ -332,7 +332,7 @@ export default function InventoryDashboard() {
                                                     </td>
                                                 </tr>
                                             ))}
-                                        </>
+                                        </Fragment>
                                     );
                                 })
                             )}

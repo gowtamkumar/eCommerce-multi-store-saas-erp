@@ -32,10 +32,14 @@ export class PageService {
     return await this.pageRepository.save(page)
   }
 
-  async findAllPages(tenantId: string) {
+  async findAllPages(tenantId: string, status?: string) {
       this.logger.log(`${this.findAllPages.name} Service Called`);
+    const where: any = { tenantId };
+    if (status) {
+      where.status = status;
+    }
     return await this.pageRepository.find({
-      where: { tenantId },
+      where,
       order: { createdAt: 'DESC' },
     })
   }

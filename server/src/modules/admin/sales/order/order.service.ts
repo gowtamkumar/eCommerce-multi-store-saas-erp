@@ -125,7 +125,7 @@ export class OrderService {
           orderId: savedOrder.id,
           issueDate: new Date(),
           status: (savedOrder.paymentStatus === PaymentStatus.PAID) ? InvoiceStatus.PAID : InvoiceStatus.PENDING
-        } as any, tenantId);
+        } as any, tenantId, manager);
       } catch (invoiceError) {
         this.logger.error('Failed to auto-create invoice', invoiceError);
       }
@@ -291,9 +291,9 @@ export class OrderService {
 
       // Sync Invoice Status
       if (updateOrderDto.paymentStatus === PaymentStatus.PAID) {
-        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.PAID, tenantId);
+        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.PAID, tenantId, queryRunner.manager);
       } else if (updateOrderDto.status === OrderStatus.CANCELLED) {
-        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.CANCELLED, tenantId);
+        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.CANCELLED, tenantId, queryRunner.manager);
       }
 
       await queryRunner.commitTransaction()

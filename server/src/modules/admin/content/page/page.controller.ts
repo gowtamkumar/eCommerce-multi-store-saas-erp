@@ -1,14 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, Logger } from '@nestjs/common'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
+import { Body, Controller, Delete, Get, Logger, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
+import { RequestContext } from "src/common/decorators/request-context.decorator"
+import { RequestContextDto } from "src/common/dto/request-context.dto"
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto'
 import { PageService } from './page.service'
-import { RequestContext } from "src/common/decorators/request-context.decorator";
-import { RequestContextDto } from "src/common/dto/request-context.dto";
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+
 @Controller('pages')
 export class PageController {
   private readonly logger = new Logger(PageController.name);
@@ -16,6 +16,7 @@ export class PageController {
   constructor(private readonly pageService: PageService) { }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async createPage(@RequestContext() ctx: RequestContextDto, @Body() dto: CreatePageDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPage.`);
@@ -24,12 +25,11 @@ export class PageController {
   }
 
   @Get()
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
-  async findAllPages(@RequestContext() ctx: RequestContextDto) {
+  async findAllPages(@RequestContext() ctx: RequestContextDto, @Query('status') status?: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPages.`);
     return {
       success: true,
-      data: await this.pageService.findAllPages(ctx.tenantId),
+      data: await this.pageService.findAllPages(ctx.tenantId, status),
     }
   }
 
@@ -52,12 +52,15 @@ export class PageController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
   async findOnePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOnePage.`);
     return await this.pageService.findOnePage(id, ctx.tenantId)
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
   async updatePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() dto: UpdatePageDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePage.`);
@@ -65,6 +68,7 @@ export class PageController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.Admin, UserRole.StoreManager)
   async removePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePage.`);

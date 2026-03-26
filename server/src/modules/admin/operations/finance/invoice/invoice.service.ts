@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum';
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -18,9 +18,12 @@ export class InvoiceService {
         private orderRepository: Repository<OrderEntity>,
     ) { }
 
-    async createInvoice(createInvoiceDto: CreateInvoiceDto, tenantId: string) {
+    async createInvoice(createInvoiceDto: CreateInvoiceDto, tenantId: string, manager?: EntityManager) {
         this.logger.log(`${this.createInvoice.name} Service Called`);
-        const order = await this.orderRepository.findOne({
+        const orderRepo = manager ? manager.getRepository(OrderEntity) : this.orderRepository;
+        const invoiceRepo = manager ? manager.getRepository(InvoiceEntity) : this.invoiceRepository;
+
+        const order = await orderRepo.findOne({
             where: { id: createInvoiceDto.orderId, tenantId },
         });
 
@@ -38,13 +41,13 @@ export class InvoiceService {
             invoiceNumber = `INV-${year}${month}-${random}`;
             
             // Basic check for uniqueness (could be better with a dedicated counter)
-            const exists = await this.invoiceRepository.findOne({ where: { invoiceNumber, tenantId } });
+            const exists = await invoiceRepo.findOne({ where: { invoiceNumber, tenantId } });
             if (exists) {
                 invoiceNumber = `INV-${year}${month}-${random + 1}`;
             }
         }
 
-        const invoice = this.invoiceRepository.create({
+        const invoice = invoiceRepo.create({
             ...createInvoiceDto,
             invoiceNumber,
             tenantId,
@@ -53,7 +56,7 @@ export class InvoiceService {
             userId: order.userId,
         });
 
-        return await this.invoiceRepository.save(invoice);
+        return await invoiceRepo.save(invoice);
     }
 
     async findAllInvoices(tenantId: string) {
@@ -94,12 +97,13 @@ export class InvoiceService {
         return await this.invoiceRepository.remove(invoice);
     }
 
-    async updateInvoiceStatusByOrderId(orderId: string, status: InvoiceStatus, tenantId: string) {
+    async updateInvoiceStatusByOrderId(orderId: string, status: InvoiceStatus, tenantId: string, manager?: EntityManager) {
         this.logger.log(`${this.updateInvoiceStatusByOrderId.name} Service Called`);
-        const invoice = await this.invoiceRepository.findOne({ where: { orderId, tenantId } });
+        const invoiceRepo = manager ? manager.getRepository(InvoiceEntity) : this.invoiceRepository;
+        const invoice = await invoiceRepo.findOne({ where: { orderId, tenantId } });
         if (invoice) {
             invoice.status = status;
-            await this.invoiceRepository.save(invoice);
+            await invoiceRepo.save(invoice);
         }
     }
 }

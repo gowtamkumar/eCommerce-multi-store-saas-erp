@@ -9,7 +9,6 @@ import { ReviewService } from './review.service';
 import { RequestContext } from "@/common/decorators/request-context.decorator";
 import { RequestContextDto } from "@/common/dto/request-context.dto";
 
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('reviews')
 export class ReviewController {
     private readonly logger = new Logger(ReviewController.name);
@@ -17,6 +16,7 @@ export class ReviewController {
     constructor(private readonly reviewService: ReviewService) { }
 
     @Post()
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.User)
     async createReview(@RequestContext() ctx: RequestContextDto, @Body() dto: CreateReviewDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createReview.`);
@@ -24,6 +24,7 @@ export class ReviewController {
     }
 
     @Get()
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.Operator)
     async findAllReviews(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterReviewDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllReviews.`);
@@ -56,6 +57,7 @@ export class ReviewController {
     }
 
     @Put(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support)
     async updateReview(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() dto: UpdateReviewDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateReview.`);
@@ -63,6 +65,7 @@ export class ReviewController {
     }
 
     @Delete(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.Admin, UserRole.StoreManager)
     async removeReview(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeReview.`);
