@@ -1,14 +1,12 @@
-import { DataSource } from 'typeorm'
+import { DataSource, DataSourceOptions } from 'typeorm'
 import { config } from 'dotenv'
 import { join } from 'path'
 
-const envPath = process.env.NODE_ENV === 'production'
-    ? '../../.env.production'
-    : '../../.env.development'
+// Standardize env loading for CLI (two levels up from src/database)
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
+config({ path: join(process.cwd(), envFile) })
 
-config({ path: join(__dirname, envPath) })
-
-export const AppDataSource = new DataSource({
+export const dataSourceOptions: DataSourceOptions = {
     type: 'postgres',
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT || '5432'),
@@ -17,6 +15,8 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_DATABASE,
     entities: [join(__dirname, '../**/*.entity{.ts,.js}')],
     migrations: [join(__dirname, '/migrations/*{.ts,.js}')],
-    synchronize: false,
-    logging: true,
-})
+    synchronize: process.env.NODE_ENV === 'development',
+    logging: process.env.NODE_ENV === 'development',
+}
+
+export const AppDataSource = new DataSource(dataSourceOptions)
