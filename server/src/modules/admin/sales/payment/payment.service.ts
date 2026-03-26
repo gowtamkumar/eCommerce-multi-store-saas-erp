@@ -9,6 +9,7 @@ import { PaymentStatus } from '@/common/enums/payment-status.enum';
 import { OrderStatus } from '@/common/enums/order-status.enum';
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum';
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service';
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service';
 
 @Injectable()
 export class PaymentService {
@@ -21,6 +22,7 @@ export class PaymentService {
         private paymentRepository: Repository<PaymentEntity>,
         private settingsService: SettingsService,
         private invoiceService: InvoiceService,
+        private mailService: MailService,
     ) { }
 
     async initPayment(dto: InitPaymentDto, tenantId: string) {
@@ -142,6 +144,15 @@ export class PaymentService {
 
         // Sync Invoice Status
         await this.invoiceService.updateInvoiceStatusByOrderId(order.id, InvoiceStatus.PAID, order.tenantId);
+
+        // Notify Admin
+        const orderWithRelations = await this.orderRepository.findOne({
+            where: { id: order.id, tenantId: order.tenantId },
+            relations: ['items', 'items.product', 'items.variant'],
+        });
+        if (orderWithRelations) {
+            this.mailService.sendNewOrderNotification(orderWithRelations, order.tenantId);
+        }
 
         return { success: true };
     }

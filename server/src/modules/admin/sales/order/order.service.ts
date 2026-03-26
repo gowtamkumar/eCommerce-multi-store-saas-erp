@@ -27,6 +27,8 @@ import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pri
 import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
 import { OrderStrategyFactory } from '@/common/strategies/order/order-strategy.factory'
 import { OrderCreationContext, OrderServiceDependencies } from '@/common/strategies/order/order-strategy.interface'
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
+import { PaymentMethod } from '@/common/enums/payment-method.enum'
 
 @Injectable()
 export class OrderService {
@@ -43,6 +45,7 @@ export class OrderService {
     private readonly couponService: CouponService,
     private readonly invoiceService: InvoiceService,
     private readonly shippingAddressService: ShippingAddressService,
+    private readonly mailService: MailService,
   ) { }
 
   async createOrder(createOrderDto: CreateOrderDto, tenantId: string) {
@@ -128,6 +131,17 @@ export class OrderService {
         } as any, tenantId, manager);
       } catch (invoiceError) {
         this.logger.error('Failed to auto-create invoice', invoiceError);
+      }
+
+      // 10. Admin Notification (for manual payments)
+      if (savedOrder.paymentMethod === PaymentMethod.COD || savedOrder.paymentMethod === PaymentMethod.CASH) {
+        const orderWithRelations = await manager.findOne(OrderEntity, {
+          where: { id: savedOrder.id, tenantId },
+          relations: ['items', 'items.product', 'items.variant'],
+        });
+        if (orderWithRelations) {
+          this.mailService.sendNewOrderNotification(orderWithRelations, tenantId);
+        }
       }
 
       return { message: 'Order created successfully', success: true, order: savedOrder };

@@ -5,6 +5,7 @@ import * as nodemailer from 'nodemailer'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { Repository } from 'typeorm'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 
 @Injectable()
 export class MailService {
@@ -169,6 +170,95 @@ export class MailService {
       return url.toString().replace(/\/$/, '')
     } catch (e) {
       return appUrl
+    }
+  }
+
+  async sendNewOrderNotification(order: OrderEntity, tenantId: string) {
+    this.logger.log(`${this.sendNewOrderNotification.name} Service Called`);
+    const settings = await this.settingsRepo.findOne({ where: { tenantId } });
+    if (!settings || !settings.contactEmail) {
+      this.logger.warn(`No contact email configured for tenant ${tenantId}. Skipping notification.`);
+      return;
+    }
+
+    const { transporter, from } = await this.getTransporter(tenantId);
+    
+    // Prepare item list for email
+    const itemsHtml = order.items
+      ?.map(
+        (item) => {
+          const variantName = item.variant?.combination 
+            ? Object.values(item.variant.combination).join(' / ') 
+            : '';
+          const displayName = `${item.product?.name || 'Product'} ${variantName ? '(' + variantName + ')' : ''}`;
+          
+          return `
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid #edf2f7;">${displayName}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #edf2f7; text-align: center;">${item.quantity}</td>
+              <td style="padding: 8px; border-bottom: 1px solid #edf2f7; text-align: right;">${order.currency} ${Number(item.unitPrice).toFixed(2)}</td>
+            </tr>
+          `;
+        }
+      )
+      .join('') || 'No items';
+
+    const mailOptions = {
+      from: from,
+      to: settings.contactEmail,
+      subject: `New Order Received: #${order.id}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1a202c;">
+          <h1 style="color: #2d3748; border-bottom: 2px solid #edf2f7; padding-bottom: 12px;">New Order Placed</h1>
+          <p>A new order has been received on your store.</p>
+          
+          <div style="background-color: #f7fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #4a5568;">Order Details</h3>
+            <p><strong>Order ID:</strong> #${order.id}</p>
+            <p><strong>Status:</strong> ${order.status}</p>
+            <p><strong>Payment Status:</strong> ${order.paymentStatus}</p>
+            <p><strong>Total Amount:</strong> ${order.currency} ${order.totalAmount.toFixed(2)}</p>
+          </div>
+
+          <div style="margin-bottom: 24px;">
+            <h3 style="color: #4a5568;">Customer Information</h3>
+            <p><strong>Name:</strong> ${order.customerName}</p>
+            <p><strong>Email:</strong> ${order.customerEmail}</p>
+            <p><strong>Phone:</strong> ${order.customerPhone || 'N/A'}</p>
+            <p><strong>Address:</strong> ${order.address}</p>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+            <thead style="background-color: #f7fafc;">
+              <tr>
+                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #edf2f7; color: #4a5568;">Item</th>
+                <th style="padding: 12px 8px; text-align: center; border-bottom: 2px solid #edf2f7; color: #4a5568;">Qty</th>
+                <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #edf2f7; color: #4a5568;">Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2" style="padding: 12px 8px; text-align: right; font-weight: bold;">Subtotal:</td>
+                <td style="padding: 12px 8px; text-align: right; font-weight: bold;">${order.currency} ${order.totalAmount.toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <p style="color: #718096; font-size: 14px; margin-top: 40px; border-top: 1px solid #edf2f7; padding-top: 20px;">
+            This is an automated notification. Please log in to your admin dashboard to manage the order.
+          </p>
+        </div>
+      `,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      this.logger.log(`New order notification sent for order #${order.id}`);
+    } catch (error) {
+      this.logger.error(`Failed to send order notification for order #${order.id}`, error);
     }
   }
 }
