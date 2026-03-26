@@ -6,6 +6,7 @@ import FloatingCartWidget from "@/components/shared/FloatingCartWidget";
 import ScrollToTop from "@/components/shared/ScrollToTop";
 import { CartProvider } from "@/hooks/CartContext";
 import { useSettings } from "@/hooks/SettingsContext";
+import { usePathname } from "next/navigation";
 import Script from "next/script";
 
 export default function StorefrontLayout({
@@ -13,15 +14,31 @@ export default function StorefrontLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const { settings } = useSettings();
   const { googleAnalyticsId, facebookPixelId } = settings?.marketing || {};
+
+  const hideCartPaths = [
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email",
+    "/accept-invitation",
+  ];
+
+  const shouldHideCart = hideCartPaths.some((path) => pathname?.startsWith(path));
 
   return (
     <>
       <CartProvider>
         {/* <AnalyticsTracker /> */}
-        <CartDrawer />
-        <FloatingCartWidget />
+        {!shouldHideCart && (
+          <>
+            <CartDrawer />
+            <FloatingCartWidget />
+          </>
+        )}
         <ScrollToTop />
         {children}
       </CartProvider>

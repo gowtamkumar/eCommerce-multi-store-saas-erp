@@ -25,6 +25,8 @@ import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoi
 import { ShippingStrategyFactory } from '@/common/strategies/shipping/shipping-strategy.factory'
 import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pricing-strategy.factory'
 import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
+import { OrderStrategyFactory } from '@/common/strategies/order/order-strategy.factory'
+import { OrderCreationContext, OrderServiceDependencies } from '@/common/strategies/order/order-strategy.interface'
 
 @Injectable()
 export class OrderService {
@@ -45,236 +47,79 @@ export class OrderService {
 
   async createOrder(createOrderDto: CreateOrderDto, tenantId: string) {
     this.logger.log(`${this.createOrder.name} Service Called`);
-    const {
-      customerName,
-      customerEmail,
-      customerPhone,
-      address,
-      paymentMethod,
-      orderNotes,
-      currency,
-      currencyRate,
-      userId,
-      items: directItems,
-      appliedCouponCode,
-      shippingZone,
-      shippingAddressId,
-    } = createOrderDto
 
     return await this.dataSource.transaction(async (manager) => {
-      // Get settings for currency
-      const settings = await manager.findOne(SiteSettingsEntity, {
-        where: { tenantId },
-      })
+      // 1. Initial Data Fetching
+      const settings = await manager.findOne(SiteSettingsEntity, { where: { tenantId } });
+      const user = createOrderDto.userId
+        ? await manager.findOne(UserEntity, { where: { id: createOrderDto.userId, tenantId } })
+        : null;
 
-      // Find or create lead/user
-      const user = userId ? await manager.findOne(UserEntity, {
-        where: { id: userId, tenantId },
-      }) : null
-
-      // Resolve shipping address if provided, populate flat address field
-      let resolvedAddress = address;
-      if (shippingAddressId && userId) {
+      // 2. Address Resolution
+      let resolvedAddress = createOrderDto.address;
+      if (createOrderDto.shippingAddressId && createOrderDto.userId) {
         try {
-          const savedAddress = await this.shippingAddressService.findShippingAddress(shippingAddressId, userId, tenantId);
+          const savedAddress = await this.shippingAddressService.findShippingAddress(
+            createOrderDto.shippingAddressId,
+            createOrderDto.userId,
+            tenantId
+          );
           resolvedAddress = `${savedAddress.recipientName}, ${savedAddress.address}${savedAddress.city ? ', ' + savedAddress.city : ''}`;
-        } catch {
-          // Fallback to the provided flat address if lookup fails
+        } catch (err) {
+          // Fallback to provided address is already handled by default initialization
         }
       }
 
-      let cart: any = null
-      const processedItems: OrderItemEntity[] = []
-      let preCouponTotal = 0
+      // 3. Initialize Context & Strategy
+      const context: OrderCreationContext = { tenantId, manager, user, settings };
+      const deps: OrderServiceDependencies = {
+        cartService: this.cartService,
+        inventoryService: this.inventoryService,
+        couponService: this.couponService,
+      };
 
-      const itemsToProcess = directItems && directItems.length > 0
-        ? directItems
-        : (async () => {
-          cart = await this.cartService.createOrGetCart(user?.id, tenantId)
-          if (!cart.items || cart.items.length === 0) {
-            throw new BadRequestException('Order must contain at least one item')
-          }
-          return cart.items.map(item => ({
-            productId: item.product.id,
-            variantId: item.variant?.id,
-            quantity: item.quantity,
-            pricing: item.pricing
-          }))
-        })()
+      const strategy = OrderStrategyFactory.create(createOrderDto);
 
-      const resolvedItems = await (Array.isArray(itemsToProcess) ? Promise.resolve(itemsToProcess) : itemsToProcess)
+      // 4. Resolve Items
+      const processedItems = await strategy.resolveItems(createOrderDto, context, deps);
 
-      for (const itemDto of resolvedItems) {
-        const { productId, variantId, quantity } = itemDto
-
-        // Find product with pessimistic lock
-        const product = await manager.findOne(ProductEntity, {
-          where: { id: productId, tenantId },
-          lock: { mode: 'pessimistic_write' }
-        })
-
-        if (!product) {
-          throw new NotFoundException(`Product with ID ${productId} not found`)
-        }
-
-        let variant: ProductVariantEntity | null = null
-        if (variantId) {
-          variant = await manager.findOne(ProductVariantEntity, {
-            where: { id: variantId, productId: product.id, tenantId },
-            lock: { mode: 'pessimistic_write' }
-          })
-          if (!variant) {
-            throw new NotFoundException(
-              `Variant with ID ${variantId} not found for product ${product.name}`,
-            )
-          }
-        }
-
-        const currentStock = variant ? variant.stock : product.stock
-        if (currentStock < quantity) {
-          throw new BadRequestException(
-            `Insufficient stock for ${product.name}${variant ? ' (Variant)' : ''}. Only ${currentStock} items available.`,
-          )
-        }
-
-        // Deduct stock immediately
-        await this.inventoryService.createInventoryTransaction({
-          productId: product.id,
-          variantId: variant?.id,
-          quantity: quantity,
-          type: InventoryTransactionType.OUT,
-          referenceType: InventoryTransactionReferenceType.ORDER,
-          // referenceId will be updated later when order is saved
-        }, tenantId, manager)
-
-        const unitPrice = variant?.price ? Number(variant.price) : Number(product.price)
-
-        // Calculate discount respecting discountType
-        let discountAmount: number
-        if (itemDto.pricing?.discount !== undefined) {
-          discountAmount = Number(itemDto.pricing.discount)
-        } else {
-          const rawDiscount = Number(product.discountAmount || 0)
-          const discountType = product.discountType || DiscountType.FIXED
-          const orderDiscountStrategy = DiscountStrategyFactory.create(discountType as string);
-          discountAmount = orderDiscountStrategy.calculate(unitPrice, rawDiscount);
-        }
-
-        // Apply tax on discounted price
-        const taxRate = Number(product.taxRate || 0)
-        const pricingStrategy = ItemPricingStrategyFactory.create('standard')
-        const pricing = pricingStrategy.calculate(unitPrice, discountAmount, taxRate)
-        const itemTotal = pricing.finalPrice * quantity
-
-        const orderItem = new OrderItemEntity()
-        orderItem.product = product
-        orderItem.variant = variant
-        orderItem.quantity = quantity
-        orderItem.unitPrice = pricing.basePrice
-        orderItem.discountAmount = pricing.discountAmount
-        orderItem.taxAmount = pricing.taxAmount
-        orderItem.totalAmount = itemTotal
-        orderItem.tenantId = tenantId
-        orderItem.snapshot = {
-          productId: product.id,
-          productName: product.name,
-          productImage: product.images?.[0],
-          variantId: variant?.id,
-          variantSku: variant?.sku,
-          variantOptions: variant?.combination,
-          price: unitPrice,
-        }
-
-        processedItems.push(orderItem)
-        if (directItems && directItems.length > 0) {
-          preCouponTotal += itemTotal
-        }
-      }
-
-      if (!directItems || directItems.length === 0) {
-        preCouponTotal = cart.summary.subtotal - cart.summary.offer_discount;
-      }
-
-      // Create initial order
+      // 5. Initialize Order Entity
       const order = manager.create(OrderEntity, {
-        customerName,
-        customerEmail,
-        customerPhone,
+        customerName: createOrderDto.customerName,
+        customerEmail: createOrderDto.customerEmail,
+        customerPhone: createOrderDto.customerPhone,
         address: resolvedAddress,
-        shippingAddressId: shippingAddressId || undefined,
+        shippingAddressId: createOrderDto.shippingAddressId || undefined,
         items: processedItems,
         totalAmount: 0,
-        currency: currency || settings?.currency || 'USD',
-        currencyRate: currencyRate || 1,
-        paymentMethod,
+        currency: createOrderDto.currency || settings?.currency || 'USD',
+        currencyRate: createOrderDto.currencyRate || 1,
+        paymentMethod: createOrderDto.paymentMethod,
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
-        orderNotes,
+        orderNotes: createOrderDto.orderNotes,
         userId: user?.id,
         tenantId,
-        deliveryZone: shippingZone,
-        taxAmount: processedItems.reduce((acc, item) => acc + Number(item.taxAmount) * item.quantity, 0),
-      })
+        deliveryZone: createOrderDto.shippingZone,
+      });
 
-      let couponDiscountAmount = 0;
-      const finalCouponCode = appliedCouponCode || cart?.appliedCouponCode;
-      let isFreeShipping = false;
+      // 6. Calculate Totals (includes Coupons & Shipping)
+      await strategy.calculateTotals(order, processedItems, createOrderDto, context, deps);
 
-      if (finalCouponCode) {
-        try {
-          const validation = await this.couponService.validateCoupon(
-            finalCouponCode,
-            preCouponTotal,
-            tenantId,
-          );
-          if (validation.valid) {
-            couponDiscountAmount = validation.discountAmount;
-            order.appliedCoupon = finalCouponCode;
-            order.couponDiscountAmount = couponDiscountAmount;
+      // 7. Save Order
+      const savedOrder = await manager.save(order);
 
-            if (validation.coupon.discountType === DiscountType.FREE_SHIPPING || validation.coupon.discountType as any === 'free_shipping') {
-              isFreeShipping = true;
-            }
-
-            await this.couponService.incrementUsage(validation.coupon.id, tenantId);
-          }
-        } catch (error) {
-          this.logger.error('Invalid coupon at checkout', error);
-        }
-      }
-
-
-      const strategy = ShippingStrategyFactory.create(shippingZone);
-      let shippingFee = strategy.calculate(settings?.shippingConfig, preCouponTotal - couponDiscountAmount);
-
-      if (isFreeShipping) {
-        shippingFee = 0;
-      }
-
-      // POS/Admin manual override
-      if (typeof createOrderDto.shippingFee === 'number') {
-        shippingFee = createOrderDto.shippingFee;
-      }
-
-      order.shippingFee = shippingFee;
-      order.totalAmount = preCouponTotal - couponDiscountAmount + shippingFee;
-      const savedOrder = await manager.save(order)
-
-      // Update inventory transactions with order reference ID
+      // 8. Update Inventory Transactions with order reference ID
       await manager.update(InventoryTransactionEntity,
         { referenceType: InventoryTransactionReferenceType.ORDER, referenceId: null, tenantId },
         { referenceId: savedOrder.id }
-      )
-      // Note: The above update is a bit risky if multiple orders are being created for the same tenant.
-      // Better to track the transaction IDs and update them specifically.
-      // Actually, my createInventoryTransaction returns the transaction.
+      );
 
-      // Clear cart if user exists and this was a cart-based order
-      if (user && user.id && !directItems) {
-        await this.cartService.clearCart(user.id, tenantId)
+      // 9. Post-Order Processing
+      if (user?.id && !createOrderDto.items) {
+        await this.cartService.clearCart(user.id, tenantId);
       }
 
-      // Automatically create invoice record
       try {
         await this.invoiceService.createInvoice({
           orderId: savedOrder.id,
@@ -285,7 +130,7 @@ export class OrderService {
         this.logger.error('Failed to auto-create invoice', invoiceError);
       }
 
-      return { message: 'Order created successfully', success: true, order: savedOrder }
+      return { message: 'Order created successfully', success: true, order: savedOrder };
     });
   }
 
