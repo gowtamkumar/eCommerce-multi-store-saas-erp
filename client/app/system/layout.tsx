@@ -1,5 +1,6 @@
 'use client';
 import SystemSidebar from '@/features/system/components/SystemSidebar';
+import { UserRole } from '@/lib/enums/user-role.enum';
 import { Menu } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -17,7 +18,7 @@ export default function SuperAdminLayout({
 
 
   useEffect(() => {
-    if (status === 'unauthenticated' || (status === 'authenticated' && session?.user?.role !== 'SuperAdmin')) {
+    if (status === 'unauthenticated' || (status === 'authenticated' && session?.user?.role !== UserRole.SUPER_ADMIN)) {
       router.push('/login');
     }
   }, [status, session, router]);
@@ -30,7 +31,7 @@ export default function SuperAdminLayout({
     );
   }
 
-  if (!session || session.user.role !== 'SuperAdmin') {
+  if (!session || session.user.role !== UserRole.SUPER_ADMIN) {
     return null;
   }
 

@@ -27,7 +27,7 @@ export class TenantService {
     private readonly settingsService: SettingsService,
     private readonly mailService: MailService,
     private readonly subscriptionPlanService: SubscriptionPlanService,
-  ) {}
+  ) { }
 
   async createTenant(createTenantDto: CreateTenantDto) {
     this.logger.log(`${this.createTenant.name} Service Called`)
@@ -78,6 +78,9 @@ export class TenantService {
     })
 
     const savedUser = await this.userRepository.save(adminUser)
+
+    savedTenant.userId = savedUser.id
+    await this.tenantRepository.save(savedTenant)
 
     // Send verification email
     const mailRes = await this.mailService.sendVerificationEmail(

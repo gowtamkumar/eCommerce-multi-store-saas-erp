@@ -157,10 +157,10 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id;
         session.user.role = token.role;
-        session.user.phone = token.phone || "";
-        session.user.address = token.address || "";
-        session.user.image = token.image || "";
-        session.user.tenantId = token.tenantId || "";
+        session.user.phone = token.phone;
+        session.user.address = token.address;
+        session.user.image = token.image;
+        session.user.tenantId = token.tenantId;
         session.user.accessToken = token.accessToken;
         session.user.error = token.error;
       }

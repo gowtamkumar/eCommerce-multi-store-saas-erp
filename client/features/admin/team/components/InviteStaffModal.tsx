@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Mail, UserCog, Loader2 } from 'lucide-react';
+import { UserRole } from '@/lib/enums/user-role.enum';
 
 interface InviteStaffModalProps {
     onClose: () => void;
@@ -9,13 +10,16 @@ interface InviteStaffModalProps {
 }
 
 const roles = [
-    { value: 'Admin', label: 'Admin', description: 'Full access to all features.' },
-    { value: 'Operator', label: 'Operator', description: 'Can manage orders, products, and customers.' },
+    { value: UserRole.ADMIN, label: 'Admin', description: 'Full access to all features.' },
+    { value: UserRole.MARKETING, label: 'Marketing', description: 'Can manage marketing features.' },
+    { value: UserRole.STORE_MANAGER, label: 'Store Manager', description: 'Can manage store features.' },
+    { value: UserRole.OPERATOR, label: 'Operator', description: 'Can manage orders, products, and customers.' },
+    { value: UserRole.SUPPORT, label: 'Support', description: 'Can manage orders, products, and customers.' },
 ];
 
 export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModalProps) {
     const [email, setEmail] = useState('');
-    const [role, setRole] = useState<'Admin' | 'Operator'>('Operator');
+    const [role, setRole] = useState<UserRole>(UserRole.OPERATOR);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -101,12 +105,11 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
                                     key={r.value}
                                     type="button"
                                     id={`role-btn-${r.value.toLowerCase()}`}
-                                    onClick={() => setRole(r.value as 'Admin' | 'Operator')}
-                                    className={`p-3 rounded-xl border-2 text-left transition-all ${
-                                        role === r.value
-                                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/50'
-                                            : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300'
-                                    }`}
+                                    onClick={() => setRole(r.value as UserRole)}
+                                    className={`p-3 rounded-xl border-2 text-left transition-all ${role === r.value
+                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/50'
+                                        : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300'
+                                        }`}
                                 >
                                     <div className="font-semibold text-sm text-slate-900 dark:text-white">{r.label}</div>
                                     <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{r.description}</div>

@@ -296,8 +296,8 @@ export default function TeamList() {
                                     <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                                         <td className="px-5 py-4 text-slate-700 dark:text-slate-300 font-medium">{inv.email}</td>
                                         <td className="px-5 py-4">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${roleColors[inv.role] || roleColors['User']}`}>
-                                                {roleIcons[inv.role] || roleIcons['User']} {inv.role}
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${roleColors[inv.role] || roleColors[UserRole.USER]}`}>
+                                                {roleIcons[inv.role] || roleIcons[UserRole.USER]} {inv.role}
                                             </span>
                                         </td>
                                         <td className="px-5 py-4 text-xs text-slate-500 dark:text-slate-400">

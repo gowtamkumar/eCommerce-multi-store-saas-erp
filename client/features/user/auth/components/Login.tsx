@@ -26,17 +26,14 @@ export default function Login() {
                 redirect: false,
             });
 
-
             if (res?.error) {
                 setError(res.error);
             }
-
             // Fetch the session after successful login
             const session = await getSession();
-
             if (session?.user) {
                 const userRole = session.user.role;
-                toast.success(`Logged in as ${userRole || 'User'}`);
+                toast.success(`Logged in as ${userRole || UserRole.USER}`);
                 if (userRole === UserRole.SUPER_ADMIN) {
                     router.push('/system');
                 } else if ([UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING].includes(userRole)) {

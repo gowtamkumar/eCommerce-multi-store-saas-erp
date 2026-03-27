@@ -8,6 +8,8 @@ import { ChevronLeft, ChevronRight, Loader2, Search, Trash2, User as UserIcon } 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { Pagination, User } from '../type';
+import { UserRole } from '@/lib/enums/user-role.enum';
+import { UserStatus } from '@/lib/enums/user-status.enum';
 
 
 export default function Customer() {
@@ -147,7 +149,7 @@ export default function Customer() {
                                             {user.phone && <p className="text-xs text-slate-500 dark:text-slate-400">{user.phone}</p>}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.role === 'Admin'
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.role === UserRole.ADMIN
                                                 ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                                                 : user.role === 'lead'
                                                     ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
@@ -157,7 +159,7 @@ export default function Customer() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.status === 'Active'
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.status === UserStatus.ACTIVE
                                                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                                                 : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                                 }`}>
@@ -166,7 +168,7 @@ export default function Customer() {
                                         </td>
                                         <td className="px-6 py-4 text-slate-500 text-sm">{new Date(user.createdAt).toLocaleDateString()}</td>
                                         {
-                                            user.role !== 'admin' && (
+                                            user.role !== UserRole.ADMIN && (
                                                 <td className="px-6 py-4 text-right">
                                                     <button
                                                         disabled={loading}

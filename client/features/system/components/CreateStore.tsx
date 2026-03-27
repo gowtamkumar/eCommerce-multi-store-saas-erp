@@ -6,14 +6,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, Globe, Layers, Layout, Loader2, Lock, User } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { SubscriptionPlan } from '../type';
 
-interface SubscriptionPlan {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    features: string[];
-}
+
 
 export default function CreateStore() {
     const [step, setStep] = useState(1);
@@ -94,8 +89,6 @@ export default function CreateStore() {
             console.log("data res", data);
 
             if (data.success && data.subdomain) {
-                console.log("checking..");
-
                 // Successful onboarding
                 const protocol = window.location.protocol;
                 const hostname = window.location.hostname;

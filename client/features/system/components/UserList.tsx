@@ -1,5 +1,6 @@
 'use client';
 
+import { UserRole } from '@/lib/enums/user-role.enum';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, Shield, Store, User as UserIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -92,15 +93,15 @@ export default function UserList({ initialUsers }: UserListProps) {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          {user.role === 'SuperAdmin' ? (
+                          {user.role === UserRole.SUPER_ADMIN ? (
                             <Shield className="w-4 h-4 text-rose-500" />
-                          ) : user.role === 'admin' ? (
+                          ) : user.role === UserRole.ADMIN ? (
                             <Shield className="w-4 h-4 text-indigo-500" />
                           ) : (
                             <UserIcon className="w-4 h-4 text-slate-400" />
                           )}
-                          <span className={`text-xs font-bold uppercase ${user.role === 'SuperAdmin' ? 'text-rose-500' :
-                            user.role === 'admin' ? 'text-indigo-500' : 'text-slate-500'
+                          <span className={`text-xs font-bold uppercase ${user.role === UserRole.SUPER_ADMIN ? 'text-rose-500' :
+                            user.role === UserRole.ADMIN ? 'text-indigo-500' : 'text-slate-500'
                             }`}>
                             {user.role}
                           </span>
