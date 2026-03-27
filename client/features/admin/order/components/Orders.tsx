@@ -84,9 +84,9 @@ export default function Orders() {
     };
 
     const handleCreateCourierOrder = async (order: Order, courier: string) => {
-        if (courier === 'steadfast') {
+        if (courier === CourierType.STEADFAST) {
             await handleCreateSteadfastOrder(order, setCreatingOrder);
-        } else if (courier === 'pathao') {
+        } else if (courier === CourierType.PATHAO) {
             await handleCreatePathaoOrder(order, setCreatingPathaoOrder);
         }
     };
@@ -237,13 +237,13 @@ export default function Orders() {
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-1.5">
                                                         <span className="text-[10px] font-bold text-brand-600 uppercase tracking-wider">
-                                                            {['pathao', 'steadfast'].includes(order.courierStatus.toLowerCase())
+                                                            {[CourierType.PATHAO.toString(), CourierType.STEADFAST.toString()].includes(order.courierStatus.toLowerCase())
                                                                 ? order.courierStatus
                                                                 : 'DISPATCHED'}
                                                         </span>
                                                         {order.trackingId && (
                                                             <a
-                                                                href={order.courierStatus.toLowerCase() === 'pathao' ? 'https://tracking.pathao.com/' : 'https://steadfast.com.bd/tracking'}
+                                                                href={order.courierStatus.toLowerCase() === CourierType.PATHAO.toString() ? 'https://tracking.pathao.com/' : 'https://steadfast.com.bd/tracking'}
                                                                 target="_blank"
                                                                 className="text-slate-400 hover:text-brand-600"
                                                             >
@@ -318,10 +318,10 @@ export default function Orders() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 max-w-md w-full transform transition-all">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                            Create {pendingCourierOrder.courier === 'pathao' ? 'Pathao' : 'Steadfast'} Order?
+                            Create {pendingCourierOrder.courier === CourierType.PATHAO ? 'Pathao' : 'Steadfast'} Order?
                         </h3>
                         <p className="text-slate-600 dark:text-slate-400 mb-6">
-                            Are you sure you want to create a {pendingCourierOrder.courier === 'pathao' ? 'Pathao' : 'Steadfast'} courier order for order <span className="font-mono font-semibold">{pendingCourierOrder.order.id.slice(-6).toUpperCase()}</span>?
+                            Are you sure you want to create a {pendingCourierOrder.courier === CourierType.PATHAO ? 'Pathao' : 'Steadfast'} courier order for order <span className="font-mono font-semibold">{pendingCourierOrder.order.id.slice(-6).toUpperCase()}</span>?
                         </p>
                         <div className="flex gap-3 justify-end">
                             <button

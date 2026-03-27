@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { CourierType } from "@/lib/enums/courier-type.enum";
 import { ShippingZoneType } from "@/lib/enums/shipping-zone-type.enum";
 
 
@@ -105,9 +106,9 @@ export default function OrderDetailsPage({
         setShowCourierModal(false);
         setSelectedCourier("");
 
-        if (courier === 'steadfast') {
+        if (courier === CourierType.STEADFAST) {
             await handleCreateSteadfastOrder(order, setCreatingOrder);
-        } else if (courier === 'pathao') {
+        } else if (courier === CourierType.PATHAO) {
             await handleCreatePathaoOrder(order, setCreatingPathaoOrder);
         }
     };
@@ -457,8 +458,8 @@ export default function OrderDetailsPage({
                         className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer hover:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
                     >
                         <option value="">🚚 Create Courier Order</option>
-                        <option value="steadfast">📦 Steadfast</option>
-                        <option value="pathao">🚚 Pathao</option>
+                        <option value={CourierType.STEADFAST}>📦 Steadfast</option>
+                        <option value={CourierType.PATHAO}>🚚 Pathao</option>
                     </select>
                 </div>
             </div>

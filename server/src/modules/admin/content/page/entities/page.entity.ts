@@ -1,4 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity';
+import { PageStatus } from '@/common/enums/page-status.enum';
 import {
   Column,
   Entity,
@@ -9,6 +10,7 @@ import {
 
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
+import { PageSectionType } from '@/common/enums/page/page-sections-type.enum';
 @Entity('pages')
 @Index(['slug', 'tenantId'], { unique: true })
 export class PageEntity extends BaseEntity {
@@ -28,7 +30,7 @@ export class PageEntity extends BaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   sections: Array<{
     id: string;
-    type: 'section' | 'row' | 'column' | 'banner' | 'product-slider' | 'category-grid' | 'offer-banner' | 'review-slider' | 'text-block' | 'image-block' | 'button' | 'faq-section' | string;
+    type: PageSectionType;
     settings?: any;
     styles?: any;
     disabled?: boolean;
@@ -61,10 +63,10 @@ export class PageEntity extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: ['draft', 'published'],
-    default: 'published',
+    enum: PageStatus,
+    default: PageStatus.PUBLISHED,
   })
-  status: string;
+  status: PageStatus;
 
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string;

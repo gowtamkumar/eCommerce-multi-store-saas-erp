@@ -2,7 +2,7 @@ import { ShippingStrategy } from './shipping-strategy.interface';
 import { InsideCityShippingStrategy } from './inside-city-shipping.strategy';
 import { OutsideCityShippingStrategy } from './outside-city-shipping.strategy';
 import { FreeShippingStrategy } from './free-shipping.strategy';
-import { ShippingZoneType } from '@/common/enums/shipping-zone-type';
+import { ShippingZoneType } from '@/common/enums/shipping-zone-type.enum';
 import { DiscountType } from '@/common/enums/discount-type.enum';
 
 export class ShippingStrategyFactory {

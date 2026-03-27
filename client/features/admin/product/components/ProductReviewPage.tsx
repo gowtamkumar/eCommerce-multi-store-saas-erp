@@ -1,15 +1,12 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
+import { ReviewStatus } from '@/lib/enums/review-status.enum';
 import { fetchAPI } from '@/services/api';
 import { Product, Review } from '@/types/product';
 import { ArrowLeft, Calendar, Coins, Edit, Package, Tag } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
-
-
-
 
 
 export default function ProductReviewPage({ params }: { params: Promise<{ id: string }> }) {
@@ -48,7 +45,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
         fetchData();
     }, [id]);
 
-    const handleReviewAction = async (reviewId: string, action: 'approved' | 'rejected' | 'delete') => {
+    const handleReviewAction = async (reviewId: string, action: ReviewStatus | 'delete') => {
         try {
             if (action === 'delete') {
                 const res = await fetchAPI(`/reviews/${reviewId}`, { method: 'DELETE' });
@@ -397,8 +394,8 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                                             <div className="flex items-center gap-4 text-[10px] text-slate-400 uppercase font-bold tracking-wider">
                                                 <span>Submitted on {new Date(review.createdAt).toLocaleDateString()}</span>
                                                 <span>•</span>
-                                                <span className={`${review.status === 'approved' ? 'text-green-500' :
-                                                    review.status === 'rejected' ? 'text-red-500' : 'text-yellow-500'
+                                                <span className={`${review.status === ReviewStatus.APPROVED ? 'text-green-500' :
+                                                    review.status === ReviewStatus.REJECTED ? 'text-red-500' : 'text-yellow-500'
                                                     }`}>
                                                     Status: {review.status}
                                                 </span>
@@ -406,33 +403,33 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            {review.status === 'pending' && (
+                                            {review.status === ReviewStatus.PENDING && (
                                                 <>
                                                     <button
-                                                        onClick={() => handleReviewAction(review.id, 'approved')}
+                                                        onClick={() => handleReviewAction(review.id, ReviewStatus.APPROVED)}
                                                         className="px-3 py-1.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-xs font-bold hover:bg-green-200 transition-colors"
                                                     >
                                                         Approve
                                                     </button>
                                                     <button
-                                                        onClick={() => handleReviewAction(review.id, 'rejected')}
+                                                        onClick={() => handleReviewAction(review.id, ReviewStatus.REJECTED)}
                                                         className="px-3 py-1.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-lg text-xs font-bold hover:bg-red-200 transition-colors"
                                                     >
                                                         Reject
                                                     </button>
                                                 </>
                                             )}
-                                            {review.status === 'approved' && (
+                                            {review.status === ReviewStatus.APPROVED && (
                                                 <button
-                                                    onClick={() => handleReviewAction(review.id, 'rejected')}
+                                                    onClick={() => handleReviewAction(review.id, ReviewStatus.REJECTED)}
                                                     className="px-3 py-1.5 bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors"
                                                 >
                                                     Reject
                                                 </button>
                                             )}
-                                            {review.status === 'rejected' && (
+                                            {review.status === ReviewStatus.REJECTED && (
                                                 <button
-                                                    onClick={() => handleReviewAction(review.id, 'approved')}
+                                                    onClick={() => handleReviewAction(review.id, ReviewStatus.APPROVED)}
                                                     className="px-3 py-1.5 bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors"
                                                 >
                                                     Approve

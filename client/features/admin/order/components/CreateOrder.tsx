@@ -25,6 +25,7 @@ import toast from 'react-hot-toast';
 import { calculateShippingFee } from '@/lib/utils';
 import { ShippingZoneType } from '@/lib/enums/shipping-zone-type.enum';
 import { DiscountType } from '@/lib/enums/discount-type.enum';
+import { PaymentMethod } from '@/lib/enums/payment-method.enum';
 
 interface SelectedItem {
     product: Product;
@@ -244,7 +245,7 @@ export default function CreateOrder() {
                 customerPhone: String(phone),
                 address: shippingData.address,
                 orderNotes: shippingData.notes,
-                paymentMethod: 'cod',
+                paymentMethod: PaymentMethod.COD,
                 currency: selectedCurrency.code,
                 currencyRate: selectedCurrency.rate,
                 appliedCouponCode: appliedCouponCode || undefined,

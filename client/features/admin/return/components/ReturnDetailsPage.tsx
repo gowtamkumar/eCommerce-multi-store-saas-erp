@@ -253,7 +253,7 @@ export default function ReturnDetailsPage({
 
                 <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">Quick Actions:</p>
-                    {returnRequest.status === "pending" && (
+                    {returnRequest.status === ReturnStatus.PENDING && (
                         <>
                             <button
                                 onClick={() => handleStatusUpdate(ReturnStatus.APPROVED)}
@@ -263,7 +263,7 @@ export default function ReturnDetailsPage({
                                 <Check className="w-4 h-4" /> Approve & Restock
                             </button>
                             <button
-                                onClick={() => handleStatusUpdate("rejected")}
+                                onClick={() => handleStatusUpdate(ReturnStatus.REJECTED)}
                                 disabled={updating}
                                 className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-800 text-red-600 border border-red-100 dark:border-red-900/30 rounded-xl text-sm font-bold hover:bg-red-50 transition-all disabled:opacity-50"
                             >
@@ -479,8 +479,8 @@ export default function ReturnDetailsPage({
 
                             {/* Step 2: Current Status */}
                             <div className="relative pl-8">
-                                <div className={`absolute left-0 top-0 w-4 h-4 rounded-full border-4 border-white dark:border-slate-800 z-10 ${returnRequest.status === 'pending' ? 'bg-slate-200' : 'bg-brand-500 shadow-sm shadow-brand-200'}`} />
-                                <p className={`text-xs font-black uppercase tracking-tighter mb-0.5 ${returnRequest.status === 'pending' ? 'text-slate-400' : 'text-slate-900 dark:text-white'}`}>
+                                <div className={`absolute left-0 top-0 w-4 h-4 rounded-full border-4 border-white dark:border-slate-800 z-10 ${returnRequest.status === ReturnStatus.PENDING ? 'bg-slate-200' : 'bg-brand-500 shadow-sm shadow-brand-200'}`} />
+                                <p className={`text-xs font-black uppercase tracking-tighter mb-0.5 ${returnRequest.status === ReturnStatus.PENDING ? 'text-slate-400' : 'text-slate-900 dark:text-white'}`}>
                                     Status Update: {returnRequest.status}
                                 </p>
                                 {returnRequest.updatedAt !== returnRequest.createdAt ? (

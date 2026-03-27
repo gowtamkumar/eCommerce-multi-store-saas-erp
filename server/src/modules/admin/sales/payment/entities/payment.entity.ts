@@ -1,4 +1,6 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity';
+import { PaymentMethod } from '@/common/enums/payment-method.enum';
+import { PaymentStatus } from '@/common/enums/payment-status.enum';
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity';
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
 import {
@@ -36,11 +38,11 @@ export class PaymentEntity extends BaseEntity {
   @Column({ type: 'varchar', name: 'currency', length: 10, default: 'BDT' })
   currency: string;
 
-  @Column({ type: 'varchar', name: 'method', length: 50 })
-  method: string;
+  @Column({ type: 'enum', enum: PaymentMethod, name: 'method' })
+  method: PaymentMethod;
 
-  @Column({ type: 'varchar', name: 'status', length: 50 })
-  status: string;
+  @Column({ type: 'enum', enum: PaymentStatus, name: 'status', default: PaymentStatus.PENDING })
+  status: PaymentStatus;
 
   @Column({ type: 'jsonb', name: 'gateway_response', nullable: true })
   gatewayResponse: any;

@@ -1,5 +1,6 @@
 import { IsString, IsBoolean, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { PageStatus } from '@/common/enums/page-status.enum';
 
 export class CreatePageDto {
     @ApiProperty()
@@ -33,10 +34,10 @@ export class CreatePageDto {
     @IsOptional()
     typography?: any;
 
-    @ApiProperty({ required: false, default: 'active' })
-    @IsString()
+    @ApiProperty({ required: false, default: PageStatus.PUBLISHED, enum: PageStatus })
+    @IsEnum(PageStatus)
     @IsOptional()
-    status?: string;
+    status?: PageStatus;
 
     @ApiProperty({ required: false })
     @IsString()

@@ -271,8 +271,8 @@ export class OrderService {
             transactionId,
             amount: order.totalAmount,
             currency: order.currency,
-            method: order.paymentMethod || 'Manual',
-            status: 'SUCCESS',
+            method: order.paymentMethod || PaymentMethod.COD,
+            status: PaymentStatus.COMPLETED,
             gatewayResponse: { note: 'Manual update from admin dashboard' },
             tenantId,
           })

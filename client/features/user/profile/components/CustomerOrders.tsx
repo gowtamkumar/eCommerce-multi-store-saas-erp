@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import { Order, OrderItem } from "@/types/order";
 import ReturnModal from "@/features/admin/return/components/ReturnModal";
 import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
+import { ReturnStatus } from "@/lib/enums/return-status.enum";
 
 
 const CustomerOrders = () => {
@@ -198,7 +199,7 @@ const CustomerOrders = () => {
                                                         <span>Qty: {firstItem.quantity}</span>
                                                         {(() => {
                                                             const returnStatus = getReturnStatus(order, firstItem.product!.id, firstItem.variant?.id);
-                                                            if (returnStatus && (returnStatus === 'approved' || returnStatus === 'refunded')) {
+                                                            if (returnStatus && (returnStatus === ReturnStatus.APPROVED || returnStatus === ReturnStatus.REFUNDED)) {
                                                                 const returnedQty = order.returns?.find((req: any) => {
                                                                     const found = req.items.find((i: any) =>
                                                                         i.productId === firstItem.product!.id &&
@@ -365,9 +366,9 @@ const CustomerOrders = () => {
 
                                                     if (returnStatus) {
                                                         return (
-                                                            <span className={`text-xs px-2 py-1 rounded font-medium uppercase ${returnStatus === 'approved' ? 'bg-green-100 text-green-700' :
-                                                                returnStatus === 'rejected' ? 'bg-red-100 text-red-700' :
-                                                                    returnStatus === 'refunded' ? 'bg-blue-100 text-blue-700' :
+                                                            <span className={`text-xs px-2 py-1 rounded font-medium uppercase ${returnStatus === ReturnStatus.APPROVED ? 'bg-green-100 text-green-700' :
+                                                                returnStatus === ReturnStatus.REJECTED ? 'bg-red-100 text-red-700' :
+                                                                    returnStatus === ReturnStatus.REFUNDED ? 'bg-blue-100 text-blue-700' :
                                                                         'bg-yellow-100 text-yellow-700'
                                                                 }`}>
                                                                 Return: {returnStatus}
@@ -410,7 +411,7 @@ const CustomerOrders = () => {
                                 {(() => {
                                     // Calculate refunded amount
                                     const totalRefunded = (selectedOrder.returns || []).reduce((total: number, returnReq: any) => {
-                                        if (returnReq.status === 'approved' || returnReq.status === 'refunded') {
+                                        if (returnReq.status === ReturnStatus.APPROVED || returnReq.status === ReturnStatus.REFUNDED) {
                                             return total + returnReq.items.reduce((itemTotal: number, returnItem: any) => {
                                                 const orderItem = selectedOrder.items?.find((oi: any) =>
                                                     oi.productId === returnItem.productId &&

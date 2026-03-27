@@ -1,5 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { ShippingZoneType } from '@/common/enums/shipping-zone-type';
+import { ShippingZoneType } from '@/common/enums/shipping-zone-type.enum';
 import { Column, Entity } from 'typeorm';
 
 @Entity('shipping_addresses')

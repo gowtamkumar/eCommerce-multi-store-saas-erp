@@ -1,4 +1,4 @@
-import { ShippingZoneType } from '@/common/enums/shipping-zone-type';
+import { ShippingZoneType } from '@/common/enums/shipping-zone-type.enum';
 import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 
 export class CreateShippingAddressDto {

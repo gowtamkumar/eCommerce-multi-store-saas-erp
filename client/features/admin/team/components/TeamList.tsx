@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { UserRole } from '@/lib/enums/user-role.enum';
 import {
     Users,
     UserPlus,
@@ -16,37 +17,26 @@ import {
     ShieldCheck,
 } from 'lucide-react';
 import InviteStaffModal from './InviteStaffModal';
+import { TeamMember, Invitation } from '../type';
 
-interface TeamMember {
-    id: string;
-    name: string;
-    username: string;
-    email: string;
-    role: 'Admin' | 'Operator' | 'User';
-    status: 'active' | 'inactive';
-    image?: string;
-    createdAt: string;
-}
-
-interface Invitation {
-    id: string;
-    email: string;
-    role: string;
-    status: 'pending' | 'accepted' | 'expired';
-    createdAt: string;
-    expiresAt: string;
-}
-
-const roleIcons: Record<string, React.ReactElement> = {
-    Admin: <Crown className="w-3.5 h-3.5 text-amber-500" />,
-    Operator: <Settings className="w-3.5 h-3.5 text-blue-500" />,
-    User: <Users className="w-3.5 h-3.5 text-slate-400" />,
+const roleIcons: Record<UserRole, React.ReactElement> = {
+    [UserRole.ADMIN]: <Crown className="w-3.5 h-3.5 text-amber-500" />,
+    [UserRole.OPERATOR]: <Settings className="w-3.5 h-3.5 text-blue-500" />,
+    [UserRole.USER]: <Users className="w-3.5 h-3.5 text-slate-400" />,
+    [UserRole.SUPERADMIN]: <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />,
+    [UserRole.STOREMANAGER]: <Settings className="w-3.5 h-3.5 text-blue-500" />,
+    [UserRole.SUPPORT]: <Users className="w-3.5 h-3.5 text-slate-400" />,
+    [UserRole.MARKETING]: <Settings className="w-3.5 h-3.5 text-blue-500" />,
 };
 
-const roleColors: Record<string, string> = {
-    Admin: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
-    Operator: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
-    User: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+const roleColors: Record<UserRole, string> = {
+    [UserRole.ADMIN]: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+    [UserRole.OPERATOR]: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
+    [UserRole.USER]: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+    [UserRole.SUPERADMIN]: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400',
+    [UserRole.STOREMANAGER]: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
+    [UserRole.SUPPORT]: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+    [UserRole.MARKETING]: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
 };
 
 export default function TeamList() {
@@ -87,7 +77,7 @@ export default function TeamList() {
         }
     };
 
-    const handleRoleChange = async (memberId: string, role: string) => {
+    const handleRoleChange = async (memberId: string, role: UserRole) => {
         try {
             const { fetchAPI } = await import('@/services/api');
             await fetchAPI(`/users/team/members/${memberId}/role`, {
@@ -151,8 +141,8 @@ export default function TeamList() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
                     { label: 'Total Members', value: members.length, icon: <Users className="w-5 h-5 text-indigo-500" />, color: 'bg-indigo-50 dark:bg-indigo-950/30' },
-                    { label: 'Admins', value: members.filter(m => m.role === 'Admin').length, icon: <Crown className="w-5 h-5 text-amber-500" />, color: 'bg-amber-50 dark:bg-amber-950/30' },
-                    { label: 'Operators', value: members.filter(m => m.role === 'Operator').length, icon: <Settings className="w-5 h-5 text-blue-500" />, color: 'bg-blue-50 dark:bg-blue-950/30' },
+                    { label: 'Admins', value: members.filter(m => m.role === UserRole.ADMIN).length, icon: <Crown className="w-5 h-5 text-amber-500" />, color: 'bg-amber-50 dark:bg-amber-950/30' },
+                    { label: 'Operators', value: members.filter(m => m.role === UserRole.OPERATOR).length, icon: <Settings className="w-5 h-5 text-blue-500" />, color: 'bg-blue-50 dark:bg-blue-950/30' },
                     { label: 'Pending Invites', value: invitations.length, icon: <Clock className="w-5 h-5 text-orange-500" />, color: 'bg-orange-50 dark:bg-orange-950/30' },
                 ].map((stat) => (
                     <div key={stat.label} className={`${stat.color} rounded-2xl p-4 border border-slate-100 dark:border-slate-800`}>
@@ -254,7 +244,7 @@ export default function TeamList() {
                                                     <div className="absolute right-0 top-8 z-10 w-44 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
                                                         <div className="p-1">
                                                             <p className="text-xs text-slate-400 px-3 py-2 font-medium">Change Role</p>
-                                                            {['Admin', 'Operator', 'User'].map((r) => (
+                                                            {Object.values(UserRole).map((r) => (
                                                                 <button
                                                                     key={r}
                                                                     id={`change-role-${r.toLowerCase()}-${member.id}`}

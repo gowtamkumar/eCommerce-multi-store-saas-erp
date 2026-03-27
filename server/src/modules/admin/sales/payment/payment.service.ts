@@ -11,6 +11,7 @@ import { InvoiceStatus } from '@/common/enums/invoice-status.enum';
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service';
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service';
 import { PaymentStrategyFactory } from '@/common/strategies/payment/payment-strategy.factory';
+import { PaymentMethod } from '@/common/enums/payment-method.enum';
 
 @Injectable()
 export class PaymentService {
@@ -88,8 +89,8 @@ export class PaymentService {
             transactionId: tran_id,
             amount: order.totalAmount,
             currency: order.currency,
-            method: validation.methodName || 'Unknown',
-            status: 'SUCCESS',
+            method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
+            status: PaymentStatus.COMPLETED,
             gatewayResponse: validation.gatewayResponse,
             tenantId: order.tenantId,
         });
@@ -124,8 +125,8 @@ export class PaymentService {
             transactionId: tran_id,
             amount: order.totalAmount,
             currency: order.currency,
-            method: validation.methodName || 'Unknown',
-            status: 'FAILED',
+            method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
+            status: PaymentStatus.FAILED,
             gatewayResponse: validation.gatewayResponse,
             tenantId: order.tenantId,
         });
@@ -148,8 +149,8 @@ export class PaymentService {
             transactionId: tran_id,
             amount: order.totalAmount,
             currency: order.currency,
-            method: validation.methodName || 'Unknown',
-            status: 'CANCELLED',
+            method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
+            status: PaymentStatus.PENDING,
             gatewayResponse: validation.gatewayResponse,
             tenantId: order.tenantId,
         });
