@@ -23,6 +23,8 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { Product } from '@/types/product';
 import toast from 'react-hot-toast';
 import { calculateShippingFee } from '@/lib/utils';
+import { ShippingZoneType } from '@/lib/enums/shipping-zone-type';
+import { DiscountType } from '@/lib/enums/discount-type';
 
 interface SelectedItem {
     product: Product;
@@ -64,7 +66,7 @@ export default function CreateOrder() {
         address: '',
         notes: '',
     });
-    const [shippingZone, setShippingZone] = useState<"inside" | "outside">("inside");
+    const [shippingZone, setShippingZone] = useState<ShippingZoneType>(ShippingZoneType.INSIDE);
 
     // Fetch customers
     useEffect(() => {
@@ -123,18 +125,18 @@ export default function CreateOrder() {
             setSelectedItems(newItems);
         } else {
             const unitPrice = variant?.price ? Number(variant.price) : Number(product.price);
-            
+
             let discountAmount = 0;
             const rawDiscount = Number(product.discountAmount) || 0;
-            if ((product as any).discountType === 'PERCENTAGE' || (product as any).discountType === 'percentage') {
+            if ((product as any).discountType === DiscountType.PERCENTAGE) {
                 discountAmount = (unitPrice * rawDiscount) / 100;
             } else {
                 discountAmount = rawDiscount;
             }
-            
+
             const discountedPrice = unitPrice - discountAmount;
             const taxAmount = (discountedPrice * (Number(product.taxRate) || 0)) / 100;
-            
+
             const newItem: SelectedItem = {
                 product,
                 variant,
@@ -215,11 +217,11 @@ export default function CreateOrder() {
     const subtotal = selectedItems.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
     const totalProductDiscount = selectedItems.reduce((acc, item) => acc + (item.discountAmount * item.quantity), 0);
     const totalTax = selectedItems.reduce((acc, item) => acc + (item.taxAmount * item.quantity), 0);
-    
+
     // Shipping logic
     const calculatedShippingFee = calculateShippingFee(shippingZone, settings?.shippingConfig, subtotal - totalProductDiscount - couponDiscount);
     const finalShippingFee = isFreeShippingCoupon ? 0 : calculatedShippingFee;
-    
+
     const payable = subtotal - totalProductDiscount - couponDiscount + totalTax + finalShippingFee;
 
     const handleSubmit = async () => {
@@ -564,28 +566,28 @@ export default function CreateOrder() {
                                         </label>
                                         <div className="grid grid-cols-2 gap-4">
                                             <button
-                                                onClick={() => setShippingZone('inside')}
-                                                className={`p-4 rounded-2xl border-2 transition-all text-left ${shippingZone === 'inside'
+                                                onClick={() => setShippingZone(ShippingZoneType.INSIDE)}
+                                                className={`p-4 rounded-2xl border-2 transition-all text-left ${shippingZone === ShippingZoneType.INSIDE
                                                     ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20'
                                                     : 'border-slate-100 dark:border-slate-800 hover:border-brand-200'
                                                     }`}
                                             >
                                                 <div className="flex items-center justify-between mb-1">
-                                                    <span className={`text-sm font-bold ${shippingZone === 'inside' ? 'text-brand-600' : 'text-slate-900 dark:text-white'}`}>Inside City</span>
-                                                    {shippingZone === 'inside' && <Check className="w-4 h-4 text-brand-600" />}
+                                                    <span className={`text-sm font-bold ${shippingZone === ShippingZoneType.INSIDE ? 'text-brand-600' : 'text-slate-900 dark:text-white'}`}>Inside City</span>
+                                                    {shippingZone === ShippingZoneType.INSIDE && <Check className="w-4 h-4 text-brand-600" />}
                                                 </div>
                                                 <p className="text-xs text-slate-500">Fast delivery within current city</p>
                                             </button>
                                             <button
-                                                onClick={() => setShippingZone('outside')}
-                                                className={`p-4 rounded-2xl border-2 transition-all text-left ${shippingZone === 'outside'
+                                                onClick={() => setShippingZone(ShippingZoneType.OUTSIDE)}
+                                                className={`p-4 rounded-2xl border-2 transition-all text-left ${shippingZone === ShippingZoneType.OUTSIDE
                                                     ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20'
                                                     : 'border-slate-100 dark:border-slate-800 hover:border-brand-200'
                                                     }`}
                                             >
                                                 <div className="flex items-center justify-between mb-1">
-                                                    <span className={`text-sm font-bold ${shippingZone === 'outside' ? 'text-brand-600' : 'text-slate-900 dark:text-white'}`}>Outside City</span>
-                                                    {shippingZone === 'outside' && <Check className="w-4 h-4 text-brand-600" />}
+                                                    <span className={`text-sm font-bold ${shippingZone === ShippingZoneType.OUTSIDE ? 'text-brand-600' : 'text-slate-900 dark:text-white'}`}>Outside City</span>
+                                                    {shippingZone === ShippingZoneType.OUTSIDE && <Check className="w-4 h-4 text-brand-600" />}
                                                 </div>
                                                 <p className="text-xs text-slate-500">Standard delivery nationwide</p>
                                             </button>
@@ -729,12 +731,12 @@ export default function CreateOrder() {
                                     <span>-{formatPrice(couponDiscount)}</span>
                                 </div>
                             )}
-                             <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                            <div className="flex justify-between text-slate-600 dark:text-slate-400">
                                 <span>Estimated Tax</span>
                                 <span>{formatPrice(totalTax)}</span>
-                             </div>
-                             <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                                <span>Delivery Zone ({shippingZone === 'inside' ? 'Inside' : 'Outside'})</span>
+                            </div>
+                            <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                                <span>Delivery Zone ({shippingZone === ShippingZoneType.INSIDE ? 'Inside' : 'Outside'})</span>
                                 <span>{finalShippingFee > 0 ? formatPrice(finalShippingFee) : <span className="text-green-600 font-bold uppercase text-xs">Free</span>}</span>
                             </div>
                             <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">

@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import { twMerge } from 'tailwind-merge';
 import { fetchAPI } from '../services/api';
 import { OrderStatus } from './enums/order-status';
+import { ShippingZoneType } from './enums/shipping-zone-type';
+import { DiscountType } from './enums/discount-type';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,10 +16,10 @@ export function formatCurrency(amount: number, currencySymbol?: string): string 
   return `${symbol}${amount.toLocaleString()}`;
 }
 
-export function calculatePricing(price: number, discountAmount: number, discountType: 'percentage' | 'fixed' | string, taxRate: number) {
+export function calculatePricing(price: number, discountAmount: number, discountType: DiscountType | string, taxRate: number) {
   let discountedPrice = price;
   if (discountAmount > 0) {
-    if (discountType === 'percentage') {
+    if (discountType === DiscountType.PERCENTAGE) {
       discountedPrice = Math.max(0, price * (1 - discountAmount / 100));
     } else {
       discountedPrice = Math.max(0, price - discountAmount);
@@ -39,17 +41,17 @@ export function calculatePricing(price: number, discountAmount: number, discount
 }
 
 export function calculateShippingFee(
-  shippingZone: "inside" | "outside" | undefined,
+  shippingZone: ShippingZoneType,
   shippingConfig: any,
   payableSubtotal: number
 ): number {
   if (!shippingZone) return 0;
-  
+
   const insideFee = Number(shippingConfig?.insideCityFee ?? 60);
   const outsideFee = Number(shippingConfig?.outsideCityFee ?? 120);
   const threshold = Number(shippingConfig?.freeShippingThreshold ?? 5000);
 
-  const rawShippingFee = shippingZone === "inside" ? insideFee : outsideFee;
+  const rawShippingFee = shippingZone === ShippingZoneType.INSIDE ? insideFee : outsideFee;
   const isFreeShipping = threshold > 0 && payableSubtotal >= threshold;
 
   return isFreeShipping ? 0 : rawShippingFee;

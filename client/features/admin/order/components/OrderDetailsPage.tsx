@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { ShippingZoneType } from "@/lib/enums/shipping-zone-type";
 
 
 
@@ -763,7 +764,7 @@ export default function OrderDetailsPage({
                                             </p>
                                             {order.shippingAddress.zone && (
                                                 <p className="text-[10px] font-medium text-slate-400 capitalize mt-0.5">
-                                                    📍 {order.shippingAddress.zone === 'inside' ? 'Inside City' : 'Outside City'}
+                                                    📍 {order.shippingAddress.zone === ShippingZoneType.INSIDE ? 'Inside City' : 'Outside City'}
                                                 </p>
                                             )}
                                         </div>

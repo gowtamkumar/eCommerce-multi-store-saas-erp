@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import ProductVariants from './ProductVariants';
 import RichEditor from '@/components/shared/RichEditor';
 import { calculatePricing } from '@/lib/utils';
+import { DiscountType } from '@/lib/enums/discount-type';
 
 
 interface ProductFormProps {
@@ -358,21 +359,21 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                 onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
               >
-                <option value="percentage">Percentage (%)</option>
-                <option value="fixed">Fixed Amount ($)</option>
+                <option value={DiscountType.PERCENTAGE}>Percentage (%)</option>
+                <option value={DiscountType.FIXED}>Fixed Amount ($)</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Discount Value</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">
-                  {formData.discountType === 'percentage' ? '%' : '$'}
+                  {formData.discountType === DiscountType.PERCENTAGE ? '%' : '$'}
                 </span>
                 <input
                   type="number"
                   min="0"
-                  step={formData.discountType === 'percentage' ? '1' : '0.01'}
-                  max={formData.discountType === 'percentage' ? '100' : undefined}
+                  step={formData.discountType === DiscountType.PERCENTAGE ? '1' : '0.01'}
+                  max={formData.discountType === DiscountType.PERCENTAGE ? '100' : undefined}
                   value={formData.discountAmount}
                   onChange={(e) => setFormData({ ...formData, discountAmount: e.target.value })}
                   className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all font-mono"
@@ -402,7 +403,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
                       </div>
                       {discountAmount > 0 && (
                         <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                          <span>Discount ({formData.discountType === 'percentage' ? `${discountAmount}%` : `$${discountAmount}`}):</span>
+                          <span>Discount ({formData.discountType === DiscountType.PERCENTAGE ? `${discountAmount}%` : `$${discountAmount}`}):</span>
                           <span>-${(price - discountedPrice).toFixed(2)}</span>
                         </div>
                       )}

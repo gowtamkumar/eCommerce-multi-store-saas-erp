@@ -1,8 +1,5 @@
 "use client";
-
-import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
-import { Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { ReturnRequest } from "@/types/order";
@@ -13,8 +10,6 @@ import Link from "next/link";
 export default function ReturnsPage() {
     const [returns, setReturns] = useState<ReturnRequest[]>([]);
     const [loading, setLoading] = useState(true);
-    const { formatPrice } = useSettings();
-
     useEffect(() => {
         fetchReturns();
     }, []);

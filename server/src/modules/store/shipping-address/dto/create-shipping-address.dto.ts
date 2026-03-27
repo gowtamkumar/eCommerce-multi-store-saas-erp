@@ -1,4 +1,5 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
+import { ShippingZoneType } from '@/common/enums/shipping-zone-type';
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
 
 export class CreateShippingAddressDto {
     @IsString()
@@ -21,9 +22,9 @@ export class CreateShippingAddressDto {
     @IsOptional()
     city?: string;
 
-    @IsString()
+    @IsEnum(ShippingZoneType)
     @IsOptional()
-    zone?: string;
+    zone?: ShippingZoneType;
 
     @IsBoolean()
     @IsOptional()

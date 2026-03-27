@@ -26,7 +26,7 @@ export default function LandingCheckout({ settings, styles }: LandingCheckoutPro
   const [productLoading, setProductLoading] = useState(false);
   const [localProduct, setLocalProduct] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "sslcommerz">(PaymentMethod.COD as any);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.COD);
   const [step, setStep] = useState<"form" | "success">("form");
   const [lastOrder, setLastOrder] = useState<any>(null);
 

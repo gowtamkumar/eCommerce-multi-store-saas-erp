@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { ProductDetailsProps } from "../types";
 import { calculatePricing } from "@/lib/utils";
+import { PromotionType } from "@/lib/enums/promotion-type";
 
 
 const ProductDetails = ({ product }: ProductDetailsProps) => {
@@ -292,9 +293,9 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                         {promo.description && <p className="text-xs text-brand-700 dark:text-brand-300">{promo.description}</p>}
                       </div>
                       <div className="px-3 py-1 bg-brand-600 text-white text-xs font-black uppercase rounded-full">
-                        {promo.promotionType === 'percentage' && `${promo.value}% OFF`}
-                        {promo.promotionType === 'fixed' && `${promo.value} OFF`}
-                        {promo.promotionType === 'free_shipping' && `FREE SHIP`}
+                        {promo.promotionType === PromotionType.PERCENTAGE && `${promo.value}% OFF`}
+                        {promo.promotionType === PromotionType.FIXED && `${promo.value} OFF`}
+                        {promo.promotionType === PromotionType.FREE_SHIPPING && `FREE SHIP`}
                       </div>
                     </div>
                   ))}

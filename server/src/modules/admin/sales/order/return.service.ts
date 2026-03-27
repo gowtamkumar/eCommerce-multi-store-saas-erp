@@ -36,11 +36,6 @@ export class ReturnService {
             throw new NotFoundException('Order not found or does not belong to user');
         }
 
-        // Basic validation: Check if items are in the order
-        // In a real app, strict quantity checks against previously returned items would be needed
-        console.log('=== RETURN DEBUG ===');
-        console.log('Order items:', order.items.map(i => ({ productId: i.productId, variantId: i.variantId })));
-        console.log('Return items:', items);
 
         for (const returnItem of items) {
             const orderItem = order.items.find(
@@ -49,8 +44,6 @@ export class ReturnService {
                     (oi.variantId === returnItem.variantId ||
                         (!oi.variantId && !returnItem.variantId))
             );
-
-            console.log("returnItem", orderItem);
 
 
             if (!orderItem) {
@@ -75,14 +68,11 @@ export class ReturnService {
 
     async findAllReturns(tenantId: string) {
         this.logger.log(`${this.findAllReturns.name} Service Called`);
-        console.log('Fetching returns for tenant:', tenantId);
         const returns = await this.returnRepository.find({
             where: { tenantId },
             order: { createdAt: 'DESC' },
             relations: ['order', 'order.items', 'order.items.product', 'order.items.variant', 'user'],
         });
-
-        console.log('Found returns:', returns.length);
         return returns;
     }
 

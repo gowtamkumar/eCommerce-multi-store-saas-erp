@@ -4,7 +4,7 @@ import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { ReturnModalProps } from "../../../types";
+import { ReturnModalProps } from "@/features/admin/return/types";
 
 
 
@@ -33,9 +33,6 @@ export default function ReturnModal({ orderId, item, onClose, onSuccess }: Retur
           ],
         }),
       });
-
-      console.log("returns", res);
-
       if (res.success || res.id) { // res.id check as typeorm save returns entity
         toast.success("Return requested successfully!");
         onSuccess();

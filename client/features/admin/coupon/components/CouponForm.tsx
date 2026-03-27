@@ -1,6 +1,7 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
+import { DiscountType } from '@/lib/enums/discount-type';
 import { fetchAPI } from '@/services/api';
 import { motion } from 'framer-motion';
 import { Calendar, Percent, RefreshCw, X } from 'lucide-react';
@@ -181,12 +182,12 @@ export default function CouponForm({ coupon, onClose, onSuccess }: CouponFormPro
                                     value={formData.discountType}
                                     onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
                                 >
-                                    <option value="percentage">Percentage (%)</option>
-                                    <option value="fixed">Fixed Amount ({currency})</option>
-                                    <option value="free_shipping">Free Shipping</option>
+                                    <option value={DiscountType.PERCENTAGE}>Percentage (%)</option>
+                                    <option value={DiscountType.FIXED}>Fixed Amount ({currency})</option>
+                                    <option value={DiscountType.FREE_SHIPPING}>Free Shipping</option>
                                 </select>
                             </div>
-                            {formData.discountType !== 'free_shipping' && (
+                            {formData.discountType !== DiscountType.FREE_SHIPPING && (
                                 <div className="space-y-2">
                                     <label className="text-sm font-semibold text-slate-900 dark:text-white">Discount Value</label>
                                     <div className="relative">

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useCart } from '@/hooks/CartContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { PromotionType } from '@/lib/enums/promotion-type';
 
 interface Product {
     id: string;
@@ -24,7 +25,7 @@ interface Product {
     finalPrice: number;
     promotionId: string;
     promotionName: string;
-    promotionType: string;
+    promotionType: PromotionType;
 }
 
 interface Promotion {
@@ -32,7 +33,7 @@ interface Promotion {
     name: string;
     slug: string;
     description?: string;
-    promotionType: string;
+    promotionType: PromotionType;
     value?: number;
     targetType: string;
     minOrderValue?: number;
@@ -230,13 +231,13 @@ export default function PromotionDetails({ promotion, products }: PromotionDetai
                             </p>
 
                             <div className="flex flex-wrap gap-4">
-                                {promotion.promotionType === 'percentage' && promotion.value && (
+                                {promotion.promotionType === PromotionType.PERCENTAGE && promotion.value && (
                                     <div className="flex flex-col bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 min-w-[120px]">
                                         <span className="text-white/60 text-xs font-medium mb-1">Discount</span>
                                         <span className="text-2xl font-bold text-white uppercase">{promotion.value}% OFF</span>
                                     </div>
                                 )}
-                                {promotion.promotionType === 'fixed' && promotion.value && (
+                                {promotion.promotionType === PromotionType.FIXED && promotion.value && (
                                     <div className="flex flex-col bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 min-w-[120px]">
                                         <span className="text-white/60 text-xs font-medium mb-1">Flat Discount</span>
                                         <span className="text-2xl font-bold text-white">{promotion.value} OFF</span>

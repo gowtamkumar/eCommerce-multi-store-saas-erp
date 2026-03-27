@@ -1,4 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity';
+import { ShippingZoneType } from '@/common/enums/shipping-zone-type';
 import { Column, Entity } from 'typeorm';
 
 @Entity('shipping_addresses')
@@ -24,8 +25,8 @@ export class ShippingAddressEntity extends BaseEntity {
     @Column({ type: 'varchar', length: 100, nullable: true })
     city: string;
 
-    @Column({ type: 'varchar', length: 20, nullable: true })
-    zone: string; // 'inside' | 'outside'
+    @Column({ type: 'enum', enum: ShippingZoneType, nullable: true })
+    zone: ShippingZoneType;
 
     @Column({ type: 'boolean', name: 'is_default', default: false })
     isDefault: boolean;

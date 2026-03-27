@@ -31,6 +31,7 @@ import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
 import type { ShippingAddress } from "@/services/shippingAddress";
 import * as shippingAddressApi from "@/services/shippingAddress";
 import { MapPin, Plus } from "lucide-react";
+import { ShippingZoneType } from "@/lib/enums/shipping-zone-type";
 
 export default function Checkout() {
     const {
@@ -44,12 +45,12 @@ export default function Checkout() {
     const { data: session, status: sessionStatus } = useSession();
     const { downloadInvoice } = useDownloadInvoice();
     const [loading, setLoading] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<"cod" | "sslcommerz">(
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
         PaymentMethod.COD as any,
     );
     const [step, setStep] = useState<"form" | "success">("form");
     const [lastOrder, setLastOrder] = useState<any>(null);
-    const [shippingZone, setShippingZone] = useState<"inside" | "outside">("inside");
+    const [shippingZone, setShippingZone] = useState<ShippingZoneType>(ShippingZoneType.INSIDE);
 
     // Form state
     const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
@@ -62,7 +63,7 @@ export default function Checkout() {
         phone: '',
         address: '',
         city: '',
-        zone: 'inside' as 'inside' | 'outside',
+        zone: ShippingZoneType.INSIDE,
     });
     const [formData, setFormData] = useState({
         email: "",
@@ -86,7 +87,7 @@ export default function Checkout() {
                 if (addresses.length > 0) {
                     const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
                     setSelectedAddressId(defaultAddr.id);
-                    setShippingZone((defaultAddr.zone as any) || 'inside');
+                    setShippingZone((defaultAddr.zone as any) || ShippingZoneType.INSIDE);
                 } else {
                     setAddingNewAddress(true);
                 }
@@ -439,7 +440,7 @@ export default function Checkout() {
                                                             onChange={() => {
                                                                 setSelectedAddressId(addr.id);
                                                                 setAddingNewAddress(false);
-                                                                if (addr.zone) setShippingZone(addr.zone as any);
+                                                                if (addr.zone) setShippingZone(addr.zone as ShippingZoneType);
                                                             }}
                                                         />
                                                         <div>
@@ -539,11 +540,11 @@ export default function Checkout() {
                                             <div className="space-y-2">
                                                 <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Delivery Zone</label>
                                                 <div className="grid grid-cols-2 gap-3">
-                                                    {(['inside', 'outside'] as const).map(zone => (
+                                                    {[ShippingZoneType.INSIDE, ShippingZoneType.OUTSIDE].map(zone => (
                                                         <label key={zone} className={`cursor-pointer p-3 rounded-lg border-2 text-sm font-medium transition-all ${newAddressForm.zone === zone ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400' : 'border-slate-200 dark:border-slate-600 text-slate-600'
                                                             }`}>
                                                             <input type="radio" className="sr-only" checked={newAddressForm.zone === zone} onChange={() => { setNewAddressForm(p => ({ ...p, zone })); setShippingZone(zone); }} />
-                                                            {zone === 'inside' ? 'Inside City' : 'Outside City'}
+                                                            {zone === ShippingZoneType.INSIDE ? 'Inside City' : 'Outside City'}
                                                         </label>
                                                     ))}
                                                 </div>

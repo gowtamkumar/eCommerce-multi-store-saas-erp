@@ -110,11 +110,11 @@ export default function ReturnDetailsPage({
 
     const getStatusStyles = (status: string) => {
         switch (status.toLowerCase()) {
-            case "approved":
+            case ReturnStatus.APPROVED:
                 return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-            case "rejected":
+            case ReturnStatus.REJECTED:
                 return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-            case "refunded":
+            case ReturnStatus.REFUNDED:
                 return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
             default:
                 return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
@@ -256,7 +256,7 @@ export default function ReturnDetailsPage({
                     {returnRequest.status === "pending" && (
                         <>
                             <button
-                                onClick={() => handleStatusUpdate("approved")}
+                                onClick={() => handleStatusUpdate(ReturnStatus.APPROVED)}
                                 disabled={updating}
                                 className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 transition-all shadow-md shadow-green-200 dark:shadow-none hover:translate-y-[-1px] active:translate-y-[0px] disabled:opacity-50"
                             >
@@ -271,9 +271,9 @@ export default function ReturnDetailsPage({
                             </button>
                         </>
                     )}
-                    {returnRequest.status === "approved" && (
+                    {returnRequest.status === ReturnStatus.APPROVED && (
                         <button
-                            onClick={() => handleStatusUpdate("refunded")}
+                            onClick={() => handleStatusUpdate(ReturnStatus.REFUNDED)}
                             disabled={updating}
                             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-200 dark:shadow-none disabled:opacity-50"
                         >

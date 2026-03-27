@@ -11,6 +11,7 @@ import { InventoryTransactionType } from '@/common/enums/inventory-transaction-t
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum';
 import { OrderCreationContext, OrderServiceDependencies } from './order-strategy.interface';
 import { ShippingStrategyFactory } from '@/common/strategies/shipping/shipping-strategy.factory';
+import { ShippingZoneType } from '@/common/enums/shipping-zone-type';
 
 export abstract class BaseOrderStrategy {
   protected async processItem(
@@ -142,7 +143,7 @@ export abstract class BaseOrderStrategy {
     dto: CreateOrderDto,
     context: OrderCreationContext,
   ): Promise<number> {
-    const strategy = ShippingStrategyFactory.create(dto.shippingZone);
+    const strategy = ShippingStrategyFactory.create(dto.shippingZone as ShippingZoneType);
     let shippingFee = strategy.calculate(context.settings?.shippingConfig, totalAfterCoupon);
 
     if (isFreeShipping) {

@@ -17,7 +17,7 @@ export class DiscountStrategyFactory {
     if (strategyType === DiscountType.FREE_SHIPPING || strategyType === PromotionType.FREE_SHIPPING || strategyType === 'free_shipping') {
       return new FreeShippingDiscountStrategy()
     }
-    
+
     // For specific promo types like BOGO, we might just return 0 for now or implement a dedicated strategy
     if (strategyType === PromotionType.BOGO) {
       // Assuming BOGO isn't a direct monetary discount we calculate in the loop, or handle it via a new BogoStrategy

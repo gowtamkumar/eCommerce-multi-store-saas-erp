@@ -1,3 +1,4 @@
+import { ShippingZoneType } from '@/lib/enums/shipping-zone-type';
 import { fetchAPI } from './api';
 
 export interface ShippingAddress {
@@ -7,7 +8,7 @@ export interface ShippingAddress {
     phone: string;
     address: string;
     city?: string;
-    zone?: string;
+    zone?: ShippingZoneType;
     isDefault: boolean;
 }
 
@@ -17,7 +18,7 @@ export interface CreateShippingAddressPayload {
     address: string;
     label?: string;
     city?: string;
-    zone?: string;
+    zone?: ShippingZoneType;
     isDefault?: boolean;
 }
 

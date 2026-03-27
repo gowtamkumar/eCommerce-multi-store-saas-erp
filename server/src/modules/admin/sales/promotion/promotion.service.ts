@@ -283,8 +283,8 @@ export class PromotionService {
     private async getProductsForPromotion(promotion: PromotionEntity, tenantId: string) {
         const baseProductQuery = () =>
             this.productRepository.createQueryBuilder('product')
-                .leftJoinAndSelect('product.category', 'category')
-                .leftJoinAndSelect('product.brand', 'brand')
+                .leftJoin('product.category', 'category')
+                .leftJoin('product.brand', 'brand')
                 .where('product.tenantId = :tenantId', { tenantId })
                 .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
                 .andWhere('product.stock > 0')

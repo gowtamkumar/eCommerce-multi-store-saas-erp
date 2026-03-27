@@ -1,3 +1,5 @@
+import { ShippingZoneType } from "@/lib/enums/shipping-zone-type";
+
 export interface OrderItem {
   id: string;
   quantity: number;
@@ -34,7 +36,7 @@ export interface Order {
     phone: string;
     address: string;
     city?: string;
-    zone?: string;
+    zone?: ShippingZoneType;
     isDefault: boolean;
   };
   totalAmount: number;

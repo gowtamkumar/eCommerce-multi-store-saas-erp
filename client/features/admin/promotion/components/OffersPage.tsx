@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useCart } from '@/hooks/CartContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
+import { PromotionType } from '@/lib/enums/promotion-type';
 
 interface Product {
     id: string;
@@ -24,7 +25,7 @@ interface Product {
     finalPrice: number;
     promotionId: string;
     promotionName: string;
-    promotionType: string;
+    promotionType: PromotionType;
 }
 
 interface Promotion {
@@ -32,7 +33,7 @@ interface Promotion {
     name: string;
     slug: string;
     description?: string;
-    promotionType: string;
+    promotionType: PromotionType;
     value?: number;
     targetType: string;
     minOrderValue?: number;
@@ -157,13 +158,13 @@ function OfferProductCard({ product }: { product: Product }) {
                                         🏷️ -{discountPct}% OFF
                                     </span>
                                 )}
-                                <PromotionTypeBadge type={product.promotionType || 'entire_order'} />
+                                <PromotionTypeBadge type={product.promotionType} />
                             </>
                         )}
                     </div>
 
                     {/* Free Shipping Badge */}
-                    {product.promotionType === 'free_shipping' && (
+                    {product.promotionType === PromotionType.FREE_SHIPPING && (
                         <div className="absolute bottom-3 left-3 right-3 z-10">
                             <span className="w-full inline-block text-center px-2 py-1 bg-emerald-500 text-white text-[10px] font-bold rounded-lg shadow">
                                 🚚 FREE SHIPPING
@@ -255,19 +256,19 @@ function PromotionSection({ group }: { group: OfferGroup }) {
                             <p className="text-white/70 text-sm mt-1">{group.promotion.description}</p>
                         )}
                         <div className="flex flex-wrap gap-3 mt-3">
-                            {group.promotion.promotionType === 'percentage' && group.promotion.value && (
+                            {group.promotion.promotionType === PromotionType.PERCENTAGE && group.promotion.value && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
                                     <Percent className="w-4 h-4" />
                                     {group.promotion.value}% OFF
                                 </span>
                             )}
-                            {group.promotion.promotionType === 'fixed' && group.promotion.value && (
+                            {group.promotion.promotionType === PromotionType.FIXED && group.promotion.value && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
                                     <Tag className="w-4 h-4" />
                                     Flat Discount — {group.promotion.value} OFF
                                 </span>
                             )}
-                            {group.promotion.promotionType === 'free_shipping' && (
+                            {group.promotion.promotionType === PromotionType.FREE_SHIPPING && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
                                     🚚 Free Shipping
                                 </span>
@@ -361,7 +362,7 @@ export default function OffersPage({ offerGroups, promotions }: OffersPageProps)
             <div className={`${offersSettings.bannerFullWidth ? 'w-full' : 'container mx-auto px-4'}`}>
                 {/* Hero Banner */}
                 {offersSettings.bannerShow && (
-                    <div 
+                    <div
                         style={bannerStyle}
                         className={`relative overflow-hidden ${offersSettings.bannerFullWidth ? '' : 'rounded-3xl'} mb-12 flex flex-col items-center justify-center p-8 md:p-12 text-center ${!offersSettings.bannerBackgroundColor && !offersSettings.bannerImage ? 'bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900' : ''}`}
                     >
@@ -538,19 +539,19 @@ function PromotionSectionHeader({ group }: { group: OfferGroup }) {
                         <p className="text-white/70 text-sm mt-1">{group.promotion.description}</p>
                     )}
                     <div className="flex flex-wrap gap-3 mt-3">
-                        {group.promotion.promotionType === 'percentage' && group.promotion.value && (
+                        {group.promotion.promotionType === PromotionType.PERCENTAGE && group.promotion.value && (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
                                 <Percent className="w-4 h-4" />
                                 {group.promotion.value}% OFF
                             </span>
                         )}
-                        {group.promotion.promotionType === 'fixed' && group.promotion.value && (
+                        {group.promotion.promotionType === PromotionType.FIXED && group.promotion.value && (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
                                 <Tag className="w-4 h-4" />
                                 Flat Discount — {group.promotion.value} OFF
                             </span>
                         )}
-                        {group.promotion.promotionType === 'free_shipping' && (
+                        {group.promotion.promotionType === PromotionType.FREE_SHIPPING && (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
                                 🚚 Free Shipping
                             </span>
