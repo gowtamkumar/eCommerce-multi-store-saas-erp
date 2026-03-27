@@ -29,11 +29,11 @@ export default withAuth(
     // Admin pages - require admin role
     const staffRoles = [
       UserRole.ADMIN,
-      UserRole.STOREMANAGER,
+      UserRole.STORE_MANAGER,
       UserRole.OPERATOR,
       UserRole.SUPPORT,
       UserRole.MARKETING,
-      UserRole.SUPERADMIN,
+      UserRole.SUPER_ADMIN,
     ];
     if (isAdminRoute && !staffRoles.includes(token?.role as UserRole)) {
       return NextResponse.redirect(new URL("/login", req.url));
@@ -53,7 +53,7 @@ export default withAuth(
       req.nextUrl.pathname.startsWith(route)
     );
 
-    if (isAdminOnlyRoute && ![UserRole.ADMIN, UserRole.SUPERADMIN].includes(token?.role as UserRole)) {
+    if (isAdminOnlyRoute && ![UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(token?.role as UserRole)) {
       return NextResponse.json(
         { error: "Forbidden. Admin access required." },
         { status: 403 }

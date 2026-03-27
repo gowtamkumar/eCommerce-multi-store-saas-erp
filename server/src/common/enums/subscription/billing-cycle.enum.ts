@@ -1,4 +1,4 @@
 export enum SubscriptionBillingCycle {
-    Monthly = 'MONTHLY',
-    Yearly = 'YEARLY',
+    MONTHLY = 'monthly',
+    YEARLY = 'yearly',
 }

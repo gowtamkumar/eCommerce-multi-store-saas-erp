@@ -16,7 +16,7 @@ export class SubscriberController {
     }
 
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPPORT, UserRole.OPERATOR)
     @Get()
     findAllSubscribers() {
         return this.subscriberService.findAllSubscribers();

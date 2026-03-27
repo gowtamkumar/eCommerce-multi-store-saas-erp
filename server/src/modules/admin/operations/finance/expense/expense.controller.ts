@@ -13,31 +13,31 @@ export class ExpenseController {
     constructor(private readonly expenseService: ExpenseService) { }
 
     @Post()
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     createExpense(@Body() createExpenseDto: CreateExpenseDto, @Request() req: any) {
         return this.expenseService.createExpense(createExpenseDto, req.user.tenantId);
     }
 
     @Get()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR)
     findAllExpenses(@Request() req: any) {
         return this.expenseService.findAllExpenses(req.user.tenantId);
     }
 
     @Get(':id')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR)
     findOneExpense(@Param('id') id: string, @Request() req: any) {
         return this.expenseService.findOneExpense(id, req.user.tenantId);
     }
 
     @Patch(':id')
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     updateExpense(@Param('id') id: string, @Body() updateExpenseDto: UpdateExpenseDto, @Request() req: any) {
         return this.expenseService.updateExpense(id, updateExpenseDto, req.user.tenantId);
     }
 
     @Delete(':id')
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     removeExpense(@Param('id') id: string, @Request() req: any) {
         return this.expenseService.removeExpense(id, req.user.tenantId);
     }

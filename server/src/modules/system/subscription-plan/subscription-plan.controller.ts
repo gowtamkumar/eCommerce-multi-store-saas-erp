@@ -9,7 +9,7 @@ import { SubscriptionPlanService } from './subscription-plan.service'
 
 @Controller('super-admin/plans')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.SuperAdmin)
+@Roles(UserRole.SUPER_ADMIN)
 export class SubscriptionPlanController {
   constructor(private readonly planService: SubscriptionPlanService) { }
 

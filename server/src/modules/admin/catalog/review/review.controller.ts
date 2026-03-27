@@ -17,7 +17,7 @@ export class ReviewController {
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.User)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.MARKETING, UserRole.USER)
     async createReview(@RequestContext() ctx: RequestContextDto, @Body() dto: CreateReviewDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createReview.`);
         return await this.reviewService.createReview(dto, ctx.tenantId);
@@ -25,7 +25,7 @@ export class ReviewController {
 
     @Get()
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.MARKETING, UserRole.OPERATOR)
     async findAllReviews(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterReviewDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllReviews.`);
         const { reviews, total } = await this.reviewService.findAllReviews(filterDto, ctx.tenantId);
@@ -58,7 +58,7 @@ export class ReviewController {
 
     @Put(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
     async updateReview(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() dto: UpdateReviewDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateReview.`);
         return await this.reviewService.updateReview(id, dto, ctx.tenantId);
@@ -66,7 +66,7 @@ export class ReviewController {
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     async removeReview(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeReview.`);
         return await this.reviewService.removeReview(id, ctx.tenantId);

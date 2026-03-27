@@ -33,7 +33,7 @@ export class UserController {
 
   @Get('/')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async getUsers(@RequestContext() ctx: RequestContextDto, @Query() filterUserDto: FilterUserDto) {
     this.logger.log(`${this.getUsers.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username}" retieving users.`)
@@ -66,7 +66,7 @@ export class UserController {
   // ─── Team Management Endpoints ───────────────────────────────────────────────
 
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Get('/team')
   async getTeamMembers(@RequestContext() ctx: RequestContextDto) {
     this.logger.log(`${this.getTeamMembers.name} Controller Called`)
@@ -75,7 +75,7 @@ export class UserController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Post('/team/invite')
   async inviteStaff(@RequestContext() ctx: RequestContextDto, @Body() dto: InviteStaffDto) {
     this.logger.log(`${this.inviteStaff.name} Controller Called`)
@@ -84,7 +84,7 @@ export class UserController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Get('/team/invitations')
   async getInvitations(@RequestContext() ctx: RequestContextDto) {
     this.logger.log(`${this.getInvitations.name} Controller Called`)
@@ -93,7 +93,7 @@ export class UserController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Delete('/team/invitations/:invitationId')
   async revokeInvitation(
     @RequestContext() ctx: RequestContextDto,
@@ -105,7 +105,7 @@ export class UserController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Patch('/team/members/:memberId/role')
   async updateMemberRole(
     @RequestContext() ctx: RequestContextDto,
@@ -118,7 +118,7 @@ export class UserController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Delete('/team/members/:memberId')
   async removeTeamMember(
     @RequestContext() ctx: RequestContextDto,
@@ -140,7 +140,7 @@ export class UserController {
 
   @Get('/:id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async getUser(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string) {
     this.logger.log(`${this.getUser.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getUser.`);
@@ -156,7 +156,7 @@ export class UserController {
 
   @Post('/')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async createUser(@Body() createUserDto: CreateUserDto, @RequestContext() ctx: RequestContextDto) {
     this.logger.log(`${this.createUser.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createUser.`);
@@ -208,7 +208,7 @@ export class UserController {
 
   @Patch('/:id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async updateUser(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: UpdateUserDto) {
     this.logger.log(`${this.updateUser.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateUser.`);
@@ -224,7 +224,7 @@ export class UserController {
 
   @Patch('/update-password/:id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async updatePassword(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) userId: string,
@@ -244,7 +244,7 @@ export class UserController {
 
   @Delete('/:id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async deleteUser(@Param('id', ParseUUIDPipe) userId: string) {
     this.logger.log(`${this.deleteUser.name} Controller Called`)
     const user = await this.userService.deleteUser(userId)

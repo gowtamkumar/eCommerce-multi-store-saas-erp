@@ -32,7 +32,7 @@ export class AdminMediaController {
   constructor(private readonly filesService: FilesService) { }
 
   @Get()
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPPORT)
   async findAllFiles(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterFileDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllFiles.`);
     const files = await this.filesService.getFiles(filterDto, ctx.tenantId)
@@ -44,7 +44,7 @@ export class AdminMediaController {
   }
 
   @Post()
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -83,7 +83,7 @@ export class AdminMediaController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async removeFile(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFile.`);
     await this.filesService.deleteFile(id, ctx.tenantId)

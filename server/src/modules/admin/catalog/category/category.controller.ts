@@ -17,7 +17,7 @@ export class CategoryController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async createCategory(@RequestContext() ctx: RequestContextDto, @Body() createCategoryDto: CreateCategoryDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createCategory.`);
     return await this.categoryService.createCategory(createCategoryDto, ctx.tenantId)
@@ -37,7 +37,7 @@ export class CategoryController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async updateCategory(
     @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto
@@ -48,7 +48,7 @@ export class CategoryController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeCategory(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCategory.`);
     return await this.categoryService.removeCategory(id, ctx.tenantId)

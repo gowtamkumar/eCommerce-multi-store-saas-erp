@@ -26,7 +26,7 @@ export class ProductController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async create(@RequestContext() ctx: RequestContextDto, @Body() createProductDto: CreateProductDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called create.`);
     return await this.productService.createProduct(createProductDto, ctx.tenantId)
@@ -82,7 +82,7 @@ export class ProductController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async updateProduct(
     @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto
@@ -93,7 +93,7 @@ export class ProductController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeProduct.`);
     return await this.productService.removeProduct(id, ctx.tenantId)

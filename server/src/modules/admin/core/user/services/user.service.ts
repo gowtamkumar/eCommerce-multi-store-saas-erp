@@ -250,10 +250,10 @@ export class UserService {
     this.logger.log(`${this.userOverview.name} Service Called`);
     const totalUsers = await this.userRepo.count()
     const activeUsers = await this.userRepo.count({
-      where: { status: UserStatus.Active },
+      where: { status: UserStatus.ACTIVE },
     })
     const inactiveUsers = await this.userRepo.count({
-      where: { status: UserStatus.Inactive },
+      where: { status: UserStatus.INACTIVE },
     })
     return {
       totalUsers,

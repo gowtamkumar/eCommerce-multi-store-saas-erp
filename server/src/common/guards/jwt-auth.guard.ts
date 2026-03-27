@@ -4,7 +4,7 @@ import { JsonWebTokenError } from 'jsonwebtoken'
 import { AuthStrategy } from '@/common/enums/auth/auth-strategy.enum'
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard(AuthStrategy.JwtAuth) {
+export class JwtAuthGuard extends AuthGuard(AuthStrategy.JWT_AUTH) {
   canActivate(context: ExecutionContext) {
     return super.canActivate(context)
   }

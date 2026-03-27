@@ -25,7 +25,7 @@ export class ReturnController {
     constructor(private readonly returnService: ReturnService) { }
 
     @Post()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator, UserRole.User)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
     createReturnRequest(
         @RequestContext() ctx: RequestContextDto, @Body() dto: CreateReturnDto,
     ) {
@@ -34,28 +34,28 @@ export class ReturnController {
     }
 
     @Get('my-returns')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.Operator, UserRole.User)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.MARKETING, UserRole.OPERATOR, UserRole.USER)
     findMyReturns(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findMyReturns.`);
         return this.returnService.findByUser(ctx.userId, ctx.tenantId);
     }
 
     @Get()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
     findAllReturns(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllReturns.`);
         return this.returnService.findAllReturns(ctx.tenantId);
     }
 
     @Get(':id')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
     findReturnById(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findReturnById.`);
         return this.returnService.findOneReturn(id, ctx.tenantId);
     }
 
     @Patch(':id/status')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
     updateStatus(
         @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
         @Body('status') status: ReturnStatus,

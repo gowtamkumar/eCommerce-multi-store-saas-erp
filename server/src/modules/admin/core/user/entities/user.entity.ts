@@ -48,11 +48,11 @@ export class UserEntity extends BaseEntity {
   @Column({
     type: 'enum',
     enum: UserRole,
-    default: UserRole.User,
+    default: UserRole.USER,
   })
   role: UserRole
 
-  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.Active })
+  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status: UserStatus
 
   @Column({ nullable: true, name: 'refresh_token' })

@@ -50,7 +50,7 @@ export class TenantEntity extends BaseEntity {
     name: 'subscription_billing_cycle',
     type: 'enum',
     enum: SubscriptionBillingCycle,
-    default: SubscriptionBillingCycle.Monthly,
+    default: SubscriptionBillingCycle.MONTHLY,
   })
   subscriptionBillingCycle: SubscriptionBillingCycle
 
@@ -58,7 +58,7 @@ export class TenantEntity extends BaseEntity {
     name: 'subscription_status',
     type: 'enum',
     enum: SubscriptionStatus,
-    default: SubscriptionStatus.Active,
+    default: SubscriptionStatus.ACTIVE,
   })
   subscriptionStatus: SubscriptionStatus
 

@@ -17,7 +17,7 @@ export class PageController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async createPage(@RequestContext() ctx: RequestContextDto, @Body() dto: CreatePageDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPage.`);
     const page = await this.pageService.createPage(dto, ctx.tenantId);
@@ -53,7 +53,7 @@ export class PageController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPPORT, UserRole.OPERATOR)
   async findOnePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOnePage.`);
     return await this.pageService.findOnePage(id, ctx.tenantId)
@@ -61,7 +61,7 @@ export class PageController {
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async updatePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() dto: UpdatePageDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePage.`);
     return await this.pageService.updatePage(id, dto, ctx.tenantId)
@@ -69,7 +69,7 @@ export class PageController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePage.`);
     return await this.pageService.removePage(id, ctx.tenantId)

@@ -23,8 +23,8 @@ const roleIcons: Record<UserRole, React.ReactElement> = {
     [UserRole.ADMIN]: <Crown className="w-3.5 h-3.5 text-amber-500" />,
     [UserRole.OPERATOR]: <Settings className="w-3.5 h-3.5 text-blue-500" />,
     [UserRole.USER]: <Users className="w-3.5 h-3.5 text-slate-400" />,
-    [UserRole.SUPERADMIN]: <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />,
-    [UserRole.STOREMANAGER]: <Settings className="w-3.5 h-3.5 text-blue-500" />,
+    [UserRole.SUPER_ADMIN]: <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />,
+    [UserRole.STORE_MANAGER]: <Settings className="w-3.5 h-3.5 text-blue-500" />,
     [UserRole.SUPPORT]: <Users className="w-3.5 h-3.5 text-slate-400" />,
     [UserRole.MARKETING]: <Settings className="w-3.5 h-3.5 text-blue-500" />,
 };
@@ -33,8 +33,8 @@ const roleColors: Record<UserRole, string> = {
     [UserRole.ADMIN]: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
     [UserRole.OPERATOR]: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
     [UserRole.USER]: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
-    [UserRole.SUPERADMIN]: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400',
-    [UserRole.STOREMANAGER]: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
+    [UserRole.SUPER_ADMIN]: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400',
+    [UserRole.STORE_MANAGER]: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
     [UserRole.SUPPORT]: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
     [UserRole.MARKETING]: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
 };

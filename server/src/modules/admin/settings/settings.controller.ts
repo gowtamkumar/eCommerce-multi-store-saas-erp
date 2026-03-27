@@ -22,7 +22,7 @@ export class SettingsController {
 
   @Put()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.Admin, UserRole.StoreManager)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async updateSettings(@RequestContext() ctx: RequestContextDto, @Body() dto: UpdateSiteSettingsDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateSettings.`);
     return await this.settingsService.updateSettings(ctx.tenantId, dto)

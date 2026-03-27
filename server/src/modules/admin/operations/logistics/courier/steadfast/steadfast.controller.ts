@@ -18,7 +18,7 @@ export class SteadfastController {
   constructor(private readonly steadfastService: SteadfastService) { }
 
   @Post('create-order')
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   @ApiOperation({ summary: 'Create a Steadfast courier order' })
   async createSteadfastOrder(@RequestContext() ctx: RequestContextDto, @Body() createOrderDto: CreateSteadfastOrderDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createSteadfastOrder.`);

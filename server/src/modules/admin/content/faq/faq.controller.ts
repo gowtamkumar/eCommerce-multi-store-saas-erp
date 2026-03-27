@@ -17,7 +17,7 @@ export class FaqController {
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
     async createFaq(@RequestContext() ctx: RequestContextDto, @Body() dto: CreateFaqDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createFaq.`);
         const data = await this.faqService.createFaq(dto, ctx.tenantId);
@@ -45,7 +45,7 @@ export class FaqController {
 
     @Put(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
     async updateFaq(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() dto: UpdateFaqDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateFaq.`);
         const data = await this.faqService.updateFaq(id, dto, ctx.tenantId);
@@ -54,7 +54,7 @@ export class FaqController {
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     async removeFaq(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFaq.`);
         return await this.faqService.removeFaq(id, ctx.tenantId);

@@ -37,9 +37,9 @@ export default function Login() {
             if (session?.user) {
                 const userRole = session.user.role;
                 toast.success(`Logged in as ${userRole || 'User'}`);
-                if (userRole === UserRole.SUPERADMIN) {
+                if (userRole === UserRole.SUPER_ADMIN) {
                     router.push('/system');
-                } else if ([UserRole.ADMIN, UserRole.STOREMANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING].includes(userRole)) {
+                } else if ([UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING].includes(userRole)) {
                     router.push('/admin');
                 } else {
                     router.push('/');

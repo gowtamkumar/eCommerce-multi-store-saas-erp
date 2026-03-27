@@ -13,7 +13,7 @@ export class StaffInvitationEntity extends BaseEntity {
   @Column()
   email: string;
 
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.Operator })
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.OPERATOR })
   role: UserRole;
 
   @Column({ name: 'tenant_id', type: 'uuid' })

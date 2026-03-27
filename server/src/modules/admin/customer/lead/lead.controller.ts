@@ -17,14 +17,14 @@ export class LeadController {
     constructor(private readonly leadService: LeadService) { }
 
     @Post()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator, UserRole.User)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
     async createLead(@RequestContext() ctx: RequestContextDto, @Body() dto: CreateLeadDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createLead.`);
         return await this.leadService.createLead(dto, ctx.tenantId);
     }
 
     @Get()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPPORT, UserRole.OPERATOR)
     async findAllLeads(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterLeadDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllLeads.`);
         const { leads, total } = await this.leadService.findAllLeads(filterDto, ctx.tenantId);
@@ -44,7 +44,7 @@ export class LeadController {
     }
 
     @Patch(':id')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
     async updateLead(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() dto: UpdateLeadDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateLead.`);
         return await this.leadService.updateLead(id, dto, ctx.tenantId);

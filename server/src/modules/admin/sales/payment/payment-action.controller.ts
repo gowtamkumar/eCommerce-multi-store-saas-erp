@@ -17,7 +17,7 @@ export class PaymentActionController {
 
     @Post('init')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator, UserRole.User)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
     async init(@RequestContext() ctx: RequestContextDto, @Body() dto: InitPaymentDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called init.`);
         return await this.paymentService.initPayment(dto, ctx.tenantId);

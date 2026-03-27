@@ -19,28 +19,28 @@ export class PurchaseOrderController {
     constructor(private readonly service: PurchaseOrderService) { }
 
     @Post()
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     async createPurchaseOrder(@RequestContext() ctx: RequestContextDto, @Body() dto: CreatePurchaseOrderDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPurchaseOrder.`);
         return await this.service.createPurchaseOrder(dto, ctx.tenantId);
     }
 
     @Get()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
     async findAllPurchaseOrder(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPurchaseOrder.`);
         return await this.service.findAllPurchaseOrders(ctx.tenantId);
     }
 
     @Get(':id')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
     async findOnePurchaseOrder(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOnePurchaseOrder.`);
         return await this.service.findOnePurchaseOrder(id, ctx.tenantId);
     }
 
     @Patch(':id/status')
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     async updatePurchaseOrderStatus(
         @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
         @Body() dto: UpdatePurchaseOrderStatusDto
@@ -50,7 +50,7 @@ export class PurchaseOrderController {
     }
 
     @Post(':id/payments')
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     async recordSupplierPayment(
         @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
         @Body() dto: RecordSupplierPaymentDto

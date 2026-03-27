@@ -28,7 +28,7 @@ export class OrderController {
 
 
     @Post()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator, UserRole.User)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
     async createOrder(
         @RequestContext() ctx: RequestContextDto, @Body() createOrderDto: CreateOrderDto
     ) {
@@ -37,7 +37,7 @@ export class OrderController {
     }
 
     @Get()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.MARKETING, UserRole.OPERATOR)
     async findAllOrders(
         @RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterOrderDto
     ) {
@@ -63,7 +63,7 @@ export class OrderController {
     }
 
     @Get(':id')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.MARKETING, UserRole.OPERATOR)
     async findOneOrder(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneOrder.`);
         const order = await this.orderService.findOneOrder(id, ctx.tenantId);
@@ -75,7 +75,7 @@ export class OrderController {
     }
 
     @Get('user/:userId')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.MARKETING, UserRole.OPERATOR)
     async getUserOrders(
         @RequestContext() ctx: RequestContextDto, @Param('userId') userId: string,
         @Query('search') search: string
@@ -90,7 +90,7 @@ export class OrderController {
     }
 
     @Put(':id')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
     async updateOrder(
         @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
         @Body() updateOrderDto: UpdateOrderDto

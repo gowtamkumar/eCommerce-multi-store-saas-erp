@@ -18,7 +18,7 @@ export class PathaoController {
   constructor(private readonly pathaoService: PathaoService) { }
 
   @Post('create-order')
-  @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async createPathaoOrder(@RequestContext() ctx: RequestContextDto, @Body() createOrderDto: CreatePathaoOrderDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPathaoOrder.`);
     return await this.pathaoService.createPathaoOrder(createOrderDto, ctx.tenantId);

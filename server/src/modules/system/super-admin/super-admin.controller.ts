@@ -51,7 +51,7 @@ export class SuperAdminController {
       password,
       username,
       emailVerificationToken: null,
-      role: UserRole.SuperAdmin,
+      role: UserRole.SUPER_ADMIN,
       isAdmin: true,
     })
 
@@ -63,7 +63,7 @@ export class SuperAdminController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SuperAdmin)
+  @Roles(UserRole.SUPER_ADMIN)
   @Get('/health')
   async getHealth() {
 
@@ -135,7 +135,7 @@ export class SuperAdminController {
 
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SuperAdmin)
+  @Roles(UserRole.SUPER_ADMIN)
   @Get('/overview')
   async getOverview(@Query('days') days?: number) {
     const [tenantOverview, userOverview, productOverview, orderOverview, traffic] = await Promise.all([
@@ -162,7 +162,7 @@ export class SuperAdminController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SuperAdmin)
+  @Roles(UserRole.SUPER_ADMIN)
   @Get('/traffic')
   async getTraffic(@Query('days') days?: number) {
     return {
@@ -172,7 +172,7 @@ export class SuperAdminController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SuperAdmin)
+  @Roles(UserRole.SUPER_ADMIN)
   @Get('/tenants')
   async getAllTenants() {
     return {
@@ -182,7 +182,7 @@ export class SuperAdminController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SuperAdmin)
+  @Roles(UserRole.SUPER_ADMIN)
   @Get('/tenants/analytics')
   async getTenantAnalytics() {
     try {
@@ -226,7 +226,7 @@ export class SuperAdminController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SuperAdmin)
+  @Roles(UserRole.SUPER_ADMIN)
   @Get('/tenants/:id/analytics')
   async getDetailedTenantAnalytics(@Param('id') id: string) {
     try {
@@ -256,7 +256,7 @@ export class SuperAdminController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SuperAdmin)
+  @Roles(UserRole.SUPER_ADMIN)
   @Get('/users')
   async getAllUsers() {
     const users = await this.userService.findAllUsersCrossTenant()
@@ -275,7 +275,7 @@ export class SuperAdminController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SuperAdmin)
+  @Roles(UserRole.SUPER_ADMIN)
   @Patch('/tenants/:id/status')
   async updateTenantStatus(@Param('id') id: string, @Body('status') status: string) {
     const tenant = await this.tenantService.updateTenantStatus(id, status)
@@ -287,7 +287,7 @@ export class SuperAdminController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SuperAdmin)
+  @Roles(UserRole.SUPER_ADMIN)
   @Patch('/tenants/:id/plan')
   async updateTenantPlan(@Param('id') id: string, @Body('planId') planId: string) {
     // This would require a new method in TenantService to update the plan relation

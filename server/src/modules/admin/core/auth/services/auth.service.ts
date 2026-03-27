@@ -45,7 +45,7 @@ export class AuthService {
     const verificationToken = crypto.randomBytes(32).toString('hex')
 
     const user = (await this.userService.createUser(
-      { ...registerCredentialDto, emailVerificationToken: verificationToken, role: UserRole.User },
+      { ...registerCredentialDto, emailVerificationToken: verificationToken, role: UserRole.USER },
       tenantId,
     )) as CreateUserDto
 

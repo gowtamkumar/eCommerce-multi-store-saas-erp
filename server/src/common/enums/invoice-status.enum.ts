@@ -1,6 +1,6 @@
 export enum InvoiceStatus {
-    PENDING = 'PENDING',
-    PAID = 'PAID',
-    OVERDUE = 'OVERDUE',
-    CANCELLED = 'CANCELLED'
+    PENDING = 'pending',
+    PAID = 'paid',
+    OVERDUE = 'overdue',
+    CANCELLED = 'cancelled'
 }

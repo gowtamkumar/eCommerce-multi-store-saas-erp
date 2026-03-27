@@ -18,7 +18,7 @@ export class PromotionController {
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
     createPromotion(@RequestContext() ctx: RequestContextDto, @Body() createPromotionDto: CreatePromotionDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPromotion.`);
         return this.promotionService.createPromotion(createPromotionDto, ctx.tenantId);
@@ -26,7 +26,7 @@ export class PromotionController {
 
     @Get()
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPPORT, UserRole.OPERATOR)
     findAllPromotions(@RequestContext() ctx: RequestContextDto, @Query() filterDto: any) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPromotions.`);
         return this.promotionService.findAllPromotions(filterDto, ctx.tenantId);
@@ -34,7 +34,7 @@ export class PromotionController {
 
     @Get('active')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator, UserRole.User)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
     findActivePromotions(@TenantId() tenantId: string) {
         this.logger.verbose(`User "${tenantId}" called findActivePromotions.`);
         return this.promotionService.findActivePromotions(tenantId);
@@ -55,7 +55,7 @@ export class PromotionController {
 
     @Get(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPPORT, UserRole.OPERATOR)
     findOnePromotion(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOnePromotion.`);
         return this.promotionService.findOne(id, ctx.tenantId);
@@ -63,7 +63,7 @@ export class PromotionController {
 
     @Patch(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Marketing)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
     updatePromotion(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() updatePromotionDto: UpdatePromotionDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePromotion.`);
         return this.promotionService.updatePromotion(id, updatePromotionDto, ctx.tenantId);
@@ -71,7 +71,7 @@ export class PromotionController {
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     removePromotion(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePromotion.`);
         return this.promotionService.removePromotion(id, ctx.tenantId);

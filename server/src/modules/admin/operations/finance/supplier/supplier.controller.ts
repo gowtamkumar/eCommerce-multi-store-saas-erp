@@ -16,28 +16,28 @@ export class SupplierController {
     constructor(private readonly service: SupplierService) { }
 
     @Post()
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     async createSupplier(@RequestContext() ctx: RequestContextDto, @Body() dto: CreateSupplierDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createSupplier.`);
         return await this.service.createSupplier(dto, ctx.tenantId);
     }
 
     @Get()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
     async findAllSuppliers(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllSuppliers.`);
         return await this.service.findAllSuppliers(ctx.tenantId);
     }
 
     @Get(':id')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
     async findOneSupplier(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneSupplier.`);
         return await this.service.findOneSupplier(id, ctx.tenantId);
     }
 
     @Put(':id')
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     async updateSupplier(
         @RequestContext() ctx: RequestContextDto, @Param('id') id: string,
         @Body() dto: UpdateSupplierDto
@@ -47,7 +47,7 @@ export class SupplierController {
     }
 
     @Delete(':id')
-    @Roles(UserRole.Admin, UserRole.StoreManager)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
     async removeSupplier(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeSupplier.`);
         return await this.service.removeSupplier(id, ctx.tenantId);

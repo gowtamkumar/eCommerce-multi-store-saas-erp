@@ -1,6 +1,6 @@
 export enum PurchaseOrderStatus {
-    DRAFT = 'DRAFT',
-    PENDING = 'PENDING',
-    RECEIVED = 'RECEIVED',
-    CANCELLED = 'CANCELLED',
+    DRAFT = 'draft',
+    PENDING = 'pending',
+    RECEIVED = 'received',
+    CANCELLED = 'cancelled',
 }

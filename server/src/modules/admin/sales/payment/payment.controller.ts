@@ -15,7 +15,7 @@ export class PaymentController {
     constructor(private readonly paymentService: PaymentService) { }
 
     @Get()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Marketing)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.MARKETING)
     async findAllPayments(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPayments.`);
         return {

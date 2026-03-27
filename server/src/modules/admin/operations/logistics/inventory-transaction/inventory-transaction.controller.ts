@@ -16,7 +16,7 @@ export class InventoryTransactionController {
     constructor(private readonly service: InventoryTransactionService) { }
 
     @Post()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR)
     async createInventoryTransaction(
         @RequestContext() ctx: RequestContextDto, @Body() dto: CreateInventoryTransactionDto
     ) {
@@ -26,7 +26,7 @@ export class InventoryTransactionController {
     }
 
     @Get()
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
     async findAllInventoryTransactions(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllInventoryTransactions.`);
         const transactions = await this.service.findAllInventoryTransactions(ctx.tenantId);
@@ -34,7 +34,7 @@ export class InventoryTransactionController {
     }
 
     @Get('product/:productId')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
     async findByProductInventoryTransactions(
         @RequestContext() ctx: RequestContextDto, @Param('productId') productId: string
     ) {
@@ -44,7 +44,7 @@ export class InventoryTransactionController {
     }
 
     @Get('stock-summary')
-    @Roles(UserRole.Admin, UserRole.StoreManager, UserRole.Support, UserRole.Operator)
+    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
     async getStockSummaryInventoryTransactions(@RequestContext() ctx: RequestContextDto) {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getStockSummaryInventoryTransactions.`);
         const data = await this.service.getStockSummaryInventoryTransactions(ctx.tenantId);

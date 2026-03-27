@@ -33,7 +33,7 @@ export default function AdminLayout({
         } else if (status === 'authenticated') {
             const rawRole = session?.user?.role || '';
             console.log("rawRole", rawRole);
-            const allowedRoles = [UserRole.ADMIN, UserRole.STOREMANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING, UserRole.SUPERADMIN];
+            const allowedRoles = [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING, UserRole.SUPER_ADMIN];
             if (!allowedRoles.includes(rawRole)) {
                 console.warn(`User role ${rawRole} is not authorized for admin access`);
                 router.replace('/');
@@ -48,7 +48,7 @@ export default function AdminLayout({
         return navGroups
             .filter(group => {
                 if ((group as any).roles) {
-                    return (group as any).roles.map((r: string) => r.toLowerCase()).includes(userRole) || userRole === UserRole.SUPERADMIN;
+                    return (group as any).roles.map((r: string) => r.toLowerCase()).includes(userRole) || userRole === UserRole.SUPER_ADMIN;
                 }
                 return true;
             })
@@ -56,7 +56,7 @@ export default function AdminLayout({
                 ...group,
                 items: group.items.filter((item: any) => {
                     if (item.roles) {
-                        return item.roles.map((r: string) => r.toLowerCase()).includes(userRole) || userRole === UserRole.SUPERADMIN;
+                        return item.roles.map((r: string) => r.toLowerCase()).includes(userRole) || userRole === UserRole.SUPER_ADMIN;
                     }
                     return true;
                 })

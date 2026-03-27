@@ -1,3 +1,3 @@
 export enum AuthStrategy {
-  JwtAuth = 'jwt',
+  JWT_AUTH = 'jwt',
 }
