@@ -117,12 +117,14 @@ export default function AdminLayout({
         await signOut({ callbackUrl: `${window.location.origin}/login` });
     };
 
-    const isExpired = settings?.status === 'expired' && session?.user?.role !== UserRole.SUPER_ADMIN;
+    const isSubscriptionExpired = settings?.status === 'expired' && session?.user?.role !== UserRole.SUPER_ADMIN;
+    const isOnBillingPage = pathname?.startsWith('/admin/settings/billing');
+    const showExpirationOverlay = isSubscriptionExpired && !isOnBillingPage;
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
             {/* Expiration Overlay */}
-            {isExpired && (
+            {showExpirationOverlay && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}

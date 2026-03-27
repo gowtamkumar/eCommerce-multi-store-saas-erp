@@ -18,9 +18,17 @@ export default function StorefrontLayout({
   const pathname = usePathname();
   const { settings } = useSettings();
   const { googleAnalyticsId, facebookPixelId } = settings?.marketing || {};
-  console.log("settings", settings);
+  const authPaths = [
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email",
+    "/accept-invitation",
+  ];
 
-  const isExpired = settings?.status === 'expired';
+  const isAuthPage = authPaths.some((path) => pathname?.startsWith(path));
+  const isExpired = settings?.status === 'expired' && !isAuthPage;
 
   if (isExpired) {
     return (

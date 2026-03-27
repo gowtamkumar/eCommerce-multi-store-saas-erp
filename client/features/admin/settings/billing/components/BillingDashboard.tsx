@@ -10,7 +10,8 @@ import {
   Clock,
   Zap,
   ShieldCheck,
-  Check
+  Check,
+  RefreshCw
 } from "lucide-react";
 import { fetchAPI } from "@/services/api";
 import { Loader2 } from "lucide-react";
@@ -18,6 +19,7 @@ import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Plan, SubscriptionInfo, BillingInvoice } from "../../type";
+import { useSearchParams } from "next/navigation";
 
 dayjs.extend(relativeTime);
 
@@ -27,10 +29,28 @@ export default function BillingDashboard() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [history, setHistory] = useState<BillingInvoice[]>([]);
   const [initiating, setInitiating] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    loadBillingData();
-  }, []);
+    const success = searchParams.get("success");
+    const error = searchParams.get("error");
+
+    if (success === "true") {
+      toast.success("Subscription updated successfully!");
+      loadBillingData();
+    } else if (error) {
+      if (error === "payment_failed") {
+        toast.error("Payment failed. Please try again.");
+      } else if (error === "payment_cancelled") {
+        toast.error("Payment cancelled.");
+      } else {
+        toast.error("An error occurred during payment.");
+      }
+      loadBillingData();
+    } else {
+      loadBillingData();
+    }
+  }, [searchParams]);
 
   const loadBillingData = async () => {
     try {
@@ -59,11 +79,8 @@ export default function BillingDashboard() {
         body: JSON.stringify({ planId })
       });
 
-      if (res.gatewayUrl && res.gatewayUrl !== '#') {
-        window.location.href = res.gatewayUrl;
-      } else {
-        toast.success("Subscription initiated! (Sandbox Mode)");
-        // In a real app, redirection happens here
+      if (res.data.gatewayUrl && res.data.gatewayUrl !== '#') {
+        window.location.href = res.data.gatewayUrl;
       }
     } catch (error) {
       toast.error("Failed to initiate upgrade");
@@ -124,6 +141,18 @@ export default function BillingDashboard() {
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Status</p>
               <p className="text-xl font-bold text-slate-700 dark:text-slate-200 text-center capitalize">{subInfo?.status}</p>
             </div>
+
+            <button
+              onClick={() => {
+                const currentPlan = plans.find(p => p.name === subInfo?.planName);
+                if (currentPlan) handleUpgrade(currentPlan.id);
+              }}
+              disabled={initiating !== null}
+              className="bg-brand-600 text-white px-8 py-5 rounded-3xl font-black uppercase tracking-widest hover:bg-brand-700 transition-all flex items-center gap-3 shadow-xl shadow-brand-600/20 active:scale-95 disabled:opacity-50"
+            >
+              {initiating ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
+              Renew Now
+            </button>
           </div>
         </div>
       </section>
@@ -181,16 +210,16 @@ export default function BillingDashboard() {
 
                   <button
                     onClick={() => handleUpgrade(plan.id)}
-                    disabled={isCurrent || initiating !== null}
+                    disabled={initiating !== null}
                     className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest transition-all duration-300 ${isCurrent
-                      ? 'bg-slate-50 dark:bg-slate-900/30 text-slate-400 cursor-default'
-                      : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-brand-600 hover:text-white dark:hover:bg-brand-600 dark:hover:text-white shadow-xl shadow-slate-900/5 active:scale-95'
-                      }`}
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-500/20'
+                      : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-brand-600 hover:text-white dark:hover:bg-brand-600 dark:hover:text-white shadow-xl shadow-slate-900/5'
+                      } active:scale-95 disabled:opacity-50 shadow-xl`}
                   >
                     {initiating === plan.id ? (
                       <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                     ) : isCurrent ? (
-                      'Your Plan'
+                      'Renew Now'
                     ) : (
                       'Upgrade Now'
                     )}

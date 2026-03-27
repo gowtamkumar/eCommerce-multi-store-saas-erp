@@ -6,6 +6,7 @@ import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entit
 import { PaymentModule } from '@/modules/admin/sales/payment/payment.module'
 import { SubscriptionBillingController } from './subscription-billing.controller'
 import { SubscriptionBillingService } from './subscription-billing.service'
+import { ConfigModule } from '@nestjs/config'
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { SubscriptionBillingService } from './subscription-billing.service'
       TenantEntity,
       SubscriptionPlanEntity
     ]),
-    PaymentModule
+    PaymentModule,
+    ConfigModule
   ],
   controllers: [SubscriptionBillingController],
   providers: [SubscriptionBillingService],

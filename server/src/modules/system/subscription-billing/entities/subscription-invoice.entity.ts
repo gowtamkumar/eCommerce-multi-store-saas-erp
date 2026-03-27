@@ -44,4 +44,7 @@ export class SubscriptionInvoiceEntity extends BaseEntity {
 
   @Column({ name: 'payment_url', type: 'text', nullable: true })
   paymentUrl: string
+
+  @Column({ name: 'gateway_response', type: 'jsonb', nullable: true })
+  gatewayResponse: any
 }
