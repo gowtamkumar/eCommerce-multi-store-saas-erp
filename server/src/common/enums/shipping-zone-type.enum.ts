@@ -1,4 +1,4 @@
 export enum ShippingZoneType {
-    INSIDE = 'inside',
-    OUTSIDE = 'outside'
+  INSIDE = 'inside',
+  OUTSIDE = 'outside',
 }

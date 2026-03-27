@@ -13,10 +13,10 @@ export class FilesService {
   constructor(
     @InjectRepository(FileEntity)
     private readonly fileRepo: Repository<FileEntity>,
-  ) { }
+  ) {}
 
   getFiles(filterFile: FilterFileDto, tenantId: string): Promise<FileEntity[]> {
-    this.logger.log(`${this.getFiles.name} Service Called`);
+    this.logger.log(`${this.getFiles.name} Service Called`)
     const { filename, originalname } = filterFile
 
     const newQuery: any = { tenantId }
@@ -40,7 +40,7 @@ export class FilesService {
   }
 
   async createFile(createFile: CreateFileDto, tenantId: string) {
-    this.logger.log(`${this.createFile.name} Service Called`);
+    this.logger.log(`${this.createFile.name} Service Called`)
     this.logger.log(`${this.createFile.name} service Called`)
 
     const fileCreate = this.fileRepo.create({ ...createFile, tenantId })
@@ -48,7 +48,7 @@ export class FilesService {
   }
 
   async createPdf(createFile: CreateFileDto) {
-    this.logger.log(`${this.createPdf.name} Service Called`);
+    this.logger.log(`${this.createPdf.name} Service Called`)
     this.logger.log(`${this.createPdf.name} service Called`)
 
     const pdf = new PDFDocument()
@@ -80,7 +80,7 @@ export class FilesService {
   }
 
   async deleteFile(id: string, tenantId: string) {
-    this.logger.log(`${this.deleteFile.name} Service Called`);
+    this.logger.log(`${this.deleteFile.name} Service Called`)
     this.logger.log(`${this.deleteFile.name} service Called`)
     const file = await this.fileRepo.findOne({ where: { id, tenantId } })
 

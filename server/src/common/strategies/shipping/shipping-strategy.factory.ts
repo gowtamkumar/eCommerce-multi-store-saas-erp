@@ -1,23 +1,23 @@
-import { ShippingStrategy } from './shipping-strategy.interface';
-import { InsideCityShippingStrategy } from './inside-city-shipping.strategy';
-import { OutsideCityShippingStrategy } from './outside-city-shipping.strategy';
-import { FreeShippingStrategy } from './free-shipping.strategy';
-import { ShippingZoneType } from '@/common/enums/shipping-zone-type.enum';
-import { DiscountType } from '@/common/enums/discount-type.enum';
+import { ShippingStrategy } from './shipping-strategy.interface'
+import { InsideCityShippingStrategy } from './inside-city-shipping.strategy'
+import { OutsideCityShippingStrategy } from './outside-city-shipping.strategy'
+import { FreeShippingStrategy } from './free-shipping.strategy'
+import { ShippingZoneType } from '@/common/enums/shipping-zone-type.enum'
+import { DiscountType } from '@/common/enums/discount-type.enum'
 
 export class ShippingStrategyFactory {
   static create(shippingZone: string | undefined | null): ShippingStrategy {
-    const zone = shippingZone?.toLowerCase();
+    const zone = shippingZone?.toLowerCase()
     switch (zone) {
       case ShippingZoneType.INSIDE:
-        return new InsideCityShippingStrategy();
+        return new InsideCityShippingStrategy()
       case ShippingZoneType.OUTSIDE:
-        return new OutsideCityShippingStrategy();
+        return new OutsideCityShippingStrategy()
       case 'free':
       case DiscountType.FREE_SHIPPING:
-        return new FreeShippingStrategy();
+        return new FreeShippingStrategy()
       default:
-        return new FreeShippingStrategy();
+        return new FreeShippingStrategy()
     }
   }
 }

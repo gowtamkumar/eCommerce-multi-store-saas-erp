@@ -7,21 +7,21 @@ import { ReviewEntity } from './entities/review.entity'
 
 @Injectable()
 export class ReviewService {
-  private readonly logger = new Logger(ReviewService.name);
+  private readonly logger = new Logger(ReviewService.name)
 
   constructor(
     @InjectRepository(ReviewEntity)
     private reviewRepository: Repository<ReviewEntity>,
-  ) { }
+  ) {}
 
   async createReview(dto: CreateReviewDto, tenantId: string) {
-    this.logger.log(`${this.createReview.name} Service Called`);
+    this.logger.log(`${this.createReview.name} Service Called`)
     const review = this.reviewRepository.create({ ...dto, tenantId })
     return await this.reviewRepository.save(review)
   }
 
   async findAllReviews(filterDto: any, tenantId: string) {
-    this.logger.log(`${this.findAllReviews.name} Service Called`);
+    this.logger.log(`${this.findAllReviews.name} Service Called`)
     const { page, limit, q, status } = filterDto
     const query = this.reviewRepository
       .createQueryBuilder('review')
@@ -45,7 +45,7 @@ export class ReviewService {
   }
 
   async findPublicReviews(tenantId: string) {
-    this.logger.log(`${this.findPublicReviews.name} Service Called`);
+    this.logger.log(`${this.findPublicReviews.name} Service Called`)
     return await this.reviewRepository.find({
       where: { tenantId, status: ReviewStatus.APPROVED },
       order: { createdAt: 'DESC' },
@@ -53,7 +53,7 @@ export class ReviewService {
   }
 
   async findByProductReviews(productId: string, tenantId: string) {
-    this.logger.log(`${this.findByProductReviews.name} Service Called`);
+    this.logger.log(`${this.findByProductReviews.name} Service Called`)
     return await this.reviewRepository.find({
       where: { productId, tenantId },
       order: { createdAt: 'DESC' },
@@ -61,7 +61,7 @@ export class ReviewService {
   }
 
   async updateReview(id: string, dto: UpdateReviewDto, tenantId: string) {
-    this.logger.log(`${this.updateReview.name} Service Called`);
+    this.logger.log(`${this.updateReview.name} Service Called`)
     const review = await this.reviewRepository.findOne({ where: { id, tenantId } })
     if (!review) throw new NotFoundException('Review not found')
     Object.assign(review, dto)
@@ -69,7 +69,7 @@ export class ReviewService {
   }
 
   async removeReview(id: string, tenantId: string) {
-    this.logger.log(`${this.removeReview.name} Service Called`);
+    this.logger.log(`${this.removeReview.name} Service Called`)
     const review = await this.reviewRepository.findOne({ where: { id, tenantId } })
     if (!review) throw new NotFoundException('Review not found')
     await this.reviewRepository.remove(review)

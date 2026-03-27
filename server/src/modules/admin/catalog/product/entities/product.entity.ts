@@ -1,26 +1,19 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
-import { ReviewEntity } from '@/modules/admin/catalog/review/entities/review.entity';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany
-} from 'typeorm';
-import { ProductStatus } from '@/common/enums/product-status.enum';
-import { DiscountType } from '@/common/enums/discount-type.enum';
-import { BrandEntity } from '../../brand/entities/brand.entity';
-import { CategoryEntity } from '../../category/entities/category.entity';
-import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity';
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
-import { ProductAttributeEntity } from './attribute.entity';
-import { ProductVariantEntity } from './variant.entity';
-import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { ReviewEntity } from '@/modules/admin/catalog/review/entities/review.entity'
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
+import { ProductStatus } from '@/common/enums/product-status.enum'
+import { DiscountType } from '@/common/enums/discount-type.enum'
+import { BrandEntity } from '../../brand/entities/brand.entity'
+import { CategoryEntity } from '../../category/entities/category.entity'
+import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { ProductAttributeEntity } from './attribute.entity'
+import { ProductVariantEntity } from './variant.entity'
+import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 
 @Entity('products')
 export class ProductEntity extends BaseEntity {
-
   @Column({ type: 'varchar', length: 255 })
   name: string
 
@@ -57,7 +50,6 @@ export class ProductEntity extends BaseEntity {
   @Column({ type: 'simple-array' })
   images: string[]
 
-
   @Column({ type: 'int', default: 0 })
   stock: number
 
@@ -87,14 +79,12 @@ export class ProductEntity extends BaseEntity {
   @JoinColumn({ name: 'brand_id' })
   brand: BrandEntity
 
-
   @Column({ type: 'uuid', name: 'landing_page_id', nullable: true })
   landingPageId: string
 
   // @OneToOne(() => PageEntity, { nullable: true, onDelete: 'SET NULL' })
   // @JoinColumn({ name: 'landing_page_id' })
   // landingPage: PageEntity
-
 
   @OneToMany(() => FaqEntity, (faq) => faq.product)
   faqs: FaqEntity[]
@@ -129,11 +119,11 @@ export class ProductEntity extends BaseEntity {
   tenant: TenantEntity
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 
   @Column({ type: 'varchar', length: 255, name: 'meta_title', nullable: true })
   metaTitle: string

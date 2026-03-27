@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { PromotionService } from './promotion.service';
-import { PromotionController } from './promotion.controller';
-import { PromotionEntity } from './entities/promotion.entity';
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity';
+import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { PromotionService } from './promotion.service'
+import { PromotionController } from './promotion.controller'
+import { PromotionEntity } from './entities/promotion.entity'
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 
 @Module({
   imports: [TypeOrmModule.forFeature([PromotionEntity, ProductEntity])],
@@ -11,4 +11,4 @@ import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.
   providers: [PromotionService],
   exports: [PromotionService],
 })
-export class PromotionModule { }
+export class PromotionModule {}

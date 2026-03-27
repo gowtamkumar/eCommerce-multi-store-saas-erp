@@ -23,7 +23,7 @@ import { PromotionTargetType } from '../../sales/promotion/enums/promotion-targe
 
 @Injectable()
 export class ProductService {
-  private readonly logger = new Logger(ProductService.name);
+  private readonly logger = new Logger(ProductService.name)
 
   constructor(
     @InjectRepository(ProductEntity)
@@ -40,132 +40,156 @@ export class ProductService {
     private readonly inventoryService: InventoryTransactionService,
     private readonly purchaseOrderService: PurchaseOrderService,
     private readonly promotionService: PromotionService,
-  ) { }
+  ) {}
 
   private async attachPromotions(product: any, tenantId: string) {
-    this.logger.log(`${this.attachPromotions.name} Service Called`);
-    if (!product) return product;
+    this.logger.log(`${this.attachPromotions.name} Service Called`)
+    if (!product) return product
     try {
-      const activePromos = await this.promotionService.findActivePromotions(tenantId);
-      if (!activePromos || activePromos.length === 0) return product;
+      const activePromos = await this.promotionService.findActivePromotions(tenantId)
+      if (!activePromos || activePromos.length === 0) return product
 
-      const applicablePromotions = activePromos.filter(promo => {
-        if (promo.targetType === 'specific_product' && promo.targetId === product.id) return true;
-        if (promo.targetType === 'specific_category' && (promo.targetId === product.categoryId || (product.category && promo.targetId === product.category.id))) return true;
-        if (promo.targetType === 'specific_brand' && promo.targetId === product.brandId) return true;
-        return false;
-      });
+      const applicablePromotions = activePromos.filter((promo) => {
+        if (promo.targetType === 'specific_product' && promo.targetId === product.id) return true
+        if (
+          promo.targetType === 'specific_category' &&
+          (promo.targetId === product.categoryId ||
+            (product.category && promo.targetId === product.category.id))
+        )
+          return true
+        if (promo.targetType === 'specific_brand' && promo.targetId === product.brandId) return true
+        return false
+      })
 
       // Calculate maximum possible discount from promotions to display on the product
-      let maxPromoDiscount = 0;
-      const basePrice = Number(product.price || 0);
+      let maxPromoDiscount = 0
+      const basePrice = Number(product.price || 0)
 
-      applicablePromotions.forEach(promo => {
-        const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as string);
-        const calcDiscount = promoDiscountStrategy.calculate(basePrice, Number(promo.value));
+      applicablePromotions.forEach((promo) => {
+        const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as string)
+        const calcDiscount = promoDiscountStrategy.calculate(basePrice, Number(promo.value))
         if (calcDiscount > maxPromoDiscount) {
-          maxPromoDiscount = calcDiscount;
+          maxPromoDiscount = calcDiscount
         }
-      });
+      })
 
       // Calculate the original discount value in flat currency
-      const originalDiscountType = product.discountType || DiscountType.FIXED;
-      const originalRawDiscount = Number(product.discountAmount || 0);
-      const originalDiscountStrategy = DiscountStrategyFactory.create(originalDiscountType as string);
-      const originalDiscountValue = originalDiscountStrategy.calculate(basePrice, originalRawDiscount);
+      const originalDiscountType = product.discountType || DiscountType.FIXED
+      const originalRawDiscount = Number(product.discountAmount || 0)
+      const originalDiscountStrategy = DiscountStrategyFactory.create(
+        originalDiscountType as string,
+      )
+      const originalDiscountValue = originalDiscountStrategy.calculate(
+        basePrice,
+        originalRawDiscount,
+      )
 
       // Determine final discount: keep original type/amount if higher, else use flat promo amount
-      let finalDiscountAmount = originalRawDiscount;
-      let finalDiscountType = originalDiscountType;
+      let finalDiscountAmount = originalRawDiscount
+      let finalDiscountType = originalDiscountType
 
       if (maxPromoDiscount > originalDiscountValue) {
-        finalDiscountAmount = maxPromoDiscount;
-        finalDiscountType = DiscountType.FIXED;
+        finalDiscountAmount = maxPromoDiscount
+        finalDiscountType = DiscountType.FIXED
       }
 
       return {
         ...product,
         applicablePromotions,
         discountAmount: finalDiscountAmount,
-        discountType: finalDiscountType
-      };
+        discountType: finalDiscountType,
+      }
     } catch (error) {
-      console.error("Error attaching promotions", error);
-      return product;
+      console.error('Error attaching promotions', error)
+      return product
     }
   }
 
   private async attachPromotionsMany(products: any[], tenantId: string) {
-    this.logger.log(`${this.attachPromotionsMany.name} Service Called`);
-    if (!products || products.length === 0) return products;
+    this.logger.log(`${this.attachPromotionsMany.name} Service Called`)
+    if (!products || products.length === 0) return products
     try {
-      const activePromos = await this.promotionService.findActivePromotions(tenantId);
-      if (!activePromos || activePromos.length === 0) return products;
+      const activePromos = await this.promotionService.findActivePromotions(tenantId)
+      if (!activePromos || activePromos.length === 0) return products
 
-      return products.map(product => {
-        const applicablePromotions = activePromos.filter(promo => {
-          if (promo.targetType === PromotionTargetType.SPECIFIC_PRODUCT && promo.targetId === product.id) return true;
-          if (promo.targetType === PromotionTargetType.SPECIFIC_CATEGORY && (promo.targetId === product.categoryId || (product.category && promo.targetId === product.category.id))) return true;
-          if (promo.targetType === PromotionTargetType.SPECIFIC_BRAND && promo.targetId === product.brandId) return true;
-          return false;
-        });
+      return products.map((product) => {
+        const applicablePromotions = activePromos.filter((promo) => {
+          if (
+            promo.targetType === PromotionTargetType.SPECIFIC_PRODUCT &&
+            promo.targetId === product.id
+          )
+            return true
+          if (
+            promo.targetType === PromotionTargetType.SPECIFIC_CATEGORY &&
+            (promo.targetId === product.categoryId ||
+              (product.category && promo.targetId === product.category.id))
+          )
+            return true
+          if (
+            promo.targetType === PromotionTargetType.SPECIFIC_BRAND &&
+            promo.targetId === product.brandId
+          )
+            return true
+          return false
+        })
 
         // Calculate maximum possible discount from promotions to display on the product
-        let maxPromoDiscount = 0;
-        const basePrice = Number(product.price || 0);
+        let maxPromoDiscount = 0
+        const basePrice = Number(product.price || 0)
 
-        applicablePromotions.forEach(promo => {
-          const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as string);
-          const calcDiscount = promoDiscountStrategy.calculate(basePrice, Number(promo.value));
+        applicablePromotions.forEach((promo) => {
+          const promoDiscountStrategy = DiscountStrategyFactory.create(
+            promo.promotionType as string,
+          )
+          const calcDiscount = promoDiscountStrategy.calculate(basePrice, Number(promo.value))
           if (calcDiscount > maxPromoDiscount) {
-            maxPromoDiscount = calcDiscount;
+            maxPromoDiscount = calcDiscount
           }
-        });
+        })
 
-        const originalDiscountType = product.discountType || DiscountType.FIXED;
-        const originalRawDiscount = Number(product.discountAmount || 0);
-        const originalDiscountStrategy = DiscountStrategyFactory.create(originalDiscountType as string);
-        const originalDiscountValue = originalDiscountStrategy.calculate(basePrice, originalRawDiscount);
+        const originalDiscountType = product.discountType || DiscountType.FIXED
+        const originalRawDiscount = Number(product.discountAmount || 0)
+        const originalDiscountStrategy = DiscountStrategyFactory.create(
+          originalDiscountType as string,
+        )
+        const originalDiscountValue = originalDiscountStrategy.calculate(
+          basePrice,
+          originalRawDiscount,
+        )
 
-        let finalDiscountAmount = originalRawDiscount;
-        let finalDiscountType = originalDiscountType;
+        let finalDiscountAmount = originalRawDiscount
+        let finalDiscountType = originalDiscountType
 
         if (maxPromoDiscount > originalDiscountValue) {
-          finalDiscountAmount = maxPromoDiscount;
-          finalDiscountType = DiscountType.FIXED;
+          finalDiscountAmount = maxPromoDiscount
+          finalDiscountType = DiscountType.FIXED
         }
 
         return {
           ...product,
           applicablePromotions,
           discountAmount: finalDiscountAmount,
-          discountType: finalDiscountType
-        };
-      });
+          discountType: finalDiscountType,
+        }
+      })
     } catch (error) {
-      console.error("Error attaching promotions many", error);
-      return products;
+      console.error('Error attaching promotions many', error)
+      return products
     }
   }
 
-
   async findAllProducts(filterDto: any, tenantId: string) {
-    this.logger.log(`${this.findAllProducts.name} Service Called`);
+    this.logger.log(`${this.findAllProducts.name} Service Called`)
     const page = Math.max(1, parseInt(filterDto.page) || 1)
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { q, status, categoryId, brandId } = filterDto
-
 
     const query = this.productRepository
       .createQueryBuilder('product')
       .leftJoin('product.category', 'category')
       .leftJoin('product.variants', 'variants')
       .where('product.tenantId = :tenantId', { tenantId })
-      .select([
-        'product',
-        'category',
-        'variants',
-      ])
+      .select(['product', 'category', 'variants'])
     if (status) {
       query.andWhere('product.status = :status', { status })
     }
@@ -192,23 +216,25 @@ export class ProductService {
 
     if (filterDto.attributes) {
       try {
-        const attrFilters = JSON.parse(filterDto.attributes);
-        const filteredEntries = Object.entries(attrFilters).filter(([_, v]) => Array.isArray(v) && v.length > 0);
+        const attrFilters = JSON.parse(filterDto.attributes)
+        const filteredEntries = Object.entries(attrFilters).filter(
+          ([_, v]) => Array.isArray(v) && v.length > 0,
+        )
 
         if (filteredEntries.length > 0) {
-          let existsQuery = `SELECT 1 FROM product_variants v WHERE v.product_id = product.id`;
-          const params = {};
+          let existsQuery = `SELECT 1 FROM product_variants v WHERE v.product_id = product.id`
+          const params = {}
 
           filteredEntries.forEach(([key, values], index) => {
-            existsQuery += ` AND v.combination->>:key${index} IN (:...values${index})`;
-            params[`key${index}`] = key;
-            params[`values${index}`] = values;
-          });
+            existsQuery += ` AND v.combination->>:key${index} IN (:...values${index})`
+            params[`key${index}`] = key
+            params[`values${index}`] = values
+          })
 
-          query.andWhere(`EXISTS (${existsQuery})`, params);
+          query.andWhere(`EXISTS (${existsQuery})`, params)
         }
       } catch (e) {
-        this.logger.error('Failed to parse attributes filter', e);
+        this.logger.error('Failed to parse attributes filter', e)
       }
     }
 
@@ -224,71 +250,74 @@ export class ProductService {
   }
 
   async getFilterOptions(tenantId: string, categoryId?: string) {
-    this.logger.log(`${this.getFilterOptions.name} Service Called`);
+    this.logger.log(`${this.getFilterOptions.name} Service Called`)
 
     // 1. Fetch Min/Max Price
-    const priceQuery = this.productRepository.createQueryBuilder('product')
+    const priceQuery = this.productRepository
+      .createQueryBuilder('product')
       .where('product.tenantId = :tenantId', { tenantId })
       .select('MIN(product.price)', 'min')
-      .addSelect('MAX(product.price)', 'max');
+      .addSelect('MAX(product.price)', 'max')
 
     if (categoryId) {
-      priceQuery.andWhere('product.categoryId = :categoryId', { categoryId });
+      priceQuery.andWhere('product.categoryId = :categoryId', { categoryId })
     }
-    const prices = await priceQuery.getRawOne();
+    const prices = await priceQuery.getRawOne()
 
     // 2. Fetch Unique Brands that have products in this context
-    const brandQuery = this.brandRepository.createQueryBuilder('brand')
+    const brandQuery = this.brandRepository
+      .createQueryBuilder('brand')
       .innerJoin(ProductEntity, 'product', 'product.brandId = brand.id')
       .where('brand.tenantId = :tenantId', { tenantId })
       .select('brand.id', 'id')
       .addSelect('brand.name', 'name')
       .addSelect('brand.slug', 'slug')
-      .distinct(true);
+      .distinct(true)
 
     if (categoryId) {
-      brandQuery.andWhere('product.categoryId = :categoryId', { categoryId });
+      brandQuery.andWhere('product.categoryId = :categoryId', { categoryId })
     }
-    const brands = await brandQuery.getRawMany();
+    const brands = await brandQuery.getRawMany()
 
     // 3. Fetch Unique Attributes from Variants (JSONB)
-    const variantQuery = this.variantRepository.createQueryBuilder('variant')
+    const variantQuery = this.variantRepository
+      .createQueryBuilder('variant')
       .innerJoin('variant.product', 'product')
       .where('variant.tenantId = :tenantId', { tenantId })
-      .select('variant.combination', 'combination');
+      .select('variant.combination', 'combination')
 
     if (categoryId) {
-      variantQuery.andWhere('product.categoryId = :categoryId', { categoryId });
+      variantQuery.andWhere('product.categoryId = :categoryId', { categoryId })
     }
-    const variants = await variantQuery.getRawMany();
+    const variants = await variantQuery.getRawMany()
 
-    const attributeMap: Record<string, Set<string>> = {};
-    variants.forEach(v => {
+    const attributeMap: Record<string, Set<string>> = {}
+    variants.forEach((v) => {
       if (v.combination) {
         Object.entries(v.combination).forEach(([key, value]) => {
-          if (!attributeMap[key]) attributeMap[key] = new Set();
-          attributeMap[key].add(value as string);
-        });
+          if (!attributeMap[key]) attributeMap[key] = new Set()
+          attributeMap[key].add(value as string)
+        })
       }
-    });
+    })
 
     const formattedAttributes = Object.entries(attributeMap).map(([name, values]) => ({
       name,
-      values: Array.from(values)
-    }));
+      values: Array.from(values),
+    }))
 
     return {
       priceRange: {
         min: Number(prices?.min || 0),
-        max: Number(prices?.max || 0)
+        max: Number(prices?.max || 0),
       },
       brands,
-      attributes: formattedAttributes
-    };
+      attributes: formattedAttributes,
+    }
   }
 
   async findBySlugProduct(slug: string, tenantId: string) {
-    this.logger.log(`${this.findBySlugProduct.name} Service Called`);
+    this.logger.log(`${this.findBySlugProduct.name} Service Called`)
     const product = await this.productRepository.findOne({
       where: { slug, tenantId },
       relations: ['faqs', 'category', 'attributes', 'variants', 'reviews'],
@@ -302,7 +331,7 @@ export class ProductService {
   }
 
   async createProduct(createProductDto: CreateProductDto, tenantId: string) {
-    this.logger.log(`${this.createProduct.name} Service Called`);
+    this.logger.log(`${this.createProduct.name} Service Called`)
     // Check if slug exists for this tenant
     const existing = await this.productRepository.findOne({
       where: { slug: createProductDto.slug, tenantId },
@@ -382,23 +411,29 @@ export class ProductService {
 
     // Create a RECEIVED Purchase Order if there are items to stock
     if (poItems.length > 0 && createProductDto.supplierId) {
-      const po = await this.purchaseOrderService.createPurchaseOrder({
-        supplierId: createProductDto.supplierId,
-        referenceNumber: `INITIAL_${savedProduct.slug.toUpperCase()}_${Date.now()}`,
-        items: poItems,
-      }, tenantId)
+      const po = await this.purchaseOrderService.createPurchaseOrder(
+        {
+          supplierId: createProductDto.supplierId,
+          referenceNumber: `INITIAL_${savedProduct.slug.toUpperCase()}_${Date.now()}`,
+          items: poItems,
+        },
+        tenantId,
+      )
 
       // Mark as received immediately to trigger inventory
-      await this.purchaseOrderService.updatePurchaseOrderStatus(po.id, { status: PurchaseOrderStatus.RECEIVED }, tenantId)
+      await this.purchaseOrderService.updatePurchaseOrderStatus(
+        po.id,
+        { status: PurchaseOrderStatus.RECEIVED },
+        tenantId,
+      )
     }
 
     const newProduct = await this.findOneProduct(savedProduct.id, tenantId)
     return newProduct // Promos are already attached in findOne
   }
 
-
   async findLatestProducts(tenantId: string, limit: number = 10) {
-    this.logger.log(`${this.findLatestProducts.name} Service Called`);
+    this.logger.log(`${this.findLatestProducts.name} Service Called`)
     const products = await this.productRepository.find({
       where: { tenantId },
       relations: ['variants', 'category'],
@@ -410,7 +445,7 @@ export class ProductService {
   }
 
   async findOneProduct(id: string, tenantId: string) {
-    this.logger.log(`${this.findOneProduct.name} Service Called`);
+    this.logger.log(`${this.findOneProduct.name} Service Called`)
     const cacheKey = `product:${id}`
 
     const cached = await this.cache.getCache(cacheKey, tenantId)
@@ -436,10 +471,8 @@ export class ProductService {
     return await this.attachPromotions(product, tenantId)
   }
 
-
-
   async updateProduct(id: string, updateProductDto: UpdateProductDto, tenantId: string) {
-    this.logger.log(`${this.updateProduct.name} Service Called`);
+    this.logger.log(`${this.updateProduct.name} Service Called`)
     const product: any = await this.findOneProduct(id, tenantId)
 
     // If slug is being updated, check uniqueness
@@ -545,13 +578,20 @@ export class ProductService {
 
       // Create a RECEIVED Purchase Order for new variants if there are items to stock
       if (poItems.length > 0 && product.supplierId) {
-        const po = await this.purchaseOrderService.createPurchaseOrder({
-          supplierId: product.supplierId,
-          referenceNumber: `INITIAL_VAR_${product.slug.toUpperCase()}_${Date.now()}`,
-          items: poItems,
-        }, tenantId)
+        const po = await this.purchaseOrderService.createPurchaseOrder(
+          {
+            supplierId: product.supplierId,
+            referenceNumber: `INITIAL_VAR_${product.slug.toUpperCase()}_${Date.now()}`,
+            items: poItems,
+          },
+          tenantId,
+        )
 
-        await this.purchaseOrderService.updatePurchaseOrderStatus(po.id, { status: PurchaseOrderStatus.RECEIVED }, tenantId)
+        await this.purchaseOrderService.updatePurchaseOrderStatus(
+          po.id,
+          { status: PurchaseOrderStatus.RECEIVED },
+          tenantId,
+        )
       }
 
       // 5. Delete removed variants
@@ -574,7 +614,7 @@ export class ProductService {
   }
 
   async removeProduct(id: string, tenantId: string) {
-    this.logger.log(`${this.removeProduct.name} Service Called`);
+    this.logger.log(`${this.removeProduct.name} Service Called`)
     const product: any = await this.findOneProduct(id, tenantId)
     await this.productRepository.remove(product)
 
@@ -585,30 +625,33 @@ export class ProductService {
   }
 
   async decrementStock(productId: string, quantity: number, tenantId: string, variantId?: string) {
-    this.logger.log(`${this.decrementStock.name} Service Called`);
+    this.logger.log(`${this.decrementStock.name} Service Called`)
     // Note: The inventory service handles updating the static stock fields (cache)
     // and logging the transaction record.
-    return await this.inventoryService.createInventoryTransaction({
-      productId,
-      variantId,
-      quantity,
-      type: InventoryTransactionType.OUT,
-      referenceType: InventoryTransactionReferenceType.ADJUSTMENT,
-    }, tenantId)
+    return await this.inventoryService.createInventoryTransaction(
+      {
+        productId,
+        variantId,
+        quantity,
+        type: InventoryTransactionType.OUT,
+        referenceType: InventoryTransactionReferenceType.ADJUSTMENT,
+      },
+      tenantId,
+    )
   }
 
   async findAllProductsCrossTenant() {
-    this.logger.log(`${this.findAllProductsCrossTenant.name} Service Called`);
+    this.logger.log(`${this.findAllProductsCrossTenant.name} Service Called`)
     return await this.productRepository.find()
   }
 
   async countByTenant(tenantId: string) {
-    this.logger.log(`${this.countByTenant.name} Service Called`);
+    this.logger.log(`${this.countByTenant.name} Service Called`)
     return await this.productRepository.count({ where: { tenantId } })
   }
 
   private getSortOptions(sort?: string): any {
-    this.logger.log(`${this.getSortOptions.name} Service Called`);
+    this.logger.log(`${this.getSortOptions.name} Service Called`)
     switch (sort) {
       case 'price-low':
         return { 'product.price': 'ASC' }
@@ -625,7 +668,7 @@ export class ProductService {
   }
   // this function for system plateform
   async productOverview() {
-    this.logger.log(`${this.productOverview.name} Service Called`);
+    this.logger.log(`${this.productOverview.name} Service Called`)
     const totalProducts = await this.productRepository.count()
     const activeProducts = await this.productRepository.count({
       where: { status: ProductStatus.ACTIVE },

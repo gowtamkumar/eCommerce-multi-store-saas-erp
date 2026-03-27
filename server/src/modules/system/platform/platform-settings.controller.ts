@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Put } from '@nestjs/common';
-import { PlatformSettingsService } from './platform-settings.service';
+import { Body, Controller, Get, Put } from '@nestjs/common'
+import { PlatformSettingsService } from './platform-settings.service'
 
 @Controller('platform/settings')
 export class PlatformSettingsController {
@@ -7,11 +7,11 @@ export class PlatformSettingsController {
 
   @Get()
   async getPlatformSettings() {
-    return await this.platformSettingsService.getPlatformSettings();
+    return await this.platformSettingsService.getPlatformSettings()
   }
 
   @Put()
   async updatePlatformSettings(@Body() data: any) {
-    return await this.platformSettingsService.updatePlatformSettings(data);
+    return await this.platformSettingsService.updatePlatformSettings(data)
   }
 }

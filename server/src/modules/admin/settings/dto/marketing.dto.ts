@@ -1,20 +1,19 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString } from 'class-validator'
 
 export class MarketingDto {
+  @IsString()
+  @IsOptional()
+  googleAnalyticsId?: string
 
   @IsString()
   @IsOptional()
-  googleAnalyticsId?: string;
+  googleSiteVerification?: string
 
   @IsString()
   @IsOptional()
-  googleSiteVerification?: string;
+  facebookPixelId?: string
 
   @IsString()
   @IsOptional()
-  facebookPixelId?: string;
-
-  @IsString()
-  @IsOptional()
-  facebookDomainVerification?: string;
+  facebookDomainVerification?: string
 }

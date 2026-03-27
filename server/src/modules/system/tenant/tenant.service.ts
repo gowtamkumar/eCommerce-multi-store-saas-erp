@@ -17,7 +17,7 @@ import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 
 @Injectable()
 export class TenantService {
-  private readonly logger = new Logger(TenantService.name);
+  private readonly logger = new Logger(TenantService.name)
 
   constructor(
     @InjectRepository(TenantEntity)
@@ -27,10 +27,10 @@ export class TenantService {
     private readonly settingsService: SettingsService,
     private readonly mailService: MailService,
     private readonly subscriptionPlanService: SubscriptionPlanService,
-  ) { }
+  ) {}
 
   async createTenant(createTenantDto: CreateTenantDto) {
-    this.logger.log(`${this.createTenant.name} Service Called`);
+    this.logger.log(`${this.createTenant.name} Service Called`)
     const { storeName, subdomain, planId, name, username, email, password } = createTenantDto
     // Check if subdomain already exists
     const existingTenant = await this.tenantRepository.findOne({
@@ -105,14 +105,14 @@ export class TenantService {
   }
 
   async findAllTenants() {
-    this.logger.log(`${this.findAllTenants.name} Service Called`);
+    this.logger.log(`${this.findAllTenants.name} Service Called`)
     return await this.tenantRepository.find({
       order: { createdAt: 'DESC' },
     })
   }
 
   async findOneTenants(id: string) {
-    this.logger.log(`${this.findOneTenants.name} Service Called`);
+    this.logger.log(`${this.findOneTenants.name} Service Called`)
     const tenant = await this.tenantRepository.findOne({ where: { id } })
     if (!tenant) {
       throw new NotFoundException('Tenant not found')
@@ -121,7 +121,7 @@ export class TenantService {
   }
 
   async findBySubdomain(subdomain: string) {
-    this.logger.log(`${this.findBySubdomain.name} Service Called`);
+    this.logger.log(`${this.findBySubdomain.name} Service Called`)
     const tenant = await this.tenantRepository.findOne({ where: { subdomain } })
     // if (!tenant) {
     //   throw new NotFoundException('Tenant not found')
@@ -130,7 +130,7 @@ export class TenantService {
   }
 
   async findByCustomDomain(customDomain: string) {
-    this.logger.log(`${this.findByCustomDomain.name} Service Called`);
+    this.logger.log(`${this.findByCustomDomain.name} Service Called`)
     const tenant = await this.tenantRepository.findOne({
       where: { customDomain },
     })
@@ -142,7 +142,7 @@ export class TenantService {
   }
 
   async lookupTenant(subdomain?: string, customDomain?: string) {
-    this.logger.log(`${this.lookupTenant.name} Service Called`);
+    this.logger.log(`${this.lookupTenant.name} Service Called`)
     let domain = {} as any
 
     if (customDomain) {
@@ -160,7 +160,7 @@ export class TenantService {
   }
 
   async updateCustomDomain(id: string, customDomain: string) {
-    this.logger.log(`${this.updateCustomDomain.name} Service Called`);
+    this.logger.log(`${this.updateCustomDomain.name} Service Called`)
     const tenant = await this.findOneTenants(id)
     tenant.customDomain = customDomain
     tenant.customDomainStatus = CustomDomainStatus.PENDING
@@ -169,7 +169,7 @@ export class TenantService {
   }
 
   async verifyCustomDomain(id: string) {
-    this.logger.log(`${this.verifyCustomDomain.name} Service Called`);
+    this.logger.log(`${this.verifyCustomDomain.name} Service Called`)
     const tenant = await this.findOneTenants(id)
     // Mock verification: in a real app, you'd check DNS records here
     tenant.customDomainStatus = CustomDomainStatus.ACTIVE
@@ -178,15 +178,14 @@ export class TenantService {
   }
 
   async updateTenantStatus(id: string, status: string) {
-    this.logger.log(`${this.updateTenantStatus.name} Service Called`);
+    this.logger.log(`${this.updateTenantStatus.name} Service Called`)
     const tenant = await this.findOneTenants(id)
     tenant.status = status as TenantStatus
     return await this.tenantRepository.save(tenant)
   }
 
-
   async tenantOverview() {
-    this.logger.log(`${this.tenantOverview.name} Service Called`);
+    this.logger.log(`${this.tenantOverview.name} Service Called`)
     const totalTenants = await this.tenantRepository.count()
     const activeTenants = await this.tenantRepository.count({
       where: { status: TenantStatus.ACTIVE },

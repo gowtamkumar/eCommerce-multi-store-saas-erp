@@ -1,69 +1,63 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity';
-import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity';
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
-import { OrderEntity } from './order.entity';
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
+import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { OrderEntity } from './order.entity'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('order_items')
 export class OrderItemEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'order_id' })
-  orderId: string;
+  orderId: string
 
   @ManyToOne(() => OrderEntity, (order) => order.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
-  order: OrderEntity;
+  order: OrderEntity
 
   @Column({ type: 'uuid', name: 'product_id' })
-  productId: string;
+  productId: string
 
   @ManyToOne(() => ProductEntity, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'product_id' })
-  product: ProductEntity;
+  product: ProductEntity
 
   @Column({ type: 'uuid', nullable: true, name: 'variant_id' })
-  variantId: string;
+  variantId: string
 
   @ManyToOne(() => ProductVariantEntity, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'variant_id' })
-  variant: ProductVariantEntity;
+  variant: ProductVariantEntity
 
   @Column({ type: 'jsonb', nullable: true })
-  snapshot: any;
+  snapshot: any
 
   @Column({ type: 'int' })
-  quantity: number;
+  quantity: number
 
   @Column({ type: 'decimal', name: 'unit_price', precision: 10, scale: 2 })
-  unitPrice: number;
+  unitPrice: number
 
   @Column({ type: 'decimal', name: 'discount_amount', precision: 10, scale: 2, default: 0 })
-  discountAmount: number;
+  discountAmount: number
 
   @Column({ type: 'decimal', name: 'tax_amount', precision: 10, scale: 2, default: 0 })
-  taxAmount: number;
+  taxAmount: number
 
   @Column({ type: 'decimal', name: 'total_amount', precision: 10, scale: 2 })
-  totalAmount: number;
+  totalAmount: number
 
   @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string;
+  tenantId: string
 
   @ManyToOne(() => TenantEntity)
   @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity;
+  tenant: TenantEntity
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 }
-

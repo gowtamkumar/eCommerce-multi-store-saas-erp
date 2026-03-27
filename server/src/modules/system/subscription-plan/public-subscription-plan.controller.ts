@@ -3,10 +3,10 @@ import { SubscriptionPlanService } from './subscription-plan.service'
 
 @Controller('plans')
 export class PublicSubscriptionPlanController {
-    constructor(private readonly planService: SubscriptionPlanService) { }
+  constructor(private readonly planService: SubscriptionPlanService) {}
 
-    @Get()
-    findActiveSubscriptionPlans() {
-        return this.planService.findActiveSubscriptionPlans()
-    }
+  @Get()
+  findActiveSubscriptionPlans() {
+    return this.planService.findActiveSubscriptionPlans()
+  }
 }

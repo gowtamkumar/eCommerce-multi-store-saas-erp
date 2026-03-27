@@ -29,7 +29,7 @@ import { UserService } from '../services/user.service'
 export class UserController {
   private readonly logger = new Logger(UserController.name)
 
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Get('/')
   @UseGuards(RolesGuard)
@@ -38,7 +38,7 @@ export class UserController {
     this.logger.log(`${this.getUsers.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username}" retieving users.`)
 
-    const { users, total, } = await this.userService.getUsers(filterUserDto, ctx.tenantId)
+    const { users, total } = await this.userService.getUsers(filterUserDto, ctx.tenantId)
 
     return {
       success: true,
@@ -59,7 +59,7 @@ export class UserController {
   @Get('/profile')
   async getProfile(@RequestContext() ctx: RequestContextDto) {
     this.logger.log(`${this.getProfile.name} Controller Called`)
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getProfile.`);
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getProfile.`)
     return this.userService.getUser(ctx.userId)
   }
 
@@ -143,7 +143,7 @@ export class UserController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async getUser(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string) {
     this.logger.log(`${this.getUser.name} Controller Called`)
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getUser.`);
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getUser.`)
     const user = await this.userService.getUser(id)
 
     return {
@@ -159,7 +159,7 @@ export class UserController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async createUser(@Body() createUserDto: CreateUserDto, @RequestContext() ctx: RequestContextDto) {
     this.logger.log(`${this.createUser.name} Controller Called`)
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createUser.`);
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createUser.`)
     const user = await this.userService.createUser(createUserDto, ctx.tenantId)
 
     return {
@@ -171,13 +171,16 @@ export class UserController {
   }
 
   @Patch('/profile')
-  async updateProfile(@RequestContext() ctx: RequestContextDto, @Body() updateUserDto: UpdateUserDto) {
+  async updateProfile(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     this.logger.log(`${this.updateProfile.name} Controller Called`)
-    this.logger.verbose(`User "${ctx.user?.username}" called updateProfile.`);
+    this.logger.verbose(`User "${ctx.user?.username}" called updateProfile.`)
 
     // Security check: Remove role and status if present to prevent self-elevation
-    delete updateUserDto.role;
-    delete updateUserDto.status;
+    delete updateUserDto.role
+    delete updateUserDto.status
 
     const user = await this.userService.updateUser(ctx.userId, updateUserDto)
 
@@ -195,7 +198,7 @@ export class UserController {
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
     this.logger.log(`${this.updateProfilePassword.name} Controller Called`)
-    this.logger.verbose(`User "${ctx.user?.username}" called updateProfilePassword.`);
+    this.logger.verbose(`User "${ctx.user?.username}" called updateProfilePassword.`)
     const user = await this.userService.updatePassword(ctx.userId, updatePasswordDto)
 
     return {
@@ -209,9 +212,13 @@ export class UserController {
   @Patch('/:id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  async updateUser(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: UpdateUserDto) {
+  async updateUser(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     this.logger.log(`${this.updateUser.name} Controller Called`)
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateUser.`);
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateUser.`)
     const user = await this.userService.updateUser(id, updateUserDto)
 
     return {
@@ -231,7 +238,7 @@ export class UserController {
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
     this.logger.log(`${this.updatePassword.name} Controller Called`)
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePassword.`);
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePassword.`)
     const user = await this.userService.updatePassword(userId, updatePasswordDto)
 
     return {

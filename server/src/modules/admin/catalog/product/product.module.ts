@@ -14,7 +14,6 @@ import { InventoryTransactionModule } from '@/modules/admin/operations/logistics
 import { PurchaseModule } from '@/modules/admin/operations/finance/purchase/purchase.module'
 import { PromotionModule } from '@/modules/admin/sales/promotion/promotion.module'
 
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -35,4 +34,4 @@ import { PromotionModule } from '@/modules/admin/sales/promotion/promotion.modul
   providers: [ProductService],
   exports: [ProductService],
 })
-export class ProductModule { }
+export class ProductModule {}

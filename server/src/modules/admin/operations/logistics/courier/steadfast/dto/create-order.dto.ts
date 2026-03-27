@@ -1,12 +1,9 @@
-import {
-  IsOptional,
-  IsString
-} from 'class-validator';
+import { IsOptional, IsString } from 'class-validator'
 
 export class CreateSteadfastOrderDto {
   @IsOptional()
   @IsString()
-  orderId?: string;
+  orderId?: string
 
   // @ApiProperty({
   //   description: 'Unique invoice number (alpha-numeric, hyphens, underscores)',

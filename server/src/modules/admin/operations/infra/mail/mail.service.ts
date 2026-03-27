@@ -31,7 +31,7 @@ export class MailService {
   }
 
   private async getTransporter(tenantId: string) {
-    this.logger.log(`${this.getTransporter.name} Service Called`);
+    this.logger.log(`${this.getTransporter.name} Service Called`)
     if (!tenantId)
       return {
         transporter: this.transporter,
@@ -40,7 +40,7 @@ export class MailService {
 
     const settings = await this.settingsRepo.findOne({ where: { tenantId } })
     if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
-      const port = Number(settings.smtp.port) || 587;
+      const port = Number(settings.smtp.port) || 587
 
       const tenantTransporter = nodemailer.createTransport({
         host: settings.smtp.host,
@@ -61,7 +61,7 @@ export class MailService {
   }
 
   async sendVerificationEmail(email: string, token: string, tenantId: string) {
-    this.logger.log(`${this.sendVerificationEmail.name} Service Called`);
+    this.logger.log(`${this.sendVerificationEmail.name} Service Called`)
     const baseUrl = await this.getTenantBaseUrl(tenantId)
     const verificationLink = `${baseUrl}/verify-email?token=${token}`
 
@@ -88,7 +88,7 @@ export class MailService {
   }
 
   async sendResetPasswordEmail(email: string, token: string, tenantId: string) {
-    this.logger.log(`${this.sendResetPasswordEmail.name} Service Called`);
+    this.logger.log(`${this.sendResetPasswordEmail.name} Service Called`)
     const baseUrl = await this.getTenantBaseUrl(tenantId)
     const resetLink = `${baseUrl}/reset-password?token=${token}`
 
@@ -117,11 +117,11 @@ export class MailService {
   }
 
   async sendStaffInvitationEmail(email: string, token: string, role: string, tenantId: string) {
-    this.logger.log(`${this.sendStaffInvitationEmail.name} Service Called`);
-    const baseUrl = await this.getTenantBaseUrl(tenantId);
-    const invitationLink = `${baseUrl}/accept-invitation?token=${token}`;
+    this.logger.log(`${this.sendStaffInvitationEmail.name} Service Called`)
+    const baseUrl = await this.getTenantBaseUrl(tenantId)
+    const invitationLink = `${baseUrl}/accept-invitation?token=${token}`
 
-    const { transporter, from } = await this.getTransporter(tenantId);
+    const { transporter, from } = await this.getTransporter(tenantId)
 
     const mailOptions = {
       from: from,
@@ -139,18 +139,18 @@ export class MailService {
           <p style="color: #64748b; font-size: 14px;">If you didn't expect this invitation, please ignore this email.</p>
         </div>
       `,
-    };
+    }
 
     try {
-      await transporter.sendMail(mailOptions);
-      this.logger.log(`Staff invitation email sent to ${email}`);
+      await transporter.sendMail(mailOptions)
+      this.logger.log(`Staff invitation email sent to ${email}`)
     } catch (error) {
-      this.logger.error(`Failed to send invitation email to ${email}`, error);
+      this.logger.error(`Failed to send invitation email to ${email}`, error)
     }
   }
 
   private async getTenantBaseUrl(tenantId: string): Promise<string> {
-    this.logger.log(`${this.getTenantBaseUrl.name} Service Called`);
+    this.logger.log(`${this.getTenantBaseUrl.name} Service Called`)
     const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000')
 
     if (!tenantId) return appUrl
@@ -174,34 +174,33 @@ export class MailService {
   }
 
   async sendNewOrderNotification(order: OrderEntity, tenantId: string) {
-    this.logger.log(`${this.sendNewOrderNotification.name} Service Called`);
-    const settings = await this.settingsRepo.findOne({ where: { tenantId } });
+    this.logger.log(`${this.sendNewOrderNotification.name} Service Called`)
+    const settings = await this.settingsRepo.findOne({ where: { tenantId } })
     if (!settings || !settings.contactEmail) {
-      this.logger.warn(`No contact email configured for tenant ${tenantId}. Skipping notification.`);
-      return;
+      this.logger.warn(`No contact email configured for tenant ${tenantId}. Skipping notification.`)
+      return
     }
 
-    const { transporter, from } = await this.getTransporter(tenantId);
-    
+    const { transporter, from } = await this.getTransporter(tenantId)
+
     // Prepare item list for email
-    const itemsHtml = order.items
-      ?.map(
-        (item) => {
-          const variantName = item.variant?.combination 
-            ? Object.values(item.variant.combination).join(' / ') 
-            : '';
-          const displayName = `${item.product?.name || 'Product'} ${variantName ? '(' + variantName + ')' : ''}`;
-          
+    const itemsHtml =
+      order.items
+        ?.map((item) => {
+          const variantName = item.variant?.combination
+            ? Object.values(item.variant.combination).join(' / ')
+            : ''
+          const displayName = `${item.product?.name || 'Product'} ${variantName ? '(' + variantName + ')' : ''}`
+
           return `
             <tr>
               <td style="padding: 8px; border-bottom: 1px solid #edf2f7;">${displayName}</td>
               <td style="padding: 8px; border-bottom: 1px solid #edf2f7; text-align: center;">${item.quantity}</td>
               <td style="padding: 8px; border-bottom: 1px solid #edf2f7; text-align: right;">${order.currency} ${Number(item.unitPrice).toFixed(2)}</td>
             </tr>
-          `;
-        }
-      )
-      .join('') || 'No items';
+          `
+        })
+        .join('') || 'No items'
 
     const mailOptions = {
       from: from,
@@ -252,13 +251,13 @@ export class MailService {
           </p>
         </div>
       `,
-    };
+    }
 
     try {
-      await transporter.sendMail(mailOptions);
-      this.logger.log(`New order notification sent for order #${order.id}`);
+      await transporter.sendMail(mailOptions)
+      this.logger.log(`New order notification sent for order #${order.id}`)
     } catch (error) {
-      this.logger.error(`Failed to send order notification for order #${order.id}`, error);
+      this.logger.error(`Failed to send order notification for order #${order.id}`, error)
     }
   }
 }

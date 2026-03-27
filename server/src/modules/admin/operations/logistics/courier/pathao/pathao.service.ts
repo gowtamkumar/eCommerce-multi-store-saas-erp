@@ -16,10 +16,10 @@ export class PathaoService {
     private httpService: HttpService,
     private settingsService: SettingsService,
     private orderService: OrderService,
-  ) { }
+  ) {}
 
   private async getAccessToken(credentials: any) {
-    this.logger.log(`${this.getAccessToken.name} Service Called`);
+    this.logger.log(`${this.getAccessToken.name} Service Called`)
     try {
       const response = await firstValueFrom(
         this.httpService.post(
@@ -42,12 +42,14 @@ export class PathaoService {
       return response.data.access_token
     } catch (error) {
       this.logger.error('Failed to authenticate with Pathao', error.response?.data || error.message)
-      throw new Error(`Pathao Authentication failed: ${error.response?.data?.message || error.message}`)
+      throw new Error(
+        `Pathao Authentication failed: ${error.response?.data?.message || error.message}`,
+      )
     }
   }
 
   private async fetchCredentials(tenantId: string) {
-    this.logger.log(`${this.fetchCredentials.name} Service Called`);
+    this.logger.log(`${this.fetchCredentials.name} Service Called`)
     let baseURL: string
     let clientId: string
     let clientSecret: string
@@ -60,7 +62,12 @@ export class PathaoService {
 
       if (settings?.pathaoCourier) {
         const courier = settings.pathaoCourier
-        if (courier.pathaoClientId && courier.pathaoClientSecret && courier.pathaoUsername && courier.pathaoPassword) {
+        if (
+          courier.pathaoClientId &&
+          courier.pathaoClientSecret &&
+          courier.pathaoUsername &&
+          courier.pathaoPassword
+        ) {
           baseURL = courier.sandboxMode
             ? this.configService.get<string>('PATHAO_SENDBOX_BASE_URL')
             : this.configService.get<string>('PATHAO_BASE_URL')
@@ -84,41 +91,41 @@ export class PathaoService {
   }
 
   async createPathaoOrder(createOrderDto: CreatePathaoOrderDto, tenantId: string) {
-    this.logger.log(`${this.createPathaoOrder.name} Service Called`);
+    this.logger.log(`${this.createPathaoOrder.name} Service Called`)
     const { orderId } = createOrderDto
     const creds = await this.fetchCredentials(tenantId)
     const accessToken = await this.getAccessToken(creds)
 
     const order: any = await this.orderService.findOneForCourier(orderId, tenantId)
-    console.log("order", order);
-
+    console.log('order', order)
 
     if (!order) {
       throw new Error('Order not found')
     }
 
     // Format phone number for Pathao
-    let formattedPhone = (order.customerPhone || '').replace(/\D/g, '');
+    let formattedPhone = (order.customerPhone || '').replace(/\D/g, '')
     if (!formattedPhone.startsWith('0')) {
-      formattedPhone = '0' + formattedPhone;
+      formattedPhone = '0' + formattedPhone
     }
     if (formattedPhone.length > 11) {
-      formattedPhone = formattedPhone.slice(0, 11);
+      formattedPhone = formattedPhone.slice(0, 11)
     }
     if (formattedPhone.length < 11) {
-      formattedPhone = '01700000000';
+      formattedPhone = '01700000000'
     }
 
     // Calculate total item quantity and weight
-    const totalQuantity = order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 1;
-    const estimatedWeight = totalQuantity * 0.5; // Estimate 0.5kg per item
+    const totalQuantity =
+      order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 1
+    const estimatedWeight = totalQuantity * 0.5 // Estimate 0.5kg per item
 
     // Map order data to Pathao format
     const pathaoOrderData = {
       store_id: creds.pathaoStoreId,
       merchant_order_id: order.id.slice(-8).toUpperCase(),
       recipient_name: order.customerName,
-      recipient_phone: "01700000000",
+      recipient_phone: '01700000000',
       recipient_address: order.address || 'Address not provided',
       recipient_city: Number((order as any).cityId) || 1, // Dhaka = 1 (default to satisfy API)
       recipient_zone: Number((order as any).zoneId) || 1,
@@ -127,36 +134,36 @@ export class PathaoService {
       item_type: 2, // 1 for Document, 2 for Parcel
       item_quantity: totalQuantity,
       item_weight: Math.min(estimatedWeight, 10), // Max 10kg
-      item_description: order.items?.map((item: any) =>
-        `${item.quantity}x ${item.product?.name || 'Product'}`
-      ).join(', ') || 'Order items',
+      item_description:
+        order.items
+          ?.map((item: any) => `${item.quantity}x ${item.product?.name || 'Product'}`)
+          .join(', ') || 'Order items',
       amount_to_collect: Number(order.totalAmount) || 0,
-    };
-
+    }
 
     try {
       const response = await firstValueFrom(
-        this.httpService.post(
-          `${creds.baseURL}/aladdin/api/v1/orders`,
-          pathaoOrderData,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-            },
+        this.httpService.post(`${creds.baseURL}/aladdin/api/v1/orders`, pathaoOrderData, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
           },
-        ),
+        }),
       )
-      const responseData = response.data;
-      const trackingId = responseData.data?.consignment_id;
+      const responseData = response.data
+      const trackingId = responseData.data?.consignment_id
 
       // Update order status to SHIPPED and save tracking info
-      await this.orderService.updateOrder(order.id, {
-        status: OrderStatus.SHIPPED,
-        courierStatus: 'Pathao',
-        trackingId: trackingId?.toString()
-      }, tenantId);
+      await this.orderService.updateOrder(
+        order.id,
+        {
+          status: OrderStatus.SHIPPED,
+          courierStatus: 'Pathao',
+          trackingId: trackingId?.toString(),
+        },
+        tenantId,
+      )
 
       return response.data
     } catch (error) {

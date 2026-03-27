@@ -1,52 +1,52 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { PurchaseOrderEntity } from './purchase-order.entity';
-import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity';
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { PurchaseOrderEntity } from './purchase-order.entity'
+import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('supplier_payments')
 export class SupplierPaymentEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'purchase_order_id' })
-  purchaseOrderId: string;
+  purchaseOrderId: string
 
   @ManyToOne(() => PurchaseOrderEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'purchase_order_id' })
-  purchaseOrder: PurchaseOrderEntity;
+  purchaseOrder: PurchaseOrderEntity
 
   @Column({ type: 'uuid', name: 'supplier_id' })
-  supplierId: string;
+  supplierId: string
 
   @ManyToOne(() => SupplierEntity, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'supplier_id' })
-  supplier: SupplierEntity;
+  supplier: SupplierEntity
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  amount: number;
+  amount: number
 
   @Column({ type: 'timestamp', name: 'payment_date', default: () => 'CURRENT_TIMESTAMP' })
-  paymentDate: Date;
+  paymentDate: Date
 
   @Column({ type: 'varchar', name: 'payment_method', length: 50 })
-  paymentMethod: string;
+  paymentMethod: string
 
   @Column({ type: 'varchar', name: 'transaction_id', length: 255, nullable: true })
-  transactionId: string;
+  transactionId: string
 
   @Column({ type: 'text', nullable: true })
-  note: string;
+  note: string
 
   @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string;
+  tenantId: string
 
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity;
+  tenant: TenantEntity
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 }

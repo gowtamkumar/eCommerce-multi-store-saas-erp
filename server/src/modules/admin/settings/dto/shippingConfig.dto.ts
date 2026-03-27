@@ -1,15 +1,15 @@
-import { IsNumber, IsOptional } from "class-validator";
+import { IsNumber, IsOptional } from 'class-validator'
 
 export class ShippingConfigDto {
   @IsNumber()
   @IsOptional()
-  insideCityFee?: number;
+  insideCityFee?: number
 
   @IsNumber()
   @IsOptional()
-  outsideCityFee?: number;
+  outsideCityFee?: number
 
   @IsNumber()
   @IsOptional()
-  freeShippingThreshold?: number;
+  freeShippingThreshold?: number
 }

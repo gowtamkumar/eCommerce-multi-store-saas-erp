@@ -1,5 +1,5 @@
 export enum PurchaseOrderPaymentStatus {
-    PENDING = 'pending',
-    PARTIAL = 'partial',
-    PAID = 'paid',
+  PENDING = 'pending',
+  PARTIAL = 'partial',
+  PAID = 'paid',
 }

@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { CacheModule } from './cache/cache.module';
-import { MailModule } from './mail/mail.module';
-import { FileModule } from './media/file.module';
+import { Module } from '@nestjs/common'
+import { CacheModule } from './cache/cache.module'
+import { MailModule } from './mail/mail.module'
+import { FileModule } from './media/file.module'
 
 @Module({
   imports: [CacheModule, MailModule, FileModule],

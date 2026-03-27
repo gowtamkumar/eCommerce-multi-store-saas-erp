@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcrypt'
 import * as crypto from 'crypto'
@@ -21,7 +27,7 @@ export class UserService {
     @InjectRepository(StaffInvitationEntity)
     private readonly invitationRepo: Repository<StaffInvitationEntity>,
     private readonly mailService: MailService,
-  ) { }
+  ) {}
 
   async getUsers(
     filterUserDto: FilterUserDto,
@@ -52,7 +58,7 @@ export class UserService {
       .take(limit)
       .getManyAndCount()
 
-    return { users, total, }
+    return { users, total }
   }
 
   async findAllUsersCrossTenant(): Promise<UserEntity[]> {
@@ -161,19 +167,19 @@ export class UserService {
   }
 
   validateUser(user: UserEntity, password: string): Promise<boolean> {
-    this.logger.log(`${this.validateUser.name} Service Called`);
+    this.logger.log(`${this.validateUser.name} Service Called`)
     return bcrypt.compare(password, user.password)
   }
 
   async verifyUser(id: string): Promise<UserEntity> {
-    this.logger.log(`${this.verifyUser.name} Service Called`);
+    this.logger.log(`${this.verifyUser.name} Service Called`)
     const user = await this.getUser(id)
     user.isEmailVerified = true
     return this.userRepo.save(user)
   }
 
   async verifyUserByToken(token: string): Promise<UserEntity> {
-    this.logger.log(`${this.verifyUserByToken.name} Service Called`);
+    this.logger.log(`${this.verifyUserByToken.name} Service Called`)
     const user = await this.userRepo.findOne({ where: { emailVerificationToken: token } })
     if (!user) {
       throw new NotFoundException('Invalid or expired verification token')
@@ -184,7 +190,7 @@ export class UserService {
   }
 
   async updateResetToken(userId: string, token: string, expires: Date) {
-    this.logger.log(`${this.updateResetToken.name} Service Called`);
+    this.logger.log(`${this.updateResetToken.name} Service Called`)
     const user = await this.getUser(userId)
     user.resetPasswordToken = token
     user.resetPasswordExpires = expires
@@ -192,7 +198,7 @@ export class UserService {
   }
 
   async resetUserPasswordByToken(token: string, password: string): Promise<UserEntity> {
-    this.logger.log(`${this.resetUserPasswordByToken.name} Service Called`);
+    this.logger.log(`${this.resetUserPasswordByToken.name} Service Called`)
     const user = await this.userRepo.findOne({
       where: { resetPasswordToken: token },
     })
@@ -208,12 +214,12 @@ export class UserService {
   }
 
   async countByTenant(tenantId: string) {
-    this.logger.log(`${this.countByTenant.name} Service Called`);
+    this.logger.log(`${this.countByTenant.name} Service Called`)
     return await this.userRepo.count({ where: { tenantId } })
   }
 
   async setCurrentRefreshToken(refreshToken: string, userId: string) {
-    this.logger.log(`${this.setCurrentRefreshToken.name} Service Called`);
+    this.logger.log(`${this.setCurrentRefreshToken.name} Service Called`)
     const currentRefreshToken = await bcrypt.hash(refreshToken, 10)
     await this.userRepo.update(userId, {
       refreshToken: currentRefreshToken,
@@ -221,7 +227,7 @@ export class UserService {
   }
 
   async getUserIfRefreshTokenMatches(refreshToken: string, userId: string) {
-    this.logger.log(`${this.getUserIfRefreshTokenMatches.name} Service Called`);
+    this.logger.log(`${this.getUserIfRefreshTokenMatches.name} Service Called`)
     const user = await this.userRepo
       .createQueryBuilder('user')
       .addSelect('user.refreshToken')
@@ -240,14 +246,14 @@ export class UserService {
   }
 
   async removeRefreshToken(userId: string) {
-    this.logger.log(`${this.removeRefreshToken.name} Service Called`);
+    this.logger.log(`${this.removeRefreshToken.name} Service Called`)
     return this.userRepo.update(userId, {
       refreshToken: null,
     })
   }
 
   async userOverview() {
-    this.logger.log(`${this.userOverview.name} Service Called`);
+    this.logger.log(`${this.userOverview.name} Service Called`)
     const totalUsers = await this.userRepo.count()
     const activeUsers = await this.userRepo.count({
       where: { status: UserStatus.ACTIVE },
@@ -265,7 +271,7 @@ export class UserService {
   // ─── Team / Staff Invitation Methods ───────────────────────────────────────
 
   async inviteStaff(dto: InviteStaffDto, tenantId: string, invitedBy: string) {
-    this.logger.log(`${this.inviteStaff.name} Service Called`);
+    this.logger.log(`${this.inviteStaff.name} Service Called`)
 
     // Prevent re-inviting an existing active user
     const existingUser = await this.findUserByEmail(dto.email, tenantId)
@@ -301,7 +307,7 @@ export class UserService {
   }
 
   async acceptInvitation(dto: AcceptInvitationDto) {
-    this.logger.log(`${this.acceptInvitation.name} Service Called`);
+    this.logger.log(`${this.acceptInvitation.name} Service Called`)
 
     const invitation = await this.invitationRepo.findOne({ where: { token: dto.token } })
 
@@ -342,7 +348,7 @@ export class UserService {
   }
 
   async getInvitations(tenantId: string) {
-    this.logger.log(`${this.getInvitations.name} Service Called`);
+    this.logger.log(`${this.getInvitations.name} Service Called`)
     return this.invitationRepo.find({
       where: { tenantId },
       order: { createdAt: 'DESC' },
@@ -350,7 +356,7 @@ export class UserService {
   }
 
   async revokeInvitation(invitationId: string, tenantId: string) {
-    this.logger.log(`${this.revokeInvitation.name} Service Called`);
+    this.logger.log(`${this.revokeInvitation.name} Service Called`)
     const invitation = await this.invitationRepo.findOne({
       where: { id: invitationId, tenantId },
     })
@@ -365,7 +371,7 @@ export class UserService {
   }
 
   async getTeamMembers(tenantId: string) {
-    this.logger.log(`${this.getTeamMembers.name} Service Called`);
+    this.logger.log(`${this.getTeamMembers.name} Service Called`)
 
     const [members, invitations] = await Promise.all([
       this.userRepo.find({
@@ -383,7 +389,7 @@ export class UserService {
   }
 
   async updateTeamMemberRole(memberId: string, role: UserRole, tenantId: string) {
-    this.logger.log(`${this.updateTeamMemberRole.name} Service Called`);
+    this.logger.log(`${this.updateTeamMemberRole.name} Service Called`)
     const user = await this.userRepo.findOne({ where: { id: memberId, tenantId } })
     if (!user) throw new NotFoundException('Team member not found.')
     user.role = role

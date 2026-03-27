@@ -97,7 +97,6 @@ export class CreateOrderDto {
   @IsOptional()
   shippingFee?: number
 
-
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()

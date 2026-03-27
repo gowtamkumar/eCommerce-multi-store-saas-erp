@@ -25,7 +25,7 @@ export class ReportController {
     private readonly supplierService: SupplierService,
     private readonly purchaseOrderService: PurchaseOrderService,
     private readonly expenseService: ExpenseService,
-  ) { }
+  ) {}
 
   @Get('/analytics')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
@@ -170,7 +170,10 @@ export class ReportController {
         supplierStats: {
           totalSuppliers: suppliers.length,
           totalPurchaseOrders: purchaseOrders.length,
-          totalAmountDue: purchaseOrders.reduce((sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)), 0),
+          totalAmountDue: purchaseOrders.reduce(
+            (sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)),
+            0,
+          ),
           recentPurchaseOrders: purchaseOrders.slice(0, 5),
         },
         counts: {
@@ -196,15 +199,21 @@ export class ReportController {
           })
           .map((p: any) => {
             // For UI, determine if it's the base product or a variant that triggered the alert
-            const triggeringVariant = p.variants?.find((v: any) => v.stock <= (v.lowStockThreshold || 5));
+            const triggeringVariant = p.variants?.find(
+              (v: any) => v.stock <= (v.lowStockThreshold || 5),
+            )
             return {
               id: p.id,
               name: p.name,
               image: p.images?.[0],
               stock: triggeringVariant ? triggeringVariant.stock : p.stock,
-              threshold: triggeringVariant ? (triggeringVariant.lowStockThreshold || 5) : (p.lowStockThreshold || 5),
-              variantName: triggeringVariant ? Object.values(triggeringVariant.combination).join(' / ') : null
-            };
+              threshold: triggeringVariant
+                ? triggeringVariant.lowStockThreshold || 5
+                : p.lowStockThreshold || 5,
+              variantName: triggeringVariant
+                ? Object.values(triggeringVariant.combination).join(' / ')
+                : null,
+            }
           })
           .slice(0, 10),
       },
@@ -213,102 +222,113 @@ export class ReportController {
 
   @Get('/profit-loss')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  async getProfitLossReport(@Request() req: any, @Query('startDate') startDateStr?: string, @Query('endDate') endDateStr?: string) {
-    const tenantId = req.user.tenantId;
+  async getProfitLossReport(
+    @Request() req: any,
+    @Query('startDate') startDateStr?: string,
+    @Query('endDate') endDateStr?: string,
+  ) {
+    const tenantId = req.user.tenantId
 
     const [orders, payments, expenses, purchaseOrders] = await Promise.all([
       this.orderService.findAllOrders({ page: 1, limit: 1000 }, tenantId),
       this.paymentService.findAllPayments(tenantId),
       this.expenseService.findAllExpenses(tenantId),
       this.purchaseOrderService.findAllPurchaseOrders(tenantId),
-    ]);
+    ])
 
-    const ordersData = orders.orders || [];
-    const paymentsData = payments || [];
-    const expensesData = expenses || [];
-    const purchaseOrdersData = purchaseOrders || [];
+    const ordersData = orders.orders || []
+    const paymentsData = payments || []
+    const expensesData = expenses || []
+    const purchaseOrdersData = purchaseOrders || []
 
-    let startDate = startDateStr ? new Date(startDateStr) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    let endDate = endDateStr ? new Date(endDateStr) : new Date();
+    let startDate = startDateStr
+      ? new Date(startDateStr)
+      : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    let endDate = endDateStr ? new Date(endDateStr) : new Date()
 
     // Set end date to end of day to include full day
-    endDate.setHours(23, 59, 59, 999);
+    endDate.setHours(23, 59, 59, 999)
 
     // Filter data by date range
     const filterByDate = (item: any, dateField: string = 'createdAt') => {
-      const itemDate = new Date(item[dateField]);
-      return itemDate >= startDate && itemDate <= endDate;
-    };
+      const itemDate = new Date(item[dateField])
+      return itemDate >= startDate && itemDate <= endDate
+    }
 
-    const filteredOrders = ordersData.filter((o: any) => filterByDate(o));
-    const filteredPayments = paymentsData.filter((p: any) => filterByDate(p));
-    const filteredExpenses = expensesData.filter((e: any) => filterByDate(e, 'expenseDate'));
-    const filteredPurchaseOrders = purchaseOrdersData.filter((po: any) => filterByDate(po));
+    const filteredOrders = ordersData.filter((o: any) => filterByDate(o))
+    const filteredPayments = paymentsData.filter((p: any) => filterByDate(p))
+    const filteredExpenses = expensesData.filter((e: any) => filterByDate(e, 'expenseDate'))
+    const filteredPurchaseOrders = purchaseOrdersData.filter((po: any) => filterByDate(po))
 
     // Calculate Sales Revenue
     // Revenue can be either Total Value of Completed/Delivered Orders or sum of Payments depending on accounting logic.
     // Using Payment amounts (completed transactions) is standard for cash-based accounting.
-    const revenue = filteredPayments.reduce((sum: number, p: any) => sum + (+p.amount || 0), 0);
+    const revenue = filteredPayments.reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
 
     // Calculate COGS (Cost of Goods Sold)
     // Using actual Purchase Orders that are completed or approved
     const cogs = filteredPurchaseOrders
       .filter((po: any) => po.status !== 'CANCELLED')
-      .reduce((sum: number, po: any) => sum + (+po.totalAmount || 0), 0);
+      .reduce((sum: number, po: any) => sum + (+po.totalAmount || 0), 0)
 
-    const grossProfit = revenue - cogs;
+    const grossProfit = revenue - cogs
 
     // Calculate Operating Expenses
     const categorizedExpenses = filteredExpenses.reduce((acc: Record<string, number>, exp: any) => {
-      const cat = exp.category;
-      acc[cat] = (acc[cat] || 0) + Number(exp.amount || 0);
-      return acc;
-    }, {});
+      const cat = exp.category
+      acc[cat] = (acc[cat] || 0) + Number(exp.amount || 0)
+      return acc
+    }, {})
 
-    const totalOperatingExpenses = filteredExpenses.reduce((sum: number, exp: any) => sum + (+exp.amount || 0), 0);
+    const totalOperatingExpenses = filteredExpenses.reduce(
+      (sum: number, exp: any) => sum + (+exp.amount || 0),
+      0,
+    )
 
-    const netProfit = grossProfit - totalOperatingExpenses;
-    const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
+    const netProfit = grossProfit - totalOperatingExpenses
+    const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0
 
     return {
       success: true,
       data: {
         period: {
           startDate,
-          endDate
+          endDate,
         },
         revenue: {
           total: revenue,
-          orderCount: filteredOrders.length
+          orderCount: filteredOrders.length,
         },
         cogs: {
           total: cogs,
-          purchaseOrderCount: filteredPurchaseOrders.length
+          purchaseOrderCount: filteredPurchaseOrders.length,
         },
         grossProfit,
         operatingExpenses: {
           total: totalOperatingExpenses,
-          breakdown: Object.keys(categorizedExpenses).map(category => ({
-            category,
-            amount: categorizedExpenses[category]
-          })).sort((a, b) => b.amount - a.amount)
+          breakdown: Object.keys(categorizedExpenses)
+            .map((category) => ({
+              category,
+              amount: categorizedExpenses[category],
+            }))
+            .sort((a, b) => b.amount - a.amount),
         },
         netProfit,
-        profitMargin
-      }
-    };
+        profitMargin,
+      },
+    }
   }
 
   @Get('/supplier-ledger/:supplierId')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
   async getSupplierLedger(@Request() req: any, @Param('supplierId') supplierId: string) {
-    const tenantId = req.user.tenantId;
+    const tenantId = req.user.tenantId
 
     const [supplier, pos, payments] = await Promise.all([
       this.supplierService.findOneSupplier(supplierId, tenantId),
       this.purchaseOrderService.findAllBySupplier(supplierId, tenantId),
       this.purchaseOrderService.findAllPaymentsBySupplier(supplierId, tenantId),
-    ]);
+    ])
 
     // Combine and sort chronologically
     const transactions: any[] = [
@@ -331,19 +351,19 @@ export class ReportController {
         debit: 0,
         credit: +p.amount, // Payment decreases due amount
         method: p.paymentMethod,
-        note: p.note
-      }))
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        note: p.note,
+      })),
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
     // Calculate running balance and summary
-    let runningBalance = 0;
-    const ledger = transactions.map(tx => {
-      runningBalance += (tx.debit - tx.credit);
-      return { ...tx, balance: runningBalance };
-    });
+    let runningBalance = 0
+    const ledger = transactions.map((tx) => {
+      runningBalance += tx.debit - tx.credit
+      return { ...tx, balance: runningBalance }
+    })
 
-    const totalOrders = pos.reduce((sum, po) => sum + (+po.totalAmount || 0), 0);
-    const totalPaid = payments.reduce((sum, p) => sum + (+p.amount || 0), 0);
+    const totalOrders = pos.reduce((sum, po) => sum + (+po.totalAmount || 0), 0)
+    const totalPaid = payments.reduce((sum, p) => sum + (+p.amount || 0), 0)
 
     return {
       success: true,
@@ -352,28 +372,28 @@ export class ReportController {
           id: supplier.id,
           name: supplier.name,
           email: supplier.email,
-          phone: supplier.phone
+          phone: supplier.phone,
         },
         summary: {
           totalOrders,
           totalPaid,
-          balance: runningBalance
+          balance: runningBalance,
         },
-        ledger: ledger.reverse() // Newest first for UI
-      }
-    };
+        ledger: ledger.reverse(), // Newest first for UI
+      },
+    }
   }
 
   @Get('/customer-ledger/:customerId')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
   async getCustomerLedger(@Request() req: any, @Param('customerId') customerId: string) {
-    const tenantId = req.user.tenantId;
+    const tenantId = req.user.tenantId
 
     const [customer, orders, payments] = await Promise.all([
       this.userService.findOneUser(customerId, tenantId),
       this.orderService.findByUserId(customerId, tenantId),
       this.paymentService.findAllPaymentsByCustomer(customerId, tenantId),
-    ]);
+    ])
 
     // Combine and sort chronologically
     const transactions: any[] = [
@@ -396,19 +416,21 @@ export class ReportController {
         debit: 0,
         credit: +p.amount, // Payment decreases due amount
         method: p.method,
-        note: p.gatewayResponse?.note || ''
-      }))
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        note: p.gatewayResponse?.note || '',
+      })),
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
     // Calculate running balance and summary
-    let runningBalance = 0;
-    const ledger = transactions.map(tx => {
-      runningBalance += (tx.debit - tx.credit);
-      return { ...tx, balance: runningBalance };
-    });
+    let runningBalance = 0
+    const ledger = transactions.map((tx) => {
+      runningBalance += tx.debit - tx.credit
+      return { ...tx, balance: runningBalance }
+    })
 
-    const totalOrders = orders.reduce((sum, order) => sum + (+order.totalAmount || 0), 0);
-    const totalPaid = payments.filter((p: any) => p.status === 'SUCCESS').reduce((sum, p) => sum + (+p.amount || 0), 0);
+    const totalOrders = orders.reduce((sum, order) => sum + (+order.totalAmount || 0), 0)
+    const totalPaid = payments
+      .filter((p: any) => p.status === 'SUCCESS')
+      .reduce((sum, p) => sum + (+p.amount || 0), 0)
 
     return {
       success: true,
@@ -417,86 +439,91 @@ export class ReportController {
           id: customer.id,
           name: customer.name,
           email: customer.email,
-          phone: customer.phone
+          phone: customer.phone,
         },
         summary: {
           totalOrders,
           totalPaid,
-          balance: runningBalance
+          balance: runningBalance,
         },
-        ledger: ledger.reverse() // Newest first for UI
-      }
-    };
+        ledger: ledger.reverse(), // Newest first for UI
+      },
+    }
   }
 
   @Get('/cash-flow')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async getCashFlow(@Request() req: any, @Query('period') period: string = 'last30days') {
-    const tenantId = req.user.tenantId;
+    const tenantId = req.user.tenantId
 
     const [customerPayments, expenses, supplierPayments] = await Promise.all([
       this.paymentService.findAllPayments(tenantId),
       this.expenseService.findAllExpenses(tenantId),
       this.purchaseOrderService.findAllPaymentsByPurchaseOrder(tenantId),
-    ]);
+    ])
 
-    const inflow = customerPayments.filter((p: any) => p.status === 'SUCCESS');
-    const outflowExpenses = expenses;
-    const outflowSuppliers = supplierPayments;
+    const inflow = customerPayments.filter((p: any) => p.status === 'SUCCESS')
+    const outflowExpenses = expenses
+    const outflowSuppliers = supplierPayments
 
     // Combine all movements
     const movements: any[] = [
-      ...inflow.map(p => ({
+      ...inflow.map((p) => ({
         date: p.createdAt,
         amount: +p.amount,
         type: 'INFLOW',
         category: 'Sales',
-        reference: p.transactionId
+        reference: p.transactionId,
       })),
-      ...outflowExpenses.map(e => ({
+      ...outflowExpenses.map((e) => ({
         date: e.expenseDate,
         amount: +e.amount,
         type: 'OUTFLOW',
         category: e.category,
-        reference: e.description
+        reference: e.description,
       })),
-      ...outflowSuppliers.map(sp => ({
+      ...outflowSuppliers.map((sp) => ({
         date: sp.paymentDate,
         amount: +sp.amount,
         type: 'OUTFLOW',
         category: 'Supplier Payment',
-        reference: sp.transactionId || 'Vendor Payout'
-      }))
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        reference: sp.transactionId || 'Vendor Payout',
+      })),
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
     // Group by day for the last 30 days
     const last30Days = Array.from({ length: 30 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      return d.toISOString().split('T')[0];
-    }).reverse();
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      return d.toISOString().split('T')[0]
+    }).reverse()
 
-    const chartData = last30Days.map(date => {
-      const dayMovements = movements.filter(m => {
-        const d = m.date instanceof Date ? m.date.toISOString() : m.date;
-        return typeof d === 'string' && d.startsWith(date);
-      });
+    const chartData = last30Days.map((date) => {
+      const dayMovements = movements.filter((m) => {
+        const d = m.date instanceof Date ? m.date.toISOString() : m.date
+        return typeof d === 'string' && d.startsWith(date)
+      })
 
-      const dayInflow = dayMovements.filter(m => m.type === 'INFLOW').reduce((sum, m) => sum + m.amount, 0);
-      const dayOutflow = dayMovements.filter(m => m.type === 'OUTFLOW').reduce((sum, m) => sum + m.amount, 0);
+      const dayInflow = dayMovements
+        .filter((m) => m.type === 'INFLOW')
+        .reduce((sum, m) => sum + m.amount, 0)
+      const dayOutflow = dayMovements
+        .filter((m) => m.type === 'OUTFLOW')
+        .reduce((sum, m) => sum + m.amount, 0)
 
       return {
         date,
         displayDate: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         inflow: dayInflow,
         outflow: dayOutflow,
-        net: dayInflow - dayOutflow
-      };
-    });
+        net: dayInflow - dayOutflow,
+      }
+    })
 
-    const totalInflow = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0);
-    const totalOutflow = outflowExpenses.reduce((sum, e) => sum + (+e.amount || 0), 0) +
-      outflowSuppliers.reduce((sum, sp) => sum + (+sp.amount || 0), 0);
+    const totalInflow = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0)
+    const totalOutflow =
+      outflowExpenses.reduce((sum, e) => sum + (+e.amount || 0), 0) +
+      outflowSuppliers.reduce((sum, sp) => sum + (+sp.amount || 0), 0)
 
     return {
       success: true,
@@ -504,12 +531,12 @@ export class ReportController {
         summary: {
           totalInflow,
           totalOutflow,
-          netCashFlow: totalInflow - totalOutflow
+          netCashFlow: totalInflow - totalOutflow,
         },
         chartData,
-        recentMovements: movements.reverse().slice(0, 10)
-      }
-    };
+        recentMovements: movements.reverse().slice(0, 10),
+      },
+    }
   }
 
   @Get('/export/:type')
@@ -520,122 +547,138 @@ export class ReportController {
     @Query('startDate') startDateStr?: string,
     @Query('endDate') endDateStr?: string,
     @Query('supplierId') supplierId?: string,
-    @Query('customerId') customerId?: string
+    @Query('customerId') customerId?: string,
   ) {
-    const tenantId = req.user.tenantId;
-    const startDate = startDateStr ? new Date(startDateStr) : new Date(0);
-    const endDate = endDateStr ? new Date(endDateStr) : new Date();
-    endDate.setHours(23, 59, 59, 999);
+    const tenantId = req.user.tenantId
+    const startDate = startDateStr ? new Date(startDateStr) : new Date(0)
+    const endDate = endDateStr ? new Date(endDateStr) : new Date()
+    endDate.setHours(23, 59, 59, 999)
 
-    let csvContent = '';
-    let filename = `report-${type}-${new Date().toISOString().split('T')[0]}.csv`;
+    let csvContent = ''
+    let filename = `report-${type}-${new Date().toISOString().split('T')[0]}.csv`
 
     switch (type) {
       case 'sales': {
-        const payments = await this.paymentService.findAllPayments(tenantId);
-        const filtered = payments.filter((p: any) => p.status === 'SUCCESS' && new Date(p.createdAt) >= startDate && new Date(p.createdAt) <= endDate);
-        csvContent = 'Date,Transaction ID,Order ID,Amount,Currency,Method\n';
+        const payments = await this.paymentService.findAllPayments(tenantId)
+        const filtered = payments.filter(
+          (p: any) =>
+            p.status === 'SUCCESS' &&
+            new Date(p.createdAt) >= startDate &&
+            new Date(p.createdAt) <= endDate,
+        )
+        csvContent = 'Date,Transaction ID,Order ID,Amount,Currency,Method\n'
         filtered.forEach((p: any) => {
-          csvContent += `${p.createdAt},${p.transactionId},${p.orderId},${p.amount},${p.currency},${p.method}\n`;
-        });
-        break;
+          csvContent += `${p.createdAt},${p.transactionId},${p.orderId},${p.amount},${p.currency},${p.method}\n`
+        })
+        break
       }
       case 'expenses': {
-        const expenses = await this.expenseService.findAllExpenses(tenantId);
-        const filtered = expenses.filter((e: any) => new Date(e.expenseDate) >= startDate && new Date(e.expenseDate) <= endDate);
-        csvContent = 'Date,Category,Description,Amount,Tenant ID\n';
+        const expenses = await this.expenseService.findAllExpenses(tenantId)
+        const filtered = expenses.filter(
+          (e: any) => new Date(e.expenseDate) >= startDate && new Date(e.expenseDate) <= endDate,
+        )
+        csvContent = 'Date,Category,Description,Amount,Tenant ID\n'
         filtered.forEach((e: any) => {
-          csvContent += `${e.expenseDate},${e.category},"${e.description || ''}",${e.amount},${e.tenantId}\n`;
-        });
-        break;
+          csvContent += `${e.expenseDate},${e.category},"${e.description || ''}",${e.amount},${e.tenantId}\n`
+        })
+        break
       }
       case 'supplier-ledger': {
-        if (!supplierId) return { success: false, message: 'Supplier ID required' };
-        const res = await this.getSupplierLedger(req, supplierId);
-        const data = res.data;
-        csvContent = `Supplier: ${data.supplier.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`;
+        if (!supplierId) return { success: false, message: 'Supplier ID required' }
+        const res = await this.getSupplierLedger(req, supplierId)
+        const data = res.data
+        csvContent = `Supplier: ${data.supplier.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`
         data.ledger.forEach((tx: any) => {
-          csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`;
-        });
-        break;
+          csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`
+        })
+        break
       }
       case 'customer-ledger': {
-        if (!customerId) return { success: false, message: 'Customer ID required' };
-        const res = await this.getCustomerLedger(req, customerId);
-        const data = res.data;
-        csvContent = `Customer: ${data.customer.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`;
+        if (!customerId) return { success: false, message: 'Customer ID required' }
+        const res = await this.getCustomerLedger(req, customerId)
+        const data = res.data
+        csvContent = `Customer: ${data.customer.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`
         data.ledger.forEach((tx: any) => {
-          csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`;
-        });
-        break;
+          csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`
+        })
+        break
       }
       case 'cash-flow': {
-        const res = await this.getCashFlow(req);
-        const data = res.data;
-        csvContent = 'Date,Type,Category,Reference,Amount\n';
+        const res = await this.getCashFlow(req)
+        const data = res.data
+        csvContent = 'Date,Type,Category,Reference,Amount\n'
         data.recentMovements.forEach((m: any) => {
-          csvContent += `${m.date},${m.type},${m.category},"${m.reference || ''}",${m.amount}\n`;
-        });
-        break;
+          csvContent += `${m.date},${m.type},${m.category},"${m.reference || ''}",${m.amount}\n`
+        })
+        break
       }
       default:
-        return { success: false, message: 'Invalid export type' };
+        return { success: false, message: 'Invalid export type' }
     }
 
     return {
       success: true,
       data: {
         csv: csvContent,
-        filename
-      }
-    };
+        filename,
+      },
+    }
   }
 
   @Get('/finance-summary')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async getFinanceSummary(@Request() req: any) {
-    const tenantId = req.user.tenantId;
+    const tenantId = req.user.tenantId
 
     const [customerPayments, expenses, supplierPayments, purchaseOrders] = await Promise.all([
       this.paymentService.findAllPayments(tenantId),
       this.expenseService.findAllExpenses(tenantId),
       this.purchaseOrderService.findAllPaymentsByPurchaseOrder(tenantId),
       this.purchaseOrderService.findAllPurchaseOrders(tenantId),
-    ]);
+    ])
 
-    const inflow = customerPayments.filter((p: any) => p.status === 'SUCCESS');
-    const totalRevenue = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0);
-    const totalOpExpenses = expenses.reduce((sum, e) => sum + (+e.amount || 0), 0);
-    const totalSupplierPayments = supplierPayments.reduce((sum, sp) => sum + (+sp.amount || 0), 0);
-    const totalExpenses = totalOpExpenses + totalSupplierPayments;
-    const totalAmountDue = purchaseOrders.reduce((sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)), 0);
+    const inflow = customerPayments.filter((p: any) => p.status === 'SUCCESS')
+    const totalRevenue = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0)
+    const totalOpExpenses = expenses.reduce((sum, e) => sum + (+e.amount || 0), 0)
+    const totalSupplierPayments = supplierPayments.reduce((sum, sp) => sum + (+sp.amount || 0), 0)
+    const totalExpenses = totalOpExpenses + totalSupplierPayments
+    const totalAmountDue = purchaseOrders.reduce(
+      (sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)),
+      0,
+    )
 
     // Monthly Trend (Last 6 Months)
     const months = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      return d.toISOString().substring(0, 7); // YYYY-MM
-    }).reverse();
+      const d = new Date()
+      d.setMonth(d.getMonth() - i)
+      return d.toISOString().substring(0, 7) // YYYY-MM
+    }).reverse()
 
-    const chartData = months.map(month => {
-      const monthInflow = inflow.filter(p => p.createdAt.toString().startsWith(month)).reduce((sum, p) => sum + (+p.amount || 0), 0);
-      const monthOpEx = expenses.filter(e => e.expenseDate.toString().startsWith(month)).reduce((sum, e) => sum + (+e.amount || 0), 0);
-      const monthSuppEx = supplierPayments.filter(sp => sp.paymentDate.toString().startsWith(month)).reduce((sum, sp) => sum + (+sp.amount || 0), 0);
+    const chartData = months.map((month) => {
+      const monthInflow = inflow
+        .filter((p) => p.createdAt.toString().startsWith(month))
+        .reduce((sum, p) => sum + (+p.amount || 0), 0)
+      const monthOpEx = expenses
+        .filter((e) => e.expenseDate.toString().startsWith(month))
+        .reduce((sum, e) => sum + (+e.amount || 0), 0)
+      const monthSuppEx = supplierPayments
+        .filter((sp) => sp.paymentDate.toString().startsWith(month))
+        .reduce((sum, sp) => sum + (+sp.amount || 0), 0)
 
       return {
         name: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short' }),
         revenue: monthInflow,
         expense: monthOpEx + monthSuppEx,
-        profit: monthInflow - (monthOpEx + monthSuppEx)
-      };
-    });
+        profit: monthInflow - (monthOpEx + monthSuppEx),
+      }
+    })
 
     // Categorized Expenses
-    const categories: Record<string, number> = {};
-    expenses.forEach(e => {
-      categories[e.category] = (categories[e.category] || 0) + (+e.amount || 0);
-    });
-    categories['Supplier Payouts'] = totalSupplierPayments;
+    const categories: Record<string, number> = {}
+    expenses.forEach((e) => {
+      categories[e.category] = (categories[e.category] || 0) + (+e.amount || 0)
+    })
+    categories['Supplier Payouts'] = totalSupplierPayments
 
     return {
       success: true,
@@ -645,16 +688,18 @@ export class ReportController {
           totalExpenses,
           netProfit: totalRevenue - totalExpenses,
           margin: totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue) * 100 : 0,
-          totalAmountDue
+          totalAmountDue,
         },
         chartData,
-        expenseBreakdown: Object.entries(categories).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value),
+        expenseBreakdown: Object.entries(categories)
+          .map(([name, value]) => ({ name, value }))
+          .sort((a, b) => b.value - a.value),
         supplierStats: {
           totalSuppliers: (await this.supplierService.findAllSuppliers(tenantId)).length,
           totalPurchaseOrders: purchaseOrders.length,
-          recentPurchaseOrders: purchaseOrders.slice(0, 5)
-        }
-      }
-    };
+          recentPurchaseOrders: purchaseOrders.slice(0, 5),
+        },
+      },
+    }
   }
 }

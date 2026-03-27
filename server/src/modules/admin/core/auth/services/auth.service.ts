@@ -26,7 +26,7 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly tenantService: TenantService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   async register(registerCredentialDto: RegisterCredentialDto, tenantId: string) {
     this.logger.log(`${this.register.name} Service Called`)
@@ -122,17 +122,17 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
-    this.logger.log(`${this.verifyEmail.name} Service Called`);
+    this.logger.log(`${this.verifyEmail.name} Service Called`)
     return this.userService.verifyUserByToken(token)
   }
 
   async acceptInvitation(dto: any) {
-    this.logger.log(`${this.acceptInvitation.name} Service Called`);
-    return this.userService.acceptInvitation(dto);
+    this.logger.log(`${this.acceptInvitation.name} Service Called`)
+    return this.userService.acceptInvitation(dto)
   }
 
   async getTokens(user) {
-    this.logger.log(`${this.getTokens.name} Service Called`);
+    this.logger.log(`${this.getTokens.name} Service Called`)
     const payload = {
       username: user.username,
       tenantId: user.tenantId,
@@ -160,7 +160,7 @@ export class AuthService {
   }
 
   async refreshTokens(userId: string, refreshToken: string) {
-    this.logger.log(`${this.refreshTokens.name} Service Called`);
+    this.logger.log(`${this.refreshTokens.name} Service Called`)
     const user = await this.userService.getUserIfRefreshTokenMatches(refreshToken, userId)
     if (!user) throw new UnauthorizedException('Access Denied')
 
@@ -169,7 +169,7 @@ export class AuthService {
   }
 
   async logout(userId: string) {
-    this.logger.log(`${this.logout.name} Service Called`);
+    this.logger.log(`${this.logout.name} Service Called`)
     return this.userService.removeRefreshToken(userId)
   }
 }

@@ -1,23 +1,23 @@
-import { IsEnum, IsOptional } from 'class-validator';
-import { UserRole } from '@/common/enums/user/user-role.enum';
-import { UserStatus } from '@/common/enums/user/user-status.enum';
-import { PaginationDto } from '@/common/dto/pagination.dto';
+import { IsEnum, IsOptional } from 'class-validator'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { UserStatus } from '@/common/enums/user/user-status.enum'
+import { PaginationDto } from '@/common/dto/pagination.dto'
 
 export class FilterUserDto extends PaginationDto {
   @IsOptional()
-  name: string;
+  name: string
 
   @IsOptional()
-  email: string;
+  email: string
 
   @IsOptional()
-  username: string;
+  username: string
 
   @IsEnum(UserRole)
   @IsOptional()
-  role: UserRole;
+  role: UserRole
 
   @IsEnum(UserStatus)
   @IsOptional()
-  status: UserStatus;
+  status: UserStatus
 }

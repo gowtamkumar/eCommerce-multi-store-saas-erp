@@ -1,43 +1,43 @@
-import { IsDefined, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsDefined, IsNotEmpty, IsNumber, IsString } from 'class-validator'
 
 export class CreateFileDto {
   @IsString()
   @IsDefined()
   @IsNotEmpty()
-  fieldname: string; // Photo, Signature, etc
+  fieldname: string // Photo, Signature, etc
 
   @IsString()
   @IsDefined()
   @IsNotEmpty()
-  originalname: string; // Photo, Signature, etc
+  originalname: string // Photo, Signature, etc
 
   @IsString()
   @IsDefined()
   @IsNotEmpty()
-  encoding: string;
+  encoding: string
 
   @IsString()
   @IsDefined()
   @IsNotEmpty()
-  mimetype: string;
+  mimetype: string
 
   @IsString()
   @IsDefined()
   @IsNotEmpty()
-  destination: string;
+  destination: string
 
   @IsString()
   @IsDefined()
   @IsNotEmpty()
-  filename: string;
+  filename: string
 
   @IsString()
   @IsDefined()
   @IsNotEmpty()
-  path: string;
+  path: string
 
   @IsNumber()
   @IsDefined()
   @IsNotEmpty()
-  size: number;
+  size: number
 }

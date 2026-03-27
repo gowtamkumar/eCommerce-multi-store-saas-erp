@@ -4,7 +4,7 @@ import { TenantStatus } from '../enums/tenant/tenant-status.enum'
 
 @Injectable()
 export class TenantStatusGuard implements CanActivate {
-  constructor(private readonly tenantService: TenantService) { }
+  constructor(private readonly tenantService: TenantService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()

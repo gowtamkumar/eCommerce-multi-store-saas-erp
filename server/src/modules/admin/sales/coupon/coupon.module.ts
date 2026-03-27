@@ -1,8 +1,8 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { CouponService } from './coupon.service';
-import { CouponController } from './coupon.controller';
-import { CouponEntity } from './entities/coupon.entity';
+import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { CouponService } from './coupon.service'
+import { CouponController } from './coupon.controller'
+import { CouponEntity } from './entities/coupon.entity'
 
 @Module({
   imports: [TypeOrmModule.forFeature([CouponEntity])],
@@ -10,4 +10,4 @@ import { CouponEntity } from './entities/coupon.entity';
   providers: [CouponService],
   exports: [CouponService],
 })
-export class CouponModule { }
+export class CouponModule {}

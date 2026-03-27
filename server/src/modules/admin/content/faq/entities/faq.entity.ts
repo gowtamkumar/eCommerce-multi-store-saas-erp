@@ -1,62 +1,57 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { FaqStatus } from '@/common/enums/faq-status.enum';
-import { PageEntity } from '@/modules/admin/content/page/entities/page.entity';
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity';
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { FaqStatus } from '@/common/enums/faq-status.enum'
+import { PageEntity } from '@/modules/admin/content/page/entities/page.entity'
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('faqs')
 export class FaqEntity extends BaseEntity {
   @Column({ type: 'text' })
-  question: string;
+  question: string
 
   @Column({ type: 'text' })
-  answer: string;
+  answer: string
 
   @Column({ type: 'varchar', length: 100, default: 'General' })
-  category: string;
+  category: string
 
   @Column({ type: 'int', default: 0 })
-  order: number;
+  order: number
 
   @Column({
     type: 'enum',
     enum: FaqStatus,
     default: FaqStatus.ACTIVE,
   })
-  status: FaqStatus;
+  status: FaqStatus
 
   @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string;
+  tenantId: string
 
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity;
+  tenant: TenantEntity
 
   @Column({ type: 'uuid', nullable: true, name: 'product_id' })
-  productId: string;
+  productId: string
 
   @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'product_id' })
-  product: ProductEntity;
+  product: ProductEntity
 
   @Column({ type: 'uuid', name: 'page_id', nullable: true })
-  pageId: string;
+  pageId: string
 
   @ManyToOne(() => PageEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'page_id' })
-  page: PageEntity;
+  page: PageEntity
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 }

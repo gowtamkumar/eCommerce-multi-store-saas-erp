@@ -1,74 +1,107 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards, Logger } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+  Logger,
+} from '@nestjs/common'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { RolesGuard } from '@/common/guards/roles.guard'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-import { FilterReviewDto } from './dto/filter-review.dto';
-import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto';
-import { ReviewService } from './review.service';
-import { RequestContext } from "@/common/decorators/request-context.decorator";
-import { RequestContextDto } from "@/common/dto/request-context.dto";
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { FilterReviewDto } from './dto/filter-review.dto'
+import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto'
+import { ReviewService } from './review.service'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Controller('reviews')
 export class ReviewController {
-    private readonly logger = new Logger(ReviewController.name);
+  private readonly logger = new Logger(ReviewController.name)
 
-    constructor(private readonly reviewService: ReviewService) { }
+  constructor(private readonly reviewService: ReviewService) {}
 
-    @Post()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.MARKETING, UserRole.USER)
-    async createReview(@RequestContext() ctx: RequestContextDto, @Body() dto: CreateReviewDto) {
-        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createReview.`);
-        return await this.reviewService.createReview(dto, ctx.tenantId);
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.STORE_MANAGER,
+    UserRole.SUPPORT,
+    UserRole.MARKETING,
+    UserRole.USER,
+  )
+  async createReview(@RequestContext() ctx: RequestContextDto, @Body() dto: CreateReviewDto) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createReview.`)
+    return await this.reviewService.createReview(dto, ctx.tenantId)
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.STORE_MANAGER,
+    UserRole.SUPPORT,
+    UserRole.MARKETING,
+    UserRole.OPERATOR,
+  )
+  async findAllReviews(
+    @RequestContext() ctx: RequestContextDto,
+    @Query() filterDto: FilterReviewDto,
+  ) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllReviews.`)
+    const { reviews, total } = await this.reviewService.findAllReviews(filterDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      data: {
+        reviews,
+        pagination: {
+          total,
+          page: filterDto.page,
+          limit: filterDto.limit,
+          totalPages: Math.ceil(total / filterDto.limit),
+        },
+      },
     }
+  }
 
-    @Get()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.MARKETING, UserRole.OPERATOR)
-    async findAllReviews(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterReviewDto) {
-        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllReviews.`);
-        const { reviews, total } = await this.reviewService.findAllReviews(filterDto, ctx.tenantId);
-        return {
-            success: true,
-            statusCode: 200,
-            data: {
-                reviews,
-                pagination: {
-                    total,
-                    page: filterDto.page,
-                    limit: filterDto.limit,
-                    totalPages: Math.ceil(total / filterDto.limit),
-                },
-            },
-        };
-    }
+  @Get('public')
+  async findPublicReviews(@RequestContext() ctx: RequestContextDto) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findPublicReviews.`)
+    return await this.reviewService.findPublicReviews(ctx.tenantId)
+  }
 
-    @Get('public')
-    async findPublicReviews(@RequestContext() ctx: RequestContextDto) {
-        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findPublicReviews.`);
-        return await this.reviewService.findPublicReviews(ctx.tenantId);
-    }
+  @Get('product/:productId')
+  async findByProductReviews(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('productId') productId: string,
+  ) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByProductReviews.`)
+    return await this.reviewService.findByProductReviews(productId, ctx.tenantId)
+  }
 
-    @Get('product/:productId')
-    async findByProductReviews(@RequestContext() ctx: RequestContextDto, @Param('productId') productId: string) {
-        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByProductReviews.`);
-        return await this.reviewService.findByProductReviews(productId, ctx.tenantId);
-    }
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
+  async updateReview(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body() dto: UpdateReviewDto,
+  ) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateReview.`)
+    return await this.reviewService.updateReview(id, dto, ctx.tenantId)
+  }
 
-    @Put(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
-    async updateReview(@RequestContext() ctx: RequestContextDto, @Param('id') id: string, @Body() dto: UpdateReviewDto) {
-        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateReview.`);
-        return await this.reviewService.updateReview(id, dto, ctx.tenantId);
-    }
-
-    @Delete(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-    async removeReview(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
-        this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeReview.`);
-        return await this.reviewService.removeReview(id, ctx.tenantId);
-    }
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  async removeReview(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeReview.`)
+    return await this.reviewService.removeReview(id, ctx.tenantId)
+  }
 }

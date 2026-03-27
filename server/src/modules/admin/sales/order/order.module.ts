@@ -46,4 +46,4 @@ import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
   providers: [OrderService, ReturnService], // Registered
   exports: [OrderService, ReturnService],
 })
-export class OrderModule { }
+export class OrderModule {}

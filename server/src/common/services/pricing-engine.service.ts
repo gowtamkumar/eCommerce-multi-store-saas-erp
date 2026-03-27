@@ -93,7 +93,9 @@ export class PricingEngineService {
       })
 
       if (applies) {
-        const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as PromotionType)
+        const promoDiscountStrategy = DiscountStrategyFactory.create(
+          promo.promotionType as PromotionType,
+        )
         const calcDiscount = promoDiscountStrategy.calculate(basePrice, Number(promo.value))
         if (calcDiscount > bestPromoDiscount) {
           bestPromoDiscount = calcDiscount
@@ -119,15 +121,15 @@ export class PricingEngineService {
       },
       variant: item.variant
         ? {
-          id: item.variant.id,
-          sku: item.variant.sku,
-          attributes: item.variant.combination
-            ? Object.entries(item.variant.combination).map(([name, value]) => ({
-              name,
-              value: String(value),
-            }))
-            : [],
-        }
+            id: item.variant.id,
+            sku: item.variant.sku,
+            attributes: item.variant.combination
+              ? Object.entries(item.variant.combination).map(([name, value]) => ({
+                  name,
+                  value: String(value),
+                }))
+              : [],
+          }
         : null,
       pricing: {
         base_price: pricing.basePrice,

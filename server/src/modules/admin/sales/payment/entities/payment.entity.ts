@@ -1,57 +1,49 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { PaymentMethod } from '@/common/enums/payment-method.enum';
-import { PaymentStatus } from '@/common/enums/payment-status.enum';
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity';
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
-
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { PaymentMethod } from '@/common/enums/payment-method.enum'
+import { PaymentStatus } from '@/common/enums/payment-status.enum'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('payments')
 export class PaymentEntity extends BaseEntity {
-
   @Column({ type: 'uuid', name: 'order_id' })
-  orderId: string;
+  orderId: string
 
   @ManyToOne(() => OrderEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
-  order: OrderEntity;
+  order: OrderEntity
 
   // TODO: Add user entity and relation
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   // @ManyToOne(() => UserEntity, { onDelete: 'SET NULL' })
   // @JoinColumn({ name: 'user_id' })
   // user: UserEntity;
 
   @Column({ type: 'varchar', name: 'transaction_id', length: 255 })
-  transactionId: string;
+  transactionId: string
 
   @Column({ type: 'decimal', name: 'amount', precision: 10, scale: 2 })
-  amount: number;
+  amount: number
 
   @Column({ type: 'varchar', name: 'currency', length: 10, default: 'BDT' })
-  currency: string;
+  currency: string
 
   @Column({ type: 'enum', enum: PaymentMethod, name: 'method' })
-  method: PaymentMethod;
+  method: PaymentMethod
 
   @Column({ type: 'enum', enum: PaymentStatus, name: 'status', default: PaymentStatus.PENDING })
-  status: PaymentStatus;
+  status: PaymentStatus
 
   @Column({ type: 'jsonb', name: 'gateway_response', nullable: true })
-  gatewayResponse: any;
+  gatewayResponse: any
 
   @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string;
+  tenantId: string
 
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity;
-
+  tenant: TenantEntity
 }

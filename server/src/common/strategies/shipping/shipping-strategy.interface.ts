@@ -1,3 +1,3 @@
 export interface ShippingStrategy {
-  calculate(config: any, payableSubtotal: number): number;
+  calculate(config: any, payableSubtotal: number): number
 }

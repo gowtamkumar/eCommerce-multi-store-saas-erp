@@ -1,29 +1,29 @@
-import { IsEnum, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
-import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum';
-import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum';
+import { IsEnum, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator'
+import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
+import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 
 export class CreateInventoryTransactionDto {
-    @IsUUID()
-    productId: string;
+  @IsUUID()
+  productId: string
 
-    @IsEnum(InventoryTransactionType)
-    type: InventoryTransactionType;
+  @IsEnum(InventoryTransactionType)
+  type: InventoryTransactionType
 
-    @IsNumber()
-    quantity: number;
+  @IsNumber()
+  quantity: number
 
-    @IsEnum(InventoryTransactionReferenceType)
-    referenceType: InventoryTransactionReferenceType;
+  @IsEnum(InventoryTransactionReferenceType)
+  referenceType: InventoryTransactionReferenceType
 
-    @IsString()
-    @IsOptional()
-    referenceId?: string;
+  @IsString()
+  @IsOptional()
+  referenceId?: string
 
-    @IsUUID()
-    @IsOptional()
-    variantId?: string;
+  @IsUUID()
+  @IsOptional()
+  variantId?: string
 
-    @IsUUID()
-    @IsOptional()
-    supplierId?: string;
+  @IsUUID()
+  @IsOptional()
+  supplierId?: string
 }

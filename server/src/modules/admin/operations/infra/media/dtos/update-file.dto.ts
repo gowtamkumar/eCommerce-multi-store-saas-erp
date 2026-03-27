@@ -1,35 +1,35 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator'
 
 export class UpdateFileDto {
   @IsString()
   @IsNotEmpty()
-  fieldname: string; // Photo, Signature, etc
+  fieldname: string // Photo, Signature, etc
 
   @IsString()
   @IsNotEmpty()
-  originalname: string; // Photo, Signature, etc
+  originalname: string // Photo, Signature, etc
 
   @IsString()
   @IsNotEmpty()
-  encoding: string;
+  encoding: string
 
   @IsString()
   @IsNotEmpty()
-  mimetype: string;
+  mimetype: string
 
   @IsString()
   @IsNotEmpty()
-  destination: string;
+  destination: string
 
   @IsString()
   @IsNotEmpty()
-  filename: string;
+  filename: string
 
   @IsString()
   @IsNotEmpty()
-  path: string;
+  path: string
 
   @IsNumber()
   @IsNotEmpty()
-  size: number;
+  size: number
 }

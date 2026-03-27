@@ -3,21 +3,22 @@ import { Response } from 'express'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RegisterCredentialDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
-import { RequestContext } from "@/common/decorators/request-context.decorator";
-import { RequestContextDto } from "@/common/dto/request-context.dto";
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Controller('auth')
 export class AuthController {
-  private readonly logger = new Logger(AuthController.name);
+  private readonly logger = new Logger(AuthController.name)
 
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('/register')
   async register(
-    @RequestContext() ctx: RequestContextDto, @Body() registerCredentialDto: RegisterCredentialDto,
+    @RequestContext() ctx: RequestContextDto,
+    @Body() registerCredentialDto: RegisterCredentialDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called register.`);
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called register.`)
     const authPayload = await this.authService.register(registerCredentialDto, ctx.tenantId)
     // set cookies token
     this.cookiesBuildTokenResponsive(res, authPayload.accessToken)
@@ -48,8 +49,11 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('/logout')
-  async logout(@RequestContext() ctx: RequestContextDto, @Res({ passthrough: true }) res: Response) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called logout.`);
+  async logout(
+    @RequestContext() ctx: RequestContextDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called logout.`)
     await this.authService.logout(ctx.userId)
     res.clearCookie('token')
     return {
@@ -72,7 +76,7 @@ export class AuthController {
 
   @Post('/forgot-password')
   async forgotPassword(@RequestContext() ctx: RequestContextDto, @Body() body: { email: string }) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called forgotPassword.`);
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called forgotPassword.`)
     const { email } = body
     await this.authService.forgotPassword(email, ctx.tenantId)
     return {
@@ -95,8 +99,8 @@ export class AuthController {
 
   @Post('/accept-invitation')
   async acceptInvitation(@Body() body: any) {
-    this.logger.verbose(`acceptInvitation called.`);
-    const data = await this.authService.acceptInvitation(body);
+    this.logger.verbose(`acceptInvitation called.`)
+    const data = await this.authService.acceptInvitation(body)
     return {
       success: true,
       statusCode: 201,
@@ -108,7 +112,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('/me')
   getMe(@RequestContext() ctx: RequestContextDto) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getMe.`);
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getMe.`)
     return this.authService.getMe(ctx.user)
   }
 

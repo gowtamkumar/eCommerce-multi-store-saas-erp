@@ -1,27 +1,26 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { Column, Entity, Unique, ManyToOne, JoinColumn } from 'typeorm';
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { Column, Entity, Unique, ManyToOne, JoinColumn } from 'typeorm'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('tenant_traffic')
 @Unique(['tenantId', 'date'])
 export class TenantTrafficEntity extends BaseEntity {
-
   @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string;
+  tenantId: string
 
   @Column({ type: 'date' })
-  date: Date;
+  date: Date
 
   @Column({ type: 'int', name: 'request_count', default: 0 })
-  requestCount: number;
+  requestCount: number
 
   @Column({ type: 'timestamptz', name: 'last_updated', default: () => 'CURRENT_TIMESTAMP' })
-  lastUpdated: Date;
+  lastUpdated: Date
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 }

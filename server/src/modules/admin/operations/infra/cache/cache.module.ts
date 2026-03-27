@@ -21,5 +21,4 @@ import { CacheService } from '@/modules/admin/operations/infra/cache/cache.servi
   providers: [CacheService],
   exports: [CacheService],
 })
-export class CacheModule { }
-
+export class CacheModule {}

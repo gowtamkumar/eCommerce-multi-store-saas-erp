@@ -1,54 +1,48 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity';
-import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity';
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
-import { CartEntity } from './cart.entity';
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
+import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { CartEntity } from './cart.entity'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('cart_items')
 export class CartItemEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'cart_id' })
-  cartId: string;
+  cartId: string
 
   @ManyToOne(() => CartEntity, (cart) => cart.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'cart_id' })
-  cart: CartEntity;
+  cart: CartEntity
 
   @Column({ type: 'uuid', name: 'product_id' })
-  productId: string;
+  productId: string
 
   @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'product_id' })
-  product: ProductEntity;
+  product: ProductEntity
 
   @Column({ type: 'uuid', nullable: true, name: 'variant_id' })
-  variantId: string;
+  variantId: string
 
   @ManyToOne(() => ProductVariantEntity, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'variant_id' })
-  variant: ProductVariantEntity;
+  variant: ProductVariantEntity
 
   @Column({ type: 'int', default: 1 })
-  quantity: number;
+  quantity: number
 
   @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string;
+  tenantId: string
 
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity;
+  tenant: TenantEntity
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 }
-

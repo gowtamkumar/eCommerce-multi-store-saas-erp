@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { PlatformSettingsEntity } from './entities/platform-settings.entity';
+import { Injectable, Logger } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { PlatformSettingsEntity } from './entities/platform-settings.entity'
 
 @Injectable()
 export class PlatformSettingsService {
-    private readonly logger = new Logger(PlatformSettingsService.name);
+  private readonly logger = new Logger(PlatformSettingsService.name)
 
   constructor(
     @InjectRepository(PlatformSettingsEntity)
@@ -13,8 +13,8 @@ export class PlatformSettingsService {
   ) {}
 
   async getPlatformSettings(): Promise<PlatformSettingsEntity> {
-      this.logger.log(`${this.getPlatformSettings.name} Service Called`);
-    let settings = await this.platformSettingsRepository.findOne({ where: {} });
+    this.logger.log(`${this.getPlatformSettings.name} Service Called`)
+    let settings = await this.platformSettingsRepository.findOne({ where: {} })
 
     if (!settings) {
       settings = this.platformSettingsRepository.create({
@@ -24,20 +24,46 @@ export class PlatformSettingsService {
         hero: {
           badge: 'Next-Gen eCommerce Platform',
           title: 'Launch Your Store in Seconds, Not Days',
-          description: 'The all-in-one multi-tenant platform for ambitious sellers. Manage orders, inventory, and customers across multiple stores with a single dashboard.',
+          description:
+            'The all-in-one multi-tenant platform for ambitious sellers. Manage orders, inventory, and customers across multiple stores with a single dashboard.',
           primaryBtnText: 'Start Your Free Trial',
           primaryBtnLink: '/create-store',
           secondaryBtnText: 'Watch Demo',
           secondaryBtnLink: '#',
-          image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426&auto=format&fit=crop',
+          image:
+            'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426&auto=format&fit=crop',
         },
         features: [
-          { icon: 'Globe', title: 'Multi-Tenant', description: 'Run separate stores for different brands or regions with isolated data.' },
-          { icon: 'Zap', title: 'Instant Deployment', description: 'New stores are live in seconds with their own subdomain automatically.' },
-          { icon: 'Shield', title: 'Secure Payments', description: 'Pre-integrated with SSLCommerz and more for secure transactions.' },
-          { icon: 'BarChart3', title: 'Global Analytics', description: 'Monitor sales and customer behavior across all your stores.' },
-          { icon: 'Users', title: 'User Management', description: 'Role-based access control for your team and store administrators.' },
-          { icon: 'Target', title: 'SEO Optimized', description: 'Built-in SEO tools to help your products rank higher in search results.' },
+          {
+            icon: 'Globe',
+            title: 'Multi-Tenant',
+            description: 'Run separate stores for different brands or regions with isolated data.',
+          },
+          {
+            icon: 'Zap',
+            title: 'Instant Deployment',
+            description: 'New stores are live in seconds with their own subdomain automatically.',
+          },
+          {
+            icon: 'Shield',
+            title: 'Secure Payments',
+            description: 'Pre-integrated with SSLCommerz and more for secure transactions.',
+          },
+          {
+            icon: 'BarChart3',
+            title: 'Global Analytics',
+            description: 'Monitor sales and customer behavior across all your stores.',
+          },
+          {
+            icon: 'Users',
+            title: 'User Management',
+            description: 'Role-based access control for your team and store administrators.',
+          },
+          {
+            icon: 'Target',
+            title: 'SEO Optimized',
+            description: 'Built-in SEO tools to help your products rank higher in search results.',
+          },
         ],
         footer: {
           description: 'The ultimate multi-tenant eCommerce platform.',
@@ -49,17 +75,17 @@ export class PlatformSettingsService {
             linkedin: '#',
           },
         },
-      });
-      await this.platformSettingsRepository.save(settings);
+      })
+      await this.platformSettingsRepository.save(settings)
     }
 
-    return settings;
+    return settings
   }
 
   async updatePlatformSettings(data: any): Promise<PlatformSettingsEntity> {
-      this.logger.log(`${this.updatePlatformSettings.name} Service Called`);
-    const settings = await this.getPlatformSettings();
-    Object.assign(settings, data);
-    return await this.platformSettingsRepository.save(settings);
+    this.logger.log(`${this.updatePlatformSettings.name} Service Called`)
+    const settings = await this.getPlatformSettings()
+    Object.assign(settings, data)
+    return await this.platformSettingsRepository.save(settings)
   }
 }

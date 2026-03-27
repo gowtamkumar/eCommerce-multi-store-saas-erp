@@ -5,15 +5,15 @@ import { TenantTrafficEntity } from './entities/tenant-traffic.entity'
 
 @Injectable()
 export class TrafficService {
-    private readonly logger = new Logger(TrafficService.name);
+  private readonly logger = new Logger(TrafficService.name)
 
   constructor(
     @InjectRepository(TenantTrafficEntity)
     private trafficRepository: Repository<TenantTrafficEntity>,
-  ) { }
+  ) {}
 
   async logRequestTraffic(tenantId: string) {
-      this.logger.log(`${this.logRequestTraffic.name} Service Called`);
+    this.logger.log(`${this.logRequestTraffic.name} Service Called`)
     if (!tenantId) return
 
     const today = new Date()
@@ -32,10 +32,8 @@ export class TrafficService {
     }
   }
 
-
-
   async getTrafficStats(days: number = 7) {
-      this.logger.log(`${this.getTrafficStats.name} Service Called`);
+    this.logger.log(`${this.getTrafficStats.name} Service Called`)
     const sinceDate = new Date()
     sinceDate.setHours(0, 0, 0, 0)
     sinceDate.setDate(sinceDate.getDate() - days)
@@ -49,7 +47,7 @@ export class TrafficService {
   }
 
   async getGlobalTrafficStats(days: number = 7) {
-      this.logger.log(`${this.getGlobalTrafficStats.name} Service Called`);
+    this.logger.log(`${this.getGlobalTrafficStats.name} Service Called`)
     const sinceDate = new Date()
     sinceDate.setHours(0, 0, 0, 0)
     sinceDate.setDate(sinceDate.getDate() - days)
@@ -68,6 +66,4 @@ export class TrafficService {
       requestCount: parseInt(s.requestCount, 10),
     }))
   }
-
-
 }

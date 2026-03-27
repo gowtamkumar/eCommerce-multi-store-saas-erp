@@ -11,7 +11,7 @@ import { SubscriptionPlanService } from './subscription-plan.service'
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPER_ADMIN)
 export class SubscriptionPlanController {
-  constructor(private readonly planService: SubscriptionPlanService) { }
+  constructor(private readonly planService: SubscriptionPlanService) {}
 
   @Post()
   createSubscriptionPlan(@Body() createDto: CreateSubscriptionPlanDto) {

@@ -1,11 +1,10 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
-import { Column, Entity, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { Column, Entity, OneToMany, ManyToOne, JoinColumn } from 'typeorm'
 
 @Entity('subscription_plans')
 export class SubscriptionPlanEntity extends BaseEntity {
-
   @Column({ type: 'varchar', length: 255 })
   name: string
 
@@ -25,9 +24,9 @@ export class SubscriptionPlanEntity extends BaseEntity {
   tenants: TenantEntity[]
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 }

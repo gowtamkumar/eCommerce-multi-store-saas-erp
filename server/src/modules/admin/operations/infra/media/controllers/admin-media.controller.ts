@@ -11,14 +11,15 @@ import {
   Query,
   UploadedFile,
   UseGuards,
-  UseInterceptors, Logger
+  UseInterceptors,
+  Logger,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
-import { RequestContext } from "@/common/decorators/request-context.decorator";
-import { RequestContextDto } from "@/common/dto/request-context.dto";
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { FilesService } from '../services/file.service'
 import { FilterFileDto } from '../dtos'
@@ -27,14 +28,14 @@ import { Roles } from '@/common/decorators/roles.decorator'
 @Controller('admin/media')
 @UseGuards(JwtAuthGuard)
 export class AdminMediaController {
-  private readonly logger = new Logger(AdminMediaController.name);
+  private readonly logger = new Logger(AdminMediaController.name)
 
-  constructor(private readonly filesService: FilesService) { }
+  constructor(private readonly filesService: FilesService) {}
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPPORT)
   async findAllFiles(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterFileDto) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllFiles.`);
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllFiles.`)
     const files = await this.filesService.getFiles(filterDto, ctx.tenantId)
     return {
       success: true,
@@ -59,7 +60,8 @@ export class AdminMediaController {
     }),
   )
   async uploadFile(
-    @RequestContext() ctx: RequestContextDto, @UploadedFile(
+    @RequestContext() ctx: RequestContextDto,
+    @UploadedFile(
       new ParseFilePipe({
         validators: [
           new FileTypeValidator({
@@ -70,9 +72,9 @@ export class AdminMediaController {
         ],
       }),
     )
-    file: Express.Multer.File
+    file: Express.Multer.File,
   ) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called uploadFile.`);
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called uploadFile.`)
     const newFile = await this.filesService.createFile(file, ctx.tenantId)
     return {
       success: true,
@@ -84,8 +86,11 @@ export class AdminMediaController {
 
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
-  async removeFile(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFile.`);
+  async removeFile(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFile.`)
     await this.filesService.deleteFile(id, ctx.tenantId)
     return {
       success: true,

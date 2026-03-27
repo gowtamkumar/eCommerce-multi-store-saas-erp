@@ -1,43 +1,45 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { PurchaseOrderEntity } from './purchase-order.entity';
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity';
-import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { PurchaseOrderEntity } from './purchase-order.entity'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
+import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 
 @Entity('purchase_order_items')
 export class PurchaseOrderItemEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'purchase_order_id' })
-  purchaseOrderId: string;
+  purchaseOrderId: string
 
-  @ManyToOne(() => PurchaseOrderEntity, (po: PurchaseOrderEntity) => po.items, { onDelete: 'CASCADE' })
+  @ManyToOne(() => PurchaseOrderEntity, (po: PurchaseOrderEntity) => po.items, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'purchase_order_id' })
-  purchaseOrder: PurchaseOrderEntity;
+  purchaseOrder: PurchaseOrderEntity
 
   @Column({ type: 'uuid', name: 'product_id' })
-  productId: string;
+  productId: string
 
   @ManyToOne(() => ProductEntity, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'product_id' })
-  product: ProductEntity;
+  product: ProductEntity
 
   @Column({ type: 'uuid', name: 'variant_id', nullable: true })
-  variantId: string;
+  variantId: string
 
   @ManyToOne(() => ProductVariantEntity, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'variant_id' })
-  variant: ProductVariantEntity;
+  variant: ProductVariantEntity
 
   @Column({ type: 'int' })
-  quantity: number;
+  quantity: number
 
   @Column({ type: 'decimal', precision: 10, scale: 2, name: 'unit_price' })
-  unitPrice: number;
+  unitPrice: number
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 }

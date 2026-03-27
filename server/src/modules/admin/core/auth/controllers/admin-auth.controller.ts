@@ -3,21 +3,22 @@ import { Request, Response } from 'express'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { LoginCredentialDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
-import { RequestContext } from "@/common/decorators/request-context.decorator";
-import { RequestContextDto } from "@/common/dto/request-context.dto";
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Controller('admin')
 export class AdminAuthController {
-  private readonly logger = new Logger(AdminAuthController.name);
+  private readonly logger = new Logger(AdminAuthController.name)
 
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('/login')
   async login(
-    @RequestContext() ctx: RequestContextDto, @Body() loginCredentialDto: LoginCredentialDto,
+    @RequestContext() ctx: RequestContextDto,
+    @Body() loginCredentialDto: LoginCredentialDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called login.`);
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called login.`)
     try {
       const authPayload = await this.authService.login(loginCredentialDto, ctx.tenantId)
       // set cookies token

@@ -1,54 +1,54 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger'
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator'
 
 export class OffersPageSettingsDto {
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  bannerShow?: boolean;
+  bannerShow?: boolean
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerHeadline?: string;
+  bannerHeadline?: string
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerSubheadline?: string;
+  bannerSubheadline?: string
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showFilters?: boolean;
+  showFilters?: boolean
 
   @ApiProperty({ required: false })
   @IsNumber()
   @IsOptional()
-  productsPerRow?: number;
+  productsPerRow?: number
 
   @ApiProperty({ required: false })
   @IsNumber()
   @IsOptional()
-  bannerHeight?: number;
+  bannerHeight?: number
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  bannerFullWidth?: boolean;
+  bannerFullWidth?: boolean
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerImage?: string;
+  bannerImage?: string
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerBackgroundColor?: string;
+  bannerBackgroundColor?: string
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerTextColor?: string;
+  bannerTextColor?: string
 }

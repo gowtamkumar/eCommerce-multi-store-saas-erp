@@ -1,49 +1,58 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
-import { CurrenciesDto, FooterSettingsDto, MarketingDto, NavbarSettingsDto, PathaoCourierDto, PaymentDto, ProductsPageSettingsDto, SingleProductPageSettingsDto, OffersPageSettingsDto, SmtpDto, SocialLinkDto, SteadfastCourierDto, TrustBadgeDto, ShippingConfigDto } from '../dto/index';
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity';
+  CurrenciesDto,
+  FooterSettingsDto,
+  MarketingDto,
+  NavbarSettingsDto,
+  PathaoCourierDto,
+  PaymentDto,
+  ProductsPageSettingsDto,
+  SingleProductPageSettingsDto,
+  OffersPageSettingsDto,
+  SmtpDto,
+  SocialLinkDto,
+  SteadfastCourierDto,
+  TrustBadgeDto,
+  ShippingConfigDto,
+} from '../dto/index'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 
 @Entity('site_settings')
 export class SiteSettingsEntity extends BaseEntity {
-
   @Column({ nullable: true })
-  logo: string;
+  logo: string
 
   @Column({ name: 'brand_name', nullable: true })
-  brandName: string;
+  brandName: string
 
   @Column({ name: 'site_description', nullable: true })
-  siteDescription: string;
+  siteDescription: string
 
   @Column({ name: 'contact_email', nullable: true })
-  contactEmail: string;
+  contactEmail: string
 
   @Column({ name: 'contact_phone', nullable: true })
-  contactPhone: string;
+  contactPhone: string
 
   @Column({ name: 'whatsapp_phone', nullable: true })
-  whatsappPhone: string;
+  whatsappPhone: string
 
   @Column({ nullable: true })
-  address: string;
+  address: string
 
   @Column({ nullable: true })
-  currency: string;
+  currency: string
 
   @Column({ name: 'currency_symbol', nullable: true })
-  currencySymbol: string;
+  currencySymbol: string
 
   @Column({ type: 'jsonb', name: 'supported_currencies', nullable: true })
-  supportedCurrencies?: CurrenciesDto[];
+  supportedCurrencies?: CurrenciesDto[]
 
   @Column({ type: 'jsonb', name: 'social_links', nullable: true })
-  socialLinks?: SocialLinkDto;
+  socialLinks?: SocialLinkDto
 
   @Column({ type: 'jsonb', nullable: true })
   marketing?: MarketingDto
@@ -63,39 +72,38 @@ export class SiteSettingsEntity extends BaseEntity {
   @Column({ type: 'jsonb', name: 'shipping_config', nullable: true })
   shippingConfig?: ShippingConfigDto
 
-
   @Column({ type: 'jsonb', name: 'navbar', nullable: true })
-  navbar?: NavbarSettingsDto;
+  navbar?: NavbarSettingsDto
 
   @Column({ type: 'jsonb', name: 'footer', nullable: true })
-  footer?: FooterSettingsDto;
+  footer?: FooterSettingsDto
 
   @Column({ type: 'jsonb', name: 'trust_badges', nullable: true })
   trustBadges?: TrustBadgeDto[]
 
   @Column({ type: 'jsonb', name: 'products_page', nullable: true })
-  productsPage?: ProductsPageSettingsDto;
+  productsPage?: ProductsPageSettingsDto
 
   @Column({ type: 'jsonb', name: 'single_product_page', nullable: true })
-  singleProductPage?: SingleProductPageSettingsDto;
+  singleProductPage?: SingleProductPageSettingsDto
 
   @Column({ type: 'jsonb', name: 'offers_page', nullable: true })
-  offersPage?: OffersPageSettingsDto;
+  offersPage?: OffersPageSettingsDto
 
   @Column({ type: 'text', name: 'robots_txt', nullable: true })
-  robotsTxt?: string;
+  robotsTxt?: string
 
   @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string;
+  tenantId: string
 
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity;
+  tenant: TenantEntity
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 }

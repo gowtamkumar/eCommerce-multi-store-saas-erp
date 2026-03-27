@@ -1,88 +1,88 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger'
+import { IsBoolean, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator'
 
 export class ProductsPageSettingsDto {
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerHeadline?: string;
+  bannerHeadline?: string
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerSubheadline?: string;
+  bannerSubheadline?: string
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerTagline?: string;
+  bannerTagline?: string
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerImage?: string;
+  bannerImage?: string
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerBackgroundColor?: string;
+  bannerBackgroundColor?: string
 
   @ApiProperty({ required: false })
   @IsNumber()
   @Min(0)
   @Max(100)
   @IsOptional()
-  bannerOverlayOpacity?: number;
+  bannerOverlayOpacity?: number
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerTextColor?: string;
+  bannerTextColor?: string
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  bannerFullWidth?: boolean;
+  bannerFullWidth?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  bannerShow?: boolean;
+  bannerShow?: boolean
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  bannerStyle?: 'modern' | 'minimal' | 'gradient' | 'image' | 'none';
+  bannerStyle?: 'modern' | 'minimal' | 'gradient' | 'image' | 'none'
 
   @ApiProperty({ required: false })
   @IsNumber()
   @Min(2)
   @Max(6)
   @IsOptional()
-  productsPerRow?: number;
+  productsPerRow?: number
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  sidebarStyle?: 'classic' | 'modern' | 'minimal';
+  sidebarStyle?: 'classic' | 'modern' | 'minimal'
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showSearch?: boolean;
+  showSearch?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showCategories?: boolean;
+  showCategories?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showBrands?: boolean;
+  showBrands?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showPriceFilter?: boolean;
+  showPriceFilter?: boolean
 }

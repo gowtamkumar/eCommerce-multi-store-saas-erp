@@ -1,58 +1,58 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsOptional } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger'
+import { IsBoolean, IsOptional } from 'class-validator'
 
 export class SingleProductPageSettingsDto {
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showBreadcrumb?: boolean;
+  showBreadcrumb?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showRating?: boolean;
+  showRating?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showStock?: boolean;
+  showStock?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showFeatures?: boolean;
+  showFeatures?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showShare?: boolean;
+  showShare?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showPromotions?: boolean;
+  showPromotions?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showStickyCart?: boolean;
+  showStickyCart?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showRelatedProducts?: boolean;
+  showRelatedProducts?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showProductReviews?: boolean;
+  showProductReviews?: boolean
 
   @ApiProperty({ required: false })
   @IsBoolean()
   @IsOptional()
-  showProductFAQs?: boolean;
+  showProductFAQs?: boolean
 
   @ApiProperty({ required: false })
   @IsOptional()
-  relatedProductsPerRow?: number;
+  relatedProductsPerRow?: number
 }

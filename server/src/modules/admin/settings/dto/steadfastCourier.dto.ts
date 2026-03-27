@@ -1,11 +1,11 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator'
 
 export class SteadfastCourierDto {
   @IsString()
   @IsOptional()
-  apiKey?: string;
+  apiKey?: string
 
   @IsString()
   @IsOptional()
-  secretKey?: string;
+  secretKey?: string
 }

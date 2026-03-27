@@ -29,4 +29,4 @@ import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
   providers: [AuthService, JwtAuthStrategy],
   exports: [],
 })
-export class AuthModule { }
+export class AuthModule {}

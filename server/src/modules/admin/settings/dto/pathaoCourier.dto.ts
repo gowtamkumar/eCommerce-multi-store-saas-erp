@@ -1,27 +1,27 @@
-import { IsBoolean, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsOptional, IsString } from 'class-validator'
 
 export class PathaoCourierDto {
-   @IsString()
-   @IsOptional()
-  pathaoClientId?: string;
+  @IsString()
+  @IsOptional()
+  pathaoClientId?: string
 
-   @IsString()
-   @IsOptional()
-  pathaoClientSecret?: string;
+  @IsString()
+  @IsOptional()
+  pathaoClientSecret?: string
 
-   @IsString()
-   @IsOptional()
-  pathaoUsername?: string;
+  @IsString()
+  @IsOptional()
+  pathaoUsername?: string
 
-   @IsString()
-   @IsOptional()
-   pathaoPassword?: string;
+  @IsString()
+  @IsOptional()
+  pathaoPassword?: string
 
-   @IsString()
-   @IsOptional()
-   pathaoStoreId?: string;
+  @IsString()
+  @IsOptional()
+  pathaoStoreId?: string
 
-   @IsBoolean()
-   @IsOptional()
-    sandboxMode?: boolean;
+  @IsBoolean()
+  @IsOptional()
+  sandboxMode?: boolean
 }

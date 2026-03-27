@@ -1,6 +1,6 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('files')
 export class FileEntity extends BaseEntity {
@@ -35,9 +35,9 @@ export class FileEntity extends BaseEntity {
   tenantId: string
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 }

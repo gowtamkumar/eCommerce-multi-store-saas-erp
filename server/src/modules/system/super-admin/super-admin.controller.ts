@@ -8,20 +8,19 @@ import {
   Query,
   UnauthorizedException,
   UseGuards,
-} from '@nestjs/common';
-import { Roles } from '@/common/decorators/roles.decorator';
-import { UserRole } from '@/common/enums/user/user-role.enum';
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-import { RolesGuard } from '@/common/guards/roles.guard';
-import { UserService } from '@/modules/admin/core/user/services/user.service';
-import { OrderService } from '@/modules/admin/sales/order/order.service';
-import { PageService } from '@/modules/admin/content/page/page.service';
-import { ProductService } from '@/modules/admin/catalog/product/product.service';
-import { ReviewService } from '@/modules/admin/catalog/review/review.service';
-import { TenantService } from '@/modules/system/tenant/tenant.service';
-import si from 'systeminformation';
-import { TrafficService } from './traffic.service';
-
+} from '@nestjs/common'
+import { Roles } from '@/common/decorators/roles.decorator'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
+import { UserService } from '@/modules/admin/core/user/services/user.service'
+import { OrderService } from '@/modules/admin/sales/order/order.service'
+import { PageService } from '@/modules/admin/content/page/page.service'
+import { ProductService } from '@/modules/admin/catalog/product/product.service'
+import { ReviewService } from '@/modules/admin/catalog/review/review.service'
+import { TenantService } from '@/modules/system/tenant/tenant.service'
+import si from 'systeminformation'
+import { TrafficService } from './traffic.service'
 
 @Controller('super-admin')
 export class SuperAdminController {
@@ -33,7 +32,7 @@ export class SuperAdminController {
     private readonly trafficService: TrafficService,
     private readonly productService: ProductService,
     private readonly pageService: PageService,
-  ) { }
+  ) {}
 
   @Post('/setup')
   async setup(@Body() body: any) {
@@ -66,18 +65,17 @@ export class SuperAdminController {
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/health')
   async getHealth() {
+    const cpu = await si.cpu()
+    const cpuLoad = await si.currentLoad()
+    const mem = await si.mem()
+    const disk = await si.fsSize()
+    const network = await si.networkStats()
+    const temp = await si.cpuTemperature()
+    const osInfo = await si.osInfo()
+    const time = await si.time()
 
-    const cpu = await si.cpu();
-    const cpuLoad = await si.currentLoad();
-    const mem = await si.mem();
-    const disk = await si.fsSize();
-    const network = await si.networkStats();
-    const temp = await si.cpuTemperature();
-    const osInfo = await si.osInfo();
-    const time = await si.time();
-
-    const processes = await si.processes();
-    const docker = await si.dockerContainers(true); // Fetch all containers with full info
+    const processes = await si.processes()
+    const docker = await si.dockerContainers(true) // Fetch all containers with full info
 
     const stats = {
       cpu: {
@@ -86,39 +84,41 @@ export class SuperAdminController {
         cores: cpu.cores,
         physicalCores: cpu.physicalCores,
         usagePercent: cpuLoad.currentLoad.toFixed(2),
-        loadAverage: Array.isArray(cpuLoad.avgLoad) ? cpuLoad.avgLoad.join(', ') : String(cpuLoad.avgLoad)
+        loadAverage: Array.isArray(cpuLoad.avgLoad)
+          ? cpuLoad.avgLoad.join(', ')
+          : String(cpuLoad.avgLoad),
       },
       memory: {
-        total: (mem.total / 1024 / 1024 / 1024).toFixed(2) + " GB",
-        used: (mem.active / 1024 / 1024 / 1024).toFixed(2) + " GB",
-        usagePercent: ((mem.active / mem.total) * 100).toFixed(2)
+        total: (mem.total / 1024 / 1024 / 1024).toFixed(2) + ' GB',
+        used: (mem.active / 1024 / 1024 / 1024).toFixed(2) + ' GB',
+        usagePercent: ((mem.active / mem.total) * 100).toFixed(2),
       },
-      disk: disk.map(d => ({
+      disk: disk.map((d) => ({
         filesystem: d.fs,
         sizeGB: (d.size / 1024 / 1024 / 1024).toFixed(2),
         usedGB: (d.used / 1024 / 1024 / 1024).toFixed(2),
-        usagePercent: d.use
+        usagePercent: d.use,
       })),
-      network: network.map(n => ({
+      network: network.map((n) => ({
         interface: n.iface,
         rx_bytes: n.rx_bytes,
-        tx_bytes: n.tx_bytes
+        tx_bytes: n.tx_bytes,
       })),
       temperature: temp.main,
       os: {
         platform: osInfo.platform,
         distro: osInfo.distro,
         release: osInfo.release,
-        uptimeSeconds: time.uptime
+        uptimeSeconds: time.uptime,
       },
-      docker: docker.map(c => ({
+      docker: docker.map((c) => ({
         id: c.id,
         name: c.name,
         image: c.image,
-        state: c.state
+        state: c.state,
       })),
-      totalProcesses: processes.all
-    };
+      totalProcesses: processes.all,
+    }
 
     return {
       success: true,
@@ -133,18 +133,18 @@ export class SuperAdminController {
     }
   }
 
-
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/overview')
   async getOverview(@Query('days') days?: number) {
-    const [tenantOverview, userOverview, productOverview, orderOverview, traffic] = await Promise.all([
-      this.tenantService.tenantOverview(),
-      this.userService.userOverview(),
-      this.productService.productOverview(),
-      this.orderService.orderOverview(),
-      this.trafficService.getGlobalTrafficStats(days || 7),
-    ])
+    const [tenantOverview, userOverview, productOverview, orderOverview, traffic] =
+      await Promise.all([
+        this.tenantService.tenantOverview(),
+        this.userService.userOverview(),
+        this.productService.productOverview(),
+        this.orderService.orderOverview(),
+        this.trafficService.getGlobalTrafficStats(days || 7),
+      ])
 
     const totalRequestsLast24h = traffic[0]?.requestCount || 0
 

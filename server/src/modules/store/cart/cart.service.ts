@@ -28,7 +28,7 @@ export class CartService {
     private readonly couponService: CouponService,
     private readonly promotionService: PromotionService,
     private readonly pricingEngine: PricingEngineService,
-  ) { }
+  ) {}
 
   async createOrGetCart(userId: string, tenantId: string): Promise<any> {
     this.logger.log(`${this.createOrGetCart.name} Service Called`)
@@ -66,13 +66,18 @@ export class CartService {
     const currency = settings?.currency || 'BDT'
 
     // 2. Delegate all math to the PricingEngineService (Option 1 + 2)
-    const { transformedItems, subtotal, totalDiscount, totalTax, payable: enginePayable } =
-      this.pricingEngine.calculateCart(cart.items || [], activePromotions)
+    const {
+      transformedItems,
+      subtotal,
+      totalDiscount,
+      totalTax,
+      payable: enginePayable,
+    } = this.pricingEngine.calculateCart(cart.items || [], activePromotions)
 
     // 3. Apply Coupon (async, stays in service layer)
     let couponDiscountAmount = 0
     let isFreeShipping = false
-    let payable = enginePayable - totalTax  // enginePayable already includes tax, so strip it before coupon deduction
+    let payable = enginePayable - totalTax // enginePayable already includes tax, so strip it before coupon deduction
 
     if (cart.appliedCouponCode) {
       try {
@@ -84,9 +89,7 @@ export class CartService {
         if (validation.valid) {
           couponDiscountAmount = validation.discountAmount
           payable -= couponDiscountAmount
-          if (
-            validation.coupon.discountType === DiscountType.FREE_SHIPPING
-          ) {
+          if (validation.coupon.discountType === DiscountType.FREE_SHIPPING) {
             isFreeShipping = true
           }
         }

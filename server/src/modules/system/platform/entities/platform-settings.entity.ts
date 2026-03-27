@@ -1,56 +1,53 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity';
-import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity';
+import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('platform_settings')
 export class PlatformSettingsEntity extends BaseEntity {
-
   @Column({ nullable: true, name: 'brand_name' })
-  brandName: string;
+  brandName: string
 
   @Column({ nullable: true, name: 'brand_logo' })
-  brandLogo: string;
+  brandLogo: string
 
   @Column({ nullable: true, name: 'support_email' })
-  supportEmail: string;
+  supportEmail: string
 
   @Column({ type: 'jsonb', nullable: true })
   hero: {
-    badge: string;
-    title: string;
-    description: string;
-    primaryBtnText: string;
-    primaryBtnLink: string;
-    secondaryBtnText: string;
-    secondaryBtnLink: string;
-    image: string;
-  };
+    badge: string
+    title: string
+    description: string
+    primaryBtnText: string
+    primaryBtnLink: string
+    secondaryBtnText: string
+    secondaryBtnLink: string
+    image: string
+  }
 
   @Column({ type: 'jsonb', nullable: true })
   features: Array<{
-    icon: string;
-    title: string;
-    description: string;
-  }>;
+    icon: string
+    title: string
+    description: string
+  }>
 
   @Column({ type: 'jsonb', nullable: true })
   footer: {
-    description: string;
-    copyright: string;
+    description: string
+    copyright: string
     socials: {
-      facebook: string;
-      twitter: string;
-      instagram: string;
-      linkedin: string;
-    };
-  };
-
-
+      facebook: string
+      twitter: string
+      instagram: string
+      linkedin: string
+    }
+  }
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string;
+  userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user: UserEntity
 }

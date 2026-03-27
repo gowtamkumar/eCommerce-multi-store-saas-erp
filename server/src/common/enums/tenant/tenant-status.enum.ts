@@ -1,6 +1,5 @@
 export enum TenantStatus {
-    ACTIVE = 'active',
-    SUSPENDED = 'suspended',
-    ARCHIVED = 'archived'
-
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+  ARCHIVED = 'archived',
 }

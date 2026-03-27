@@ -26,13 +26,16 @@ import { ShippingStrategyFactory } from '@/common/strategies/shipping/shipping-s
 import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pricing-strategy.factory'
 import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
 import { OrderStrategyFactory } from '@/common/strategies/order/order-strategy.factory'
-import { OrderCreationContext, OrderServiceDependencies } from '@/common/strategies/order/order-strategy.interface'
+import {
+  OrderCreationContext,
+  OrderServiceDependencies,
+} from '@/common/strategies/order/order-strategy.interface'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 
 @Injectable()
 export class OrderService {
-  private readonly logger = new Logger(OrderService.name);
+  private readonly logger = new Logger(OrderService.name)
 
   constructor(
     @InjectRepository(OrderEntity)
@@ -46,45 +49,45 @@ export class OrderService {
     private readonly invoiceService: InvoiceService,
     private readonly shippingAddressService: ShippingAddressService,
     private readonly mailService: MailService,
-  ) { }
+  ) {}
 
   async createOrder(createOrderDto: CreateOrderDto, tenantId: string) {
-    this.logger.log(`${this.createOrder.name} Service Called`);
+    this.logger.log(`${this.createOrder.name} Service Called`)
 
     return await this.dataSource.transaction(async (manager) => {
       // 1. Initial Data Fetching
-      const settings = await manager.findOne(SiteSettingsEntity, { where: { tenantId } });
+      const settings = await manager.findOne(SiteSettingsEntity, { where: { tenantId } })
       const user = createOrderDto.userId
         ? await manager.findOne(UserEntity, { where: { id: createOrderDto.userId, tenantId } })
-        : null;
+        : null
 
       // 2. Address Resolution
-      let resolvedAddress = createOrderDto.address;
+      let resolvedAddress = createOrderDto.address
       if (createOrderDto.shippingAddressId && createOrderDto.userId) {
         try {
           const savedAddress = await this.shippingAddressService.findShippingAddress(
             createOrderDto.shippingAddressId,
             createOrderDto.userId,
-            tenantId
-          );
-          resolvedAddress = `${savedAddress.recipientName}, ${savedAddress.address}${savedAddress.city ? ', ' + savedAddress.city : ''}`;
+            tenantId,
+          )
+          resolvedAddress = `${savedAddress.recipientName}, ${savedAddress.address}${savedAddress.city ? ', ' + savedAddress.city : ''}`
         } catch (err) {
           // Fallback to provided address is already handled by default initialization
         }
       }
 
       // 3. Initialize Context & Strategy
-      const context: OrderCreationContext = { tenantId, manager, user, settings };
+      const context: OrderCreationContext = { tenantId, manager, user, settings }
       const deps: OrderServiceDependencies = {
         cartService: this.cartService,
         inventoryService: this.inventoryService,
         couponService: this.couponService,
-      };
+      }
 
-      const strategy = OrderStrategyFactory.create(createOrderDto);
+      const strategy = OrderStrategyFactory.create(createOrderDto)
 
       // 4. Resolve Items
-      const processedItems = await strategy.resolveItems(createOrderDto, context, deps);
+      const processedItems = await strategy.resolveItems(createOrderDto, context, deps)
 
       // 5. Initialize Order Entity
       const order = manager.create(OrderEntity, {
@@ -104,33 +107,41 @@ export class OrderService {
         userId: user?.id,
         tenantId,
         deliveryZone: createOrderDto.shippingZone,
-      });
+      })
 
       // 6. Calculate Totals (includes Coupons & Shipping)
-      await strategy.calculateTotals(order, processedItems, createOrderDto, context, deps);
+      await strategy.calculateTotals(order, processedItems, createOrderDto, context, deps)
 
       // 7. Save Order
-      const savedOrder = await manager.save(order);
+      const savedOrder = await manager.save(order)
 
       // 8. Update Inventory Transactions with order reference ID
-      await manager.update(InventoryTransactionEntity,
+      await manager.update(
+        InventoryTransactionEntity,
         { referenceType: InventoryTransactionReferenceType.ORDER, referenceId: null, tenantId },
-        { referenceId: savedOrder.id }
-      );
+        { referenceId: savedOrder.id },
+      )
 
       // 9. Post-Order Processing
       if (user?.id && !createOrderDto.items) {
-        await this.cartService.clearCart(user.id, tenantId);
+        await this.cartService.clearCart(user.id, tenantId)
       }
 
       try {
-        await this.invoiceService.createInvoice({
-          orderId: savedOrder.id,
-          issueDate: new Date(),
-          status: (savedOrder.paymentStatus === PaymentStatus.PAID) ? InvoiceStatus.PAID : InvoiceStatus.PENDING
-        } as any, tenantId, manager);
+        await this.invoiceService.createInvoice(
+          {
+            orderId: savedOrder.id,
+            issueDate: new Date(),
+            status:
+              savedOrder.paymentStatus === PaymentStatus.PAID
+                ? InvoiceStatus.PAID
+                : InvoiceStatus.PENDING,
+          } as any,
+          tenantId,
+          manager,
+        )
       } catch (invoiceError) {
-        this.logger.error('Failed to auto-create invoice', invoiceError);
+        this.logger.error('Failed to auto-create invoice', invoiceError)
       }
 
       // 10. Admin Notification (for manual payments)
@@ -138,19 +149,18 @@ export class OrderService {
         const orderWithRelations = await manager.findOne(OrderEntity, {
           where: { id: savedOrder.id, tenantId },
           relations: ['items', 'items.product', 'items.variant'],
-        });
+        })
         if (orderWithRelations) {
-          this.mailService.sendNewOrderNotification(orderWithRelations, tenantId);
+          this.mailService.sendNewOrderNotification(orderWithRelations, tenantId)
         }
       }
 
-      return { message: 'Order created successfully', success: true, order: savedOrder };
-    });
+      return { message: 'Order created successfully', success: true, order: savedOrder }
+    })
   }
 
-
   async findAllOrders(filterDto: any, tenantId: string) {
-    this.logger.log(`${this.findAllOrders.name} Service Called`);
+    this.logger.log(`${this.findAllOrders.name} Service Called`)
     const { page, limit, search, status } = filterDto
 
     const skip = (page - 1) * limit
@@ -186,7 +196,7 @@ export class OrderService {
   }
 
   async findOneOrder(id: string, tenantId: string) {
-    this.logger.log(`${this.findOneOrder.name} Service Called`);
+    this.logger.log(`${this.findOneOrder.name} Service Called`)
     const order = await this.orderRepository.findOne({
       where: { id, tenantId },
       relations: ['items', 'items.product', 'items.variant', 'returns', 'shippingAddress'],
@@ -200,7 +210,7 @@ export class OrderService {
   }
 
   async findOneForCourier(id: string, tenantId: string) {
-    this.logger.log(`${this.findOneForCourier.name} Service Called`);
+    this.logger.log(`${this.findOneForCourier.name} Service Called`)
     const order = await this.orderRepository.findOne({
       where: { id, tenantId },
       relations: ['items', 'items.product', 'shippingAddress'],
@@ -214,7 +224,7 @@ export class OrderService {
   }
 
   async findByUserId(userId: string, tenantId: string, search?: string) {
-    this.logger.log(`${this.findByUserId.name} Service Called`);
+    this.logger.log(`${this.findByUserId.name} Service Called`)
     const queryBuilder = this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items')
@@ -241,7 +251,7 @@ export class OrderService {
   }
 
   async updateOrder(id: string, updateOrderDto: UpdateOrderDto, tenantId: string) {
-    this.logger.log(`${this.updateOrder.name} Service Called`);
+    this.logger.log(`${this.updateOrder.name} Service Called`)
     const order = await this.findOneOrder(id, tenantId)
 
     // Using query runner for business transaction
@@ -287,14 +297,18 @@ export class OrderService {
         oldStatus !== OrderStatus.COMPLETED // Don't restore if already completed? Usually, returns handle that.
       ) {
         for (const item of order.items) {
-          await this.inventoryService.createInventoryTransaction({
-            productId: item.productId,
-            variantId: item.variantId,
-            quantity: item.quantity,
-            type: InventoryTransactionType.IN,
-            referenceType: InventoryTransactionReferenceType.ORDER,
-            referenceId: order.id,
-          }, tenantId, queryRunner.manager);
+          await this.inventoryService.createInventoryTransaction(
+            {
+              productId: item.productId,
+              variantId: item.variantId,
+              quantity: item.quantity,
+              type: InventoryTransactionType.IN,
+              referenceType: InventoryTransactionReferenceType.ORDER,
+              referenceId: order.id,
+            },
+            tenantId,
+            queryRunner.manager,
+          )
         }
       }
 
@@ -305,9 +319,19 @@ export class OrderService {
 
       // Sync Invoice Status
       if (updateOrderDto.paymentStatus === PaymentStatus.PAID) {
-        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.PAID, tenantId, queryRunner.manager);
+        await this.invoiceService.updateInvoiceStatusByOrderId(
+          id,
+          InvoiceStatus.PAID,
+          tenantId,
+          queryRunner.manager,
+        )
       } else if (updateOrderDto.status === OrderStatus.CANCELLED) {
-        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.CANCELLED, tenantId, queryRunner.manager);
+        await this.invoiceService.updateInvoiceStatusByOrderId(
+          id,
+          InvoiceStatus.CANCELLED,
+          tenantId,
+          queryRunner.manager,
+        )
       }
 
       await queryRunner.commitTransaction()
@@ -328,12 +352,12 @@ export class OrderService {
   // }
 
   async countByTenant(tenantId: string) {
-    this.logger.log(`${this.countByTenant.name} Service Called`);
+    this.logger.log(`${this.countByTenant.name} Service Called`)
     return await this.orderRepository.count({ where: { tenantId } })
   }
 
   async orderOverview() {
-    this.logger.log(`${this.orderOverview.name} Service Called`);
+    this.logger.log(`${this.orderOverview.name} Service Called`)
     const totalOrders = await this.orderRepository.count()
     const pendingOrders = await this.orderRepository.count({
       where: { status: OrderStatus.PENDING },

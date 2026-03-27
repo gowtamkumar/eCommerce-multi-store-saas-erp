@@ -1,138 +1,153 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum';
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity';
-import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity';
-import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logistics/inventory-transaction/dto/create-inventory-transaction.dto';
-import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
+import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
+import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logistics/inventory-transaction/dto/create-inventory-transaction.dto'
+import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity'
 
 @Injectable()
 export class InventoryTransactionService {
-    private readonly logger = new Logger(InventoryTransactionService.name);
+  private readonly logger = new Logger(InventoryTransactionService.name)
 
-    constructor(
-        @InjectRepository(InventoryTransactionEntity)
-        private readonly repository: Repository<InventoryTransactionEntity>,
-        @InjectRepository(ProductEntity)
-        private readonly productRepository: Repository<ProductEntity>,
-        @InjectRepository(ProductVariantEntity)
-        private readonly variantRepository: Repository<ProductVariantEntity>,
-    ) { }
+  constructor(
+    @InjectRepository(InventoryTransactionEntity)
+    private readonly repository: Repository<InventoryTransactionEntity>,
+    @InjectRepository(ProductEntity)
+    private readonly productRepository: Repository<ProductEntity>,
+    @InjectRepository(ProductVariantEntity)
+    private readonly variantRepository: Repository<ProductVariantEntity>,
+  ) {}
 
-    async createInventoryTransaction(dto: CreateInventoryTransactionDto, tenantId: string, manager?: any) {
-        this.logger.log(`${this.createInventoryTransaction.name} Service Called`);
+  async createInventoryTransaction(
+    dto: CreateInventoryTransactionDto,
+    tenantId: string,
+    manager?: any,
+  ) {
+    this.logger.log(`${this.createInventoryTransaction.name} Service Called`)
 
-        const productRepo = manager ? manager.getRepository(ProductEntity) : this.productRepository;
-        const variantRepo = manager ? manager.getRepository(ProductVariantEntity) : this.variantRepository;
-        const transactionRepo = manager ? manager.getRepository(InventoryTransactionEntity) : this.repository;
+    const productRepo = manager ? manager.getRepository(ProductEntity) : this.productRepository
+    const variantRepo = manager
+      ? manager.getRepository(ProductVariantEntity)
+      : this.variantRepository
+    const transactionRepo = manager
+      ? manager.getRepository(InventoryTransactionEntity)
+      : this.repository
 
-        const product = await productRepo.findOne({
-            where: { id: dto.productId, tenantId },
-        });
+    const product = await productRepo.findOne({
+      where: { id: dto.productId, tenantId },
+    })
 
-        if (!product) {
-            throw new NotFoundException('Product not found');
-        }
+    if (!product) {
+      throw new NotFoundException('Product not found')
+    }
 
-        // Update static stock fields (cache) atomically
-        const isIncrement = dto.type !== InventoryTransactionType.OUT;
-        const absQty = Math.abs(dto.quantity);
+    // Update static stock fields (cache) atomically
+    const isIncrement = dto.type !== InventoryTransactionType.OUT
+    const absQty = Math.abs(dto.quantity)
 
-        if (dto.variantId) {
-            const variant = await variantRepo.findOne({
-                where: { id: dto.variantId, tenantId }
-            });
-            if (variant) {
-                if (isIncrement) {
-                    await variantRepo.increment({ id: variant.id, tenantId }, 'stock', absQty);
-                } else {
-                    await variantRepo.decrement({ id: variant.id, tenantId }, 'stock', absQty);
-                }
-            } else {
-                throw new NotFoundException(`Variant with ID ${dto.variantId} not found`);
-            }
+    if (dto.variantId) {
+      const variant = await variantRepo.findOne({
+        where: { id: dto.variantId, tenantId },
+      })
+      if (variant) {
+        if (isIncrement) {
+          await variantRepo.increment({ id: variant.id, tenantId }, 'stock', absQty)
         } else {
-            if (isIncrement) {
-                await productRepo.increment({ id: product.id, tenantId }, 'stock', absQty);
-            } else {
-                await productRepo.decrement({ id: product.id, tenantId }, 'stock', absQty);
-            }
+          await variantRepo.decrement({ id: variant.id, tenantId }, 'stock', absQty)
         }
-
-        const transaction = transactionRepo.create({
-            ...dto,
-            tenantId,
-        });
-
-        return await transactionRepo.save(transaction);
+      } else {
+        throw new NotFoundException(`Variant with ID ${dto.variantId} not found`)
+      }
+    } else {
+      if (isIncrement) {
+        await productRepo.increment({ id: product.id, tenantId }, 'stock', absQty)
+      } else {
+        await productRepo.decrement({ id: product.id, tenantId }, 'stock', absQty)
+      }
     }
 
-    async findAllInventoryTransactions(tenantId: string) {
-        this.logger.log(`${this.findAllInventoryTransactions.name} Service Called`);
-        return await this.repository.find({
-            where: { tenantId },
-            order: { createdAt: 'DESC' },
-            relations: ['product'],
-        });
-    }
+    const transaction = transactionRepo.create({
+      ...dto,
+      tenantId,
+    })
 
-    async findByProductInventoryTransactions(productId: string, tenantId: string) {
-        this.logger.log(`${this.findByProductInventoryTransactions.name} Service Called`);
-        return await this.repository.find({
-            where: { productId, tenantId },
-            order: { createdAt: 'DESC' },
-        });
-    }
+    return await transactionRepo.save(transaction)
+  }
 
-    async getStockSummaryInventoryTransactions(tenantId: string) {
-        this.logger.log(`${this.getStockSummaryInventoryTransactions.name} Service Called`);
-        const products = await this.productRepository.find({
-            where: { tenantId },
-            relations: ['variants', 'category', 'supplier'],
-            order: { createdAt: 'DESC' },
-        });
+  async findAllInventoryTransactions(tenantId: string) {
+    this.logger.log(`${this.findAllInventoryTransactions.name} Service Called`)
+    return await this.repository.find({
+      where: { tenantId },
+      order: { createdAt: 'DESC' },
+      relations: ['product'],
+    })
+  }
 
-        return products.map(product => {
-            const hasVariants = product.variants && product.variants.length > 0;
-            const totalStock = hasVariants
-                ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
-                : product.stock;
-            const totalValue = hasVariants
-                ? product.variants.reduce((sum, v) => sum + (v.stock || 0) * Number(v.price || product.price), 0)
-                : product.stock * Number(product.price);
+  async findByProductInventoryTransactions(productId: string, tenantId: string) {
+    this.logger.log(`${this.findByProductInventoryTransactions.name} Service Called`)
+    return await this.repository.find({
+      where: { productId, tenantId },
+      order: { createdAt: 'DESC' },
+    })
+  }
 
-            const isLowStock = hasVariants
-                ? product.variants.some(v => v.stock <= (v.lowStockThreshold ?? product.lowStockThreshold ?? 5))
-                : (product.stock <= (product.lowStockThreshold ?? 5));
+  async getStockSummaryInventoryTransactions(tenantId: string) {
+    this.logger.log(`${this.getStockSummaryInventoryTransactions.name} Service Called`)
+    const products = await this.productRepository.find({
+      where: { tenantId },
+      relations: ['variants', 'category', 'supplier'],
+      order: { createdAt: 'DESC' },
+    })
 
-            const isOutOfStock = hasVariants
-                ? product.variants.some(v => v.stock === 0)
-                : product.stock === 0;
+    return products.map((product) => {
+      const hasVariants = product.variants && product.variants.length > 0
+      const totalStock = hasVariants
+        ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
+        : product.stock
+      const totalValue = hasVariants
+        ? product.variants.reduce(
+            (sum, v) => sum + (v.stock || 0) * Number(v.price || product.price),
+            0,
+          )
+        : product.stock * Number(product.price)
 
-            return {
-                id: product.id,
-                name: product.name,
-                slug: product.slug,
-                images: product.images,
-                price: product.price,
-                status: product.status,
-                categoryName: (product as any).category?.name || null,
-                supplierName: (product as any).supplier?.name || null,
-                hasVariants,
-                stock: totalStock,
-                stockValue: totalValue,
-                variants: hasVariants ? product.variants.map(v => ({
-                    id: v.id,
-                    sku: v.sku,
-                    combination: v.combination,
-                    price: v.price || product.price,
-                    stock: v.stock,
-                    lowStockThreshold: v.lowStockThreshold || product.lowStockThreshold || 5,
-                })) : [],
-                lowStock: isLowStock,
-                outOfStock: isOutOfStock,
-            };
-        });
-    }
+      const isLowStock = hasVariants
+        ? product.variants.some(
+            (v) => v.stock <= (v.lowStockThreshold ?? product.lowStockThreshold ?? 5),
+          )
+        : product.stock <= (product.lowStockThreshold ?? 5)
+
+      const isOutOfStock = hasVariants
+        ? product.variants.some((v) => v.stock === 0)
+        : product.stock === 0
+
+      return {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        images: product.images,
+        price: product.price,
+        status: product.status,
+        categoryName: (product as any).category?.name || null,
+        supplierName: (product as any).supplier?.name || null,
+        hasVariants,
+        stock: totalStock,
+        stockValue: totalValue,
+        variants: hasVariants
+          ? product.variants.map((v) => ({
+              id: v.id,
+              sku: v.sku,
+              combination: v.combination,
+              price: v.price || product.price,
+              stock: v.stock,
+              lowStockThreshold: v.lowStockThreshold || product.lowStockThreshold || 5,
+            }))
+          : [],
+        lowStock: isLowStock,
+        outOfStock: isOutOfStock,
+      }
+    })
+  }
 }

@@ -1,12 +1,9 @@
-
-
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator'
 
 export class CreatePathaoOrderDto {
-
   @IsOptional()
   @IsString()
-  orderId?: string;
+  orderId?: string
 
   // @IsNotEmpty()
   // @IsString()
