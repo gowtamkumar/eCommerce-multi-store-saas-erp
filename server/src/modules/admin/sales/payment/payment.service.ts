@@ -10,6 +10,7 @@ import { OrderStatus } from '@/common/enums/order-status.enum';
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum';
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service';
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service';
+import { PaymentStrategyFactory } from '@/common/strategies/payment/payment-strategy.factory';
 
 @Injectable()
 export class PaymentService {
@@ -39,91 +40,43 @@ export class PaymentService {
         }
 
         const settings = await this.settingsService.findByTenantSettings(tenantId);
-
-
-        const store_id = settings.payment?.sslCommerzStoreId;
-        const store_passwd = settings.payment?.sslCommerzStorePassword;
-        const is_live = !settings.payment?.sslCommerzIsSandbox;
-        const app_url = callbackUrl
-
-        if (!store_id || !store_passwd) {
-            throw new BadRequestException('Payment gateway not configured');
-        }
-
-        const tran_id = `TRAN_${orderId}_${Date.now()}`;
-
-        // Update order with transaction ID
-        order.transactionId = tran_id;
-        await this.orderRepository.save(order);
-
-        const initData: any = {
-            store_id,
-            store_passwd,
-            total_amount: (order.totalAmount / (order.currencyRate || 1)).toFixed(2),
-            currency: order.currency || 'BDT',
-            tran_id,
-            success_url: `${app_url}/success?tran_id=${tran_id}`,
-            fail_url: `${app_url}/fail?tran_id=${tran_id}`,
-            cancel_url: `${app_url}/cancel?tran_id=${tran_id}`,
-            ipn_url: `${app_url}/api/v1/payment/ipn`,
-            shipping_method: 'Courier',
-            product_name: order.items?.map(i => i.product?.name).join(', ').substring(0, 250) || 'Order Items',
-            product_category: 'General',
-            product_profile: 'general',
-            cus_name: order.customerName,
-            cus_email: order.customerEmail,
-            cus_add1: order.address,
-            cus_add2: 'N/A',
-            cus_city: 'N/A',
-            cus_state: 'N/A',
-            cus_postcode: 'N/A',
-            cus_country: 'Bangladesh',
-            cus_phone: order.customerPhone || '01700000000',
-            cus_fax: order.customerPhone || '01700000000',
-            ship_name: order.customerName,
-            ship_add1: order.address,
-            ship_add2: 'N/A',
-            ship_city: 'N/A',
-            ship_state: 'N/A',
-            ship_postcode: 'N/A',
-            ship_country: 'Bangladesh',
-            value_a: app_url,
-            value_b: tenantId,
-        };
-
-        const apiUrl = is_live
-            ? 'https://securepay.sslcommerz.com/gwprocess/v4/api.php'
-            : 'https://sandbox.sslcommerz.com/gwprocess/v4/api.php';
-
-        const formData = new URLSearchParams();
-        Object.entries(initData).forEach(([key, value]) => {
-            formData.append(key, value as string);
+        const strategy = PaymentStrategyFactory.create(order.paymentMethod);
+        
+        const result = await strategy.initiate(order, settings, { 
+            callbackUrl, 
+            tenantId 
         });
 
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                body: formData,
-            });
-
-            const result: any = await response.json();
-
-
-            if (result.status === 'SUCCESS') {
-                return { gatewayUrl: result.GatewayPageURL };
-            } else {
-                throw new BadRequestException('Failed to initiate payment', result.failedreason);
+        if (result.success) {
+            if (result.transactionId) {
+                order.transactionId = result.transactionId;
+                await this.orderRepository.save(order);
             }
-        } catch (error) {
-            console.error('Payment init error:', error);
-            throw new InternalServerErrorException('Failed to process payment with gateway');
+            return { gatewayUrl: result.gatewayUrl };
+        } else {
+            throw new BadRequestException(result.error || 'Failed to initiate payment');
         }
+    }
+
+
+    async getStrategyByTransactionId(tran_id: string) {
+        const order = await this.orderRepository.findOne({ where: { transactionId: tran_id } });
+        if (!order) throw new NotFoundException('Order not found');
+        return {
+            strategy: PaymentStrategyFactory.create(order.paymentMethod),
+            order
+        };
     }
 
     async handleSuccessPayment(tran_id: string, gatewayResponse: any) {
         this.logger.log(`${this.handleSuccessPayment.name} Service Called`);
-        const order = await this.orderRepository.findOne({ where: { transactionId: tran_id } });
-        if (!order) throw new NotFoundException('Order not found');
+        const { strategy, order } = await this.getStrategyByTransactionId(tran_id);
+        const validation = await strategy.validateCallback(gatewayResponse);
+
+        if (!validation.success) {
+            this.logger.warn(`Payment validation failed for tran_id: ${tran_id}`);
+            return { success: false };
+        }
 
         order.paymentStatus = PaymentStatus.PAID;
         order.status = OrderStatus.PENDING;
@@ -135,9 +88,9 @@ export class PaymentService {
             transactionId: tran_id,
             amount: order.totalAmount,
             currency: order.currency,
-            method: gatewayResponse.card_type || 'Unknown',
+            method: validation.methodName || 'Unknown',
             status: 'SUCCESS',
-            gatewayResponse,
+            gatewayResponse: validation.gatewayResponse,
             tenantId: order.tenantId,
         });
         await this.paymentRepository.save(payment);
@@ -159,8 +112,8 @@ export class PaymentService {
 
     async handleFailPayment(tran_id: string, gatewayResponse: any) {
         this.logger.log(`${this.handleFailPayment.name} Service Called`);
-        const order = await this.orderRepository.findOne({ where: { transactionId: tran_id } });
-        if (!order) throw new NotFoundException('Order not found');
+        const { strategy, order } = await this.getStrategyByTransactionId(tran_id);
+        const validation = await strategy.validateCallback(gatewayResponse);
 
         order.paymentStatus = PaymentStatus.FAILED;
         await this.orderRepository.save(order);
@@ -171,9 +124,9 @@ export class PaymentService {
             transactionId: tran_id,
             amount: order.totalAmount,
             currency: order.currency,
-            method: gatewayResponse.card_type || 'Unknown',
+            method: validation.methodName || 'Unknown',
             status: 'FAILED',
-            gatewayResponse,
+            gatewayResponse: validation.gatewayResponse,
             tenantId: order.tenantId,
         });
         await this.paymentRepository.save(payment);
@@ -183,8 +136,8 @@ export class PaymentService {
 
     async handleCancelPayment(tran_id: string, gatewayResponse: any) {
         this.logger.log(`${this.handleCancelPayment.name} Service Called`);
-        const order = await this.orderRepository.findOne({ where: { transactionId: tran_id } });
-        if (!order) throw new NotFoundException('Order not found');
+        const { strategy, order } = await this.getStrategyByTransactionId(tran_id);
+        const validation = await strategy.validateCallback(gatewayResponse);
 
         order.paymentStatus = PaymentStatus.PENDING; // Or CANCELLED if you have that status
         await this.orderRepository.save(order);
@@ -195,15 +148,21 @@ export class PaymentService {
             transactionId: tran_id,
             amount: order.totalAmount,
             currency: order.currency,
-            method: gatewayResponse.card_type || 'Unknown',
+            method: validation.methodName || 'Unknown',
             status: 'CANCELLED',
-            gatewayResponse,
+            gatewayResponse: validation.gatewayResponse,
             tenantId: order.tenantId,
         });
         await this.paymentRepository.save(payment);
 
         return { cancelled: true };
     }
+
+    async getRedirectUrl(tran_id: string, gatewayResponse: any, defaultAppUrl: string) {
+        const { strategy } = await this.getStrategyByTransactionId(tran_id);
+        return strategy.getRedirectUrl(gatewayResponse, defaultAppUrl);
+    }
+
 
     async findAllPayments(tenantId: string) {
         this.logger.log(`${this.findAllPayments.name} Service Called`);

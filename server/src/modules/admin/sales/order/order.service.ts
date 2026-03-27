@@ -134,7 +134,7 @@ export class OrderService {
       }
 
       // 10. Admin Notification (for manual payments)
-      if (savedOrder.paymentMethod === PaymentMethod.COD || savedOrder.paymentMethod === PaymentMethod.CASH) {
+      if (savedOrder.paymentMethod === PaymentMethod.COD) {
         const orderWithRelations = await manager.findOne(OrderEntity, {
           where: { id: savedOrder.id, tenantId },
           relations: ['items', 'items.product', 'items.variant'],

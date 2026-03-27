@@ -6,7 +6,10 @@ import {
     Param,
     Post,
     Put,
-    UseGuards, Logger
+    UseGuards, Logger,
+    Ip,
+    HostParam,
+    Redirect
 } from '@nestjs/common';
 import { Roles } from '@/common/decorators/roles.decorator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
@@ -36,7 +39,7 @@ export class BrandController {
     }
 
     @Get()
-    async findAllBrands(@RequestContext() ctx: RequestContextDto) {
+    async findAllBrands(@RequestContext() ctx: RequestContextDto): Promise<any> {
         this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllBrands.`);
         const data = await this.brandService.findAllBrands(ctx.tenantId);
         return { success: true, data };

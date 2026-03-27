@@ -26,23 +26,27 @@ export class PaymentActionController {
     @Post('success')
     async success(@Query('tran_id') tran_id: string, @Body() gatewayResponse: any, @Res() res: Response) {
         await this.paymentService.handleSuccessPayment(tran_id, gatewayResponse);
-        const appUrl = gatewayResponse.value_a?.replace('/api/payment', '') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        return res.redirect(`${appUrl}/payment/success?tran_id=${tran_id}`);
+        const defaultAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const redirectUrl = await this.paymentService.getRedirectUrl(tran_id, gatewayResponse, defaultAppUrl);
+        return res.redirect(redirectUrl);
     }
 
     @Post('fail')
     async fail(@Query('tran_id') tran_id: string, @Body() gatewayResponse: any, @Res() res: Response) {
         await this.paymentService.handleFailPayment(tran_id, gatewayResponse);
-        const appUrl = gatewayResponse.value_a?.replace('/api/payment', '') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        return res.redirect(`${appUrl}/payment/fail?tran_id=${tran_id}`);
+        const defaultAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const redirectUrl = await this.paymentService.getRedirectUrl(tran_id, gatewayResponse, defaultAppUrl);
+        return res.redirect(redirectUrl);
     }
 
     @Post('cancel')
     async cancel(@Query('tran_id') tran_id: string, @Body() gatewayResponse: any, @Res() res: Response) {
         await this.paymentService.handleCancelPayment(tran_id, gatewayResponse);
-        const appUrl = gatewayResponse.value_a?.replace('/api/payment', '') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        return res.redirect(`${appUrl}/payment/cancel?tran_id=${tran_id}`);
+        const defaultAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const redirectUrl = await this.paymentService.getRedirectUrl(tran_id, gatewayResponse, defaultAppUrl);
+        return res.redirect(redirectUrl);
     }
+
 
     @Post('ipn')
     async ipn(@Body() gatewayResponse: any) {

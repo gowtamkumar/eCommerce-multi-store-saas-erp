@@ -6,11 +6,12 @@ import { rateLimit } from 'express-rate-limit'
 import { AppModule } from './app.module'
 import getLogLevels from './lib/logger'
 import { SwaggerConfig } from './lib/swagger'
+import { NestExpressApplication } from '@nestjs/platform-express'
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap Logger')
 
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: getLogLevels(process.env.NODE_ENV === 'production'),
   })
 
