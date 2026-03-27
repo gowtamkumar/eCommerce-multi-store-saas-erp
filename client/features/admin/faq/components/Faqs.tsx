@@ -4,7 +4,7 @@ import { fetchAPI } from '@/services/api';
 import { Edit, HelpCircle, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FAQ } from '../../../type';
+import type { FAQ } from '../type';
 
 
 export default function FAQs() {

@@ -6,7 +6,7 @@ import { Save, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { FAQFormProps } from '../../../type';
+import type { FAQFormProps } from '../type';
 
 export default function FAQForm({ faqId, initialData }: FAQFormProps) {
     const router = useRouter();

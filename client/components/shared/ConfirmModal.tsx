@@ -1,5 +1,4 @@
 import { AlertTriangle, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface ConfirmModalProps {
     isOpen: boolean;

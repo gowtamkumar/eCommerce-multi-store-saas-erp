@@ -30,7 +30,6 @@ Beyond simple percentages, implement these high-conversion types:
     *   Spend $300 → $60 Off
 
 ### Category 2: Behavior Based
-*   **Buy X Get Y (BOGO)**: Buy 1 shoe, get the 2nd at 50% off.
 *   **Quantity Breaks**: 1 unit = $20, 5 units = $15 each.
 *   **Free Shipping**: Removes shipping cost if cart exceeds $X.
 
@@ -60,7 +59,7 @@ Do not calculate discounts in controllers. Create a `PricingEngineService`.
 ### Phase 3: Admin Management (Tenant Dashboard)
 Give store owners a powerful UI to manage campaigns:
 *   **Campaign Wizard**: A step-by-step UI to create "Flash Sales".
-*   **Exclusions Toggle**: Easily exclude "On Sale" items from further coupon discounts.
+*   **Exclusions Toggle**: Easily exclude "On Sale" enlightened items from further coupon discounts.
 *   **Usage Analytics**: Show "Revenue Generated" vs "Discount Weight".
 
 ### Phase 4: Customer Experience (Storefront)
@@ -71,7 +70,6 @@ Give store owners a powerful UI to manage campaigns:
 ---
 
 ## 4. Multi-Tenant Edge Cases & Rules
-
 ### I. Stacking Logic
 Define a "Strictly One" vs "Cumulative" policy per tenant.
 *   **Global Rule**: Most tenants prefer "Coupons cannot be used on already discounted items."
@@ -131,16 +129,6 @@ export class FixedAmountDiscountStrategy implements DiscountStrategy {
     return Math.max(0, baseAmount - value);
   }
 }
-
-// BOGO (Buy One Get One Free) - Example Logic
-export class BogoDiscountStrategy implements DiscountStrategy {
-  calculate(baseAmount: number, count: number): number {
-    // If user buys 2, they only pay for 1
-    const payableItems = Math.ceil(count / 2);
-    const unitPrice = baseAmount / count;
-    return payableItems * unitPrice;
-  }
-}
 ```
 
 ### C. The Strategy Factory
@@ -156,8 +144,6 @@ export class DiscountStrategyFactory {
         return new PercentageDiscountStrategy();
       case 'fixed_amount':
         return new FixedAmountDiscountStrategy();
-      case 'bogo':
-        return new BogoDiscountStrategy();
       case 'free_shipping':
         // Returns base amount as shipping is handled separately
         return (base) => base; 
@@ -192,7 +178,7 @@ export class PricingService {
 
 ## 7. Developer's A-Z Implementation Steps
 
-1.  **Define Enums**: Create a `PromotionType` enum ('percentage', 'fixed', 'bogo').
+1.  **Define Enums**: Create a `PromotionType` enum ('percentage', 'fixed').
 2.  **Create Strategy Classes**: Implement the `DiscountStrategy` interface for each enum value.
 3.  **Update Database**: Ensure `promotions` table has a `promotionType` and `value` column.
 4.  **Implement Factory**: Use the `DiscountStrategyFactory` to map enums to classes.
@@ -204,7 +190,7 @@ export class PricingService {
 ## Summary Checklist
 - [x] Tenant-ID scoped schema.
 - [x] Centralized `PricingEngine` service using **Strategy Pattern**.
-- [x] Support for Percentage, Fixed, BOGO, and Free Shipping.
+- [x] Support for Percentage, Fixed, and Free Shipping.
 - [x] Expiry dates and usage limits per customer.
 - [x] Stacking/Exclusion logic.
 - [x] Admin Revenue impact dashboard.

@@ -1,5 +1,7 @@
 "use server";
+import { headers } from "next/headers";
 import nestApiUrl from "../lib/api-url";
+import { authOptions } from "@/lib/authOptions";
 
 let cachedTenantId: string | null = null;
 let tenantLookupPromise: Promise<string | null> | null = null;
@@ -88,7 +90,7 @@ export async function getTenantId(
     headerTenantId = getHeader(req, "x-tenant-id");
   } else {
     try {
-      const { headers } = await import("next/headers");
+      // const { headers } = await import("next/headers");
       const headerList = await headers();
       host = headerList.get("host");
       headerTenantId = headerList.get("x-tenant-id");
@@ -147,7 +149,7 @@ export async function getTenantId(
   if (allowSessionFallback) {
     try {
       const { getServerSession } = await import("next-auth");
-      const { authOptions } = await import("../lib/authOptions");
+      // const { authOptions } = await import("../lib/authOptions");
       const session = await getServerSession(authOptions);
       if (session?.user?.tenantId) {
         return session.user.tenantId;

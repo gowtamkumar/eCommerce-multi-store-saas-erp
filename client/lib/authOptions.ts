@@ -122,7 +122,7 @@ export const authOptions: NextAuthOptions = {
     maxAge: 7 * 24 * 60 * 60, // 7 days - session expires after 7 days
   },
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, trigger, session }: any) {
       if (user) {
         console.log("NEXTAUTH JWT INITIAL PAYLOAD USER:", user);
         return {
@@ -153,7 +153,7 @@ export const authOptions: NextAuthOptions = {
       // Token has expired, try to refresh it
       return refreshAccessToken(token);
     },
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (session.user) {
         session.user.id = token.id;
         session.user.role = token.role;

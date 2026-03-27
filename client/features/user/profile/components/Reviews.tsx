@@ -1,7 +1,7 @@
 'use client';
 import { Quote, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { DisplayItem } from '../../../type';
+import { DisplayItem } from '../type';
 
 const Reviews = ({ reviews }: { reviews: DisplayItem[] }) => {
   const [loading, setLoading] = useState(true);

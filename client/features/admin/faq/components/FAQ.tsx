@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import type { FAQ, FAQProps } from '../../../type';
+import type { FAQ, FAQProps } from '../type';
 
 
 export default function FAQ({ title, description, faqs: customFaqs, isBuilderSection = false }: FAQProps) {

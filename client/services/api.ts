@@ -3,6 +3,7 @@
 import { getSession } from "next-auth/react";
 import nestApiUrl from "../lib/api-url";
 import { getTenantId } from "./tenant";
+import { authOptions } from "@/lib/authOptions";
 
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const headers: any = { ...options.headers };
@@ -32,7 +33,7 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
       } else {
         // Server-side
         const { getServerSession } = await import("next-auth");
-        const { authOptions } = await import("../lib/authOptions");
+        // const { authOptions } = await import("../lib/authOptions");
         const session = await getServerSession(authOptions);
         if (session?.user?.accessToken) {
           (headers as any)["Authorization"] =

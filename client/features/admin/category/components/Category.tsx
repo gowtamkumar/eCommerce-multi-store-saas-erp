@@ -4,7 +4,7 @@ import { fetchAPI } from '@/services/api';
 import { Edit, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import type { Category } from '../../type';
+import type { Category } from '../type';
 
 export default function Categories() {
     const [categories, setCategories] = useState<Category[]>([]);
