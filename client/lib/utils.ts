@@ -3,9 +3,9 @@ import { type ClassValue, clsx } from 'clsx';
 import toast from 'react-hot-toast';
 import { twMerge } from 'tailwind-merge';
 import { fetchAPI } from '../services/api';
-import { OrderStatus } from './enums/order-status';
-import { ShippingZoneType } from './enums/shipping-zone-type';
-import { DiscountType } from './enums/discount-type';
+import { OrderStatus } from './enums/order-status.enum';
+import { ShippingZoneType } from './enums/shipping-zone-type.enum';
+import { DiscountType } from './enums/discount-type.enum';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

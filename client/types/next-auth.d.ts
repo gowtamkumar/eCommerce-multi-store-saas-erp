@@ -1,4 +1,4 @@
-import { UserRole } from "@/lib/enums/user-role";
+import { UserRole } from "@/lib/enums/user-role.enum";
 import "next-auth";
 import "next-auth/jwt";
 

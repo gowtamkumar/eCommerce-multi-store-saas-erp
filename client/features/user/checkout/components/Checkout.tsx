@@ -3,7 +3,7 @@
 import Price from "@/components/shared/Price";
 import { useCart } from "@/hooks/CartContext";
 import { useSettings } from "@/hooks/SettingsContext";
-import { PaymentMethod } from "@/lib/enums/payment-method";
+import { PaymentMethod } from "@/lib/enums/payment-method.enum";
 import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
 import { calculateShippingFee } from "@/lib/utils";
 import { fetchAPI } from "@/services/api";
@@ -31,7 +31,7 @@ import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
 import type { ShippingAddress } from "@/services/shippingAddress";
 import * as shippingAddressApi from "@/services/shippingAddress";
 import { MapPin, Plus } from "lucide-react";
-import { ShippingZoneType } from "@/lib/enums/shipping-zone-type";
+import { ShippingZoneType } from "@/lib/enums/shipping-zone-type.enum";
 
 export default function Checkout() {
     const {

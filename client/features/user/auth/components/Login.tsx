@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { getSession, signIn } from 'next-auth/react';
 import toast from 'react-hot-toast';
-import { UserRole } from '@/lib/enums/user-role';
+import { UserRole } from '@/lib/enums/user-role.enum';
 
 export default function Login() {
     const [username, setUsername] = useState('');

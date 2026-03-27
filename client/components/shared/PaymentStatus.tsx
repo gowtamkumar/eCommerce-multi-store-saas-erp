@@ -1,7 +1,7 @@
 'use client';
 
 import { useDownloadInvoice } from '@/lib/handleDownloadInvoice';
-import { OrderStatus } from '@/lib/enums/order-status';
+import { OrderStatus } from '@/lib/enums/order-status.enum';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Download, Loader2, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';

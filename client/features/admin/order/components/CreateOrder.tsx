@@ -23,8 +23,8 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { Product } from '@/types/product';
 import toast from 'react-hot-toast';
 import { calculateShippingFee } from '@/lib/utils';
-import { ShippingZoneType } from '@/lib/enums/shipping-zone-type';
-import { DiscountType } from '@/lib/enums/discount-type';
+import { ShippingZoneType } from '@/lib/enums/shipping-zone-type.enum';
+import { DiscountType } from '@/lib/enums/discount-type.enum';
 
 interface SelectedItem {
     product: Product;

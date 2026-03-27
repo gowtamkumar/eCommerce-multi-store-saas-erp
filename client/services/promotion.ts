@@ -1,5 +1,5 @@
-import { PromotionType } from "@/lib/enums/promotion-type";
-import { PromotionTargetType } from "@/lib/enums/promotion-target-type";
+import { PromotionType } from "@/lib/enums/promotion-type.enum";
+import { PromotionTargetType } from "@/lib/enums/promotion-target-type.enum";
 import { fetchAPI } from "./api";
 
 export interface Promotion {

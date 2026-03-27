@@ -1,6 +1,6 @@
 "use client";
 
-import { UserRole } from "@/lib/enums/user-role";
+import { UserRole } from "@/lib/enums/user-role.enum";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, LayoutDashboard, LogOut, User, UserCircle } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";

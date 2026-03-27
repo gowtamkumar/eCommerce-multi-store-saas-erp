@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Check, Download, Loader2, ShieldCheck, Truck, CreditCard, Plus, Minus } from "lucide-react";
 import { useSettings } from "@/hooks/SettingsContext";
-import { PaymentMethod } from "@/lib/enums/payment-method";
+import { PaymentMethod } from "@/lib/enums/payment-method.enum";
 import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
 import { fetchAPI } from "@/services/api";
 import { getSession, signIn, useSession } from "next-auth/react";

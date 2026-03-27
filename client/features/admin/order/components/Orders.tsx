@@ -4,17 +4,16 @@ import { fetchAPI } from '@/services/api';
 
 import { useSettings } from '@/hooks/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
-import { OrderStatus } from '@/lib/enums/order-status';
-import { PaymentStatus } from '@/lib/enums/payment-status';
+import { OrderStatus } from '@/lib/enums/order-status.enum';
+import { PaymentStatus } from '@/lib/enums/payment-status.enum';
 import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, updateOrderStatus } from '@/lib/utils';
 import { Order } from '@/types/order';
 import { ChevronLeft, ChevronRight, Eye, Loader2, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Pagination } from '../../../../customer/type';
-
-
+import { Pagination } from '../../customer/type';
+import { CourierType } from '@/lib/enums/courier-type.enum';
 
 
 export default function Orders() {
@@ -263,8 +262,8 @@ export default function Orders() {
                                                     className="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer hover:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
                                                 >
                                                     <option value="">🚚 Create Courier Order</option>
-                                                    <option value="steadfast">🚚 Steadfast</option>
-                                                    <option value="pathao">📦 Pathao</option>
+                                                    <option value={CourierType.STEADFAST}>🚚 Steadfast</option>
+                                                    <option value={CourierType.PATHAO}>📦 Pathao</option>
                                                 </select>
                                             )}
                                         </td>

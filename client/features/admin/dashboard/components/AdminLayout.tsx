@@ -1,7 +1,7 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
-import { UserRole } from '@/lib/enums/user-role';
+import { UserRole } from '@/lib/enums/user-role.enum';
 import { navGroups } from '@/routes';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Menu, X } from 'lucide-react';

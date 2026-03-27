@@ -1,4 +1,4 @@
-import { ShippingZoneType } from "@/lib/enums/shipping-zone-type";
+import { ShippingZoneType } from "@/lib/enums/shipping-zone-type.enum";
 
 export interface OrderItem {
   id: string;

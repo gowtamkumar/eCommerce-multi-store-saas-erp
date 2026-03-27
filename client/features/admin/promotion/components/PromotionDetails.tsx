@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useCart } from '@/hooks/CartContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { PromotionType } from '@/lib/enums/promotion-type';
+import { PromotionType } from '@/lib/enums/promotion-type.enum';
 
 interface Product {
     id: string;

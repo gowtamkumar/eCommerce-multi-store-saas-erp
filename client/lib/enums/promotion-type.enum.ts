@@ -1,0 +1,1 @@
+export { DiscountType as PromotionType } from '@/lib/enums/discount-type.enum'

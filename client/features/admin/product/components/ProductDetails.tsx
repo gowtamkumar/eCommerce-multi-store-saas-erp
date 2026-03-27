@@ -22,7 +22,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { ProductDetailsProps } from "../types";
 import { calculatePricing } from "@/lib/utils";
-import { PromotionType } from "@/lib/enums/promotion-type";
+import { PromotionType } from "@/lib/enums/promotion-type.enum";
 
 
 const ProductDetails = ({ product }: ProductDetailsProps) => {

@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import CurrencySwitcher from "../shared/CurrencySwitcher";
 import UserDropdown from "./UserDropdown";
-import { UserRole } from "@/lib/enums/user-role";
+import { UserRole } from "@/lib/enums/user-role.enum";
 
 const Navbar = () => {
   const { data: session } = useSession();

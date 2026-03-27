@@ -1,7 +1,7 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
-import { DiscountType } from '@/lib/enums/discount-type';
+import { DiscountType } from '@/lib/enums/discount-type.enum';
 import { fetchAPI } from '@/services/api';
 import { motion } from 'framer-motion';
 import { Calendar, Percent, RefreshCw, X } from 'lucide-react';

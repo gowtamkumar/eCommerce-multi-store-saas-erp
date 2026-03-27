@@ -1,8 +1,9 @@
 import { IsEnum, IsOptional } from 'class-validator';
 import { PaginationDto } from '@/common/dto/pagination.dto';
+import { FaqStatus } from '@/common/enums/faq-status.enum';
 
 export class FilterFaqDto extends PaginationDto {
     @IsOptional()
-    @IsEnum(['active', 'inactive'])
-    status?: string;
+    @IsEnum(FaqStatus)
+    status?: FaqStatus;
 }

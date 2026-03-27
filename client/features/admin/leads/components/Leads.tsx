@@ -1,7 +1,7 @@
 'use client';
 
 import { fetchAPI } from '@/services/api';
-import { LeadStatus } from '@/lib/enums/lead-status';
+import { LeadStatus } from '@/lib/enums/lead-status.enum';
 import { ChevronLeft, ChevronRight, Download, Filter, Loader2, MessageSquare, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';

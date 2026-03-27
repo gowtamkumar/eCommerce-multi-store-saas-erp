@@ -7,9 +7,9 @@ import { motion } from 'framer-motion';
 import { Calendar, Copy, Percent, X, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { DiscountType } from '@/lib/enums/discount-type';
-import { PromotionType } from '@/lib/enums/promotion-type';
-import { PromotionTargetType } from '@/lib/enums/promotion-target-type';
+import { DiscountType } from '@/lib/enums/discount-type.enum';
+import { PromotionType } from '@/lib/enums/promotion-type.enum';
+import { PromotionTargetType } from '@/lib/enums/promotion-target-type.enum';
 
 interface PromotionFormProps {
     promotion?: Promotion | null;

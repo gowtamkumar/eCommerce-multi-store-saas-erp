@@ -2,7 +2,7 @@
 
 import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
-import { ReturnStatus } from "@/lib/enums/return-status";
+import { ReturnStatus } from "@/lib/enums/return-status.enum";
 import {
     ArrowLeft,
     Calendar,

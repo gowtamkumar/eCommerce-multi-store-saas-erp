@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import ProductVariants from './ProductVariants';
 import RichEditor from '@/components/shared/RichEditor';
 import { calculatePricing } from '@/lib/utils';
-import { DiscountType } from '@/lib/enums/discount-type';
+import { DiscountType } from '@/lib/enums/discount-type.enum';
 
 
 interface ProductFormProps {

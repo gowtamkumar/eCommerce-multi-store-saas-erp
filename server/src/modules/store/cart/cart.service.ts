@@ -85,8 +85,7 @@ export class CartService {
           couponDiscountAmount = validation.discountAmount
           payable -= couponDiscountAmount
           if (
-            validation.coupon.discountType === DiscountType.FREE_SHIPPING ||
-            (validation.coupon.discountType as any) === 'free_shipping'
+            validation.coupon.discountType === DiscountType.FREE_SHIPPING
           ) {
             isFreeShipping = true
           }

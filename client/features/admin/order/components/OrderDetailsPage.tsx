@@ -2,8 +2,8 @@
 
 import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
-import { OrderStatus } from "@/lib/enums/order-status";
-import { PaymentStatus } from "@/lib/enums/payment-status";
+import { OrderStatus } from "@/lib/enums/order-status.enum";
+import { PaymentStatus } from "@/lib/enums/payment-status.enum";
 import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, updateOrderStatus } from "@/lib/utils";
 import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
 import { Order } from "@/types/order";
@@ -23,7 +23,7 @@ import {
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { ShippingZoneType } from "@/lib/enums/shipping-zone-type";
+import { ShippingZoneType } from "@/lib/enums/shipping-zone-type.enum";
 
 
 

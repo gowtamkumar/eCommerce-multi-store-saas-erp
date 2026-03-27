@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
+import { TenantStatus } from '../enums/tenant/tenant-status.enum'
 
 @Injectable()
 export class TenantStatusGuard implements CanActivate {
@@ -16,11 +17,11 @@ export class TenantStatusGuard implements CanActivate {
     try {
       const tenant = await this.tenantService.findOneTenants(tenantId)
 
-      if (tenant.status === 'suspended') {
+      if (tenant.status === TenantStatus.SUSPENDED) {
         throw new ForbiddenException({
           success: false,
           message: 'Your store has been suspended by the administrator. Please contact support.',
-          status: 'suspended',
+          status: TenantStatus.SUSPENDED,
         })
       }
 

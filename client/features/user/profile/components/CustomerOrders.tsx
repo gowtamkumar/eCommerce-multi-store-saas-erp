@@ -2,7 +2,7 @@
 
 import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
-import { OrderStatus } from "@/lib/enums/order-status";
+import { OrderStatus } from "@/lib/enums/order-status.enum";
 
 import { getOrderStatusStyles } from "@/lib/utils";
 import { Eye, FileText, Package, RotateCcw, Search, ShoppingBag, Star, Truck } from "lucide-react";

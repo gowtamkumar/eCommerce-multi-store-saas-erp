@@ -1,6 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import { UserRole } from "./lib/enums/user-role";
+import { UserRole } from "./lib/enums/user-role.enum";
 
 export default withAuth(
   function middleware(req) {
