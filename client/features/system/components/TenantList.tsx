@@ -72,6 +72,39 @@ export default function TenantList({ initialTenants }: TenantListProps) {
     }
   };
 
+  const getStatusStyles = (status: string) => {
+    switch (status) {
+      case 'active':
+        return {
+          bg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400',
+          dot: 'bg-emerald-500',
+          icon: 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-800 text-indigo-500 shadow-sm shadow-indigo-500/10',
+          gradient: 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/20'
+        };
+      case 'suspended':
+        return {
+          bg: 'bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400',
+          dot: 'bg-rose-500',
+          icon: 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400',
+          gradient: 'bg-slate-400 shadow-slate-400/20'
+        };
+      case 'expired':
+        return {
+          bg: 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400',
+          dot: 'bg-amber-500',
+          icon: 'bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800 text-amber-500 shadow-sm shadow-amber-500/10',
+          gradient: 'bg-gradient-to-br from-amber-500 to-orange-600 shadow-amber-500/20'
+        };
+      default:
+        return {
+          bg: 'bg-slate-50 text-slate-600 dark:bg-slate-900/20 dark:text-slate-400',
+          dot: 'bg-slate-500',
+          icon: 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400',
+          gradient: 'bg-slate-300 shadow-slate-300/20'
+        };
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -121,114 +154,114 @@ export default function TenantList({ initialTenants }: TenantListProps) {
                 </tr>
               ) : (
                 <AnimatePresence mode="popLayout">
-                  {filteredTenants.map((tenant) => (
-                    <motion.tr
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      key={tenant.id}
-                      className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors group"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all group-hover:scale-105 ${tenant.status === 'active' ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-800 text-indigo-500 shadow-sm shadow-indigo-500/10' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400'}`}>
-                            <Store className="w-6 h-6" />
+                  {filteredTenants.map((tenant) => {
+                    const styles = getStatusStyles(tenant.status);
+                    return (
+                      <motion.tr
+                        layout
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        key={tenant.id}
+                        className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors group"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all group-hover:scale-105 ${styles.icon}`}>
+                              <Store className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <p className="font-black text-slate-900 dark:text-white leading-tight capitalize">{tenant.storeName}</p>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                {tenant.subdomain}
+                                <span className="text-slate-300 dark:text-slate-600">.HOST.LOCAL</span>
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-black text-slate-900 dark:text-white leading-tight capitalize">{tenant.storeName}</p>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                              {tenant.subdomain}
-                              <span className="text-slate-300 dark:text-slate-600">.HOST.LOCAL</span>
-                            </p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <Layers className="w-4 h-4 text-indigo-500" />
+                            <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                              {(tenant as any).subscriptionPlan?.name || 'Legacy Tier'}
+                            </span>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Layers className="w-4 h-4 text-indigo-500" />
-                          <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                            {(tenant as any).subscriptionPlan?.name || 'Legacy Tier'}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${tenant.subscriptionStatus === 'ACTIVE'
+                              ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
+                              : 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'
+                              }`}>
+                              {tenant.subscriptionStatus || 'ACTIVE'}
+                            </span>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                              {tenant.subscriptionBillingCycle || 'MONTHLY'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${styles.bg}`}>
+                            <span className={`w-1 h-1 rounded-full ${styles.dot} ${tenant.status === 'active' ? 'animate-pulse' : ''}`} />
+                            {tenant.status}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${tenant.subscriptionStatus === 'ACTIVE'
-                            ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
-                            : 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'
-                            }`}>
-                            {tenant.subscriptionStatus || 'ACTIVE'}
-                          </span>
-                          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-1">
-                            {tenant.subscriptionBillingCycle || 'MONTHLY'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${tenant.status === 'active'
-                          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
-                          : 'bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400'
-                          }`}>
-                          <span className={`w-1 h-1 rounded-full ${tenant.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                          {tenant.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                          {tenant.subscriptionEndsAt
-                            ? new Date(tenant.subscriptionEndsAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-                            : 'PERPETUAL'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleFetchDetails(tenant)}
-                            className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
-                            title="Quick Audit"
-                          >
-                            <Info className="w-5 h-5" />
-                          </button>
-                          {tenant.status === 'active' ? (
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            {tenant.subscriptionEndsAt
+                              ? new Date(tenant.subscriptionEndsAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                              : 'PERPETUAL'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2">
                             <button
-                              onClick={() => handleUpdateStatus(tenant.id, 'suspended')}
-                              disabled={loadingId === tenant.id}
-                              className="p-2 text-slate-400 hover:text-rose-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg disabled:opacity-50"
-                              title="Suspend Resource"
+                              onClick={() => handleFetchDetails(tenant)}
+                              className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
+                              title="Quick Audit"
                             >
-                              <Ban className="w-5 h-5" />
+                              <Info className="w-5 h-5" />
                             </button>
-                          ) : (
-                            <button
-                              onClick={() => handleUpdateStatus(tenant.id, 'active')}
-                              disabled={loadingId === tenant.id}
-                              className="p-2 text-slate-400 hover:text-emerald-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg disabled:opacity-50"
-                              title="Restore Resource"
+                            {tenant.status === 'active' ? (
+                              <button
+                                onClick={() => handleUpdateStatus(tenant.id, 'suspended')}
+                                disabled={loadingId === tenant.id}
+                                className="p-2 text-slate-400 hover:text-rose-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg disabled:opacity-50"
+                                title="Suspend Resource"
+                              >
+                                <Ban className="w-5 h-5" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleUpdateStatus(tenant.id, 'active')}
+                                disabled={loadingId === tenant.id}
+                                className="p-2 text-slate-400 hover:text-emerald-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg disabled:opacity-50"
+                                title="Restore Resource"
+                              >
+                                <CheckCircle2 className="w-5 h-5" />
+                              </button>
+                            )}
+                            <Link
+                              href={`/system/tenants/${tenant.id}/analytics`}
+                              className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
+                              title="Resource Analytics"
                             >
-                              <CheckCircle2 className="w-5 h-5" />
-                            </button>
-                          )}
-                          <Link
-                            href={`/system/tenants/${tenant.id}/analytics`}
-                            className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
-                            title="Resource Analytics"
-                          >
-                            <BarChart3 className="w-5 h-5" />
-                          </Link>
-                          <a
-                            href={tenant.customDomain ? tenant.customDomain : `http://${tenant.subdomain}.localhost:3000`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
-                            title="Access Partition"
-                          >
-                            <ExternalLink className="w-5 h-5" />
-                          </a>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
+                              <BarChart3 className="w-5 h-5" />
+                            </Link>
+                            <a
+                              href={tenant.customDomain ? tenant.customDomain : `http://${tenant.subdomain}.localhost:3000`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
+                              title="Access Partition"
+                            >
+                              <ExternalLink className="w-5 h-5" />
+                            </a>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
                 </AnimatePresence>
               )}
             </tbody>
@@ -255,40 +288,47 @@ export default function TenantList({ initialTenants }: TenantListProps) {
             >
               {/* Header */}
               <div className="p-8 pb-0 flex justify-between items-start">
-                <div className="flex items-center gap-6">
-                  <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center text-white shadow-2xl transition-all ${selectedTenant.status === 'active' ? 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/20' : 'bg-slate-400 shadow-slate-400/20'}`}>
-                    <Store className="w-10 h-10" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h2 className="text-3xl font-black text-slate-900 dark:text-white capitalize">{selectedTenant.storeName}</h2>
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] ${selectedTenant.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                        {selectedTenant.status}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4 mt-2">
-                      <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                        <Terminal className="w-3.5 h-3.5" />
-                        {selectedTenant.subdomain}.host.local
-                      </span>
-                      {selectedTenant.customDomain && (
-                        <>
-                          <div className="w-1 h-1 bg-slate-300 rounded-full" />
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-indigo-500 uppercase tracking-widest">
-                            <Globe className="w-3.5 h-3.5" />
-                            {selectedTenant.customDomain}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedTenant(null)}
-                  className="p-4 text-slate-400 hover:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-3xl transition-all"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+                {(() => {
+                  const styles = getStatusStyles(selectedTenant.status);
+                  return (
+                    <>
+                      <div className="flex items-center gap-6">
+                        <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center text-white shadow-2xl transition-all ${styles.gradient}`}>
+                          <Store className="w-10 h-10" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <h2 className="text-3xl font-black text-slate-900 dark:text-white capitalize">{selectedTenant.storeName}</h2>
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] ${styles.bg}`}>
+                              {selectedTenant.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 mt-2">
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                              <Terminal className="w-3.5 h-3.5" />
+                              {selectedTenant.subdomain}.host.local
+                            </span>
+                            {selectedTenant.customDomain && (
+                              <>
+                                <div className="w-1 h-1 bg-slate-300 rounded-full" />
+                                <span className="flex items-center gap-1.5 text-xs font-bold text-indigo-500 uppercase tracking-widest">
+                                  <Globe className="w-3.5 h-3.5" />
+                                  {selectedTenant.customDomain}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedTenant(null)}
+                        className="p-4 text-slate-400 hover:text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-3xl transition-all"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Content */}

@@ -7,6 +7,7 @@ import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SettingsService } from './settings.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
 
 @Controller('settings')
 export class SettingsController {
@@ -15,6 +16,7 @@ export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Get()
+  @PublicDuringExpiration()
   async findByTenantSettings(@RequestContext() ctx: RequestContextDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByTenantSettings.`)
     return await this.settingsService.findByTenantSettings(ctx.tenantId)

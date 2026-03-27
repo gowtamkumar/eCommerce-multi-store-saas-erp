@@ -144,6 +144,7 @@ interface SiteSettings {
     bannerTextColor?: string;
   };
   robotsTxt?: string;
+  status?: string;
 }
 
 interface SettingsContextType {

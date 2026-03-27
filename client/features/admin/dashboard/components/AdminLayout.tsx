@@ -4,7 +4,7 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { UserRole } from '@/lib/enums/user-role.enum';
 import { navGroups } from '@/routes';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Menu, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Menu, X, Shield } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -32,7 +32,6 @@ export default function AdminLayout({
             router.replace('/login');
         } else if (status === 'authenticated') {
             const rawRole = session?.user?.role || '';
-            console.log("rawRole", rawRole);
             const allowedRoles = [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING, UserRole.SUPER_ADMIN];
             if (!allowedRoles.includes(rawRole)) {
                 console.warn(`User role ${rawRole} is not authorized for admin access`);
@@ -118,8 +117,41 @@ export default function AdminLayout({
         await signOut({ callbackUrl: `${window.location.origin}/login` });
     };
 
+    const isExpired = settings?.status === 'expired' && session?.user?.role !== UserRole.SUPER_ADMIN;
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
+            {/* Expiration Overlay */}
+            {isExpired && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="bg-white dark:bg-slate-800 p-10 rounded-[3rem] shadow-2xl border border-amber-200 dark:border-amber-900/50 max-w-lg text-center"
+                    >
+                        <div className="w-24 h-24 bg-amber-50 dark:bg-amber-900/20 rounded-[2rem] flex items-center justify-center mx-auto mb-8 relative">
+                            <Shield className="w-12 h-12 text-amber-500" />
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full animate-ping" />
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4 uppercase tracking-tighter">Plan Expired</h2>
+                        <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed">
+                            Your store subscription has expired. Storefront access is currently locked and management features are restricted until renewal.
+                        </p>
+                        <div className="flex flex-col gap-4">
+                            <button className="py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-amber-500/20 active:scale-95">
+                                Renew Subscription
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                className="py-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold tracking-wide transition-all"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
             {/* Mobile Menu Overlay */}
             <AnimatePresence>
                 {isMobileMenuOpen && (

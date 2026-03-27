@@ -66,18 +66,24 @@ export class AuthService {
   async login(loginCredentialsDto: LoginCredentialDto, tenantId: string) {
     this.logger.log(`${this.login.name} Service Called`)
     const { username, password } = loginCredentialsDto
-    // Check if tenant is suspended (skip for super admin who has no tenant)
-    if (tenantId) {
-      const tenant = await this.tenantService.findOneTenants(tenantId)
-      if (tenant && tenant.status === TenantStatus.SUSPENDED) {
-        throw new UnauthorizedException('Store is suspended. Please contact support.')
-      }
-    }
-
     const user = await this.userService.findUserByUsername(username, tenantId)
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid Login Credentials')
+    }
 
     if (user.status === UserStatus.BLOCKED) {
       throw new UnauthorizedException('User is blocked. Please contact support.')
+    }
+
+    // Check if tenant is suspended (skip for super admin)
+    if (user.role !== UserRole.SUPER_ADMIN && tenantId) {
+      const tenant = await this.tenantService.findOneTenants(tenantId)
+      if (tenant) {
+        if (tenant.status === TenantStatus.SUSPENDED) {
+          throw new UnauthorizedException('Store is suspended. Please contact support.')
+        }
+      }
     }
 
     const valid = user ? await this.userService.validateUser(user, password) : false

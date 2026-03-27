@@ -74,4 +74,9 @@ export class TenantEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
+
+  get isExpired(): boolean {
+    if (!this.subscriptionEndsAt) return false
+    return new Date() > new Date(this.subscriptionEndsAt)
+  }
 }

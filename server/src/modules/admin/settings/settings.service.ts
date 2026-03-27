@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SiteSettingsEntity } from './entities/site-settings.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 
 @Injectable()
 export class SettingsService {
@@ -11,7 +13,9 @@ export class SettingsService {
   constructor(
     @InjectRepository(SiteSettingsEntity)
     private settingsRepository: Repository<SiteSettingsEntity>,
-  ) {}
+    @InjectRepository(TenantEntity)
+    private tenantRepository: Repository<TenantEntity>,
+  ) { }
 
   async findByTenantSettings(tenantId: string) {
     this.logger.log(`${this.findByTenantSettings.name} Service Called`)
@@ -22,7 +26,22 @@ export class SettingsService {
       await this.settingsRepository.save(settings)
     }
 
-    return settings
+    const tenant = await this.tenantRepository.findOne({
+      where: { id: tenantId },
+      select: ['status', 'subscriptionEndsAt']
+    })
+
+    let effectiveStatus = tenant?.status
+
+    // Check if subscription has logically expired
+    if (tenant?.isExpired) {
+      effectiveStatus = TenantStatus.EXPIRED
+    }
+
+    return {
+      ...settings,
+      status: effectiveStatus,
+    }
   }
 
   async updateSettings(tenantId: string, dto: UpdateSiteSettingsDto) {

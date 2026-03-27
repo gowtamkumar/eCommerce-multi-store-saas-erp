@@ -206,4 +206,8 @@ export class TenantService {
       archivedTenants,
     }
   }
+
+  isSubscriptionExpired(tenant: TenantEntity): boolean {
+    return tenant.isExpired
+  }
 }
