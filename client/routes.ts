@@ -83,6 +83,7 @@ export const navGroups = [
         title: 'System Settings',
         roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN],
         items: [
+            { icon: CreditCard, label: 'Subscription & Billing', href: '/admin/settings/billing' },
             { icon: Globe, label: 'General Info', href: '/admin/settings?tab=general' },
             { icon: Globe, label: 'Custom Domain', href: '/admin/settings?tab=domain' },
             { icon: Mail, label: 'Email Config', href: '/admin/settings?tab=email' },

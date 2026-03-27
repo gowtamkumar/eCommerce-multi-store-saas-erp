@@ -138,9 +138,12 @@ export default function AdminLayout({
                             Your store subscription has expired. Storefront access is currently locked and management features are restricted until renewal.
                         </p>
                         <div className="flex flex-col gap-4">
-                            <button className="py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-amber-500/20 active:scale-95">
+                            <Link 
+                                href="/admin/settings/billing"
+                                className="py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-amber-500/20 active:scale-95 text-center flex items-center justify-center"
+                            >
                                 Renew Subscription
-                            </button>
+                            </Link>
                             <button
                                 onClick={handleLogout}
                                 className="py-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold tracking-wide transition-all"
