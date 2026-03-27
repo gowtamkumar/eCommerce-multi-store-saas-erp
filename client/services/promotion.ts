@@ -1,3 +1,5 @@
+import { PromotionType } from "@/lib/enums/promotion-type";
+import { PromotionTargetType } from "@/lib/enums/promotion-target-type";
 import { fetchAPI } from "./api";
 
 export interface Promotion {
@@ -5,9 +7,9 @@ export interface Promotion {
     slug: string;
     name: string;
     description?: string;
-    promotionType: 'percentage' | 'fixed' | 'free_shipping' | 'bogo';
+    promotionType: PromotionType;
     value?: number;
-    targetType: 'entire_order' | 'specific_product' | 'specific_category' | 'specific_brand' | 'minimum_cart_value';
+    targetType: PromotionTargetType;
     targetId?: string;
     minOrderValue?: number;
     startDate?: string;

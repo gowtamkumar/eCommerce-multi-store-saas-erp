@@ -8,6 +8,8 @@ import { Calendar, Copy, Percent, X, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { DiscountType } from '@/lib/enums/discount-type';
+import { PromotionType } from '@/lib/enums/promotion-type';
+import { PromotionTargetType } from '@/lib/enums/promotion-target-type';
 
 interface PromotionFormProps {
     promotion?: Promotion | null;
@@ -23,9 +25,9 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
         name: '',
         slug: '',
         description: '',
-        promotionType: 'percentage',
+        promotionType: PromotionType.PERCENTAGE,
         value: '',
-        targetType: 'entire_order',
+        targetType: PromotionTargetType.ENTIRE_ORDER,
         targetId: '',
         minOrderValue: '',
         startDate: '',
@@ -63,9 +65,9 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
                 name: promotion.name || '',
                 slug: promotion.slug || '',
                 description: promotion.description || '',
-                promotionType: promotion.promotionType || 'percentage',
+                promotionType: promotion.promotionType || PromotionType.PERCENTAGE,
                 value: promotion.value ? String(promotion.value) : '',
-                targetType: promotion.targetType || 'entire_order',
+                targetType: promotion.targetType || PromotionTargetType.ENTIRE_ORDER,
                 targetId: promotion.targetId || '',
                 minOrderValue: promotion.minOrderValue ? String(promotion.minOrderValue) : '',
                 startDate: promotion.startDate ? new Date(promotion.startDate).toISOString().split('T')[0] : '',
@@ -114,15 +116,15 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
             name: formData.name,
             slug: formData.slug,
             description: formData.description,
-            promotionType: formData.promotionType as any,
-            targetType: formData.targetType as any,
+            promotionType: formData.promotionType,
+            targetType: formData.targetType,
             isActive: formData.isActive,
         };
 
         if (formData.value) payload.value = Number(formData.value);
         if (formData.minOrderValue) payload.minOrderValue = Number(formData.minOrderValue);
 
-        if (['specific_product', 'specific_category', 'specific_brand'].includes(formData.targetType)) {
+        if ([PromotionTargetType.SPECIFIC_PRODUCT, PromotionTargetType.SPECIFIC_CATEGORY, PromotionTargetType.SPECIFIC_BRAND].includes(formData.targetType)) {
             if (!formData.targetId) {
                 toast.error('Please select a target item');
                 setLoading(false);
@@ -260,7 +262,7 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
                                 <select
                                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm"
                                     value={formData.promotionType}
-                                    onChange={(e) => setFormData({ ...formData, promotionType: e.target.value })}
+                                    onChange={(e) => setFormData({ ...formData, promotionType: e.target.value as PromotionType })}
                                 >
                                     <option value={DiscountType.PERCENTAGE}>Percentage (%)</option>
                                     <option value={DiscountType.FIXED}>Fixed Amount ({currency})</option>
@@ -283,7 +285,7 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
                                             placeholder="0.00"
                                         />
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
-                                            {formData.promotionType === 'fixed' ? currency : <Percent className="w-4 h-4" />}
+                                            {formData.promotionType === PromotionType.FIXED ? currency : <Percent className="w-4 h-4" />}
                                         </span>
                                     </div>
                                 </div>
@@ -299,17 +301,17 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
                                 <select
                                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm"
                                     value={formData.targetType}
-                                    onChange={(e) => setFormData({ ...formData, targetType: e.target.value, targetId: '' })}
+                                    onChange={(e) => setFormData({ ...formData, targetType: e.target.value as PromotionTargetType, targetId: '' })}
                                 >
-                                    <option value="entire_order">Entire Order</option>
-                                    <option value="minimum_cart_value">Minimum Cart Value</option>
-                                    <option value="specific_product">Specific Product</option>
-                                    <option value="specific_category">Specific Category</option>
-                                    <option value="specific_brand">Specific Brand</option>
+                                    <option value={PromotionTargetType.ENTIRE_ORDER}>Entire Order</option>
+                                    <option value={PromotionTargetType.MINIMUM_CART_VALUE}>Minimum Cart Value</option>
+                                    <option value={PromotionTargetType.SPECIFIC_PRODUCT}>Specific Product</option>
+                                    <option value={PromotionTargetType.SPECIFIC_CATEGORY}>Specific Category</option>
+                                    <option value={PromotionTargetType.SPECIFIC_BRAND}>Specific Brand</option>
                                 </select>
                             </div>
 
-                            {['specific_brand', 'specific_category', 'specific_product'].includes(formData.targetType) && (
+                            {[PromotionTargetType.SPECIFIC_BRAND, PromotionTargetType.SPECIFIC_CATEGORY, PromotionTargetType.SPECIFIC_PRODUCT].includes(formData.targetType) && (
                                 <div className="space-y-2">
                                     <label className="text-sm font-semibold text-slate-900 dark:text-white">Target Selection</label>
                                     <select
@@ -319,14 +321,14 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
                                         onChange={(e) => setFormData({ ...formData, targetId: e.target.value })}
                                     >
                                         <option value="">Select Target...</option>
-                                        {formData.targetType === 'specific_brand' && brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                                        {formData.targetType === 'specific_category' && categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                        {formData.targetType === 'specific_product' && products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                        {formData.targetType === PromotionTargetType.SPECIFIC_BRAND && brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                        {formData.targetType === PromotionTargetType.SPECIFIC_CATEGORY && categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                        {formData.targetType === PromotionTargetType.SPECIFIC_PRODUCT && products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                                     </select>
                                 </div>
                             )}
 
-                            {(formData.targetType === 'minimum_cart_value') && (
+                            {(formData.targetType === PromotionTargetType.MINIMUM_CART_VALUE) && (
                                 <div className="space-y-2">
                                     <label className="text-sm font-semibold text-slate-900 dark:text-white">Minimum Order Value</label>
                                     <div className="relative">

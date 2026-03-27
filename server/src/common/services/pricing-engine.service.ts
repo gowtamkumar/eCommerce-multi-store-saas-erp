@@ -3,6 +3,7 @@ import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-s
 import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pricing-strategy.factory'
 import { PromotionTargetStrategyFactory } from '@/common/strategies/promotion/promotion-target-strategy.factory'
 import { PromotionEntity } from '@/modules/admin/sales/promotion/entities/promotion.entity'
+import { PromotionType } from '@/modules/admin/sales/promotion/enums/promotion-type.enum'
 import { Injectable, Logger } from '@nestjs/common'
 
 export interface PricingContextItem {
@@ -78,7 +79,7 @@ export class PricingEngineService {
     const basePrice = Number(item.variant?.price || item.product?.price || 0)
     const discountType = item.product?.discountType || DiscountType.FIXED
 
-    const discountStrategy = DiscountStrategyFactory.create(discountType as string)
+    const discountStrategy = DiscountStrategyFactory.create(discountType as DiscountType)
     let discount = discountStrategy.calculate(basePrice, Number(item.product?.discountAmount || 0))
 
     // Evaluate promotional item discounts
@@ -92,7 +93,7 @@ export class PricingEngineService {
       })
 
       if (applies) {
-        const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as string)
+        const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as PromotionType)
         const calcDiscount = promoDiscountStrategy.calculate(basePrice, Number(promo.value))
         if (calcDiscount > bestPromoDiscount) {
           bestPromoDiscount = calcDiscount
@@ -118,15 +119,15 @@ export class PricingEngineService {
       },
       variant: item.variant
         ? {
-            id: item.variant.id,
-            sku: item.variant.sku,
-            attributes: item.variant.combination
-              ? Object.entries(item.variant.combination).map(([name, value]) => ({
-                  name,
-                  value: String(value),
-                }))
-              : [],
-          }
+          id: item.variant.id,
+          sku: item.variant.sku,
+          attributes: item.variant.combination
+            ? Object.entries(item.variant.combination).map(([name, value]) => ({
+              name,
+              value: String(value),
+            }))
+            : [],
+        }
         : null,
       pricing: {
         base_price: pricing.basePrice,
