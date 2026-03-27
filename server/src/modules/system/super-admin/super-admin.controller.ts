@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
+import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
@@ -19,6 +20,7 @@ import { PageService } from '@/modules/admin/content/page/page.service'
 import { ProductService } from '@/modules/admin/catalog/product/product.service'
 import { ReviewService } from '@/modules/admin/catalog/review/review.service'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
+import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 import si from 'systeminformation'
 import { TrafficService } from './traffic.service'
 
@@ -276,9 +278,43 @@ export class SuperAdminController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
+  @Get('/users/:id')
+  async getUserDetails(@Param('id') id: string) {
+    const user = await this.userService.getUser(id)
+    return {
+      success: true,
+      data: user,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Patch('/users/:id/status')
+  async updateUserStatus(@Param('id') id: string, @Body('status') status: UserStatus) {
+    const user = await this.userService.updateUser(id, { status } as any)
+    return {
+      success: true,
+      message: `User status updated to ${status}`,
+      data: user,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Get('/tenants/:id')
+  async getTenantDetails(@Param('id') id: string) {
+    const tenant = await this.tenantService.findOneTenants(id)
+    return {
+      success: true,
+      data: tenant,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
   @Patch('/tenants/:id/status')
-  async updateTenantStatus(@Param('id') id: string, @Body('status') status: string) {
-    const tenant = await this.tenantService.updateTenantStatus(id, status)
+  async updateTenantStatus(@Param('id') id: string, @Body('status') status: TenantStatus) {
+    const tenant = await this.tenantService.updateTenantStatus(id, status as any)
     return {
       success: true,
       message: `Tenant status updated to ${status}`,

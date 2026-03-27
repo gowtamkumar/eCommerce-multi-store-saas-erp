@@ -16,6 +16,7 @@ import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { UserStatus } from '@/common/enums/user/user-status.enum'
 
 @Injectable()
 export class AuthService {
@@ -26,7 +27,7 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly tenantService: TenantService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   async register(registerCredentialDto: RegisterCredentialDto, tenantId: string) {
     this.logger.log(`${this.register.name} Service Called`)
@@ -64,7 +65,7 @@ export class AuthService {
 
   async login(loginCredentialsDto: LoginCredentialDto, tenantId: string) {
     this.logger.log(`${this.login.name} Service Called`)
-
+    const { username, password } = loginCredentialsDto
     // Check if tenant is suspended (skip for super admin who has no tenant)
     if (tenantId) {
       const tenant = await this.tenantService.findOneTenants(tenantId)
@@ -73,9 +74,11 @@ export class AuthService {
       }
     }
 
-    const { username, password } = loginCredentialsDto
-
     const user = await this.userService.findUserByUsername(username, tenantId)
+
+    if (user.status === UserStatus.BLOCKED) {
+      throw new UnauthorizedException('User is blocked. Please contact support.')
+    }
 
     const valid = user ? await this.userService.validateUser(user, password) : false
 
