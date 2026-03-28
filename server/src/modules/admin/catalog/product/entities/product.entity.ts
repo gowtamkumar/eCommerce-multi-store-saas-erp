@@ -1,16 +1,16 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { ReviewEntity } from '@/modules/admin/catalog/review/entities/review.entity'
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
-import { ProductStatus } from '@/common/enums/product-status.enum'
 import { DiscountType } from '@/common/enums/discount-type.enum'
+import { ProductStatus } from '@/common/enums/product-status.enum'
+import { ReviewEntity } from '@/modules/admin/catalog/review/entities/review.entity'
+import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { BrandEntity } from '../../brand/entities/brand.entity'
 import { CategoryEntity } from '../../category/entities/category.entity'
-import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { ProductAttributeEntity } from './attribute.entity'
 import { ProductVariantEntity } from './variant.entity'
-import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 
 @Entity('products')
 export class ProductEntity extends BaseEntity {

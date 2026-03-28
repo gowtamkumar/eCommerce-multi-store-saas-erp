@@ -1,9 +1,9 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { FaqStatus } from '@/common/enums/faq-status.enum'
-import { PageEntity } from '@/modules/admin/content/page/entities/page.entity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { PageEntity } from '@/modules/admin/content/page/entities/page.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('faqs')

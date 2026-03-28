@@ -1,27 +1,14 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  UseGuards,
-  Logger,
-  Ip,
-  HostParam,
-  Redirect,
-} from '@nestjs/common'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-import { RolesGuard } from '@/common/guards/roles.guard'
 import { Audit } from '@/common/decorators/audit.decorator'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { Roles } from '@/common/decorators/roles.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
+import { Body, Controller, Delete, Get, Logger, Param, Post, Put, UseGuards } from '@nestjs/common'
 import { BrandService } from './brand.service'
-import { UpdateBrandDto } from './dto/update-brand.dto'
 import { CreateBrandDto } from './dto/create-brand.dto'
+import { UpdateBrandDto } from './dto/update-brand.dto'
 
 @Controller('brands')
 export class BrandController {

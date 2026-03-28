@@ -1,3 +1,5 @@
+import { DiscountType } from '@/common/enums/discount-type.enum'
+import { ProductStatus } from '@/common/enums/product-status.enum'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import {
@@ -13,8 +15,6 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator'
-import { ProductStatus } from '@/common/enums/product-status.enum'
-import { DiscountType } from '@/common/enums/discount-type.enum'
 
 class ProductFaqDto {
   @ApiProperty()

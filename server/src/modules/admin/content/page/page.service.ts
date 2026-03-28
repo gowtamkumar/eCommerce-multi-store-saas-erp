@@ -1,9 +1,9 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { FaqService } from '@/modules/admin/content/faq/faq.service'
 import { ProductService } from '@/modules/admin/catalog/product/product.service'
+import { FaqService } from '@/modules/admin/content/faq/faq.service'
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto'
-import { PageRepository } from './page.repository'
 import { PageEntity } from './entities/page.entity'
+import { PageRepository } from './page.repository'
 
 @Injectable()
 export class PageService {

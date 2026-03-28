@@ -1,5 +1,5 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreateLeadDto, UpdateLeadDto } from '@/modules/admin/customer/lead/dto/lead.dto'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { LeadRepository } from './lead.repository'
 
 @Injectable()

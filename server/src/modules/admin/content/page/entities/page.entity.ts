@@ -1,10 +1,10 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { PageStatus } from '@/common/enums/page-status.enum'
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
-
+import { PageSectionType } from '@/common/enums/page/page-sections-type.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { PageSectionType } from '@/common/enums/page/page-sections-type.enum'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
+
 @Entity('pages')
 @Index(['slug', 'tenantId'], { unique: true })
 export class PageEntity extends BaseEntity {

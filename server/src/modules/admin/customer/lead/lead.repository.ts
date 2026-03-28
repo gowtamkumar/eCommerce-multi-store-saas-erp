@@ -1,6 +1,6 @@
+import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
 import { Injectable } from '@nestjs/common'
 import { DataSource, Repository } from 'typeorm'
-import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
 
 @Injectable()
 export class LeadRepository extends Repository<LeadEntity> {

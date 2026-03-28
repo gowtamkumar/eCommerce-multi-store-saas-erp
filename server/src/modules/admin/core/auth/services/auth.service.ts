@@ -1,3 +1,11 @@
+import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { UserStatus } from '@/common/enums/user/user-status.enum'
+import { CreateUserDto } from '@/modules/admin/core/user/dtos/create-user.dto'
+import { UserDto } from '@/modules/admin/core/user/dtos/user.dto'
+import { UserService } from '@/modules/admin/core/user/services/user.service'
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
+import { TenantService } from '@/modules/system/tenant/tenant.service'
 import {
   ConflictException,
   Injectable,
@@ -8,15 +16,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as crypto from 'crypto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-import { CreateUserDto } from '@/modules/admin/core/user/dtos/create-user.dto'
-import { UserDto } from '@/modules/admin/core/user/dtos/user.dto'
-import { UserService } from '@/modules/admin/core/user/services/user.service'
-import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
-import { TenantService } from '@/modules/system/tenant/tenant.service'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
-import { UserStatus } from '@/common/enums/user/user-status.enum'
 
 @Injectable()
 export class AuthService {

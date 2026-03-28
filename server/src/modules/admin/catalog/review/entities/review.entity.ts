@@ -1,9 +1,9 @@
-import { BaseEntity } from 'src/common/base-entity/BaseEntity'
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 import { ReviewStatus } from '@/common/enums/review-status.enum'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { BaseEntity } from 'src/common/base-entity/BaseEntity'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('reviews')
 @Index(['productId', 'status'])

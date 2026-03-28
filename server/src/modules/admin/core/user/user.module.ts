@@ -1,9 +1,9 @@
-import { UserService } from './services/user.service'
-import { UserController } from './controllers/user.controller'
-import { Module } from '@nestjs/common'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
-import { UserRepository } from './repositories/user.repository'
+import { Module } from '@nestjs/common'
+import { UserController } from './controllers/user.controller'
 import { StaffInvitationRepository } from './repositories/staff-invitation.repository'
+import { UserRepository } from './repositories/user.repository'
+import { UserService } from './services/user.service'
 
 @Module({
   imports: [MailModule],

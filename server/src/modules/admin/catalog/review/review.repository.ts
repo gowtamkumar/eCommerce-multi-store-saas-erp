@@ -1,7 +1,7 @@
+import { ReviewStatus } from '@/common/enums/review-status.enum'
 import { Injectable } from '@nestjs/common'
 import { DataSource, Repository } from 'typeorm'
 import { ReviewEntity } from './entities/review.entity'
-import { ReviewStatus } from '@/common/enums/review-status.enum'
 
 @Injectable()
 export class ReviewRepository extends Repository<ReviewEntity> {

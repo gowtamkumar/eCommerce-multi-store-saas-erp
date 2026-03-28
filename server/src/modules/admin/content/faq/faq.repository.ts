@@ -1,7 +1,7 @@
+import { FaqStatus } from '@/common/enums/faq-status.enum'
 import { Injectable } from '@nestjs/common'
 import { DataSource, In, Repository } from 'typeorm'
 import { FaqEntity } from './entities/faq.entity'
-import { FaqStatus } from '@/common/enums/faq-status.enum'
 
 @Injectable()
 export class FaqRepository extends Repository<FaqEntity> {

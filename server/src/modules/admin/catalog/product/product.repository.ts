@@ -1,7 +1,7 @@
+import { ProductStatus } from '@/common/enums/product-status.enum'
 import { Injectable, Logger } from '@nestjs/common'
 import { DataSource, Repository } from 'typeorm'
 import { ProductEntity } from './entities/product.entity'
-import { ProductStatus } from '@/common/enums/product-status.enum'
 
 @Injectable()
 export class ProductRepository extends Repository<ProductEntity> {

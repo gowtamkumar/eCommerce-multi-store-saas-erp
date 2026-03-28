@@ -1,7 +1,7 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { LeadStatus } from '@/common/enums/lead-status.enum'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('leads')

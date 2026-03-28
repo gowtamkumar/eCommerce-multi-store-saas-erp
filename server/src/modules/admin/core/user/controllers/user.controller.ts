@@ -1,3 +1,9 @@
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { Roles } from '@/common/decorators/roles.decorator'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import {
   Body,
   Controller,
@@ -11,17 +17,11 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { CreateUserDto } from '../dtos/create-user.dto'
 import { FilterUserDto } from '../dtos/filter-user.dto'
+import { InviteStaffDto } from '../dtos/invite-staff.dto'
 import { UpdatePasswordDto } from '../dtos/update-password.dto'
 import { UpdateUserDto } from '../dtos/update-user.dto'
-import { InviteStaffDto } from '../dtos/invite-staff.dto'
 import { UserService } from '../services/user.service'
 
 @UseGuards(JwtAuthGuard)

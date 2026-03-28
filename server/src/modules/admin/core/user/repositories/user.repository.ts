@@ -1,8 +1,8 @@
+import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { Injectable } from '@nestjs/common'
 import { DataSource, Repository } from 'typeorm'
-import { UserEntity } from '../entities/user.entity'
 import { FilterUserDto } from '../dtos'
-import { UserStatus } from '@/common/enums/user/user-status.enum'
+import { UserEntity } from '../entities/user.entity'
 
 @Injectable()
 export class UserRepository extends Repository<UserEntity> {

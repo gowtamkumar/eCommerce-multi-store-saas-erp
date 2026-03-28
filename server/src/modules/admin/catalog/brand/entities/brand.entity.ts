@@ -1,23 +1,23 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('brands')
 export class BrandEntity extends BaseEntity {
-  @Column({ type: 'varchar', length: 255 })
+  @Column()
   name: string
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column()
   slug: string
 
   @Column({ type: 'text', nullable: true })
   description: string
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ nullable: true })
   image: string
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ nullable: true })
   website: string
 
   @Column({ type: 'uuid', name: 'tenant_id' })

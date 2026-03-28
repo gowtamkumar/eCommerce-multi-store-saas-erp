@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { ReviewRepository } from './review.repository'
 import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto'
+import { ReviewRepository } from './review.repository'
 
 @Injectable()
 export class ReviewService {

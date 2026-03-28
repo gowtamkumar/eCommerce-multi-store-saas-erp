@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { FaqRepository } from './faq.repository'
 import { CreateFaqDto, UpdateFaqDto } from './dto/faq.dto'
+import { FaqRepository } from './faq.repository'
 
 @Injectable()
 export class FaqService {

@@ -1,3 +1,5 @@
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import {
   BadRequestException,
   Injectable,
@@ -7,14 +9,12 @@ import {
 } from '@nestjs/common'
 import * as bcrypt from 'bcrypt'
 import * as crypto from 'crypto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { CreateUserDto, FilterUserDto, UpdatePasswordDto, UpdateUserDto } from '../dtos'
-import { InviteStaffDto, AcceptInvitationDto } from '../dtos/invite-staff.dto'
-import { UserEntity } from '../entities/user.entity'
+import { AcceptInvitationDto, InviteStaffDto } from '../dtos/invite-staff.dto'
 import { InvitationStatus } from '../entities/staff-invitation.entity'
-import { UserRepository } from '../repositories/user.repository'
+import { UserEntity } from '../entities/user.entity'
 import { StaffInvitationRepository } from '../repositories/staff-invitation.repository'
+import { UserRepository } from '../repositories/user.repository'
 
 @Injectable()
 export class UserService {

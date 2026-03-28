@@ -1,7 +1,7 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 import { ProductEntity } from './product.entity'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('product_variants')
 export class ProductVariantEntity extends BaseEntity {

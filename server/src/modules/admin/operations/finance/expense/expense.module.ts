@@ -1,9 +1,7 @@
 import { Module } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { ExpenseService } from './expense.service'
 import { ExpenseController } from './expense.controller'
-import { ExpenseEntity } from './entities/expense.entity'
 import { ExpenseRepository } from './expense.repository'
+import { ExpenseService } from './expense.service'
 
 @Module({
   imports: [],
