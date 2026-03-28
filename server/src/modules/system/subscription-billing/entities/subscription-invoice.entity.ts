@@ -1,8 +1,8 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entities/subscription-plan.entity'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
+import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entities/subscription-plan.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('subscription_invoices')
 export class SubscriptionInvoiceEntity extends BaseEntity {
@@ -19,6 +19,7 @@ export class SubscriptionInvoiceEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'plan_id' })
   planId: string
 
+  
   @ManyToOne(() => SubscriptionPlanEntity)
   @JoinColumn({ name: 'plan_id' })
   plan: SubscriptionPlanEntity

@@ -1,7 +1,5 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { BrandEntity } from './entities/brand.entity'
+import { BrandRepository } from './brand.repository'
 import { CreateBrandDto } from './dto/create-brand.dto'
 import { UpdateBrandDto } from './dto/update-brand.dto'
 
@@ -10,8 +8,7 @@ export class BrandService {
   private readonly logger = new Logger(BrandService.name)
 
   constructor(
-    @InjectRepository(BrandEntity)
-    private brandRepository: Repository<BrandEntity>,
+    private readonly brandRepository: BrandRepository,
   ) {}
 
   async createBrand(createBrandDto: CreateBrandDto, tenantId: string) {
