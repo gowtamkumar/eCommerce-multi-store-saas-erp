@@ -1,29 +1,26 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import * as bcrypt from 'bcrypt'
-import * as crypto from 'crypto'
-import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
-import { Repository } from 'typeorm'
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
+import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
+import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { SubscriptionPlanService } from '@/modules/system/subscription-plan/subscription-plan.service'
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import * as bcrypt from 'bcrypt'
+import * as crypto from 'crypto'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantEntity } from './entities/tenant.entity'
-import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
+import { TenantRepository } from './tenant.repository'
 
 @Injectable()
 export class TenantService {
   private readonly logger = new Logger(TenantService.name)
 
   constructor(
-    @InjectRepository(TenantEntity)
-    private tenantRepository: Repository<TenantEntity>,
-    @InjectRepository(UserEntity)
-    private userRepository: Repository<UserEntity>,
+    private tenantRepository: TenantRepository,
+    private userRepository: UserRepository,
     private readonly settingsService: SettingsService,
     private readonly mailService: MailService,
     private readonly subscriptionPlanService: SubscriptionPlanService,
@@ -33,9 +30,7 @@ export class TenantService {
     this.logger.log(`${this.createTenant.name} Service Called`)
     const { storeName, subdomain, planId, name, username, email, password } = createTenantDto
     // Check if subdomain already exists
-    const existingTenant = await this.tenantRepository.findOne({
-      where: { subdomain },
-    })
+    const existingTenant = await this.tenantRepository.findBySubdomain(subdomain)
 
     if (existingTenant) {
       throw new ConflictException('Subdomain already exists')
@@ -50,23 +45,23 @@ export class TenantService {
     const endsAt = new Date()
     endsAt.setMonth(now.getMonth() + 1) // Default to 1 month from now
 
-    const tenant = this.tenantRepository.create({
-      storeName,
-      subdomain,
+    const savedTenant = await this.tenantRepository.createAndSave(
+      {
+        storeName,
+        subdomain,
+        subscriptionStatus: SubscriptionStatus.ACTIVE,
+        subscriptionBillingCycle: SubscriptionBillingCycle.MONTHLY,
+        subscriptionStartsAt: now,
+        subscriptionEndsAt: endsAt,
+      },
       subscriptionPlan,
-      subscriptionStatus: SubscriptionStatus.ACTIVE,
-      subscriptionBillingCycle: SubscriptionBillingCycle.MONTHLY,
-      subscriptionStartsAt: now,
-      subscriptionEndsAt: endsAt,
-    })
-
-    const savedTenant = await this.tenantRepository.save(tenant)
+    )
 
     // Create admin user for this tenant
     const hashedPassword = await bcrypt.hash(password, 10)
 
     const verificationToken = crypto.randomBytes(32).toString('hex')
-    const adminUser = this.userRepository.create({
+    const savedUser = await this.userRepository.createAndSave({
       name,
       username,
       email,
@@ -77,10 +72,7 @@ export class TenantService {
       emailVerificationToken: verificationToken,
     })
 
-    const savedUser = await this.userRepository.save(adminUser)
-
-    savedTenant.userId = savedUser.id
-    await this.tenantRepository.save(savedTenant)
+    await this.tenantRepository.updateAndSave(savedTenant, { userId: savedUser.id })
 
     // Send verification email
     const mailRes = await this.mailService.sendVerificationEmail(
@@ -109,14 +101,12 @@ export class TenantService {
 
   async findAllTenants() {
     this.logger.log(`${this.findAllTenants.name} Service Called`)
-    return await this.tenantRepository.find({
-      order: { createdAt: 'DESC' },
-    })
+    return await this.tenantRepository.findAllSorted()
   }
 
   async findOneTenants(id: string) {
     this.logger.log(`${this.findOneTenants.name} Service Called`)
-    const tenant = await this.tenantRepository.findOne({ where: { id } })
+    const tenant = await this.tenantRepository.findTenantById(id)
     if (!tenant) {
       throw new NotFoundException('Tenant not found')
     }
@@ -125,23 +115,12 @@ export class TenantService {
 
   async findBySubdomain(subdomain: string) {
     this.logger.log(`${this.findBySubdomain.name} Service Called`)
-    const tenant = await this.tenantRepository.findOne({ where: { subdomain } })
-    // if (!tenant) {
-    //   throw new NotFoundException('Tenant not found')
-    // }
-    return tenant
+    return await this.tenantRepository.findBySubdomain(subdomain)
   }
 
   async findByCustomDomain(customDomain: string) {
     this.logger.log(`${this.findByCustomDomain.name} Service Called`)
-    const tenant = await this.tenantRepository.findOne({
-      where: { customDomain },
-    })
-
-    // if (!tenant) {
-    //   throw new NotFoundException('Tenant not found')
-    // }
-    return tenant
+    return await this.tenantRepository.findByCustomDomain(customDomain)
   }
 
   async lookupTenant(subdomain?: string, customDomain?: string) {
@@ -165,40 +144,37 @@ export class TenantService {
   async updateCustomDomain(id: string, customDomain: string) {
     this.logger.log(`${this.updateCustomDomain.name} Service Called`)
     const tenant = await this.findOneTenants(id)
-    tenant.customDomain = customDomain
-    tenant.customDomainStatus = CustomDomainStatus.PENDING
-    tenant.customDomainVerifiedAt = null
-    return await this.tenantRepository.save(tenant)
+    return await this.tenantRepository.updateAndSave(tenant, {
+      customDomain,
+      customDomainStatus: CustomDomainStatus.PENDING,
+      customDomainVerifiedAt: null,
+    })
   }
 
   async verifyCustomDomain(id: string) {
     this.logger.log(`${this.verifyCustomDomain.name} Service Called`)
     const tenant = await this.findOneTenants(id)
     // Mock verification: in a real app, you'd check DNS records here
-    tenant.customDomainStatus = CustomDomainStatus.ACTIVE
-    tenant.customDomainVerifiedAt = new Date()
-    return await this.tenantRepository.save(tenant)
+    return await this.tenantRepository.updateAndSave(tenant, {
+      customDomainStatus: CustomDomainStatus.ACTIVE,
+      customDomainVerifiedAt: new Date(),
+    })
   }
 
   async updateTenantStatus(id: string, status: string) {
     this.logger.log(`${this.updateTenantStatus.name} Service Called`)
     const tenant = await this.findOneTenants(id)
-    tenant.status = status as TenantStatus
-    return await this.tenantRepository.save(tenant)
+    return await this.tenantRepository.updateAndSave(tenant, {
+      status: status as TenantStatus,
+    })
   }
 
   async tenantOverview() {
     this.logger.log(`${this.tenantOverview.name} Service Called`)
-    const totalTenants = await this.tenantRepository.count()
-    const activeTenants = await this.tenantRepository.count({
-      where: { status: TenantStatus.ACTIVE },
-    })
-    const suspendedTenants = await this.tenantRepository.count({
-      where: { status: TenantStatus.SUSPENDED },
-    })
-    const archivedTenants = await this.tenantRepository.count({
-      where: { status: TenantStatus.ARCHIVED },
-    })
+    const totalTenants = await this.tenantRepository.findCountByStatus()
+    const activeTenants = await this.tenantRepository.findCountByStatus(TenantStatus.ACTIVE)
+    const suspendedTenants = await this.tenantRepository.findCountByStatus(TenantStatus.SUSPENDED)
+    const archivedTenants = await this.tenantRepository.findCountByStatus(TenantStatus.ARCHIVED)
     return {
       totalTenants,
       activeTenants,

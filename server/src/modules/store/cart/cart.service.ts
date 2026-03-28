@@ -1,15 +1,14 @@
 import { DiscountType } from '@/common/enums/discount-type.enum'
 import { PricingEngineService } from '@/common/services/pricing-engine.service'
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
+import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
 import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
 import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
-import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
+import { SiteSettingsRepository } from '@/modules/admin/settings/site-settings.repository'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { CartItemRepository } from './cart-item.repository'
+import { CartRepository } from './cart.repository'
 import { CreateCartItemDto } from './dto/create-cart-item.dto'
 import { UpdateCartItemDto } from './dto/update-cart-item.dto'
-import { CartItemEntity } from './entities/cart-item.entity'
 import { CartEntity } from './entities/cart.entity'
 
 @Injectable()
@@ -17,14 +16,10 @@ export class CartService {
   private readonly logger = new Logger(CartService.name)
 
   constructor(
-    @InjectRepository(CartEntity)
-    private readonly cartRepository: Repository<CartEntity>,
-    @InjectRepository(CartItemEntity)
-    private readonly cartItemRepository: Repository<CartItemEntity>,
-    @InjectRepository(ProductEntity)
-    private readonly productRepository: Repository<ProductEntity>,
-    @InjectRepository(SiteSettingsEntity)
-    private readonly siteSettingsRepository: Repository<SiteSettingsEntity>,
+    private readonly cartRepository: CartRepository,
+    private readonly cartItemRepository: CartItemRepository,
+    private readonly productRepository: ProductRepository,
+    private readonly siteSettingsRepository: SiteSettingsRepository,
     private readonly couponService: CouponService,
     private readonly promotionService: PromotionService,
     private readonly pricingEngine: PricingEngineService,
@@ -38,18 +33,10 @@ export class CartService {
 
   private async findOrCreateCart(userId: string, tenantId: string): Promise<CartEntity> {
     this.logger.log(`${this.findOrCreateCart.name} Service Called`)
-    let cart = await this.cartRepository.findOne({
-      where: { userId, tenantId },
-      relations: ['items', 'items.product', 'items.variant'],
-    })
+    let cart = await this.cartRepository.findByUserId(userId, tenantId)
 
     if (!cart) {
-      cart = this.cartRepository.create({
-        userId,
-        tenantId,
-        items: [],
-      })
-      await this.cartRepository.save(cart)
+      cart = await this.cartRepository.createAndSave(userId, tenantId)
     }
 
     return cart
@@ -60,7 +47,7 @@ export class CartService {
 
     // 1. Fetch dependencies
     const [settings, activePromotions] = await Promise.all([
-      this.siteSettingsRepository.findOne({ where: { tenantId } }),
+      this.siteSettingsRepository.findByTenantId(tenantId),
       this.promotionService.findActivePromotions(tenantId),
     ])
     const currency = settings?.currency || 'BDT'
@@ -124,10 +111,7 @@ export class CartService {
 
     // If variantId is not provided, check if the product has variants and pick the first one
     if (!variantId) {
-      const product = await this.productRepository.findOne({
-        where: { id: productId, tenantId },
-        relations: ['variants'],
-      })
+      const product = await this.productRepository.findProductById(productId, tenantId)
 
       if (product && product.variants && product.variants.length > 0) {
         variantId = product.variants[0].id
@@ -142,17 +126,15 @@ export class CartService {
     })
 
     if (cartItem) {
-      cartItem.quantity = Number(cartItem.quantity) + Number(quantity)
-      await this.cartItemRepository.save(cartItem)
+      await this.cartItemRepository.updateQuantity(cartItem, Number(cartItem.quantity) + Number(quantity))
     } else {
-      cartItem = this.cartItemRepository.create({
+      await this.cartItemRepository.createAndSave({
         cartId: cart.id,
         productId,
         variantId: variantId || null,
         quantity: Number(quantity),
         tenantId,
       })
-      await this.cartItemRepository.save(cartItem)
     }
 
     // Return transformed cart
@@ -166,10 +148,7 @@ export class CartService {
     updateCartItemDto: UpdateCartItemDto,
   ): Promise<any> {
     this.logger.log(`${this.updateCartItem.name} Service Called`)
-    const cartItem = await this.cartItemRepository.findOne({
-      where: { id: cartItemId, tenantId },
-      relations: ['cart'],
-    })
+    const cartItem = await this.cartItemRepository.findByIdWithCart(cartItemId, tenantId)
 
     if (!cartItem) {
       throw new NotFoundException('Cart item not found')
@@ -179,18 +158,14 @@ export class CartService {
       throw new NotFoundException('Cart item not found in user cart')
     }
 
-    cartItem.quantity = updateCartItemDto.quantity
-    await this.cartItemRepository.save(cartItem)
+    await this.cartItemRepository.updateQuantity(cartItem, updateCartItemDto.quantity)
 
     return this.createOrGetCart(userId, tenantId)
   }
 
   async removeFromCart(userId: string, tenantId: string, cartItemId: string): Promise<any> {
     this.logger.log(`${this.removeFromCart.name} Service Called`)
-    const cartItem = await this.cartItemRepository.findOne({
-      where: { id: cartItemId, tenantId },
-      relations: ['cart'],
-    })
+    const cartItem = await this.cartItemRepository.findByIdWithCart(cartItemId, tenantId)
 
     if (!cartItem) {
       throw new NotFoundException('Cart item not found')
@@ -200,7 +175,7 @@ export class CartService {
       throw new NotFoundException('Cart item not found in user cart')
     }
 
-    await this.cartItemRepository.remove(cartItem)
+    await this.cartItemRepository.removeItems(cartItem)
 
     return this.createOrGetCart(userId, tenantId)
   }
@@ -208,7 +183,7 @@ export class CartService {
   async clearCart(userId: string, tenantId: string): Promise<void> {
     this.logger.log(`${this.clearCart.name} Service Called`)
     const cart = await this.findOrCreateCart(userId, tenantId)
-    await this.cartItemRepository.remove(cart.items)
+    await this.cartItemRepository.removeItems(cart.items)
   }
 
   async syncCart(userId: string, tenantId: string, items: CreateCartItemDto[]): Promise<any> {
@@ -217,7 +192,7 @@ export class CartService {
 
     // Clear existing items
     if (cart.items && cart.items.length > 0) {
-      await this.cartItemRepository.remove(cart.items)
+      await this.cartItemRepository.removeItems(cart.items)
       cart.items = [] // Reset locally
     }
 
@@ -227,24 +202,20 @@ export class CartService {
 
       // If variantId is not provided, check if the product has variants and pick the first one
       if (!variantId) {
-        const product = await this.productRepository.findOne({
-          where: { id: productId, tenantId },
-          relations: ['variants'],
-        })
+        const product = await this.productRepository.findProductById(productId, tenantId)
 
         if (product && product.variants && product.variants.length > 0) {
           variantId = product.variants[0].id
         }
       }
 
-      const cartItem = this.cartItemRepository.create({
+      await this.cartItemRepository.createAndSave({
         cartId: cart.id,
         productId,
         variantId: variantId || null,
         quantity: Number(quantity),
         tenantId,
       })
-      await this.cartItemRepository.save(cartItem)
     }
 
     return this.createOrGetCart(userId, tenantId)
@@ -261,8 +232,7 @@ export class CartService {
     // Validates and throws error if invalid
     await this.couponService.validateCoupon(code, payableBeforeCoupon, tenantId)
 
-    cart.appliedCouponCode = code.toUpperCase()
-    await this.cartRepository.save(cart)
+    await this.cartRepository.updateCoupon(cart, code)
 
     return this.createOrGetCart(userId, tenantId)
   }
@@ -270,8 +240,7 @@ export class CartService {
   async removeCoupon(userId: string, tenantId: string): Promise<any> {
     this.logger.log(`${this.removeCoupon.name} Service Called`)
     const cart = await this.findOrCreateCart(userId, tenantId)
-    cart.appliedCouponCode = null
-    await this.cartRepository.save(cart)
+    await this.cartRepository.updateCoupon(cart, null)
 
     return this.createOrGetCart(userId, tenantId)
   }

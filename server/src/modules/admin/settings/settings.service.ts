@@ -1,12 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { UpdateSiteSettingsDto } from './dto/settings.dto'
-import { SiteSettingsEntity } from './entities/site-settings.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
-import { SiteSettingsRepository } from './site-settings.repository'
 import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
+import { Injectable, Logger } from '@nestjs/common'
+import { UpdateSiteSettingsDto } from './dto/settings.dto'
+import { SiteSettingsRepository } from './site-settings.repository'
 
 @Injectable()
 export class SettingsService {

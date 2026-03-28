@@ -90,6 +90,13 @@ export class ProductRepository extends Repository<ProductEntity> {
     })
   }
 
+  async findProductById(id: string, tenantId: string): Promise<ProductEntity | null> {
+    return this.findOne({
+      where: { id, tenantId },
+      relations: ['variants'],
+    })
+  }
+
   async findBySlug(slug: string, tenantId: string): Promise<ProductEntity | null> {
     return this.findOne({ where: { slug, tenantId } })
   }
@@ -146,6 +153,50 @@ export class ProductRepository extends Repository<ProductEntity> {
     const inactiveProducts = await this.count({ where: { status: ProductStatus.INACTIVE } })
     
     return { totalProducts, activeProducts, inactiveProducts }
+  }
+
+  async findOfferProducts(params: {
+    tenantId: string
+    targetType?: string
+    targetId?: string
+    limit?: number
+  }): Promise<ProductEntity[]> {
+    const { tenantId, targetType, targetId, limit = 20 } = params
+    const query = this.createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.brand', 'brand')
+      .where('product.tenantId = :tenantId', { tenantId })
+      .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
+      .andWhere('product.stock > 0')
+      .select([
+        'product.id',
+        'product.name',
+        'product.slug',
+        'product.price',
+        'product.discountAmount',
+        'product.images',
+        'product.shortDescription',
+        'product.stock',
+        'product.categoryId',
+        'product.brandId',
+        'category.id',
+        'category.name',
+        'category.slug',
+        'brand.id',
+        'brand.name',
+      ])
+
+    if (targetType === 'SPECIFIC_PRODUCT' && targetId) {
+      query.andWhere('product.id = :id', { id: targetId })
+      const product = await query.getOne()
+      return product ? [product] : []
+    } else if (targetType === 'SPECIFIC_CATEGORY' && targetId) {
+      query.andWhere('product.categoryId = :categoryId', { categoryId: targetId })
+    } else if (targetType === 'SPECIFIC_BRAND' && targetId) {
+      query.andWhere('product.brandId = :brandId', { brandId: targetId })
+    }
+
+    return await query.orderBy('product.createdAt', 'DESC').take(limit).getMany()
   }
 
   private getSortOptions(sort?: string): any {

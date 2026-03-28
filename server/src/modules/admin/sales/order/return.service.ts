@@ -1,38 +1,29 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
-import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.dto'
-import { OrderReturnEntity } from '@/modules/admin/sales/order/entities/order-return.entity'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { OrderReturnRepository } from '@/modules/admin/sales/order/order-return.repository'
+import { OrderRepository } from '@/modules/admin/sales/order/order.repository'
+import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
+import { ProductVariantRepository } from '@/modules/admin/catalog/product/variant.repository'
 
 @Injectable()
 export class ReturnService {
   private readonly logger = new Logger(ReturnService.name)
 
   constructor(
-    @InjectRepository(OrderReturnEntity)
-    private returnRepository: Repository<OrderReturnEntity>,
-    @InjectRepository(OrderEntity)
-    private orderRepository: Repository<OrderEntity>,
-    @InjectRepository(ProductEntity)
-    private productRepository: Repository<ProductEntity>,
-    @InjectRepository(ProductVariantEntity)
-    private variantRepository: Repository<ProductVariantEntity>,
+    private returnRepository: OrderReturnRepository,
+    private orderRepository: OrderRepository,
+    private productRepository: ProductRepository,
+    private variantRepository: ProductVariantRepository,
   ) {}
 
   async createReturnRequest(userId: string, tenantId: string, dto: CreateReturnDto) {
     this.logger.log(`${this.createReturnRequest.name} Service Called`)
     const { orderId, items, reason } = dto
 
-    const order = await this.orderRepository.findOne({
-      where: { id: orderId, userId, tenantId },
-      relations: ['items'],
-    })
+    const order = await this.orderRepository.findOrderById(orderId, tenantId)
 
-    if (!order) {
+    if (!order || order.userId !== userId) {
       throw new NotFoundException('Order not found or does not belong to user')
     }
 
@@ -51,43 +42,26 @@ export class ReturnService {
       }
     }
 
-    const returnRequest = this.returnRepository.create({
-      orderId,
+    return await this.returnRepository.createAndSaveReturn(
+      { orderId, reason, items },
       userId,
       tenantId,
-      reason,
-      items,
-      status: ReturnStatus.PENDING,
-    })
-
-    return await this.returnRepository.save(returnRequest)
+    )
   }
 
   async findAllReturns(tenantId: string) {
     this.logger.log(`${this.findAllReturns.name} Service Called`)
-    const returns = await this.returnRepository.find({
-      where: { tenantId },
-      order: { createdAt: 'DESC' },
-      relations: ['order', 'order.items', 'order.items.product', 'order.items.variant', 'user'],
-    })
-    return returns
+    return await this.returnRepository.findAllWithRelations(tenantId)
   }
 
   async findByUser(userId: string, tenantId: string) {
     this.logger.log(`${this.findByUser.name} Service Called`)
-    return await this.returnRepository.find({
-      where: { userId, tenantId },
-      order: { createdAt: 'DESC' },
-      relations: ['order'],
-    })
+    return await this.returnRepository.findByUserWithRelations(userId, tenantId)
   }
 
   async findOneReturn(id: string, tenantId: string) {
     this.logger.log(`${this.findOneReturn.name} Service Called`)
-    const returnRequest = await this.returnRepository.findOne({
-      where: { id, tenantId },
-      relations: ['order', 'order.items', 'order.items.product', 'order.items.variant', 'user'],
-    })
+    const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
 
     if (!returnRequest) {
       throw new NotFoundException('Return request not found')
@@ -103,9 +77,7 @@ export class ReturnService {
     adminComment?: string,
   ) {
     this.logger.log(`${this.updateReturnRequestStatus.name} Service Called`)
-    const returnRequest = await this.returnRepository.findOne({
-      where: { id, tenantId },
-    })
+    const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
 
     if (!returnRequest) {
       throw new NotFoundException('Return request not found')
@@ -124,13 +96,7 @@ export class ReturnService {
       await this.restockItems(returnRequest.items, tenantId)
     }
 
-    returnRequest.status = status
-    if (adminComment) {
-      returnRequest.adminComment = adminComment
-    }
-
-    const saved = await this.returnRepository.save(returnRequest)
-    return saved
+    return await this.returnRepository.updateStatus(returnRequest, status, adminComment)
   }
 
   private async restockItems(items: any[], tenantId: string) {
@@ -139,17 +105,9 @@ export class ReturnService {
       const { productId, variantId, quantity } = item
 
       if (variantId) {
-        const variant = await this.variantRepository.findOne({ where: { id: variantId, tenantId } })
-        if (variant) {
-          variant.stock += quantity
-          await this.variantRepository.save(variant)
-        }
+        await this.variantRepository.incrementStock(variantId, tenantId, quantity)
       } else {
-        const product = await this.productRepository.findOne({ where: { id: productId, tenantId } })
-        if (product) {
-          product.stock += quantity
-          await this.productRepository.save(product)
-        }
+        await this.productRepository.incrementStock(productId, tenantId, quantity)
       }
     }
   }

@@ -1,9 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { SubscriptionInvoiceEntity } from './entities/subscription-invoice.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entities/subscription-plan.entity'
+import { SubscriptionInvoiceRepository } from './subscription-invoice.repository'
+import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
+import { SubscriptionPlanRepository } from '@/modules/system/subscription-plan/subscription-plan.repository'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 import { ConfigService } from '@nestjs/config'
@@ -17,21 +15,15 @@ export class SubscriptionBillingService {
   private readonly logger = new Logger(SubscriptionBillingService.name)
 
   constructor(
-    @InjectRepository(SubscriptionInvoiceEntity)
-    private readonly invoiceRepository: Repository<SubscriptionInvoiceEntity>,
-    @InjectRepository(TenantEntity)
-    private readonly tenantRepository: Repository<TenantEntity>,
-    @InjectRepository(SubscriptionPlanEntity)
-    private readonly planRepository: Repository<SubscriptionPlanEntity>,
+    private readonly invoiceRepository: SubscriptionInvoiceRepository,
+    private readonly tenantRepository: TenantRepository,
+    private readonly planRepository: SubscriptionPlanRepository,
     private readonly configService: ConfigService,
   ) { }
 
   async getCurrentSubscription(tenantId: string) {
     this.logger.log(`${this.getCurrentSubscription.name} Called for tenant: ${tenantId}`)
-    const tenant = await this.tenantRepository.findOne({
-      where: { id: tenantId },
-      relations: ['subscriptionPlan'],
-    })
+    const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
 
     if (!tenant) {
       throw new NotFoundException('Tenant not found')
@@ -48,34 +40,24 @@ export class SubscriptionBillingService {
   }
 
   async getAvailablePlans() {
-    return await this.planRepository.find({
-      where: { isActive: true },
-      order: { price: 'ASC' },
-    })
+    return await this.planRepository.findActiveSortedByPrice()
   }
 
   async getBillingHistory(tenantId: string) {
-    return await this.invoiceRepository.find({
-      where: { tenantId },
-      relations: ['plan'],
-      order: { billingDate: 'DESC' },
-    })
+    return await this.invoiceRepository.findAllByTenant(tenantId)
   }
 
   async initiateSubscriptionPayment(tenantId: string, planId: string) {
     this.logger.log(`Initiating subscription payment for tenant ${tenantId} and plan ${planId}`)
-    const plan = await this.planRepository.findOne({ where: { id: planId } })
+    const plan = await this.planRepository.findById(planId)
     if (!plan) throw new NotFoundException('Plan not found')
 
-    const tenant = await this.tenantRepository.findOne({
-      where: { id: tenantId },
-      relations: ['user']
-    })
+    const tenant = await this.tenantRepository.findByIdWithUser(tenantId)
     if (!tenant) throw new NotFoundException('Tenant not found')
 
     const transactionId = `SUB-${Date.now()}`
     const invoiceNumber = `INV-${Date.now()}`
-    const invoice = this.invoiceRepository.create({
+    const invoice = await this.invoiceRepository.createAndSave({
       invoiceNumber,
       tenantId,
       planId,
@@ -85,8 +67,6 @@ export class SubscriptionBillingService {
       transactionId,
       billingDate: new Date(),
     })
-
-    await this.invoiceRepository.save(invoice)
 
     // Actual SSLCommerz Integration
     const strategy = new SslCommerzPaymentStrategy()
@@ -132,10 +112,7 @@ export class SubscriptionBillingService {
 
   async handleSuccessPayment(transactionId: string, gatewayResponse: any = {}) {
     this.logger.log(`Handling success subscription payment for transaction: ${transactionId}`)
-    const invoice = await this.invoiceRepository.findOne({
-      where: { transactionId },
-      relations: ['plan']
-    })
+    const invoice = await this.invoiceRepository.findByTransactionId(transactionId)
 
     if (!invoice) throw new NotFoundException('Invoice not found')
     if (invoice.status === PaymentStatus.COMPLETED) return invoice
@@ -148,11 +125,12 @@ export class SubscriptionBillingService {
       return this.handleFailPayment(transactionId, gatewayResponse)
     }
 
-    invoice.status = PaymentStatus.COMPLETED
-    invoice.gatewayResponse = gatewayResponse
-    await this.invoiceRepository.save(invoice)
+    await this.invoiceRepository.updateAndSave(invoice, {
+      status: PaymentStatus.COMPLETED,
+      gatewayResponse,
+    })
 
-    const tenant = await this.tenantRepository.findOne({ where: { id: invoice.tenantId } })
+    const tenant = await this.tenantRepository.findById(invoice.tenantId)
     if (tenant) {
       const currentDate = new Date()
       const baseDate = (tenant.subscriptionEndsAt && tenant.subscriptionEndsAt > currentDate)
@@ -162,12 +140,12 @@ export class SubscriptionBillingService {
       const newEndsAt = new Date(baseDate)
       newEndsAt.setDate(newEndsAt.getDate() + 30)
 
-      tenant.subscriptionEndsAt = newEndsAt
-      tenant.subscriptionPlanId = invoice.planId
-      tenant.subscriptionStatus = SubscriptionStatus.ACTIVE
-      tenant.status = TenantStatus.ACTIVE
-
-      await this.tenantRepository.save(tenant)
+      await this.tenantRepository.updateAndSave(tenant, {
+        subscriptionEndsAt: newEndsAt,
+        subscriptionPlanId: invoice.planId,
+        subscriptionStatus: SubscriptionStatus.ACTIVE,
+        status: TenantStatus.ACTIVE,
+      })
       this.logger.log(`Tenant ${tenant.id} subscription extended to ${newEndsAt}`)
     }
 
@@ -176,22 +154,24 @@ export class SubscriptionBillingService {
 
   async handleFailPayment(transactionId: string, gatewayResponse: any = {}) {
     this.logger.log(`Handling failed subscription payment for transaction: ${transactionId}`)
-    const invoice = await this.invoiceRepository.findOne({ where: { transactionId } })
+    const invoice = await this.invoiceRepository.findByTransactionId(transactionId)
     if (invoice) {
-      invoice.status = PaymentStatus.FAILED
-      invoice.gatewayResponse = gatewayResponse
-      await this.invoiceRepository.save(invoice)
+      await this.invoiceRepository.updateAndSave(invoice, {
+        status: PaymentStatus.FAILED,
+        gatewayResponse,
+      })
     }
     return { success: false }
   }
 
   async handleCancelPayment(transactionId: string, gatewayResponse: any = {}) {
     this.logger.log(`Handling cancelled subscription payment for transaction: ${transactionId}`)
-    const invoice = await this.invoiceRepository.findOne({ where: { transactionId } })
+    const invoice = await this.invoiceRepository.findByTransactionId(transactionId)
     if (invoice) {
-      invoice.status = PaymentStatus.PENDING
-      invoice.gatewayResponse = gatewayResponse
-      await this.invoiceRepository.save(invoice)
+      await this.invoiceRepository.updateAndSave(invoice, {
+        status: PaymentStatus.PENDING,
+        gatewayResponse,
+      })
     }
     return { cancelled: true }
   }

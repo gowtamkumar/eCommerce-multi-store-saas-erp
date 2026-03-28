@@ -1,6 +1,6 @@
+import { TrafficService } from '@/modules/system/tenant-traffic/traffic.service'
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common'
 import { Observable } from 'rxjs'
-import { TrafficService } from 'src/modules/system/super-admin/traffic.service'
 
 @Injectable()
 export class TrafficInterceptor implements NestInterceptor {

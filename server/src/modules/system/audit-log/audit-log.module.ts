@@ -1,11 +1,9 @@
 import { Module } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
 import { AuditLogController } from './audit-log.controller'
 import { AuditLogService } from './audit-log.service'
-import { AuditLogEntity } from './entities/audit-log.entity'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AuditLogEntity])],
+  imports: [],
   controllers: [AuditLogController],
   providers: [AuditLogService],
   exports: [AuditLogService], // export so any other module can inject it

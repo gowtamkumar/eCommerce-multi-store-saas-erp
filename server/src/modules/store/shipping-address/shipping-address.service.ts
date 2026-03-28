@@ -1,7 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { ShippingAddressEntity } from './entities/shipping-address.entity'
+import { ShippingAddressRepository } from './shipping-address.repository'
 import { CreateShippingAddressDto } from './dto/create-shipping-address.dto'
 import { UpdateShippingAddressDto } from './dto/update-shipping-address.dto'
 
@@ -10,17 +8,16 @@ export class ShippingAddressService {
   private readonly logger = new Logger(ShippingAddressService.name)
 
   constructor(
-    @InjectRepository(ShippingAddressEntity)
-    private readonly repo: Repository<ShippingAddressEntity>,
+    private readonly repo: ShippingAddressRepository,
   ) {}
 
   async findShippingAddresses(userId: string, tenantId: string) {
     this.logger.log(`${this.findShippingAddresses.name} Service Called`)
-    return this.repo.find({ where: { userId, tenantId }, order: { isDefault: 'DESC' } })
+    return await this.repo.findAllByUserId(userId, tenantId)
   }
 
   async findShippingAddress(id: string, userId: string, tenantId: string) {
-    const address = await this.repo.findOne({ where: { id, userId, tenantId } })
+    const address = await this.repo.findById(id, userId, tenantId)
     if (!address) throw new NotFoundException('Shipping address not found')
     return address
   }
@@ -29,10 +26,9 @@ export class ShippingAddressService {
     this.logger.log(`${this.createShippingAddress.name} Service Called`)
     // If isDefault, unset existing defaults first
     if (dto.isDefault) {
-      await this.repo.update({ userId, tenantId }, { isDefault: false })
+      await this.repo.unsetDefaults(userId, tenantId)
     }
-    const entity = this.repo.create({ ...dto, userId, tenantId })
-    return this.repo.save(entity)
+    return await this.repo.createAndSave(userId, tenantId, dto)
   }
 
   async updateShippingAddress(
@@ -42,26 +38,24 @@ export class ShippingAddressService {
     dto: UpdateShippingAddressDto,
   ) {
     this.logger.log(`${this.updateShippingAddress.name} Service Called`)
-    await this.findShippingAddress(id, userId, tenantId)
+    const address = await this.findShippingAddress(id, userId, tenantId)
     if (dto.isDefault) {
-      await this.repo.update({ userId, tenantId }, { isDefault: false })
+      await this.repo.unsetDefaults(userId, tenantId)
     }
-    await this.repo.update(id, dto)
-    return this.findShippingAddress(id, userId, tenantId)
+    return await this.repo.updateAndSave(address, dto)
   }
 
   async setDefaultShippingAddress(id: string, userId: string, tenantId: string) {
     this.logger.log(`${this.setDefaultShippingAddress.name} Service Called`)
-    await this.findShippingAddress(id, userId, tenantId)
-    await this.repo.update({ userId, tenantId }, { isDefault: false })
-    await this.repo.update(id, { isDefault: true })
-    return this.findShippingAddress(id, userId, tenantId)
+    const address = await this.findShippingAddress(id, userId, tenantId)
+    await this.repo.unsetDefaults(userId, tenantId)
+    return await this.repo.updateAndSave(address, { isDefault: true })
   }
 
   async removeShippingAddress(id: string, userId: string, tenantId: string) {
     this.logger.log(`${this.removeShippingAddress.name} Service Called`)
     const address = await this.findShippingAddress(id, userId, tenantId)
-    await this.repo.remove(address)
+    await this.repo.removeAddress(address)
     return { success: true, message: 'Shipping address deleted' }
   }
 }

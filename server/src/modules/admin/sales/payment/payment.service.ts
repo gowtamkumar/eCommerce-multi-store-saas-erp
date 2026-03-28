@@ -61,7 +61,7 @@ export class PaymentService {
   }
 
   async getStrategyByTransactionId(tran_id: string) {
-    const order = await this.orderRepository.findOne({ where: { transactionId: tran_id } })
+    const order = await this.orderRepository.findOrderByTransactionId(tran_id)
     if (!order) throw new NotFoundException('Order not found')
     return {
       strategy: PaymentStrategyFactory.create(order.paymentMethod),
@@ -164,22 +164,11 @@ export class PaymentService {
 
   async findAllPayments(tenantId: string) {
     this.logger.log(`${this.findAllPayments.name} Service Called`)
-    return await this.paymentRepository.find({
-      where: { tenantId },
-      order: { createdAt: 'DESC' },
-      relations: ['order'],
-    })
+    return await this.paymentRepository.findPaymentsByTenant(tenantId)
   }
 
   async findAllPaymentsByCustomer(userId: string, tenantId: string) {
     this.logger.log(`${this.findAllPaymentsByCustomer.name} Service Called`)
-    return await this.paymentRepository.find({
-      where: {
-        tenantId,
-        order: { userId },
-      },
-      order: { createdAt: 'DESC' },
-      relations: ['order'],
-    })
+    return await this.paymentRepository.findPaymentsByUser(userId, tenantId)
   }
 }

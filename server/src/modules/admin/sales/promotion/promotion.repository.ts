@@ -1,0 +1,72 @@
+import { Injectable } from '@nestjs/common'
+import { DataSource, Repository } from 'typeorm'
+import { PromotionEntity } from './entities/promotion.entity'
+
+@Injectable()
+export class PromotionRepository extends Repository<PromotionEntity> {
+  constructor(private dataSource: DataSource) {
+    super(PromotionEntity, dataSource.createEntityManager())
+  }
+
+  async findActivePromotions(tenantId: string, now: Date): Promise<PromotionEntity[]> {
+    return await this.createQueryBuilder('promotion')
+      .where('promotion.tenantId = :tenantId', { tenantId })
+      .andWhere('promotion.isActive = true')
+      .andWhere('(promotion.startDate IS NULL OR promotion.startDate <= :now)', { now })
+      .andWhere('(promotion.endDate IS NULL OR promotion.endDate >= :now)', { now })
+      .orderBy('promotion.createdAt', 'DESC')
+      .getMany()
+  }
+
+  async findAllWithFilters(filterDto: any, tenantId: string): Promise<[PromotionEntity[], number]> {
+    const page = Math.max(1, parseInt(filterDto.page) || 1)
+    const limit = Math.max(1, parseInt(filterDto.limit) || 10)
+    const { search, isActive } = filterDto
+
+    const query = this.createQueryBuilder('promotion')
+      .where('promotion.tenantId = :tenantId', { tenantId })
+
+    if (isActive !== undefined) {
+      query.andWhere('promotion.isActive = :isActive', { isActive: isActive === 'true' })
+    }
+
+    if (search) {
+      query.andWhere('promotion.name ILIKE :search', { search: `%${search}%` })
+    }
+
+    return await query
+      .orderBy('promotion.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount()
+  }
+
+  async findBySlug(slug: string, tenantId: string): Promise<PromotionEntity | null> {
+    return await this.findOne({
+      where: { slug, tenantId },
+    })
+  }
+
+  async findById(id: string, tenantId: string): Promise<PromotionEntity | null> {
+    return await this.findOne({
+      where: { id, tenantId },
+    })
+  }
+
+  async createAndSave(dto: any, tenantId: string): Promise<PromotionEntity> {
+    const promotion = this.create({
+      ...dto,
+      tenantId,
+    } as PromotionEntity)
+    return await this.save(promotion)
+  }
+
+  async updateAndSave(promotion: PromotionEntity, dto: any): Promise<PromotionEntity> {
+    Object.assign(promotion, dto)
+    return await this.save(promotion)
+  }
+
+  async removePromotion(promotion: PromotionEntity): Promise<void> {
+    await this.remove(promotion)
+  }
+}

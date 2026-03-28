@@ -15,6 +15,12 @@ export class OrderRepository extends Repository<OrderEntity> {
     })
   }
 
+  async findOrderByTransactionId(transactionId: string): Promise<OrderEntity | null> {
+    return await this.findOne({
+      where: { transactionId },
+    })
+  }
+
   async findOneForCourier(id: string, tenantId: string): Promise<OrderEntity | null> {
     return await this.findOne({
       where: { id, tenantId },
