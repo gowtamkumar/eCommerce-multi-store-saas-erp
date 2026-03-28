@@ -12,6 +12,7 @@ export default function SaaSLanding() {
   const [settings, setSettings] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
 
   useEffect(() => {
@@ -86,64 +87,116 @@ export default function SaaSLanding() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold font-display text-slate-900 dark:text-white mb-4">
-            Simple, transparent pricing
-          </h2>
-          <p className="text-lg text-slate-600 dark:text-slate-400 mb-12">
-            Start for free, upgrade as you grow.
-          </p>
+      <section id="pricing" className="py-24 relative overflow-hidden">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-1/4 -right-20 w-80 h-80 bg-brand-500/10 rounded-full blur-3xl opacity-50" />
+        <div className="absolute bottom-1/4 -left-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl opacity-50" />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <div className="mb-16">
+            <h2 className="text-4xl lg:text-5xl font-black font-display text-slate-900 dark:text-white mb-6 tracking-tight">
+              Simple, <span className="text-brand-600 dark:text-brand-400">transparent</span> pricing
+            </h2>
+            <p className="text-lg lg:text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto">
+              Choose the perfect plan for your business and scale without limits.
+            </p>
+
+            {/* Billing Toggle */}
+            <div className="flex items-center justify-center gap-4 mb-12">
+              <span className={`text-sm font-bold transition-colors ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>Monthly</span>
+              <button
+                onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
+                className="w-14 h-7 bg-slate-200 dark:bg-slate-800 rounded-full p-1 relative transition-colors focus:ring-2 focus:ring-brand-500 outline-none"
+              >
+                <div className={`w-5 h-5 bg-brand-600 rounded-full shadow-md transition-transform duration-300 ${billingCycle === 'yearly' ? 'translate-x-7' : 'translate-x-0'}`} />
+              </button>
+              <span className={`text-sm font-bold transition-colors ${billingCycle === 'yearly' ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                Yearly <span className="ml-1 text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">Save 20%</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.length > 0 ? (
-              plans.map((plan: any) => (
-                <div key={plan.id} className={`p-8 rounded-3xl border-2 bg-white dark:bg-slate-900 shadow-xl relative overflow-hidden flex flex-col ${plan.isPopular ? 'border-brand-600 scale-105 z-10' : 'border-slate-100 dark:border-slate-800'}`}>
-                  {plan.isPopular && <div className="absolute top-0 right-0 bg-brand-600 text-white px-4 py-1 text-xs font-bold rounded-bl-xl">POPULAR</div>}
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{plan.name}</h3>
-                  <div className="flex items-end justify-center gap-1 mb-6">
-                    <span className="text-4xl font-bold text-slate-900 dark:text-white">${parseFloat(plan.price).toFixed(0)}</span>
-                    <span className="text-slate-600 dark:text-slate-400 mb-1">/mo</span>
-                  </div>
-                  <p className="text-slate-500 text-sm mb-6">{plan.description}</p>
-                  <ul className="text-left space-y-4 mb-8 flex-1">
-                    {(plan.features || []).map((item: string) => (
-                      <li key={item} className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                        <Icons.Zap className="w-4 h-4 text-brand-600" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    href={`/create-store?planId=${plan.id}`}
-                    className={`block w-full py-4 rounded-2xl font-bold transition-all shadow-lg text-center ${plan.isPopular ? 'bg-brand-600 text-white hover:bg-brand-700 shadow-brand-500/25' : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+              plans.map((plan: any, idx: number) => {
+                const price = billingCycle === 'yearly' ? parseFloat(plan.price) * 0.8 : parseFloat(plan.price);
+                const isPopular = plan.isPopular || idx === 1;
+
+                return (
+                  <div
+                    key={plan.id}
+                    className={`group p-8 rounded-[2.5rem] border transition-all duration-500 flex flex-col relative ${isPopular
+                        ? 'bg-white dark:bg-slate-900 border-brand-200 dark:border-brand-800 shadow-[0_32px_64px_-16px_rgba(79,70,229,0.15)] scale-105 z-10'
+                        : 'bg-white/50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900 backdrop-blur-sm'
+                      }`}
                   >
-                    Get Started
-                  </Link>
-                </div>
-              ))
+                    {isPopular && (
+                      <div className="absolute top-0 right-12 translate-y-[-50%] bg-gradient-to-r from-brand-600 to-indigo-600 text-white px-6 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-brand-500/30">
+                        Most Popular
+                      </div>
+                    )}
+
+                    <div className="mb-8">
+                      <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 font-display">{plan.name}</h3>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{plan.description || "The essentials to get your store up and running."}</p>
+                    </div>
+
+                    <div className="flex items-baseline gap-1 mb-8">
+                      <span className="text-5xl font-black text-slate-900 dark:text-white">${price.toFixed(0)}</span>
+                      <span className="text-slate-500 dark:text-slate-400 font-bold">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                    </div>
+
+                    <div className="w-full h-px bg-slate-100 dark:bg-slate-800 mb-8" />
+
+                    <ul className="text-left space-y-4 mb-10 flex-1">
+                      {(plan.features || []).map((item: string) => (
+                        <li key={item} className="flex items-center gap-3 text-slate-600 dark:text-slate-300 group/item">
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${isPopular ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                            <Icons.Check className="w-3 h-3" strokeWidth={3} />
+                          </div>
+                          <span className="text-sm font-bold group-hover/item:text-slate-900 dark:group-hover/item:text-white transition-colors">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Link
+                      href={`/create-store?planId=${plan.id}&cycle=${billingCycle}`}
+                      className={`block w-full py-5 rounded-2xl font-black text-[13px] uppercase tracking-widest transition-all shadow-xl text-center active:scale-[0.98] ${isPopular
+                          ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white hover:from-brand-700 hover:to-indigo-700 shadow-brand-500/30 hover:shadow-brand-500/50'
+                          : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100'
+                        }`}
+                    >
+                      Step into success
+                    </Link>
+                  </div>
+                );
+              })
             ) : (
-              // Default Fallback Plan if none found in DB
-              <div className="max-w-md mx-auto p-8 rounded-3xl border-2 border-brand-600 bg-white dark:bg-slate-900 shadow-2xl relative overflow-hidden col-span-full">
-                <div className="absolute top-0 right-0 bg-brand-600 text-white px-4 py-1 text-xs font-bold rounded-bl-xl">POPULAR</div>
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Pro Seller</h3>
-                <div className="flex items-end justify-center gap-1 mb-6">
-                  <span className="text-4xl font-bold text-slate-900 dark:text-white">$29</span>
-                  <span className="text-slate-600 dark:text-slate-400 mb-1">/mo</span>
+              // Default Fallback Plan
+              <div className="max-w-md mx-auto p-10 rounded-[3rem] border-2 border-brand-500 bg-white dark:bg-slate-900 shadow-[0_32px_64px_-16px_rgba(79,70,229,0.2)] relative overflow-hidden col-span-full">
+                <div className="absolute top-0 right-12 translate-y-[-50%] bg-gradient-to-r from-brand-600 to-indigo-600 text-white px-6 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
+                  Luxe Standard
                 </div>
-                <ul className="text-left space-y-4 mb-8">
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-2 font-display">Pro Seller</h3>
+                <div className="flex items-baseline justify-center gap-1 mb-6">
+                  <span className="text-6xl font-black text-slate-900 dark:text-white">$29</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-bold">/mo</span>
+                </div>
+                <ul className="text-left space-y-4 mb-10">
                   {['Unlimited Products', 'Custom Domains', 'Advanced Analytics', 'Priority Support'].map((item: string) => (
-                    <li key={item} className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                      <Icons.Zap className="w-4 h-4 text-brand-600" />
-                      {item}
+                    <li key={item} className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
+                      <div className="w-6 h-6 rounded-full bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400">
+                        <Icons.Check className="w-3.5 h-3.5" strokeWidth={3} />
+                      </div>
+                      <span className="text-base font-bold">{item}</span>
                     </li>
                   ))}
                 </ul>
                 <Link
                   href="/create-store"
-                  className="block w-full py-4 rounded-2xl bg-brand-600 text-white font-bold hover:bg-brand-700 transition-all shadow-lg shadow-brand-500/25 text-center"
+                  className="block w-full py-5 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-black text-[13px] uppercase tracking-widest hover:from-brand-700 hover:to-indigo-700 transition-all shadow-xl shadow-brand-500/40 active:scale-[0.98] text-center"
                 >
-                  Get Started Now
+                  Experience Excellence
                 </Link>
               </div>
             )}
