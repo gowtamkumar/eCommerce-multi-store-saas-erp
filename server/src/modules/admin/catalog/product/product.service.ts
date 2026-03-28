@@ -5,7 +5,7 @@ import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { Repository } from 'typeorm'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
-import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity'
+import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchase/purchase-order.service'
@@ -15,6 +15,9 @@ import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductAttributeEntity } from './entities/attribute.entity'
 import { ProductEntity } from './entities/product.entity'
 import { ProductVariantEntity } from './entities/variant.entity'
+import { ProductRepository } from './product.repository'
+import { ProductAttributeRepository } from './attribute.repository'
+import { ProductVariantRepository } from './variant.repository'
 import { BrandEntity } from '../brand/entities/brand.entity'
 import { PromotionType } from '../../sales/promotion/enums/promotion-type.enum'
 import { DiscountType } from '@/common/enums/discount-type.enum'
@@ -26,14 +29,10 @@ export class ProductService {
   private readonly logger = new Logger(ProductService.name)
 
   constructor(
-    @InjectRepository(ProductEntity)
-    private productRepository: Repository<ProductEntity>,
-    @InjectRepository(FaqEntity)
-    private faqRepository: Repository<FaqEntity>,
-    @InjectRepository(ProductAttributeEntity)
-    private attributeRepository: Repository<ProductAttributeEntity>,
-    @InjectRepository(ProductVariantEntity)
-    private variantRepository: Repository<ProductVariantEntity>,
+    private productRepository: ProductRepository,
+    private faqRepository: FaqRepository,
+    private attributeRepository: ProductAttributeRepository,
+    private variantRepository: ProductVariantRepository,
     @InjectRepository(BrandEntity)
     private brandRepository: Repository<BrandEntity>,
     private cache: CacheService,

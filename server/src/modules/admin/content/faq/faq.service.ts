@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import { FaqStatus } from '@/common/enums/faq-status.enum'
-import { In, Repository } from 'typeorm'
+import { In } from 'typeorm'
+import { FaqRepository } from './faq.repository'
 import { CreateFaqDto, UpdateFaqDto } from './dto/faq.dto'
 import { FaqEntity } from './entities/faq.entity'
 
@@ -10,8 +10,7 @@ export class FaqService {
   private readonly logger = new Logger(FaqService.name)
 
   constructor(
-    @InjectRepository(FaqEntity)
-    private faqRepository: Repository<FaqEntity>,
+    private readonly faqRepository: FaqRepository,
   ) {}
 
   async createFaq(createFaqDto: CreateFaqDto, tenantId: string) {

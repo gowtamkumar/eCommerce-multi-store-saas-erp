@@ -8,12 +8,12 @@ export class BrandService {
   private readonly logger = new Logger(BrandService.name)
 
   constructor(
-    private readonly brandRepository: BrandRepository,
+    private readonly brandRepo: BrandRepository,
   ) {}
 
   async createBrand(createBrandDto: CreateBrandDto, tenantId: string) {
     this.logger.log(`${this.createBrand.name} Service Called`)
-    const existing = await this.brandRepository.findOne({
+    const existing = await this.brandRepo.findOne({
       where: { slug: createBrandDto.slug, tenantId },
     })
 
@@ -21,17 +21,17 @@ export class BrandService {
       throw new ConflictException('Brand with this slug already exists')
     }
 
-    const brand = this.brandRepository.create({
+    const brand = this.brandRepo.create({
       ...createBrandDto,
       tenantId,
     })
 
-    return await this.brandRepository.save(brand)
+    return await this.brandRepo.save(brand)
   }
 
   async findAllBrands(tenantId: string) {
     this.logger.log(`${this.findAllBrands.name} Service Called`)
-    return await this.brandRepository.find({
+    return await this.brandRepo.find({
       where: { tenantId },
       order: { name: 'ASC' },
     })
@@ -39,7 +39,7 @@ export class BrandService {
 
   async findOneBrand(id: string, tenantId: string) {
     this.logger.log(`${this.findOneBrand.name} Service Called`)
-    const brand = await this.brandRepository.findOne({
+    const brand = await this.brandRepo.findOne({
       where: { id, tenantId },
     })
 
@@ -55,7 +55,7 @@ export class BrandService {
     const brand = await this.findOneBrand(id, tenantId)
 
     if (updateBrandDto.slug && updateBrandDto.slug !== brand.slug) {
-      const existing = await this.brandRepository.findOne({
+      const existing = await this.brandRepo.findOne({
         where: { slug: updateBrandDto.slug, tenantId },
       })
 
@@ -65,13 +65,13 @@ export class BrandService {
     }
 
     Object.assign(brand, updateBrandDto)
-    return await this.brandRepository.save(brand)
+    return await this.brandRepo.save(brand)
   }
 
   async removeBrand(id: string, tenantId: string) {
     this.logger.log(`${this.removeBrand.name} Service Called`)
     const brand = await this.findOneBrand(id, tenantId)
-    await this.brandRepository.remove(brand)
+    await this.brandRepo.remove(brand)
     return { success: true, message: 'Brand deleted successfully' }
   }
 }

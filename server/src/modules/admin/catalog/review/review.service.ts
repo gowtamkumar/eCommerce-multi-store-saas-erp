@@ -1,6 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { ReviewRepository } from './review.repository'
 import { ReviewStatus } from '@/common/enums/review-status.enum'
 import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto'
 import { ReviewEntity } from './entities/review.entity'
@@ -10,8 +9,7 @@ export class ReviewService {
   private readonly logger = new Logger(ReviewService.name)
 
   constructor(
-    @InjectRepository(ReviewEntity)
-    private reviewRepository: Repository<ReviewEntity>,
+    private readonly reviewRepository: ReviewRepository,
   ) {}
 
   async createReview(dto: CreateReviewDto, tenantId: string) {

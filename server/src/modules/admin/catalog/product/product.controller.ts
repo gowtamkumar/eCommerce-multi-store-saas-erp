@@ -1,3 +1,9 @@
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { Roles } from '@/common/decorators/roles.decorator'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import {
   Body,
   Controller,
@@ -10,21 +16,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-import { RolesGuard } from '@/common/guards/roles.guard'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { CreateReviewDto } from '../review/dto/review.dto'
 import { ReviewService } from '../review/review.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { FilterProductDto } from './dto/filter-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductService } from './product.service'
-import { ProductVariantEntity } from './entities/variant.entity'
-import { BrandEntity } from '../brand/entities/brand.entity'
-import { Brackets, Repository } from 'typeorm'
 
 @Controller('products')
 export class ProductController {
