@@ -8,7 +8,7 @@ import { SupplierRepository } from './supplier.repository'
 @Module({
   imports: [],
   controllers: [SupplierController],
-  providers: [SupplierService, SupplierRepository],
-  exports: [SupplierService, SupplierRepository],
+  providers: [SupplierService],
+  exports: [SupplierService],
 })
 export class SupplierModule {}

@@ -6,7 +6,7 @@ import { SubscriberService } from './subscriber.service'
 @Module({
   imports: [],
   controllers: [SubscriberController],
-  providers: [SubscriberService, SubscriberRepository],
-  exports: [SubscriberService, SubscriberRepository],
+  providers: [SubscriberService],
+  exports: [SubscriberService],
 })
 export class SubscriberModule {}

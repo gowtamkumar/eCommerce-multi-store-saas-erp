@@ -8,7 +8,7 @@ import { PageService } from './page.service'
 @Module({
   imports: [ProductModule, FaqModule],
   controllers: [PageController],
-  providers: [PageService, PageRepository],
-  exports: [PageService, PageRepository],
+  providers: [PageService],
+  exports: [PageService],
 })
 export class PageModule {}

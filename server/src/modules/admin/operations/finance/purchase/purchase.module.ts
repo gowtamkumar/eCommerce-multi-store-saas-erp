@@ -8,7 +8,7 @@ import { SupplierPaymentRepository } from './supplier-payment.repository'
 @Module({
   imports: [InventoryTransactionModule],
   controllers: [PurchaseOrderController],
-  providers: [PurchaseOrderService, PurchaseOrderRepository, SupplierPaymentRepository],
-  exports: [PurchaseOrderService, PurchaseOrderRepository, SupplierPaymentRepository],
+  providers: [PurchaseOrderService],
+  exports: [PurchaseOrderService],
 })
 export class PurchaseModule {}

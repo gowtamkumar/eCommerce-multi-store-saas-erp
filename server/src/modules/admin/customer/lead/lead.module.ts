@@ -6,7 +6,7 @@ import { LeadRepository } from './lead.repository'
 @Module({
   imports: [],
   controllers: [LeadController],
-  providers: [LeadService, LeadRepository],
-  exports: [LeadService, LeadRepository],
+  providers: [LeadService],
+  exports: [LeadService],
 })
 export class LeadModule {}
