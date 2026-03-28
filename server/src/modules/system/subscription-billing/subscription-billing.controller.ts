@@ -58,9 +58,6 @@ export class SubscriptionBillingController {
     @Body() body: any,
   ) {
     return await this.billingService.handleFailPayment(tran_id, body)
-    // const defaultAppUrl = this.configService.get('FRONTEND_URL')
-    // const redirectUrl = await this.billingService.getRedirectUrl(tran_id, body, defaultAppUrl)
-    // return res.redirect(redirectUrl)
   }
 
   @Public()

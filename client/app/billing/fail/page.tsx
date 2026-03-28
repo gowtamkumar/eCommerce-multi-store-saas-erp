@@ -1,13 +1,14 @@
 "use client";
 
-import { XCircle, ArrowLeft } from "lucide-react";
+import { XCircle, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 function FailContent() {
   const searchParams = useSearchParams();
   const tran_id = searchParams.get("tran_id");
+  const [isReporting, setIsReporting] = useState(true);
 
   useEffect(() => {
     const reportFail = async () => {
@@ -19,12 +20,25 @@ function FailContent() {
             body: JSON.stringify({ message: "Failure from frontend" })
           });
         }
+        setTimeout(() => setIsReporting(false), 1000);
       } catch (error) {
         console.error("Failed to report payment failure:", error);
+        setIsReporting(false);
       }
     };
     reportFail();
   }, [tran_id]);
+
+  if (isReporting) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-red-600 mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400 font-medium">Processing payment result...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
