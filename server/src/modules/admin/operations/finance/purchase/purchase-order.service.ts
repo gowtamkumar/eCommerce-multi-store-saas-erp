@@ -1,28 +1,23 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { DataSource, Repository } from 'typeorm'
+import { DataSource } from 'typeorm'
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from './dto/purchase-order.dto'
 import { RecordSupplierPaymentDto } from './dto/record-payment.dto'
-import { PurchaseOrderItemEntity } from './entities/purchase-order-item.entity'
 import { PurchaseOrderEntity } from './entities/purchase-order.entity'
-import { SupplierPaymentEntity } from './entities/supplier-payment.entity'
 import { PurchaseOrderPaymentStatus } from './enums/purchase-order-payment-status.enum'
 import { InventoryTransactionService } from '../../logistics/inventory-transaction/inventory-transaction.service'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
+import { PurchaseOrderRepository } from './purchase-order.repository'
+import { SupplierPaymentRepository } from './supplier-payment.repository'
 
 @Injectable()
 export class PurchaseOrderService {
   private readonly logger = new Logger(PurchaseOrderService.name)
 
   constructor(
-    @InjectRepository(PurchaseOrderEntity)
-    private readonly repository: Repository<PurchaseOrderEntity>,
-    @InjectRepository(PurchaseOrderItemEntity)
-    private readonly itemRepository: Repository<PurchaseOrderItemEntity>,
-    @InjectRepository(SupplierPaymentEntity)
-    private readonly paymentRepository: Repository<SupplierPaymentEntity>,
+    private readonly repository: PurchaseOrderRepository,
+    private readonly paymentRepository: SupplierPaymentRepository,
     private readonly inventoryService: InventoryTransactionService,
     private readonly dataSource: DataSource,
   ) {}
@@ -30,32 +25,21 @@ export class PurchaseOrderService {
   async createPurchaseOrder(dto: CreatePurchaseOrderDto, tenantId: string) {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
     const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-
-    const purchaseOrder = this.repository.create({
-      ...dto,
-      totalAmount,
+    return await this.repository.createAndSave(
+      { ...dto, totalAmount },
       tenantId,
-      status: PurchaseOrderStatus.DRAFT,
-    })
-
-    return await this.repository.save(purchaseOrder)
+      PurchaseOrderStatus.DRAFT
+    )
   }
 
   async findAllPurchaseOrders(tenantId: string) {
     this.logger.log(`${this.findAllPurchaseOrders.name} Service Called`)
-    return await this.repository.find({
-      where: { tenantId },
-      relations: ['supplier'],
-      order: { createdAt: 'DESC' },
-    })
+    return await this.repository.findAllWithRelations(tenantId)
   }
 
   async findOnePurchaseOrder(id: string, tenantId: string) {
     this.logger.log(`${this.findOnePurchaseOrder.name} Service Called`)
-    const order = await this.repository.findOne({
-      where: { id, tenantId },
-      relations: ['supplier', 'items', 'items.product', 'items.variant', 'payments'],
-    })
+    const order = await this.repository.findByIdWithRelations(id, tenantId)
     if (!order) {
       throw new NotFoundException('Purchase order not found')
     }
@@ -78,7 +62,7 @@ export class PurchaseOrderService {
     }
 
     order.status = dto.status
-    return await this.repository.save(order)
+    return await this.repository.saveOrder(order)
   }
 
   private async receivePurchaseOrder(order: PurchaseOrderEntity, tenantId: string) {
@@ -89,10 +73,9 @@ export class PurchaseOrderService {
 
     try {
       order.status = PurchaseOrderStatus.RECEIVED
-      const savedOrder = await queryRunner.manager.save(order)
+      const savedOrder = await this.repository.saveOrder(order, queryRunner.manager)
 
       for (const item of order.items) {
-        // Use explicit column ID if present, else fallback to relation ID
         const productId = item.productId || (item.product as any)?.id
         const variantId = item.variantId || (item.variant as any)?.id
 
@@ -127,26 +110,20 @@ export class PurchaseOrderService {
     await queryRunner.startTransaction()
 
     try {
-      const order = await queryRunner.manager.findOne(PurchaseOrderEntity, {
-        where: { id, tenantId },
-        relations: ['payments'],
-      })
+      const order = await this.repository.findByIdWithRelations(id, tenantId, queryRunner.manager)
+      if (!order) throw new NotFoundException('Purchase order not found')
 
-      if (!order) {
-        throw new NotFoundException('Purchase order not found')
-      }
+      const savedPayment = await this.paymentRepository.createAndSave(
+        {
+          ...dto,
+          purchaseOrderId: order.id,
+          supplierId: order.supplierId,
+          tenantId,
+          paymentDate: dto.paymentDate ? new Date(dto.paymentDate) : new Date(),
+        },
+        queryRunner.manager
+      )
 
-      const payment = queryRunner.manager.create(SupplierPaymentEntity, {
-        ...dto,
-        purchaseOrderId: order.id,
-        supplierId: order.supplierId,
-        tenantId,
-        paymentDate: dto.paymentDate ? new Date(dto.paymentDate) : new Date(),
-      })
-
-      const savedPayment = await queryRunner.manager.save(payment)
-
-      // Update PO paid amount and status
       order.paidAmount = Number(order.paidAmount || 0) + Number(dto.amount)
 
       if (order.paidAmount >= order.totalAmount) {
@@ -155,14 +132,10 @@ export class PurchaseOrderService {
         order.paymentStatus = PurchaseOrderPaymentStatus.PARTIAL
       }
 
-      // Important: Update the relation array to avoid TypeORM nullifying the FK
-      if (order.payments) {
-        order.payments.push(savedPayment)
-      } else {
-        order.payments = [savedPayment]
-      }
+      if (order.payments) order.payments.push(savedPayment)
+      else order.payments = [savedPayment]
 
-      const savedOrder = await queryRunner.manager.save(order)
+      const savedOrder = await this.repository.saveOrder(order, queryRunner.manager)
       await queryRunner.commitTransaction()
       return savedOrder
     } catch (err) {
@@ -175,27 +148,16 @@ export class PurchaseOrderService {
 
   async findAllBySupplier(supplierId: string, tenantId: string) {
     this.logger.log(`${this.findAllBySupplier.name} Service Called`)
-    return await this.repository.find({
-      where: { supplierId, tenantId },
-      relations: ['items'],
-      order: { createdAt: 'DESC' },
-    })
+    return await this.repository.findAllBySupplier(supplierId, tenantId)
   }
 
   async findAllPaymentsBySupplier(supplierId: string, tenantId: string) {
     this.logger.log(`${this.findAllPaymentsBySupplier.name} Service Called`)
-    return await this.paymentRepository.find({
-      where: { supplierId, tenantId },
-      order: { paymentDate: 'DESC' },
-    })
+    return await this.paymentRepository.findAllBySupplier(supplierId, tenantId)
   }
 
   async findAllPaymentsByPurchaseOrder(tenantId: string) {
     this.logger.log(`${this.findAllPaymentsByPurchaseOrder.name} Service Called`)
-    return await this.paymentRepository.find({
-      where: { tenantId },
-      relations: ['supplier', 'purchaseOrder'],
-      order: { paymentDate: 'DESC' },
-    })
+    return await this.paymentRepository.findAllPayments(tenantId)
   }
 }

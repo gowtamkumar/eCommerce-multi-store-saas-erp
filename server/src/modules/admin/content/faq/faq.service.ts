@@ -1,9 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { FaqStatus } from '@/common/enums/faq-status.enum'
-import { In } from 'typeorm'
 import { FaqRepository } from './faq.repository'
 import { CreateFaqDto, UpdateFaqDto } from './dto/faq.dto'
-import { FaqEntity } from './entities/faq.entity'
 
 @Injectable()
 export class FaqService {
@@ -15,38 +12,17 @@ export class FaqService {
 
   async createFaq(createFaqDto: CreateFaqDto, tenantId: string) {
     this.logger.log(`${this.createFaq.name} Service Called`)
-    const faq = this.faqRepository.create({ ...createFaqDto, tenantId })
-    return await this.faqRepository.save(faq)
+    return await this.faqRepository.createAndSave(createFaqDto, tenantId)
   }
 
   async findAllFaqs(filterDto: any, tenantId: string) {
     this.logger.log(`${this.findAllFaqs.name} Service Called`)
-    const { page, limit, q, status } = filterDto
-    const query = this.faqRepository
-      .createQueryBuilder('faq')
-      .where('faq.tenantId = :tenantId', { tenantId })
-
-    if (status) {
-      query.andWhere('faq.status = :status', { status })
-    }
-
-    if (q) {
-      query.andWhere('(faq.question ILIKE :q OR faq.answer ILIKE :q)', { q: `%${q}%` })
-    }
-
-    const [faqs, total] = await query
-      .orderBy('faq.order', 'ASC')
-      .addOrderBy('faq.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount()
-
-    return { faqs, total }
+    return await this.faqRepository.findAllWithFilters(filterDto, tenantId)
   }
 
   async findOneFaq(id: string, tenantId: string) {
     this.logger.log(`${this.findOneFaq.name} Service Called`)
-    const faq = await this.faqRepository.findOne({ where: { id, tenantId } })
+    const faq = await this.faqRepository.findById(id, tenantId)
     if (!faq) throw new NotFoundException('FAQ not found')
     return faq
   }
@@ -54,54 +30,31 @@ export class FaqService {
   async updateFaq(id: string, updateFaqDto: UpdateFaqDto, tenantId: string) {
     this.logger.log(`${this.updateFaq.name} Service Called`)
     const faq = await this.findOneFaq(id, tenantId)
-    Object.assign(faq, updateFaqDto)
-    return await this.faqRepository.save(faq)
+    return await this.faqRepository.updateAndSave(faq, updateFaqDto)
   }
 
   async removeFaq(id: string, tenantId: string) {
     this.logger.log(`${this.removeFaq.name} Service Called`)
     const faq = await this.findOneFaq(id, tenantId)
-    await this.faqRepository.remove(faq)
+    await this.faqRepository.removeFaq(faq)
     return { success: true }
   }
 
   // Find FAQs by Page ID
   async findByPageFaq(pageId: string, tenantId: string) {
     this.logger.log(`${this.findByPageFaq.name} Service Called`)
-    return await this.faqRepository.find({
-      where: { pageId, tenantId, status: FaqStatus.ACTIVE },
-      order: { order: 'ASC', createdAt: 'DESC' },
-    })
+    return await this.faqRepository.findByPageId(pageId, tenantId)
   }
 
   // Find Global FAQs (no productId or pageId)
   async findGlobalFaqs(tenantId: string) {
     this.logger.log(`${this.findGlobalFaqs.name} Service Called`)
-    return await this.faqRepository.find({
-      where: {
-        tenantId,
-        productId: null,
-        pageId: null,
-        status: FaqStatus.ACTIVE,
-      },
-      order: { order: 'ASC', createdAt: 'DESC' },
-    })
+    return await this.faqRepository.findGlobal(tenantId)
   }
 
   // Find FAQs by multiple IDs
   async findByIdsFaq(ids: string[], tenantId: string) {
     this.logger.log(`${this.findByIdsFaq.name} Service Called`)
-    if (!ids || ids.length === 0) {
-      return []
-    }
-
-    return await this.faqRepository.find({
-      where: {
-        id: In(ids),
-        tenantId,
-        status: FaqStatus.ACTIVE,
-      },
-      order: { order: 'ASC', createdAt: 'DESC' },
-    })
+    return await this.faqRepository.findByIdsList(ids, tenantId)
   }
 }

@@ -1,36 +1,28 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { CreateSubscriberDto } from './dto/subscriber.dto'
-import { SubscriberEntity } from './entities/subscriber.entity'
+import { SubscriberRepository } from './subscriber.repository'
 
 @Injectable()
 export class SubscriberService {
   private readonly logger = new Logger(SubscriberService.name)
 
   constructor(
-    @InjectRepository(SubscriberEntity)
-    private readonly subscriberRepository: Repository<SubscriberEntity>,
+    private readonly subscriberRepository: SubscriberRepository,
   ) {}
 
   async createSubscriber(createSubscriberDto: CreateSubscriberDto) {
     this.logger.log(`${this.createSubscriber.name} Service Called`)
-    const existingSubscriber = await this.subscriberRepository.findOne({
-      where: { email: createSubscriberDto.email },
-    })
+    const existingSubscriber = await this.subscriberRepository.findByEmail(createSubscriberDto.email)
 
     if (existingSubscriber) {
       throw new ConflictException('Email is already subscribed')
     }
 
-    const subscriber = this.subscriberRepository.create(createSubscriberDto)
-    return await this.subscriberRepository.save(subscriber)
+    return await this.subscriberRepository.createAndSave(createSubscriberDto)
   }
 
   async findAllSubscribers() {
     this.logger.log(`${this.findAllSubscribers.name} Service Called`)
-    return await this.subscriberRepository.find({
-      order: { createdAt: 'DESC' },
-    })
+    return await this.subscriberRepository.findAllDesc()
   }
 }

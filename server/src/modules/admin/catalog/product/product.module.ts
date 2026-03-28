@@ -17,6 +17,7 @@ import { ProductRepository } from './product.repository'
 import { ProductAttributeRepository } from './attribute.repository'
 import { ProductVariantRepository } from './variant.repository'
 import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
+import { BrandRepository } from '../brand/brand.repository'
 
 @Module({
   imports: [
@@ -35,7 +36,7 @@ import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
     PromotionModule,
   ],
   controllers: [ProductController],
-  providers: [ProductService, ProductRepository, ProductAttributeRepository, ProductVariantRepository, FaqRepository],
+  providers: [ProductService, ProductRepository, ProductAttributeRepository, ProductVariantRepository, FaqRepository, BrandRepository],
   exports: [ProductService, ProductRepository, ProductAttributeRepository, ProductVariantRepository],
 })
 export class ProductModule {}

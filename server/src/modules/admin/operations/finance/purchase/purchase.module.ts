@@ -6,6 +6,8 @@ import { PurchaseOrderService } from './purchase-order.service'
 import { PurchaseOrderController } from './purchase-order.controller'
 import { SupplierPaymentEntity } from './entities/supplier-payment.entity'
 import { InventoryTransactionModule } from '../../logistics/inventory-transaction/inventory-transaction.module'
+import { PurchaseOrderRepository } from './purchase-order.repository'
+import { SupplierPaymentRepository } from './supplier-payment.repository'
 
 @Module({
   imports: [
@@ -13,7 +15,7 @@ import { InventoryTransactionModule } from '../../logistics/inventory-transactio
     InventoryTransactionModule,
   ],
   controllers: [PurchaseOrderController],
-  providers: [PurchaseOrderService],
-  exports: [PurchaseOrderService],
+  providers: [PurchaseOrderService, PurchaseOrderRepository, SupplierPaymentRepository],
+  exports: [PurchaseOrderService, PurchaseOrderRepository, SupplierPaymentRepository],
 })
 export class PurchaseModule {}

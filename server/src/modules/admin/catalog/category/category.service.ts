@@ -13,35 +13,26 @@ export class CategoryService {
 
   async createCategory(createCategoryDto: CreateCategoryDto, tenantId: string) {
     this.logger.log(`${this.createCategory.name} Service Called`)
-    const existing = await this.categoryRepo.findOne({
-      where: { slug: createCategoryDto.slug, tenantId },
-    })
+    const existing = await this.categoryRepo.findBySlug(createCategoryDto.slug, tenantId)
 
     if (existing) {
       throw new ConflictException('Category with this slug already exists')
     }
 
-    const category = this.categoryRepo.create({
+    return await this.categoryRepo.createAndSave({
       ...createCategoryDto,
       tenantId,
     })
-
-    return await this.categoryRepo.save(category)
   }
 
   async findAllCategories(tenantId: string) {
     this.logger.log(`${this.findAllCategories.name} Service Called`)
-    return await this.categoryRepo.find({
-      where: { tenantId },
-      order: { name: 'ASC' },
-    })
+    return await this.categoryRepo.findAllByTenant(tenantId)
   }
 
   async findOneCategory(id: string, tenantId: string) {
     this.logger.log(`${this.findOneCategory.name} Service Called`)
-    const category = await this.categoryRepo.findOne({
-      where: { id, tenantId },
-    })
+    const category = await this.categoryRepo.findById(id, tenantId)
 
     if (!category) {
       throw new NotFoundException('Category not found')
@@ -55,23 +46,20 @@ export class CategoryService {
     const category = await this.findOneCategory(id, tenantId)
 
     if (updateCategoryDto.slug && updateCategoryDto.slug !== category.slug) {
-      const existing = await this.categoryRepo.findOne({
-        where: { slug: updateCategoryDto.slug, tenantId },
-      })
+      const existing = await this.categoryRepo.findBySlug(updateCategoryDto.slug, tenantId)
 
       if (existing) {
         throw new ConflictException('Category with this slug already exists')
       }
     }
 
-    Object.assign(category, updateCategoryDto)
-    return await this.categoryRepo.save(category)
+    return await this.categoryRepo.updateAndSave(category, updateCategoryDto)
   }
 
   async removeCategory(id: string, tenantId: string) {
     this.logger.log(`${this.removeCategory.name} Service Called`)
     const category = await this.findOneCategory(id, tenantId)
-    await this.categoryRepo.remove(category)
+    await this.categoryRepo.removeCategory(category)
     return { success: true, message: 'Category deleted successfully' }
   }
 }
