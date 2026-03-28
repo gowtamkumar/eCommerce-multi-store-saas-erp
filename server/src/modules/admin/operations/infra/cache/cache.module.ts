@@ -1,7 +1,8 @@
+import { CacheRepository } from '@/modules/admin/operations/infra/cache/cache.repository'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { CacheModule as NestCacheModule } from '@nestjs/cache-manager'
 import { Global, Module } from '@nestjs/common'
 import { redisStore } from 'cache-manager-redis-yet'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
 @Global()
 @Module({
@@ -18,7 +19,7 @@ import { CacheService } from '@/modules/admin/operations/infra/cache/cache.servi
       }),
     }),
   ],
-  providers: [CacheService],
-  exports: [CacheService],
+  providers: [CacheService, CacheRepository],
+  exports: [CacheService, CacheRepository],
 })
 export class CacheModule {}

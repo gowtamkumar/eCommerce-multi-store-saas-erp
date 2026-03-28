@@ -1,40 +1,28 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { CreateSupplierDto, UpdateSupplierDto } from './dto/supplier.dto'
-import { SupplierEntity } from './entities/supplier.entity'
+import { SupplierRepository } from './supplier.repository'
 
 @Injectable()
 export class SupplierService {
   private readonly logger = new Logger(SupplierService.name)
 
   constructor(
-    @InjectRepository(SupplierEntity)
-    private readonly repository: Repository<SupplierEntity>,
+    private readonly repository: SupplierRepository,
   ) {}
 
   async createSupplier(dto: CreateSupplierDto, tenantId: string) {
     this.logger.log(`${this.createSupplier.name} Service Called`)
-    const supplier = this.repository.create({
-      ...dto,
-      tenantId,
-    })
-    return await this.repository.save(supplier)
+    return await this.repository.createAndSave(dto, tenantId)
   }
 
   async findAllSuppliers(tenantId: string) {
     this.logger.log(`${this.findAllSuppliers.name} Service Called`)
-    return await this.repository.find({
-      where: { tenantId },
-      order: { name: 'ASC' },
-    })
+    return await this.repository.findAllByTenant(tenantId)
   }
 
   async findOneSupplier(id: string, tenantId: string) {
     this.logger.log(`${this.findOneSupplier.name} Service Called`)
-    const supplier = await this.repository.findOne({
-      where: { id, tenantId },
-    })
+    const supplier = await this.repository.findByIdAndTenant(id, tenantId)
     if (!supplier) {
       throw new NotFoundException('Supplier not found')
     }
@@ -44,13 +32,12 @@ export class SupplierService {
   async updateSupplier(id: string, dto: UpdateSupplierDto, tenantId: string) {
     this.logger.log(`${this.updateSupplier.name} Service Called`)
     const supplier = await this.findOneSupplier(id, tenantId)
-    Object.assign(supplier, dto)
-    return await this.repository.save(supplier)
+    return await this.repository.updateAndSave(supplier, dto)
   }
 
   async removeSupplier(id: string, tenantId: string) {
     this.logger.log(`${this.removeSupplier.name} Service Called`)
     const supplier = await this.findOneSupplier(id, tenantId)
-    return await this.repository.remove(supplier)
+    return await this.repository.removeSupplier(supplier)
   }
 }

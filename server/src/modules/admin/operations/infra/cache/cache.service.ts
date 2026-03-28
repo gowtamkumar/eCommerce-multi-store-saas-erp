@@ -1,13 +1,12 @@
-import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Inject, Injectable, Logger } from '@nestjs/common'
-import { Cache } from 'cache-manager'
+import { Injectable, Logger } from '@nestjs/common'
 import { CACHE_PREFIX } from '@/common/constants/cache.'
+import { CacheRepository } from './cache.repository'
 
 @Injectable()
 export class CacheService {
   private readonly logger = new Logger(CacheService.name)
 
-  constructor(@Inject(CACHE_MANAGER) private cache: Cache) {}
+  constructor(private readonly cacheRepository: CacheRepository) {}
 
   private buildKey(key: string, tenantId?: string) {
     this.logger.log(`${this.buildKey.name} Service Called`)
@@ -18,9 +17,9 @@ export class CacheService {
     this.logger.log(`${this.getCache.name} Service Called`)
     try {
       const fullKey = this.buildKey(key, tenantId)
-      const data = await this.cache.get<T>(fullKey)
-      return data ?? null
+      return await this.cacheRepository.get<T>(fullKey)
     } catch (error) {
+      this.logger.error(`[CACHE] GET error for key ${key}:`, error.message)
       return null
     }
   }
@@ -30,9 +29,9 @@ export class CacheService {
     try {
       const fullKey = this.buildKey(key, tenantId)
       const ttlMs = ttl * 1000 // Convert seconds to milliseconds for cache-manager-redis-yet
-      await this.cache.set(fullKey, value, ttlMs)
+      await this.cacheRepository.set(fullKey, value, ttlMs)
     } catch (error) {
-      console.error('[CACHE] SET error:', error.message, error.stack)
+      this.logger.error(`[CACHE] SET error for key ${key}:`, error.message)
     }
   }
 
@@ -40,18 +39,18 @@ export class CacheService {
     this.logger.log(`${this.delCache.name} Service Called`)
     try {
       const fullKey = this.buildKey(key, tenantId)
-      await this.cache.del(fullKey)
+      await this.cacheRepository.del(fullKey)
     } catch (error) {
-      console.error('[CACHE] DELETE error:', error.message)
+      this.logger.error(`[CACHE] DELETE error for key ${key}:`, error.message)
     }
   }
 
   async resetCache() {
     this.logger.log(`${this.resetCache.name} Service Called`)
     try {
-      await this.cache.clear()
+      await this.cacheRepository.clear()
     } catch (error) {
-      console.error('[CACHE] RESET error:', error.message)
+      this.logger.error('[CACHE] RESET error:', error.message)
     }
   }
 
