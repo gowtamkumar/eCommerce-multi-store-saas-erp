@@ -93,7 +93,10 @@ export class SubscriptionBillingService {
     } as any as SiteSettingsEntity
 
     const apiBaseUrl = this.configService.get('API_URL')
-    const callbackUrl = `${apiBaseUrl}/billing/complete`
+
+
+
+    const callbackUrl = `http://gowtam.localhost:3000/admin/settings/billing`
 
     const result = await strategy.initiate(mockOrder, mockSettings, {
       callbackUrl,

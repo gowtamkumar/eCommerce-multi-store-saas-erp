@@ -541,6 +541,19 @@ All entities extend `BaseEntity`, which includes:
     - `ManyToOne` -> `TenantEntity` (tenant_id)
     - `ManyToOne` -> `UserEntity` (user_id)
 
+#### Shipping Address Entity
+- **Table**: `shipping_addresses`
+- **Fields**:
+    - `user_id`: `uuid`
+    - `tenant_id`: `uuid`
+    - `label`: `varchar(100)` (nullable)
+    - `recipient_name`: `varchar(255)`
+    - `phone`: `varchar(20)`
+    - `address`: `text`
+    - `city`: `varchar(100)` (nullable)
+    - `zone`: `enum` (ShippingZoneType) (nullable)
+    - `is_default`: `boolean` (default: false)
+
 ---
 
 ## System Module
@@ -585,6 +598,23 @@ All entities extend `BaseEntity`, which includes:
 - **Relationships**:
     - `OneToMany` -> `TenantEntity`
     - `ManyToOne` -> `UserEntity` (user_id)
+
+#### Subscription Invoice Entity
+- **Table**: `subscription_invoices`
+- **Fields**:
+    - `invoice_number`: `varchar(100)` (unique)
+    - `tenant_id`: `uuid`
+    - `subscription_plan_id`: `uuid`
+    - `amount`: `decimal(10,2)`
+    - `currency`: `varchar(10)` (default: 'USD')
+    - `status`: `enum` (PaymentStatus) (default: `pending`)
+    - `transaction_id`: `varchar(255)` (nullable)
+    - `billing_date`: `timestamptz` (default: now)
+    - `payment_url`: `text` (nullable)
+    - `gateway_response`: `jsonb` (nullable)
+- **Relationships**:
+    - `ManyToOne` -> `TenantEntity` (tenant_id)
+    - `ManyToOne` -> `SubscriptionPlanEntity` (subscription_plan_id)
 
 #### Tenant Traffic Entity
 - **Table**: `tenant_traffic`

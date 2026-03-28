@@ -11,7 +11,7 @@ export class SettingsService {
   constructor(
     private settingsRepository: SiteSettingsRepository,
     private tenantRepository: TenantRepository,
-  ) {}
+  ) { }
 
   async findByTenantSettings(tenantId: string) {
     this.logger.log(`${this.findByTenantSettings.name} Service Called`)
@@ -41,5 +41,9 @@ export class SettingsService {
     const settings = await this.settingsRepository.findByTenantId(tenantId)
     if (!settings) throw new Error('Settings not found')
     return await this.settingsRepository.updateAndSave(settings, dto)
+  }
+  async createSetting(tenantId: string, dto: UpdateSiteSettingsDto) {
+    this.logger.log(`${this.createSetting.name} Service Called`)
+    return await this.settingsRepository.createAndSave(dto, tenantId)
   }
 }

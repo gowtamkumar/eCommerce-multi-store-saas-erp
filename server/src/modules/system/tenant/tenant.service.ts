@@ -24,13 +24,16 @@ export class TenantService {
     private readonly settingsService: SettingsService,
     private readonly mailService: MailService,
     private readonly subscriptionPlanService: SubscriptionPlanService,
-  ) {}
+  ) { }
 
   async createTenant(createTenantDto: CreateTenantDto) {
     this.logger.log(`${this.createTenant.name} Service Called`)
     const { storeName, subdomain, planId, name, username, email, password } = createTenantDto
+    console.log("createTenantDto", createTenantDto);
+
     // Check if subdomain already exists
     const existingTenant = await this.tenantRepository.findBySubdomain(subdomain)
+    console.log("existingTenant", existingTenant);
 
     if (existingTenant) {
       throw new ConflictException('Subdomain already exists')
@@ -42,6 +45,8 @@ export class TenantService {
     const endsAt = new Date()
 
     if (planId) {
+      console.log("planid");
+
       subscriptionPlan = await this.subscriptionPlanService.findOneSubscriptionPlan(planId)
       if (subscriptionPlan) {
         billingCycle = subscriptionPlan.billingCycle
@@ -54,6 +59,9 @@ export class TenantService {
     } else {
       endsAt.setMonth(now.getMonth() + 1)
     }
+
+    console.log("Create tenant brfoere");
+
 
     // Create tenant
     const savedTenant = await this.tenantRepository.createAndSave(
@@ -83,17 +91,18 @@ export class TenantService {
       emailVerificationToken: verificationToken,
     })
 
-    await this.tenantRepository.updateAndSave(savedTenant, { userId: savedUser.id })
 
+    await this.tenantRepository.updateAndSave(savedTenant, { userId: savedUser.id })
     // Send verification email
-    const mailRes = await this.mailService.sendVerificationEmail(
+    await this.mailService.sendVerificationEmail(
       email,
       verificationToken,
       savedTenant.id,
     )
 
     // Initialize Site Settings
-    const res = await this.settingsService.updateSettings(savedTenant.id, {
+    await this.settingsService.createSetting(savedTenant.id, {
+      userId: savedUser.id,
       brandName: storeName,
       siteDescription: `Welcome to ${storeName}! Premium products and excellent service.`,
       contactEmail: email,

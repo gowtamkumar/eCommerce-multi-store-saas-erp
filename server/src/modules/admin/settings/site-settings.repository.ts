@@ -14,7 +14,7 @@ export class SiteSettingsRepository extends Repository<SiteSettingsEntity> {
 
   async createAndSave(dto: any, tenantId: string): Promise<SiteSettingsEntity> {
     const settings = this.create({ ...dto, tenantId } as any) as unknown as SiteSettingsEntity
-    return await (this.save(settings) as Promise<SiteSettingsEntity>)
+    return this.save(settings)
   }
 
   async updateAndSave(settings: SiteSettingsEntity, dto: any): Promise<SiteSettingsEntity> {

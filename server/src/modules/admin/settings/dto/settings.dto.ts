@@ -25,6 +25,11 @@ import { SingleProductPageSettingsDto } from './single-product-page.dto'
 import { OffersPageSettingsDto } from './offers-page.dto'
 
 export class UpdateSiteSettingsDto {
+
+  @IsString()
+  @IsOptional()
+  userId?: string
+
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()

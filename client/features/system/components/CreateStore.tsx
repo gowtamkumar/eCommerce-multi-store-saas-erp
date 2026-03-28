@@ -86,14 +86,12 @@ export default function CreateStore() {
                 body: JSON.stringify(formData),
             });
 
-            console.log("data res", data);
-
             if (data.success && data.subdomain) {
                 // Successful onboarding
                 const protocol = window.location.protocol;
                 const hostname = window.location.hostname;
                 const port = window.location.port ? `:${window.location.port}` : '';
-                const adminUrl = `${protocol}//${data.subdomain}.${hostname}${port}/admin/login`;
+                const adminUrl = `${protocol}//${data.subdomain}.${hostname}${port}/login`;
                 alert("Store created successfully! Redirecting to your admin dashboard...");
                 window.location.href = adminUrl;
             }
