@@ -10,6 +10,7 @@ import { LoggingInterceptor } from '@/common/interceptors/logging.interceptor'
 import { TransformInterceptor } from '@/common/interceptors/transform.interceptor'
 import { TenantContextMiddleware } from '@/common/middleware/tenant-context.middleware'
 import { DatabaseModule } from '@/database/database.module'
+import { PersistenceModule } from '@/database/persistence.module'
 import { AdminModule } from '@/modules/admin/core/admin.module'
 import { CatalogModule } from '@/modules/admin/catalog/catalog.module'
 import { SalesModule } from '@/modules/admin/sales/sales.module'
@@ -36,6 +37,7 @@ import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping
       serveRoot: '/uploads',
     }),
     DatabaseModule,
+    PersistenceModule,
 
     // Core & System Domains
     AdminModule,

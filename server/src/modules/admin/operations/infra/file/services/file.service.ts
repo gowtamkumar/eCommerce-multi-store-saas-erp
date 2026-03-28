@@ -1,18 +1,16 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import * as fs from 'fs'
 import PDFDocument from 'pdfkit'
-import { Repository } from 'typeorm'
 import { FileEntity } from '../entities/file.entity'
 import { CreateFileDto, FilterFileDto, UpdateFileDto } from '../dtos'
+import { FileRepository } from '../file.repository'
 
 @Injectable()
 export class FilesService {
   private readonly logger = new Logger(FilesService.name)
 
   constructor(
-    @InjectRepository(FileEntity)
-    private readonly fileRepo: Repository<FileEntity>,
+    private readonly fileRepository: FileRepository,
   ) {}
 
   getFiles(filterFile: FilterFileDto, tenantId: string): Promise<FileEntity[]> {
@@ -23,14 +21,12 @@ export class FilesService {
 
     if (filename) newQuery.filename = filename
     if (originalname) newQuery.originalname = originalname
-    return this.fileRepo.find({
-      where: newQuery,
-    })
+    return this.fileRepository.findAllByTenant(newQuery)
   }
 
   async getFile(id: string) {
     this.logger.log(`${this.getFile.name} Service Called`)
-    const file = await this.fileRepo.findOne({ where: { id } })
+    const file = await this.fileRepository.findById(id)
 
     if (!file) {
       throw new NotFoundException(`File of id ${id} not found`)
@@ -41,15 +37,11 @@ export class FilesService {
 
   async createFile(createFile: CreateFileDto, tenantId: string) {
     this.logger.log(`${this.createFile.name} Service Called`)
-    this.logger.log(`${this.createFile.name} service Called`)
-
-    const fileCreate = this.fileRepo.create({ ...createFile, tenantId })
-    return this.fileRepo.save(fileCreate)
+    return this.fileRepository.createAndSave(createFile, tenantId)
   }
 
   async createPdf(createFile: CreateFileDto) {
     this.logger.log(`${this.createPdf.name} Service Called`)
-    this.logger.log(`${this.createPdf.name} service Called`)
 
     const pdf = new PDFDocument()
     const filename = `example_${Date.now()}.pdf`
@@ -60,36 +52,31 @@ export class FilesService {
     pdf.text('Hello, World! kkkd dkjasdklfa sd kljlkj lk j kljlkjkl')
     pdf.end()
 
-    const result = this.fileRepo.create({
+    return this.fileRepository.createAndSave({
       pdfFile: filename,
       fieldname: filename,
     })
-    return this.fileRepo.save(result)
   }
 
   async updateFile(id: string, updateFile: UpdateFileDto) {
     this.logger.log(`${this.updateFile.name} Service Called`)
 
-    const findFile = await this.fileRepo.findOne({ where: { id } })
+    const findFile = await this.fileRepository.findById(id)
 
     if (!findFile) {
       throw new NotFoundException(`File of id ${id} not found`)
     }
-    this.fileRepo.merge(findFile, updateFile)
-    return this.fileRepo.save(findFile)
+    return this.fileRepository.mergeAndSave(findFile, updateFile)
   }
 
   async deleteFile(id: string, tenantId: string) {
     this.logger.log(`${this.deleteFile.name} Service Called`)
-    this.logger.log(`${this.deleteFile.name} service Called`)
-    const file = await this.fileRepo.findOne({ where: { id, tenantId } })
-
-    console.log('file', file)
+    const file = await this.fileRepository.findByIdAndTenant(id, tenantId)
 
     if (!file) {
       throw new NotFoundException(`File of id ${id} not found`)
     }
 
-    return this.fileRepo.remove(file)
+    return this.fileRepository.removeFile(file)
   }
 }

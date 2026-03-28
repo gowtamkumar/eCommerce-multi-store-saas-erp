@@ -3,10 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { AdminMediaController } from './controllers/admin-media.controller'
 import { FileEntity } from './entities/file.entity'
 import { FilesService } from './services/file.service'
+import { FileRepository } from './file.repository'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([FileEntity])],
+  imports: [],
   controllers: [AdminMediaController],
   providers: [FilesService],
+  exports: [FilesService],
 })
 export class FileModule {}

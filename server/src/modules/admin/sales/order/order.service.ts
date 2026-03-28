@@ -1,9 +1,11 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
-import { Brackets, DataSource, Repository } from 'typeorm'
+import { Brackets, DataSource } from 'typeorm'
+import { OrderRepository } from './order.repository'
+import { PaymentRepository } from '../payment/payment.repository'
+import { SiteSettingsRepository } from '@/modules/admin/settings/site-settings.repository'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
@@ -38,10 +40,9 @@ export class OrderService {
   private readonly logger = new Logger(OrderService.name)
 
   constructor(
-    @InjectRepository(OrderEntity)
-    private orderRepository: Repository<OrderEntity>,
-    @InjectRepository(PaymentEntity)
-    private paymentRepository: Repository<PaymentEntity>,
+    private orderRepository: OrderRepository,
+    private paymentRepository: PaymentRepository,
+    private settingsRepository: SiteSettingsRepository,
     private cartService: CartService,
     private readonly inventoryService: InventoryTransactionService,
     private readonly dataSource: DataSource,
@@ -197,10 +198,7 @@ export class OrderService {
 
   async findOneOrder(id: string, tenantId: string) {
     this.logger.log(`${this.findOneOrder.name} Service Called`)
-    const order = await this.orderRepository.findOne({
-      where: { id, tenantId },
-      relations: ['items', 'items.product', 'items.variant', 'returns', 'shippingAddress'],
-    })
+    const order = await this.orderRepository.findOrderById(id, tenantId)
 
     if (!order) {
       throw new NotFoundException('Order not found')
@@ -211,10 +209,7 @@ export class OrderService {
 
   async findOneForCourier(id: string, tenantId: string) {
     this.logger.log(`${this.findOneForCourier.name} Service Called`)
-    const order = await this.orderRepository.findOne({
-      where: { id, tenantId },
-      relations: ['items', 'items.product', 'shippingAddress'],
-    })
+    const order = await this.orderRepository.findOneForCourier(id, tenantId)
 
     if (!order) {
       throw new NotFoundException('Order not found')
@@ -276,7 +271,7 @@ export class OrderService {
         })
 
         if (!existingPayment) {
-          const payment = this.paymentRepository.create({
+          const payment = await this.paymentRepository.createAndSave({
             orderId: order.id,
             transactionId,
             amount: order.totalAmount,
@@ -286,7 +281,6 @@ export class OrderService {
             gatewayResponse: { note: 'Manual update from admin dashboard' },
             tenantId,
           })
-          await queryRunner.manager.save(payment)
         }
       }
 
@@ -353,20 +347,21 @@ export class OrderService {
 
   async countByTenant(tenantId: string) {
     this.logger.log(`${this.countByTenant.name} Service Called`)
-    return await this.orderRepository.count({ where: { tenantId } })
+    return await this.orderRepository.countByTenant(tenantId)
   }
 
-  async orderOverview() {
+  async orderOverview(tenantId?: string) {
     this.logger.log(`${this.orderOverview.name} Service Called`)
-    const totalOrders = await this.orderRepository.count()
+    const where = tenantId ? { tenantId } : {}
+    const totalOrders = await this.orderRepository.count({ where })
     const pendingOrders = await this.orderRepository.count({
-      where: { status: OrderStatus.PENDING },
+      where: { ...where, status: OrderStatus.PENDING },
     })
     const completedOrders = await this.orderRepository.count({
-      where: { status: OrderStatus.COMPLETED },
+      where: { ...where, status: OrderStatus.COMPLETED },
     })
     const cancelledOrders = await this.orderRepository.count({
-      where: { status: OrderStatus.CANCELLED },
+      where: { ...where, status: OrderStatus.CANCELLED },
     })
     return {
       totalOrders,

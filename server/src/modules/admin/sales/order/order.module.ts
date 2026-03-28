@@ -26,15 +26,12 @@ import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
     CouponModule,
     PaymentModule,
     TypeOrmModule.forFeature([
-      OrderEntity,
       ProductEntity,
       UserEntity,
       LeadEntity,
-      SiteSettingsEntity,
-      PaymentEntity,
       OrderItemEntity,
       ProductVariantEntity,
-      OrderReturnEntity, // Registered
+      OrderReturnEntity,
     ]),
     CartModule,
     InventoryTransactionModule,

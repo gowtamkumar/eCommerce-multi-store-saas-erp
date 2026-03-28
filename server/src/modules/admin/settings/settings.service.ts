@@ -5,31 +5,27 @@ import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SiteSettingsEntity } from './entities/site-settings.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { SiteSettingsRepository } from './site-settings.repository'
+import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
 
 @Injectable()
 export class SettingsService {
   private readonly logger = new Logger(SettingsService.name)
 
   constructor(
-    @InjectRepository(SiteSettingsEntity)
-    private settingsRepository: Repository<SiteSettingsEntity>,
-    @InjectRepository(TenantEntity)
-    private tenantRepository: Repository<TenantEntity>,
+    private settingsRepository: SiteSettingsRepository,
+    private tenantRepository: TenantRepository,
   ) { }
 
   async findByTenantSettings(tenantId: string) {
     this.logger.log(`${this.findByTenantSettings.name} Service Called`)
-    let settings = await this.settingsRepository.findOne({ where: { tenantId } })
+    let settings = await this.settingsRepository.findByTenantId(tenantId)
     // Create default settings if not exists
     if (!settings) {
-      settings = this.settingsRepository.create({ tenantId })
-      await this.settingsRepository.save(settings)
+      settings = await this.settingsRepository.createAndSave({}, tenantId)
     }
 
-    const tenant = await this.tenantRepository.findOne({
-      where: { id: tenantId },
-      select: ['status', 'subscriptionEndsAt']
-    })
+    const tenant = await this.tenantRepository.findTenantById(tenantId)
 
     let effectiveStatus = tenant?.status
 
@@ -46,8 +42,8 @@ export class SettingsService {
 
   async updateSettings(tenantId: string, dto: UpdateSiteSettingsDto) {
     this.logger.log(`${this.updateSettings.name} Service Called`)
-    const settings = await this.findByTenantSettings(tenantId)
-    Object.assign(settings, dto)
-    return await this.settingsRepository.save(settings)
+    const settings = await this.settingsRepository.findByTenantId(tenantId)
+    if (!settings) throw new Error('Settings not found')
+    return await this.settingsRepository.updateAndSave(settings, dto)
   }
 }

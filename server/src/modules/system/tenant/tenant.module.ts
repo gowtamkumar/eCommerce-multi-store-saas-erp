@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
@@ -8,10 +8,11 @@ import { TenantEntity } from './entities/tenant.entity'
 import { OnboardController } from './public-tenant.controller'
 import { TenantController } from './tenant.controller'
 import { TenantService } from './tenant.service'
+import { TenantRepository } from './tenant.repository'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TenantEntity, UserEntity]),
+    TypeOrmModule.forFeature([UserEntity]),
     SettingsModule,
     MailModule,
     SubscriptionPlanModule,

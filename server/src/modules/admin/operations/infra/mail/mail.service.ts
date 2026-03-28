@@ -1,11 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { InjectRepository } from '@nestjs/typeorm'
 import * as nodemailer from 'nodemailer'
-import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Repository } from 'typeorm'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
+import { SiteSettingsRepository } from '@/modules/admin/settings/site-settings.repository'
 
 @Injectable()
 export class MailService {
@@ -14,10 +12,8 @@ export class MailService {
 
   constructor(
     private configService: ConfigService,
-    @InjectRepository(TenantEntity)
-    private tenantRepo: Repository<TenantEntity>,
-    @InjectRepository(SiteSettingsEntity)
-    private settingsRepo: Repository<SiteSettingsEntity>,
+    private tenantRepo: TenantRepository,
+    private settingsRepo: SiteSettingsRepository,
   ) {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
@@ -38,7 +34,7 @@ export class MailService {
         from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),
       }
 
-    const settings = await this.settingsRepo.findOne({ where: { tenantId } })
+    const settings = await this.settingsRepo.findByTenantId(tenantId)
     if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
       const port = Number(settings.smtp.port) || 587
 
@@ -49,7 +45,7 @@ export class MailService {
         auth: {
           user: settings.smtp.user,
           pass: settings.smtp.pass,
-        },
+          },
       })
       return { transporter: tenantTransporter, from: settings.smtp.from || settings.smtp.user }
     }
@@ -155,7 +151,7 @@ export class MailService {
 
     if (!tenantId) return appUrl
 
-    const tenant = await this.tenantRepo.findOne({ where: { id: tenantId } })
+    const tenant = await this.tenantRepo.findTenantById(tenantId)
     if (!tenant) return appUrl
 
     if (tenant.customDomain) {
@@ -175,7 +171,7 @@ export class MailService {
 
   async sendNewOrderNotification(order: OrderEntity, tenantId: string) {
     this.logger.log(`${this.sendNewOrderNotification.name} Service Called`)
-    const settings = await this.settingsRepo.findOne({ where: { tenantId } })
+    const settings = await this.settingsRepo.findByTenantId(tenantId)
     if (!settings || !settings.contactEmail) {
       this.logger.warn(`No contact email configured for tenant ${tenantId}. Skipping notification.`)
       return

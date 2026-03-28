@@ -5,10 +5,10 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { InitPaymentDto } from './dto/payment.dto'
 import { PaymentEntity } from './entities/payment.entity'
+import { OrderRepository } from '@/modules/admin/sales/order/order.repository'
+import { PaymentRepository } from './payment.repository'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
@@ -24,10 +24,8 @@ export class PaymentService {
   private readonly logger = new Logger(PaymentService.name)
 
   constructor(
-    @InjectRepository(OrderEntity)
-    private orderRepository: Repository<OrderEntity>,
-    @InjectRepository(PaymentEntity)
-    private paymentRepository: Repository<PaymentEntity>,
+    private orderRepository: OrderRepository,
+    private paymentRepository: PaymentRepository,
     private settingsService: SettingsService,
     private invoiceService: InvoiceService,
     private mailService: MailService,
@@ -37,10 +35,7 @@ export class PaymentService {
     this.logger.log(`${this.initPayment.name} Service Called`)
     const { orderId, callbackUrl } = dto
 
-    const order = await this.orderRepository.findOne({
-      where: { id: orderId, tenantId },
-      relations: ['items', 'items.product'],
-    })
+    const order = await this.orderRepository.findOrderById(orderId, tenantId)
 
     if (!order) {
       throw new NotFoundException('Order not found')
@@ -57,7 +52,7 @@ export class PaymentService {
     if (result.success) {
       if (result.transactionId) {
         order.transactionId = result.transactionId
-        await this.orderRepository.save(order)
+        await this.orderRepository.saveOrder(order)
       }
       return { gatewayUrl: result.gatewayUrl }
     } else {
@@ -86,10 +81,10 @@ export class PaymentService {
 
     order.paymentStatus = PaymentStatus.PAID
     order.status = OrderStatus.PENDING
-    await this.orderRepository.save(order)
+    await this.orderRepository.saveOrder(order)
 
     // Record payment
-    const payment = this.paymentRepository.create({
+    const payment = await this.paymentRepository.createAndSave({
       orderId: order.id,
       transactionId: tran_id,
       amount: order.totalAmount,
@@ -99,7 +94,6 @@ export class PaymentService {
       gatewayResponse: validation.gatewayResponse,
       tenantId: order.tenantId,
     })
-    await this.paymentRepository.save(payment)
 
     // Sync Invoice Status
     await this.invoiceService.updateInvoiceStatusByOrderId(
@@ -109,10 +103,7 @@ export class PaymentService {
     )
 
     // Notify Admin
-    const orderWithRelations = await this.orderRepository.findOne({
-      where: { id: order.id, tenantId: order.tenantId },
-      relations: ['items', 'items.product', 'items.variant'],
-    })
+    const orderWithRelations = await this.orderRepository.findOrderById(order.id, order.tenantId)
     if (orderWithRelations) {
       this.mailService.sendNewOrderNotification(orderWithRelations, order.tenantId)
     }
@@ -126,10 +117,10 @@ export class PaymentService {
     const validation = await strategy.validateCallback(gatewayResponse)
 
     order.paymentStatus = PaymentStatus.FAILED
-    await this.orderRepository.save(order)
+    await this.orderRepository.saveOrder(order)
 
     // Record payment failure
-    const payment = this.paymentRepository.create({
+    const payment = await this.paymentRepository.createAndSave({
       orderId: order.id,
       transactionId: tran_id,
       amount: order.totalAmount,
@@ -139,7 +130,6 @@ export class PaymentService {
       gatewayResponse: validation.gatewayResponse,
       tenantId: order.tenantId,
     })
-    await this.paymentRepository.save(payment)
 
     return { success: false }
   }
@@ -150,10 +140,10 @@ export class PaymentService {
     const validation = await strategy.validateCallback(gatewayResponse)
 
     order.paymentStatus = PaymentStatus.PENDING // Or CANCELLED if you have that status
-    await this.orderRepository.save(order)
+    await this.orderRepository.saveOrder(order)
 
     // Record payment cancellation
-    const payment = this.paymentRepository.create({
+    const payment = await this.paymentRepository.createAndSave({
       orderId: order.id,
       transactionId: tran_id,
       amount: order.totalAmount,
@@ -163,7 +153,6 @@ export class PaymentService {
       gatewayResponse: validation.gatewayResponse,
       tenantId: order.tenantId,
     })
-    await this.paymentRepository.save(payment)
 
     return { cancelled: true }
   }

@@ -1,12 +1,11 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { MailService } from './mail.service'
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { SettingsModule } from '@/modules/admin/settings/settings.module'
 
 @Module({
-  imports: [ConfigModule, TypeOrmModule.forFeature([TenantEntity, SiteSettingsEntity])],
+  imports: [ConfigModule],
   providers: [MailService],
   exports: [MailService],
 })

@@ -11,7 +11,6 @@ import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PaymentEntity, OrderEntity]),
     SettingsModule,
     InvoiceModule,
     MailModule,
