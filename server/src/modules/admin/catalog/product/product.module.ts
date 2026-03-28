@@ -15,15 +15,9 @@ import { ProductVariantRepository } from './variant.repository'
   controllers: [ProductController],
   providers: [
     ProductService,
-    ProductRepository,
-    ProductAttributeRepository,
-    ProductVariantRepository,
   ],
   exports: [
     ProductService,
-    ProductRepository,
-    ProductAttributeRepository,
-    ProductVariantRepository,
   ],
 })
 export class ProductModule {}

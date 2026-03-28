@@ -2,8 +2,10 @@ import { BrandRepository } from '@/modules/admin/catalog/brand/brand.repository'
 import { BrandEntity } from '@/modules/admin/catalog/brand/entities/brand.entity'
 import { CategoryRepository } from '@/modules/admin/catalog/category/category.repository'
 import { CategoryEntity } from '@/modules/admin/catalog/category/entities/category.entity'
+import { ProductAttributeEntity } from '@/modules/admin/catalog/product/entities/attribute.entity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
+import { ProductAttributeRepository } from '@/modules/admin/catalog/product/attribute.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
 import { ProductVariantRepository } from '@/modules/admin/catalog/product/variant.repository'
 import { ReviewEntity } from '@/modules/admin/catalog/review/entities/review.entity'
@@ -79,6 +81,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
       PaymentEntity,
       ProductEntity,
       ProductVariantEntity,
+      ProductAttributeEntity,
       InventoryTransactionEntity,
       CouponEntity,
       OrderItemEntity,
@@ -129,6 +132,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     PaymentRepository,
     ProductRepository,
     ProductVariantRepository,
+    ProductAttributeRepository,
     InventoryTransactionRepository,
     CouponRepository,
     OrderReturnRepository,
@@ -164,6 +168,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     PaymentRepository,
     ProductRepository,
     ProductVariantRepository,
+    ProductAttributeRepository,
     InventoryTransactionRepository,
     CouponRepository,
     OrderReturnRepository,
