@@ -5,8 +5,8 @@ import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 async function getSuperAdminDashboardData() {
   try {
     const [overview, analyticsRes] = await Promise.all([
-      fetchSuperAdminAPI('/super-admin/overview'),
-      fetchSuperAdminAPI('/super-admin/tenants/analytics')
+      fetchSuperAdminAPI('/tenant-traffic/overview'),
+      fetchSuperAdminAPI('/tenant-traffic/tenants/analytics')
     ]);
 
     const tenants = analyticsRes.data || [];

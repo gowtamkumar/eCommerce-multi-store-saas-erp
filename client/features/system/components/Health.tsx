@@ -1,9 +1,11 @@
 'use client';
 
 import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     Activity,
+    AlertCircle,
+    Box,
     Clock,
     Cpu,
     Database,
@@ -11,24 +13,17 @@ import {
     Network,
     Server,
     ShieldCheck,
-    Thermometer,
-    Zap,
-    TrendingUp,
-    Box,
-    CheckCircle2,
-    XCircle,
-    AlertCircle,
-    ChevronRight,
+    Zap
 } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import {
-    AreaChart,
     Area,
+    AreaChart,
+    CartesianGrid,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
 } from 'recharts';
 
 // --- Sub-Components ---
@@ -108,7 +103,7 @@ export default function PlatformHealth() {
     useEffect(() => {
         const fetchHealth = async () => {
             try {
-                const result = await fetchSuperAdminAPI('/super-admin/health');
+                const result = await fetchSuperAdminAPI('/tenant-traffic/health');
                 const ss = result.data?.stats;
                 setData(result.data);
                 if (ss) {

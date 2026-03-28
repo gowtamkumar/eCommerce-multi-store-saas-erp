@@ -4,7 +4,7 @@ import { UserRole } from '@/lib/enums/user-role.enum';
 import { UserStatus } from '@/lib/enums/user-status.enum';
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Shield, Store, User as UserIcon, X, Info, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, Info, Loader2, Search, Shield, Store, User as UserIcon, X } from 'lucide-react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -43,7 +43,7 @@ export default function UserList({ initialUsers }: UserListProps) {
   const handleStatusChange = async (userId: string, newStatus: UserStatus) => {
     setUpdatingId(userId);
     try {
-      const res = await fetchAPI(`/super-admin/users/${userId}/status`, {
+      const res = await fetchAPI(`/tenant-traffic/users/${userId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus }),
       });

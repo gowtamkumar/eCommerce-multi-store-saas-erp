@@ -23,7 +23,7 @@ The Super Admin is the system-level administrator responsible for managing the e
 - **Objective**: Temporarily or permanently disable a store from serving traffic.
 - **Implementation**:
     - Add a `status` field to the `TenantEntity` (e.g., `enum { ACTIVE, SUSPENDED, DELETED }`).
-    - Create a `PATCH /super-admin/tenants/:id/status` endpoint.
+    - Create a `PATCH /tenant-traffic/tenants/:id/status` endpoint.
     - **Enforcement**: Update the generic `TenantGuard` or a Global Interceptor to check the tenant status. If a tenant is `SUSPENDED`, the API should return a `403 Forbidden` with a message like `"Store is temporarily suspended"`.
     - **Frontend**: The public-facing store should show a clean "Maintenance" or "Suspended" page.
 
@@ -31,7 +31,7 @@ The Super Admin is the system-level administrator responsible for managing the e
 - **Objective**: Manually upgrade or downgrade a merchant's subscription plan.
 - **Implementation**:
     - Update the `plan` field in the `TenantEntity` or a dedicated `SubscriptionEntity`.
-    - Create a `PATCH /super-admin/tenants/:id/plan` endpoint.
+    - Create a `PATCH /tenant-traffic/tenants/:id/plan` endpoint.
     - **Logic**: 
         - When changing a plan, invalidate any cached store settings.
         - If integrated with a payment gateway (e.g., Stripe), trigger a subscription update via the gateway API to ensure billing stays in sync.
@@ -49,7 +49,7 @@ The Super Admin is the system-level administrator responsible for managing the e
     - **Visualization**: Use a "Super Admin Dashboard" with charts showing platform-wide growth vs. individual store performance.
 
 ## 4. UI/UX Recommendations
-- **Isolation**: The Super Admin dashboard should be a separate route (e.g., `/super-admin/*`) to avoid confusion with the standard merchant admin dash (`/admin/*`).
+- **Isolation**: The Super Admin dashboard should be a separate route (e.g., `/tenant-traffic/*`) to avoid confusion with the standard merchant admin dash (`/admin/*`).
 - **Global Search**: Implement a high-performance search across all tenants and users.
 - **Critical Alerts**: Highlight stores that are exceeding usage limits or have failed payments.
 

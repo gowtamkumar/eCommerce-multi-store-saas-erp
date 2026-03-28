@@ -1,11 +1,11 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
-import { Ban, BarChart3, CheckCircle2, ExternalLink, Filter, Search, Terminal, Layers, Info, X, Globe, CreditCard, Calendar, Activity, Loader2, Shield, Store } from 'lucide-react';
-import { useState } from 'react';
 import { fetchAPI } from '@/services/api';
-import { toast } from 'react-hot-toast';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Activity, Ban, BarChart3, Calendar, CheckCircle2, CreditCard, ExternalLink, Filter, Globe, Info, Layers, Loader2, Search, Shield, Store, Terminal, X } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 
 interface Tenant {
   id: string;
@@ -41,7 +41,7 @@ export default function TenantList({ initialTenants }: TenantListProps) {
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     setLoadingId(id);
     try {
-      const res = await fetchAPI(`/super-admin/tenants/${id}/status`, {
+      const res = await fetchAPI(`/tenant-traffic/tenants/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus }),
       });
@@ -63,7 +63,7 @@ export default function TenantList({ initialTenants }: TenantListProps) {
   const handleFetchDetails = async (tenant: Tenant) => {
     setSelectedTenant(tenant);
     try {
-      const res = await fetchAPI(`/super-admin/tenants/${tenant.id}`);
+      const res = await fetchAPI(`/tenant-traffic/tenants/${tenant.id}`);
       if (res.success) {
         setSelectedTenant(res.data);
       }
