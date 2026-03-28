@@ -2,12 +2,18 @@
 
 import { Check, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useSettings } from "@/hooks/SettingsContext";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 
 function SuccessContent() {
+  const { refreshSettings } = useSettings();
   const searchParams = useSearchParams();
   const tran_id = searchParams.get("tran_id");
+
+  useEffect(() => {
+    refreshSettings();
+  }, []);
 
   return (
     <div className="flex items-center justify-center min-h-[60vh] p-6">

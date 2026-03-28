@@ -36,11 +36,12 @@ export class SubscriptionBillingController {
 
   @Post('initiate')
   @PublicDuringExpiration()
-  async initiatePayment(@RequestContext() ctx: RequestContextDto, @Body('planId') planId: string) {
-    return await this.billingService.initiateSubscriptionPayment(ctx.tenantId, planId)
+  async initiatePayment(@RequestContext() ctx: RequestContextDto, @Body('planId') planId: string, @Body('frontendUrl') frontendUrl?: string) {
+    return await this.billingService.initiateSubscriptionPayment(ctx.tenantId, planId, frontendUrl)
   }
 
   @Public()
+  @PublicDuringExpiration()
   @Post('complete/success')
   async completePaymentSuccess(
     @Query('tran_id') tran_id: string,
@@ -54,6 +55,7 @@ export class SubscriptionBillingController {
   }
 
   @Public()
+  @PublicDuringExpiration()
   @Post('complete/fail')
   async completePaymentFail(
     @Query('tran_id') tran_id: string,
@@ -67,6 +69,7 @@ export class SubscriptionBillingController {
   }
 
   @Public()
+  @PublicDuringExpiration()
   @Post('complete/cancel')
   async completePaymentCancel(
     @Query('tran_id') tran_id: string,

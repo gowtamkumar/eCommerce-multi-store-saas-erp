@@ -129,8 +129,7 @@ export async function getTenantId(
         }
 
         const res = await fetch(`${nestApiUrl}/tenants${queryParams}`, {
-          cache: "force-cache",
-          next: { revalidate: 60 },
+          cache: "no-store",
         });
 
         if (res.ok) {

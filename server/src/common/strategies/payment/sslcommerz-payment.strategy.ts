@@ -16,12 +16,15 @@ export class SslCommerzPaymentStrategy implements PaymentStrategy {
     settings: SiteSettingsEntity,
     options: PaymentStrategyOptions,
   ): Promise<PaymentInitiationResult> {
-    const { callbackUrl, tenantId } = options
+    const { callbackUrl, tenantId, frontendUrl } = options
 
     const store_id = settings.payment?.sslCommerzStoreId
     const store_passwd = settings.payment?.sslCommerzStorePassword
     const is_live = !settings.payment?.sslCommerzIsSandbox
     const app_url = callbackUrl
+
+    console.log("options", options);
+
 
     if (!store_id || !store_passwd) {
       throw new BadRequestException('SSLCommerz gateway not configured')
@@ -64,7 +67,7 @@ export class SslCommerzPaymentStrategy implements PaymentStrategy {
       ship_state: 'N/A',
       ship_postcode: 'N/A',
       ship_country: 'Bangladesh',
-      value_a: app_url,
+      value_a: frontendUrl || app_url,
       value_b: tenantId,
     }
 

@@ -76,7 +76,7 @@ export default function BillingDashboard() {
       setInitiating(planId);
       const res = await fetchAPI("/billing/initiate", {
         method: "POST",
-        body: JSON.stringify({ planId })
+        body: JSON.stringify({ planId, frontendUrl: window.location.origin })
       });
 
       if (res.data.gatewayUrl && res.data.gatewayUrl !== '#') {

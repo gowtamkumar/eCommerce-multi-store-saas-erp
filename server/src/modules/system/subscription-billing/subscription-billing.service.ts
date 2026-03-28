@@ -48,7 +48,7 @@ export class SubscriptionBillingService {
     return await this.planRecordRepository.findAllByTenant(tenantId)
   }
 
-  async initiateSubscriptionPayment(tenantId: string, planId: string) {
+  async initiateSubscriptionPayment(tenantId: string, planId: string, frontendUrl?: string) {
     this.logger.log(`Initiating subscription payment for tenant ${tenantId} and plan ${planId}`)
     const plan = await this.planRepository.findById(planId)
     if (!plan) throw new NotFoundException('Plan not found')
@@ -92,15 +92,12 @@ export class SubscriptionBillingService {
       },
     } as any as SiteSettingsEntity
 
-    const apiBaseUrl = this.configService.get('API_URL')
-
-
-
-    const callbackUrl = `http://gowtam.localhost:3000/admin/settings/billing`
+    const callbackUrl = `${frontendUrl}/admin/settings/billing`
 
     const result = await strategy.initiate(mockOrder, mockSettings, {
       callbackUrl,
       tenantId: tenant.id,
+      frontendUrl,
     })
 
     if (result.success) {
@@ -192,10 +189,11 @@ export class SubscriptionBillingService {
   }
 
   async getRedirectUrl(transactionId: string, gatewayResponse: any, defaultAppUrl: string) {
+    const baseUrl = gatewayResponse?.value_a || defaultAppUrl;
     let status = 'success'
     if (gatewayResponse.status === 'FAILED') status = 'fail'
     if (gatewayResponse.status === 'CANCELLED') status = 'cancel'
 
-    return `${defaultAppUrl}/admin/settings/billing/${status}?tran_id=${transactionId}`
+    return `${baseUrl}/admin/settings/billing/${status}?tran_id=${transactionId}`
   }
 }

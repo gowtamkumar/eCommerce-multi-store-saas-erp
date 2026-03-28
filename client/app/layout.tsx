@@ -7,8 +7,8 @@ import Script from "next/script";
 import "../styles/typography.css";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
-const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
+// const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
+// const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +26,7 @@ export default async function RootLayout({
         {googleSiteVerification && <meta name="google-site-verification" content={googleSiteVerification} />}
         {facebookDomainVerification && <meta name="facebook-domain-verification" content={facebookDomainVerification} />}
       </head>
-      <body className={`${inter.className} ${outfit.variable} antialiased`}>
+      <body className={`antialiased`}>
         {/* Google Analytics */}
         {googleAnalyticsId && (
           <>
