@@ -1,5 +1,4 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { SubscriptionInvoiceRepository } from './subscription-invoice.repository'
 import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
 import { SubscriptionPlanRepository } from '@/modules/system/subscription-plan/subscription-plan.repository'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
@@ -9,13 +8,15 @@ import { SslCommerzPaymentStrategy } from '@/common/strategies/payment/sslcommer
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
+import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
+import { SubscriptionInvoiceRepository } from './subscription-invoice.repository'
 
 @Injectable()
 export class SubscriptionBillingService {
   private readonly logger = new Logger(SubscriptionBillingService.name)
 
   constructor(
-    private readonly invoiceRepository: SubscriptionInvoiceRepository,
+    private readonly planRecordRepository: SubscriptionInvoiceRepository,
     private readonly tenantRepository: TenantRepository,
     private readonly planRepository: SubscriptionPlanRepository,
     private readonly configService: ConfigService,
@@ -44,7 +45,7 @@ export class SubscriptionBillingService {
   }
 
   async getBillingHistory(tenantId: string) {
-    return await this.invoiceRepository.findAllByTenant(tenantId)
+    return await this.planRecordRepository.findAllByTenant(tenantId)
   }
 
   async initiateSubscriptionPayment(tenantId: string, planId: string) {
@@ -57,10 +58,10 @@ export class SubscriptionBillingService {
 
     const transactionId = `SUB-${Date.now()}`
     const invoiceNumber = `INV-${Date.now()}`
-    const invoice = await this.invoiceRepository.createAndSave({
+    const record = await this.planRecordRepository.createAndSave({
       invoiceNumber,
       tenantId,
-      planId,
+      subscriptionPlanId: planId,
       amount: plan.price,
       currency: 'BDT',
       status: PaymentStatus.PENDING,
@@ -72,7 +73,7 @@ export class SubscriptionBillingService {
     const strategy = new SslCommerzPaymentStrategy()
 
     const mockOrder = {
-      id: invoice.id,
+      id: record.id,
       transactionId: transactionId,
       totalAmount: plan.price,
       currency: 'BDT',
@@ -112,10 +113,10 @@ export class SubscriptionBillingService {
 
   async handleSuccessPayment(transactionId: string, gatewayResponse: any = {}) {
     this.logger.log(`Handling success subscription payment for transaction: ${transactionId}`)
-    const invoice = await this.invoiceRepository.findByTransactionId(transactionId)
+    const record = await this.planRecordRepository.findByTransactionId(transactionId)
 
-    if (!invoice) throw new NotFoundException('Invoice not found')
-    if (invoice.status === PaymentStatus.COMPLETED) return invoice
+    if (!record) throw new NotFoundException('Subscription record not found')
+    if (record.status === PaymentStatus.COMPLETED) return record
 
     const strategy = new SslCommerzPaymentStrategy()
     const validation = await strategy.validateCallback(gatewayResponse, { tran_id: transactionId })
@@ -125,39 +126,49 @@ export class SubscriptionBillingService {
       return this.handleFailPayment(transactionId, gatewayResponse)
     }
 
-    await this.invoiceRepository.updateAndSave(invoice, {
+    await this.planRecordRepository.updateAndSave(record, {
       status: PaymentStatus.COMPLETED,
       gatewayResponse,
     })
 
-    const tenant = await this.tenantRepository.findById(invoice.tenantId)
-    if (tenant) {
+    const tenant = await this.tenantRepository.findById(record.tenantId)
+    const plan = await this.planRepository.findById(record.subscriptionPlanId)
+
+    if (tenant && plan) {
       const currentDate = new Date()
+      // If current subscription is still active, extend from endsAt, otherwise from now
       const baseDate =
         tenant.subscriptionEndsAt && tenant.subscriptionEndsAt > currentDate
           ? tenant.subscriptionEndsAt
           : currentDate
 
       const newEndsAt = new Date(baseDate)
-      newEndsAt.setDate(newEndsAt.getDate() + 30)
+
+      // Dynamic Expiry Calculation
+      if (plan.billingCycle === SubscriptionBillingCycle.YEARLY) {
+        newEndsAt.setFullYear(newEndsAt.getFullYear() + 1)
+      } else {
+        newEndsAt.setDate(newEndsAt.getDate() + 30) // Default Monthly
+      }
 
       await this.tenantRepository.updateAndSave(tenant, {
         subscriptionEndsAt: newEndsAt,
-        subscriptionPlanId: invoice.subscriptionPlanId,
+        subscriptionPlanId: record.subscriptionPlanId,
         subscriptionStatus: SubscriptionStatus.ACTIVE,
+        subscriptionBillingCycle: plan.billingCycle,
         status: TenantStatus.ACTIVE,
       })
-      this.logger.log(`Tenant ${tenant.id} subscription extended to ${newEndsAt}`)
+      this.logger.log(`Tenant ${tenant.id} subscription extended to ${newEndsAt} (${plan.billingCycle})`)
     }
 
-    return invoice
+    return record
   }
 
   async handleFailPayment(transactionId: string, gatewayResponse: any = {}) {
     this.logger.log(`Handling failed subscription payment for transaction: ${transactionId}`)
-    const invoice = await this.invoiceRepository.findByTransactionId(transactionId)
-    if (invoice) {
-      await this.invoiceRepository.updateAndSave(invoice, {
+    const record = await this.planRecordRepository.findByTransactionId(transactionId)
+    if (record) {
+      await this.planRecordRepository.updateAndSave(record, {
         status: PaymentStatus.FAILED,
         gatewayResponse,
       })
@@ -167,9 +178,9 @@ export class SubscriptionBillingService {
 
   async handleCancelPayment(transactionId: string, gatewayResponse: any = {}) {
     this.logger.log(`Handling cancelled subscription payment for transaction: ${transactionId}`)
-    const invoice = await this.invoiceRepository.findByTransactionId(transactionId)
-    if (invoice) {
-      await this.invoiceRepository.updateAndSave(invoice, {
+    const record = await this.planRecordRepository.findByTransactionId(transactionId)
+    if (record) {
+      await this.planRecordRepository.updateAndSave(record, {
         status: PaymentStatus.PENDING,
         gatewayResponse,
       })
@@ -178,9 +189,6 @@ export class SubscriptionBillingService {
   }
 
   async getRedirectUrl(transactionId: string, gatewayResponse: any, defaultAppUrl: string) {
-    const strategy = new SslCommerzPaymentStrategy()
-    // SslCommerzStrategy expects value_a to contain the base redirect path
-    // For subscriptions, we want to go back to /admin/settings/billing
     let status = 'success'
     if (gatewayResponse.status === 'FAILED') status = 'fail'
     if (gatewayResponse.status === 'CANCELLED') status = 'cancel'

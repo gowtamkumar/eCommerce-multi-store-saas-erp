@@ -185,4 +185,4 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     TypeOrmModule,
   ],
 })
-export class PersistenceModule {}
+export class PersistenceModule { }

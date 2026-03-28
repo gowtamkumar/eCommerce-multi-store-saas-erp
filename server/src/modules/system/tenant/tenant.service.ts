@@ -37,20 +37,31 @@ export class TenantService {
     }
 
     let subscriptionPlan = null
-    if (planId) {
-      subscriptionPlan = await this.subscriptionPlanService.findOneSubscriptionPlan(planId)
-    }
-    // Create tenant
+    let billingCycle = SubscriptionBillingCycle.MONTHLY
     const now = new Date()
     const endsAt = new Date()
-    endsAt.setMonth(now.getMonth() + 1) // Default to 1 month from now
 
+    if (planId) {
+      subscriptionPlan = await this.subscriptionPlanService.findOneSubscriptionPlan(planId)
+      if (subscriptionPlan) {
+        billingCycle = subscriptionPlan.billingCycle
+      }
+    }
+
+    // Dynamic Expiry Calculation based on Plan
+    if (billingCycle === SubscriptionBillingCycle.YEARLY) {
+      endsAt.setFullYear(now.getFullYear() + 1)
+    } else {
+      endsAt.setMonth(now.getMonth() + 1)
+    }
+
+    // Create tenant
     const savedTenant = await this.tenantRepository.createAndSave(
       {
         storeName,
         subdomain,
         subscriptionStatus: SubscriptionStatus.ACTIVE,
-        subscriptionBillingCycle: SubscriptionBillingCycle.MONTHLY,
+        subscriptionBillingCycle: billingCycle,
         subscriptionStartsAt: now,
         subscriptionEndsAt: endsAt,
       },
