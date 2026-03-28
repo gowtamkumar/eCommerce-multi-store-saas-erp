@@ -1,9 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { ILike, Repository } from 'typeorm'
 import { CreateCouponDto } from './dto/create-coupon.dto'
 import { UpdateCouponDto } from './dto/update-coupon.dto'
-import { CouponEntity } from './entities/coupon.entity'
+import { CouponRepository } from './coupon.repository'
 import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
 
 @Injectable()
@@ -11,61 +9,29 @@ export class CouponService {
   private readonly logger = new Logger(CouponService.name)
 
   constructor(
-    @InjectRepository(CouponEntity)
-    private couponRepository: Repository<CouponEntity>,
+    private couponRepository: CouponRepository,
   ) {}
 
   async createCoupon(createCouponDto: CreateCouponDto, tenantId: string) {
     this.logger.log(`${this.createCoupon.name} Service Called`)
-    const existing = await this.couponRepository.findOne({
-      where: { code: ILike(createCouponDto.code), tenantId },
-    })
+    const existing = await this.couponRepository.findByCode(createCouponDto.code, tenantId)
 
     if (existing) {
       throw new BadRequestException('Coupon code already exists')
     }
 
-    const coupon = this.couponRepository.create({
-      ...createCouponDto,
-      code: createCouponDto.code.toUpperCase(),
-      tenantId,
-    })
-
-    return await this.couponRepository.save(coupon)
+    return await this.couponRepository.createAndSave(createCouponDto, tenantId)
   }
 
   async findAllCoupons(filterDto: any, tenantId: string) {
     this.logger.log(`${this.findAllCoupons.name} Service Called`)
-    const page = Math.max(1, parseInt(filterDto.page) || 1)
-    const limit = Math.max(1, parseInt(filterDto.limit) || 10)
-    const { search, isActive } = filterDto
-
-    const query = this.couponRepository
-      .createQueryBuilder('coupon')
-      .where('coupon.tenantId = :tenantId', { tenantId })
-
-    if (isActive !== undefined) {
-      query.andWhere('coupon.isActive = :isActive', { isActive: isActive === 'true' })
-    }
-
-    if (search) {
-      query.andWhere('coupon.code ILIKE :search', { search: `%${search}%` })
-    }
-
-    const [coupons, total] = await query
-      .orderBy('coupon.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount()
-
+    const [coupons, total] = await this.couponRepository.findAllWithFilters(filterDto, tenantId)
     return { coupons, total }
   }
 
   async findOneCoupon(id: string, tenantId: string) {
     this.logger.log(`${this.findOneCoupon.name} Service Called`)
-    const coupon = await this.couponRepository.findOne({
-      where: { id, tenantId },
-    })
+    const coupon = await this.couponRepository.findById(id, tenantId)
 
     if (!coupon) {
       throw new NotFoundException('Coupon not found')
@@ -76,9 +42,7 @@ export class CouponService {
 
   async findByCodeCoupon(code: string, tenantId: string) {
     this.logger.log(`${this.findByCodeCoupon.name} Service Called`)
-    const coupon = await this.couponRepository.findOne({
-      where: { code: ILike(code), tenantId },
-    })
+    const coupon = await this.couponRepository.findByCode(code, tenantId)
 
     if (!coupon) {
       throw new NotFoundException('Coupon not found')
@@ -92,27 +56,20 @@ export class CouponService {
     const coupon = await this.findOneCoupon(id, tenantId)
 
     if (updateCouponDto.code && updateCouponDto.code.toUpperCase() !== coupon.code) {
-      const existing = await this.couponRepository.findOne({
-        where: { code: ILike(updateCouponDto.code), tenantId },
-      })
+      const existing = await this.couponRepository.findByCode(updateCouponDto.code, tenantId)
 
       if (existing) {
         throw new BadRequestException('Coupon code already exists')
       }
     }
 
-    if (updateCouponDto.code) {
-      updateCouponDto.code = updateCouponDto.code.toUpperCase()
-    }
-
-    Object.assign(coupon, updateCouponDto)
-    return await this.couponRepository.save(coupon)
+    return await this.couponRepository.updateAndSave(coupon, updateCouponDto)
   }
 
   async removeCoupon(id: string, tenantId: string) {
     this.logger.log(`${this.removeCoupon.name} Service Called`)
     const coupon = await this.findOneCoupon(id, tenantId)
-    await this.couponRepository.remove(coupon)
+    await this.couponRepository.removeCoupon(coupon)
     return { success: true, message: 'Coupon deleted successfully' }
   }
 
@@ -167,6 +124,6 @@ export class CouponService {
     this.logger.log(`${this.incrementUsage.name} Service Called`)
     const coupon = await this.findOneCoupon(id, tenantId)
     coupon.usedCount += 1
-    await this.couponRepository.save(coupon)
+    await this.couponRepository.updateAndSave(coupon, {})
   }
 }

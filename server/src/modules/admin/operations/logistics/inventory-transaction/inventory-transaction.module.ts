@@ -11,9 +11,6 @@ import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/enti
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      InventoryTransactionEntity,
-      ProductEntity,
-      ProductVariantEntity,
       CategoryEntity,
       SupplierEntity,
     ]),

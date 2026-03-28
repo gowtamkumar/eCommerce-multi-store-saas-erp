@@ -1,23 +1,18 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
-import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logistics/inventory-transaction/dto/create-inventory-transaction.dto'
-import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity'
+import { InventoryTransactionRepository } from './inventory-transaction.repository'
+import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
+import { ProductVariantRepository } from '@/modules/admin/catalog/product/variant.repository'
 
 @Injectable()
 export class InventoryTransactionService {
   private readonly logger = new Logger(InventoryTransactionService.name)
 
   constructor(
-    @InjectRepository(InventoryTransactionEntity)
-    private readonly repository: Repository<InventoryTransactionEntity>,
-    @InjectRepository(ProductEntity)
-    private readonly productRepository: Repository<ProductEntity>,
-    @InjectRepository(ProductVariantEntity)
-    private readonly variantRepository: Repository<ProductVariantEntity>,
+    private readonly repository: InventoryTransactionRepository,
+    private readonly productRepository: ProductRepository,
+    private readonly variantRepository: ProductVariantRepository,
   ) {}
 
   async createInventoryTransaction(
@@ -27,17 +22,7 @@ export class InventoryTransactionService {
   ) {
     this.logger.log(`${this.createInventoryTransaction.name} Service Called`)
 
-    const productRepo = manager ? manager.getRepository(ProductEntity) : this.productRepository
-    const variantRepo = manager
-      ? manager.getRepository(ProductVariantEntity)
-      : this.variantRepository
-    const transactionRepo = manager
-      ? manager.getRepository(InventoryTransactionEntity)
-      : this.repository
-
-    const product = await productRepo.findOne({
-      where: { id: dto.productId, tenantId },
-    })
+    const product = await this.productRepository.findByIdWithRelations(dto.productId, tenantId)
 
     if (!product) {
       throw new NotFoundException('Product not found')
@@ -48,49 +33,30 @@ export class InventoryTransactionService {
     const absQty = Math.abs(dto.quantity)
 
     if (dto.variantId) {
-      const variant = await variantRepo.findOne({
-        where: { id: dto.variantId, tenantId },
-      })
-      if (variant) {
-        if (isIncrement) {
-          await variantRepo.increment({ id: variant.id, tenantId }, 'stock', absQty)
-        } else {
-          await variantRepo.decrement({ id: variant.id, tenantId }, 'stock', absQty)
-        }
+      if (isIncrement) {
+        await this.variantRepository.incrementStock(dto.variantId, tenantId, absQty, manager)
       } else {
-        throw new NotFoundException(`Variant with ID ${dto.variantId} not found`)
+        await this.variantRepository.decrementStock(dto.variantId, tenantId, absQty, manager)
       }
     } else {
       if (isIncrement) {
-        await productRepo.increment({ id: product.id, tenantId }, 'stock', absQty)
+        await this.productRepository.incrementStock(product.id, tenantId, absQty, manager)
       } else {
-        await productRepo.decrement({ id: product.id, tenantId }, 'stock', absQty)
+        await this.productRepository.decrementStock(product.id, tenantId, absQty, manager)
       }
     }
 
-    const transaction = transactionRepo.create({
-      ...dto,
-      tenantId,
-    })
-
-    return await transactionRepo.save(transaction)
+    return await this.repository.createAndSave(dto, tenantId, manager)
   }
 
   async findAllInventoryTransactions(tenantId: string) {
     this.logger.log(`${this.findAllInventoryTransactions.name} Service Called`)
-    return await this.repository.find({
-      where: { tenantId },
-      order: { createdAt: 'DESC' },
-      relations: ['product'],
-    })
+    return await this.repository.findByTenant(tenantId)
   }
 
   async findByProductInventoryTransactions(productId: string, tenantId: string) {
     this.logger.log(`${this.findByProductInventoryTransactions.name} Service Called`)
-    return await this.repository.find({
-      where: { productId, tenantId },
-      order: { createdAt: 'DESC' },
-    })
+    return await this.repository.findByProduct(productId, tenantId)
   }
 
   async getStockSummaryInventoryTransactions(tenantId: string) {

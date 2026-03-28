@@ -48,4 +48,14 @@ export class ProductVariantRepository extends Repository<ProductVariantEntity> {
       await this.delete(ids)
     }
   }
+
+  async incrementStock(id: string, tenantId: string, quantity: number, manager?: any): Promise<void> {
+    const repo = manager ? manager.getRepository(ProductVariantEntity) : this
+    await repo.increment({ id, tenantId }, 'stock', quantity)
+  }
+
+  async decrementStock(id: string, tenantId: string, quantity: number, manager?: any): Promise<void> {
+    const repo = manager ? manager.getRepository(ProductVariantEntity) : this
+    await repo.decrement({ id, tenantId }, 'stock', quantity)
+  }
 }

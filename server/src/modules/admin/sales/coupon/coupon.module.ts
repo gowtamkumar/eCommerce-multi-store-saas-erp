@@ -5,7 +5,7 @@ import { CouponController } from './coupon.controller'
 import { CouponEntity } from './entities/coupon.entity'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CouponEntity])],
+  imports: [],
   controllers: [CouponController],
   providers: [CouponService],
   exports: [CouponService],
