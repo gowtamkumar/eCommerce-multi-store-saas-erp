@@ -11,6 +11,8 @@ import { InventoryTransactionRepository } from '@/modules/admin/operations/logis
 import { CouponRepository } from '@/modules/admin/sales/coupon/coupon.repository'
 import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entity'
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
+import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
+import { LeadRepository } from '@/modules/admin/customer/lead/lead.repository'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { OrderReturnRepository } from '@/modules/admin/sales/order/order-return.repository'
 import { OrderRepository } from '@/modules/admin/sales/order/order.repository'
@@ -65,12 +67,14 @@ import { TypeOrmModule } from '@nestjs/typeorm'
       SubscriptionPlanEntity,
       SubscriptionInvoiceEntity,
       TenantTrafficEntity,
+      LeadEntity,
     ]),
   ],
   providers: [
     TenantRepository,
     SiteSettingsRepository,
     FileRepository,
+    LeadRepository,
     OrderRepository,
     PaymentRepository,
     ProductRepository,
@@ -93,6 +97,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     TenantRepository,
     SiteSettingsRepository,
     FileRepository,
+    LeadRepository,
     OrderRepository,
     PaymentRepository,
     ProductRepository,

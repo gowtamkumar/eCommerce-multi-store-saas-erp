@@ -1,34 +1,20 @@
-import { Module } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
-import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
-import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
-import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
-import { OrderReturnEntity } from '@/modules/admin/sales/order/entities/order-return.entity'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoice.module'
+import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
+import { InventoryTransactionModule } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.module'
+import { CouponModule } from '@/modules/admin/sales/coupon/coupon.module'
 import { OrderController } from '@/modules/admin/sales/order/order.controller'
 import { OrderService } from '@/modules/admin/sales/order/order.service'
 import { ReturnController } from '@/modules/admin/sales/order/return.controller'
 import { ReturnService } from '@/modules/admin/sales/order/return.service'
-import { InventoryTransactionModule } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.module'
-import { CouponModule } from '@/modules/admin/sales/coupon/coupon.module'
-import { PaymentEntity } from '../payment/entities/payment.entity'
 import { CartModule } from '@/modules/store/cart/cart.module'
-import { PaymentModule } from '../payment/payment.module'
-import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoice.module'
 import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping-address.module'
-import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
+import { Module } from '@nestjs/common'
+import { PaymentModule } from '../payment/payment.module'
 
 @Module({
   imports: [
     CouponModule,
     PaymentModule,
-    TypeOrmModule.forFeature([
-      UserEntity,
-      LeadEntity,
-    ]),
     CartModule,
     InventoryTransactionModule,
     InvoiceModule,

@@ -1,39 +1,31 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { OrderStatus } from '@/common/enums/order-status.enum'
-import { PaymentStatus } from '@/common/enums/payment-status.enum'
-import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
-import { Brackets, DataSource } from 'typeorm'
-import { OrderRepository } from './order.repository'
-import { PaymentRepository } from '../payment/payment.repository'
-import { SiteSettingsRepository } from '@/modules/admin/settings/site-settings.repository'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { DiscountType } from '@/common/enums/discount-type.enum'
-import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
-import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
-import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
-import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
-import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
-import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
-import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
-import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
-import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { PaymentEntity } from '../payment/entities/payment.entity'
-import { CartService } from '@/modules/store/cart/cart.service'
-import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
-import { ShippingStrategyFactory } from '@/common/strategies/shipping/shipping-strategy.factory'
-import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pricing-strategy.factory'
-import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
+import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
+import { OrderStatus } from '@/common/enums/order-status.enum'
+import { PaymentMethod } from '@/common/enums/payment-method.enum'
+import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { OrderStrategyFactory } from '@/common/strategies/order/order-strategy.factory'
 import {
   OrderCreationContext,
   OrderServiceDependencies,
 } from '@/common/strategies/order/order-strategy.interface'
+import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
+import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
-import { PaymentMethod } from '@/common/enums/payment-method.enum'
+import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity'
+import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
+import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
+import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
+import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { SiteSettingsRepository } from '@/modules/admin/settings/site-settings.repository'
+import { CartService } from '@/modules/store/cart/cart.service'
+import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { Brackets, DataSource } from 'typeorm'
+import { PaymentEntity } from '../payment/entities/payment.entity'
+import { PaymentRepository } from '../payment/payment.repository'
+import { OrderRepository } from './order.repository'
 
 @Injectable()
 export class OrderService {
@@ -50,6 +42,7 @@ export class OrderService {
     private readonly invoiceService: InvoiceService,
     private readonly shippingAddressService: ShippingAddressService,
     private readonly mailService: MailService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async createOrder(createOrderDto: CreateOrderDto, tenantId: string) {
@@ -57,9 +50,9 @@ export class OrderService {
 
     return await this.dataSource.transaction(async (manager) => {
       // 1. Initial Data Fetching
-      const settings = await manager.findOne(SiteSettingsEntity, { where: { tenantId } })
+      const settings = await manager.withRepository(this.settingsRepository).findByTenantId(tenantId)
       const user = createOrderDto.userId
-        ? await manager.findOne(UserEntity, { where: { id: createOrderDto.userId, tenantId } })
+        ? await manager.withRepository(this.userRepository).findByIdAndTenant(createOrderDto.userId, tenantId)
         : null
 
       // 2. Address Resolution
