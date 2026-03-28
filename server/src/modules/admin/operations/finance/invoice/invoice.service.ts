@@ -1,8 +1,7 @@
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { OrderRepository } from '@/modules/admin/sales/order/order.repository'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { EntityManager, Repository } from 'typeorm'
+import { EntityManager } from 'typeorm'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
 import { UpdateInvoiceDto } from './dto/update-invoice.dto'
 import { InvoiceRepository } from './invoice.repository'
@@ -13,8 +12,7 @@ export class InvoiceService {
 
   constructor(
     private readonly invoiceRepository: InvoiceRepository,
-    @InjectRepository(OrderEntity)
-    private readonly orderRepository: Repository<OrderEntity>,
+    private readonly orderRepository: OrderRepository,
   ) {}
 
   async createInvoice(
@@ -23,7 +21,7 @@ export class InvoiceService {
     manager?: EntityManager,
   ) {
     this.logger.log(`${this.createInvoice.name} Service Called`)
-    const orderRepo = manager ? manager.getRepository(OrderEntity) : this.orderRepository
+    const orderRepo = manager ? manager.withRepository(this.orderRepository) : this.orderRepository
 
     const order = await orderRepo.findOne({
       where: { id: createInvoiceDto.orderId, tenantId },

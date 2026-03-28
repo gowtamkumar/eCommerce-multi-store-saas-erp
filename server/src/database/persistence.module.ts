@@ -1,9 +1,36 @@
+import { BrandRepository } from '@/modules/admin/catalog/brand/brand.repository'
+import { BrandEntity } from '@/modules/admin/catalog/brand/entities/brand.entity'
+import { CategoryRepository } from '@/modules/admin/catalog/category/category.repository'
+import { CategoryEntity } from '@/modules/admin/catalog/category/entities/category.entity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
 import { ProductVariantRepository } from '@/modules/admin/catalog/product/variant.repository'
+import { ReviewEntity } from '@/modules/admin/catalog/review/entities/review.entity'
+import { ReviewRepository } from '@/modules/admin/catalog/review/review.repository'
+import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity'
+import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
+import { PageEntity } from '@/modules/admin/content/page/entities/page.entity'
+import { PageRepository } from '@/modules/admin/content/page/page.repository'
+import { StaffInvitationEntity } from '@/modules/admin/core/user/entities/staff-invitation.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { StaffInvitationRepository } from '@/modules/admin/core/user/repositories/staff-invitation.repository'
 import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
+import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
+import { LeadRepository } from '@/modules/admin/customer/lead/lead.repository'
+import { SubscriberEntity } from '@/modules/admin/customer/subscriber/entities/subscriber.entity'
+import { SubscriberRepository } from '@/modules/admin/customer/subscriber/subscriber.repository'
+import { ExpenseEntity } from '@/modules/admin/operations/finance/expense/entities/expense.entity'
+import { ExpenseRepository } from '@/modules/admin/operations/finance/expense/expense.repository'
+import { InvoiceEntity } from '@/modules/admin/operations/finance/invoice/entities/invoice.entity'
+import { InvoiceRepository } from '@/modules/admin/operations/finance/invoice/invoice.repository'
+import { PurchaseOrderItemEntity } from '@/modules/admin/operations/finance/purchase/entities/purchase-order-item.entity'
+import { PurchaseOrderEntity } from '@/modules/admin/operations/finance/purchase/entities/purchase-order.entity'
+import { SupplierPaymentEntity } from '@/modules/admin/operations/finance/purchase/entities/supplier-payment.entity'
+import { PurchaseOrderRepository } from '@/modules/admin/operations/finance/purchase/purchase-order.repository'
+import { SupplierPaymentRepository } from '@/modules/admin/operations/finance/purchase/supplier-payment.repository'
+import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
+import { SupplierRepository } from '@/modules/admin/operations/finance/supplier/supplier.repository'
 import { FileEntity } from '@/modules/admin/operations/infra/file/entities/file.entity'
 import { FileRepository } from '@/modules/admin/operations/infra/file/file.repository'
 import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity'
@@ -11,8 +38,6 @@ import { InventoryTransactionRepository } from '@/modules/admin/operations/logis
 import { CouponRepository } from '@/modules/admin/sales/coupon/coupon.repository'
 import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entity'
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
-import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
-import { LeadRepository } from '@/modules/admin/customer/lead/lead.repository'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { OrderReturnRepository } from '@/modules/admin/sales/order/order-return.repository'
 import { OrderRepository } from '@/modules/admin/sales/order/order.repository'
@@ -68,6 +93,19 @@ import { TypeOrmModule } from '@nestjs/typeorm'
       SubscriptionInvoiceEntity,
       TenantTrafficEntity,
       LeadEntity,
+      CategoryEntity,
+      BrandEntity,
+      ReviewEntity,
+      FaqEntity,
+      PageEntity,
+      ExpenseEntity,
+      InvoiceEntity,
+      PurchaseOrderEntity,
+      PurchaseOrderItemEntity,
+      SupplierEntity,
+      SupplierPaymentEntity,
+      SubscriberEntity,
+      StaffInvitationEntity,
     ]),
   ],
   providers: [
@@ -75,6 +113,18 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     SiteSettingsRepository,
     FileRepository,
     LeadRepository,
+    CategoryRepository,
+    BrandRepository,
+    ReviewRepository,
+    FaqRepository,
+    PageRepository,
+    ExpenseRepository,
+    InvoiceRepository,
+    PurchaseOrderRepository,
+    SupplierRepository,
+    SupplierPaymentRepository,
+    SubscriberRepository,
+    StaffInvitationRepository,
     OrderRepository,
     PaymentRepository,
     ProductRepository,
@@ -98,6 +148,18 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     SiteSettingsRepository,
     FileRepository,
     LeadRepository,
+    CategoryRepository,
+    BrandRepository,
+    ReviewRepository,
+    FaqRepository,
+    PageRepository,
+    ExpenseRepository,
+    InvoiceRepository,
+    PurchaseOrderRepository,
+    SupplierRepository,
+    SupplierPaymentRepository,
+    SubscriberRepository,
+    StaffInvitationRepository,
     OrderRepository,
     PaymentRepository,
     ProductRepository,

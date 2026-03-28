@@ -7,7 +7,7 @@ import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { InvoiceRepository } from './invoice.repository'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([InvoiceEntity, OrderEntity])],
+  imports: [],
   controllers: [InvoiceController],
   providers: [InvoiceService, InvoiceRepository],
   exports: [InvoiceService, InvoiceRepository],

@@ -7,16 +7,12 @@ import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { CategoryEntity } from '@/modules/admin/catalog/category/entities/category.entity'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
+import { InventoryTransactionRepository } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.repository'
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      CategoryEntity,
-      SupplierEntity,
-    ]),
-  ],
+  imports: [],
   controllers: [InventoryTransactionController],
-  providers: [InventoryTransactionService],
-  exports: [InventoryTransactionService],
+  providers: [InventoryTransactionService, InventoryTransactionRepository],
+  exports: [InventoryTransactionService, InventoryTransactionRepository],
 })
 export class InventoryTransactionModule {}

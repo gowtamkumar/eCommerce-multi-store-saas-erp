@@ -6,7 +6,7 @@ import { FaqEntity } from './entities/faq.entity'
 import { FaqRepository } from './faq.repository'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([FaqEntity])],
+  imports: [],
   controllers: [FaqController],
   providers: [FaqService, FaqRepository],
   exports: [FaqService, FaqRepository],

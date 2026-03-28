@@ -6,7 +6,7 @@ import { CategoryEntity } from '@/modules/admin/catalog/category/entities/catego
 import { CategoryRepository } from './category.repository'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CategoryEntity])],
+  imports: [],
   controllers: [CategoryController],
   providers: [CategoryService, CategoryRepository],
   exports: [CategoryService, CategoryRepository],

@@ -1,19 +1,12 @@
 import { Module } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { PurchaseOrderEntity } from './entities/purchase-order.entity'
-import { PurchaseOrderItemEntity } from './entities/purchase-order-item.entity'
-import { PurchaseOrderService } from './purchase-order.service'
-import { PurchaseOrderController } from './purchase-order.controller'
-import { SupplierPaymentEntity } from './entities/supplier-payment.entity'
 import { InventoryTransactionModule } from '../../logistics/inventory-transaction/inventory-transaction.module'
+import { PurchaseOrderController } from './purchase-order.controller'
 import { PurchaseOrderRepository } from './purchase-order.repository'
+import { PurchaseOrderService } from './purchase-order.service'
 import { SupplierPaymentRepository } from './supplier-payment.repository'
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([PurchaseOrderEntity, PurchaseOrderItemEntity, SupplierPaymentEntity]),
-    InventoryTransactionModule,
-  ],
+  imports: [InventoryTransactionModule],
   controllers: [PurchaseOrderController],
   providers: [PurchaseOrderService, PurchaseOrderRepository, SupplierPaymentRepository],
   exports: [PurchaseOrderService, PurchaseOrderRepository, SupplierPaymentRepository],

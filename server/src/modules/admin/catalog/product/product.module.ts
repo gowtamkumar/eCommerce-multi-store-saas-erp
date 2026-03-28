@@ -1,13 +1,9 @@
-import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity'
-import { PurchaseModule } from '@/modules/admin/operations/finance/purchase/purchase.module'
+import { Module } from '@nestjs/common'
+import { ReviewModule } from '../review/review.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
 import { InventoryTransactionModule } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.module'
+import { PurchaseModule } from '@/modules/admin/operations/finance/purchase/purchase.module'
 import { PromotionModule } from '@/modules/admin/sales/promotion/promotion.module'
-import { Module } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { BrandEntity } from '../brand/entities/brand.entity'
-import { CategoryEntity } from '../category/entities/category.entity'
-import { ReviewModule } from '../review/review.module'
 import { ProductAttributeEntity } from './entities/attribute.entity'
 import { ProductEntity } from './entities/product.entity'
 import { ProductVariantEntity } from './entities/variant.entity'
@@ -21,14 +17,6 @@ import { BrandRepository } from '../brand/brand.repository'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      ProductEntity,
-      FaqEntity,
-      ProductAttributeEntity,
-      ProductVariantEntity,
-      CategoryEntity,
-      BrandEntity,
-    ]),
     ReviewModule,
     CacheModule,
     InventoryTransactionModule,
@@ -36,7 +24,7 @@ import { BrandRepository } from '../brand/brand.repository'
     PromotionModule,
   ],
   controllers: [ProductController],
-  providers: [ProductService, ProductRepository, ProductAttributeRepository, ProductVariantRepository, FaqRepository, BrandRepository],
+  providers: [ProductService, ProductRepository, ProductAttributeRepository, ProductVariantRepository],
   exports: [ProductService, ProductRepository, ProductAttributeRepository, ProductVariantRepository],
 })
 export class ProductModule {}
