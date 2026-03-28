@@ -16,12 +16,12 @@ export class SubscriptionInvoiceEntity extends BaseEntity {
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 
-  @Column({ type: 'uuid', name: 'plan_id' })
-  planId: string
+  @Column({ type: 'uuid', name: 'subscription_plan_id' })
+  subscriptionPlanId: string
 
   @ManyToOne(() => SubscriptionPlanEntity)
-  @JoinColumn({ name: 'plan_id' })
-  plan: SubscriptionPlanEntity
+  @JoinColumn({ name: 'subscription_plan_id' })
+  subscriptionPlan: SubscriptionPlanEntity
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: number

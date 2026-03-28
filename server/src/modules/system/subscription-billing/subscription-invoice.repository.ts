@@ -16,7 +16,7 @@ export class SubscriptionInvoiceRepository extends Repository<SubscriptionInvoic
   async findAllByTenant(tenantId: string): Promise<SubscriptionInvoiceEntity[]> {
     return await this.find({
       where: { tenantId },
-      relations: ['plan'],
+      relations: ['subscriptionPlan'],
       order: { billingDate: 'DESC' },
     })
   }
@@ -24,7 +24,7 @@ export class SubscriptionInvoiceRepository extends Repository<SubscriptionInvoic
   async findByTransactionId(transactionId: string): Promise<SubscriptionInvoiceEntity | null> {
     return await this.findOne({
       where: { transactionId },
-      relations: ['plan'],
+      relations: ['subscriptionPlan'],
     })
   }
 

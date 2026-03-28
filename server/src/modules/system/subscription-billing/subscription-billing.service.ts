@@ -19,7 +19,7 @@ export class SubscriptionBillingService {
     private readonly tenantRepository: TenantRepository,
     private readonly planRepository: SubscriptionPlanRepository,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   async getCurrentSubscription(tenantId: string) {
     this.logger.log(`${this.getCurrentSubscription.name} Called for tenant: ${tenantId}`)
@@ -143,7 +143,7 @@ export class SubscriptionBillingService {
 
       await this.tenantRepository.updateAndSave(tenant, {
         subscriptionEndsAt: newEndsAt,
-        subscriptionPlanId: invoice.planId,
+        subscriptionPlanId: invoice.subscriptionPlanId,
         subscriptionStatus: SubscriptionStatus.ACTIVE,
         status: TenantStatus.ACTIVE,
       })
