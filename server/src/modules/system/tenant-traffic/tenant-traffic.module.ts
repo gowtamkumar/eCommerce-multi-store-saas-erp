@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common'
-import { APP_INTERCEPTOR } from '@nestjs/core'
 import { TrafficInterceptor } from '@/common/interceptors/traffic.interceptor'
-import { UserModule } from '@/modules/admin/core/user/user.module'
-import { OrderModule } from '@/modules/admin/sales/order/order.module'
-import { PageModule } from '@/modules/admin/content/page/page.module'
 import { ProductModule } from '@/modules/admin/catalog/product/product.module'
 import { ReviewModule } from '@/modules/admin/catalog/review/review.module'
+import { PageModule } from '@/modules/admin/content/page/page.module'
+import { UserModule } from '@/modules/admin/core/user/user.module'
+import { OrderModule } from '@/modules/admin/sales/order/order.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
-import { SuperAdminController } from './super-admin.controller'
+import { Module } from '@nestjs/common'
+import { APP_INTERCEPTOR } from '@nestjs/core'
+import { TenantTrafficController } from './tenant-traffic.controller'
 import { TrafficService } from './traffic.service'
 
 @Module({
@@ -19,7 +19,7 @@ import { TrafficService } from './traffic.service'
     ProductModule,
     PageModule,
   ],
-  controllers: [SuperAdminController],
+  controllers: [TenantTrafficController],
   providers: [
     TrafficService,
     {
@@ -29,4 +29,4 @@ import { TrafficService } from './traffic.service'
   ],
   exports: [TrafficService],
 })
-export class SuperAdminModule {}
+export class TenantTrafficModule {}

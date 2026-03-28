@@ -1,3 +1,15 @@
+import { Roles } from '@/common/decorators/roles.decorator'
+import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { UserStatus } from '@/common/enums/user/user-status.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
+import { ProductService } from '@/modules/admin/catalog/product/product.service'
+import { ReviewService } from '@/modules/admin/catalog/review/review.service'
+import { PageService } from '@/modules/admin/content/page/page.service'
+import { UserService } from '@/modules/admin/core/user/services/user.service'
+import { OrderService } from '@/modules/admin/sales/order/order.service'
+import { TenantService } from '@/modules/system/tenant/tenant.service'
 import {
   Body,
   Controller,
@@ -9,23 +21,11 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-import { UserStatus } from '@/common/enums/user/user-status.enum'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
-import { UserService } from '@/modules/admin/core/user/services/user.service'
-import { OrderService } from '@/modules/admin/sales/order/order.service'
-import { PageService } from '@/modules/admin/content/page/page.service'
-import { ProductService } from '@/modules/admin/catalog/product/product.service'
-import { ReviewService } from '@/modules/admin/catalog/review/review.service'
-import { TenantService } from '@/modules/system/tenant/tenant.service'
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 import si from 'systeminformation'
 import { TrafficService } from './traffic.service'
 
-@Controller('super-admin')
-export class SuperAdminController {
+@Controller('tenant-traffic')
+export class TenantTrafficController {
   constructor(
     private readonly userService: UserService,
     private readonly tenantService: TenantService,
