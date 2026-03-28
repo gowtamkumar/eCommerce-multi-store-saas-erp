@@ -5,6 +5,7 @@ import { LoginCredentialDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
 
 @Controller('admin')
 export class AdminAuthController {
@@ -56,6 +57,7 @@ export class AdminAuthController {
   }
 
   @Post('/refresh')
+  @PublicDuringExpiration()
   async refresh(
     @Body() body: { userId: string; refreshToken: string },
     @Res({ passthrough: true }) res: Response,

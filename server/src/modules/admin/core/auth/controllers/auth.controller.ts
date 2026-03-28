@@ -5,6 +5,7 @@ import { RegisterCredentialDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
 
 @Controller('auth')
 export class AuthController {
@@ -32,6 +33,7 @@ export class AuthController {
   }
 
   @Post('/refresh')
+  @PublicDuringExpiration()
   async refresh(
     @Body() body: { userId: string; refreshToken: string },
     @Res({ passthrough: true }) res: Response,
@@ -111,6 +113,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('/me')
+  @PublicDuringExpiration()
   getMe(@RequestContext() ctx: RequestContextDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getMe.`)
     return this.authService.getMe(ctx.user)

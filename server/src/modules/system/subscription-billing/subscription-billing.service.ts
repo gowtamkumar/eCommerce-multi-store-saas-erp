@@ -92,7 +92,7 @@ export class SubscriptionBillingService {
       },
     } as any as SiteSettingsEntity
 
-    const callbackUrl = `${frontendUrl}/admin/settings/billing`
+    const callbackUrl = `${frontendUrl}/billing`
 
     const result = await strategy.initiate(mockOrder, mockSettings, {
       callbackUrl,
@@ -137,10 +137,8 @@ export class SubscriptionBillingService {
     if (tenant && plan) {
       const currentDate = new Date()
       // If current subscription is still active, extend from endsAt, otherwise from now
-      const baseDate =
-        tenant.subscriptionEndsAt && tenant.subscriptionEndsAt > currentDate
-          ? tenant.subscriptionEndsAt
-          : currentDate
+      const isCurrentlyActive = tenant.subscriptionEndsAt && tenant.subscriptionEndsAt > currentDate
+      const baseDate = isCurrentlyActive ? tenant.subscriptionEndsAt : currentDate
 
       const newEndsAt = new Date(baseDate)
 
@@ -152,13 +150,14 @@ export class SubscriptionBillingService {
       }
 
       await this.tenantRepository.updateAndSave(tenant, {
+        subscriptionStartsAt: isCurrentlyActive ? tenant.subscriptionStartsAt : currentDate,
         subscriptionEndsAt: newEndsAt,
         subscriptionPlanId: record.subscriptionPlanId,
         subscriptionStatus: SubscriptionStatus.ACTIVE,
         subscriptionBillingCycle: plan.billingCycle,
         status: TenantStatus.ACTIVE,
       })
-      this.logger.log(`Tenant ${tenant.id} subscription extended to ${newEndsAt} (${plan.billingCycle})`)
+      this.logger.log(`Tenant ${tenant.id} subscription updated: Plan ${plan.name}, startsAt: ${currentDate}, endsAt: ${newEndsAt}`)
     }
 
     return record
@@ -194,6 +193,6 @@ export class SubscriptionBillingService {
     if (gatewayResponse.status === 'FAILED') status = 'fail'
     if (gatewayResponse.status === 'CANCELLED') status = 'cancel'
 
-    return `${baseUrl}/admin/settings/billing/${status}?tran_id=${transactionId}`
+    return `${baseUrl}/billing/${status}?tran_id=${transactionId}`
   }
 }
