@@ -24,7 +24,11 @@ export class ProductVariantRepository extends Repository<ProductVariantEntity> {
     return this.find({ where: { productId, tenantId } })
   }
 
-  async saveNewVariant(variantDto: any, productId: string, tenantId: string): Promise<ProductVariantEntity> {
+  async saveNewVariant(
+    variantDto: any,
+    productId: string,
+    tenantId: string,
+  ): Promise<ProductVariantEntity> {
     const variant = this.create({
       ...variantDto,
       productId,
@@ -34,7 +38,11 @@ export class ProductVariantRepository extends Repository<ProductVariantEntity> {
     return this.save(variant)
   }
 
-  async saveExistingVariant(variantDto: any, productId: string, tenantId: string): Promise<ProductVariantEntity> {
+  async saveExistingVariant(
+    variantDto: any,
+    productId: string,
+    tenantId: string,
+  ): Promise<ProductVariantEntity> {
     const variant = this.create({
       ...variantDto,
       productId,
@@ -49,12 +57,22 @@ export class ProductVariantRepository extends Repository<ProductVariantEntity> {
     }
   }
 
-  async incrementStock(id: string, tenantId: string, quantity: number, manager?: any): Promise<void> {
+  async incrementStock(
+    id: string,
+    tenantId: string,
+    quantity: number,
+    manager?: any,
+  ): Promise<void> {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this
     await repo.increment({ id, tenantId }, 'stock', quantity)
   }
 
-  async decrementStock(id: string, tenantId: string, quantity: number, manager?: any): Promise<void> {
+  async decrementStock(
+    id: string,
+    tenantId: string,
+    quantity: number,
+    manager?: any,
+  ): Promise<void> {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this
     await repo.decrement({ id, tenantId }, 'stock', quantity)
   }

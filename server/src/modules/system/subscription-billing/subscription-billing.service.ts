@@ -19,7 +19,7 @@ export class SubscriptionBillingService {
     private readonly tenantRepository: TenantRepository,
     private readonly planRepository: SubscriptionPlanRepository,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   async getCurrentSubscription(tenantId: string) {
     this.logger.log(`${this.getCurrentSubscription.name} Called for tenant: ${tenantId}`)
@@ -80,7 +80,7 @@ export class SubscriptionBillingService {
       customerEmail: tenant.user?.email || 'billing@omnicart.com',
       address: tenant.user?.address || 'Dhaka, Bangladesh',
       customerPhone: tenant.user?.phone || '01700000000',
-      items: [{ product: { name: `OmniCart Subscription: ${plan.name} Plan` } }]
+      items: [{ product: { name: `OmniCart Subscription: ${plan.name} Plan` } }],
     } as any as OrderEntity
 
     const mockSettings = {
@@ -88,7 +88,7 @@ export class SubscriptionBillingService {
         sslCommerzStoreId: this.configService.get('SUPER_ADMIN_STORE_ID'),
         sslCommerzStorePassword: this.configService.get('SUPER_ADMIN_STORE_PASS'),
         sslCommerzIsSandbox: true,
-      }
+      },
     } as any as SiteSettingsEntity
 
     const apiBaseUrl = this.configService.get('API_URL')
@@ -133,9 +133,10 @@ export class SubscriptionBillingService {
     const tenant = await this.tenantRepository.findById(invoice.tenantId)
     if (tenant) {
       const currentDate = new Date()
-      const baseDate = (tenant.subscriptionEndsAt && tenant.subscriptionEndsAt > currentDate)
-        ? tenant.subscriptionEndsAt
-        : currentDate
+      const baseDate =
+        tenant.subscriptionEndsAt && tenant.subscriptionEndsAt > currentDate
+          ? tenant.subscriptionEndsAt
+          : currentDate
 
       const newEndsAt = new Date(baseDate)
       newEndsAt.setDate(newEndsAt.getDate() + 30)

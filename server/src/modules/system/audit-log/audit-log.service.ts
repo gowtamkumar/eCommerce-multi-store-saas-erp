@@ -7,9 +7,7 @@ import { QueryAuditLogDto } from './dto/query-audit-log.dto'
 export class AuditLogService {
   private readonly logger = new Logger(AuditLogService.name)
 
-  constructor(
-    private readonly auditLogRepository: AuditLogRepository,
-  ) {}
+  constructor(private readonly auditLogRepository: AuditLogRepository) {}
 
   /**
    * Programmatically log an action from any service.

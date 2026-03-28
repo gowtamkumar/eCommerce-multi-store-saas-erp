@@ -1,7 +1,5 @@
 import { Injectable, Logger, Query } from '@nestjs/common'
 
-
-
 import { OrderStatus } from '@/common/enums/order-status.enum'
 
 import { ProductService } from '@/modules/admin/catalog/product/product.service'
@@ -29,8 +27,6 @@ export class ReportService {
   ) {}
 
   async getAnalytics(tenantId: string) {
-    
-
     // Parallelize for performance
     const [users, products, orders, pages] = await Promise.all([
       this.userService.countByTenant(tenantId),
@@ -54,8 +50,6 @@ export class ReportService {
   }
 
   async getDashboardReport(tenantId: string, period: string = 'month') {
-    
-
     // Fetch all data in parallel for backend processing
     const [orders, products, payments, pages, suppliers, purchaseOrders] = await Promise.all([
       this.orderService.findAllOrders({ page: 1, limit: 1000 }, tenantId),
@@ -217,13 +211,7 @@ export class ReportService {
     }
   }
 
-  async getProfitLossReport(
-    tenantId: string,
-    startDateStr?: string,
-    endDateStr?: string,
-  ) {
-    
-
+  async getProfitLossReport(tenantId: string, startDateStr?: string, endDateStr?: string) {
     const [orders, payments, expenses, purchaseOrders] = await Promise.all([
       this.orderService.findAllOrders({ page: 1, limit: 1000 }, tenantId),
       this.paymentService.findAllPayments(tenantId),
@@ -315,8 +303,6 @@ export class ReportService {
   }
 
   async getSupplierLedger(tenantId: string, supplierId: string) {
-    
-
     const [supplier, pos, payments] = await Promise.all([
       this.supplierService.findOneSupplier(supplierId, tenantId),
       this.purchaseOrderService.findAllBySupplier(supplierId, tenantId),
@@ -378,8 +364,6 @@ export class ReportService {
   }
 
   async getCustomerLedger(tenantId: string, customerId: string) {
-    
-
     const [customer, orders, payments] = await Promise.all([
       this.userService.findOneUser(customerId, tenantId),
       this.orderService.findByUserId(customerId, tenantId),
@@ -443,8 +427,6 @@ export class ReportService {
   }
 
   async getCashFlow(tenantId: string, @Query('period') period: string = 'last30days') {
-    
-
     const [customerPayments, expenses, supplierPayments] = await Promise.all([
       this.paymentService.findAllPayments(tenantId),
       this.expenseService.findAllExpenses(tenantId),
@@ -536,7 +518,6 @@ export class ReportService {
     supplierId?: string,
     customerId?: string,
   ) {
-    
     const startDate = startDateStr ? new Date(startDateStr) : new Date(0)
     const endDate = endDateStr ? new Date(endDateStr) : new Date()
     endDate.setHours(23, 59, 59, 999)
@@ -613,8 +594,6 @@ export class ReportService {
   }
 
   async getFinanceSummary(tenantId: string) {
-    
-
     const [customerPayments, expenses, supplierPayments, purchaseOrders] = await Promise.all([
       this.paymentService.findAllPayments(tenantId),
       this.expenseService.findAllExpenses(tenantId),

@@ -6,9 +6,7 @@ import { CreateFaqDto, UpdateFaqDto } from './dto/faq.dto'
 export class FaqService {
   private readonly logger = new Logger(FaqService.name)
 
-  constructor(
-    private readonly faqRepository: FaqRepository,
-  ) {}
+  constructor(private readonly faqRepository: FaqRepository) {}
 
   async createFaq(createFaqDto: CreateFaqDto, tenantId: string) {
     this.logger.log(`${this.createFaq.name} Service Called`)

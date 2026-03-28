@@ -8,9 +8,7 @@ import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-s
 export class CouponService {
   private readonly logger = new Logger(CouponService.name)
 
-  constructor(
-    private couponRepository: CouponRepository,
-  ) {}
+  constructor(private couponRepository: CouponRepository) {}
 
   async createCoupon(createCouponDto: CreateCouponDto, tenantId: string) {
     this.logger.log(`${this.createCoupon.name} Service Called`)

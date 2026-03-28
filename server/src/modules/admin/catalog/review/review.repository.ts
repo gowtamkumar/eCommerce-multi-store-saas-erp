@@ -9,9 +9,14 @@ export class ReviewRepository extends Repository<ReviewEntity> {
     super(ReviewEntity, dataSource.createEntityManager())
   }
 
-  async findAllWithFilters(filterDto: any, tenantId: string): Promise<{ reviews: ReviewEntity[]; total: number }> {
+  async findAllWithFilters(
+    filterDto: any,
+    tenantId: string,
+  ): Promise<{ reviews: ReviewEntity[]; total: number }> {
     const { page, limit, q, status } = filterDto
-    const query = this.createQueryBuilder('review').where('review.tenantId = :tenantId', { tenantId })
+    const query = this.createQueryBuilder('review').where('review.tenantId = :tenantId', {
+      tenantId,
+    })
 
     if (status) {
       query.andWhere('review.status = :status', { status })

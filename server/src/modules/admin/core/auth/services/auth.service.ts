@@ -27,7 +27,7 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly tenantService: TenantService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   async register(registerCredentialDto: RegisterCredentialDto, tenantId: string) {
     this.logger.log(`${this.register.name} Service Called`)

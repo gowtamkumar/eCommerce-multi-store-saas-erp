@@ -14,7 +14,7 @@ export class SubscriptionBillingController {
   constructor(
     private readonly billingService: SubscriptionBillingService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   @Get('current')
   @PublicDuringExpiration()
@@ -36,16 +36,17 @@ export class SubscriptionBillingController {
 
   @Post('initiate')
   @PublicDuringExpiration()
-  async initiatePayment(
-    @RequestContext() ctx: RequestContextDto,
-    @Body('planId') planId: string
-  ) {
+  async initiatePayment(@RequestContext() ctx: RequestContextDto, @Body('planId') planId: string) {
     return await this.billingService.initiateSubscriptionPayment(ctx.tenantId, planId)
   }
 
   @Public()
   @Post('complete/success')
-  async completePaymentSuccess(@Query('tran_id') tran_id: string, @Body() body: any, @Res() res: Response) {
+  async completePaymentSuccess(
+    @Query('tran_id') tran_id: string,
+    @Body() body: any,
+    @Res() res: Response,
+  ) {
     await this.billingService.handleSuccessPayment(tran_id, body)
     const defaultAppUrl = this.configService.get('FRONTEND_URL')
     const redirectUrl = await this.billingService.getRedirectUrl(tran_id, body, defaultAppUrl)
@@ -54,7 +55,11 @@ export class SubscriptionBillingController {
 
   @Public()
   @Post('complete/fail')
-  async completePaymentFail(@Query('tran_id') tran_id: string, @Body() body: any, @Res() res: Response) {
+  async completePaymentFail(
+    @Query('tran_id') tran_id: string,
+    @Body() body: any,
+    @Res() res: Response,
+  ) {
     await this.billingService.handleFailPayment(tran_id, body)
     const defaultAppUrl = this.configService.get('FRONTEND_URL')
     const redirectUrl = await this.billingService.getRedirectUrl(tran_id, body, defaultAppUrl)
@@ -63,7 +68,11 @@ export class SubscriptionBillingController {
 
   @Public()
   @Post('complete/cancel')
-  async completePaymentCancel(@Query('tran_id') tran_id: string, @Body() body: any, @Res() res: Response) {
+  async completePaymentCancel(
+    @Query('tran_id') tran_id: string,
+    @Body() body: any,
+    @Res() res: Response,
+  ) {
     await this.billingService.handleCancelPayment(tran_id, body)
     const defaultAppUrl = this.configService.get('FRONTEND_URL')
     const redirectUrl = await this.billingService.getRedirectUrl(tran_id, body, defaultAppUrl)
@@ -85,7 +94,9 @@ export class SubscriptionBillingController {
   async completePaymentGet(@Query('tran_id') transactionId: string, @Res() res: Response) {
     // Basic GET handler for simple tests or direct navigation
     if (!transactionId) {
-      return res.redirect(`${this.configService.get('FRONTEND_URL')}/admin/settings/billing?error=invalid_txn`)
+      return res.redirect(
+        `${this.configService.get('FRONTEND_URL')}/admin/settings/billing?error=invalid_txn`,
+      )
     }
     const defaultAppUrl = this.configService.get('FRONTEND_URL')
     return res.redirect(`${defaultAppUrl}/admin/settings/billing/success?tran_id=${transactionId}`)

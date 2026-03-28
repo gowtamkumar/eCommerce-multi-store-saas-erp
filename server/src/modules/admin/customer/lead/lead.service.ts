@@ -6,9 +6,7 @@ import { LeadRepository } from './lead.repository'
 export class LeadService {
   private readonly logger = new Logger(LeadService.name)
 
-  constructor(
-    private readonly leadRepository: LeadRepository,
-  ) {}
+  constructor(private readonly leadRepository: LeadRepository) {}
 
   async createLead(dto: CreateLeadDto, tenantId: string) {
     this.logger.log(`${this.createLead.name} Service Called`)
@@ -24,7 +22,7 @@ export class LeadService {
     this.logger.log(`${this.updateLead.name} Service Called`)
     const lead = await this.leadRepository.findById(id, tenantId)
     if (!lead) throw new NotFoundException('Lead not found')
-    
+
     return await this.leadRepository.updateAndSave(lead, dto)
   }
 }

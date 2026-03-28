@@ -9,7 +9,10 @@ export class FaqRepository extends Repository<FaqEntity> {
     super(FaqEntity, dataSource.createEntityManager())
   }
 
-  async findAllWithFilters(filterDto: any, tenantId: string): Promise<{ faqs: FaqEntity[]; total: number }> {
+  async findAllWithFilters(
+    filterDto: any,
+    tenantId: string,
+  ): Promise<{ faqs: FaqEntity[]; total: number }> {
     const { page, limit, q, status } = filterDto
     const query = this.createQueryBuilder('faq').where('faq.tenantId = :tenantId', { tenantId })
 
@@ -82,9 +85,7 @@ export class FaqRepository extends Repository<FaqEntity> {
 
   async saveMultiple(faqs: any[], productId: string, tenantId: string): Promise<FaqEntity[]> {
     if (!faqs || faqs.length === 0) return []
-    const entities = faqs.map((faq) =>
-      this.create({ ...faq, productId, tenantId } as FaqEntity),
-    )
+    const entities = faqs.map((faq) => this.create({ ...faq, productId, tenantId } as FaqEntity))
     return this.save(entities)
   }
 

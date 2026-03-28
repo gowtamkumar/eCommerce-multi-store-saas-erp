@@ -6,9 +6,7 @@ import { PlatformSettingsEntity } from './entities/platform-settings.entity'
 export class PlatformSettingsService {
   private readonly logger = new Logger(PlatformSettingsService.name)
 
-  constructor(
-    private readonly platformSettingsRepository: PlatformSettingsRepository,
-  ) {}
+  constructor(private readonly platformSettingsRepository: PlatformSettingsRepository) {}
 
   async getPlatformSettings(): Promise<PlatformSettingsEntity> {
     this.logger.log(`${this.getPlatformSettings.name} Service Called`)

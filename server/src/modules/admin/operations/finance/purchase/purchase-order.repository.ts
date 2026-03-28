@@ -29,7 +29,11 @@ export class PurchaseOrderRepository extends Repository<PurchaseOrderEntity> {
     })
   }
 
-  async findByIdWithRelations(id: string, tenantId: string, manager?: EntityManager): Promise<PurchaseOrderEntity | null> {
+  async findByIdWithRelations(
+    id: string,
+    tenantId: string,
+    manager?: EntityManager,
+  ): Promise<PurchaseOrderEntity | null> {
     const repo = this.getRepo(manager)
     return repo.findOne({
       where: { id, tenantId },
@@ -37,7 +41,10 @@ export class PurchaseOrderRepository extends Repository<PurchaseOrderEntity> {
     })
   }
 
-  async saveOrder(order: PurchaseOrderEntity, manager?: EntityManager): Promise<PurchaseOrderEntity> {
+  async saveOrder(
+    order: PurchaseOrderEntity,
+    manager?: EntityManager,
+  ): Promise<PurchaseOrderEntity> {
     const repo = this.getRepo(manager)
     return repo.save(order)
   }

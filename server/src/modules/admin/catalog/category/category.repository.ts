@@ -28,7 +28,10 @@ export class CategoryRepository extends Repository<CategoryEntity> {
     return this.save(category)
   }
 
-  async updateAndSave(category: CategoryEntity, data: Partial<CategoryEntity>): Promise<CategoryEntity> {
+  async updateAndSave(
+    category: CategoryEntity,
+    data: Partial<CategoryEntity>,
+  ): Promise<CategoryEntity> {
     Object.assign(category, data)
     return this.save(category)
   }

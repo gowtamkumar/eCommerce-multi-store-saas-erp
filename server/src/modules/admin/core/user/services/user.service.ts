@@ -26,7 +26,10 @@ export class UserService {
     private readonly mailService: MailService,
   ) {}
 
-  async getUsers(filterUserDto: FilterUserDto, tenantId: string): Promise<{ users: UserEntity[]; total: number }> {
+  async getUsers(
+    filterUserDto: FilterUserDto,
+    tenantId: string,
+  ): Promise<{ users: UserEntity[]; total: number }> {
     this.logger.log(`${this.getUsers.name} Service Called`)
     const [users, total] = await this.userRepo.findAllWithFilters(filterUserDto, tenantId)
     return { users, total }
@@ -88,7 +91,7 @@ export class UserService {
     this.logger.log(`${this.updatePassword.name} Service Called`)
     const { currentPassword, newPassword } = updatePasswordDto
     const user = await this.getUser(id)
-    
+
     const valid = await this.validateUser(user, currentPassword)
     if (!valid) throw new UnauthorizedException('Password is not valid')
 
@@ -124,13 +127,19 @@ export class UserService {
     this.logger.log(`${this.verifyUserByToken.name} Service Called`)
     const user = await this.userRepo.findByVerificationToken(token)
     if (!user) throw new NotFoundException('Invalid or expired verification token')
-    return this.userRepo.updateAndSave(user, { isEmailVerified: true, emailVerificationToken: null } as any)
+    return this.userRepo.updateAndSave(user, {
+      isEmailVerified: true,
+      emailVerificationToken: null,
+    } as any)
   }
 
   async updateResetToken(userId: string, token: string, expires: Date) {
     this.logger.log(`${this.updateResetToken.name} Service Called`)
     const user = await this.getUser(userId)
-    return this.userRepo.updateAndSave(user, { resetPasswordToken: token, resetPasswordExpires: expires } as any)
+    return this.userRepo.updateAndSave(user, {
+      resetPasswordToken: token,
+      resetPasswordExpires: expires,
+    } as any)
   }
 
   async resetUserPasswordByToken(token: string, password: string): Promise<UserEntity> {
@@ -142,7 +151,11 @@ export class UserService {
     }
 
     const newHashedPassword = await bcrypt.hash(password, 10)
-    return this.userRepo.updateAndSave(user, { password: newHashedPassword, resetPasswordToken: null, resetPasswordExpires: null } as any)
+    return this.userRepo.updateAndSave(user, {
+      password: newHashedPassword,
+      resetPasswordToken: null,
+      resetPasswordExpires: null,
+    } as any)
   }
 
   async countByTenant(tenantId: string) {
@@ -210,8 +223,9 @@ export class UserService {
     const invitation = await this.invitationRepo.findByToken(dto.token)
 
     if (!invitation) throw new NotFoundException('Invalid or expired invitation token.')
-    if (invitation.status !== InvitationStatus.Pending) throw new BadRequestException('This invitation has already been used or expired.')
-    
+    if (invitation.status !== InvitationStatus.Pending)
+      throw new BadRequestException('This invitation has already been used or expired.')
+
     if (invitation.expiresAt < new Date()) {
       await this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Expired })
       throw new BadRequestException('This invitation has expired.')
@@ -245,8 +259,9 @@ export class UserService {
     this.logger.log(`${this.revokeInvitation.name} Service Called`)
     const invitation = await this.invitationRepo.findByIdAndTenant(invitationId, tenantId)
     if (!invitation) throw new NotFoundException('Invitation not found.')
-    if (invitation.status !== InvitationStatus.Pending) throw new BadRequestException('Only pending invitations can be revoked.')
-    
+    if (invitation.status !== InvitationStatus.Pending)
+      throw new BadRequestException('Only pending invitations can be revoked.')
+
     return this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Expired })
   }
 

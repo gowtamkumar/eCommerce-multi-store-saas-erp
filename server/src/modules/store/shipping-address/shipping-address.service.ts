@@ -7,9 +7,7 @@ import { UpdateShippingAddressDto } from './dto/update-shipping-address.dto'
 export class ShippingAddressService {
   private readonly logger = new Logger(ShippingAddressService.name)
 
-  constructor(
-    private readonly repo: ShippingAddressRepository,
-  ) {}
+  constructor(private readonly repo: ShippingAddressRepository) {}
 
   async findShippingAddresses(userId: string, tenantId: string) {
     this.logger.log(`${this.findShippingAddresses.name} Service Called`)

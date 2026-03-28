@@ -25,8 +25,9 @@ export class CouponRepository extends Repository<CouponEntity> {
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { search, isActive } = filterDto
 
-    const query = this.createQueryBuilder('coupon')
-      .where('coupon.tenantId = :tenantId', { tenantId })
+    const query = this.createQueryBuilder('coupon').where('coupon.tenantId = :tenantId', {
+      tenantId,
+    })
 
     if (isActive !== undefined) {
       query.andWhere('coupon.isActive = :isActive', { isActive: isActive === 'true' })

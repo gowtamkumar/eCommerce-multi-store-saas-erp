@@ -39,7 +39,11 @@ export class InvoiceService {
       const random = Math.floor(1000 + Math.random() * 9000)
       invoiceNumber = `INV-${year}${month}-${random}`
 
-      const exists = await this.invoiceRepository.checkInvoiceNumberExists(invoiceNumber, tenantId, manager)
+      const exists = await this.invoiceRepository.checkInvoiceNumberExists(
+        invoiceNumber,
+        tenantId,
+        manager,
+      )
       if (exists) {
         invoiceNumber = `INV-${year}${month}-${random + 1}`
       }
@@ -55,7 +59,7 @@ export class InvoiceService {
         status: createInvoiceDto.status || InvoiceStatus.PENDING,
         userId: order.userId,
       } as any,
-      manager
+      manager,
     )
   }
 

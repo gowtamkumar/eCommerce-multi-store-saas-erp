@@ -45,7 +45,7 @@ export class MailService {
         auth: {
           user: settings.smtp.user,
           pass: settings.smtp.pass,
-          },
+        },
       })
       return { transporter: tenantTransporter, from: settings.smtp.from || settings.smtp.user }
     }

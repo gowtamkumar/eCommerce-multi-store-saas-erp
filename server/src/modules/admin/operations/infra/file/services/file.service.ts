@@ -9,9 +9,7 @@ import { FileRepository } from '../file.repository'
 export class FilesService {
   private readonly logger = new Logger(FilesService.name)
 
-  constructor(
-    private readonly fileRepository: FileRepository,
-  ) {}
+  constructor(private readonly fileRepository: FileRepository) {}
 
   getFiles(filterFile: FilterFileDto, tenantId: string): Promise<FileEntity[]> {
     this.logger.log(`${this.getFiles.name} Service Called`)

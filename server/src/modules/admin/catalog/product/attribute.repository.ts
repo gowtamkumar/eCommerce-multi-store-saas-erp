@@ -8,7 +8,11 @@ export class ProductAttributeRepository extends Repository<ProductAttributeEntit
     super(ProductAttributeEntity, dataSource.createEntityManager())
   }
 
-  async saveMultiple(attributes: any[], productId: string, tenantId: string): Promise<ProductAttributeEntity[]> {
+  async saveMultiple(
+    attributes: any[],
+    productId: string,
+    tenantId: string,
+  ): Promise<ProductAttributeEntity[]> {
     if (!attributes || attributes.length === 0) return []
     const entities = attributes.map((attr) =>
       this.create({ ...attr, productId, tenantId } as ProductAttributeEntity),

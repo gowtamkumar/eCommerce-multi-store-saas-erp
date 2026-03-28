@@ -249,7 +249,11 @@ export class ProductService {
 
     if (variants && variants.length > 0) {
       for (const variantDto of variants) {
-        const savedVariant = await this.variantRepository.saveNewVariant(variantDto, savedProduct.id, tenantId)
+        const savedVariant = await this.variantRepository.saveNewVariant(
+          variantDto,
+          savedProduct.id,
+          tenantId,
+        )
 
         if (variantDto.stock > 0) {
           poItems.push({
@@ -358,7 +362,11 @@ export class ProductService {
       const poItems = []
 
       for (const variantDto of newVariants) {
-        const savedVariant = await this.variantRepository.saveNewVariant(variantDto, product.id, tenantId)
+        const savedVariant = await this.variantRepository.saveNewVariant(
+          variantDto,
+          product.id,
+          tenantId,
+        )
 
         if (variantDto.stock > 0) {
           poItems.push({

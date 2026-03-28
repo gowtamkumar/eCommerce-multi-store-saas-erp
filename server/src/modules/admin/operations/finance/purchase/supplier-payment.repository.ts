@@ -12,7 +12,10 @@ export class SupplierPaymentRepository extends Repository<SupplierPaymentEntity>
     return manager ? manager.getRepository(SupplierPaymentEntity) : this
   }
 
-  async createAndSave(data: Partial<SupplierPaymentEntity>, manager?: EntityManager): Promise<SupplierPaymentEntity> {
+  async createAndSave(
+    data: Partial<SupplierPaymentEntity>,
+    manager?: EntityManager,
+  ): Promise<SupplierPaymentEntity> {
     const repo = this.getRepo(manager)
     const payment = repo.create(data as SupplierPaymentEntity)
     return repo.save(payment)

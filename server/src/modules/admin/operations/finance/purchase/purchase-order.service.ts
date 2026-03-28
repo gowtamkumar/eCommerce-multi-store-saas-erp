@@ -28,7 +28,7 @@ export class PurchaseOrderService {
     return await this.repository.createAndSave(
       { ...dto, totalAmount },
       tenantId,
-      PurchaseOrderStatus.DRAFT
+      PurchaseOrderStatus.DRAFT,
     )
   }
 
@@ -121,7 +121,7 @@ export class PurchaseOrderService {
           tenantId,
           paymentDate: dto.paymentDate ? new Date(dto.paymentDate) : new Date(),
         },
-        queryRunner.manager
+        queryRunner.manager,
       )
 
       order.paidAmount = Number(order.paidAmount || 0) + Number(dto.amount)

@@ -28,7 +28,10 @@ export class SubscriptionInvoiceRepository extends Repository<SubscriptionInvoic
     })
   }
 
-  async updateAndSave(invoice: SubscriptionInvoiceEntity, data: any): Promise<SubscriptionInvoiceEntity> {
+  async updateAndSave(
+    invoice: SubscriptionInvoiceEntity,
+    data: any,
+  ): Promise<SubscriptionInvoiceEntity> {
     Object.assign(invoice, data)
     return await this.save(invoice)
   }

@@ -7,9 +7,7 @@ import { UpdateSubscriptionPlanDto } from './dto/update-subscription-plan.dto'
 export class SubscriptionPlanService {
   private readonly logger = new Logger(SubscriptionPlanService.name)
 
-  constructor(
-    private readonly planRepository: SubscriptionPlanRepository,
-  ) {}
+  constructor(private readonly planRepository: SubscriptionPlanRepository) {}
 
   async createSubscriptionPlan(createDto: CreateSubscriptionPlanDto) {
     this.logger.log(`${this.createSubscriptionPlan.name} Service Called`)

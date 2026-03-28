@@ -8,7 +8,10 @@ export class LeadRepository extends Repository<LeadEntity> {
     super(LeadEntity, dataSource.createEntityManager())
   }
 
-  async findAllWithFilters(filterDto: any, tenantId: string): Promise<{ leads: LeadEntity[]; total: number }> {
+  async findAllWithFilters(
+    filterDto: any,
+    tenantId: string,
+  ): Promise<{ leads: LeadEntity[]; total: number }> {
     const { page = 1, limit = 10, q, status } = filterDto
     const query = this.createQueryBuilder('lead').where('lead.tenantId = :tenantId', { tenantId })
 

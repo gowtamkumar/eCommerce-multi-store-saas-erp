@@ -6,13 +6,13 @@ import { SubscriberRepository } from './subscriber.repository'
 export class SubscriberService {
   private readonly logger = new Logger(SubscriberService.name)
 
-  constructor(
-    private readonly subscriberRepository: SubscriberRepository,
-  ) {}
+  constructor(private readonly subscriberRepository: SubscriberRepository) {}
 
   async createSubscriber(createSubscriberDto: CreateSubscriberDto) {
     this.logger.log(`${this.createSubscriber.name} Service Called`)
-    const existingSubscriber = await this.subscriberRepository.findByEmail(createSubscriberDto.email)
+    const existingSubscriber = await this.subscriberRepository.findByEmail(
+      createSubscriberDto.email,
+    )
 
     if (existingSubscriber) {
       throw new ConflictException('Email is already subscribed')

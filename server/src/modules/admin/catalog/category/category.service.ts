@@ -7,9 +7,7 @@ import { CategoryRepository } from './category.repository'
 export class CategoryService {
   private readonly logger = new Logger(CategoryService.name)
 
-  constructor(
-    private readonly categoryRepo: CategoryRepository,
-  ) {}
+  constructor(private readonly categoryRepo: CategoryRepository) {}
 
   async createCategory(createCategoryDto: CreateCategoryDto, tenantId: string) {
     this.logger.log(`${this.createCategory.name} Service Called`)

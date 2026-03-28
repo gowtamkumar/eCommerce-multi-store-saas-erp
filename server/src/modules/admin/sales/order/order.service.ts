@@ -50,9 +50,13 @@ export class OrderService {
 
     return await this.dataSource.transaction(async (manager) => {
       // 1. Initial Data Fetching
-      const settings = await manager.withRepository(this.settingsRepository).findByTenantId(tenantId)
+      const settings = await manager
+        .withRepository(this.settingsRepository)
+        .findByTenantId(tenantId)
       const user = createOrderDto.userId
-        ? await manager.withRepository(this.userRepository).findByIdAndTenant(createOrderDto.userId, tenantId)
+        ? await manager
+            .withRepository(this.userRepository)
+            .findByIdAndTenant(createOrderDto.userId, tenantId)
         : null
 
       // 2. Address Resolution

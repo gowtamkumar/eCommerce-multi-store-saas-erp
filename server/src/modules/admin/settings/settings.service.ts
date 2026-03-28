@@ -11,7 +11,7 @@ export class SettingsService {
   constructor(
     private settingsRepository: SiteSettingsRepository,
     private tenantRepository: TenantRepository,
-  ) { }
+  ) {}
 
   async findByTenantSettings(tenantId: string) {
     this.logger.log(`${this.findByTenantSettings.name} Service Called`)

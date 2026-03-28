@@ -15,7 +15,11 @@ export class ShippingAddressRepository extends Repository<ShippingAddressEntity>
     })
   }
 
-  async findById(id: string, userId: string, tenantId: string): Promise<ShippingAddressEntity | null> {
+  async findById(
+    id: string,
+    userId: string,
+    tenantId: string,
+  ): Promise<ShippingAddressEntity | null> {
     return await this.findOne({ where: { id, userId, tenantId } })
   }
 

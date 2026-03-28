@@ -16,15 +16,19 @@ import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
 import { BrandRepository } from '../brand/brand.repository'
 
 @Module({
-  imports: [
-    ReviewModule,
-    CacheModule,
-    InventoryTransactionModule,
-    PurchaseModule,
-    PromotionModule,
-  ],
+  imports: [ReviewModule, CacheModule, InventoryTransactionModule, PurchaseModule, PromotionModule],
   controllers: [ProductController],
-  providers: [ProductService, ProductRepository, ProductAttributeRepository, ProductVariantRepository],
-  exports: [ProductService, ProductRepository, ProductAttributeRepository, ProductVariantRepository],
+  providers: [
+    ProductService,
+    ProductRepository,
+    ProductAttributeRepository,
+    ProductVariantRepository,
+  ],
+  exports: [
+    ProductService,
+    ProductRepository,
+    ProductAttributeRepository,
+    ProductVariantRepository,
+  ],
 })
 export class ProductModule {}

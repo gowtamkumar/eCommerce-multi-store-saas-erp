@@ -6,9 +6,7 @@ import { SupplierRepository } from './supplier.repository'
 export class SupplierService {
   private readonly logger = new Logger(SupplierService.name)
 
-  constructor(
-    private readonly repository: SupplierRepository,
-  ) {}
+  constructor(private readonly repository: SupplierRepository) {}
 
   async createSupplier(dto: CreateSupplierDto, tenantId: string) {
     this.logger.log(`${this.createSupplier.name} Service Called`)

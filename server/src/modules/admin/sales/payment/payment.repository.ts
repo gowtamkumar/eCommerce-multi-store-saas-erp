@@ -8,7 +8,10 @@ export class PaymentRepository extends Repository<PaymentEntity> {
     super(PaymentEntity, dataSource.createEntityManager())
   }
 
-  async findByTransactionId(transactionId: string, tenantId: string): Promise<PaymentEntity | null> {
+  async findByTransactionId(
+    transactionId: string,
+    tenantId: string,
+  ): Promise<PaymentEntity | null> {
     return await this.findOne({ where: { transactionId, tenantId } })
   }
 

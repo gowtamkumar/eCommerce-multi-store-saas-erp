@@ -7,11 +7,7 @@ import { TenantController } from './tenant.controller'
 import { TenantService } from './tenant.service'
 
 @Module({
-  imports: [
-    SettingsModule,
-    MailModule,
-    SubscriptionPlanModule,
-  ],
+  imports: [SettingsModule, MailModule, SubscriptionPlanModule],
   controllers: [TenantController, OnboardController],
   providers: [TenantService],
   exports: [TenantService],

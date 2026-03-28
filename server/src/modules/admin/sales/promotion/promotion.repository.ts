@@ -23,8 +23,9 @@ export class PromotionRepository extends Repository<PromotionEntity> {
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { search, isActive } = filterDto
 
-    const query = this.createQueryBuilder('promotion')
-      .where('promotion.tenantId = :tenantId', { tenantId })
+    const query = this.createQueryBuilder('promotion').where('promotion.tenantId = :tenantId', {
+      tenantId,
+    })
 
     if (isActive !== undefined) {
       query.andWhere('promotion.isActive = :isActive', { isActive: isActive === 'true' })

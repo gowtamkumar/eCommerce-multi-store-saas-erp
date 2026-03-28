@@ -5,9 +5,7 @@ import { TrafficRepository } from './traffic.repository'
 export class TrafficService {
   private readonly logger = new Logger(TrafficService.name)
 
-  constructor(
-    private readonly trafficRepository: TrafficRepository,
-  ) {}
+  constructor(private readonly trafficRepository: TrafficRepository) {}
 
   async logRequestTraffic(tenantId: string) {
     this.logger.log(`${this.logRequestTraffic.name} Service Called`)

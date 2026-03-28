@@ -7,9 +7,7 @@ import { ExpenseRepository } from './expense.repository'
 export class ExpenseService {
   private readonly logger = new Logger(ExpenseService.name)
 
-  constructor(
-    private readonly expenseRepository: ExpenseRepository,
-  ) {}
+  constructor(private readonly expenseRepository: ExpenseRepository) {}
 
   async createExpense(createExpenseDto: CreateExpenseDto, tenantId: string) {
     this.logger.log(`${this.createExpense.name} Service Called`)

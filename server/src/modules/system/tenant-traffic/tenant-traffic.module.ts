@@ -11,14 +11,7 @@ import { TenantTrafficController } from './tenant-traffic.controller'
 import { TrafficService } from './traffic.service'
 
 @Module({
-  imports: [
-    UserModule,
-    TenantModule,
-    OrderModule,
-    ReviewModule,
-    ProductModule,
-    PageModule,
-  ],
+  imports: [UserModule, TenantModule, OrderModule, ReviewModule, ProductModule, PageModule],
   controllers: [TenantTrafficController],
   providers: [
     TrafficService,

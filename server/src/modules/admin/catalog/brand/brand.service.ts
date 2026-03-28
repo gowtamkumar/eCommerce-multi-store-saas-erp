@@ -7,9 +7,7 @@ import { UpdateBrandDto } from './dto/update-brand.dto'
 export class BrandService {
   private readonly logger = new Logger(BrandService.name)
 
-  constructor(
-    private readonly brandRepo: BrandRepository,
-  ) {}
+  constructor(private readonly brandRepo: BrandRepository) {}
 
   async createBrand(createBrandDto: CreateBrandDto, tenantId: string) {
     this.logger.log(`${this.createBrand.name} Service Called`)

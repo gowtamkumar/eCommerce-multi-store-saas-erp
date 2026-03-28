@@ -42,7 +42,10 @@ export class StaffInvitationRepository extends Repository<StaffInvitationEntity>
     })
   }
 
-  async updateAndSave(invitation: StaffInvitationEntity, data: Partial<StaffInvitationEntity>): Promise<StaffInvitationEntity> {
+  async updateAndSave(
+    invitation: StaffInvitationEntity,
+    data: Partial<StaffInvitationEntity>,
+  ): Promise<StaffInvitationEntity> {
     Object.assign(invitation, data)
     return this.save(invitation)
   }

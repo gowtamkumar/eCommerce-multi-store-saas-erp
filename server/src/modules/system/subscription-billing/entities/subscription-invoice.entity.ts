@@ -19,7 +19,6 @@ export class SubscriptionInvoiceEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'plan_id' })
   planId: string
 
-  
   @ManyToOne(() => SubscriptionPlanEntity)
   @JoinColumn({ name: 'plan_id' })
   plan: SubscriptionPlanEntity

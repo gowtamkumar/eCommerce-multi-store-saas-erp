@@ -12,13 +12,20 @@ export class InvoiceRepository extends Repository<InvoiceEntity> {
     return manager ? manager.getRepository(InvoiceEntity) : this
   }
 
-  async checkInvoiceNumberExists(invoiceNumber: string, tenantId: string, manager?: EntityManager): Promise<boolean> {
+  async checkInvoiceNumberExists(
+    invoiceNumber: string,
+    tenantId: string,
+    manager?: EntityManager,
+  ): Promise<boolean> {
     const repo = this.getRepo(manager)
     const exists = await repo.findOne({ where: { invoiceNumber, tenantId } })
     return !!exists
   }
 
-  async createAndSave(data: Partial<InvoiceEntity>, manager?: EntityManager): Promise<InvoiceEntity> {
+  async createAndSave(
+    data: Partial<InvoiceEntity>,
+    manager?: EntityManager,
+  ): Promise<InvoiceEntity> {
     const repo = this.getRepo(manager)
     const invoice = repo.create(data as InvoiceEntity)
     return repo.save(invoice)
@@ -39,11 +46,19 @@ export class InvoiceRepository extends Repository<InvoiceEntity> {
     })
   }
 
-  async findByOrderId(orderId: string, tenantId: string, manager?: EntityManager): Promise<InvoiceEntity | null> {
+  async findByOrderId(
+    orderId: string,
+    tenantId: string,
+    manager?: EntityManager,
+  ): Promise<InvoiceEntity | null> {
     return this.getRepo(manager).findOne({ where: { orderId, tenantId } })
   }
 
-  async updateAndSave(invoice: InvoiceEntity, data: Partial<InvoiceEntity>, manager?: EntityManager): Promise<InvoiceEntity> {
+  async updateAndSave(
+    invoice: InvoiceEntity,
+    data: Partial<InvoiceEntity>,
+    manager?: EntityManager,
+  ): Promise<InvoiceEntity> {
     const repo = this.getRepo(manager)
     Object.assign(invoice, data)
     return repo.save(invoice)

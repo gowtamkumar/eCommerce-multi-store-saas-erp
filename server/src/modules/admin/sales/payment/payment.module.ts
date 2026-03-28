@@ -10,11 +10,7 @@ import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoic
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 
 @Module({
-  imports: [
-    SettingsModule,
-    InvoiceModule,
-    MailModule,
-  ],
+  imports: [SettingsModule, InvoiceModule, MailModule],
   controllers: [PaymentController, PaymentActionController],
   providers: [PaymentService],
   exports: [PaymentService],

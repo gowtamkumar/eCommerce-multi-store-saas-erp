@@ -9,7 +9,11 @@ export class OrderReturnRepository extends Repository<OrderReturnEntity> {
     super(OrderReturnEntity, dataSource.createEntityManager())
   }
 
-  async createAndSaveReturn(dto: any, userId: string, tenantId: string): Promise<OrderReturnEntity> {
+  async createAndSaveReturn(
+    dto: any,
+    userId: string,
+    tenantId: string,
+  ): Promise<OrderReturnEntity> {
     const returnRequest = this.create({
       ...dto,
       userId,

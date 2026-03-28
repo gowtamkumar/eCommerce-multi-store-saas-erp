@@ -45,7 +45,10 @@ export class PromotionService {
 
   async findAllPromotions(filterDto: any, tenantId: string) {
     this.logger.log(`${this.findAllPromotions.name} Service Called`)
-    const [promotions, total] = await this.promotionRepository.findAllWithFilters(filterDto, tenantId)
+    const [promotions, total] = await this.promotionRepository.findAllWithFilters(
+      filterDto,
+      tenantId,
+    )
     return { promotions, total }
   }
 

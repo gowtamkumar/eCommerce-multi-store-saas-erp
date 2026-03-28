@@ -10,7 +10,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 export class AdminAuthController {
   private readonly logger = new Logger(AdminAuthController.name)
 
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('/login')
   async login(

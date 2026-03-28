@@ -23,7 +23,11 @@ export class InventoryTransactionRepository extends Repository<InventoryTransact
     })
   }
 
-  async createAndSave(dto: any, tenantId: string, manager?: any): Promise<InventoryTransactionEntity> {
+  async createAndSave(
+    dto: any,
+    tenantId: string,
+    manager?: any,
+  ): Promise<InventoryTransactionEntity> {
     const repo = manager ? manager.getRepository(InventoryTransactionEntity) : this
     const transaction = repo.create({ ...dto, tenantId })
     return await repo.save(transaction)

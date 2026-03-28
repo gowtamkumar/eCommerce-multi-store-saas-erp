@@ -10,10 +10,12 @@ export class UserRepository extends Repository<UserEntity> {
     super(UserEntity, dataSource.createEntityManager())
   }
 
-  async findAllWithFilters(filterUserDto: FilterUserDto, tenantId: string): Promise<[UserEntity[], number]> {
+  async findAllWithFilters(
+    filterUserDto: FilterUserDto,
+    tenantId: string,
+  ): Promise<[UserEntity[], number]> {
     const { name, username, status, page, limit, q } = filterUserDto
-    const query = this.createQueryBuilder('user')
-      .where('user.tenantId = :tenantId', { tenantId })
+    const query = this.createQueryBuilder('user').where('user.tenantId = :tenantId', { tenantId })
 
     if (name) {
       query.andWhere('user.name ILIKE :name', { name: `%${name}%` })
@@ -98,7 +100,11 @@ export class UserRepository extends Repository<UserEntity> {
       .getOne()
   }
 
-  async getOverviewStats(): Promise<{ totalUsers: number; activeUsers: number; inactiveUsers: number }> {
+  async getOverviewStats(): Promise<{
+    totalUsers: number
+    activeUsers: number
+    inactiveUsers: number
+  }> {
     const totalUsers = await this.count()
     const activeUsers = await this.count({ where: { status: UserStatus.ACTIVE } })
     const inactiveUsers = await this.count({ where: { status: UserStatus.INACTIVE } })

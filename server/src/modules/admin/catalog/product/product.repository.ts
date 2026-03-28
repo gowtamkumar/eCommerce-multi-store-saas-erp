@@ -24,7 +24,7 @@ export class ProductRepository extends Repository<ProductEntity> {
     if (status) query.andWhere('product.status = :status', { status })
     if (categoryId) query.andWhere('product.categoryId = :categoryId', { categoryId })
     if (brandId) query.andWhere('product.brandId = :brandId', { brandId })
-    
+
     if (filterDto.minPrice !== undefined && filterDto.minPrice !== null) {
       query.andWhere('product.price >= :minPrice', { minPrice: Number(filterDto.minPrice) })
     }
@@ -120,12 +120,22 @@ export class ProductRepository extends Repository<ProductEntity> {
     await this.remove(product)
   }
 
-  async incrementStock(id: string, tenantId: string, quantity: number, manager?: any): Promise<void> {
+  async incrementStock(
+    id: string,
+    tenantId: string,
+    quantity: number,
+    manager?: any,
+  ): Promise<void> {
     const repo = manager ? manager.getRepository(ProductEntity) : this
     await repo.increment({ id, tenantId }, 'stock', quantity)
   }
 
-  async decrementStock(id: string, tenantId: string, quantity: number, manager?: any): Promise<void> {
+  async decrementStock(
+    id: string,
+    tenantId: string,
+    quantity: number,
+    manager?: any,
+  ): Promise<void> {
     const repo = manager ? manager.getRepository(ProductEntity) : this
     await repo.decrement({ id, tenantId }, 'stock', quantity)
   }
@@ -147,11 +157,15 @@ export class ProductRepository extends Repository<ProductEntity> {
     return this.count({ where: { tenantId } })
   }
 
-  async getOverviewStats(): Promise<{ totalProducts: number; activeProducts: number; inactiveProducts: number }> {
+  async getOverviewStats(): Promise<{
+    totalProducts: number
+    activeProducts: number
+    inactiveProducts: number
+  }> {
     const totalProducts = await this.count()
     const activeProducts = await this.count({ where: { status: ProductStatus.ACTIVE } })
     const inactiveProducts = await this.count({ where: { status: ProductStatus.INACTIVE } })
-    
+
     return { totalProducts, activeProducts, inactiveProducts }
   }
 

@@ -10,7 +10,7 @@ export class TenantStatusGuard implements CanActivate {
   constructor(
     private readonly tenantService: TenantService,
     private readonly reflector: Reflector,
-  ) { }
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()

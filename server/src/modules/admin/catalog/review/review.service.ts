@@ -6,9 +6,7 @@ import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto'
 export class ReviewService {
   private readonly logger = new Logger(ReviewService.name)
 
-  constructor(
-    private readonly reviewRepository: ReviewRepository,
-  ) {}
+  constructor(private readonly reviewRepository: ReviewRepository) {}
 
   async createReview(dto: CreateReviewDto, tenantId: string) {
     this.logger.log(`${this.createReview.name} Service Called`)
@@ -34,7 +32,7 @@ export class ReviewService {
     this.logger.log(`${this.updateReview.name} Service Called`)
     const review = await this.reviewRepository.findById(id, tenantId)
     if (!review) throw new NotFoundException('Review not found')
-    
+
     return await this.reviewRepository.updateAndSave(review, dto)
   }
 
@@ -42,7 +40,7 @@ export class ReviewService {
     this.logger.log(`${this.removeReview.name} Service Called`)
     const review = await this.reviewRepository.findById(id, tenantId)
     if (!review) throw new NotFoundException('Review not found')
-    
+
     await this.reviewRepository.removeReview(review)
     return { success: true }
   }

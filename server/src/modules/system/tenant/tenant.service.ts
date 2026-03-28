@@ -24,7 +24,7 @@ export class TenantService {
     private readonly settingsService: SettingsService,
     private readonly mailService: MailService,
     private readonly subscriptionPlanService: SubscriptionPlanService,
-  ) { }
+  ) {}
 
   async createTenant(createTenantDto: CreateTenantDto) {
     this.logger.log(`${this.createTenant.name} Service Called`)

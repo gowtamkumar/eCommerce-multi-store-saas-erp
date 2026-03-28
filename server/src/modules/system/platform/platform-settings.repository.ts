@@ -75,7 +75,10 @@ export class PlatformSettingsRepository extends Repository<PlatformSettingsEntit
     return await this.save(settings)
   }
 
-  async updateAndSave(settings: PlatformSettingsEntity, data: any): Promise<PlatformSettingsEntity> {
+  async updateAndSave(
+    settings: PlatformSettingsEntity,
+    data: any,
+  ): Promise<PlatformSettingsEntity> {
     Object.assign(settings, data)
     return await this.save(settings)
   }
