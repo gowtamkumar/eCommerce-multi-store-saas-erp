@@ -5,6 +5,7 @@ import CartDrawer from "@/components/shared/CartDrawer";
 import FloatingCartWidget from "@/components/shared/FloatingCartWidget";
 import ScrollToTop from "@/components/shared/ScrollToTop";
 import { CartProvider } from "@/hooks/CartContext";
+import { WishlistProvider } from "@/hooks/WishlistContext";
 import { useSettings } from "@/hooks/SettingsContext";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
@@ -67,15 +68,17 @@ export default function StorefrontLayout({
   return (
     <>
       <CartProvider>
-        {/* <AnalyticsTracker /> */}
-        {!shouldHideCart && (
-          <>
-            <CartDrawer />
-            <FloatingCartWidget />
-          </>
-        )}
-        <ScrollToTop />
-        {children}
+        <WishlistProvider>
+          {/* <AnalyticsTracker /> */}
+          {!shouldHideCart && (
+            <>
+              <CartDrawer />
+              <FloatingCartWidget />
+            </>
+          )}
+          <ScrollToTop />
+          {children}
+        </WishlistProvider>
       </CartProvider>
 
       {/* Google Analytics */}

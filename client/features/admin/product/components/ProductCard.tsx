@@ -2,8 +2,9 @@
 
 import Price from "@/components/shared/Price";
 import { useCart } from "@/hooks/CartContext";
+import { useWishlist } from "@/hooks/WishlistContext";
 import { motion } from "framer-motion";
-import { ArrowUpDown, Eye, ShoppingBag } from "lucide-react";
+import { ArrowUpDown, Eye, Heart, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -17,8 +18,12 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, priority = false, viewMode = 'grid' }: ProductCardProps) {
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const router = useRouter();
   const [adding, setAdding] = useState(false);
+  const [wishlisting, setWishlisting] = useState(false);
+
+  const isWishlisted = isInWishlist(product.id);
 
   // Fallback for missing images
   const imageSrc = product.images?.[0] || "";
@@ -36,6 +41,14 @@ export default function ProductCard({ product, priority = false, viewMode = 'gri
     setAdding(true);
     await addToCart(product.id, 1);
     setAdding(false);
+  };
+
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setWishlisting(true);
+    await toggleWishlist(product.id);
+    setWishlisting(false);
   };
 
   const { finalPrice, discountAmount } = calculatePricing(
@@ -109,6 +122,22 @@ export default function ProductCard({ product, priority = false, viewMode = 'gri
             </>
           )}
         </div>
+
+        {/* Wishlist Button */}
+        <button
+          onClick={handleToggleWishlist}
+          disabled={wishlisting}
+          className={`absolute top-4 right-4 z-20 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 shadow-lg ${isWishlisted
+              ? "bg-rose-500 text-white"
+              : "bg-white/80 dark:bg-slate-900/80 text-slate-900 dark:text-white hover:scale-110 active:scale-95"
+            }`}
+        >
+          {wishlisting ? (
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Heart className={`w-5 h-5 ${isWishlisted ? "fill-current" : ""}`} />
+          )}
+        </button>
 
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">

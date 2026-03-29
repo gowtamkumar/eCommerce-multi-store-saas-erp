@@ -49,9 +49,9 @@ export default function DashboardProducts() {
         try {
             const res = await fetchAPI('/products');
             // NestJS returns { data: { products: [] } }
-            if (res.data?.products) {
-                setProducts(res.data.products);
-                setFilteredProducts(res.data.products);
+            if (res.data) {
+                setProducts(res.data);
+                setFilteredProducts(res.data);
             }
         } catch (error) {
             console.error('Failed to fetch products', error);
@@ -168,7 +168,7 @@ export default function DashboardProducts() {
                                             id: `col-product-image`,
                                             type: 'column',
                                             settings: {},
-                                            styles: { 
+                                            styles: {
                                                 flex: 1,
                                                 backgroundColor: '#FFFFFF',
                                                 borderRadius: '32px',
@@ -181,8 +181,8 @@ export default function DashboardProducts() {
                                                     id: `img-block`,
                                                     type: 'image-block',
                                                     settings: { image: product.images?.[0] || '' },
-                                                    styles: { 
-                                                        imageRadius: '24px', 
+                                                    styles: {
+                                                        imageRadius: '24px',
                                                         imageShadow: '0 15px 35px rgba(0,0,0,0.08)'
                                                     }
                                                 }
@@ -192,7 +192,7 @@ export default function DashboardProducts() {
                                             id: `col-product-info`,
                                             type: 'column',
                                             settings: {},
-                                            styles: { 
+                                            styles: {
                                                 flex: 1.2,
                                                 backgroundColor: '#FFFFFF',
                                                 borderRadius: '32px',
@@ -225,14 +225,14 @@ export default function DashboardProducts() {
                                                 {
                                                     id: `product-features`,
                                                     type: 'text-block',
-                                                    settings: { 
+                                                    settings: {
                                                         html: `
                                                             <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
                                                                 <div style="display: flex; align-items: center; gap: 14px; font-weight: 600; color: #1F2937; font-size: 16px;"><div style="min-width: 26px; height: 26px; background: #10B981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</div> Authentic Quality Assured</div>
                                                                 <div style="display: flex; align-items: center; gap: 14px; font-weight: 600; color: #1F2937; font-size: 16px;"><div style="min-width: 26px; height: 26px; background: #10B981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</div> Fast Doorstep Delivery</div>
                                                                 <div style="display: flex; align-items: center; gap: 14px; font-weight: 600; color: #1F2937; font-size: 16px;"><div style="min-width: 26px; height: 26px; background: #10B981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">✓</div> Cash on Delivery Available</div>
                                                             </div>
-                                                        ` 
+                                                        `
                                                     },
                                                     styles: { textAlign: 'left' }
                                                 }

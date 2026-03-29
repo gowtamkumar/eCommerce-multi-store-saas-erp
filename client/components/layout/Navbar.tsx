@@ -1,10 +1,11 @@
 "use client";
 
 import { useCart } from "@/hooks/CartContext";
+import { useWishlist } from "@/hooks/WishlistContext";
 import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, BadgePercent, Command, Facebook, Grid, Home, Instagram, Lock, LogOut, Menu, Phone, Search, ShoppingBag, Twitter, User, X } from "lucide-react";
+import { ArrowRight, BadgePercent, Command, Facebook, Grid, Heart, Home, Instagram, Lock, LogOut, Menu, Phone, Search, ShoppingBag, Twitter, User, X } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,6 +28,7 @@ const Navbar = () => {
   const router = useRouter();
   const { settings } = useSettings();
   const { totalItems, openCart } = useCart();
+  const { totalItems: wishlistCount } = useWishlist();
   const brandName = settings?.brandName || "LuxeAudio";
   const navbarSettings = settings?.navbar;
   const navbarLayout = navbarSettings?.layout || "default";
@@ -261,6 +263,19 @@ const Navbar = () => {
           <CurrencySwitcher />
         </div>
       )}
+
+      <Link
+        href="/wishlist"
+        className="p-2 rounded-full hover:bg-white/10 transition-colors relative group"
+        title="Wishlist"
+      >
+        <Heart className={`w-5 h-5 transition-colors ${iconColorClass}`} />
+        {wishlistCount > 0 && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full">
+            {wishlistCount}
+          </span>
+        )}
+      </Link>
 
       <button
         onClick={openCart}
