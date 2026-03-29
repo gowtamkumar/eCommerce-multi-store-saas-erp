@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { AuditLogRepository } from './audit-log.repository'
 import { CreateAuditLogDto } from './dto/create-audit-log.dto'
 import { QueryAuditLogDto } from './dto/query-audit-log.dto'
+import { AuditLogEntity } from './entities/audit-log.entity'
 
 @Injectable()
 export class AuditLogService {
@@ -40,7 +41,10 @@ export class AuditLogService {
   /**
    * Paginated list with optional filters — tenant-scoped always.
    */
-  async findAllAuditLogs(tenantId: string, query: QueryAuditLogDto) {
+  async findAllAuditLogs(
+    tenantId: string,
+    query: QueryAuditLogDto,
+  ): Promise<{ data: AuditLogEntity[]; meta: any }> {
     this.logger.log(`${this.findAllAuditLogs.name} Service Called`)
     const { page = 1, limit = 20, userId, action, entity, entityId, from, to } = query
     const [data, total] = await this.auditLogRepository.findAllWithFilters(tenantId, {
@@ -68,7 +72,7 @@ export class AuditLogService {
   /**
    * Single audit log entry — tenant-scoped.
    */
-  async findOneAuditLog(id: string, tenantId: string) {
+  async findOneAuditLog(id: string, tenantId: string): Promise<AuditLogEntity | null> {
     this.logger.log(`${this.findOneAuditLog.name} Service Called`)
     return await this.auditLogRepository.findById(id, tenantId)
   }
@@ -76,7 +80,10 @@ export class AuditLogService {
   /**
    * Delete all logs older than N days for a tenant (data-retention helper).
    */
-  async deleteOlderThanAuditLogs(tenantId: string, days: number) {
+  async deleteOlderThanAuditLogs(
+    tenantId: string,
+    days: number,
+  ): Promise<{ message: string }> {
     this.logger.log(`${this.deleteOlderThanAuditLogs.name} Service Called`)
     const cutoff = new Date()
     cutoff.setDate(cutoff.getDate() - days)
