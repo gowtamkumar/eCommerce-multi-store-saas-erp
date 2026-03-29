@@ -90,7 +90,10 @@ export class PathaoService {
     return { baseURL, clientId, clientSecret, username, password, pathaoStoreId }
   }
 
-  async createPathaoOrder(createOrderDto: CreatePathaoOrderDto, tenantId: string) {
+  async createPathaoOrder(
+    createOrderDto: CreatePathaoOrderDto,
+    tenantId: string,
+  ): Promise<any> {
     this.logger.log(`${this.createPathaoOrder.name} Service Called`)
     const { orderId } = createOrderDto
     const creds = await this.fetchCredentials(tenantId)

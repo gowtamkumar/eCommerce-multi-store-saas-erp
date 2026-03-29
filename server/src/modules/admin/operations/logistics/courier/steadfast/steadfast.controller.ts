@@ -8,6 +8,7 @@ import { CreateSteadfastOrderDto } from '@/modules/admin/operations/logistics/co
 import { SteadfastService } from '@/modules/admin/operations/logistics/courier/steadfast/steadfast.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 
 @ApiTags('courier/steadfast')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -23,8 +24,14 @@ export class SteadfastController {
   async createSteadfastOrder(
     @RequestContext() ctx: RequestContextDto,
     @Body() createOrderDto: CreateSteadfastOrderDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createSteadfastOrder.`)
-    return this.steadfastService.createSteadfastOrder(createOrderDto, ctx.tenantId)
+    const result = await this.steadfastService.createSteadfastOrder(createOrderDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Steadfast order created successfully',
+      data: result,
+    }
   }
 }

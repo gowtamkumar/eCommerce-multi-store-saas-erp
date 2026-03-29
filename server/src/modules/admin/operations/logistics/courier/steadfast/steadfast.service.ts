@@ -40,7 +40,10 @@ export class SteadfastService {
     }
   }
 
-  async createSteadfastOrder(createOrderDto: CreateSteadfastOrderDto, tenantId: string) {
+  async createSteadfastOrder(
+    createOrderDto: CreateSteadfastOrderDto,
+    tenantId: string,
+  ): Promise<any> {
     this.logger.log(`${this.createSteadfastOrder.name} Service Called`)
     await this.initializeCredentials(tenantId)
     const { orderId } = createOrderDto

@@ -8,6 +8,7 @@ import { CreatePathaoOrderDto } from '@/modules/admin/operations/logistics/couri
 import { PathaoService } from '@/modules/admin/operations/logistics/courier/pathao/pathao.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 
 @ApiTags('courier/pathao')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -22,9 +23,15 @@ export class PathaoController {
   async createPathaoOrder(
     @RequestContext() ctx: RequestContextDto,
     @Body() createOrderDto: CreatePathaoOrderDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPathaoOrder.`)
-    return await this.pathaoService.createPathaoOrder(createOrderDto, ctx.tenantId)
+    const result = await this.pathaoService.createPathaoOrder(createOrderDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Pathao order created successfully',
+      data: result,
+    }
   }
 
   // @Get('stores')
