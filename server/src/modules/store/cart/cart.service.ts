@@ -7,6 +7,7 @@ import { SiteSettingsRepository } from '@/modules/admin/settings/site-settings.r
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CartItemRepository } from './cart-item.repository'
 import { CartRepository } from './cart.repository'
+import { CartResponseDto } from './dto/cart-response.dto'
 import { CreateCartItemDto } from './dto/create-cart-item.dto'
 import { UpdateCartItemDto } from './dto/update-cart-item.dto'
 import { CartEntity } from './entities/cart.entity'
@@ -25,7 +26,7 @@ export class CartService {
     private readonly pricingEngine: PricingEngineService,
   ) {}
 
-  async createOrGetCart(userId: string, tenantId: string): Promise<any> {
+  async createOrGetCart(userId: string, tenantId: string): Promise<CartResponseDto> {
     this.logger.log(`${this.createOrGetCart.name} Service Called`)
     const cart = await this.findOrCreateCart(userId, tenantId)
     return this.transformCart(cart, tenantId)
@@ -42,7 +43,7 @@ export class CartService {
     return cart
   }
 
-  private async transformCart(cart: CartEntity, tenantId: string): Promise<any> {
+  private async transformCart(cart: CartEntity, tenantId: string): Promise<CartResponseDto> {
     this.logger.log(`${this.transformCart.name} Service Called`)
 
     // 1. Fetch dependencies
@@ -109,7 +110,7 @@ export class CartService {
     userId: string,
     tenantId: string,
     createCartItemDto: CreateCartItemDto,
-  ): Promise<any> {
+  ): Promise<CartResponseDto> {
     this.logger.log(`${this.addToCart.name} Service Called`)
     const cart = await this.findOrCreateCart(userId, tenantId)
     let { productId, variantId, quantity } = createCartItemDto
@@ -154,7 +155,7 @@ export class CartService {
     tenantId: string,
     cartItemId: string,
     updateCartItemDto: UpdateCartItemDto,
-  ): Promise<any> {
+  ): Promise<CartResponseDto> {
     this.logger.log(`${this.updateCartItem.name} Service Called`)
     const cartItem = await this.cartItemRepository.findByIdWithCart(cartItemId, tenantId)
 
@@ -171,7 +172,7 @@ export class CartService {
     return this.createOrGetCart(userId, tenantId)
   }
 
-  async removeFromCart(userId: string, tenantId: string, cartItemId: string): Promise<any> {
+  async removeFromCart(userId: string, tenantId: string, cartItemId: string): Promise<CartResponseDto> {
     this.logger.log(`${this.removeFromCart.name} Service Called`)
     const cartItem = await this.cartItemRepository.findByIdWithCart(cartItemId, tenantId)
 
@@ -194,7 +195,7 @@ export class CartService {
     await this.cartItemRepository.removeItems(cart.items)
   }
 
-  async syncCart(userId: string, tenantId: string, items: CreateCartItemDto[]): Promise<any> {
+  async syncCart(userId: string, tenantId: string, items: CreateCartItemDto[]): Promise<CartResponseDto> {
     this.logger.log(`${this.syncCart.name} Service Called`)
     const cart = await this.findOrCreateCart(userId, tenantId)
 
@@ -229,7 +230,7 @@ export class CartService {
     return this.createOrGetCart(userId, tenantId)
   }
 
-  async applyCoupon(userId: string, tenantId: string, code: string): Promise<any> {
+  async applyCoupon(userId: string, tenantId: string, code: string): Promise<CartResponseDto> {
     this.logger.log(`${this.applyCoupon.name} Service Called`)
     const cart = await this.findOrCreateCart(userId, tenantId)
 
@@ -245,7 +246,7 @@ export class CartService {
     return this.createOrGetCart(userId, tenantId)
   }
 
-  async removeCoupon(userId: string, tenantId: string): Promise<any> {
+  async removeCoupon(userId: string, tenantId: string): Promise<CartResponseDto> {
     this.logger.log(`${this.removeCoupon.name} Service Called`)
     const cart = await this.findOrCreateCart(userId, tenantId)
     await this.cartRepository.updateCoupon(cart, null)

@@ -3,6 +3,8 @@ import { CategoryRepository } from '../../admin/catalog/category/category.reposi
 import { ProductRepository } from '../../admin/catalog/product/product.repository'
 import { SiteSettingsRepository } from '../../admin/settings/site-settings.repository'
 import { ProductStatus } from '@/common/enums/product-status.enum'
+import { CategoryEntity } from '../../admin/catalog/category/entities/category.entity'
+import { ProductEntity } from '../../admin/catalog/product/entities/product.entity'
 
 @Injectable()
 export class SeoService {
@@ -12,7 +14,7 @@ export class SeoService {
     private readonly siteSettingsRepository: SiteSettingsRepository,
   ) {}
 
-  async getSitemapData(tenantId: string) {
+  async getSitemapData(tenantId: string): Promise<{ categories: CategoryEntity[]; products: ProductEntity[] }> {
     const categories = await this.categoryRepository.find({
       where: { tenantId },
       select: ['slug', 'updatedAt'] as any,

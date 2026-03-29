@@ -1,3 +1,7 @@
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import {
   Body,
   Controller,
@@ -8,13 +12,12 @@ import {
   Patch,
   Post,
   Put,
-  Req,
   UseGuards,
 } from '@nestjs/common'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { ShippingAddressService } from './shipping-address.service'
 import { CreateShippingAddressDto } from './dto/create-shipping-address.dto'
+import { ShippingAddressResponseDto } from './dto/shipping-address-response.dto'
 import { UpdateShippingAddressDto } from './dto/update-shipping-address.dto'
+import { ShippingAddressService } from './shipping-address.service'
 
 @UseGuards(JwtAuthGuard)
 @Controller('store/shipping-address')
@@ -24,38 +27,88 @@ export class ShippingAddressController {
   constructor(private readonly service: ShippingAddressService) {}
 
   @Get()
-  findShippingAddresses(@Req() req: any) {
+  async findShippingAddresses(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<ShippingAddressResponseDto[]>> {
     this.logger.log(`${this.findShippingAddresses.name} Controller Called`)
-    return this.service.findShippingAddresses(req.user.id, req.tenantId)
+    const addresses = await this.service.findShippingAddresses(ctx.userId, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Shipping addresses retrieved successfully',
+      data: addresses,
+    }
   }
 
   @Get(':id')
-  findShippingAddress(@Param('id') id: string, @Req() req: any) {
-    return this.service.findShippingAddress(id, req.user.id, req.tenantId)
+  async findShippingAddress(
+    @Param('id') id: string,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<ShippingAddressResponseDto>> {
+    const address = await this.service.findShippingAddress(id, ctx.userId, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Shipping address retrieved successfully',
+      data: address,
+    }
   }
 
   @Post()
-  createShippingAddress(@Req() req: any, @Body() dto: CreateShippingAddressDto) {
+  async createShippingAddress(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: CreateShippingAddressDto,
+  ): Promise<BaseApiSuccessResponse<ShippingAddressResponseDto>> {
     this.logger.log(`${this.createShippingAddress.name} Controller Called`)
-    return this.service.createShippingAddress(req.user.id, req.tenantId, dto)
+    const address = await this.service.createShippingAddress(ctx.userId, ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Shipping address created successfully',
+      data: address,
+    }
   }
 
   @Put(':id')
-  updateShippingAddress(
+  async updateShippingAddress(
     @Param('id') id: string,
-    @Req() req: any,
+    @RequestContext() ctx: RequestContextDto,
     @Body() dto: UpdateShippingAddressDto,
-  ) {
-    return this.service.updateShippingAddress(id, req.user.id, req.tenantId, dto)
+  ): Promise<BaseApiSuccessResponse<ShippingAddressResponseDto>> {
+    const address = await this.service.updateShippingAddress(id, ctx.userId, ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Shipping address updated successfully',
+      data: address,
+    }
   }
 
   @Patch(':id/default')
-  setDefaultShippingAddress(@Param('id') id: string, @Req() req: any) {
-    return this.service.setDefaultShippingAddress(id, req.user.id, req.tenantId)
+  async setDefaultShippingAddress(
+    @Param('id') id: string,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<ShippingAddressResponseDto>> {
+    const address = await this.service.setDefaultShippingAddress(id, ctx.userId, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Default shipping address updated',
+      data: address,
+    }
   }
 
   @Delete(':id')
-  removeShippingAddress(@Param('id') id: string, @Req() req: any) {
-    return this.service.removeShippingAddress(id, req.user.id, req.tenantId)
+  async removeShippingAddress(
+    @Param('id') id: string,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<null>> {
+    await this.service.removeShippingAddress(id, ctx.userId, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Shipping address deleted successfully',
+      data: null,
+    }
   }
 }

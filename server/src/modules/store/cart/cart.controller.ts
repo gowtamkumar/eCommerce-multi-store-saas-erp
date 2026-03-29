@@ -15,6 +15,8 @@ import { CreateCartItemDto } from './dto/create-cart-item.dto'
 import { UpdateCartItemDto } from './dto/update-cart-item.dto'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from 'src/common/dto/request-context.dto'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { CartResponseDto } from './dto/cart-response.dto'
 
 @UseGuards(JwtAuthGuard)
 @Controller('cart')
@@ -24,57 +26,114 @@ export class CartController {
   constructor(private readonly cartService: CartService) {}
 
   @Get()
-  getCart(@RequestContext() ctx: RequestContextDto) {
+  async getCart(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCart.`)
-    return this.cartService.createOrGetCart(ctx.userId, ctx.tenantId)
+    const cart = await this.cartService.createOrGetCart(ctx.userId, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Cart retrieved successfully',
+      data: cart,
+    }
   }
 
   @Post('items')
-  addToCart(
+  async addToCart(
     @RequestContext() ctx: RequestContextDto,
     @Body() createCartItemDto: CreateCartItemDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called addToCart.`)
-    return this.cartService.addToCart(ctx.userId, ctx.tenantId, createCartItemDto)
+    const cart = await this.cartService.addToCart(ctx.userId, ctx.tenantId, createCartItemDto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Item added to cart',
+      data: cart,
+    }
   }
 
   @Post('sync')
-  syncCart(@RequestContext() ctx: RequestContextDto, @Body() items: CreateCartItemDto[]) {
+  async syncCart(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() items: CreateCartItemDto[],
+  ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called syncCart.`)
-    return this.cartService.syncCart(ctx.userId, ctx.tenantId, items)
+    const cart = await this.cartService.syncCart(ctx.userId, ctx.tenantId, items)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Cart synced successfully',
+      data: cart,
+    }
   }
 
   @Patch('items/:id')
-  updateCartItem(
+  async updateCartItem(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() updateCartItemDto: UpdateCartItemDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateCartItem.`)
-    return this.cartService.updateCartItem(ctx.userId, ctx.tenantId, id, updateCartItemDto)
+    const cart = await this.cartService.updateCartItem(ctx.userId, ctx.tenantId, id, updateCartItemDto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Cart item updated',
+      data: cart,
+    }
   }
 
   @Delete('items/:id')
-  removeFromCart(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+  async removeFromCart(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFromCart.`)
-    return this.cartService.removeFromCart(ctx.userId, ctx.tenantId, id)
+    const cart = await this.cartService.removeFromCart(ctx.userId, ctx.tenantId, id)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Item removed from cart',
+      data: cart,
+    }
   }
 
   @Delete()
-  clearCart(@RequestContext() ctx: RequestContextDto) {
+  async clearCart(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called clearCart.`)
-    return this.cartService.clearCart(ctx.userId, ctx.tenantId)
+    await this.cartService.clearCart(ctx.userId, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Cart cleared',
+      data: null,
+    }
   }
 
   @Post('coupon/apply')
-  applyCoupon(@RequestContext() ctx: RequestContextDto, @Body('code') code: string) {
+  async applyCoupon(
+    @RequestContext() ctx: RequestContextDto,
+    @Body('code') code: string,
+  ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called applyCoupon.`)
-    return this.cartService.applyCoupon(ctx.userId, ctx.tenantId, code)
+    const cart = await this.cartService.applyCoupon(ctx.userId, ctx.tenantId, code)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Coupon applied successfully',
+      data: cart,
+    }
   }
 
   @Post('coupon/remove')
-  removeCoupon(@RequestContext() ctx: RequestContextDto) {
+  async removeCoupon(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCoupon.`)
-    return this.cartService.removeCoupon(ctx.userId, ctx.tenantId)
+    const cart = await this.cartService.removeCoupon(ctx.userId, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Coupon removed from cart',
+      data: cart,
+    }
   }
 }
