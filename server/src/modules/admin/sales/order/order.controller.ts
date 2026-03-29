@@ -1,14 +1,16 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseGuards, Logger } from '@nestjs/common'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
-import { RolesGuard } from '@/common/guards/roles.guard'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
 import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
 import { OrderService } from '@/modules/admin/sales/order/order.service'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { Body, Controller, Get, Logger, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { RequestContextDto } from 'src/common/dto/request-context.dto'
+import { OrderResponseDto } from './dto/order-response.dto'
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('orders')
@@ -22,9 +24,15 @@ export class OrderController {
   async createOrder(
     @RequestContext() ctx: RequestContextDto,
     @Body() createOrderDto: CreateOrderDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<{ message: string; order: OrderResponseDto }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createOrder.`)
-    return await this.orderService.createOrder(createOrderDto, ctx.tenantId)
+    const result = await this.orderService.createOrder(createOrderDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Order created successfully',
+      data: result as any,
+    }
   }
 
   @Get()
@@ -38,15 +46,16 @@ export class OrderController {
   async findAllOrders(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterOrderDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<{ orders: OrderResponseDto[]; pagination: any }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllOrders.`)
     const { orders, total } = await this.orderService.findAllOrders(filterDto, ctx.tenantId)
 
     return {
       success: true,
       statusCode: 200,
+      message: 'Orders retrieved successfully',
       data: {
-        orders,
+        orders: orders as any,
         pagination: {
           total,
           page: filterDto.page,
@@ -65,13 +74,17 @@ export class OrderController {
     UserRole.MARKETING,
     UserRole.OPERATOR,
   )
-  async findOneOrder(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+  async findOneOrder(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<OrderResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneOrder.`)
     const order = await this.orderService.findOneOrder(id, ctx.tenantId)
     return {
       success: true,
       statusCode: 200,
-      data: order,
+      message: 'Order retrieved successfully',
+      data: order as any,
     }
   }
 
@@ -87,13 +100,14 @@ export class OrderController {
     @RequestContext() ctx: RequestContextDto,
     @Param('userId') userId: string,
     @Query('search') search: string,
-  ) {
+  ): Promise<BaseApiSuccessResponse<OrderResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getUserOrders.`)
     const orders = await this.orderService.findByUserId(userId, ctx.tenantId, search)
     return {
       success: true,
       statusCode: 200,
-      data: orders,
+      message: 'User orders retrieved successfully',
+      data: orders as any,
     }
   }
 
@@ -103,13 +117,14 @@ export class OrderController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() updateOrderDto: UpdateOrderDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<OrderResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateOrder.`)
     const order = await this.orderService.updateOrder(id, updateOrderDto, ctx.tenantId)
     return {
       success: true,
       statusCode: 200,
-      data: order,
+      message: 'Order updated successfully',
+      data: order as any,
     }
   }
 }

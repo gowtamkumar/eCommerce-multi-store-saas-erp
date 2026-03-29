@@ -19,6 +19,8 @@ import { CreateCouponDto } from './dto/create-coupon.dto'
 import { UpdateCouponDto } from './dto/update-coupon.dto'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { CouponResponseDto } from './dto/coupon-response.dto'
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('coupons')
@@ -29,9 +31,18 @@ export class CouponController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
-  createCoupon(@RequestContext() ctx: RequestContextDto, @Body() createCouponDto: CreateCouponDto) {
+  async createCoupon(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() createCouponDto: CreateCouponDto,
+  ): Promise<BaseApiSuccessResponse<CouponResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createCoupon.`)
-    return this.couponService.createCoupon(createCouponDto, ctx.tenantId)
+    const result = await this.couponService.createCoupon(createCouponDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Coupon created successfully',
+      data: result as any, // Cast to any to let class-transformer handle serialization via DTO
+    }
   }
 
   @Get()
@@ -42,19 +53,34 @@ export class CouponController {
     UserRole.SUPPORT,
     UserRole.OPERATOR,
   )
-  findAllCoupons(@RequestContext() ctx: RequestContextDto, @Query() filterDto: any) {
+  async findAllCoupons(
+    @RequestContext() ctx: RequestContextDto,
+    @Query() filterDto: any,
+  ): Promise<BaseApiSuccessResponse<{ coupons: CouponResponseDto[]; total: number }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllCoupons.`)
-    return this.couponService.findAllCoupons(filterDto, ctx.tenantId)
+    const result = await this.couponService.findAllCoupons(filterDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'List of coupons retrieved',
+      data: result as any,
+    }
   }
 
   @Post('validate')
-  validateCoupon(
+  async validateCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Body('code') code: string,
     @Body('orderTotal') orderTotal: number,
-  ) {
+  ): Promise<BaseApiSuccessResponse<{ valid: boolean; coupon: CouponResponseDto; discountAmount: number }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called validateCoupon.`)
-    return this.couponService.validateCoupon(code, orderTotal, ctx.tenantId)
+    const result = await this.couponService.validateCoupon(code, orderTotal, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Coupon validated successfully',
+      data: result as any,
+    }
   }
 
   @Get(':id')
@@ -65,26 +91,50 @@ export class CouponController {
     UserRole.SUPPORT,
     UserRole.OPERATOR,
   )
-  findOneCoupon(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+  async findOneCoupon(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<CouponResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneCoupon.`)
-    return this.couponService.findOneCoupon(id, ctx.tenantId)
+    const result = await this.couponService.findOneCoupon(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Coupon retrieved',
+      data: result as any,
+    }
   }
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
-  updateCoupon(
+  async updateCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() updateCouponDto: UpdateCouponDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<CouponResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateCoupon.`)
-    return this.couponService.updateCoupon(id, updateCouponDto, ctx.tenantId)
+    const result = await this.couponService.updateCoupon(id, updateCouponDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Coupon updated successfully',
+      data: result as any,
+    }
   }
 
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  removeCoupon(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+  async removeCoupon(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCoupon.`)
-    return this.couponService.removeCoupon(id, ctx.tenantId)
+    await this.couponService.removeCoupon(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Coupon deleted successfully',
+      data: null,
+    }
   }
 }

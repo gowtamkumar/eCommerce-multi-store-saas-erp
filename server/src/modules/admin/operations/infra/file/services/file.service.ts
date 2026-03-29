@@ -11,7 +11,7 @@ export class FilesService {
 
   constructor(private readonly fileRepository: FileRepository) {}
 
-  getFiles(filterFile: FilterFileDto, tenantId: string): Promise<FileEntity[]> {
+  async getFiles(filterFile: FilterFileDto, tenantId: string): Promise<FileEntity[]> {
     this.logger.log(`${this.getFiles.name} Service Called`)
     const { filename, originalname } = filterFile
 
@@ -22,7 +22,7 @@ export class FilesService {
     return this.fileRepository.findAllByTenant(newQuery)
   }
 
-  async getFile(id: string) {
+  async getFile(id: string): Promise<FileEntity> {
     this.logger.log(`${this.getFile.name} Service Called`)
     const file = await this.fileRepository.findById(id)
 
@@ -33,12 +33,12 @@ export class FilesService {
     return file
   }
 
-  async createFile(createFile: CreateFileDto, tenantId: string) {
+  async createFile(createFile: CreateFileDto, tenantId: string): Promise<FileEntity> {
     this.logger.log(`${this.createFile.name} Service Called`)
     return this.fileRepository.createAndSave(createFile, tenantId)
   }
 
-  async createPdf(createFile: CreateFileDto) {
+  async createPdf(createFile: CreateFileDto): Promise<FileEntity> {
     this.logger.log(`${this.createPdf.name} Service Called`)
 
     const pdf = new PDFDocument()
@@ -50,13 +50,16 @@ export class FilesService {
     pdf.text('Hello, World! kkkd dkjasdklfa sd kljlkj lk j kljlkjkl')
     pdf.end()
 
-    return this.fileRepository.createAndSave({
-      pdfFile: filename,
-      fieldname: filename,
-    })
+    return this.fileRepository.createAndSave(
+      {
+        pdfFile: filename,
+        fieldname: filename,
+      } as any,
+      'system',
+    )
   }
 
-  async updateFile(id: string, updateFile: UpdateFileDto) {
+  async updateFile(id: string, updateFile: UpdateFileDto): Promise<FileEntity> {
     this.logger.log(`${this.updateFile.name} Service Called`)
 
     const findFile = await this.fileRepository.findById(id)
@@ -67,7 +70,7 @@ export class FilesService {
     return this.fileRepository.mergeAndSave(findFile, updateFile)
   }
 
-  async deleteFile(id: string, tenantId: string) {
+  async deleteFile(id: string, tenantId: string): Promise<FileEntity> {
     this.logger.log(`${this.deleteFile.name} Service Called`)
     const file = await this.fileRepository.findByIdAndTenant(id, tenantId)
 

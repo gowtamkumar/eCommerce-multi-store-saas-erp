@@ -7,6 +7,8 @@ import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logist
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { InventoryTransactionResponseDto } from './dto/inventory-transaction-response.dto'
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('inventory-transactions')
@@ -20,22 +22,34 @@ export class InventoryTransactionController {
   async createInventoryTransaction(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateInventoryTransactionDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<InventoryTransactionResponseDto>> {
     this.logger.verbose(
       `User "${ctx.user?.username || 'System'}" called createInventoryTransaction.`,
     )
     const transaction = await this.service.createInventoryTransaction(dto, ctx.tenantId)
-    return { success: true, data: transaction }
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Inventory transaction created successfully',
+      data: transaction as any,
+    }
   }
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
-  async findAllInventoryTransactions(@RequestContext() ctx: RequestContextDto) {
+  async findAllInventoryTransactions(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<InventoryTransactionResponseDto[]>> {
     this.logger.verbose(
       `User "${ctx.user?.username || 'System'}" called findAllInventoryTransactions.`,
     )
     const transactions = await this.service.findAllInventoryTransactions(ctx.tenantId)
-    return { success: true, data: transactions }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'List of inventory transactions retrieved',
+      data: transactions as any,
+    }
   }
 
   @Get('product/:productId')
@@ -43,7 +57,7 @@ export class InventoryTransactionController {
   async findByProductInventoryTransactions(
     @RequestContext() ctx: RequestContextDto,
     @Param('productId') productId: string,
-  ) {
+  ): Promise<BaseApiSuccessResponse<InventoryTransactionResponseDto[]>> {
     this.logger.verbose(
       `User "${ctx.user?.username || 'System'}" called findByProductInventoryTransactions.`,
     )
@@ -51,16 +65,28 @@ export class InventoryTransactionController {
       productId,
       ctx.tenantId,
     )
-    return { success: true, data: transactions }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Product inventory transactions retrieved',
+      data: transactions as any,
+    }
   }
 
   @Get('stock-summary')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
-  async getStockSummaryInventoryTransactions(@RequestContext() ctx: RequestContextDto) {
+  async getStockSummaryInventoryTransactions(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
     this.logger.verbose(
       `User "${ctx.user?.username || 'System'}" called getStockSummaryInventoryTransactions.`,
     )
     const data = await this.service.getStockSummaryInventoryTransactions(ctx.tenantId)
-    return { success: true, data }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Stock summary retrieved',
+      data: data as any,
+    }
   }
 }

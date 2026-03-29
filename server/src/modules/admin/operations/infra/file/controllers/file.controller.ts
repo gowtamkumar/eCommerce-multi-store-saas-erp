@@ -1,8 +1,15 @@
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import {
   Controller,
   Delete,
   FileTypeValidator,
   Get,
+  Logger,
   MaxFileSizeValidator,
   Param,
   ParseFilePipe,
@@ -12,18 +19,12 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-  Logger,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-import { FilesService } from '../services/file.service'
 import { FilterFileDto } from '../dtos'
-import { Roles } from '@/common/decorators/roles.decorator'
+import { FileResponseDto } from '../dtos/file-response.dto'
+import { FilesService } from '../services/file.service'
 
 @Controller('admin/media')
 @UseGuards(JwtAuthGuard)
@@ -34,12 +35,16 @@ export class AdminMediaController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPPORT)
-  async findAllFiles(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterFileDto) {
+  async findAllFiles(
+    @RequestContext() ctx: RequestContextDto,
+    @Query() filterDto: FilterFileDto,
+  ): Promise<BaseApiSuccessResponse<FileResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllFiles.`)
     const files = await this.filesService.getFiles(filterDto, ctx.tenantId)
     return {
       success: true,
       statusCode: 200,
+      message: 'Files retrieved successfully',
       data: files,
     }
   }
@@ -73,7 +78,7 @@ export class AdminMediaController {
       }),
     )
     file: Express.Multer.File,
-  ) {
+  ): Promise<BaseApiSuccessResponse<FileResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called uploadFile.`)
     const newFile = await this.filesService.createFile(file, ctx.tenantId)
     return {
@@ -89,13 +94,14 @@ export class AdminMediaController {
   async removeFile(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFile.`)
     await this.filesService.deleteFile(id, ctx.tenantId)
     return {
       success: true,
       statusCode: 200,
       message: 'File deleted successfully',
+      data: null,
     }
   }
 }

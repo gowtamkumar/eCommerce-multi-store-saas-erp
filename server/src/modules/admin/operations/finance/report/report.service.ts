@@ -1,4 +1,4 @@
-import { Injectable, Logger, Query } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, Query } from '@nestjs/common'
 
 import { OrderStatus } from '@/common/enums/order-status.enum'
 
@@ -36,8 +36,6 @@ export class ReportService {
     ])
 
     return {
-      success: true,
-      data: {
         counts: {
           users,
           products,
@@ -45,7 +43,6 @@ export class ReportService {
           pages,
         },
         topPages: [], // Removed page tracking feature, return empty array for backwards compatibility
-      },
     }
   }
 
@@ -146,8 +143,6 @@ export class ReportService {
     })
 
     return {
-      success: true,
-      data: {
         totalSales,
         periodSales,
         periodOrders,
@@ -207,7 +202,6 @@ export class ReportService {
             }
           })
           .slice(0, 10),
-      },
     }
   }
 
@@ -272,8 +266,6 @@ export class ReportService {
     const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0
 
     return {
-      success: true,
-      data: {
         period: {
           startDate,
           endDate,
@@ -298,7 +290,6 @@ export class ReportService {
         },
         netProfit,
         profitMargin,
-      },
     }
   }
 
@@ -345,8 +336,6 @@ export class ReportService {
     const totalPaid = payments.reduce((sum, p) => sum + (+p.amount || 0), 0)
 
     return {
-      success: true,
-      data: {
         supplier: {
           id: supplier.id,
           name: supplier.name,
@@ -359,7 +348,6 @@ export class ReportService {
           balance: runningBalance,
         },
         ledger: ledger.reverse(), // Newest first for UI
-      },
     }
   }
 
@@ -408,8 +396,6 @@ export class ReportService {
       .reduce((sum, p) => sum + (+p.amount || 0), 0)
 
     return {
-      success: true,
-      data: {
         customer: {
           id: customer.id,
           name: customer.name,
@@ -422,7 +408,6 @@ export class ReportService {
           balance: runningBalance,
         },
         ledger: ledger.reverse(), // Newest first for UI
-      },
     }
   }
 
@@ -497,8 +482,6 @@ export class ReportService {
       outflowSuppliers.reduce((sum, sp) => sum + (+sp.amount || 0), 0)
 
     return {
-      success: true,
-      data: {
         summary: {
           totalInflow,
           totalOutflow,
@@ -506,7 +489,6 @@ export class ReportService {
         },
         chartData,
         recentMovements: movements.reverse().slice(0, 10),
-      },
     }
   }
 
@@ -552,9 +534,8 @@ export class ReportService {
         break
       }
       case 'supplier-ledger': {
-        if (!supplierId) return { success: false, message: 'Supplier ID required' }
-        const res = await this.getSupplierLedger(tenantId, supplierId)
-        const data = res.data
+        if (!supplierId) throw new BadRequestException('Supplier ID required')
+        const data = await this.getSupplierLedger(tenantId, supplierId)
         csvContent = `Supplier: ${data.supplier.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`
         data.ledger.forEach((tx: any) => {
           csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`
@@ -562,9 +543,8 @@ export class ReportService {
         break
       }
       case 'customer-ledger': {
-        if (!customerId) return { success: false, message: 'Customer ID required' }
-        const res = await this.getCustomerLedger(tenantId, customerId)
-        const data = res.data
+        if (!customerId) throw new BadRequestException('Customer ID required')
+        const data = await this.getCustomerLedger(tenantId, customerId)
         csvContent = `Customer: ${data.customer.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`
         data.ledger.forEach((tx: any) => {
           csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`
@@ -572,8 +552,7 @@ export class ReportService {
         break
       }
       case 'cash-flow': {
-        const res = await this.getCashFlow(tenantId)
-        const data = res.data
+        const data = await this.getCashFlow(tenantId)
         csvContent = 'Date,Type,Category,Reference,Amount\n'
         data.recentMovements.forEach((m: any) => {
           csvContent += `${m.date},${m.type},${m.category},"${m.reference || ''}",${m.amount}\n`
@@ -581,15 +560,12 @@ export class ReportService {
         break
       }
       default:
-        return { success: false, message: 'Invalid export type' }
+        throw new BadRequestException('Invalid export type')
     }
 
     return {
-      success: true,
-      data: {
         csv: csvContent,
         filename,
-      },
     }
   }
 
@@ -645,8 +621,6 @@ export class ReportService {
     categories['Supplier Payouts'] = totalSupplierPayments
 
     return {
-      success: true,
-      data: {
         kpis: {
           totalRevenue,
           totalExpenses,
@@ -663,7 +637,6 @@ export class ReportService {
           totalPurchaseOrders: purchaseOrders.length,
           recentPurchaseOrders: purchaseOrders.slice(0, 5),
         },
-      },
     }
   }
 }

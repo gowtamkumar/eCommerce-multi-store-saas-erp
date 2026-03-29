@@ -4,6 +4,7 @@ import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logist
 import { InventoryTransactionRepository } from './inventory-transaction.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
 import { ProductVariantRepository } from '@/modules/admin/catalog/product/variant.repository'
+import { InventoryTransactionEntity } from './entities/inventory-transaction.entity'
 
 @Injectable()
 export class InventoryTransactionService {
@@ -19,7 +20,7 @@ export class InventoryTransactionService {
     dto: CreateInventoryTransactionDto,
     tenantId: string,
     manager?: any,
-  ) {
+  ): Promise<InventoryTransactionEntity> {
     this.logger.log(`${this.createInventoryTransaction.name} Service Called`)
 
     const product = await this.productRepository.findByIdWithRelations(dto.productId, tenantId)
@@ -49,17 +50,17 @@ export class InventoryTransactionService {
     return await this.repository.createAndSave(dto, tenantId, manager)
   }
 
-  async findAllInventoryTransactions(tenantId: string) {
+  async findAllInventoryTransactions(tenantId: string): Promise<InventoryTransactionEntity[]> {
     this.logger.log(`${this.findAllInventoryTransactions.name} Service Called`)
     return await this.repository.findByTenant(tenantId)
   }
 
-  async findByProductInventoryTransactions(productId: string, tenantId: string) {
+  async findByProductInventoryTransactions(productId: string, tenantId: string): Promise<InventoryTransactionEntity[]> {
     this.logger.log(`${this.findByProductInventoryTransactions.name} Service Called`)
     return await this.repository.findByProduct(productId, tenantId)
   }
 
-  async getStockSummaryInventoryTransactions(tenantId: string) {
+  async getStockSummaryInventoryTransactions(tenantId: string): Promise<any[]> {
     this.logger.log(`${this.getStockSummaryInventoryTransactions.name} Service Called`)
     const products = await this.productRepository.find({
       where: { tenantId },

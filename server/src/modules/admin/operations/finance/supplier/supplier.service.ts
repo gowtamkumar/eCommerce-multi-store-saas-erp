@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreateSupplierDto, UpdateSupplierDto } from './dto/supplier.dto'
 import { SupplierRepository } from './supplier.repository'
+import { SupplierEntity } from './entities/supplier.entity'
 
 @Injectable()
 export class SupplierService {
@@ -8,17 +9,17 @@ export class SupplierService {
 
   constructor(private readonly repository: SupplierRepository) {}
 
-  async createSupplier(dto: CreateSupplierDto, tenantId: string) {
+  async createSupplier(dto: CreateSupplierDto, tenantId: string): Promise<SupplierEntity> {
     this.logger.log(`${this.createSupplier.name} Service Called`)
     return await this.repository.createAndSave(dto, tenantId)
   }
 
-  async findAllSuppliers(tenantId: string) {
+  async findAllSuppliers(tenantId: string): Promise<SupplierEntity[]> {
     this.logger.log(`${this.findAllSuppliers.name} Service Called`)
     return await this.repository.findAllByTenant(tenantId)
   }
 
-  async findOneSupplier(id: string, tenantId: string) {
+  async findOneSupplier(id: string, tenantId: string): Promise<SupplierEntity> {
     this.logger.log(`${this.findOneSupplier.name} Service Called`)
     const supplier = await this.repository.findByIdAndTenant(id, tenantId)
     if (!supplier) {
@@ -27,13 +28,13 @@ export class SupplierService {
     return supplier
   }
 
-  async updateSupplier(id: string, dto: UpdateSupplierDto, tenantId: string) {
+  async updateSupplier(id: string, dto: UpdateSupplierDto, tenantId: string): Promise<SupplierEntity> {
     this.logger.log(`${this.updateSupplier.name} Service Called`)
     const supplier = await this.findOneSupplier(id, tenantId)
     return await this.repository.updateAndSave(supplier, dto)
   }
 
-  async removeSupplier(id: string, tenantId: string) {
+  async removeSupplier(id: string, tenantId: string): Promise<SupplierEntity> {
     this.logger.log(`${this.removeSupplier.name} Service Called`)
     const supplier = await this.findOneSupplier(id, tenantId)
     return await this.repository.removeSupplier(supplier)

@@ -45,7 +45,7 @@ export class OrderService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async createOrder(createOrderDto: CreateOrderDto, tenantId: string) {
+  async createOrder(createOrderDto: CreateOrderDto, tenantId: string): Promise<{ message: string; success: boolean; order: OrderEntity }> {
     this.logger.log(`${this.createOrder.name} Service Called`)
 
     return await this.dataSource.transaction(async (manager) => {
@@ -157,7 +157,7 @@ export class OrderService {
     })
   }
 
-  async findAllOrders(filterDto: any, tenantId: string) {
+  async findAllOrders(filterDto: any, tenantId: string): Promise<{ orders: OrderEntity[]; total: number }> {
     this.logger.log(`${this.findAllOrders.name} Service Called`)
     const { page, limit, search, status } = filterDto
 
@@ -193,7 +193,7 @@ export class OrderService {
     }
   }
 
-  async findOneOrder(id: string, tenantId: string) {
+  async findOneOrder(id: string, tenantId: string): Promise<OrderEntity> {
     this.logger.log(`${this.findOneOrder.name} Service Called`)
     const order = await this.orderRepository.findOrderById(id, tenantId)
 
@@ -204,7 +204,7 @@ export class OrderService {
     return order
   }
 
-  async findOneForCourier(id: string, tenantId: string) {
+  async findOneForCourier(id: string, tenantId: string): Promise<OrderEntity> {
     this.logger.log(`${this.findOneForCourier.name} Service Called`)
     const order = await this.orderRepository.findOneForCourier(id, tenantId)
 
@@ -215,7 +215,7 @@ export class OrderService {
     return order
   }
 
-  async findByUserId(userId: string, tenantId: string, search?: string) {
+  async findByUserId(userId: string, tenantId: string, search?: string): Promise<OrderEntity[]> {
     this.logger.log(`${this.findByUserId.name} Service Called`)
     const queryBuilder = this.orderRepository
       .createQueryBuilder('order')
@@ -242,7 +242,7 @@ export class OrderService {
     return await queryBuilder.orderBy('order.createdAt', 'DESC').getMany()
   }
 
-  async updateOrder(id: string, updateOrderDto: UpdateOrderDto, tenantId: string) {
+  async updateOrder(id: string, updateOrderDto: UpdateOrderDto, tenantId: string): Promise<OrderEntity> {
     this.logger.log(`${this.updateOrder.name} Service Called`)
     const order = await this.findOneOrder(id, tenantId)
 
@@ -342,12 +342,12 @@ export class OrderService {
   //   })
   // }
 
-  async countByTenant(tenantId: string) {
+  async countByTenant(tenantId: string): Promise<number> {
     this.logger.log(`${this.countByTenant.name} Service Called`)
     return await this.orderRepository.countByTenant(tenantId)
   }
 
-  async orderOverview(tenantId?: string) {
+  async orderOverview(tenantId?: string): Promise<{ totalOrders: number; pendingOrders: number; completedOrders: number; cancelledOrders: number }> {
     this.logger.log(`${this.orderOverview.name} Service Called`)
     const where = tenantId ? { tenantId } : {}
     const totalOrders = await this.orderRepository.count({ where })

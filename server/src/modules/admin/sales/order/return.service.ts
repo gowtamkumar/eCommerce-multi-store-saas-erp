@@ -5,6 +5,7 @@ import { OrderReturnRepository } from '@/modules/admin/sales/order/order-return.
 import { OrderRepository } from '@/modules/admin/sales/order/order.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
 import { ProductVariantRepository } from '@/modules/admin/catalog/product/variant.repository'
+import { OrderReturnEntity } from './entities/order-return.entity'
 
 @Injectable()
 export class ReturnService {
@@ -17,7 +18,7 @@ export class ReturnService {
     private variantRepository: ProductVariantRepository,
   ) {}
 
-  async createReturnRequest(userId: string, tenantId: string, dto: CreateReturnDto) {
+  async createReturnRequest(userId: string, tenantId: string, dto: CreateReturnDto): Promise<OrderReturnEntity> {
     this.logger.log(`${this.createReturnRequest.name} Service Called`)
     const { orderId, items, reason } = dto
 
@@ -49,17 +50,17 @@ export class ReturnService {
     )
   }
 
-  async findAllReturns(tenantId: string) {
+  async findAllReturns(tenantId: string): Promise<OrderReturnEntity[]> {
     this.logger.log(`${this.findAllReturns.name} Service Called`)
     return await this.returnRepository.findAllWithRelations(tenantId)
   }
 
-  async findByUser(userId: string, tenantId: string) {
+  async findByUser(userId: string, tenantId: string): Promise<OrderReturnEntity[]> {
     this.logger.log(`${this.findByUser.name} Service Called`)
     return await this.returnRepository.findByUserWithRelations(userId, tenantId)
   }
 
-  async findOneReturn(id: string, tenantId: string) {
+  async findOneReturn(id: string, tenantId: string): Promise<OrderReturnEntity> {
     this.logger.log(`${this.findOneReturn.name} Service Called`)
     const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
 
@@ -75,7 +76,7 @@ export class ReturnService {
     tenantId: string,
     status: ReturnStatus,
     adminComment?: string,
-  ) {
+  ): Promise<OrderReturnEntity> {
     this.logger.log(`${this.updateReturnRequestStatus.name} Service Called`)
     const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
 

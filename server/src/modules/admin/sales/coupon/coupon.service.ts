@@ -3,6 +3,7 @@ import { CreateCouponDto } from './dto/create-coupon.dto'
 import { UpdateCouponDto } from './dto/update-coupon.dto'
 import { CouponRepository } from './coupon.repository'
 import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
+import { CouponEntity } from './entities/coupon.entity'
 
 @Injectable()
 export class CouponService {
@@ -10,7 +11,7 @@ export class CouponService {
 
   constructor(private couponRepository: CouponRepository) {}
 
-  async createCoupon(createCouponDto: CreateCouponDto, tenantId: string) {
+  async createCoupon(createCouponDto: CreateCouponDto, tenantId: string): Promise<CouponEntity> {
     this.logger.log(`${this.createCoupon.name} Service Called`)
     const existing = await this.couponRepository.findByCode(createCouponDto.code, tenantId)
 
@@ -21,13 +22,13 @@ export class CouponService {
     return await this.couponRepository.createAndSave(createCouponDto, tenantId)
   }
 
-  async findAllCoupons(filterDto: any, tenantId: string) {
+  async findAllCoupons(filterDto: any, tenantId: string): Promise<{ coupons: CouponEntity[], total: number }> {
     this.logger.log(`${this.findAllCoupons.name} Service Called`)
     const [coupons, total] = await this.couponRepository.findAllWithFilters(filterDto, tenantId)
     return { coupons, total }
   }
 
-  async findOneCoupon(id: string, tenantId: string) {
+  async findOneCoupon(id: string, tenantId: string): Promise<CouponEntity> {
     this.logger.log(`${this.findOneCoupon.name} Service Called`)
     const coupon = await this.couponRepository.findById(id, tenantId)
 
@@ -38,7 +39,7 @@ export class CouponService {
     return coupon
   }
 
-  async findByCodeCoupon(code: string, tenantId: string) {
+  async findByCodeCoupon(code: string, tenantId: string): Promise<CouponEntity> {
     this.logger.log(`${this.findByCodeCoupon.name} Service Called`)
     const coupon = await this.couponRepository.findByCode(code, tenantId)
 
@@ -49,7 +50,7 @@ export class CouponService {
     return coupon
   }
 
-  async updateCoupon(id: string, updateCouponDto: UpdateCouponDto, tenantId: string) {
+  async updateCoupon(id: string, updateCouponDto: UpdateCouponDto, tenantId: string): Promise<CouponEntity> {
     this.logger.log(`${this.updateCoupon.name} Service Called`)
     const coupon = await this.findOneCoupon(id, tenantId)
 
@@ -64,14 +65,14 @@ export class CouponService {
     return await this.couponRepository.updateAndSave(coupon, updateCouponDto)
   }
 
-  async removeCoupon(id: string, tenantId: string) {
+  async removeCoupon(id: string, tenantId: string): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeCoupon.name} Service Called`)
     const coupon = await this.findOneCoupon(id, tenantId)
     await this.couponRepository.removeCoupon(coupon)
     return { success: true, message: 'Coupon deleted successfully' }
   }
 
-  async validateCoupon(code: string, orderTotal: number, tenantId: string) {
+  async validateCoupon(code: string, orderTotal: number, tenantId: string): Promise<{ valid: boolean; coupon: CouponEntity; discountAmount: number }> {
     this.logger.log(`${this.validateCoupon.name} Service Called`)
     try {
       const coupon = await this.findByCodeCoupon(code, tenantId)
@@ -118,7 +119,7 @@ export class CouponService {
     }
   }
 
-  async incrementUsage(id: string, tenantId: string) {
+  async incrementUsage(id: string, tenantId: string): Promise<void> {
     this.logger.log(`${this.incrementUsage.name} Service Called`)
     const coupon = await this.findOneCoupon(id, tenantId)
     coupon.usedCount += 1
