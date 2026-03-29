@@ -257,7 +257,7 @@ export default function Checkout() {
                 return;
             }
 
-            const order = orderJson.order;
+            const order = orderJson.data?.order;
 
             if (paymentMethod === (PaymentMethod.SSLCOMMERZ as any)) {
                 // 2. Initiate Payment

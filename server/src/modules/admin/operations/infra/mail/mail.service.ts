@@ -212,7 +212,7 @@ export class MailService {
             <p><strong>Order ID:</strong> #${order.id}</p>
             <p><strong>Status:</strong> ${order.status}</p>
             <p><strong>Payment Status:</strong> ${order.paymentStatus}</p>
-            <p><strong>Total Amount:</strong> ${order.currency} ${order.totalAmount.toFixed(2)}</p>
+            <p><strong>Total Amount:</strong> ${order.currency} ${Number(order.totalAmount).toFixed(2)}</p>
           </div>
 
           <div style="margin-bottom: 24px;">
@@ -237,9 +237,10 @@ export class MailService {
             <tfoot>
               <tr>
                 <td colspan="2" style="padding: 12px 8px; text-align: right; font-weight: bold;">Subtotal:</td>
-                <td style="padding: 12px 8px; text-align: right; font-weight: bold;">${order.currency} ${order.totalAmount.toFixed(2)}</td>
+                <td style="padding: 12px 8px; text-align: right; font-weight: bold;">${order.currency} ${Number(order.totalAmount).toFixed(2)}</td>
               </tr>
             </tfoot>
+
           </table>
 
           <p style="color: #718096; font-size: 14px; margin-top: 40px; border-top: 1px solid #edf2f7; padding-top: 20px;">

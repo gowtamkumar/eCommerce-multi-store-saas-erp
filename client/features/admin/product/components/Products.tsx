@@ -40,9 +40,10 @@ async function getProductsData(searchParams: { [key: string]: string | string[] 
         // For now we rely on the API returning filtered results.
 
         const res = await fetchAPI(`/products?${params.toString()}`);
+
         return {
-            products: res.data?.products || [],
-            total: res.data?.pagination?.total || 0
+            products: res.data || [],
+            total: res.pagination?.total || 0
         };
     } catch (error) {
         console.error("Error fetching product list:", error);
@@ -125,18 +126,16 @@ export default async function Products({
             <div className={`pb-20 ${productsPageSettings.bannerFullWidth ? 'pt-0' : 'pt-24'}`}>
                 <div className={`${productsPageSettings.bannerFullWidth ? 'max-w-full px-0' : 'container mx-auto px-4'}`}>
                     {productsPageSettings.bannerShow !== false && (
-                        <div 
-                            className={`relative mb-16 overflow-hidden transition-all duration-500 ${
-                                productsPageSettings.bannerFullWidth 
-                                    ? 'py-24 px-8 md:py-32' 
-                                    : 'py-16 px-8 rounded-[3rem]'
-                            } ${
-                                productsPageSettings.bannerStyle === 'minimal' 
-                                    ? 'border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm' 
+                        <div
+                            className={`relative mb-16 overflow-hidden transition-all duration-500 ${productsPageSettings.bannerFullWidth
+                                ? 'py-24 px-8 md:py-32'
+                                : 'py-16 px-8 rounded-[3rem]'
+                                } ${productsPageSettings.bannerStyle === 'minimal'
+                                    ? 'border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm'
                                     : productsPageSettings.bannerStyle === 'modern'
                                         ? 'bg-slate-50 dark:bg-slate-800/20'
                                         : ''
-                            }`}
+                                }`}
                             style={{
                                 backgroundColor: productsPageSettings.bannerBackgroundColor || undefined,
                                 backgroundImage: productsPageSettings.bannerImage ? `url(${productsPageSettings.bannerImage})` : undefined,
@@ -156,45 +155,41 @@ export default async function Products({
 
                             {/* Overlay for Image Style */}
                             {productsPageSettings.bannerImage && (
-                                <div 
-                                    className="absolute inset-0 bg-black/40 z-0" 
+                                <div
+                                    className="absolute inset-0 bg-black/40 z-0"
                                     style={{ opacity: (productsPageSettings.bannerOverlayOpacity || 40) / 100 }}
                                 />
                             )}
 
                             <div className="relative z-10 text-center max-w-4xl mx-auto">
-                                <div 
-                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-6 ${
-                                        productsPageSettings.bannerImage || (productsPageSettings.bannerTextColor && productsPageSettings.bannerTextColor !== '#000000')
-                                            ? 'bg-white/10 backdrop-blur-md text-white border border-white/20'
-                                            : 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400'
-                                    }`}
+                                <div
+                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-6 ${productsPageSettings.bannerImage || (productsPageSettings.bannerTextColor && productsPageSettings.bannerTextColor !== '#000000')
+                                        ? 'bg-white/10 backdrop-blur-md text-white border border-white/20'
+                                        : 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400'
+                                        }`}
                                 >
-                                    <span className={`w-2 h-2 rounded-full animate-pulse ${
-                                        productsPageSettings.bannerImage || (productsPageSettings.bannerTextColor && productsPageSettings.bannerTextColor !== '#000000')
-                                            ? 'bg-white'
-                                            : 'bg-brand-500'
-                                    }`} />
+                                    <span className={`w-2 h-2 rounded-full animate-pulse ${productsPageSettings.bannerImage || (productsPageSettings.bannerTextColor && productsPageSettings.bannerTextColor !== '#000000')
+                                        ? 'bg-white'
+                                        : 'bg-brand-500'
+                                        }`} />
                                     {productsPageSettings.bannerTagline || "Exclusive Collection"}
                                 </div>
-                                
-                                <h1 
-                                    className={`text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight tracking-tight ${
-                                        !productsPageSettings.bannerTextColor && (!productsPageSettings.bannerImage)
-                                            ? 'text-slate-900 dark:text-white'
-                                            : ''
-                                    }`}
+
+                                <h1
+                                    className={`text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight tracking-tight ${!productsPageSettings.bannerTextColor && (!productsPageSettings.bannerImage)
+                                        ? 'text-slate-900 dark:text-white'
+                                        : ''
+                                        }`}
                                     style={{ color: productsPageSettings.bannerTextColor || (productsPageSettings.bannerImage ? '#ffffff' : undefined) }}
                                 >
                                     {productsPageSettings.bannerHeadline || "Our Collection"}
                                 </h1>
-                                
-                                <p 
-                                    className={`text-xl md:text-2xl font-medium leading-relaxed max-w-2xl mx-auto ${
-                                        !productsPageSettings.bannerTextColor && (!productsPageSettings.bannerImage)
-                                            ? 'text-slate-500 dark:text-slate-400'
-                                            : ''
-                                    }`}
+
+                                <p
+                                    className={`text-xl md:text-2xl font-medium leading-relaxed max-w-2xl mx-auto ${!productsPageSettings.bannerTextColor && (!productsPageSettings.bannerImage)
+                                        ? 'text-slate-500 dark:text-slate-400'
+                                        : ''
+                                        }`}
                                     style={{ color: productsPageSettings.bannerTextColor ? `${productsPageSettings.bannerTextColor}cc` : (productsPageSettings.bannerImage ? 'rgba(255,255,255,0.9)' : undefined) }}
                                 >
                                     {productsPageSettings.bannerSubheadline || "Premium products curated for you."}

@@ -16,37 +16,46 @@ export default function Cart() {
 
     if (loading && items.length === 0) {
         return (
-            <div className="min-h-screen pt-24 pb-12 flex justify-center items-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
+                <Navbar />
+                <div className="flex-grow pt-24 pb-12 flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+                <Footer />
             </div>
         );
     }
 
     if (items.length === 0) {
         return (
-            <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-900">
-                <div className="container mx-auto px-4 flex flex-col items-center justify-center min-h-[60vh]">
-                    <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-[2rem] p-10 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 text-center relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600"></div>
-                        <div className="w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-3xl flex items-center justify-center mx-auto mb-8 transform group-hover:scale-110 transition-transform duration-500">
-                            <ShoppingBag className="w-12 h-12 text-blue-600 animate-pulse" />
-                        </div>
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 font-display text-center">Your cart is empty</h1>
-                        <p className="text-slate-600 dark:text-slate-400 mb-10 text-lg text-center">
-                            Looks like you haven't discovered anything you love yet. Let's change that!
-                        </p>
-                        <div className="flex justify-center">
-                            <Link href="/" className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all hover:shadow-lg hover:shadow-blue-200 active:scale-95 group">
-                                Start Shopping
-                                <Plus className="ml-2 w-5 h-5 group-hover:rotate-90 transition-transform" />
-                            </Link>
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
+                <Navbar />
+                <div className="flex-grow pt-24 pb-12">
+                    <div className="container mx-auto px-4 flex flex-col items-center justify-center min-h-[60vh]">
+                        <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-[2rem] p-10 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 text-center relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600"></div>
+                            <div className="w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-3xl flex items-center justify-center mx-auto mb-8 transform group-hover:scale-110 transition-transform duration-500">
+                                <ShoppingBag className="w-12 h-12 text-blue-600 animate-pulse" />
+                            </div>
+                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 font-display text-center">Your cart is empty</h1>
+                            <p className="text-slate-600 dark:text-slate-400 mb-10 text-lg text-center">
+                                Looks like you haven't discovered anything you love yet. Let's change that!
+                            </p>
+                            <div className="flex justify-center">
+                                <Link href="/" className="inline-flex items-center justify-center px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all hover:shadow-lg hover:shadow-blue-200 active:scale-95 group">
+                                    Start Shopping
+                                    <Plus className="ml-2 w-5 h-5 group-hover:rotate-90 transition-transform" />
+                                </Link>
+                            </div>
                         </div>
                     </div>
+                    <RecentlyViewedProducts />
                 </div>
-                <RecentlyViewedProducts />
+                <Footer />
             </div>
         );
     }
+
 
     const summary = cart?.summary || { subtotal: 0, offer_discount: 0, coupon_discount: 0, tax: 0, payable: 0 };
 

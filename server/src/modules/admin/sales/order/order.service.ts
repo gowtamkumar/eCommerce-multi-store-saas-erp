@@ -25,7 +25,10 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Brackets, DataSource } from 'typeorm'
 import { PaymentEntity } from '../payment/entities/payment.entity'
 import { PaymentRepository } from '../payment/payment.repository'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { OrderRepository } from './order.repository'
+
 
 @Injectable()
 export class OrderService {
@@ -43,37 +46,41 @@ export class OrderService {
     private readonly shippingAddressService: ShippingAddressService,
     private readonly mailService: MailService,
     private readonly userRepository: UserRepository,
-  ) {}
+  ) { }
 
   async createOrder(createOrderDto: CreateOrderDto, tenantId: string): Promise<{ message: string; success: boolean; order: OrderEntity }> {
     this.logger.log(`${this.createOrder.name} Service Called`)
 
     return await this.dataSource.transaction(async (manager) => {
+      console.log("transaction start");
       // 1. Initial Data Fetching
-      const settings = await manager
-        .withRepository(this.settingsRepository)
-        .findByTenantId(tenantId)
+      const settings = await manager.findOne(SiteSettingsEntity, { where: { tenantId } })
+
+      console.log("settings", settings);
+
       const user = createOrderDto.userId
-        ? await manager
-            .withRepository(this.userRepository)
-            .findByIdAndTenant(createOrderDto.userId, tenantId)
+        ? await manager.findOne(UserEntity, { where: { id: createOrderDto.userId, tenantId } })
         : null
 
+      console.log("Address Resolution up");
       // 2. Address Resolution
       let resolvedAddress = createOrderDto.address
       if (createOrderDto.shippingAddressId && createOrderDto.userId) {
         try {
+          console.log("Address Resolution inside");
           const savedAddress = await this.shippingAddressService.findShippingAddress(
             createOrderDto.shippingAddressId,
             createOrderDto.userId,
             tenantId,
           )
+          console.log("Address Resolution inside donw");
           resolvedAddress = `${savedAddress.recipientName}, ${savedAddress.address}${savedAddress.city ? ', ' + savedAddress.city : ''}`
         } catch (err) {
           // Fallback to provided address is already handled by default initialization
         }
       }
 
+      console.log("Initialize Context & Strategy up");
       // 3. Initialize Context & Strategy
       const context: OrderCreationContext = { tenantId, manager, user, settings }
       const deps: OrderServiceDependencies = {
@@ -81,12 +88,15 @@ export class OrderService {
         inventoryService: this.inventoryService,
         couponService: this.couponService,
       }
+      console.log("Initialize Context & Strategy");
+
 
       const strategy = OrderStrategyFactory.create(createOrderDto)
-
+      console.log(" Resolve Items up");
       // 4. Resolve Items
       const processedItems = await strategy.resolveItems(createOrderDto, context, deps)
-
+      console.log(" Resolve Items down");
+      console.log(" Initialize Order Entity up");
       // 5. Initialize Order Entity
       const order = manager.create(OrderEntity, {
         customerName: createOrderDto.customerName,
@@ -153,7 +163,22 @@ export class OrderService {
         }
       }
 
-      return { message: 'Order created successfully', success: true, order: savedOrder }
+      const finalOrder = await manager.findOne(OrderEntity, {
+        where: { id: savedOrder.id, tenantId },
+        relations: ['items', 'items.product', 'items.variant'],
+      })
+
+      // Fetch invoice count and number if needed
+      const invoice = await manager.withRepository(this.invoiceService['invoiceRepository']).findOne({
+        where: { orderId: savedOrder.id, tenantId }
+      })
+
+      if (finalOrder && invoice) {
+        ;(finalOrder as any).invoiceNumber = invoice.invoiceNumber
+      }
+
+      return { message: 'Order created successfully', success: true, order: finalOrder || savedOrder }
+
     })
   }
 

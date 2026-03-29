@@ -258,16 +258,6 @@ export default function ProfileForm({ variant, formData, setFormData }: { varian
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Shipping Address</label>
-                    <textarea
-                        rows={4}
-                        value={formData.address}
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                        className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all resize-none font-medium"
-                        placeholder="Enter your street address, apartment, etc."
-                    />
-                </div>
 
                 <div className="flex justify-end pt-4">
                     <button

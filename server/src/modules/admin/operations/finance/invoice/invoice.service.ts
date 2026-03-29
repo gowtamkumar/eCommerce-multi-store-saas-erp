@@ -4,8 +4,10 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { EntityManager } from 'typeorm'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
 import { UpdateInvoiceDto } from './dto/update-invoice.dto'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { InvoiceRepository } from './invoice.repository'
 import { InvoiceEntity } from './entities/invoice.entity'
+
 
 @Injectable()
 export class InvoiceService {
@@ -22,7 +24,7 @@ export class InvoiceService {
     manager?: EntityManager,
   ): Promise<InvoiceEntity> {
     this.logger.log(`${this.createInvoice.name} Service Called`)
-    const orderRepo = manager ? manager.withRepository(this.orderRepository) : this.orderRepository
+    const orderRepo = manager ? manager.getRepository(OrderEntity) : this.orderRepository
 
     const order = await orderRepo.findOne({
       where: { id: createInvoiceDto.orderId, tenantId },

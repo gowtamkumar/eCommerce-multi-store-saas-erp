@@ -10,11 +10,13 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import CustomerOrders from './CustomerOrders';
 import ProfileForm from './ProfileForm';
+import ShippingAddresses from './ShippingAddresses';
+import { MapPin } from 'lucide-react';
 
 export default function Profile() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'security'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses' | 'security'>('profile');
     const [formData, setFormData] = useState({});
     const [stats, setStats] = useState({ totalOrders: 0, memberSince: '' });
 
@@ -72,6 +74,7 @@ export default function Profile() {
     const tabs = [
         { id: 'profile', label: 'My Profile', icon: User },
         { id: 'orders', label: 'Order History', icon: Package },
+        { id: 'addresses', label: 'Shipping Addresses', icon: MapPin },
         { id: 'security', label: 'Security', icon: ShieldCheck },
     ];
 
@@ -222,6 +225,13 @@ export default function Profile() {
                                         <CustomerOrders />
                                     </div>
                                 )}
+
+                                {activeTab === 'addresses' && (
+                                    <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-xl min-h-[500px]">
+                                        <ShippingAddresses />
+                                    </div>
+                                )}
+
 
                                 {activeTab === 'security' && (
                                     <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-xl overflow-hidden">
