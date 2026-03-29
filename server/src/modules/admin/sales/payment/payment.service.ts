@@ -31,7 +31,7 @@ export class PaymentService {
     private mailService: MailService,
   ) {}
 
-  async initPayment(dto: InitPaymentDto, tenantId: string) {
+  async initPayment(dto: InitPaymentDto, tenantId: string): Promise<{ gatewayUrl: string }> {
     this.logger.log(`${this.initPayment.name} Service Called`)
     const { orderId, callbackUrl } = dto
 
@@ -60,7 +60,7 @@ export class PaymentService {
     }
   }
 
-  async getStrategyByTransactionId(tran_id: string) {
+  async getStrategyByTransactionId(tran_id: string): Promise<{ strategy: any; order: OrderEntity }> {
     const order = await this.orderRepository.findOrderByTransactionId(tran_id)
     if (!order) throw new NotFoundException('Order not found')
     return {
@@ -69,7 +69,7 @@ export class PaymentService {
     }
   }
 
-  async handleSuccessPayment(tran_id: string, gatewayResponse: any) {
+  async handleSuccessPayment(tran_id: string, gatewayResponse: any): Promise<{ success: boolean }> {
     this.logger.log(`${this.handleSuccessPayment.name} Service Called`)
     const { strategy, order } = await this.getStrategyByTransactionId(tran_id)
     const validation = await strategy.validateCallback(gatewayResponse)
@@ -111,7 +111,7 @@ export class PaymentService {
     return { success: true }
   }
 
-  async handleFailPayment(tran_id: string, gatewayResponse: any) {
+  async handleFailPayment(tran_id: string, gatewayResponse: any): Promise<{ success: boolean }> {
     this.logger.log(`${this.handleFailPayment.name} Service Called`)
     const { strategy, order } = await this.getStrategyByTransactionId(tran_id)
     const validation = await strategy.validateCallback(gatewayResponse)
@@ -134,7 +134,7 @@ export class PaymentService {
     return { success: false }
   }
 
-  async handleCancelPayment(tran_id: string, gatewayResponse: any) {
+  async handleCancelPayment(tran_id: string, gatewayResponse: any): Promise<{ cancelled: boolean }> {
     this.logger.log(`${this.handleCancelPayment.name} Service Called`)
     const { strategy, order } = await this.getStrategyByTransactionId(tran_id)
     const validation = await strategy.validateCallback(gatewayResponse)
@@ -157,17 +157,17 @@ export class PaymentService {
     return { cancelled: true }
   }
 
-  async getRedirectUrl(tran_id: string, gatewayResponse: any, defaultAppUrl: string) {
+  async getRedirectUrl(tran_id: string, gatewayResponse: any, defaultAppUrl: string): Promise<string> {
     const { strategy } = await this.getStrategyByTransactionId(tran_id)
     return strategy.getRedirectUrl(gatewayResponse, defaultAppUrl)
   }
 
-  async findAllPayments(tenantId: string) {
+  async findAllPayments(tenantId: string): Promise<PaymentEntity[]> {
     this.logger.log(`${this.findAllPayments.name} Service Called`)
     return await this.paymentRepository.findPaymentsByTenant(tenantId)
   }
 
-  async findAllPaymentsByCustomer(userId: string, tenantId: string) {
+  async findAllPaymentsByCustomer(userId: string, tenantId: string): Promise<PaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsByCustomer.name} Service Called`)
     return await this.paymentRepository.findPaymentsByUser(userId, tenantId)
   }

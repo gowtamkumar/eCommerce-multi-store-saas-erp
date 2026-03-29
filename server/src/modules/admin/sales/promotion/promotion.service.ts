@@ -16,7 +16,7 @@ export class PromotionService {
     private productRepository: ProductRepository,
   ) {}
 
-  async createPromotion(createPromotionDto: CreatePromotionDto, tenantId: string) {
+  async createPromotion(createPromotionDto: CreatePromotionDto, tenantId: string): Promise<PromotionEntity> {
     this.logger.log(`${this.createPromotion.name} Service Called`)
     const slug = createPromotionDto.slug || this.generateSlug(createPromotionDto.name)
 
@@ -43,7 +43,7 @@ export class PromotionService {
       .replace(/ +/g, '-')
   }
 
-  async findAllPromotions(filterDto: any, tenantId: string) {
+  async findAllPromotions(filterDto: any, tenantId: string): Promise<{ promotions: PromotionEntity[]; total: number }> {
     this.logger.log(`${this.findAllPromotions.name} Service Called`)
     const [promotions, total] = await this.promotionRepository.findAllWithFilters(
       filterDto,
@@ -52,12 +52,12 @@ export class PromotionService {
     return { promotions, total }
   }
 
-  async findActivePromotions(tenantId: string) {
+  async findActivePromotions(tenantId: string): Promise<PromotionEntity[]> {
     this.logger.log(`${this.findActivePromotions.name} Service Called`)
     return await this.promotionRepository.findActivePromotions(tenantId, new Date())
   }
 
-  async findOne(id: string, tenantId: string) {
+  async findOne(id: string, tenantId: string): Promise<PromotionEntity> {
     this.logger.log(`${this.findOne.name} Service Called`)
     const promotion = await this.promotionRepository.findById(id, tenantId)
 
@@ -68,7 +68,7 @@ export class PromotionService {
     return promotion
   }
 
-  async findOneBySlug(slug: string, tenantId: string) {
+  async findOneBySlug(slug: string, tenantId: string): Promise<PromotionEntity> {
     this.logger.log(`${this.findOneBySlug.name} Service Called`)
     const promotion = await this.promotionRepository.findBySlug(slug, tenantId)
     if (!promotion) {
@@ -77,13 +77,13 @@ export class PromotionService {
     return promotion
   }
 
-  async updatePromotion(id: string, updatePromotionDto: UpdatePromotionDto, tenantId: string) {
+  async updatePromotion(id: string, updatePromotionDto: UpdatePromotionDto, tenantId: string): Promise<PromotionEntity> {
     this.logger.log(`${this.updatePromotion.name} Service Called`)
     const promotion = await this.findOne(id, tenantId)
     return await this.promotionRepository.updateAndSave(promotion, updatePromotionDto)
   }
 
-  async removePromotion(id: string, tenantId: string) {
+  async removePromotion(id: string, tenantId: string): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removePromotion.name} Service Called`)
     const promotion = await this.findOne(id, tenantId)
     await this.promotionRepository.removePromotion(promotion)
@@ -94,7 +94,7 @@ export class PromotionService {
    * Public endpoint: returns all active promotions with their applicable products.
    * Used by the customer storefront /offers page.
    */
-  async getOfferProducts(tenantId: string) {
+  async getOfferProducts(tenantId: string): Promise<{ promotions: PromotionEntity[]; offerGroups: any[] }> {
     this.logger.log(`${this.getOfferProducts.name} Service Called`)
 
     const now = new Date()
@@ -163,7 +163,7 @@ export class PromotionService {
     return { promotions, offerGroups }
   }
 
-  async getOfferProductsBySlug(slug: string, tenantId: string) {
+  async getOfferProductsBySlug(slug: string, tenantId: string): Promise<{ promotion: PromotionEntity; products: any[] }> {
     this.logger.log(`${this.getOfferProductsBySlug.name} Service Called`)
     const promotion = await this.findOneBySlug(slug, tenantId)
 

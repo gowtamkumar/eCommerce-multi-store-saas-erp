@@ -8,6 +8,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 
 @Controller('payment')
 export class PaymentActionController {
@@ -18,11 +19,21 @@ export class PaymentActionController {
   @Post('init')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
-  async init(@RequestContext() ctx: RequestContextDto, @Body() dto: InitPaymentDto) {
+  async init(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: InitPaymentDto,
+  ): Promise<BaseApiSuccessResponse<{ gatewayUrl: string }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called init.`)
-    return await this.paymentService.initPayment(dto, ctx.tenantId)
+    const result = await this.paymentService.initPayment(dto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Payment initiated successfully',
+      data: result,
+    }
   }
 
+  // Redirect endpoints — cannot return JSON wrappers as they perform HTTP redirects
   @Post('success')
   async success(
     @Query('tran_id') tran_id: string,
@@ -72,10 +83,18 @@ export class PaymentActionController {
   }
 
   @Post('ipn')
-  async ipn(@Body() gatewayResponse: any) {
+  async ipn(
+    @Body() gatewayResponse: any,
+  ): Promise<BaseApiSuccessResponse<{ success: boolean }> | { received: boolean }> {
     const { tran_id, status } = gatewayResponse
     if (status === 'VALID' || status === 'AUTHENTICATED') {
-      return await this.paymentService.handleSuccessPayment(tran_id, gatewayResponse)
+      const result = await this.paymentService.handleSuccessPayment(tran_id, gatewayResponse)
+      return {
+        success: true,
+        statusCode: 200,
+        message: 'IPN processed successfully',
+        data: result,
+      }
     }
     return { received: true }
   }

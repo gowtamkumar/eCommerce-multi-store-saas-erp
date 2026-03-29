@@ -3,6 +3,7 @@ import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
 import { Injectable, Logger } from '@nestjs/common'
 import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SiteSettingsRepository } from './site-settings.repository'
+import { SiteSettingsEntity } from './entities/site-settings.entity'
 
 @Injectable()
 export class SettingsService {
@@ -13,7 +14,7 @@ export class SettingsService {
     private tenantRepository: TenantRepository,
   ) { }
 
-  async findByTenantSettings(tenantId: string) {
+  async findByTenantSettings(tenantId: string): Promise<SiteSettingsEntity & { status: string }> {
     this.logger.log(`${this.findByTenantSettings.name} Service Called`)
     let settings = await this.settingsRepository.findByTenantId(tenantId)
     // Create default settings if not exists
@@ -36,13 +37,13 @@ export class SettingsService {
     }
   }
 
-  async updateSettings(tenantId: string, dto: UpdateSiteSettingsDto) {
+  async updateSettings(tenantId: string, dto: UpdateSiteSettingsDto): Promise<SiteSettingsEntity> {
     this.logger.log(`${this.updateSettings.name} Service Called`)
     const settings = await this.settingsRepository.findByTenantId(tenantId)
     if (!settings) throw new Error('Settings not found')
     return await this.settingsRepository.updateAndSave(settings, dto)
   }
-  async createSetting(tenantId: string, dto: UpdateSiteSettingsDto) {
+  async createSetting(tenantId: string, dto: UpdateSiteSettingsDto): Promise<SiteSettingsEntity> {
     this.logger.log(`${this.createSetting.name} Service Called`)
     return await this.settingsRepository.createAndSave(dto, tenantId)
   }

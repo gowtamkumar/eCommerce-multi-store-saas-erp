@@ -1,25 +1,27 @@
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { Roles } from '@/common/decorators/roles.decorator'
+import { TenantId } from '@/common/decorators/tenant-id.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import {
   Body,
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   Patch,
   Post,
   Query,
   UseGuards,
-  Logger,
 } from '@nestjs/common'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { CreatePromotionDto } from './dto/create-promotion.dto'
+import { PromotionResponseDto } from './dto/promotion-response.dto'
 import { UpdatePromotionDto } from './dto/update-promotion.dto'
 import { PromotionService } from './promotion.service'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { TenantId } from '@/common/decorators/tenant-id.decorator'
-import { RolesGuard } from '@/common/guards/roles.guard'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 
 @Controller('promotions')
 export class PromotionController {
@@ -30,12 +32,18 @@ export class PromotionController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
-  createPromotion(
+  async createPromotion(
     @RequestContext() ctx: RequestContextDto,
     @Body() createPromotionDto: CreatePromotionDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<PromotionResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPromotion.`)
-    return this.promotionService.createPromotion(createPromotionDto, ctx.tenantId)
+    const result = await this.promotionService.createPromotion(createPromotionDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Promotion created successfully',
+      data: result,
+    }
   }
 
   @Get()
@@ -47,9 +55,18 @@ export class PromotionController {
     UserRole.SUPPORT,
     UserRole.OPERATOR,
   )
-  findAllPromotions(@RequestContext() ctx: RequestContextDto, @Query() filterDto: any) {
+  async findAllPromotions(
+    @RequestContext() ctx: RequestContextDto,
+    @Query() filterDto: any,
+  ): Promise<BaseApiSuccessResponse<{ promotions: PromotionResponseDto[]; total: number }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPromotions.`)
-    return this.promotionService.findAllPromotions(filterDto, ctx.tenantId)
+    const result = await this.promotionService.findAllPromotions(filterDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Promotions retrieved successfully',
+      data: result,
+    }
   }
 
   @Get('active')
@@ -62,22 +79,47 @@ export class PromotionController {
     UserRole.OPERATOR,
     UserRole.USER,
   )
-  findActivePromotions(@TenantId() tenantId: string) {
-    this.logger.verbose(`User "${tenantId}" called findActivePromotions.`)
-    return this.promotionService.findActivePromotions(tenantId)
+  async findActivePromotions(
+    @TenantId() tenantId: string,
+  ): Promise<BaseApiSuccessResponse<PromotionResponseDto[]>> {
+    this.logger.verbose(`[Active Promotions] called for tenant: ${tenantId}`)
+    const result = await this.promotionService.findActivePromotions(tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Active promotions retrieved',
+      data: result,
+    }
   }
 
   // ─── Public endpoint (no auth) — used by storefront /offers page ───
   @Get('offers')
-  getOfferProducts(@TenantId() tenantId: string) {
+  async getOfferProducts(
+    @TenantId() tenantId: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`[Public] getOfferProducts called for tenant: ${tenantId}`)
-    return this.promotionService.getOfferProducts(tenantId)
+    const result = await this.promotionService.getOfferProducts(tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Offer products retrieved',
+      data: result,
+    }
   }
 
   @Get('slug/:slug')
-  getPromotionBySlug(@Param('slug') slug: string, @TenantId() tenantId: string) {
+  async getPromotionBySlug(
+    @Param('slug') slug: string,
+    @TenantId() tenantId: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`[Public] getPromotionBySlug called for slug: ${slug}, tenant: ${tenantId}`)
-    return this.promotionService.getOfferProductsBySlug(slug, tenantId)
+    const result = await this.promotionService.getOfferProductsBySlug(slug, tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Promotion by slug retrieved',
+      data: result,
+    }
   }
 
   @Get(':id')
@@ -89,28 +131,52 @@ export class PromotionController {
     UserRole.SUPPORT,
     UserRole.OPERATOR,
   )
-  findOnePromotion(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+  async findOnePromotion(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<PromotionResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOnePromotion.`)
-    return this.promotionService.findOne(id, ctx.tenantId)
+    const result = await this.promotionService.findOne(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Promotion retrieved',
+      data: result,
+    }
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
-  updatePromotion(
+  async updatePromotion(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() updatePromotionDto: UpdatePromotionDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<PromotionResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePromotion.`)
-    return this.promotionService.updatePromotion(id, updatePromotionDto, ctx.tenantId)
+    const result = await this.promotionService.updatePromotion(id, updatePromotionDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Promotion updated successfully',
+      data: result,
+    }
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  removePromotion(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+  async removePromotion(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePromotion.`)
-    return this.promotionService.removePromotion(id, ctx.tenantId)
+    await this.promotionService.removePromotion(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Promotion deleted successfully',
+      data: null,
+    }
   }
 }

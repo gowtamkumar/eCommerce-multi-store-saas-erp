@@ -1,13 +1,15 @@
-import { Body, Controller, Get, Put, UseGuards, Logger } from '@nestjs/common'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-import { RolesGuard } from '@/common/guards/roles.guard'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { UpdateSiteSettingsDto } from './dto/settings.dto'
-import { SettingsService } from './settings.service'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
+import { Body, Controller, Get, Logger, Put, UseGuards } from '@nestjs/common'
+import { UpdateSiteSettingsDto } from './dto/settings.dto'
+import { SiteSettingsResponseDto } from './dto/site-settings-response.dto'
+import { SettingsService } from './settings.service'
 
 @Controller('settings')
 export class SettingsController {
@@ -17,9 +19,17 @@ export class SettingsController {
 
   @Get()
   @PublicDuringExpiration()
-  async findByTenantSettings(@RequestContext() ctx: RequestContextDto) {
+  async findByTenantSettings(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<SiteSettingsResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByTenantSettings.`)
-    return await this.settingsService.findByTenantSettings(ctx.tenantId)
+    const settings = await this.settingsService.findByTenantSettings(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Settings retrieved successfully',
+      data: settings as any,
+    }
   }
 
   @Put()
@@ -28,8 +38,14 @@ export class SettingsController {
   async updateSettings(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: UpdateSiteSettingsDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<SiteSettingsResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateSettings.`)
-    return await this.settingsService.updateSettings(ctx.tenantId, dto)
+    const settings = await this.settingsService.updateSettings(ctx.tenantId, dto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Settings updated successfully',
+      data: settings as any,
+    }
   }
 }
