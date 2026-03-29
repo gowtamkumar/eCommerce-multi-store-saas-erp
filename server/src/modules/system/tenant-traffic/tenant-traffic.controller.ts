@@ -1,11 +1,11 @@
 import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { ProductService } from '@/modules/admin/catalog/product/product.service'
-import { ReviewService } from '@/modules/admin/catalog/review/review.service'
 import { PageService } from '@/modules/admin/content/page/page.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { OrderService } from '@/modules/admin/sales/order/order.service'
@@ -14,6 +14,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Param,
   Patch,
   Post,
@@ -26,18 +27,19 @@ import { TrafficService } from './traffic.service'
 
 @Controller('tenant-traffic')
 export class TenantTrafficController {
+  private readonly logger = new Logger(TenantTrafficController.name)
+
   constructor(
     private readonly userService: UserService,
     private readonly tenantService: TenantService,
     private readonly orderService: OrderService,
-    private readonly reviewService: ReviewService,
     private readonly trafficService: TrafficService,
     private readonly productService: ProductService,
     private readonly pageService: PageService,
   ) {}
 
   @Post('/setup')
-  async setup(@Body() body: any) {
+  async setup(@Body() body: any): Promise<BaseApiSuccessResponse<{ user: { name: string, username: string } }>> {
     const { name, email, password, username, setupKey } = body
 
     // Security check
@@ -58,15 +60,16 @@ export class TenantTrafficController {
 
     return {
       success: true,
+      statusCode: 201,
       message: 'Super Admin created successfully',
-      user: { name: superAdmin.name, username: superAdmin.username },
+      data: { user: { name: superAdmin.name, username: superAdmin.username } },
     }
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/health')
-  async getHealth() {
+  async getHealth(): Promise<BaseApiSuccessResponse<any>> {
     const cpu = await si.cpu()
     const cpuLoad = await si.currentLoad()
     const mem = await si.mem()
@@ -77,7 +80,7 @@ export class TenantTrafficController {
     const time = await si.time()
 
     const processes = await si.processes()
-    const docker = await si.dockerContainers(true) // Fetch all containers with full info
+    const docker = await si.dockerContainers(true)
 
     const stats = {
       cpu: {
@@ -124,6 +127,8 @@ export class TenantTrafficController {
 
     return {
       success: true,
+      statusCode: 200,
+      message: 'System health retrieved successfully',
       data: {
         status: 'ok',
         stats,
@@ -138,7 +143,7 @@ export class TenantTrafficController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/overview')
-  async getOverview(@Query('days') days?: number) {
+  async getOverview(@Query('days') days?: number): Promise<BaseApiSuccessResponse<any>> {
     const [tenantOverview, userOverview, productOverview, orderOverview, traffic] =
       await Promise.all([
         this.tenantService.tenantOverview(),
@@ -152,6 +157,8 @@ export class TenantTrafficController {
 
     return {
       success: true,
+      statusCode: 200,
+      message: 'Global system overview retrieved successfully',
       data: {
         ...tenantOverview,
         ...userOverview,
@@ -166,27 +173,33 @@ export class TenantTrafficController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/traffic')
-  async getTraffic(@Query('days') days?: number) {
+  async getTraffic(@Query('days') days?: number): Promise<BaseApiSuccessResponse<any[]>> {
+    const traffic = await this.trafficService.getGlobalTrafficStats(days || 7)
     return {
       success: true,
-      data: await this.trafficService.getGlobalTrafficStats(days || 7),
+      statusCode: 200,
+      message: 'Global traffic stats retrieved successfully',
+      data: traffic,
     }
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/tenants')
-  async getAllTenants() {
+  async getAllTenants(): Promise<BaseApiSuccessResponse<any[]>> {
+    const tenants = await this.tenantService.findAllTenants()
     return {
       success: true,
-      data: await this.tenantService.findAllTenants(),
+      statusCode: 200,
+      message: 'All tenants retrieved successfully',
+      data: tenants as any,
     }
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/tenants/analytics')
-  async getTenantAnalytics() {
+  async getTenantAnalytics(): Promise<BaseApiSuccessResponse<any[]>> {
     try {
       const tenants = await this.tenantService.findAllTenants()
       const traffic = await this.trafficService.getTrafficStats(30)
@@ -220,9 +233,14 @@ export class TenantTrafficController {
         }),
       )
 
-      return { success: true, data: analytics }
+      return {
+        success: true,
+        statusCode: 200,
+        message: 'Tenant analytics retrieved successfully',
+        data: analytics,
+      }
     } catch (error) {
-      console.error('[SuperAdmin] Error fetching tenant analytics:', error)
+      this.logger.error('[SuperAdmin] Error fetching tenant analytics:', error)
       throw error
     }
   }
@@ -230,7 +248,9 @@ export class TenantTrafficController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/tenants/:id/analytics')
-  async getDetailedTenantAnalytics(@Param('id') id: string) {
+  async getDetailedTenantAnalytics(
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
     try {
       const [users, products, orders, pages] = await Promise.all([
         this.userService.countByTenant(id),
@@ -241,6 +261,8 @@ export class TenantTrafficController {
 
       return {
         success: true,
+        statusCode: 200,
+        message: 'Detailed tenant analytics retrieved',
         data: {
           counts: {
             users,
@@ -252,7 +274,7 @@ export class TenantTrafficController {
         },
       }
     } catch (error) {
-      console.error(`[SuperAdmin] Error fetching detailed analytics for tenant ${id}:`, error)
+      this.logger.error(`[SuperAdmin] Error fetching detailed analytics for tenant ${id}:`, error)
       throw error
     }
   }
@@ -260,10 +282,12 @@ export class TenantTrafficController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/users')
-  async getAllUsers() {
+  async getAllUsers(): Promise<BaseApiSuccessResponse<any>> {
     const users = await this.userService.findAllUsersCrossTenant()
     return {
       success: true,
+      statusCode: 200,
+      message: 'All users retrieved successfully',
       data: {
         users,
         pagination: {
@@ -279,58 +303,75 @@ export class TenantTrafficController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/users/:id')
-  async getUserDetails(@Param('id') id: string) {
+  async getUserDetails(@Param('id') id: string): Promise<BaseApiSuccessResponse<any>> {
     const user = await this.userService.getUser(id)
     return {
       success: true,
-      data: user,
+      statusCode: 200,
+      message: 'User details retrieved successfully',
+      data: user as any,
     }
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Patch('/users/:id/status')
-  async updateUserStatus(@Param('id') id: string, @Body('status') status: UserStatus) {
+  async updateUserStatus(
+    @Param('id') id: string,
+    @Body('status') status: UserStatus,
+  ): Promise<BaseApiSuccessResponse<any>> {
     const user = await this.userService.updateUser(id, { status } as any)
     return {
       success: true,
+      statusCode: 200,
       message: `User status updated to ${status}`,
-      data: user,
+      data: user as any,
     }
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/tenants/:id')
-  async getTenantDetails(@Param('id') id: string) {
+  async getTenantDetails(@Param('id') id: string): Promise<BaseApiSuccessResponse<any>> {
     const tenant = await this.tenantService.findOneTenants(id)
     return {
       success: true,
-      data: tenant,
+      statusCode: 200,
+      message: 'Tenant details retrieved successfully',
+      data: tenant as any,
     }
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Patch('/tenants/:id/status')
-  async updateTenantStatus(@Param('id') id: string, @Body('status') status: TenantStatus) {
+  async updateTenantStatus(
+    @Param('id') id: string,
+    @Body('status') status: TenantStatus,
+  ): Promise<BaseApiSuccessResponse<any>> {
     const tenant = await this.tenantService.updateTenantStatus(id, status as any)
     return {
       success: true,
+      statusCode: 200,
       message: `Tenant status updated to ${status}`,
-      data: tenant,
+      data: tenant as any,
     }
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Patch('/tenants/:id/plan')
-  async updateTenantPlan(@Param('id') id: string, @Body('planId') planId: string) {
+  async updateTenantPlan(
+    @Param('id') id: string,
+    @Body('planId') planId: string,
+  ): Promise<BaseApiSuccessResponse<null>> {
     // This would require a new method in TenantService to update the plan relation
     // For now, removing the legacy tier logic.
     return {
       success: true,
+      statusCode: 200,
       message: 'Plan update logic to be implemented with dynamic plans',
+      data: null,
     }
   }
 }

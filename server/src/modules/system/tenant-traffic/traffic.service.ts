@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { TrafficRepository } from './traffic.repository'
+import { TenantTrafficEntity } from './entities/tenant-traffic.entity'
 
 @Injectable()
 export class TrafficService {
@@ -7,7 +8,7 @@ export class TrafficService {
 
   constructor(private readonly trafficRepository: TrafficRepository) {}
 
-  async logRequestTraffic(tenantId: string) {
+  async logRequestTraffic(tenantId: string): Promise<void> {
     this.logger.log(`${this.logRequestTraffic.name} Service Called`)
     if (!tenantId) return
 
@@ -21,7 +22,7 @@ export class TrafficService {
     }
   }
 
-  async getTrafficStats(days: number = 7) {
+  async getTrafficStats(days: number = 7): Promise<TenantTrafficEntity[]> {
     this.logger.log(`${this.getTrafficStats.name} Service Called`)
     const sinceDate = new Date()
     sinceDate.setHours(0, 0, 0, 0)
@@ -30,7 +31,9 @@ export class TrafficService {
     return await this.trafficRepository.findAllSince(sinceDate)
   }
 
-  async getGlobalTrafficStats(days: number = 7) {
+  async getGlobalTrafficStats(
+    days: number = 7,
+  ): Promise<{ date: Date; requestCount: number }[]> {
     this.logger.log(`${this.getGlobalTrafficStats.name} Service Called`)
     const sinceDate = new Date()
     sinceDate.setHours(0, 0, 0, 0)

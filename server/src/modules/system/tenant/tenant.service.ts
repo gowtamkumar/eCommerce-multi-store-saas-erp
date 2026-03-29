@@ -13,6 +13,17 @@ import * as crypto from 'crypto'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantEntity } from './entities/tenant.entity'
 import { TenantRepository } from './tenant.repository'
+import { TenantOverviewResponseDto } from './dto/tenant-response.dto'
+
+export interface CreateTenantResponseDto {
+  tenant: TenantEntity
+  admin: {
+    id: string
+    name: string
+    username: string
+    email: string
+  }
+}
 
 @Injectable()
 export class TenantService {
@@ -26,7 +37,7 @@ export class TenantService {
     private readonly subscriptionPlanService: SubscriptionPlanService,
   ) { }
 
-  async createTenant(createTenantDto: CreateTenantDto) {
+  async createTenant(createTenantDto: CreateTenantDto): Promise<CreateTenantResponseDto> {
     this.logger.log(`${this.createTenant.name} Service Called`)
     const { storeName, subdomain, planId, name, username, email, password } = createTenantDto
     console.log("createTenantDto", createTenantDto);
@@ -119,12 +130,12 @@ export class TenantService {
     }
   }
 
-  async findAllTenants() {
+  async findAllTenants(): Promise<TenantEntity[]> {
     this.logger.log(`${this.findAllTenants.name} Service Called`)
     return await this.tenantRepository.findAllSorted()
   }
 
-  async findOneTenants(id: string) {
+  async findOneTenants(id: string): Promise<TenantEntity> {
     this.logger.log(`${this.findOneTenants.name} Service Called`)
     const tenant = await this.tenantRepository.findTenantById(id)
     if (!tenant) {
@@ -133,17 +144,17 @@ export class TenantService {
     return tenant
   }
 
-  async findBySubdomain(subdomain: string) {
+  async findBySubdomain(subdomain: string): Promise<TenantEntity | null> {
     this.logger.log(`${this.findBySubdomain.name} Service Called`)
     return await this.tenantRepository.findBySubdomain(subdomain)
   }
 
-  async findByCustomDomain(customDomain: string) {
+  async findByCustomDomain(customDomain: string): Promise<TenantEntity | null> {
     this.logger.log(`${this.findByCustomDomain.name} Service Called`)
     return await this.tenantRepository.findByCustomDomain(customDomain)
   }
 
-  async lookupTenant(subdomain?: string, customDomain?: string) {
+  async lookupTenant(subdomain?: string, customDomain?: string): Promise<TenantEntity> {
     this.logger.log(`${this.lookupTenant.name} Service Called`)
     let domain = {} as any
 
@@ -161,7 +172,7 @@ export class TenantService {
     return domain
   }
 
-  async updateCustomDomain(id: string, customDomain: string) {
+  async updateCustomDomain(id: string, customDomain: string): Promise<TenantEntity> {
     this.logger.log(`${this.updateCustomDomain.name} Service Called`)
     const tenant = await this.findOneTenants(id)
     return await this.tenantRepository.updateAndSave(tenant, {
@@ -171,7 +182,7 @@ export class TenantService {
     })
   }
 
-  async verifyCustomDomain(id: string) {
+  async verifyCustomDomain(id: string): Promise<TenantEntity> {
     this.logger.log(`${this.verifyCustomDomain.name} Service Called`)
     const tenant = await this.findOneTenants(id)
     // Mock verification: in a real app, you'd check DNS records here
@@ -181,7 +192,7 @@ export class TenantService {
     })
   }
 
-  async updateTenantStatus(id: string, status: string) {
+  async updateTenantStatus(id: string, status: string): Promise<TenantEntity> {
     this.logger.log(`${this.updateTenantStatus.name} Service Called`)
     const tenant = await this.findOneTenants(id)
     return await this.tenantRepository.updateAndSave(tenant, {
@@ -189,7 +200,7 @@ export class TenantService {
     })
   }
 
-  async tenantOverview() {
+  async tenantOverview(): Promise<TenantOverviewResponseDto> {
     this.logger.log(`${this.tenantOverview.name} Service Called`)
     const totalTenants = await this.tenantRepository.findCountByStatus()
     const activeTenants = await this.tenantRepository.findCountByStatus(TenantStatus.ACTIVE)
