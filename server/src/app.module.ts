@@ -18,6 +18,7 @@ import { SettingsModule } from '@/modules/admin/settings/settings.module'
 import { CartModule } from '@/modules/store/cart/cart.module'
 import { SeoModule } from '@/modules/store/seo/seo.module'
 import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping-address.module'
+import { WishlistModule } from '@/modules/store/wishlist/wishlist.module'
 import { SystemModule } from '@/modules/system/system.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
@@ -47,6 +48,7 @@ import { join } from 'path'
     // Storefront Domain
     CartModule,
     ShippingAddressModule,
+    WishlistModule,
 
     // Admin Sub-Domains
     CatalogModule,

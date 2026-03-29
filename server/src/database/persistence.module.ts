@@ -67,6 +67,8 @@ import { TenantTrafficEntity } from '@/modules/system/tenant-traffic/entities/te
 import { TrafficRepository } from '@/modules/system/tenant-traffic/traffic.repository'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
+import { WishlistRepository } from '@/modules/store/wishlist/wishlist.repository'
+import { WishlistEntity } from '@/modules/store/wishlist/entities/wishlist.entity'
 import { Global, Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
@@ -109,6 +111,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
       SupplierPaymentEntity,
       SubscriberEntity,
       StaffInvitationEntity,
+      WishlistEntity,
     ]),
   ],
   providers: [
@@ -146,6 +149,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     SubscriptionPlanRepository,
     SubscriptionInvoiceRepository,
     TrafficRepository,
+    WishlistRepository,
   ],
   exports: [
     TenantRepository,
@@ -182,6 +186,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     SubscriptionPlanRepository,
     SubscriptionInvoiceRepository,
     TrafficRepository,
+    WishlistRepository,
     TypeOrmModule,
   ],
 })
