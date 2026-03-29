@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
+import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { CreateSubscriptionPlanDto } from './dto/create-subscription-plan.dto'
+import { SubscriptionPlanResponseDto } from './dto/subscription-plan-response.dto'
 import { UpdateSubscriptionPlanDto } from './dto/update-subscription-plan.dto'
 import { SubscriptionPlanService } from './subscription-plan.service'
 
@@ -11,30 +13,71 @@ import { SubscriptionPlanService } from './subscription-plan.service'
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.SUPER_ADMIN)
 export class SubscriptionPlanController {
+  private readonly logger = new Logger(SubscriptionPlanController.name)
+
   constructor(private readonly planService: SubscriptionPlanService) {}
 
   @Post()
-  createSubscriptionPlan(@Body() createDto: CreateSubscriptionPlanDto) {
-    return this.planService.createSubscriptionPlan(createDto)
+  async createSubscriptionPlan(
+    @Body() createDto: CreateSubscriptionPlanDto,
+  ): Promise<BaseApiSuccessResponse<SubscriptionPlanResponseDto>> {
+    const plan = await this.planService.createSubscriptionPlan(createDto)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Subscription plan created successfully',
+      data: plan,
+    }
   }
 
   @Get()
-  findAllSubscriptionPlans() {
-    return this.planService.findAllSubscriptionPlans()
+  async findAllSubscriptionPlans(): Promise<BaseApiSuccessResponse<SubscriptionPlanResponseDto[]>> {
+    const plans = await this.planService.findAllSubscriptionPlans()
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Subscription plans retrieved successfully',
+      data: plans,
+    }
   }
 
   @Get(':id')
-  findOneSubscriptionPlan(@Param('id') id: string) {
-    return this.planService.findOneSubscriptionPlan(id)
+  async findOneSubscriptionPlan(
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<SubscriptionPlanResponseDto>> {
+    const plan = await this.planService.findOneSubscriptionPlan(id)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Subscription plan retrieved successfully',
+      data: plan,
+    }
   }
 
   @Patch(':id')
-  updateSubscriptionPlan(@Param('id') id: string, @Body() updateDto: UpdateSubscriptionPlanDto) {
-    return this.planService.updateSubscriptionPlan(id, updateDto)
+  async updateSubscriptionPlan(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateSubscriptionPlanDto,
+  ): Promise<BaseApiSuccessResponse<SubscriptionPlanResponseDto>> {
+    const plan = await this.planService.updateSubscriptionPlan(id, updateDto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Subscription plan updated successfully',
+      data: plan,
+    }
   }
 
   @Delete(':id')
-  removeSubscriptionPlan(@Param('id') id: string) {
-    return this.planService.removeSubscriptionPlan(id)
+  async removeSubscriptionPlan(
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<null>> {
+    await this.planService.removeSubscriptionPlan(id)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Subscription plan deleted successfully',
+      data: null,
+    }
   }
 }

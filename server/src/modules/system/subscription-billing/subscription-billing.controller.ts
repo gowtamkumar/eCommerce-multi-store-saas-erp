@@ -1,16 +1,22 @@
-import { Controller, Get, Post, Body, UseGuards, Query, Res } from '@nestjs/common'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { SubscriptionBillingService } from './subscription-billing.service'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
-import { Public } from '../../../common/decorators/public.decorator'
-import { Response } from 'express'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { Body, Controller, Get, Logger, Post, Query, Res, UseGuards } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { Response } from 'express'
+import { Public } from '../../../common/decorators/public.decorator'
+import { SubscriptionPlanEntity } from '../subscription-plan/entities/subscription-plan.entity'
+import { CurrentSubscriptionResponseDto } from './dto/current-subscription-response.dto'
+import { SubscriptionInvoiceResponseDto } from './dto/subscription-invoice-response.dto'
+import { SubscriptionBillingService } from './subscription-billing.service'
 
 @Controller('billing')
 @UseGuards(JwtAuthGuard)
 export class SubscriptionBillingController {
+  private readonly logger = new Logger(SubscriptionBillingController.name)
+
   constructor(
     private readonly billingService: SubscriptionBillingService,
     private readonly configService: ConfigService,
@@ -18,26 +24,62 @@ export class SubscriptionBillingController {
 
   @Get('current')
   @PublicDuringExpiration()
-  async getCurrentSubscription(@RequestContext() ctx: RequestContextDto) {
-    return await this.billingService.getCurrentSubscription(ctx.tenantId)
+  async getCurrentSubscription(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<CurrentSubscriptionResponseDto>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCurrentSubscription.`)
+    const data = await this.billingService.getCurrentSubscription(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Current subscription retrieved successfully',
+      data,
+    }
   }
 
   @Get('plans')
   @PublicDuringExpiration()
-  async getAvailablePlans() {
-    return await this.billingService.getAvailablePlans()
+  async getAvailablePlans(): Promise<BaseApiSuccessResponse<SubscriptionPlanEntity[]>> {
+    this.logger.verbose('called getAvailablePlans.')
+    const data = await this.billingService.getAvailablePlans()
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Available subscription plans retrieved',
+      data,
+    }
   }
 
   @Get('history')
   @PublicDuringExpiration()
-  async getBillingHistory(@RequestContext() ctx: RequestContextDto) {
-    return await this.billingService.getBillingHistory(ctx.tenantId)
+  async getBillingHistory(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<SubscriptionInvoiceResponseDto[]>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getBillingHistory.`)
+    const data = await this.billingService.getBillingHistory(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Billing history retrieved successfully',
+      data,
+    }
   }
 
   @Post('initiate')
   @PublicDuringExpiration()
-  async initiatePayment(@RequestContext() ctx: RequestContextDto, @Body('planId') planId: string, @Body('frontendUrl') frontendUrl?: string) {
-    return await this.billingService.initiateSubscriptionPayment(ctx.tenantId, planId, frontendUrl)
+  async initiatePayment(
+    @RequestContext() ctx: RequestContextDto,
+    @Body('planId') planId: string,
+    @Body('frontendUrl') frontendUrl?: string,
+  ): Promise<BaseApiSuccessResponse<{ gatewayUrl: string }>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called initiatePayment.`)
+    const data = await this.billingService.initiateSubscriptionPayment(ctx.tenantId, planId, frontendUrl)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Payment initiation successful',
+      data,
+    }
   }
 
   @Public()
@@ -46,8 +88,15 @@ export class SubscriptionBillingController {
   async completePaymentSuccess(
     @Query('tran_id') tran_id: string,
     @Body() body: any,
-  ) {
-    return await this.billingService.handleSuccessPayment(tran_id, body)
+  ): Promise<BaseApiSuccessResponse<SubscriptionInvoiceResponseDto | { success: boolean }>> {
+    this.logger.verbose(`Payment completion success callback for tran_id: ${tran_id}`)
+    const data = await this.billingService.handleSuccessPayment(tran_id, body)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Payment completed successfully',
+      data,
+    }
   }
 
   @Public()
@@ -56,8 +105,15 @@ export class SubscriptionBillingController {
   async completePaymentFail(
     @Query('tran_id') tran_id: string,
     @Body() body: any,
-  ) {
-    return await this.billingService.handleFailPayment(tran_id, body)
+  ): Promise<BaseApiSuccessResponse<SubscriptionInvoiceResponseDto | { success: boolean }>> {
+    this.logger.verbose(`Payment completion failure callback for tran_id: ${tran_id}`)
+    const data = await this.billingService.handleFailPayment(tran_id, body)
+    return {
+      success: true,
+      statusCode: 200, // Still returning 200 with the failure info in data
+      message: 'Payment failed processing',
+      data,
+    }
   }
 
   @Public()
@@ -66,11 +122,15 @@ export class SubscriptionBillingController {
   async completePaymentCancel(
     @Query('tran_id') tran_id: string,
     @Body() body: any,
-  ) {
-    return await this.billingService.handleCancelPayment(tran_id, body)
-    // const defaultAppUrl = this.configService.get('FRONTEND_URL')
-    // const redirectUrl = await this.billingService.getRedirectUrl(tran_id, body, defaultAppUrl)
-    // return res.redirect(redirectUrl)
+  ): Promise<BaseApiSuccessResponse<SubscriptionInvoiceResponseDto | { cancelled: boolean }>> {
+    this.logger.verbose(`Payment completion cancel callback for tran_id: ${tran_id}`)
+    const data = await this.billingService.handleCancelPayment(tran_id, body)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Payment was cancelled',
+      data,
+    }
   }
 
   @Public()
@@ -86,7 +146,6 @@ export class SubscriptionBillingController {
   @Public()
   @Get('complete')
   async completePaymentGet(@Query('tran_id') transactionId: string, @Res() res: Response) {
-    // Basic GET handler for simple tests or direct navigation
     if (!transactionId) {
       return res.redirect(
         `${this.configService.get('FRONTEND_URL')}/billing?error=invalid_txn`,

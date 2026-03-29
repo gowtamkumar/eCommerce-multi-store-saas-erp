@@ -10,6 +10,9 @@ import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-setti
 import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 import { SubscriptionInvoiceRepository } from './subscription-invoice.repository'
+import { CurrentSubscriptionResponseDto } from './dto/current-subscription-response.dto'
+import { SubscriptionInvoiceEntity } from './entities/subscription-invoice.entity'
+import { SubscriptionPlanEntity } from '../subscription-plan/entities/subscription-plan.entity'
 
 @Injectable()
 export class SubscriptionBillingService {
@@ -22,7 +25,7 @@ export class SubscriptionBillingService {
     private readonly configService: ConfigService,
   ) { }
 
-  async getCurrentSubscription(tenantId: string) {
+  async getCurrentSubscription(tenantId: string): Promise<CurrentSubscriptionResponseDto> {
     this.logger.log(`${this.getCurrentSubscription.name} Called for tenant: ${tenantId}`)
     const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
 
@@ -40,15 +43,19 @@ export class SubscriptionBillingService {
     }
   }
 
-  async getAvailablePlans() {
+  async getAvailablePlans(): Promise<SubscriptionPlanEntity[]> {
     return await this.planRepository.findActiveSortedByPrice()
   }
 
-  async getBillingHistory(tenantId: string) {
+  async getBillingHistory(tenantId: string): Promise<SubscriptionInvoiceEntity[]> {
     return await this.planRecordRepository.findAllByTenant(tenantId)
   }
 
-  async initiateSubscriptionPayment(tenantId: string, planId: string, frontendUrl?: string) {
+  async initiateSubscriptionPayment(
+    tenantId: string,
+    planId: string,
+    frontendUrl?: string,
+  ): Promise<{ gatewayUrl: string }> {
     this.logger.log(`Initiating subscription payment for tenant ${tenantId} and plan ${planId}`)
     const plan = await this.planRepository.findById(planId)
     if (!plan) throw new NotFoundException('Plan not found')
@@ -107,11 +114,17 @@ export class SubscriptionBillingService {
     }
   }
 
-  async completeSubscriptionPayment(transactionId: string, gatewayResponse: any = {}) {
+  async completeSubscriptionPayment(
+    transactionId: string,
+    gatewayResponse: any = {},
+  ): Promise<SubscriptionInvoiceEntity | { success: boolean }> {
     return this.handleSuccessPayment(transactionId, gatewayResponse)
   }
 
-  async handleSuccessPayment(transactionId: string, gatewayResponse: any = {}) {
+  async handleSuccessPayment(
+    transactionId: string,
+    gatewayResponse: any = {},
+  ): Promise<SubscriptionInvoiceEntity | { success: boolean }> {
     this.logger.log(`Handling success subscription payment for transaction: ${transactionId}`)
     const record = await this.planRecordRepository.findByTransactionId(transactionId)
 
@@ -163,11 +176,14 @@ export class SubscriptionBillingService {
     return record
   }
 
-  async handleFailPayment(transactionId: string, gatewayResponse: any = {}) {
+  async handleFailPayment(
+    transactionId: string,
+    gatewayResponse: any = {},
+  ): Promise<SubscriptionInvoiceEntity | { success: boolean }> {
     this.logger.log(`Handling failed subscription payment for transaction: ${transactionId}`)
     const record = await this.planRecordRepository.findByTransactionId(transactionId)
     if (record) {
-      await this.planRecordRepository.updateAndSave(record, {
+      return await this.planRecordRepository.updateAndSave(record, {
         status: PaymentStatus.FAILED,
         gatewayResponse,
       })
@@ -175,11 +191,14 @@ export class SubscriptionBillingService {
     return { success: false }
   }
 
-  async handleCancelPayment(transactionId: string, gatewayResponse: any = {}) {
+  async handleCancelPayment(
+    transactionId: string,
+    gatewayResponse: any = {},
+  ): Promise<SubscriptionInvoiceEntity | { cancelled: boolean }> {
     this.logger.log(`Handling cancelled subscription payment for transaction: ${transactionId}`)
     const record = await this.planRecordRepository.findByTransactionId(transactionId)
     if (record) {
-      await this.planRecordRepository.updateAndSave(record, {
+      return await this.planRecordRepository.updateAndSave(record, {
         status: PaymentStatus.PENDING,
         gatewayResponse,
       })
