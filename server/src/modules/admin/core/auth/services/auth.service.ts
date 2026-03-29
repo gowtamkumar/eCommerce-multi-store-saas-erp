@@ -17,6 +17,7 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as crypto from 'crypto'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
+import { UserEntity } from '../../user/entities/user.entity'
 
 @Injectable()
 export class AuthService {
@@ -29,7 +30,10 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async register(registerCredentialDto: RegisterCredentialDto, tenantId: string) {
+  async register(
+    registerCredentialDto: RegisterCredentialDto,
+    tenantId: string,
+  ): Promise<{ accessToken: string; refreshToken: string; user: UserEntity }> {
     this.logger.log(`${this.register.name} Service Called`)
 
     const { username, email } = registerCredentialDto
@@ -45,10 +49,10 @@ export class AuthService {
 
     const verificationToken = crypto.randomBytes(32).toString('hex')
 
-    const user = (await this.userService.createUser(
+    const user = await this.userService.createUser(
       { ...registerCredentialDto, emailVerificationToken: verificationToken, role: UserRole.USER },
       tenantId,
-    )) as CreateUserDto
+    )
 
     if (!user) {
       throw new InternalServerErrorException('Failed to create user')
@@ -63,7 +67,10 @@ export class AuthService {
     return { ...tokens, user }
   }
 
-  async login(loginCredentialsDto: LoginCredentialDto, tenantId: string) {
+  async login(
+    loginCredentialsDto: LoginCredentialDto,
+    tenantId: string,
+  ): Promise<{ user: UserEntity; accessToken: string; refreshToken: string }> {
     this.logger.log(`${this.login.name} Service Called`)
     const { username, password } = loginCredentialsDto
     const user = await this.userService.findUserByUsername(username, tenantId)
@@ -94,23 +101,18 @@ export class AuthService {
 
     const tokens = await this.getTokens(user)
 
-    delete user.password
-    delete user.resetPasswordToken
-    delete user.resetPasswordExpires
-    delete user.emailVerificationToken
-
     return {
       user,
       ...tokens,
     }
   }
 
-  async getMe(user: UserDto) {
+  async getMe(user: UserDto): Promise<UserDto> {
     this.logger.log(`${this.getMe.name} Service Called`)
     return user
   }
 
-  async forgotPassword(email: string, tenantId: string) {
+  async forgotPassword(email: string, tenantId: string): Promise<void> {
     this.logger.log(`${this.forgotPassword.name} Service Called`)
     const user = await this.userService.findUserByEmail(email, tenantId)
     if (!user) {
@@ -125,22 +127,22 @@ export class AuthService {
     await this.mailService.sendResetPasswordEmail(user.email, resetToken, tenantId)
   }
 
-  async resetPassword(token: string, newPassword: string) {
+  async resetPassword(token: string, newPassword: string): Promise<UserEntity> {
     this.logger.log(`${this.resetPassword.name} Service Called`)
     return this.userService.resetUserPasswordByToken(token, newPassword)
   }
 
-  async verifyEmail(token: string) {
+  async verifyEmail(token: string): Promise<UserEntity> {
     this.logger.log(`${this.verifyEmail.name} Service Called`)
     return this.userService.verifyUserByToken(token)
   }
 
-  async acceptInvitation(dto: any) {
+  async acceptInvitation(dto: any): Promise<{ message: string; user: UserEntity }> {
     this.logger.log(`${this.acceptInvitation.name} Service Called`)
     return this.userService.acceptInvitation(dto)
   }
 
-  async getTokens(user) {
+  async getTokens(user: any): Promise<{ accessToken: string; refreshToken: string }> {
     this.logger.log(`${this.getTokens.name} Service Called`)
     const payload = {
       username: user.username,
@@ -168,7 +170,10 @@ export class AuthService {
     }
   }
 
-  async refreshTokens(userId: string, refreshToken: string) {
+  async refreshTokens(
+    userId: string,
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     this.logger.log(`${this.refreshTokens.name} Service Called`)
     const user = await this.userService.getUserIfRefreshTokenMatches(refreshToken, userId)
     if (!user) throw new UnauthorizedException('Access Denied')
@@ -177,7 +182,7 @@ export class AuthService {
     return tokens
   }
 
-  async logout(userId: string) {
+  async logout(userId: string): Promise<void> {
     this.logger.log(`${this.logout.name} Service Called`)
     return this.userService.removeRefreshToken(userId)
   }

@@ -1,5 +1,6 @@
 import { CreateLeadDto, UpdateLeadDto } from '@/modules/admin/customer/lead/dto/lead.dto'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { LeadEntity } from './entities/lead.entity'
 import { LeadRepository } from './lead.repository'
 
 @Injectable()
@@ -8,17 +9,20 @@ export class LeadService {
 
   constructor(private readonly leadRepository: LeadRepository) {}
 
-  async createLead(dto: CreateLeadDto, tenantId: string) {
+  async createLead(dto: CreateLeadDto, tenantId: string): Promise<LeadEntity> {
     this.logger.log(`${this.createLead.name} Service Called`)
     return await this.leadRepository.createAndSave(dto, tenantId)
   }
 
-  async findAllLeads(filterDto: any, tenantId: string) {
+  async findAllLeads(
+    filterDto: any,
+    tenantId: string,
+  ): Promise<{ leads: LeadEntity[]; total: number }> {
     this.logger.log(`${this.findAllLeads.name} Service Called`)
     return await this.leadRepository.findAllWithFilters(filterDto, tenantId)
   }
 
-  async updateLead(id: string, dto: UpdateLeadDto, tenantId: string) {
+  async updateLead(id: string, dto: UpdateLeadDto, tenantId: string): Promise<LeadEntity> {
     this.logger.log(`${this.updateLead.name} Service Called`)
     const lead = await this.leadRepository.findById(id, tenantId)
     if (!lead) throw new NotFoundException('Lead not found')

@@ -11,7 +11,7 @@ import * as bcrypt from 'bcrypt'
 import * as crypto from 'crypto'
 import { CreateUserDto, FilterUserDto, UpdatePasswordDto, UpdateUserDto } from '../dtos'
 import { AcceptInvitationDto, InviteStaffDto } from '../dtos/invite-staff.dto'
-import { InvitationStatus } from '../entities/staff-invitation.entity'
+import { InvitationStatus, StaffInvitationEntity } from '../entities/staff-invitation.entity'
 import { UserEntity } from '../entities/user.entity'
 import { StaffInvitationRepository } from '../repositories/staff-invitation.repository'
 import { UserRepository } from '../repositories/user.repository'
@@ -54,17 +54,17 @@ export class UserService {
     return user
   }
 
-  async findUserById(id: string) {
+  async findUserById(id: string): Promise<UserEntity | null> {
     this.logger.log(`${this.findUserById.name} Service Called`)
     return this.userRepo.findById(id)
   }
 
-  async findUserByUsername(username: string, tenantId?: string) {
+  async findUserByUsername(username: string, tenantId?: string): Promise<UserEntity | null> {
     this.logger.log(`${this.findUserByUsername.name} Service Called`)
     return this.userRepo.findByUsername(username, tenantId)
   }
 
-  async findUserByEmail(email: string, tenantId?: string) {
+  async findUserByEmail(email: string, tenantId?: string): Promise<UserEntity | null> {
     this.logger.log(`${this.findUserByEmail.name} Service Called`)
     return this.userRepo.findByEmail(email, tenantId)
   }
@@ -77,7 +77,6 @@ export class UserService {
       password: hashPassword,
       tenantId,
     })
-    delete (user as any).password
     return user
   }
 
@@ -133,7 +132,7 @@ export class UserService {
     } as any)
   }
 
-  async updateResetToken(userId: string, token: string, expires: Date) {
+  async updateResetToken(userId: string, token: string, expires: Date): Promise<UserEntity> {
     this.logger.log(`${this.updateResetToken.name} Service Called`)
     const user = await this.getUser(userId)
     return this.userRepo.updateAndSave(user, {
@@ -158,18 +157,18 @@ export class UserService {
     } as any)
   }
 
-  async countByTenant(tenantId: string) {
+  async countByTenant(tenantId: string): Promise<number> {
     this.logger.log(`${this.countByTenant.name} Service Called`)
     return await this.userRepo.countByTenant(tenantId)
   }
 
-  async setCurrentRefreshToken(refreshToken: string, userId: string) {
+  async setCurrentRefreshToken(refreshToken: string, userId: string): Promise<void> {
     this.logger.log(`${this.setCurrentRefreshToken.name} Service Called`)
     const currentRefreshToken = await bcrypt.hash(refreshToken, 10)
     await this.userRepo.updateRefreshToken(userId, currentRefreshToken)
   }
 
-  async getUserIfRefreshTokenMatches(refreshToken: string, userId: string) {
+  async getUserIfRefreshTokenMatches(refreshToken: string, userId: string): Promise<UserEntity | null> {
     this.logger.log(`${this.getUserIfRefreshTokenMatches.name} Service Called`)
     const user = await this.userRepo.findUserWithRefreshToken(userId)
 
@@ -177,21 +176,26 @@ export class UserService {
 
     const isRefreshTokenMatching = await bcrypt.compare(refreshToken, user.refreshToken)
     if (isRefreshTokenMatching) return user
+    return null
   }
 
-  async removeRefreshToken(userId: string) {
+  async removeRefreshToken(userId: string): Promise<void> {
     this.logger.log(`${this.removeRefreshToken.name} Service Called`)
-    return this.userRepo.updateRefreshToken(userId, null)
+    await this.userRepo.updateRefreshToken(userId, null)
   }
 
-  async userOverview() {
+  async userOverview(): Promise<any> {
     this.logger.log(`${this.userOverview.name} Service Called`)
     return this.userRepo.getOverviewStats()
   }
 
   // ─── Team / Staff Invitation Methods ───────────────────────────────────────
 
-  async inviteStaff(dto: InviteStaffDto, tenantId: string, invitedBy: string) {
+  async inviteStaff(
+    dto: InviteStaffDto,
+    tenantId: string,
+    invitedBy: string,
+  ): Promise<{ message: string; invitation: StaffInvitationEntity }> {
     this.logger.log(`${this.inviteStaff.name} Service Called`)
 
     const existingUser = await this.findUserByEmail(dto.email, tenantId)
@@ -218,7 +222,7 @@ export class UserService {
     return { message: `Invitation sent to ${dto.email}`, invitation }
   }
 
-  async acceptInvitation(dto: AcceptInvitationDto) {
+  async acceptInvitation(dto: AcceptInvitationDto): Promise<{ message: string; user: UserEntity }> {
     this.logger.log(`${this.acceptInvitation.name} Service Called`)
     const invitation = await this.invitationRepo.findByToken(dto.token)
 
@@ -250,12 +254,12 @@ export class UserService {
     return { message: 'Account created successfully. You can now log in.', user }
   }
 
-  async getInvitations(tenantId: string) {
+  async getInvitations(tenantId: string): Promise<StaffInvitationEntity[]> {
     this.logger.log(`${this.getInvitations.name} Service Called`)
     return this.invitationRepo.findAllByTenant(tenantId)
   }
 
-  async revokeInvitation(invitationId: string, tenantId: string) {
+  async revokeInvitation(invitationId: string, tenantId: string): Promise<StaffInvitationEntity> {
     this.logger.log(`${this.revokeInvitation.name} Service Called`)
     const invitation = await this.invitationRepo.findByIdAndTenant(invitationId, tenantId)
     if (!invitation) throw new NotFoundException('Invitation not found.')
@@ -265,7 +269,9 @@ export class UserService {
     return this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Expired })
   }
 
-  async getTeamMembers(tenantId: string) {
+  async getTeamMembers(
+    tenantId: string,
+  ): Promise<{ members: UserEntity[]; pendingInvitations: StaffInvitationEntity[] }> {
     this.logger.log(`${this.getTeamMembers.name} Service Called`)
 
     const [members, pendingInvitations] = await Promise.all([
@@ -276,7 +282,7 @@ export class UserService {
     return { members, pendingInvitations }
   }
 
-  async updateTeamMemberRole(memberId: string, role: UserRole, tenantId: string) {
+  async updateTeamMemberRole(memberId: string, role: UserRole, tenantId: string): Promise<UserEntity> {
     this.logger.log(`${this.updateTeamMemberRole.name} Service Called`)
     const user = await this.userRepo.findByIdAndTenant(memberId, tenantId)
     if (!user) throw new NotFoundException('Team member not found.')

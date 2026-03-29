@@ -1,11 +1,12 @@
-import { Body, Controller, Delete, Post, Req, Res, UseGuards, Logger } from '@nestjs/common'
-import { Request, Response } from 'express'
+import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { LoginCredentialDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
+import { Body, Controller, Delete, Logger, Post, Req, Res, UseGuards } from '@nestjs/common'
+import { Request, Response } from 'express'
 
 @Controller('admin')
 export class AdminAuthController {
@@ -18,7 +19,7 @@ export class AdminAuthController {
     @RequestContext() ctx: RequestContextDto,
     @Body() loginCredentialDto: LoginCredentialDto,
     @Res({ passthrough: true }) res: Response,
-  ) {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called login.`)
     try {
       const authPayload = await this.authService.login(loginCredentialDto, ctx.tenantId)
@@ -32,14 +33,18 @@ export class AdminAuthController {
         data: authPayload,
       }
     } catch (error) {
-      console.error('Login Error:', error)
+      console.error('Admin Login Error:', error)
       throw error
     }
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('/logout')
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<BaseApiSuccessResponse<null>> {
+    this.logger.verbose(`Admin logout called.`)
     //revoke token from database
     if (req.user) {
       await this.authService.logout((req.user as any).id)
@@ -61,7 +66,7 @@ export class AdminAuthController {
   async refresh(
     @Body() body: { userId: string; refreshToken: string },
     @Res({ passthrough: true }) res: Response,
-  ) {
+  ): Promise<BaseApiSuccessResponse<any>> {
     const tokens = await this.authService.refreshTokens(body.userId, body.refreshToken)
     this.cookiesBuildTokenResponsive(res, tokens.accessToken)
 

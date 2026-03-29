@@ -8,6 +8,8 @@ import { Body, Controller, Get, Logger, Param, Patch, Post, Query, UseGuards } f
 import { FilterLeadDto } from './dto/filter-lead.dto'
 import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto'
 import { LeadService } from './lead.service'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { LeadResponseDto } from './dto/lead-response.dto'
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('leads')
@@ -18,9 +20,18 @@ export class LeadController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
-  async createLead(@RequestContext() ctx: RequestContextDto, @Body() dto: CreateLeadDto) {
+  async createLead(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: CreateLeadDto,
+  ): Promise<BaseApiSuccessResponse<LeadResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createLead.`)
-    return await this.leadService.createLead(dto, ctx.tenantId)
+    const result = await this.leadService.createLead(dto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Lead created successfully',
+      data: result as any,
+    }
   }
 
   @Get()
@@ -31,20 +42,22 @@ export class LeadController {
     UserRole.SUPPORT,
     UserRole.OPERATOR,
   )
-  async findAllLeads(@RequestContext() ctx: RequestContextDto, @Query() filterDto: FilterLeadDto) {
+  async findAllLeads(
+    @RequestContext() ctx: RequestContextDto,
+    @Query() filterDto: FilterLeadDto,
+  ): Promise<BaseApiSuccessResponse<LeadResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllLeads.`)
     const { leads, total } = await this.leadService.findAllLeads(filterDto, ctx.tenantId)
     return {
       success: true,
       statusCode: 200,
-      data: {
-        leads,
-        pagination: {
-          total,
-          page: filterDto.page,
-          limit: filterDto.limit,
-          totalPages: Math.ceil(total / filterDto.limit),
-        },
+      message: 'List of leads retrieved',
+      data: leads as any,
+      pagination: {
+        total,
+        page: filterDto.page || 1,
+        limit: filterDto.limit || 10,
+        totalPages: Math.ceil(total / (filterDto.limit || 10)),
       },
     }
   }
@@ -55,8 +68,14 @@ export class LeadController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() dto: UpdateLeadDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<LeadResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateLead.`)
-    return await this.leadService.updateLead(id, dto, ctx.tenantId)
+    const result = await this.leadService.updateLead(id, dto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Lead updated successfully',
+      data: result as any,
+    }
   }
 }

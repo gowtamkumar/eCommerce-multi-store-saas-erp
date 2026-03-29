@@ -23,6 +23,8 @@ import { InviteStaffDto } from '../dtos/invite-staff.dto'
 import { UpdatePasswordDto } from '../dtos/update-password.dto'
 import { UpdateUserDto } from '../dtos/update-user.dto'
 import { UserService } from '../services/user.service'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { UserResponseDto } from '../dtos/user-response.dto'
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -34,7 +36,10 @@ export class UserController {
   @Get('/')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  async getUsers(@RequestContext() ctx: RequestContextDto, @Query() filterUserDto: FilterUserDto) {
+  async getUsers(
+    @RequestContext() ctx: RequestContextDto,
+    @Query() filterUserDto: FilterUserDto,
+  ): Promise<BaseApiSuccessResponse<UserResponseDto[]>> {
     this.logger.log(`${this.getUsers.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username}" retieving users.`)
 
@@ -44,23 +49,29 @@ export class UserController {
       success: true,
       statusCode: 200,
       message: `List of users`,
-      data: {
-        users,
-        pagination: {
-          total,
-          page: filterUserDto.page,
-          limit: filterUserDto.limit,
-          totalPages: Math.ceil(total / filterUserDto.limit),
-        },
+      data: users as any,
+      pagination: {
+        total,
+        page: filterUserDto.page,
+        limit: filterUserDto.limit,
+        totalPages: Math.ceil(total / filterUserDto.limit),
       },
     }
   }
 
   @Get('/profile')
-  async getProfile(@RequestContext() ctx: RequestContextDto) {
+  async getProfile(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.getProfile.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getProfile.`)
-    return this.userService.getUser(ctx.userId)
+    const result = await this.userService.getUser(ctx.userId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Profile retrieved',
+      data: result as any,
+    }
   }
 
   // ─── Team Management Endpoints ───────────────────────────────────────────────
@@ -68,7 +79,9 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Get('/team')
-  async getTeamMembers(@RequestContext() ctx: RequestContextDto) {
+  async getTeamMembers(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.getTeamMembers.name} Controller Called`)
     const data = await this.userService.getTeamMembers(ctx.tenantId)
     return { success: true, statusCode: 200, message: 'Team members', data }
@@ -77,7 +90,10 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Post('/team/invite')
-  async inviteStaff(@RequestContext() ctx: RequestContextDto, @Body() dto: InviteStaffDto) {
+  async inviteStaff(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: InviteStaffDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.inviteStaff.name} Controller Called`)
     const data = await this.userService.inviteStaff(dto, ctx.tenantId, ctx.userId)
     return { success: true, statusCode: 201, message: data.message, data: data.invitation }
@@ -86,7 +102,9 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Get('/team/invitations')
-  async getInvitations(@RequestContext() ctx: RequestContextDto) {
+  async getInvitations(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.getInvitations.name} Controller Called`)
     const data = await this.userService.getInvitations(ctx.tenantId)
     return { success: true, statusCode: 200, message: 'Invitations', data }
@@ -98,7 +116,7 @@ export class UserController {
   async revokeInvitation(
     @RequestContext() ctx: RequestContextDto,
     @Param('invitationId', ParseUUIDPipe) invitationId: string,
-  ) {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.revokeInvitation.name} Controller Called`)
     const data = await this.userService.revokeInvitation(invitationId, ctx.tenantId)
     return { success: true, statusCode: 200, message: 'Invitation revoked', data }
@@ -111,10 +129,15 @@ export class UserController {
     @RequestContext() ctx: RequestContextDto,
     @Param('memberId', ParseUUIDPipe) memberId: string,
     @Body('role') role: UserRole,
-  ) {
+  ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.updateMemberRole.name} Controller Called`)
     const data = await this.userService.updateTeamMemberRole(memberId, role, ctx.tenantId)
-    return { success: true, statusCode: 200, message: 'Member role updated', data }
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Member role updated',
+      data: data as any,
+    }
   }
 
   @UseGuards(RolesGuard)
@@ -123,25 +146,19 @@ export class UserController {
   async removeTeamMember(
     @RequestContext() ctx: RequestContextDto,
     @Param('memberId', ParseUUIDPipe) memberId: string,
-  ) {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.removeTeamMember.name} Controller Called`)
     const data = await this.userService.deleteUser(memberId)
-    return { success: true, statusCode: 200, message: 'Team member removed', data }
+    return { success: true, statusCode: 200, message: 'Team member removed', data: null }
   }
-
-  // ─── Accept Invitation (Public) ──────────────────────────────────────────────
-  // Note: This endpoint is intentionally not behind JwtAuthGuard
-  // It must be placed OUTSIDE the @UseGuards(JwtAuthGuard) class decorator scope.
-  // However since NestJS applies class-level guards first, we'll override via a
-  // separate public endpoint handled in the Auth module. For now, this is added
-  // here purely as documentation; the real endpoint is handled in AuthController.
-
-  // ─── Legacy User CRUD ────────────────────────────────────────────────────────
 
   @Get('/:id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  async getUser(@RequestContext() ctx: RequestContextDto, @Param('id', ParseUUIDPipe) id: string) {
+  async getUser(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.getUser.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getUser.`)
     const user = await this.userService.getUser(id)
@@ -150,14 +167,17 @@ export class UserController {
       success: true,
       statusCode: 200,
       message: `User of ID: ${id}`,
-      data: user,
+      data: user as any,
     }
   }
 
   @Post('/')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  async createUser(@Body() createUserDto: CreateUserDto, @RequestContext() ctx: RequestContextDto) {
+  async createUser(
+    @Body() createUserDto: CreateUserDto,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.createUser.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createUser.`)
     const user = await this.userService.createUser(createUserDto, ctx.tenantId)
@@ -166,7 +186,7 @@ export class UserController {
       success: true,
       statusCode: 201,
       message: `New user created`,
-      data: user,
+      data: user as any,
     }
   }
 
@@ -174,7 +194,7 @@ export class UserController {
   async updateProfile(
     @RequestContext() ctx: RequestContextDto,
     @Body() updateUserDto: UpdateUserDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.updateProfile.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username}" called updateProfile.`)
 
@@ -188,7 +208,7 @@ export class UserController {
       success: true,
       statusCode: 200,
       message: `Profile updated`,
-      data: user,
+      data: user as any,
     }
   }
 
@@ -196,7 +216,7 @@ export class UserController {
   async updateProfilePassword(
     @RequestContext() ctx: RequestContextDto,
     @Body() updatePasswordDto: UpdatePasswordDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.updateProfilePassword.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username}" called updateProfilePassword.`)
     const user = await this.userService.updatePassword(ctx.userId, updatePasswordDto)
@@ -205,7 +225,7 @@ export class UserController {
       success: true,
       statusCode: 200,
       message: `Password updated`,
-      data: user,
+      data: user as any,
     }
   }
 
@@ -216,7 +236,7 @@ export class UserController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.updateUser.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateUser.`)
     const user = await this.userService.updateUser(id, updateUserDto)
@@ -225,7 +245,7 @@ export class UserController {
       success: true,
       statusCode: 200,
       message: `User of ID ${user.id} updated`,
-      data: user,
+      data: user as any,
     }
   }
 
@@ -236,7 +256,7 @@ export class UserController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) userId: string,
     @Body() updatePasswordDto: UpdatePasswordDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.updatePassword.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePassword.`)
     const user = await this.userService.updatePassword(userId, updatePasswordDto)
@@ -245,22 +265,24 @@ export class UserController {
       success: true,
       statusCode: 200,
       message: `User password of id ${user.id} updated`,
-      data: user,
+      data: user as any,
     }
   }
 
   @Delete('/:id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  async deleteUser(@Param('id', ParseUUIDPipe) userId: string) {
+  async deleteUser(
+    @Param('id', ParseUUIDPipe) userId: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.deleteUser.name} Controller Called`)
     const user = await this.userService.deleteUser(userId)
 
     return {
       success: true,
       statusCode: 200,
-      message: `User of ${user} deleted`,
-      data: user,
+      message: `User deleted successfully`,
+      data: null,
     }
   }
 }

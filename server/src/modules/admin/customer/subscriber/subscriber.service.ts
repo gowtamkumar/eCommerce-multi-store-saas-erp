@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common'
 import { CreateSubscriberDto } from './dto/subscriber.dto'
 import { SubscriberRepository } from './subscriber.repository'
+import { SubscriberEntity } from './entities/subscriber.entity'
 
 @Injectable()
 export class SubscriberService {
@@ -8,7 +9,7 @@ export class SubscriberService {
 
   constructor(private readonly subscriberRepository: SubscriberRepository) {}
 
-  async createSubscriber(createSubscriberDto: CreateSubscriberDto) {
+  async createSubscriber(createSubscriberDto: CreateSubscriberDto): Promise<SubscriberEntity> {
     this.logger.log(`${this.createSubscriber.name} Service Called`)
     const existingSubscriber = await this.subscriberRepository.findByEmail(
       createSubscriberDto.email,
@@ -21,7 +22,7 @@ export class SubscriberService {
     return await this.subscriberRepository.createAndSave(createSubscriberDto)
   }
 
-  async findAllSubscribers() {
+  async findAllSubscribers(): Promise<SubscriberEntity[]> {
     this.logger.log(`${this.findAllSubscribers.name} Service Called`)
     return await this.subscriberRepository.findAllDesc()
   }
