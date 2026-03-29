@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreateFaqDto, UpdateFaqDto } from './dto/faq.dto'
 import { FaqRepository } from './faq.repository'
+import { FaqEntity } from './entities/faq.entity'
 
 @Injectable()
 export class FaqService {
@@ -8,50 +9,56 @@ export class FaqService {
 
   constructor(private readonly faqRepository: FaqRepository) {}
 
-  async createFaq(createFaqDto: CreateFaqDto, tenantId: string) {
+  async createFaq(createFaqDto: CreateFaqDto, tenantId: string): Promise<FaqEntity> {
     this.logger.log(`${this.createFaq.name} Service Called`)
     return await this.faqRepository.createAndSave(createFaqDto, tenantId)
   }
 
-  async findAllFaqs(filterDto: any, tenantId: string) {
+  async findAllFaqs(
+    filterDto: any,
+    tenantId: string,
+  ): Promise<{ faqs: FaqEntity[]; total: number }> {
     this.logger.log(`${this.findAllFaqs.name} Service Called`)
     return await this.faqRepository.findAllWithFilters(filterDto, tenantId)
   }
 
-  async findOneFaq(id: string, tenantId: string) {
+  async findOneFaq(id: string, tenantId: string): Promise<FaqEntity> {
     this.logger.log(`${this.findOneFaq.name} Service Called`)
     const faq = await this.faqRepository.findById(id, tenantId)
     if (!faq) throw new NotFoundException('FAQ not found')
     return faq
   }
 
-  async updateFaq(id: string, updateFaqDto: UpdateFaqDto, tenantId: string) {
+  async updateFaq(id: string, updateFaqDto: UpdateFaqDto, tenantId: string): Promise<FaqEntity> {
     this.logger.log(`${this.updateFaq.name} Service Called`)
     const faq = await this.findOneFaq(id, tenantId)
     return await this.faqRepository.updateAndSave(faq, updateFaqDto)
   }
 
-  async removeFaq(id: string, tenantId: string) {
+  async removeFaq(
+    id: string,
+    tenantId: string,
+  ): Promise<{ success: boolean; message?: string }> {
     this.logger.log(`${this.removeFaq.name} Service Called`)
     const faq = await this.findOneFaq(id, tenantId)
     await this.faqRepository.removeFaq(faq)
-    return { success: true }
+    return { success: true, message: 'FAQ deleted successfully' }
   }
 
   // Find FAQs by Page ID
-  async findByPageFaq(pageId: string, tenantId: string) {
+  async findByPageFaq(pageId: string, tenantId: string): Promise<FaqEntity[]> {
     this.logger.log(`${this.findByPageFaq.name} Service Called`)
     return await this.faqRepository.findByPageId(pageId, tenantId)
   }
 
   // Find Global FAQs (no productId or pageId)
-  async findGlobalFaqs(tenantId: string) {
+  async findGlobalFaqs(tenantId: string): Promise<FaqEntity[]> {
     this.logger.log(`${this.findGlobalFaqs.name} Service Called`)
     return await this.faqRepository.findGlobal(tenantId)
   }
 
   // Find FAQs by multiple IDs
-  async findByIdsFaq(ids: string[], tenantId: string) {
+  async findByIdsFaq(ids: string[], tenantId: string): Promise<FaqEntity[]> {
     this.logger.log(`${this.findByIdsFaq.name} Service Called`)
     return await this.faqRepository.findByIdsList(ids, tenantId)
   }

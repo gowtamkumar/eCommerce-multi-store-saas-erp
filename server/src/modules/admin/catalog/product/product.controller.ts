@@ -1,5 +1,6 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -20,6 +21,7 @@ import { CreateReviewDto } from '../review/dto/review.dto'
 import { ReviewService } from '../review/review.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { FilterProductDto } from './dto/filter-product.dto'
+import { ProductResponseDto } from './dto/product-response.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductService } from './product.service'
 
@@ -38,29 +40,34 @@ export class ProductController {
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() createProductDto: CreateProductDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<ProductResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called create.`)
-    return await this.productService.createProduct(createProductDto, ctx.tenantId)
+    const result = await this.productService.createProduct(createProductDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: `New product created`,
+      data: result,
+    }
   }
 
   @Get()
   async findAllProducts(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterProductDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<ProductResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllProducts.`)
     const { products, total } = await this.productService.findAllProducts(filterDto, ctx.tenantId)
     return {
       success: true,
       statusCode: 200,
-      data: {
-        products,
-        pagination: {
-          total,
-          page: filterDto.page,
-          limit: filterDto.limit,
-          totalPages: Math.ceil(total / filterDto.limit),
-        },
+      message: `List of products`,
+      data: products,
+      pagination: {
+        total,
+        page: filterDto.page,
+        limit: filterDto.limit,
+        totalPages: Math.ceil(total / filterDto.limit),
       },
     }
   }
@@ -69,12 +76,13 @@ export class ProductController {
   async getFilterOptions(
     @RequestContext() ctx: RequestContextDto,
     @Query('categoryId') categoryId?: string,
-  ) {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFilterOptions.`)
     const filters = await this.productService.getFilterOptions(ctx.tenantId, categoryId)
     return {
       success: true,
       statusCode: 200,
+      message: `Filter options retrieved`,
       data: filters,
     }
   }
@@ -83,21 +91,45 @@ export class ProductController {
   async findLatestProducts(
     @RequestContext() ctx: RequestContextDto,
     @Query('limit') limit?: number,
-  ) {
+  ): Promise<BaseApiSuccessResponse<ProductResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findLatestProducts.`)
-    return await this.productService.findLatestProducts(ctx.tenantId, limit)
+    const result = await this.productService.findLatestProducts(ctx.tenantId, limit)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Latest products retrieved`,
+      data: result,
+    }
   }
 
   @Get('slug/:slug')
-  async findBySlugProduct(@RequestContext() ctx: RequestContextDto, @Param('slug') slug: string) {
+  async findBySlugProduct(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('slug') slug: string,
+  ): Promise<BaseApiSuccessResponse<ProductResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findBySlugProduct.`)
-    return await this.productService.findBySlugProduct(slug, ctx.tenantId)
+    const result = await this.productService.findBySlugProduct(slug, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Product details for slug: ${slug}`,
+      data: result,
+    }
   }
 
   @Get(':id')
-  async findOneProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+  async findOneProduct(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<ProductResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneProduct.`)
-    return await this.productService.findOneProduct(id, ctx.tenantId)
+    const result = await this.productService.findOneProduct(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Product details`,
+      data: result,
+    }
   }
 
   @Put(':id')
@@ -107,9 +139,15 @@ export class ProductController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<ProductResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateProduct.`)
-    return await this.productService.updateProduct(id, updateProductDto, ctx.tenantId)
+    const result = await this.productService.updateProduct(id, updateProductDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Product of ID ${id} updated`,
+      data: result,
+    }
   }
 
   @Delete(':id')
@@ -117,13 +155,28 @@ export class ProductController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeProduct.`)
-    return await this.productService.removeProduct(id, ctx.tenantId)
+    const result = await this.productService.removeProduct(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: result.message || `Product deleted successfully`,
+      data: null,
+    }
   }
 
   @Get(':id/reviews')
-  async getReviewsProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+  async getReviewsProduct(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getReviewsProduct.`)
-    return await this.reviewService.findByProductReviews(id, ctx.tenantId)
+    const result = await this.reviewService.findByProductReviews(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `List of reviews for product ID ${id}`,
+      data: result,
+    }
   }
 
   @Post(':id/reviews')
@@ -132,10 +185,16 @@ export class ProductController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') productId: string,
     @Body() createReviewDto: CreateReviewDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createReviewProduct.`)
     // Ensure the productId in the body matches the URL param
     createReviewDto.productId = productId
-    return await this.reviewService.createReview(createReviewDto, ctx.tenantId)
+    const result = await this.reviewService.createReview(createReviewDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: `Review created successfully`,
+      data: result,
+    }
   }
 }

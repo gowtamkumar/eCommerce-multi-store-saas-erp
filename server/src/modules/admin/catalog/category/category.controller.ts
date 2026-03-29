@@ -1,10 +1,12 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { CategoryService } from '@/modules/admin/catalog/category/category.service'
+import { CategoryResponseDto } from './dto/category-response.dto'
 import { CreateCategoryDto } from '@/modules/admin/catalog/category/dto/create-category.dto'
 import { UpdateCategoryDto } from '@/modules/admin/catalog/category/dto/update-category.dto'
 import { Body, Controller, Delete, Get, Logger, Param, Post, Put, UseGuards } from '@nestjs/common'
@@ -21,21 +23,44 @@ export class CategoryController {
   async createCategory(
     @RequestContext() ctx: RequestContextDto,
     @Body() createCategoryDto: CreateCategoryDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<CategoryResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createCategory.`)
-    return await this.categoryService.createCategory(createCategoryDto, ctx.tenantId)
+    const result = await this.categoryService.createCategory(createCategoryDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: `New category created`,
+      data: result,
+    }
   }
 
   @Get()
-  async findAllCategories(@RequestContext() ctx: RequestContextDto) {
+  async findAllCategories(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<CategoryResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllCategories.`)
-    return await this.categoryService.findAllCategories(ctx.tenantId)
+    const result = await this.categoryService.findAllCategories(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `List of categories`,
+      data: result,
+    }
   }
 
   @Get(':id')
-  async findOneCategory(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+  async findOneCategory(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<CategoryResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneCategory.`)
-    return await this.categoryService.findOneCategory(id, ctx.tenantId)
+    const result = await this.categoryService.findOneCategory(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Category details`,
+      data: result,
+    }
   }
 
   @Put(':id')
@@ -45,9 +70,15 @@ export class CategoryController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<CategoryResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateCategory.`)
-    return await this.categoryService.updateCategory(id, updateCategoryDto, ctx.tenantId)
+    const result = await this.categoryService.updateCategory(id, updateCategoryDto, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Category of ID ${id} updated`,
+      data: result,
+    }
   }
 
   @Delete(':id')
@@ -55,6 +86,12 @@ export class CategoryController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeCategory(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCategory.`)
-    return await this.categoryService.removeCategory(id, ctx.tenantId)
+    const result = await this.categoryService.removeCategory(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: result.message || `Category deleted successfully`,
+      data: null,
+    }
   }
 }

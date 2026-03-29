@@ -2,6 +2,7 @@ import { CreateCategoryDto } from '@/modules/admin/catalog/category/dto/create-c
 import { UpdateCategoryDto } from '@/modules/admin/catalog/category/dto/update-category.dto'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CategoryRepository } from './category.repository'
+import { CategoryEntity } from './entities/category.entity'
 
 @Injectable()
 export class CategoryService {
@@ -9,7 +10,10 @@ export class CategoryService {
 
   constructor(private readonly categoryRepo: CategoryRepository) {}
 
-  async createCategory(createCategoryDto: CreateCategoryDto, tenantId: string) {
+  async createCategory(
+    createCategoryDto: CreateCategoryDto,
+    tenantId: string,
+  ): Promise<CategoryEntity> {
     this.logger.log(`${this.createCategory.name} Service Called`)
     const existing = await this.categoryRepo.findBySlug(createCategoryDto.slug, tenantId)
 
@@ -23,12 +27,12 @@ export class CategoryService {
     })
   }
 
-  async findAllCategories(tenantId: string) {
+  async findAllCategories(tenantId: string): Promise<CategoryEntity[]> {
     this.logger.log(`${this.findAllCategories.name} Service Called`)
     return await this.categoryRepo.findAllByTenant(tenantId)
   }
 
-  async findOneCategory(id: string, tenantId: string) {
+  async findOneCategory(id: string, tenantId: string): Promise<CategoryEntity> {
     this.logger.log(`${this.findOneCategory.name} Service Called`)
     const category = await this.categoryRepo.findById(id, tenantId)
 
@@ -39,7 +43,11 @@ export class CategoryService {
     return category
   }
 
-  async updateCategory(id: string, updateCategoryDto: UpdateCategoryDto, tenantId: string) {
+  async updateCategory(
+    id: string,
+    updateCategoryDto: UpdateCategoryDto,
+    tenantId: string,
+  ): Promise<CategoryEntity> {
     this.logger.log(`${this.updateCategory.name} Service Called`)
     const category = await this.findOneCategory(id, tenantId)
 
@@ -54,7 +62,10 @@ export class CategoryService {
     return await this.categoryRepo.updateAndSave(category, updateCategoryDto)
   }
 
-  async removeCategory(id: string, tenantId: string) {
+  async removeCategory(
+    id: string,
+    tenantId: string,
+  ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeCategory.name} Service Called`)
     const category = await this.findOneCategory(id, tenantId)
     await this.categoryRepo.removeCategory(category)

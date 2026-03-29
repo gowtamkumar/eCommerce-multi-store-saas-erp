@@ -16,6 +16,10 @@ import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { ProductRepository } from './product.repository'
 import { ProductVariantRepository } from './variant.repository'
+import { ProductEntity } from './entities/product.entity'
+import { FilterProductDto } from './dto/filter-product.dto'
+
+type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 
 @Injectable()
 export class ProductService {
@@ -33,7 +37,7 @@ export class ProductService {
     private readonly promotionService: PromotionService,
   ) {}
 
-  private async attachPromotions(product: any, tenantId: string) {
+  private async attachPromotions(product: any, tenantId: string): Promise<AugmentedProduct> {
     this.logger.log(`${this.attachPromotions.name} Service Called`)
     if (!product) return product
     try {
@@ -82,18 +86,21 @@ export class ProductService {
       }
 
       return {
-        ...product,
+        ...(product instanceof ProductEntity ? (product as any) : product),
         applicablePromotions,
         discountAmount: finalDiscountAmount,
         discountType: finalDiscountType,
-      }
+      } as AugmentedProduct
     } catch (error) {
       console.error('Error attaching promotions', error)
       return product
     }
   }
 
-  private async attachPromotionsMany(products: any[], tenantId: string) {
+  private async attachPromotionsMany(
+    products: any[],
+    tenantId: string,
+  ): Promise<AugmentedProduct[]> {
     this.logger.log(`${this.attachPromotionsMany.name} Service Called`)
     if (!products || products.length === 0) return products
     try {
@@ -153,11 +160,11 @@ export class ProductService {
         }
 
         return {
-          ...product,
+          ...(product instanceof ProductEntity ? (product as any) : product),
           applicablePromotions,
           discountAmount: finalDiscountAmount,
           discountType: finalDiscountType,
-        }
+        } as AugmentedProduct
       })
     } catch (error) {
       console.error('Error attaching promotions many', error)
@@ -165,14 +172,17 @@ export class ProductService {
     }
   }
 
-  async findAllProducts(filterDto: any, tenantId: string) {
+  async findAllProducts(
+    filterDto: FilterProductDto,
+    tenantId: string,
+  ): Promise<{ products: AugmentedProduct[]; total: number }> {
     this.logger.log(`${this.findAllProducts.name} Service Called`)
     const [products, total] = await this.productRepository.findAllWithFilters(filterDto, tenantId)
     const productsWithPromotions = await this.attachPromotionsMany(products, tenantId)
     return { products: productsWithPromotions, total }
   }
 
-  async getFilterOptions(tenantId: string, categoryId?: string) {
+  async getFilterOptions(tenantId: string, categoryId?: string): Promise<any> {
     this.logger.log(`${this.getFilterOptions.name} Service Called`)
 
     const prices = await this.productRepository.getPriceRange(tenantId, categoryId)
@@ -204,7 +214,7 @@ export class ProductService {
     }
   }
 
-  async findBySlugProduct(slug: string, tenantId: string) {
+  async findBySlugProduct(slug: string, tenantId: string): Promise<ProductEntity> {
     this.logger.log(`${this.findBySlugProduct.name} Service Called`)
     const product = await this.productRepository.findBySlugWithRelations(slug, tenantId)
 
@@ -215,7 +225,7 @@ export class ProductService {
     return await this.attachPromotions(product, tenantId)
   }
 
-  async createProduct(createProductDto: CreateProductDto, tenantId: string) {
+  async createProduct(createProductDto: CreateProductDto, tenantId: string): Promise<ProductEntity> {
     this.logger.log(`${this.createProduct.name} Service Called`)
     const existing = await this.productRepository.findBySlug(createProductDto.slug, tenantId)
 
@@ -285,13 +295,13 @@ export class ProductService {
     return newProduct
   }
 
-  async findLatestProducts(tenantId: string, limit: number = 10) {
+  async findLatestProducts(tenantId: string, limit: number = 10): Promise<AugmentedProduct[]> {
     this.logger.log(`${this.findLatestProducts.name} Service Called`)
     const products = await this.productRepository.findLatestProducts(tenantId, limit)
     return await this.attachPromotionsMany(products, tenantId)
   }
 
-  async findOneProduct(id: string, tenantId: string) {
+  async findOneProduct(id: string, tenantId: string): Promise<AugmentedProduct> {
     this.logger.log(`${this.findOneProduct.name} Service Called`)
     const cacheKey = `product:${id}`
 
@@ -299,7 +309,7 @@ export class ProductService {
 
     if (cached) {
       console.log('Get from cache', cached ? 'HIT' : 'MISS')
-      return cached
+      return cached as AugmentedProduct
     }
 
     console.log('Get from db')
@@ -315,9 +325,13 @@ export class ProductService {
     return await this.attachPromotions(product, tenantId)
   }
 
-  async updateProduct(id: string, updateProductDto: UpdateProductDto, tenantId: string) {
+  async updateProduct(
+    id: string,
+    updateProductDto: UpdateProductDto,
+    tenantId: string,
+  ): Promise<AugmentedProduct> {
     this.logger.log(`${this.updateProduct.name} Service Called`)
-    const product: any = await this.findOneProduct(id, tenantId)
+    const product = await this.findOneProduct(id, tenantId)
 
     if (updateProductDto.slug && updateProductDto.slug !== product.slug) {
       const existing = await this.productRepository.findBySlug(updateProductDto.slug, tenantId)
@@ -329,7 +343,7 @@ export class ProductService {
 
     const { faqs, attributes, variants, ...productData } = updateProductDto
 
-    await this.productRepository.updateAndSave(product, productData)
+    await this.productRepository.updateAndSave(product as any as ProductEntity, productData)
 
     if (faqs) {
       await this.faqRepository.deleteByProductId(product.id, tenantId)
@@ -409,17 +423,25 @@ export class ProductService {
     return await this.findOneProduct(id, tenantId)
   }
 
-  async removeProduct(id: string, tenantId: string) {
+  async removeProduct(
+    id: string,
+    tenantId: string,
+  ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeProduct.name} Service Called`)
-    const product: any = await this.findOneProduct(id, tenantId)
-    await this.productRepository.removeProduct(product)
+    const product = await this.findOneProduct(id, tenantId)
+    await this.productRepository.removeProduct(product as any as ProductEntity)
 
     await this.cache.delCache(`product:${id}`, tenantId)
 
     return { success: true, message: 'Product deleted successfully' }
   }
 
-  async decrementStock(productId: string, quantity: number, tenantId: string, variantId?: string) {
+  async decrementStock(
+    productId: string,
+    quantity: number,
+    tenantId: string,
+    variantId?: string,
+  ): Promise<any> {
     this.logger.log(`${this.decrementStock.name} Service Called`)
     return await this.inventoryService.createInventoryTransaction(
       {
@@ -433,17 +455,17 @@ export class ProductService {
     )
   }
 
-  async findAllProductsCrossTenant() {
+  async findAllProductsCrossTenant(): Promise<ProductEntity[]> {
     this.logger.log(`${this.findAllProductsCrossTenant.name} Service Called`)
     return await this.productRepository.findAllCrossTenant()
   }
 
-  async countByTenant(tenantId: string) {
+  async countByTenant(tenantId: string): Promise<number> {
     this.logger.log(`${this.countByTenant.name} Service Called`)
     return await this.productRepository.countProducts(tenantId)
   }
 
-  async productOverview() {
+  async productOverview(): Promise<any> {
     this.logger.log(`${this.productOverview.name} Service Called`)
     return await this.productRepository.getOverviewStats()
   }

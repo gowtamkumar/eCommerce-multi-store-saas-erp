@@ -8,7 +8,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { Body, Controller, Delete, Get, Logger, Param, Post, Put, UseGuards } from '@nestjs/common'
 import { BrandService } from './brand.service'
-import { BrandDto } from './dto/brand.dto'
+import { BrandResponseDto } from './dto/brand-response.dto'
 import { CreateBrandDto } from './dto/create-brand.dto'
 import { UpdateBrandDto } from './dto/update-brand.dto'
 
@@ -25,7 +25,7 @@ export class BrandController {
   async createBrand(
     @RequestContext() ctx: RequestContextDto,
     @Body() createBrandDto: CreateBrandDto,
-  ): Promise<BaseApiSuccessResponse<BrandDto>> {
+  ): Promise<BaseApiSuccessResponse<BrandResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createBrand.`)
     const result = await this.brandService.createBrand(createBrandDto, ctx.user.tenantId)
     return {
@@ -37,7 +37,7 @@ export class BrandController {
   }
 
   @Get()
-  async findAllBrands(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<BrandDto[]>> {
+  async findAllBrands(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<BrandResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllBrands.`)
     const result = await this.brandService.findAllBrands(ctx.tenantId)
     return {
@@ -52,7 +52,7 @@ export class BrandController {
   async findOneBrand(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
-  ): Promise<BaseApiSuccessResponse<BrandDto>> {
+  ): Promise<BaseApiSuccessResponse<BrandResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneBrand.`)
     const result = await this.brandService.findOneBrand(id, ctx.tenantId)
     return {
@@ -71,7 +71,7 @@ export class BrandController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() updateBrandDto: UpdateBrandDto,
-  ): Promise<BaseApiSuccessResponse<BrandDto>> {
+  ): Promise<BaseApiSuccessResponse<BrandResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateBrand.`)
     const result = await this.brandService.updateBrand(id, updateBrandDto, ctx.user.tenantId)
     return {

@@ -15,7 +15,7 @@ export class PageService {
     private readonly faqService: FaqService,
   ) {}
 
-  async createPage(dto: CreatePageDto, tenantId: string) {
+  async createPage(dto: CreatePageDto, tenantId: string): Promise<PageEntity> {
     this.logger.log(`${this.createPage.name} Service Called`)
     const existing = await this.pageRepository.findBySlug(dto.slug, tenantId)
     if (existing) throw new ConflictException('Slug already exists for this tenant')
@@ -27,31 +27,31 @@ export class PageService {
     return await this.pageRepository.createAndSave(dto, tenantId)
   }
 
-  async findAllPages(tenantId: string, status?: string) {
+  async findAllPages(tenantId: string, status?: string): Promise<PageEntity[]> {
     this.logger.log(`${this.findAllPages.name} Service Called`)
     return await this.pageRepository.findAllWithStatus(tenantId, status)
   }
 
-  async findOnePage(id: string, tenantId: string) {
+  async findOnePage(id: string, tenantId: string): Promise<PageEntity> {
     this.logger.log(`${this.findOnePage.name} Service Called`)
     const page = await this.pageRepository.findById(id, tenantId)
     if (!page) throw new NotFoundException('Page not found')
     return page
   }
 
-  async findBySlugPage(slug: string, tenantId: string) {
+  async findBySlugPage(slug: string, tenantId: string): Promise<PageEntity> {
     this.logger.log(`${this.findBySlugPage.name} Service Called`)
     const page = await this.pageRepository.findBySlug(slug, tenantId)
     if (!page) throw new NotFoundException('Page not found')
     return JSON.parse(JSON.stringify(page))
   }
 
-  async findHomePage(tenantId: string) {
+  async findHomePage(tenantId: string): Promise<PageEntity | null> {
     this.logger.log(`${this.findHomePage.name} Service Called`)
     return await this.pageRepository.findHomePage(tenantId)
   }
 
-  async updatePage(id: string, dto: UpdatePageDto, tenantId: string) {
+  async updatePage(id: string, dto: UpdatePageDto, tenantId: string): Promise<PageEntity> {
     this.logger.log(`${this.updatePage.name} Service Called`)
     const page = await this.findOnePage(id, tenantId)
 
@@ -67,26 +67,29 @@ export class PageService {
     return await this.pageRepository.updateAndSave(page, dto)
   }
 
-  async removePage(id: string, tenantId: string) {
+  async removePage(
+    id: string,
+    tenantId: string,
+  ): Promise<{ success: boolean; message?: string }> {
     this.logger.log(`${this.removePage.name} Service Called`)
     const page = await this.findOnePage(id, tenantId)
     await this.pageRepository.removePage(page)
-    return { success: true }
+    return { success: true, message: 'Page deleted successfully' }
   }
 
-  async findAllPagesCrossTenant() {
+  async findAllPagesCrossTenant(): Promise<PageEntity[]> {
     this.logger.log(`${this.findAllPagesCrossTenant.name} Service Called`)
     return await this.pageRepository.findAllCrossTenant()
   }
 
   // Load FAQs for a page with faq-section
-  async enrichPageWithFaqs(page: PageEntity) {
+  async enrichPageWithFaqs(page: PageEntity): Promise<PageEntity> {
     this.logger.log(`${this.enrichPageWithFaqs.name} Service Called`)
     if (!page.sections || page.sections.length === 0) return page
 
     const enrichedSections = await Promise.all(
       page.sections.map(async (section) => {
-        if (section.type === 'faq-section') {
+        if (section.type === 'faq-section' as any) {
           const source = section.settings?.source || 'page'
 
           let faqs = []
@@ -104,10 +107,10 @@ export class PageService {
       }),
     )
 
-    return { ...page, sections: enrichedSections }
+    return { ...page, sections: enrichedSections } as PageEntity
   }
 
-  async countByTenant(tenantId: string) {
+  async countByTenant(tenantId: string): Promise<number> {
     this.logger.log(`${this.countByTenant.name} Service Called`)
     return await this.pageRepository.countByTenant(tenantId)
   }

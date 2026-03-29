@@ -1,24 +1,28 @@
 import { Expose } from 'class-transformer'
 import { IsDate } from 'class-validator'
+import { ReviewStatus } from '@/common/enums/review-status.enum'
 
-export class BrandDto {
+export class ReviewResponseDto {
   @Expose()
   id: string
 
   @Expose()
-  name: string
+  productId: string
 
   @Expose()
-  slug: string
+  customerName: string
 
   @Expose()
-  description?: string
+  customerEmail: string
 
   @Expose()
-  image?: string
+  rating: number
 
   @Expose()
-  website?: string
+  comment: string
+
+  @Expose()
+  status: ReviewStatus
 
   @Expose()
   @IsDate()
