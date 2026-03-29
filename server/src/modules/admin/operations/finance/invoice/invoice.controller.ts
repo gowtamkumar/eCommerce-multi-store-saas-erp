@@ -1,3 +1,8 @@
+import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import {
   Body,
   Controller,
@@ -9,11 +14,8 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-import { RolesGuard } from '@/common/guards/roles.guard'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
+import { InvoiceResponseDto } from './dto/invoice-response.dto'
 import { UpdateInvoiceDto } from './dto/update-invoice.dto'
 import { InvoiceService } from './invoice.service'
 
@@ -24,35 +26,76 @@ export class InvoiceController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  createInvoice(@Body() createInvoiceDto: CreateInvoiceDto, @Request() req: any) {
-    return this.invoiceService.createInvoice(createInvoiceDto, req.user.tenantId)
+  async createInvoice(
+    @Body() createInvoiceDto: CreateInvoiceDto,
+    @Request() req: any,
+  ): Promise<BaseApiSuccessResponse<InvoiceResponseDto>> {
+    const result = await this.invoiceService.createInvoice(createInvoiceDto, req.user.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Invoice created successfully',
+      data: result,
+    }
   }
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
-  findAllInvoices(@Request() req: any) {
-    return this.invoiceService.findAllInvoices(req.user.tenantId)
+  async findAllInvoices(
+    @Request() req: any,
+  ): Promise<BaseApiSuccessResponse<InvoiceResponseDto[]>> {
+    const result = await this.invoiceService.findAllInvoices(req.user.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'List of invoices retrieved',
+      data: result,
+    }
   }
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
-  findOneInvoice(@Param('id') id: string, @Request() req: any) {
-    return this.invoiceService.findOneInvoice(id, req.user.tenantId)
+  async findOneInvoice(
+    @Param('id') id: string,
+    @Request() req: any,
+  ): Promise<BaseApiSuccessResponse<InvoiceResponseDto>> {
+    const result = await this.invoiceService.findOneInvoice(id, req.user.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Invoice retrieved',
+      data: result,
+    }
   }
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  updateInvoice(
+  async updateInvoice(
     @Param('id') id: string,
     @Body() updateInvoiceDto: UpdateInvoiceDto,
     @Request() req: any,
-  ) {
-    return this.invoiceService.updateInvoice(id, updateInvoiceDto, req.user.tenantId)
+  ): Promise<BaseApiSuccessResponse<InvoiceResponseDto>> {
+    const result = await this.invoiceService.updateInvoice(id, updateInvoiceDto, req.user.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Invoice updated successfully',
+      data: result,
+    }
   }
 
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  removeInvoice(@Param('id') id: string, @Request() req: any) {
-    return this.invoiceService.removeInvoice(id, req.user.tenantId)
+  async removeInvoice(
+    @Param('id') id: string,
+    @Request() req: any,
+  ): Promise<BaseApiSuccessResponse<null>> {
+    await this.invoiceService.removeInvoice(id, req.user.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Invoice deleted successfully',
+      data: null,
+    }
   }
 }

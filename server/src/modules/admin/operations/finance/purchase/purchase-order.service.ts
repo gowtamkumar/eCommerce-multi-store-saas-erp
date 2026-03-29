@@ -10,6 +10,7 @@ import { InventoryTransactionType } from '@/common/enums/inventory-transaction-t
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { PurchaseOrderRepository } from './purchase-order.repository'
 import { SupplierPaymentRepository } from './supplier-payment.repository'
+import { SupplierPaymentEntity } from './entities/supplier-payment.entity'
 
 @Injectable()
 export class PurchaseOrderService {
@@ -22,7 +23,7 @@ export class PurchaseOrderService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async createPurchaseOrder(dto: CreatePurchaseOrderDto, tenantId: string) {
+  async createPurchaseOrder(dto: CreatePurchaseOrderDto, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
     const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
     return await this.repository.createAndSave(
@@ -32,12 +33,12 @@ export class PurchaseOrderService {
     )
   }
 
-  async findAllPurchaseOrders(tenantId: string) {
+  async findAllPurchaseOrders(tenantId: string): Promise<PurchaseOrderEntity[]> {
     this.logger.log(`${this.findAllPurchaseOrders.name} Service Called`)
     return await this.repository.findAllWithRelations(tenantId)
   }
 
-  async findOnePurchaseOrder(id: string, tenantId: string) {
+  async findOnePurchaseOrder(id: string, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.findOnePurchaseOrder.name} Service Called`)
     const order = await this.repository.findByIdWithRelations(id, tenantId)
     if (!order) {
@@ -46,7 +47,7 @@ export class PurchaseOrderService {
     return order
   }
 
-  async updatePurchaseOrderStatus(id: string, dto: UpdatePurchaseOrderStatusDto, tenantId: string) {
+  async updatePurchaseOrderStatus(id: string, dto: UpdatePurchaseOrderStatusDto, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.updatePurchaseOrderStatus.name} Service Called`)
     const order = await this.findOnePurchaseOrder(id, tenantId)
 
@@ -65,7 +66,7 @@ export class PurchaseOrderService {
     return await this.repository.saveOrder(order)
   }
 
-  private async receivePurchaseOrder(order: PurchaseOrderEntity, tenantId: string) {
+  private async receivePurchaseOrder(order: PurchaseOrderEntity, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.receivePurchaseOrder.name} Service Called`)
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
@@ -103,7 +104,7 @@ export class PurchaseOrderService {
     }
   }
 
-  async recordSupplierPayment(id: string, dto: RecordSupplierPaymentDto, tenantId: string) {
+  async recordSupplierPayment(id: string, dto: RecordSupplierPaymentDto, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.recordSupplierPayment.name} Service Called`)
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
@@ -146,17 +147,17 @@ export class PurchaseOrderService {
     }
   }
 
-  async findAllBySupplier(supplierId: string, tenantId: string) {
+  async findAllBySupplier(supplierId: string, tenantId: string): Promise<PurchaseOrderEntity[]> {
     this.logger.log(`${this.findAllBySupplier.name} Service Called`)
     return await this.repository.findAllBySupplier(supplierId, tenantId)
   }
 
-  async findAllPaymentsBySupplier(supplierId: string, tenantId: string) {
+  async findAllPaymentsBySupplier(supplierId: string, tenantId: string): Promise<SupplierPaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsBySupplier.name} Service Called`)
     return await this.paymentRepository.findAllBySupplier(supplierId, tenantId)
   }
 
-  async findAllPaymentsByPurchaseOrder(tenantId: string) {
+  async findAllPaymentsByPurchaseOrder(tenantId: string): Promise<SupplierPaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsByPurchaseOrder.name} Service Called`)
     return await this.paymentRepository.findAllPayments(tenantId)
   }

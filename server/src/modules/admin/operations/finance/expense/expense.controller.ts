@@ -1,3 +1,8 @@
+import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { UserRole } from '@/common/enums/user/user-role.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import {
   Body,
   Controller,
@@ -9,11 +14,8 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-import { RolesGuard } from '@/common/guards/roles.guard'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { CreateExpenseDto } from './dto/create-expense.dto'
+import { ExpenseResponseDto } from './dto/expense-response.dto'
 import { UpdateExpenseDto } from './dto/update-expense.dto'
 import { ExpenseService } from './expense.service'
 
@@ -24,35 +26,76 @@ export class ExpenseController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  createExpense(@Body() createExpenseDto: CreateExpenseDto, @Request() req: any) {
-    return this.expenseService.createExpense(createExpenseDto, req.user.tenantId)
+  async createExpense(
+    @Body() createExpenseDto: CreateExpenseDto,
+    @Request() req: any,
+  ): Promise<BaseApiSuccessResponse<ExpenseResponseDto>> {
+    const result = await this.expenseService.createExpense(createExpenseDto, req.user.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Expense created successfully',
+      data: result,
+    }
   }
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR)
-  findAllExpenses(@Request() req: any) {
-    return this.expenseService.findAllExpenses(req.user.tenantId)
+  async findAllExpenses(
+    @Request() req: any,
+  ): Promise<BaseApiSuccessResponse<ExpenseResponseDto[]>> {
+    const result = await this.expenseService.findAllExpenses(req.user.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'List of expenses retrieved',
+      data: result,
+    }
   }
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR)
-  findOneExpense(@Param('id') id: string, @Request() req: any) {
-    return this.expenseService.findOneExpense(id, req.user.tenantId)
+  async findOneExpense(
+    @Param('id') id: string,
+    @Request() req: any,
+  ): Promise<BaseApiSuccessResponse<ExpenseResponseDto>> {
+    const result = await this.expenseService.findOneExpense(id, req.user.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Expense retrieved',
+      data: result,
+    }
   }
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  updateExpense(
+  async updateExpense(
     @Param('id') id: string,
     @Body() updateExpenseDto: UpdateExpenseDto,
     @Request() req: any,
-  ) {
-    return this.expenseService.updateExpense(id, updateExpenseDto, req.user.tenantId)
+  ): Promise<BaseApiSuccessResponse<ExpenseResponseDto>> {
+    const result = await this.expenseService.updateExpense(id, updateExpenseDto, req.user.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Expense updated successfully',
+      data: result,
+    }
   }
 
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  removeExpense(@Param('id') id: string, @Request() req: any) {
-    return this.expenseService.removeExpense(id, req.user.tenantId)
+  async removeExpense(
+    @Param('id') id: string,
+    @Request() req: any,
+  ): Promise<BaseApiSuccessResponse<null>> {
+    await this.expenseService.removeExpense(id, req.user.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Expense deleted successfully',
+      data: null,
+    }
   }
 }

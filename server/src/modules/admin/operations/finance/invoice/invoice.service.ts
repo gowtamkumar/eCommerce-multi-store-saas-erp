@@ -5,6 +5,7 @@ import { EntityManager } from 'typeorm'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
 import { UpdateInvoiceDto } from './dto/update-invoice.dto'
 import { InvoiceRepository } from './invoice.repository'
+import { InvoiceEntity } from './entities/invoice.entity'
 
 @Injectable()
 export class InvoiceService {
@@ -19,7 +20,7 @@ export class InvoiceService {
     createInvoiceDto: CreateInvoiceDto,
     tenantId: string,
     manager?: EntityManager,
-  ) {
+  ): Promise<InvoiceEntity> {
     this.logger.log(`${this.createInvoice.name} Service Called`)
     const orderRepo = manager ? manager.withRepository(this.orderRepository) : this.orderRepository
 
@@ -63,12 +64,12 @@ export class InvoiceService {
     )
   }
 
-  async findAllInvoices(tenantId: string) {
+  async findAllInvoices(tenantId: string): Promise<InvoiceEntity[]> {
     this.logger.log(`${this.findAllInvoices.name} Service Called`)
     return await this.invoiceRepository.findAllWithRelations(tenantId)
   }
 
-  async findOneInvoice(id: string, tenantId: string) {
+  async findOneInvoice(id: string, tenantId: string): Promise<InvoiceEntity> {
     this.logger.log(`${this.findOneInvoice.name} Service Called`)
     const invoice = await this.invoiceRepository.findByIdWithRelations(id, tenantId)
 
@@ -79,7 +80,7 @@ export class InvoiceService {
     return invoice
   }
 
-  async updateInvoice(id: string, updateInvoiceDto: UpdateInvoiceDto, tenantId: string) {
+  async updateInvoice(id: string, updateInvoiceDto: UpdateInvoiceDto, tenantId: string): Promise<InvoiceEntity> {
     this.logger.log(`${this.updateInvoice.name} Service Called`)
     const invoice = await this.findOneInvoice(id, tenantId)
 
@@ -94,7 +95,7 @@ export class InvoiceService {
     return await this.invoiceRepository.updateAndSave(invoice, updateData)
   }
 
-  async removeInvoice(id: string, tenantId: string) {
+  async removeInvoice(id: string, tenantId: string): Promise<InvoiceEntity> {
     this.logger.log(`${this.removeInvoice.name} Service Called`)
     const invoice = await this.findOneInvoice(id, tenantId)
     return await this.invoiceRepository.removeInvoice(invoice)
@@ -105,7 +106,7 @@ export class InvoiceService {
     status: InvoiceStatus,
     tenantId: string,
     manager?: EntityManager,
-  ) {
+  ): Promise<void> {
     this.logger.log(`${this.updateInvoiceStatusByOrderId.name} Service Called`)
     const invoice = await this.invoiceRepository.findByOrderId(orderId, tenantId, manager)
     if (invoice) {
