@@ -6,7 +6,7 @@ import { FaqEntity } from '@/modules/admin/content/faq/entities/faq.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { BrandEntity } from '../../brand/entities/brand.entity'
 import { CategoryEntity } from '../../category/entities/category.entity'
 import { ProductAttributeEntity } from './attribute.entity'
@@ -14,10 +14,11 @@ import { ProductVariantEntity } from './variant.entity'
 
 @Entity('products')
 export class ProductEntity extends BaseEntity {
-  @Column({ type: 'varchar', length: 255 })
+  @Column()
   name: string
 
-  @Column({ type: 'varchar', length: 255, unique: true })
+  @Column({ unique: true })
+  @Index()
   slug: string
 
   @Column({ type: 'text' })
@@ -64,6 +65,7 @@ export class ProductEntity extends BaseEntity {
   status: ProductStatus
 
   @Column({ type: 'uuid', name: 'category_id', nullable: true })
+  @Index()
   categoryId: string
   @ManyToOne(() => CategoryEntity, (category) => category.products, {
     nullable: true,
@@ -73,6 +75,7 @@ export class ProductEntity extends BaseEntity {
   category: CategoryEntity
 
   @Column({ type: 'uuid', name: 'brand_id', nullable: true })
+  @Index()
   brandId: string
 
   @ManyToOne(() => BrandEntity, { nullable: true, onDelete: 'SET NULL' })
@@ -112,6 +115,7 @@ export class ProductEntity extends BaseEntity {
   supplier: SupplierEntity
 
   @Column({ type: 'uuid', name: 'tenant_id' })
+  @Index()
   tenantId: string
 
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
@@ -119,6 +123,7 @@ export class ProductEntity extends BaseEntity {
   tenant: TenantEntity
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  @Index()
   userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })

@@ -1,12 +1,14 @@
 import { Audit } from '@/common/decorators/audit.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { Body, Controller, Delete, Get, Logger, Param, Post, Put, UseGuards } from '@nestjs/common'
 import { BrandService } from './brand.service'
+import { BrandDto } from './dto/brand.dto'
 import { CreateBrandDto } from './dto/create-brand.dto'
 import { UpdateBrandDto } from './dto/update-brand.dto'
 
@@ -23,24 +25,42 @@ export class BrandController {
   async createBrand(
     @RequestContext() ctx: RequestContextDto,
     @Body() createBrandDto: CreateBrandDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<BrandDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createBrand.`)
-    const data = await this.brandService.createBrand(createBrandDto, ctx.user.tenantId)
-    return { success: true, data }
+    const result = await this.brandService.createBrand(createBrandDto, ctx.user.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: `New brand created`,
+      data: result,
+    }
   }
 
   @Get()
-  async findAllBrands(@RequestContext() ctx: RequestContextDto): Promise<any> {
+  async findAllBrands(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<BrandDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllBrands.`)
-    const data = await this.brandService.findAllBrands(ctx.tenantId)
-    return { success: true, data }
+    const result = await this.brandService.findAllBrands(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `List of brands`,
+      data: result,
+    }
   }
 
   @Get(':id')
-  async findOneBrand(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
+  async findOneBrand(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<BrandDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneBrand.`)
-    const data = await this.brandService.findOneBrand(id, ctx.tenantId)
-    return { success: true, data }
+    const result = await this.brandService.findOneBrand(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Brand details`,
+      data: result,
+    }
   }
 
   @Put(':id')
@@ -51,10 +71,15 @@ export class BrandController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() updateBrandDto: UpdateBrandDto,
-  ) {
+  ): Promise<BaseApiSuccessResponse<BrandDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateBrand.`)
-    const data = await this.brandService.updateBrand(id, updateBrandDto, ctx.user.tenantId)
-    return { success: true, data }
+    const result = await this.brandService.updateBrand(id, updateBrandDto, ctx.user.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Brand of ID ${id} updated`,
+      data: result,
+    }
   }
 
   @Delete(':id')
@@ -63,6 +88,12 @@ export class BrandController {
   @Audit({ entity: 'Brand', action: 'DELETE' })
   async removeBrand(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeBrand.`)
-    return await this.brandService.removeBrand(id, ctx.user.tenantId)
+    const result = await this.brandService.removeBrand(id, ctx.user.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: result.message || `Brand deleted successfully`,
+      data: null,
+    }
   }
 }

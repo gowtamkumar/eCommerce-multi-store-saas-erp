@@ -2,6 +2,7 @@ import { ConflictException, Injectable, Logger, NotFoundException } from '@nestj
 import { BrandRepository } from './brand.repository'
 import { CreateBrandDto } from './dto/create-brand.dto'
 import { UpdateBrandDto } from './dto/update-brand.dto'
+import { BrandEntity } from './entities/brand.entity'
 
 @Injectable()
 export class BrandService {
@@ -9,7 +10,7 @@ export class BrandService {
 
   constructor(private readonly brandRepo: BrandRepository) {}
 
-  async createBrand(createBrandDto: CreateBrandDto, tenantId: string) {
+  async createBrand(createBrandDto: CreateBrandDto, tenantId: string): Promise<BrandEntity> {
     this.logger.log(`${this.createBrand.name} Service Called`)
     const existing = await this.brandRepo.findBySlug(createBrandDto.slug, tenantId)
 
@@ -23,12 +24,12 @@ export class BrandService {
     })
   }
 
-  async findAllBrands(tenantId: string) {
+  async findAllBrands(tenantId: string): Promise<BrandEntity[]> {
     this.logger.log(`${this.findAllBrands.name} Service Called`)
     return await this.brandRepo.findAllByTenant(tenantId)
   }
 
-  async findOneBrand(id: string, tenantId: string) {
+  async findOneBrand(id: string, tenantId: string): Promise<BrandEntity> {
     this.logger.log(`${this.findOneBrand.name} Service Called`)
     const brand = await this.brandRepo.findById(id, tenantId)
 
@@ -39,7 +40,11 @@ export class BrandService {
     return brand
   }
 
-  async updateBrand(id: string, updateBrandDto: UpdateBrandDto, tenantId: string) {
+  async updateBrand(
+    id: string,
+    updateBrandDto: UpdateBrandDto,
+    tenantId: string,
+  ): Promise<BrandEntity> {
     this.logger.log(`${this.updateBrand.name} Service Called`)
     const brand = await this.findOneBrand(id, tenantId)
 
@@ -54,7 +59,7 @@ export class BrandService {
     return await this.brandRepo.updateAndSave(brand, updateBrandDto)
   }
 
-  async removeBrand(id: string, tenantId: string) {
+  async removeBrand(id: string, tenantId: string): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeBrand.name} Service Called`)
     const brand = await this.findOneBrand(id, tenantId)
     await this.brandRepo.removeBrand(brand)
