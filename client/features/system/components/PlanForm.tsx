@@ -21,8 +21,11 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
         name: initialData?.name || '',
         description: initialData?.description || '',
         price: initialData?.price || 0,
+        monthlyPrice: initialData?.monthlyPrice || 0,
+        yearlyPrice: initialData?.yearlyPrice || 0,
         billingCycle: initialData?.billingCycle || 'monthly',
         isActive: initialData?.isActive ?? true,
+        isPopular: initialData?.isPopular ?? false,
     });
 
     const handleAddFeature = () => setFeatures([...features, '']);
@@ -41,7 +44,9 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
             const payload = {
                 ...formData,
                 features: features.filter(f => f.trim() !== ''),
-                price: Number(formData.price)
+                price: Number(formData.price),
+                monthlyPrice: Number(formData.monthlyPrice),
+                yearlyPrice: Number(formData.yearlyPrice),
             };
 
             const endpoint = isEditing ? `/super-admin/plans/${initialData.id}` : '/super-admin/plans';
@@ -103,7 +108,7 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                                 />
                             </div>
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Price ($)</label>
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Monthly Price ($)</label>
                                 <div className="relative group">
                                     <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black group-focus-within:text-brand-500 transition-colors">$</span>
                                     <input
@@ -111,25 +116,28 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                                         required
                                         min="0"
                                         step="0.01"
-                                        value={formData.price}
-                                        onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                                        value={formData.monthlyPrice}
+                                        onChange={(e) => setFormData({ ...formData, monthlyPrice: Number(e.target.value) })}
                                         className="w-full pl-12 pr-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-black text-slate-900 dark:text-white"
                                     />
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Billing Cycle</label>
-                                <select
-                                    value={formData.billingCycle}
-                                    onChange={(e) => setFormData({ ...formData, billingCycle: e.target.value })}
-                                    className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white"
-                                >
-                                    <option value="monthly">Monthly</option>
-                                    <option value="yearly">Yearly</option>
-                                </select>
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Yearly Price ($)</label>
+                                <div className="relative group">
+                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black group-focus-within:text-brand-500 transition-colors">$</span>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        step="0.01"
+                                        value={formData.yearlyPrice}
+                                        onChange={(e) => setFormData({ ...formData, yearlyPrice: Number(e.target.value) })}
+                                        className="w-full pl-12 pr-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-black text-slate-900 dark:text-white"
+                                    />
+                                </div>
                             </div>
                         </div>
-
                         <div className="space-y-3">
                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Tier Narrative</label>
                             <textarea
@@ -210,6 +218,20 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                                         <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${formData.isActive ? 'translate-x-7' : 'translate-x-0'}`} />
                                     </button>
                                 </div>
+
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-0.5">
+                                        <span className="text-sm font-black text-slate-900 dark:text-white">Most Popular</span>
+                                        <p className="text-[10px] text-slate-400 font-medium italic">Highlight this tier?</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, isPopular: !formData.isPopular })}
+                                        className={`w-14 h-7 rounded-full p-1 relative transition-colors ${formData.isPopular ? 'bg-brand-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+                                    >
+                                        <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${formData.isPopular ? 'translate-x-7' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -235,7 +257,14 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                             <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Live Preview</p>
                             <div>
                                 <h4 className="text-2xl font-black tracking-tight">{formData.name || 'Untitled Tier'}</h4>
-                                <p className="text-3xl font-black pt-1">${formData.price}<span className="text-sm opacity-60">/mo</span></p>
+                                <div className="flex items-baseline gap-2 pt-1">
+                                    <p className="text-3xl font-black">${formData.monthlyPrice}</p>
+                                    <span className="text-sm opacity-60">monthly</span>
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                    <p className="text-xl font-black opacity-80">${formData.yearlyPrice}</p>
+                                    <span className="text-xs opacity-60">yearly</span>
+                                </div>
                             </div>
                             <div className="w-full h-px bg-white/20" />
                             <p className="text-xs font-medium opacity-80 leading-relaxed italic line-clamp-2">

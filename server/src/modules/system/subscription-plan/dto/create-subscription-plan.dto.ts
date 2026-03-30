@@ -13,6 +13,16 @@ export class CreateSubscriptionPlanDto {
   @Min(0)
   price: number
 
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  monthlyPrice?: number
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  yearlyPrice?: number
+
   @IsEnum(SubscriptionBillingCycle)
   @IsOptional()
   billingCycle?: SubscriptionBillingCycle
@@ -25,4 +35,8 @@ export class CreateSubscriptionPlanDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean
+
+  @IsBoolean()
+  @IsOptional()
+  isPopular?: boolean
 }

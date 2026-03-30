@@ -6,11 +6,12 @@ import { OrderModule } from '@/modules/admin/sales/order/order.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { Module } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
+import { SubscriptionPlanModule } from '../subscription-plan/subscription-plan.module'
 import { SuperAdminController } from './super-admin.controller'
 import { TrafficService } from './traffic.service'
 
 @Module({
-  imports: [UserModule, TenantModule, OrderModule, ProductModule, PageModule],
+  imports: [UserModule, TenantModule, OrderModule, ProductModule, PageModule, SubscriptionPlanModule],
   controllers: [SuperAdminController],
   providers: [
     TrafficService,

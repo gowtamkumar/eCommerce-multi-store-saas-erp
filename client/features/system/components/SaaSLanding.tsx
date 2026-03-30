@@ -119,7 +119,9 @@ export default function SaaSLanding() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.length > 0 ? (
               plans.map((plan: any, idx: number) => {
-                const price = billingCycle === 'yearly' ? parseFloat(plan.price) * 0.8 : parseFloat(plan.price);
+                const price = billingCycle === 'yearly' 
+                  ? (plan.yearlyPrice || parseFloat(plan.price) * 0.8) 
+                  : (plan.monthlyPrice || parseFloat(plan.price));
                 const isPopular = plan.isPopular || idx === 1;
 
                 return (
@@ -142,7 +144,7 @@ export default function SaaSLanding() {
                     </div>
 
                     <div className="flex items-baseline gap-1 mb-8">
-                      <span className="text-5xl font-black text-slate-900 dark:text-white">${price.toFixed(0)}</span>
+                      <span className="text-5xl font-black text-slate-900 dark:text-white">${Number(price).toFixed(0)}</span>
                       <span className="text-slate-500 dark:text-slate-400 font-bold">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
                     </div>
 

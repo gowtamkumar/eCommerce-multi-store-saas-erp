@@ -24,6 +24,8 @@ import {
 } from '@nestjs/common'
 import si from 'systeminformation'
 import { TrafficService } from './traffic.service'
+import { SubscriptionPlanService } from '../subscription-plan/subscription-plan.service'
+import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 
 @Controller('super-admin')
 export class SuperAdminController {
@@ -36,6 +38,7 @@ export class SuperAdminController {
     private readonly trafficService: TrafficService,
     private readonly productService: ProductService,
     private readonly pageService: PageService,
+    private readonly planService: SubscriptionPlanService,
   ) { }
 
   @Post('/setup')
@@ -58,10 +61,36 @@ export class SuperAdminController {
       isAdmin: true,
     })
 
+    // Create Initial Subscription Plans if none exist
+    const existingPlans = await this.planService.findAllSubscriptionPlans()
+    if (existingPlans.length === 0) {
+      await this.planService.createSubscriptionPlan({
+        name: 'Pro Seller',
+        description: 'The essentials to get your store up and running with professional features.',
+        price: 29,
+        monthlyPrice: 29,
+        yearlyPrice: 290,
+        features: ['Unlimited Products', 'Custom Domains', 'Advanced Analytics', 'Priority Support'],
+        isActive: true,
+        isPopular: true,
+      })
+
+      await this.planService.createSubscriptionPlan({
+        name: 'Enterprise',
+        description: 'Scale your business with dedicated support and advanced infrastructure.',
+        price: 99,
+        monthlyPrice: 99,
+        yearlyPrice: 990,
+        features: ['Priority 24/7 Support', 'Dedicated Account Manager', 'Custom API Access', 'SLA Guarantee'],
+        isActive: true,
+        isPopular: false,
+      })
+    }
+
     return {
       success: true,
       statusCode: 201,
-      message: 'Super Admin created successfully',
+      message: 'Super Admin created and initial plans seeded successfully',
       data: { user: { name: superAdmin.name, username: superAdmin.username } },
     }
   }

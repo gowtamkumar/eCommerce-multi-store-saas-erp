@@ -13,6 +13,12 @@ export class SubscriptionPlanResponseDto {
 
   @Expose()
   price: number;
+  
+  @Expose()
+  monthlyPrice: number;
+
+  @Expose()
+  yearlyPrice: number;
 
   @Expose()
   billingCycle: SubscriptionBillingCycle;
@@ -22,6 +28,9 @@ export class SubscriptionPlanResponseDto {
 
   @Expose()
   isActive: boolean;
+
+  @Expose()
+  isPopular: boolean;
 
   @Expose()
   createdAt: Date;

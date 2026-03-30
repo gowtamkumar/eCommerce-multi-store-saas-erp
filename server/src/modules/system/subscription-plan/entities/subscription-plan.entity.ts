@@ -15,6 +15,12 @@ export class SubscriptionPlanEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   price: number
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'monthly_price' })
+  monthlyPrice: number
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'yearly_price' })
+  yearlyPrice: number
+
   @Column({
     type: 'enum',
     enum: SubscriptionBillingCycle,
@@ -28,6 +34,9 @@ export class SubscriptionPlanEntity extends BaseEntity {
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean
+
+  @Column({ name: 'is_popular', default: false })
+  isPopular: boolean
 
   @OneToMany(() => TenantEntity, (tenant) => tenant.subscriptionPlan)
   tenants: TenantEntity[]

@@ -11,9 +11,12 @@ interface SubscriptionPlan {
     name: string;
     description: string;
     price: number;
+    monthlyPrice: number;
+    yearlyPrice: number;
     features: string[];
     billingCycle: string;
     isActive: boolean;
+    isPopular: boolean;
     createdAt: string;
 }
 
@@ -148,16 +151,22 @@ export default function PlanList({ initialPlans }: PlanListProps) {
                                 <div className="mb-6">
                                     <div className="flex items-center gap-2 mb-2">
                                         <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{plan.name}</h3>
-                                        {!plan.isActive && <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full">Draft</span>}
+                                        <div className="flex gap-1">
+                                            {!plan.isActive && <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full">Draft</span>}
+                                            {plan.isPopular && <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-brand-100 dark:bg-brand-900/40 text-brand-600 rounded-full">Popular</span>}
+                                        </div>
                                     </div>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed line-clamp-2 h-10">
                                         {plan.description || 'Provide a compelling description for this tier.'}
                                     </p>
                                 </div>
 
-                                <div className="mb-8">
-                                    <p className="text-3xl font-black text-slate-900 dark:text-white mb-4">
-                                        ${plan.price}<span className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">/ {plan.billingCycle || 'month'}</span>
+                                <div className="mb-6 space-y-1">
+                                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                                        ${plan.monthlyPrice}<span className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">/ mo</span>
+                                    </p>
+                                    <p className="text-xl font-black text-slate-400 dark:text-slate-500">
+                                        ${plan.yearlyPrice}<span className="text-[10px] font-bold uppercase tracking-widest ml-1">/ yr</span>
                                     </p>
                                 </div>
 
