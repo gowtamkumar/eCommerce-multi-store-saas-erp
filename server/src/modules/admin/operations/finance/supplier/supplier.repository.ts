@@ -35,6 +35,6 @@ export class SupplierRepository extends Repository<SupplierEntity> {
   }
 
   async removeSupplier(supplier: SupplierEntity): Promise<SupplierEntity> {
-    return await this.remove(supplier)
+    return await this.softRemove(supplier)
   }
 }

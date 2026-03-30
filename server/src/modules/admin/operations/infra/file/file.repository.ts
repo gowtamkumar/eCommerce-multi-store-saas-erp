@@ -31,6 +31,6 @@ export class FileRepository extends Repository<FileEntity> {
   }
 
   async removeFile(file: FileEntity): Promise<FileEntity> {
-    return await this.remove(file)
+    return await this.softRemove(file)
   }
 }

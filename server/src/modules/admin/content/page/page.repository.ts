@@ -54,6 +54,6 @@ export class PageRepository extends Repository<PageEntity> {
   }
 
   async removePage(page: PageEntity): Promise<void> {
-    await this.remove(page)
+    await this.softRemove(page)
   }
 }

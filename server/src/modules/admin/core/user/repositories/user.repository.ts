@@ -82,7 +82,7 @@ export class UserRepository extends Repository<UserEntity> {
   }
 
   async deleteUser(user: UserEntity): Promise<UserEntity> {
-    return this.remove(user)
+    return this.softRemove(user)
   }
 
   async countByTenant(tenantId: string): Promise<number> {

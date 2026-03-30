@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common'
-import { PlatformSettingsService } from './platform-settings.service'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { Body, Controller, Get, Put } from '@nestjs/common'
 import { PlatformSettingsResponseDto } from './dto/platform-settings-response.dto'
+import { PlatformSettingsService } from './platform-settings.service'
 
 @Controller('platform/settings')
 export class PlatformSettingsController {
@@ -18,7 +18,7 @@ export class PlatformSettingsController {
     }
   }
 
-  @Patch()
+  @Put()
   async updatePlatformSettings(
     @Body() data: any,
   ): Promise<BaseApiSuccessResponse<PlatformSettingsResponseDto>> {

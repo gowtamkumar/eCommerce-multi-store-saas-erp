@@ -21,6 +21,6 @@ export class ProductAttributeRepository extends Repository<ProductAttributeEntit
   }
 
   async deleteByProductId(productId: string, tenantId: string): Promise<void> {
-    await this.delete({ productId, tenantId })
+    await this.softDelete({ productId, tenantId })
   }
 }

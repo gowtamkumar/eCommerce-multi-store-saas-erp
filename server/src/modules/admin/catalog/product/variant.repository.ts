@@ -53,7 +53,7 @@ export class ProductVariantRepository extends Repository<ProductVariantEntity> {
 
   async deleteByIds(ids: string[]): Promise<void> {
     if (ids.length > 0) {
-      await this.delete(ids)
+      await this.softDelete(ids)
     }
   }
 

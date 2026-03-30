@@ -65,6 +65,6 @@ export class InvoiceRepository extends Repository<InvoiceEntity> {
   }
 
   async removeInvoice(invoice: InvoiceEntity): Promise<InvoiceEntity> {
-    return this.remove(invoice)
+    return this.softRemove(invoice)
   }
 }

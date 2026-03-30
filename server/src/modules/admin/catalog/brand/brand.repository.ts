@@ -35,7 +35,7 @@ export class BrandRepository extends Repository<BrandEntity> {
   }
 
   async removeBrand(brand: BrandEntity): Promise<void> {
-    await this.remove(brand)
+    await this.softRemove(brand)
   }
 
   async findBrandsForProducts(tenantId: string, categoryId?: string) {

@@ -38,6 +38,6 @@ export class ShippingAddressRepository extends Repository<ShippingAddressEntity>
   }
 
   async removeAddress(address: ShippingAddressEntity): Promise<void> {
-    await this.remove(address)
+    await this.softRemove(address)
   }
 }

@@ -64,6 +64,6 @@ export class ReviewRepository extends Repository<ReviewEntity> {
   }
 
   async removeReview(review: ReviewEntity): Promise<void> {
-    await this.remove(review)
+    await this.softRemove(review)
   }
 }

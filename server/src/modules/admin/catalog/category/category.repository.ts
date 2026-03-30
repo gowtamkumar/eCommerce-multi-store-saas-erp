@@ -37,6 +37,6 @@ export class CategoryRepository extends Repository<CategoryEntity> {
   }
 
   async removeCategory(category: CategoryEntity): Promise<void> {
-    await this.remove(category)
+    await this.softRemove(category)
   }
 }

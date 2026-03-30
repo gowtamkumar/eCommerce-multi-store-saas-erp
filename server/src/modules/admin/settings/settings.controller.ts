@@ -6,7 +6,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
-import { Body, Controller, Get, Logger, Patch, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Logger, Put, UseGuards } from '@nestjs/common'
 import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SiteSettingsResponseDto } from './dto/site-settings-response.dto'
 import { SettingsService } from './settings.service'
@@ -32,7 +32,7 @@ export class SettingsController {
     }
   }
 
-  @Patch()
+  @Put()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async updateSettings(

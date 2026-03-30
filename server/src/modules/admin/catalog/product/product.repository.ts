@@ -117,7 +117,7 @@ export class ProductRepository extends Repository<ProductEntity> {
   }
 
   async removeProduct(product: ProductEntity): Promise<void> {
-    await this.remove(product)
+    await this.softRemove(product)
   }
 
   async incrementStock(

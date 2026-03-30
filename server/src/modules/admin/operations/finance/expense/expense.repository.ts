@@ -32,6 +32,6 @@ export class ExpenseRepository extends Repository<ExpenseEntity> {
   }
 
   async removeExpense(expense: ExpenseEntity): Promise<ExpenseEntity> {
-    return this.remove(expense)
+    return this.softRemove(expense)
   }
 }

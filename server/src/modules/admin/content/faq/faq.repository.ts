@@ -80,7 +80,7 @@ export class FaqRepository extends Repository<FaqEntity> {
   }
 
   async removeFaq(faq: FaqEntity): Promise<void> {
-    await this.remove(faq)
+    await this.softRemove(faq)
   }
 
   async saveMultiple(faqs: any[], productId: string, tenantId: string): Promise<FaqEntity[]> {
@@ -90,6 +90,6 @@ export class FaqRepository extends Repository<FaqEntity> {
   }
 
   async deleteByProductId(productId: string, tenantId: string): Promise<void> {
-    await this.delete({ productId, tenantId })
+    await this.softDelete({ productId, tenantId })
   }
 }

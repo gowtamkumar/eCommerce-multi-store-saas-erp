@@ -1,6 +1,6 @@
-import { DataSource, DataSourceOptions } from 'typeorm'
 import { config } from 'dotenv'
 import { join } from 'path'
+import { DataSource, DataSourceOptions } from 'typeorm'
 
 // Standardize env loading for CLI (two levels up from src/database)
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
@@ -15,7 +15,7 @@ export const dataSourceOptions: DataSourceOptions = {
   database: process.env.DB_DATABASE,
   entities: [join(__dirname, '../**/*.entity{.ts,.js}')],
   migrations: [join(__dirname, '/migrations/*{.ts,.js}')],
-  synchronize: true,
+  synchronize: false,
   logging: false,
 }
 

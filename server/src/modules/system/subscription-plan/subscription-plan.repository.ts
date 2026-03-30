@@ -36,6 +36,6 @@ export class SubscriptionPlanRepository extends Repository<SubscriptionPlanEntit
   }
 
   async removePlan(plan: SubscriptionPlanEntity): Promise<void> {
-    await this.remove(plan)
+    await this.softRemove(plan)
   }
 }

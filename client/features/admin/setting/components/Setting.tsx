@@ -1,9 +1,4 @@
 "use client";
-import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, Save, Settings } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
-import toast from "react-hot-toast";
 import CourierSetting from "@/features/admin/setting/components/CourierSetting";
 import CurrenciesSetting from "@/features/admin/setting/components/CurrenciesSetting";
 import { DomainSetting } from "@/features/admin/setting/components/DomainSetting";
@@ -15,12 +10,17 @@ import NavbarSetting from "@/features/admin/setting/components/NavbarSetting";
 import PaymentSetting from "@/features/admin/setting/components/PaymentSetting";
 import SocialSetting from "@/features/admin/setting/components/SocialSetting";
 import TrustDelivery from "@/features/admin/setting/components/Trust&Delivery";
-import ProductsPageSetting from "./ProductsPageSetting";
-import SingleProductPageSetting from "./SingleProductPageSetting";
-import OffersPageSetting from "./OffersPageSetting";
 import { fetchAPI } from "@/services/api";
+import { AnimatePresence, motion } from "framer-motion";
+import { Loader2, Save, Settings } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { TabType, TabTypeEnum } from "../types";
 import LabelSetting from "./LabelSetting";
+import OffersPageSetting from "./OffersPageSetting";
+import ProductsPageSetting from "./ProductsPageSetting";
+import SingleProductPageSetting from "./SingleProductPageSetting";
 
 export const dynamic = "force-dynamic";
 
@@ -373,7 +373,7 @@ function SettingsContent() {
 
         try {
             await fetchAPI("/settings", {
-                method: "PATCH",
+                method: "PUT",
                 body: JSON.stringify(updatedData),
             });
             toast.success("Settings saved successfully!");

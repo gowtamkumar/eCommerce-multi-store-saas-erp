@@ -62,6 +62,6 @@ export class CouponRepository extends Repository<CouponEntity> {
   }
 
   async removeCoupon(coupon: CouponEntity): Promise<void> {
-    await this.remove(coupon)
+    await this.softRemove(coupon)
   }
 }

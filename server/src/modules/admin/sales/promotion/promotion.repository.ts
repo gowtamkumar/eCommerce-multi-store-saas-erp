@@ -68,6 +68,6 @@ export class PromotionRepository extends Repository<PromotionEntity> {
   }
 
   async removePromotion(promotion: PromotionEntity): Promise<void> {
-    await this.remove(promotion)
+    await this.softRemove(promotion)
   }
 }
