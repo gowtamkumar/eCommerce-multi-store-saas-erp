@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { LoginCredentialDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
 import { Body, Controller, Delete, Logger, Post, Req, Res, UseGuards } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 import { Request, Response } from 'express'
 
 @Controller('admin')
@@ -14,6 +15,7 @@ export class AdminAuthController {
 
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/login')
   async login(
     @RequestContext() ctx: RequestContextDto,

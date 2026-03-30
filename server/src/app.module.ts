@@ -4,6 +4,7 @@ import { AuditLogInterceptor } from '@/common/interceptors/audit-log.interceptor
 import { LoggingInterceptor } from '@/common/interceptors/logging.interceptor'
 import { TransformInterceptor } from '@/common/interceptors/transform.interceptor'
 import { TenantContextMiddleware } from '@/common/middleware/tenant-context.middleware'
+import { AppThrottlerModule } from '@/common/throttler/throttler.module'
 import { DatabaseModule } from '@/database/database.module'
 import { PersistenceModule } from '@/database/persistence.module'
 import { CatalogModule } from '@/modules/admin/catalog/catalog.module'
@@ -62,6 +63,9 @@ import { join } from 'path'
     AuthModule,
     PaymentModule,
     SeoModule,
+
+    // Rate Limiting
+    AppThrottlerModule,
   ],
   controllers: [],
   providers: [

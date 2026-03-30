@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, Res, UseGuards, Logger } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 import { Response } from 'express'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RegisterCredentialDto } from '@/modules/admin/core/auth/dtos'
@@ -14,6 +15,7 @@ export class AuthController {
 
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/register')
   async register(
     @RequestContext() ctx: RequestContextDto,
@@ -79,6 +81,7 @@ export class AuthController {
     }
   }
 
+  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/forgot-password')
   async forgotPassword(
     @RequestContext() ctx: RequestContextDto,

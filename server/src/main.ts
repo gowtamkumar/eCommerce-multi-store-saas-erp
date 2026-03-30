@@ -1,12 +1,11 @@
 import { Logger, ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
+import { NestExpressApplication } from '@nestjs/platform-express'
 import cookieParser from 'cookie-parser'
 import { json } from 'express'
-import { rateLimit } from 'express-rate-limit'
 import { AppModule } from './app.module'
 import getLogLevels from './lib/logger'
 import { SwaggerConfig } from './lib/swagger'
-import { NestExpressApplication } from '@nestjs/platform-express'
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap Logger')
@@ -19,9 +18,9 @@ async function bootstrap() {
   app.setGlobalPrefix(API_PREFIX)
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, //we can whitelist the acceptable properties, and any property not included in the whitelist is automatically stripped from the resulting object. For example, if our handler expects email and password properties, but a request also includes an age property, this property can be automatically removed from the resulting DTO
-      transform: true, //dto data transform to help
-      skipUndefinedProperties: true, //If set to true then validator will skip validation of all properties that are undefined in the validating object.
+      whitelist: true,
+      transform: true,
+      skipUndefinedProperties: true,
     }),
   )
 
@@ -31,14 +30,7 @@ async function bootstrap() {
   })
 
   app.use(cookieParser())
-  app.use(json({ limit: '20mb' })) //this json data send size defiend
-  app.use(
-    rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 1000, // limit each IP to 1000 requests per windowMs (increased from 100)
-      message: 'Too many requests from this IP, please try again later',
-    }),
-  )
+  app.use(json({ limit: '20mb' }))
 
   SwaggerConfig(app)
 

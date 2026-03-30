@@ -1,4 +1,5 @@
 import { Body, Controller, Post, Query, Res, Logger, UseGuards } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 import { Response } from 'express'
 import { InitPaymentDto } from './dto/payment.dto'
 import { PaymentService } from './payment.service'
@@ -16,6 +17,7 @@ export class PaymentActionController {
 
   constructor(private readonly paymentService: PaymentService) {}
 
+  @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Post('init')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)

@@ -9,6 +9,7 @@ import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
 import { OrderService } from '@/modules/admin/sales/order/order.service'
 import { Body, Controller, Get, Logger, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 import { RequestContextDto } from 'src/common/dto/request-context.dto'
 import { OrderResponseDto } from './dto/order-response.dto'
 
@@ -19,6 +20,7 @@ export class OrderController {
 
   constructor(private readonly orderService: OrderService) {}
 
+  @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
   async createOrder(

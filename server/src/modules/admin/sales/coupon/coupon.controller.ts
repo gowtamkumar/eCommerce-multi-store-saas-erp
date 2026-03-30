@@ -10,6 +10,7 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -67,6 +68,7 @@ export class CouponController {
     }
   }
 
+  @Throttle({ promo: { limit: 15, ttl: 60000 } })
   @Post('validate')
   async validateCoupon(
     @RequestContext() ctx: RequestContextDto,
