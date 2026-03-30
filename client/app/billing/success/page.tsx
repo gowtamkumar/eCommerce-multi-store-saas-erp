@@ -4,7 +4,7 @@ import { useSettings } from "@/hooks/SettingsContext";
 import { Check, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, Suspense, useState } from "react";
+import { useEffect, Suspense, useState, useRef } from "react";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -12,14 +12,18 @@ function SuccessContent() {
   const tran_id = searchParams.get("tran_id");
   const { refreshSettings } = useSettings();
   const [isRefreshing, setIsRefreshing] = useState(true);
+  const hasTriggered = useRef(false);
 
   useEffect(() => {
+    if (!tran_id || hasTriggered.current) return;
+    hasTriggered.current = true;
+
     const updateSettings = async () => {
       try {
         // Call backend complete/success to ensure tenant is updated
         if (tran_id) {
           const { fetchAPI } = await import("@/services/api");
-          const billingSuccess = await fetchAPI(`/billing/complete/success?tran_id=${tran_id}`, {
+          await fetchAPI(`/billing/complete/success?tran_id=${tran_id}`, {
             method: "POST",
             body: JSON.stringify({ message: "Success from frontend" })
           });

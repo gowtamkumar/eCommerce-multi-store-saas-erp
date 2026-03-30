@@ -62,10 +62,23 @@ export class SubscriptionBillingService {
     if (!plan) throw new NotFoundException('Plan not found')
 
     const tenant = await this.tenantRepository.findByIdWithUser(tenantId)
+
     if (!tenant) throw new NotFoundException('Tenant not found')
 
     const transactionId = `SUB-${Date.now()}`
-    const amount = billingCycle === SubscriptionBillingCycle.YEARLY ? Number(plan.yearlyPrice) : Number(plan.monthlyPrice)
+    // Normalize cycle for robust comparison
+    const isYearly = String(billingCycle).toLowerCase() === 'yearly';
+    const cycle = isYearly ? SubscriptionBillingCycle.YEARLY : SubscriptionBillingCycle.MONTHLY;
+
+    // Calculate base amount
+    let amount = isYearly ? Number(plan.yearlyPrice || 0) : Number(plan.monthlyPrice || 0);
+
+    // Fallback: if yearly is zero, use 12x monthly
+    if (isYearly && amount > 0) {
+      amount = Number(plan.yearlyPrice || 0) * 12;
+    }
+
+    this.logger.log(`Subscription initiation: ${cycle} calculation Result: ${amount}`);
 
     const invoiceNumber = `INV-${Date.now()}`
     const record = await this.planRecordRepository.createAndSave({
@@ -73,7 +86,7 @@ export class SubscriptionBillingService {
       tenantId,
       subscriptionPlanId: planId,
       amount,
-      billingCycle,
+      billingCycle: cycle,
       currency: 'BDT',
       status: PaymentStatus.PENDING,
       transactionId,
@@ -160,9 +173,9 @@ export class SubscriptionBillingService {
       const newEndsAt = new Date(baseDate)
 
       // Dynamic Expiry Calculation
-      if (record.billingCycle === SubscriptionBillingCycle.YEARLY) {
+      if (record.billingCycle === SubscriptionBillingCycle.YEARLY && tenant.subscriptionStatus !== SubscriptionStatus.TRIAL) {
         newEndsAt.setFullYear(newEndsAt.getFullYear() + 1)
-      } else {
+      } else if (record.billingCycle === SubscriptionBillingCycle.MONTHLY && tenant.subscriptionStatus !== SubscriptionStatus.TRIAL) {
         newEndsAt.setMonth(newEndsAt.getMonth() + 1)
       }
 

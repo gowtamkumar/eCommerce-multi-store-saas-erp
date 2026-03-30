@@ -61,6 +61,10 @@ export default function BillingDashboard() {
         fetchAPI("/billing/plans"),
         fetchAPI("/billing/history")
       ]);
+      console.log("historyRes", historyRes);
+      console.log("plansRes", plansRes);
+      console.log("infoRes", infoRes);
+
       setSubInfo(infoRes.data);
       setPlans(plansRes.data);
       setHistory(historyRes.data);
@@ -167,11 +171,10 @@ export default function BillingDashboard() {
                 if (currentPlan) handleUpgrade(currentPlan.id);
               }}
               disabled={initiating !== null}
-              className={`px-8 py-5 rounded-3xl font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50 ${
-                subInfo?.status === 'trial' 
-                ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white shadow-brand-600/20' 
+              className={`px-8 py-5 rounded-3xl font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50 ${subInfo?.status === 'trial'
+                ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white shadow-brand-600/20'
                 : 'bg-brand-600 text-white hover:bg-brand-700 shadow-brand-600/20'
-              }`}
+                }`}
             >
               {initiating ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
               {subInfo?.status === 'trial' ? 'Upgrade Plan' : 'Renew Now'}
@@ -226,7 +229,9 @@ export default function BillingDashboard() {
                     <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">{plan.name}</h4>
                     <div className="flex items-baseline justify-center gap-1">
                       <span className="text-4xl font-black text-slate-900 dark:text-white">
-                        ${billingCycle === 'yearly' ? (plan as any).yearlyPrice : (plan as any).monthlyPrice}
+                        ${billingCycle === 'yearly' 
+                          ? ((plan as any).yearlyPrice > 0 ? (plan as any).yearlyPrice : (plan as any).monthlyPrice * 12) 
+                          : (plan as any).monthlyPrice}
                       </span>
                       <span className="text-slate-400 dark:text-slate-500 font-bold uppercase text-xs tracking-widest">
                         /{billingCycle === 'yearly' ? 'yr' : 'mo'}

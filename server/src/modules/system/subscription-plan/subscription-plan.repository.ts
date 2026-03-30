@@ -15,14 +15,14 @@ export class SubscriptionPlanRepository extends Repository<SubscriptionPlanEntit
 
   async findAllSortedByPrice(): Promise<SubscriptionPlanEntity[]> {
     return await this.find({
-      order: { price: 'ASC' },
+      order: { monthlyPrice: 'ASC' },
     })
   }
 
   async findActiveSortedByPrice(): Promise<SubscriptionPlanEntity[]> {
     return await this.find({
       where: { isActive: true },
-      order: { price: 'ASC' },
+      order: { monthlyPrice: 'ASC' },
     })
   }
 

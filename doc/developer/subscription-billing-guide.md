@@ -3,49 +3,50 @@
 This document provides a comprehensive A-to-Z guide for developers on the multi-tenant subscription, billing, and expiration protection systems.
 
 ## 1. Overview
-The platform uses a centralized subscription management system where each `Tenant` is linked to a `SubscriptionPlan`. Access to the store dashboard is strictly controlled based on the tenant's `subscriptionStatus` and `subscriptionEndsAt`.
+The platform uses a centralized subscription management system where each `Tenant` is linked to a `SubscriptionPlan`. All new merchants start with a **14-Day Free Trial**, and access is strictly controlled based on the tenant's `subscriptionStatus` and `subscriptionEndsAt`.
 
 ## 2. Subscription Plan Management
 
 ### Database Entities
-- **SubscriptionPlanEntity**: Defines global plans (Name, Price, Features, Billing Cycle).
-- **TenantEntity**: Stores subscription state (`subscriptionStatus`, `subscriptionEndsAt`, etc.).
-- **SubscriptionInvoiceEntity**: Records every transaction/payment history.
+- **SubscriptionPlanEntity**: Defines global plans (Name, Monthly/Yearly Price, Features, etc.).
+- **TenantEntity**: Stores subscription state (`subscriptionStatus`, `subscriptionEndsAt`, `subscriptionBillingCycle`).
+- **SubscriptionInvoiceEntity**: Records every transaction/payment including the purchased `billingCycle`.
 
 ### Creating Plans (Super Admin)
-Plans are managed via the Super Admin backend. When creating a plan, you specify:
-- `billingCycle`: `MONTHY` or `YEARLY`.
+Plans are managed via the Super Admin backend. Each plan supports dual pricing:
+- `monthlyPrice`: Cost for 1 month of access.
+- `yearlyPrice`: Cost for 1 year of access (usually discounted).
 - `features`: An array of strings representing entitled features.
-- `price`: Monthly/Yearly cost in BDT.
 
-## 3. Billing & Renewal Flow
+## 3. 14-Day Free Trial Logic
 
-The renewal flow is designed to be resilient, even when a tenant is already expired.
+Every new merchant signing up via the **Onboarding flow** is automatically granted a 14-day free trial.
+
+### Trial Implementation
+- **TenantService.createTenant**: 
+  - Sets `subscriptionStatus` to `TRIAL`.
+  - Sets `subscriptionEndsAt` to `now + 14 days`.
+  - Persists the merchant's intended `subscriptionBillingCycle`.
+- **Dashboard UI**: Trial users see a "Free Trial Mode" badge and a relative countdown (e.g., "7 days remaining") in the Billing Dashboard.
+- **Trial Expiration**: Once `now > subscriptionEndsAt`, the tenant is restricted just like a regular expired subscription.
+
+## 4. Billing & Renewal Flow
+
+The renewal flow is designed to be resilient, even when a tenant is already expired or in trial.
 
 ### A. Initiation
 When a tenant admin clicks "Renew" or "Upgrade":
-1. Frontend calls `POST /api/v1/billing/initiate`.
+1. Frontend calls `POST /api/v1/billing/initiate` with the selected `planId` and `billingCycle`.
 2. Backend generates a `SubscriptionInvoice` (PENDING) and a unique `transactionId`.
 3. Backend uses `SslCommerzPaymentStrategy` to get a `gatewayUrl`.
-4. User is redirected to the payment gateway.
 
-### B. Gateway Callback
-The payment gateway (SSLCommerz) is configured to redirect back to the **Frontend root-level routes**:
-- `success_url`: `/billing/success?tran_id={id}`
-- `fail_url`: `/billing/fail?tran_id={id}`
-- `cancel_url`: `/billing/cancel?tran_id={id}`
-
-> [!IMPORTANT]
-> These routes are located in `client/app/billing/` (root-level) to bypass the `admin` middleware and authentication redirects during expiration.
-
-### C. Completion Sync
-Once the user lands on the success page:
+### B. Completion Sync
+Once the user completes payment and lands on the success page:
 1. The frontend calls `POST /api/v1/billing/complete/success?tran_id={id}`.
 2. The backend:
-   - Validates the transaction.
-   - Updates the `SubscriptionInvoice` to `COMPLETED`.
-   - Extends the `Tenant`'s `subscriptionEndsAt`.
-   - Sets `subscriptionStatus` to `ACTIVE` and `status` to `ACTIVE`.
+   - Sets `subscriptionStatus` to `ACTIVE`.
+   - Recalculates `subscriptionEndsAt` by adding 1 month or 1 year based on the invoice's `billingCycle`.
+   - **Calculation Rule**: If the tenant was expired or in trial, the new period starts from **today**. If already active, it appends to the current end date.
 3. The frontend then calls `refreshSettings()` to update the global state.
 
 ## 4. Dashboard Expiration Protection

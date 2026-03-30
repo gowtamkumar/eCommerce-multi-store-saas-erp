@@ -4,13 +4,14 @@ import { TenantService } from '@/modules/system/tenant/tenant.service'
 import { TenantStatus } from '../enums/tenant/tenant-status.enum'
 import { UserRole } from '../enums/user/user-role.enum'
 import { IS_PUBLIC_DURING_EXPIRATION_KEY } from '../decorators/public-during-expiration.decorator'
+import { SubscriptionStatus } from '../enums/subscription/subscription-status.enum'
 
 @Injectable()
 export class TenantStatusGuard implements CanActivate {
   constructor(
     private readonly tenantService: TenantService,
     private readonly reflector: Reflector,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
@@ -44,15 +45,22 @@ export class TenantStatusGuard implements CanActivate {
         })
       }
 
-      // 4. Handle Expired status
+      // 4. Handle Expired status (Trial or Subscription)
       if (tenant.status === TenantStatus.EXPIRED || tenant.isExpired) {
         if (isPublicDuringExpiration) {
           return true
         }
+
+        const isTrial = tenant.subscriptionStatus === SubscriptionStatus.TRIAL
+        const message = isTrial
+          ? 'Your 14-day trial period has ended. Please upgrade your plan to continue using the store.'
+          : 'Your subscription has expired. Please renew to continue using the store.'
+
         throw new ForbiddenException({
           success: false,
-          message: 'Your subscription has expired. Please renew to continue using the store.',
+          message,
           status: TenantStatus.EXPIRED,
+          subscriptionStatus: tenant.subscriptionStatus,
         })
       }
 

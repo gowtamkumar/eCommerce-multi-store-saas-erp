@@ -90,14 +90,25 @@ export class SubscriptionBillingController {
   async completePaymentSuccess(
     @Query('tran_id') tran_id: string,
     @Body() body: any,
-  ): Promise<BaseApiSuccessResponse<SubscriptionInvoiceResponseDto | { success: boolean }>> {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`Payment completion success callback for tran_id: ${tran_id}`)
-    const data = await this.billingService.handleSuccessPayment(tran_id, body)
-    return {
-      success: true,
-      statusCode: 200,
-      message: 'Payment completed successfully',
-      data,
+    try {
+      const data: any = await this.billingService.handleSuccessPayment(tran_id, body)
+      return {
+        success: true,
+        statusCode: 200,
+        message: 'Payment completed successfully',
+        data: {
+          id: data.id,
+          invoiceNumber: data?.invoiceNumber,
+          amount: data?.amount,
+          status: data?.status,
+          transactionId: data?.transactionId,
+        },
+      }
+    } catch (error) {
+      this.logger.error(`Error in completePaymentSuccess: ${error.message}`, error.stack)
+      throw error
     }
   }
 
@@ -107,14 +118,23 @@ export class SubscriptionBillingController {
   async completePaymentFail(
     @Query('tran_id') tran_id: string,
     @Body() body: any,
-  ): Promise<BaseApiSuccessResponse<SubscriptionInvoiceResponseDto | { success: boolean }>> {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`Payment completion failure callback for tran_id: ${tran_id}`)
-    const data = await this.billingService.handleFailPayment(tran_id, body)
-    return {
-      success: true,
-      statusCode: 200, // Still returning 200 with the failure info in data
-      message: 'Payment failed processing',
-      data,
+    try {
+      const data: any = await this.billingService.handleFailPayment(tran_id, body)
+      return {
+        success: true,
+        statusCode: 200,
+        message: 'Payment failed processing',
+        data: {
+          id: data?.id,
+          status: data?.status,
+          transactionId: tran_id,
+        },
+      }
+    } catch (error) {
+      this.logger.error(`Error in completePaymentFail: ${error.message}`)
+      return { success: false, statusCode: 500, message: 'Internal error during failure processing', data: { transactionId: tran_id } }
     }
   }
 
@@ -124,14 +144,23 @@ export class SubscriptionBillingController {
   async completePaymentCancel(
     @Query('tran_id') tran_id: string,
     @Body() body: any,
-  ): Promise<BaseApiSuccessResponse<SubscriptionInvoiceResponseDto | { cancelled: boolean }>> {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`Payment completion cancel callback for tran_id: ${tran_id}`)
-    const data = await this.billingService.handleCancelPayment(tran_id, body)
-    return {
-      success: true,
-      statusCode: 200,
-      message: 'Payment was cancelled',
-      data,
+    try {
+      const data: any = await this.billingService.handleCancelPayment(tran_id, body)
+      return {
+        success: true,
+        statusCode: 200,
+        message: 'Payment was cancelled',
+        data: {
+          id: data?.id,
+          status: data?.status,
+          transactionId: tran_id,
+        },
+      }
+    } catch (error) {
+      this.logger.error(`Error in completePaymentCancel: ${error.message}`)
+      return { success: false, statusCode: 500, message: 'Internal error during cancel processing', data: { transactionId: tran_id } }
     }
   }
 
