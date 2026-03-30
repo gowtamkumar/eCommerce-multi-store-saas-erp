@@ -15,7 +15,7 @@ import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 
 export default function WishlistPage() {
-  const { wishlist, removeFromWishlist, loading, refreshWishlist } = useWishlist();
+  const { wishlist, removeFromWishlist, clearWishlist, loading, refreshWishlist } = useWishlist();
   const { addToCart } = useCart();
   const { settings } = useSettings();
   const { data: session, status } = useSession();
@@ -57,6 +57,19 @@ export default function WishlistPage() {
           <p className="text-slate-500 dark:text-slate-400 font-medium">
             {wishlist.length} {wishlist.length === 1 ? 'item' : 'items'} saved for later
           </p>
+          {wishlist.length > 0 && (
+            <button
+              onClick={() => {
+                if (confirm("Are you sure you want to clear your entire wishlist?")) {
+                  clearWishlist();
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-rose-500 hover:text-white hover:bg-rose-500 border border-rose-500 rounded-xl transition-all"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear Wishlist
+            </button>
+          )}
         </div>
 
         {loading ? (

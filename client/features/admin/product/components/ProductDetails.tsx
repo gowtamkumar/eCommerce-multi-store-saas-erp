@@ -2,6 +2,7 @@
 
 import Price from "@/components/shared/Price";
 import { useCart } from "@/hooks/CartContext";
+import { useWishlist } from "@/hooks/WishlistContext";
 import { useSettings } from "@/hooks/SettingsContext";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -28,6 +29,7 @@ import { PromotionType } from "@/lib/enums/promotion-type.enum";
 const ProductDetails = ({ product }: ProductDetailsProps) => {
   const { settings } = useSettings();
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<
@@ -40,6 +42,9 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isStickyVisible, setIsStickyVisible] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
+  const [wishlisting, setWishlisting] = useState(false);
+
+  const isWishlisted = isInWishlist(product.id);
 
   // Initialize attributes
   useEffect(() => {
@@ -107,6 +112,12 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
 
   const handleAddToCart = () => {
     addToCart(product.id, quantity, selectedVariant?.id);
+  };
+
+  const handleToggleWishlist = async () => {
+    setWishlisting(true);
+    await toggleWishlist(product.id);
+    setWishlisting(false);
   };
 
   const handleShare = async () => {
@@ -242,8 +253,19 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
                 <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white leading-tight">
                   {product.name}
                 </h1>
-                <button className="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                  <Heart className="w-6 h-6 text-slate-400" />
+                <button
+                  onClick={handleToggleWishlist}
+                  disabled={wishlisting}
+                  className={`p-3 rounded-2xl transition-all shadow-sm ${isWishlisted
+                    ? "bg-rose-500 text-white"
+                    : "bg-slate-50 dark:bg-slate-900 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                >
+                  {wishlisting ? (
+                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Heart className={`w-6 h-6 ${isWishlisted ? "fill-current" : ""}`} />
+                  )}
                 </button>
               </div>
 

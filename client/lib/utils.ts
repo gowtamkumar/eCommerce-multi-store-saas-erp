@@ -162,3 +162,27 @@ export const updateOrderStatus = async (orderId: string, updates: Record<string,
     return { success: false, error: error?.message || 'Error updating order' };
   }
 };
+
+export const handleManualDispatch = async (order: Order, setUpdating: (orderId: string | null) => void) => {
+  setUpdating(order.id);
+  try {
+    const result = await updateOrderStatus(order.id, {
+      courierStatus: 'MANUAL',
+      status: OrderStatus.SHIPPED,
+      trackingId: 'MANUAL-' + order.id.slice(-6).toUpperCase()
+    });
+
+    if (result.success) {
+      toast.success('Order marked as manually dispatched!');
+      return { success: true };
+    } else {
+      toast.error(result.error || 'Failed to update order');
+      return { success: false };
+    }
+  } catch (error: any) {
+    toast.error(error?.message || 'Error updating order');
+    return { success: false };
+  } finally {
+    setUpdating(null);
+  }
+};

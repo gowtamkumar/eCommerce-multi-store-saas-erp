@@ -324,6 +324,15 @@ const Navbar = () => {
           <Search className="w-5 h-5 text-slate-400" />
           <span className="text-[10px] font-bold text-slate-500">Search</span>
         </button>
+        <Link href="/wishlist" className="flex flex-col items-center justify-center gap-1 transition-all active:scale-90 flex-1 group relative">
+          <Heart className="w-5 h-5 text-slate-400 group-hover:text-rose-500" />
+          <span className="text-[10px] font-bold text-slate-500">Wishlist</span>
+          {wishlistCount > 0 && (
+            <span className="absolute top-1 right-3 w-4 h-4 bg-rose-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-slate-900">
+              {wishlistCount}
+            </span>
+          )}
+        </Link>
         <div className="relative -top-3">
           <button
             onClick={openCart}
@@ -677,6 +686,22 @@ const Navbar = () => {
                     <span className="text-[10px] bg-orange-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse">
                       LIVE
                     </span>
+                  </Link>
+
+                  <Link
+                    href="/wishlist"
+                    onClick={closeMobileMenu}
+                    className="flex items-center justify-between text-base font-bold text-slate-700 dark:text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 px-4 py-3 rounded-xl transition-all group"
+                  >
+                    <span className="flex items-center gap-3">
+                      <Heart className="w-5 h-5 text-slate-400 group-hover:text-rose-500" />
+                      Wishlist
+                    </span>
+                    {wishlistCount > 0 && (
+                      <span className="text-[10px] bg-rose-500 text-white px-2 py-0.5 rounded-full font-bold">
+                        {wishlistCount}
+                      </span>
+                    )}
                   </Link>
 
                   <div className="my-6 border-t border-slate-100 dark:border-slate-800" />

@@ -6,7 +6,7 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { OrderStatus } from '@/lib/enums/order-status.enum';
 import { PaymentStatus } from '@/lib/enums/payment-status.enum';
-import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, updateOrderStatus } from '@/lib/utils';
+import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, handleManualDispatch, updateOrderStatus } from '@/lib/utils';
 import { Order } from '@/types/order';
 import { ChevronLeft, ChevronRight, Eye, Loader2, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
@@ -88,6 +88,12 @@ export default function Orders() {
             await handleCreateSteadfastOrder(order, setCreatingOrder);
         } else if (courier === CourierType.PATHAO) {
             await handleCreatePathaoOrder(order, setCreatingPathaoOrder);
+        } else if (courier === CourierType.IN_STORE) {
+            const result = await handleManualDispatch(order, setCreatingOrder);
+            if (result?.success) {
+                // Refresh orders to show updated status
+                setOrders(prev => prev.map(o => o.id === order.id ? { ...o, courierStatus: 'MANUAL', status: OrderStatus.SHIPPED } : o));
+            }
         }
     };
 
@@ -264,6 +270,7 @@ export default function Orders() {
                                                     <option value="">🚚 Create Courier Order</option>
                                                     <option value={CourierType.STEADFAST}>🚚 Steadfast</option>
                                                     <option value={CourierType.PATHAO}>📦 Pathao</option>
+                                                    <option value={CourierType.IN_STORE}>🏠 Manual Dispatch</option>
                                                 </select>
                                             )}
                                         </td>
@@ -318,10 +325,10 @@ export default function Orders() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 max-w-md w-full transform transition-all">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                            Create {pendingCourierOrder.courier === CourierType.PATHAO ? 'Pathao' : 'Steadfast'} Order?
+                            Create {pendingCourierOrder.courier === CourierType.PATHAO ? 'Pathao' : pendingCourierOrder.courier === CourierType.STEADFAST ? 'Steadfast' : 'Manual Dispatch'} Order?
                         </h3>
                         <p className="text-slate-600 dark:text-slate-400 mb-6">
-                            Are you sure you want to create a {pendingCourierOrder.courier === CourierType.PATHAO ? 'Pathao' : 'Steadfast'} courier order for order <span className="font-mono font-semibold">{pendingCourierOrder.order.id.slice(-6).toUpperCase()}</span>?
+                            Are you sure you want to create a {pendingCourierOrder.courier === CourierType.PATHAO ? 'Pathao' : pendingCourierOrder.courier === CourierType.STEADFAST ? 'Steadfast' : 'Manual Dispatch'} order for order <span className="font-mono font-semibold">{pendingCourierOrder.order.id.slice(-6).toUpperCase()}</span>?
                         </p>
                         <div className="flex gap-3 justify-end">
                             <button
