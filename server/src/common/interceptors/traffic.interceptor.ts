@@ -1,4 +1,4 @@
-import { TrafficService } from '@/modules/system/tenant-traffic/traffic.service'
+import { TrafficService } from '@/modules/system/super-admin/traffic.service'
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common'
 import { Observable } from 'rxjs'
 

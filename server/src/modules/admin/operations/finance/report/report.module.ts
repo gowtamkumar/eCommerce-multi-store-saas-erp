@@ -5,7 +5,7 @@ import { ReportController } from '@/modules/admin/operations/finance/report/repo
 import { ReportService } from '@/modules/admin/operations/finance/report/report.service'
 import { OrderModule } from '@/modules/admin/sales/order/order.module'
 import { PaymentModule } from '@/modules/admin/sales/payment/payment.module'
-import { TenantTrafficModule } from '@/modules/system/tenant-traffic/tenant-traffic.module'
+import { SuperAdminModule } from '@/modules/system/super-admin/super-admin.module'
 import { Module } from '@nestjs/common'
 import { ExpenseModule } from '../expense/expense.module'
 import { InvoiceModule } from '../invoice/invoice.module'
@@ -14,7 +14,7 @@ import { SupplierModule } from '../supplier/supplier.module'
 
 @Module({
   imports: [
-    TenantTrafficModule,
+    SuperAdminModule,
     UserModule,
     ProductModule,
     OrderModule,

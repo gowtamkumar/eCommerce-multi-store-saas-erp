@@ -25,9 +25,9 @@ import {
 import si from 'systeminformation'
 import { TrafficService } from './traffic.service'
 
-@Controller('tenant-traffic')
-export class TenantTrafficController {
-  private readonly logger = new Logger(TenantTrafficController.name)
+@Controller('super-admin')
+export class SuperAdminController {
+  private readonly logger = new Logger(SuperAdminController.name)
 
   constructor(
     private readonly userService: UserService,
@@ -36,7 +36,7 @@ export class TenantTrafficController {
     private readonly trafficService: TrafficService,
     private readonly productService: ProductService,
     private readonly pageService: PageService,
-  ) {}
+  ) { }
 
   @Post('/setup')
   async setup(@Body() body: any): Promise<BaseApiSuccessResponse<{ user: { name: string, username: string } }>> {

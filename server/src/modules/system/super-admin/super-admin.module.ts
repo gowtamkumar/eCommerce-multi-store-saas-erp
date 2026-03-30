@@ -6,12 +6,12 @@ import { OrderModule } from '@/modules/admin/sales/order/order.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { Module } from '@nestjs/common'
 import { APP_INTERCEPTOR } from '@nestjs/core'
-import { TenantTrafficController } from './tenant-traffic.controller'
+import { SuperAdminController } from './super-admin.controller'
 import { TrafficService } from './traffic.service'
 
 @Module({
   imports: [UserModule, TenantModule, OrderModule, ProductModule, PageModule],
-  controllers: [TenantTrafficController],
+  controllers: [SuperAdminController],
   providers: [
     TrafficService,
     {
@@ -21,4 +21,4 @@ import { TrafficService } from './traffic.service'
   ],
   exports: [TrafficService],
 })
-export class TenantTrafficModule {}
+export class SuperAdminModule {}
