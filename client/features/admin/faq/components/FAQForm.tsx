@@ -25,7 +25,7 @@ export default function FAQForm({ faqId, initialData }: FAQFormProps) {
 
         try {
             const url = faqId ? `/faqs/${faqId}` : '/faqs';
-            const method = faqId ? 'PUT' : 'POST';
+            const method = faqId ? 'PATCH' : 'POST';
 
             const response = await fetchAPI(url, {
                 method,

@@ -55,7 +55,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                 }
             } else {
                 const res = await fetchAPI(`/reviews/${reviewId}`, {
-                    method: 'PUT',
+                    method: 'PATCH',
                     body: JSON.stringify({ status: action }),
                 });
                 if (res.success) {

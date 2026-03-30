@@ -8,7 +8,7 @@ import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto
 import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
 import { OrderService } from '@/modules/admin/sales/order/order.service'
-import { Body, Controller, Get, Logger, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Logger, Param, Post, Patch, Query, UseGuards } from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
 import { RequestContextDto } from 'src/common/dto/request-context.dto'
 import { OrderResponseDto } from './dto/order-response.dto'
@@ -113,7 +113,7 @@ export class OrderController {
     }
   }
 
-  @Put(':id')
+  @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
   async updateOrder(
     @RequestContext() ctx: RequestContextDto,

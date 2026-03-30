@@ -82,7 +82,7 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
       } else {
         // Update existing page with PUT /pages/:id
         await fetchAPI(`/pages/${pageId}`, {
-          method: 'PUT',
+          method: 'PATCH',
           body: JSON.stringify(payload),
         });
         toast.success('Page saved successfully');

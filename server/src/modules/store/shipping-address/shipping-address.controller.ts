@@ -11,7 +11,6 @@ import {
   Param,
   Patch,
   Post,
-  Put,
   UseGuards,
 } from '@nestjs/common'
 import { CreateShippingAddressDto } from './dto/create-shipping-address.dto'
@@ -69,7 +68,7 @@ export class ShippingAddressController {
     }
   }
 
-  @Put(':id')
+  @Patch(':id')
   async updateShippingAddress(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,

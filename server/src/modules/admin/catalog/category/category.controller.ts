@@ -9,7 +9,7 @@ import { CategoryService } from '@/modules/admin/catalog/category/category.servi
 import { CategoryResponseDto } from './dto/category-response.dto'
 import { CreateCategoryDto } from '@/modules/admin/catalog/category/dto/create-category.dto'
 import { UpdateCategoryDto } from '@/modules/admin/catalog/category/dto/update-category.dto'
-import { Body, Controller, Delete, Get, Logger, Param, Post, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Logger, Param, Post, Patch, UseGuards } from '@nestjs/common'
 
 @Controller('categories')
 export class CategoryController {
@@ -63,7 +63,7 @@ export class CategoryController {
     }
   }
 
-  @Put(':id')
+  @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async updateCategory(

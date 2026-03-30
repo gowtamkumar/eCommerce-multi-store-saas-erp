@@ -37,7 +37,7 @@ export async function createShippingAddress(data: CreateShippingAddressPayload):
 
 export async function updateShippingAddress(id: string, data: Partial<CreateShippingAddressPayload>): Promise<ShippingAddress> {
     const res = await fetchAPI(`/store/shipping-address/${id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: JSON.stringify(data),
     });
     return res?.data;

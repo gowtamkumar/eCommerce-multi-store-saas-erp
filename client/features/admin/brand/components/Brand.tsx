@@ -56,7 +56,7 @@ export default function Brand() {
         e.preventDefault();
         try {
             const url = editingBrand ? `/brands/${editingBrand.id}` : '/brands';
-            const method = editingBrand ? 'PUT' : 'POST';
+            const method = editingBrand ? 'PATCH' : 'POST';
 
             const res = await fetchAPI(url, {
                 method,

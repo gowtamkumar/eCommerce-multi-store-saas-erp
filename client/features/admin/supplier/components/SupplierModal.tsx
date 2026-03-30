@@ -50,7 +50,7 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
 
         try {
             const url = supplier ? `/suppliers/${supplier.id}` : '/suppliers';
-            const method = supplier ? 'PUT' : 'POST';
+            const method = supplier ? 'PATCH' : 'POST';
 
             await fetchAPI(url, {
                 method,

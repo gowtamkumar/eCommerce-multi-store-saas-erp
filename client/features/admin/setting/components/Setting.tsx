@@ -373,7 +373,7 @@ function SettingsContent() {
 
         try {
             await fetchAPI("/settings", {
-                method: "PUT",
+                method: "PATCH",
                 body: JSON.stringify(updatedData),
             });
             toast.success("Settings saved successfully!");

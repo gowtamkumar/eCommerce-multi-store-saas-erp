@@ -82,7 +82,7 @@ export default function DashboardProducts() {
     const handleStatusUpdate = async (id: string, newStatus: string) => {
         try {
             await fetchAPI(`/products/${id}`, {
-                method: 'PUT',
+                method: 'PATCH',
                 body: JSON.stringify({ status: newStatus })
             });
 
@@ -269,7 +269,7 @@ export default function DashboardProducts() {
 
             // 2. Link to Product
             const linkRes = await fetchAPI(`/products/${product.id}`, {
-                method: 'PUT',
+                method: 'PATCH',
                 body: JSON.stringify({ landingPageId: newPage.id })
             });
 

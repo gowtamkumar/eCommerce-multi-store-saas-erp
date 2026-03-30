@@ -149,7 +149,7 @@ export const getOrderStatusStyles = (status: string) => {
 export const updateOrderStatus = async (orderId: string, updates: Record<string, any>) => {
   try {
     const res = await fetchAPI(`/orders/${orderId}`, {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify(updates),
     });
 

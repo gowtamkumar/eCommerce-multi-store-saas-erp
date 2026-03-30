@@ -54,7 +54,7 @@ export default function Categories() {
         e.preventDefault();
         try {
             const url = editingCategory ? `/categories/${editingCategory.id}` : '/categories';
-            const method = editingCategory ? 'PUT' : 'POST';
+            const method = editingCategory ? 'PATCH' : 'POST';
 
             const res = await fetchAPI(url, {
                 method,

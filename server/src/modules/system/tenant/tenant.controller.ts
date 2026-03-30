@@ -1,6 +1,6 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { Body, Controller, Get, Logger, Post, Put, Query } from '@nestjs/common'
+import { Body, Controller, Get, Logger, Post, Patch, Query } from '@nestjs/common'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantLookupDto } from './dto/tenant-lookup.dto'
 import { CreateTenantResponseDto, TenantService } from './tenant.service'
@@ -63,7 +63,7 @@ export class TenantController {
     }
   }
 
-  @Put('custom-domain')
+  @Patch('custom-domain')
   async updateCustomDomain(
     @RequestContext() ctx: RequestContextDto,
     @Body() body: { customDomain: string },

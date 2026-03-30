@@ -27,7 +27,7 @@ export const DomainSetting = () => {
         setIsUpdating(true);
         try {
             const res = await fetchAPI("/tenants/custom-domain", {
-                method: "PUT",
+                method: "PATCH",
                 body: JSON.stringify({ customDomain: domainInput }),
             });
             setTenantInfo(res);

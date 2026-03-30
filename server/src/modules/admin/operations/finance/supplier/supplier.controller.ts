@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, Logger } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Patch, UseGuards, Logger } from '@nestjs/common'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { RolesGuard } from '@/common/guards/roles.guard'
@@ -67,7 +67,7 @@ export class SupplierController {
     }
   }
 
-  @Put(':id')
+  @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async updateSupplier(
     @RequestContext() ctx: RequestContextDto,

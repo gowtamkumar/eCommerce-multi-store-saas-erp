@@ -64,7 +64,7 @@ export default function Reviews() {
                 }
             } else {
                 const res = await fetchAPI(`/reviews/${id}`, {
-                    method: 'PUT',
+                    method: 'PATCH',
                     body: JSON.stringify({ status: action })
                 });
                 if (res.success) {

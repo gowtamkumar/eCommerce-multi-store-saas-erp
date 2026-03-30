@@ -13,7 +13,7 @@ import {
   Logger,
   Param,
   Post,
-  Put,
+  Patch,
   Query,
   UseGuards,
 } from '@nestjs/common'
@@ -132,7 +132,7 @@ export class ProductController {
     }
   }
 
-  @Put(':id')
+  @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async updateProduct(

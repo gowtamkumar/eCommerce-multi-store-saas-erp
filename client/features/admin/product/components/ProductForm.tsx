@@ -120,7 +120,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
 
     try {
       const url = isEdit ? `/products/${initialData.id}` : '/products';
-      const method = isEdit ? 'PUT' : 'POST';
+      const method = isEdit ? 'PATCH' : 'POST';
 
       await fetchAPI(url, {
         method,

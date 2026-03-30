@@ -45,7 +45,7 @@ export default function PagesList() {
             setPages(updatedPages);
 
             const res = await fetchAPI(`/pages/${id}`, {
-                method: 'PUT',
+                method: 'PATCH',
                 body: JSON.stringify({ order: newOrder }),
             });
 

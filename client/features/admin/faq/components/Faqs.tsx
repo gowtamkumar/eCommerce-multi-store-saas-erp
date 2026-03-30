@@ -48,7 +48,7 @@ export default function FAQs() {
         e.preventDefault();
         try {
             const url = editingFaq ? `/faqs/${editingFaq.id}` : '/faqs';
-            const method = editingFaq ? 'PUT' : 'POST';
+            const method = editingFaq ? 'PATCH' : 'POST';
 
             const res = await fetchAPI(url, {
                 method,

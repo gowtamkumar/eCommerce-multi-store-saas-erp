@@ -31,7 +31,7 @@ export default function GlobalSetting() {
         setSaving(true);
         try {
             await fetchAPI('/platform/settings', {
-                method: 'PUT',
+                method: 'PATCH',
                 body: JSON.stringify(settings),
             });
             toast.success('Global settings updated successfully!');
