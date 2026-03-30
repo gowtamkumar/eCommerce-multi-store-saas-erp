@@ -18,7 +18,7 @@ import { CustomThrottlerGuard } from './throttler.guard'
           {
             name: 'standard',
             ttl: 60000, // 60000 ms = 60 seconds = 1 minute
-            limit: 100, // 100 requests per 1 minute
+            limit: 300, // 100 requests per 1 minute
           },
           {
             name: 'sensitive',
@@ -46,4 +46,4 @@ import { CustomThrottlerGuard } from './throttler.guard'
     },
   ],
 })
-export class AppThrottlerModule {}
+export class AppThrottlerModule { }

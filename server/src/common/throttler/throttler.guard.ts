@@ -1,5 +1,5 @@
 import { ExecutionContext, Injectable } from '@nestjs/common'
-import { ThrottlerGuard } from '@nestjs/throttler'
+import { ThrottlerException, ThrottlerGuard } from '@nestjs/throttler'
 
 @Injectable()
 export class CustomThrottlerGuard extends ThrottlerGuard {
@@ -15,6 +15,6 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
   }
 
   protected async throwThrottlingException(context: ExecutionContext): Promise<void> {
-    throw new Error('Too many requests. Please try again later.')
+    throw new ThrottlerException('Too many requests. Please try again later.')
   }
 }

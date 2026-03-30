@@ -1,16 +1,13 @@
 "use client";
 
 import { useCart } from "@/hooks/CartContext";
-import { useSettings } from "@/hooks/SettingsContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import Price from "./Price";
 
 const CartDrawer = () => {
   const { isCartOpen, closeCart, cart, items, updateQuantity, removeItem } = useCart();
-  const { formatPrice } = useSettings();
 
   const summary = cart?.summary || { subtotal: 0, offer_discount: 0, coupon_discount: 0, payable: 0 };
 
