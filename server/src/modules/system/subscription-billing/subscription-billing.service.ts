@@ -65,6 +65,14 @@ export class SubscriptionBillingService {
 
     if (!tenant) throw new NotFoundException('Tenant not found')
 
+    // RENEWAL RESTRICTION: Block if not expired and same plan
+    const isSamePlan = tenant.subscriptionPlanId === planId;
+    const isCurrentlyActive = tenant.subscriptionStatus !== SubscriptionStatus.TRIAL && !tenant.isExpired;
+
+    if (isSamePlan && isCurrentlyActive) {
+      throw new BadRequestException('Your current subscription is still active. You can only renew after it expires.');
+    }
+
     const transactionId = `SUB-${Date.now()}`
     // Normalize cycle for robust comparison
     const isYearly = String(billingCycle).toLowerCase() === 'yearly';
@@ -173,9 +181,9 @@ export class SubscriptionBillingService {
       const newEndsAt = new Date(baseDate)
 
       // Dynamic Expiry Calculation
-      if (record.billingCycle === SubscriptionBillingCycle.YEARLY && tenant.subscriptionStatus !== SubscriptionStatus.TRIAL) {
+      if (record.billingCycle === SubscriptionBillingCycle.YEARLY) {
         newEndsAt.setFullYear(newEndsAt.getFullYear() + 1)
-      } else if (record.billingCycle === SubscriptionBillingCycle.MONTHLY && tenant.subscriptionStatus !== SubscriptionStatus.TRIAL) {
+      } else if (record.billingCycle === SubscriptionBillingCycle.MONTHLY) {
         newEndsAt.setMonth(newEndsAt.getMonth() + 1)
       }
 
