@@ -61,9 +61,6 @@ export default function BillingDashboard() {
         fetchAPI("/billing/plans"),
         fetchAPI("/billing/history")
       ]);
-      console.log("historyRes", historyRes);
-      console.log("plansRes", plansRes);
-      console.log("infoRes", infoRes);
 
       setSubInfo(infoRes.data);
       setPlans(plansRes.data);
@@ -91,8 +88,9 @@ export default function BillingDashboard() {
       if (res.data.gatewayUrl && res.data.gatewayUrl !== '#') {
         window.location.href = res.data.gatewayUrl;
       }
-    } catch (error) {
-      toast.error("Failed to initiate upgrade");
+    } catch (error: any) {
+      console.log("error", error);
+      toast.error(error.message || "Failed to initiate upgrade");
     } finally {
       setInitiating(null);
     }
@@ -229,8 +227,8 @@ export default function BillingDashboard() {
                     <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">{plan.name}</h4>
                     <div className="flex items-baseline justify-center gap-1">
                       <span className="text-4xl font-black text-slate-900 dark:text-white">
-                        ${billingCycle === 'yearly' 
-                          ? ((plan as any).yearlyPrice > 0 ? (plan as any).yearlyPrice : (plan as any).monthlyPrice * 12) 
+                        ${billingCycle === 'yearly'
+                          ? ((plan as any).yearlyPrice > 0 ? (plan as any).yearlyPrice : (plan as any).monthlyPrice * 12)
                           : (plan as any).monthlyPrice}
                       </span>
                       <span className="text-slate-400 dark:text-slate-500 font-bold uppercase text-xs tracking-widest">
