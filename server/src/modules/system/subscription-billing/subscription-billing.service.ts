@@ -54,6 +54,7 @@ export class SubscriptionBillingService {
   async initiateSubscriptionPayment(
     tenantId: string,
     planId: string,
+    billingCycle: SubscriptionBillingCycle = SubscriptionBillingCycle.MONTHLY,
     frontendUrl?: string,
   ): Promise<{ gatewayUrl: string }> {
     this.logger.log(`Initiating subscription payment for tenant ${tenantId} and plan ${planId}`)
@@ -64,12 +65,15 @@ export class SubscriptionBillingService {
     if (!tenant) throw new NotFoundException('Tenant not found')
 
     const transactionId = `SUB-${Date.now()}`
+    const amount = billingCycle === SubscriptionBillingCycle.YEARLY ? Number(plan.yearlyPrice) : Number(plan.monthlyPrice)
+
     const invoiceNumber = `INV-${Date.now()}`
     const record = await this.planRecordRepository.createAndSave({
       invoiceNumber,
       tenantId,
       subscriptionPlanId: planId,
-      amount: plan.price,
+      amount,
+      billingCycle,
       currency: 'BDT',
       status: PaymentStatus.PENDING,
       transactionId,
@@ -82,7 +86,7 @@ export class SubscriptionBillingService {
     const mockOrder = {
       id: record.id,
       transactionId: transactionId,
-      totalAmount: plan.price,
+      totalAmount: amount,
       currency: 'BDT',
       customerName: tenant.user?.name || tenant.storeName || 'Store Owner',
       customerEmail: tenant.user?.email || 'billing@omnicart.com',
@@ -156,10 +160,10 @@ export class SubscriptionBillingService {
       const newEndsAt = new Date(baseDate)
 
       // Dynamic Expiry Calculation
-      if (plan.billingCycle === SubscriptionBillingCycle.YEARLY) {
+      if (record.billingCycle === SubscriptionBillingCycle.YEARLY) {
         newEndsAt.setFullYear(newEndsAt.getFullYear() + 1)
       } else {
-        newEndsAt.setDate(newEndsAt.getDate() + 30) // Default Monthly
+        newEndsAt.setMonth(newEndsAt.getMonth() + 1)
       }
 
       await this.tenantRepository.updateAndSave(tenant, {
@@ -167,7 +171,7 @@ export class SubscriptionBillingService {
         subscriptionEndsAt: newEndsAt,
         subscriptionPlanId: record.subscriptionPlanId,
         subscriptionStatus: SubscriptionStatus.ACTIVE,
-        subscriptionBillingCycle: plan.billingCycle,
+        subscriptionBillingCycle: record.billingCycle,
         status: TenantStatus.ACTIVE,
       })
       this.logger.log(`Tenant ${tenant.id} subscription updated: Plan ${plan.name}, startsAt: ${currentDate}, endsAt: ${newEndsAt}`)

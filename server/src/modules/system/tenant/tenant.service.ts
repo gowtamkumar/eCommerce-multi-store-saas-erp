@@ -39,7 +39,7 @@ export class TenantService {
 
   async createTenant(createTenantDto: CreateTenantDto): Promise<CreateTenantResponseDto> {
     this.logger.log(`${this.createTenant.name} Service Called`)
-    const { storeName, subdomain, planId, name, username, email, password } = createTenantDto
+    const { storeName, subdomain, planId, name, username, email, password, subscriptionBillingCycle } = createTenantDto
     console.log("createTenantDto", createTenantDto);
 
     // Check if subdomain already exists
@@ -51,7 +51,7 @@ export class TenantService {
     }
 
     let subscriptionPlan = null
-    let billingCycle = SubscriptionBillingCycle.MONTHLY
+    let billingCycle = subscriptionBillingCycle || SubscriptionBillingCycle.MONTHLY
     const now = new Date()
     const endsAt = new Date()
 
@@ -59,7 +59,7 @@ export class TenantService {
       console.log("planid");
 
       subscriptionPlan = await this.subscriptionPlanService.findOneSubscriptionPlan(planId)
-      if (subscriptionPlan) {
+      if (subscriptionPlan && !subscriptionBillingCycle) {
         billingCycle = subscriptionPlan.billingCycle
       }
     }

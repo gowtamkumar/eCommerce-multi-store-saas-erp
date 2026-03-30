@@ -1,4 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
+import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entities/subscription-plan.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
@@ -47,4 +48,12 @@ export class SubscriptionInvoiceEntity extends BaseEntity {
 
   @Column({ name: 'gateway_response', type: 'jsonb', nullable: true })
   gatewayResponse: any
+
+  @Column({
+    type: 'enum',
+    enum: SubscriptionBillingCycle,
+    default: SubscriptionBillingCycle.MONTHLY,
+    name: 'billing_cycle'
+  })
+  billingCycle: SubscriptionBillingCycle
 }

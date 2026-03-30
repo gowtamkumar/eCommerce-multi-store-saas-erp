@@ -29,6 +29,7 @@ export default function BillingDashboard() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [history, setHistory] = useState<BillingInvoice[]>([]);
   const [initiating, setInitiating] = useState<string | null>(null);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -76,7 +77,11 @@ export default function BillingDashboard() {
       setInitiating(planId);
       const res = await fetchAPI("/billing/initiate", {
         method: "POST",
-        body: JSON.stringify({ planId, frontendUrl: window.location.origin })
+        body: JSON.stringify({ 
+          planId, 
+          billingCycle,
+          frontendUrl: window.location.origin 
+        })
       });
 
       if (res.data.gatewayUrl && res.data.gatewayUrl !== '#') {
@@ -164,6 +169,21 @@ export default function BillingDashboard() {
             <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Choose Your Growth Path</h3>
             <p className="text-slate-500 dark:text-slate-400 font-medium italic">Scale your business with professional tools</p>
           </div>
+
+          <div className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-2xl flex gap-1 self-center">
+            {['monthly', 'yearly'].map((c) => (
+              <button
+                key={c}
+                onClick={() => setBillingCycle(c as any)}
+                className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${billingCycle === c
+                    ? 'bg-white dark:bg-brand-600 text-brand-600 dark:text-white shadow-xl shadow-brand-500/10'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -187,8 +207,12 @@ export default function BillingDashboard() {
                   <div className="space-y-2 text-center">
                     <h4 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">{plan.name}</h4>
                     <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-4xl font-black text-slate-900 dark:text-white">${plan.price}</span>
-                      <span className="text-slate-400 dark:text-slate-500 font-bold uppercase text-xs tracking-widest">/mo</span>
+                      <span className="text-4xl font-black text-slate-900 dark:text-white">
+                        ${billingCycle === 'yearly' ? (plan as any).yearlyPrice : (plan as any).monthlyPrice}
+                      </span>
+                      <span className="text-slate-400 dark:text-slate-500 font-bold uppercase text-xs tracking-widest">
+                        /{billingCycle === 'yearly' ? 'yr' : 'mo'}
+                      </span>
                     </div>
                     <p className="text-sm text-slate-500 dark:text-slate-400 font-medium px-4 h-10 line-clamp-2">
                       {plan.description || "The perfect starting point for growing businesses."}

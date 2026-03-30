@@ -1,4 +1,5 @@
-import { IsDefined, IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator'
+import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
+import { IsDefined, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator'
 
 export class CreateTenantDto {
   @IsDefined()
@@ -14,6 +15,10 @@ export class CreateTenantDto {
   @IsString()
   @IsOptional()
   planId?: string
+
+  @IsEnum(SubscriptionBillingCycle)
+  @IsOptional()
+  subscriptionBillingCycle?: SubscriptionBillingCycle
 
   // Admin user details for the new tenant
   @IsString()

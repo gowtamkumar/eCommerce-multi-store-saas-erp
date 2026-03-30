@@ -18,6 +18,7 @@ export default function CreateStore() {
     const [fetchingPlans, setFetchingPlans] = useState(true);
     const searchParams = useSearchParams();
     const planIdFromUrl = searchParams.get('planId');
+    const cycleFromUrl = searchParams.get('cycle');
 
 
 
@@ -25,6 +26,7 @@ export default function CreateStore() {
         storeName: '',
         subdomain: '',
         planId: '',
+        subscriptionBillingCycle: cycleFromUrl || 'monthly',
         name: '',
         email: '',
         username: '',
@@ -228,6 +230,24 @@ export default function CreateStore() {
                                         exit={{ opacity: 0, x: -20 }}
                                         className="space-y-6"
                                     >
+                                        <div className="flex justify-center mb-6">
+                                            <div className="bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl flex gap-1">
+                                                {['monthly', 'yearly'].map((c) => (
+                                                    <button
+                                                        key={c}
+                                                        type="button"
+                                                        onClick={() => setFormData({ ...formData, subscriptionBillingCycle: c })}
+                                                        className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${formData.subscriptionBillingCycle === c
+                                                                ? 'bg-white dark:bg-brand-600 text-brand-600 dark:text-white shadow-sm'
+                                                                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                                            }`}
+                                                    >
+                                                        {c}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
                                         <div className="grid grid-cols-1 gap-4">
                                             {fetchingPlans ? (
                                                 <div className="py-10 text-center flex flex-col items-center gap-2">
@@ -235,7 +255,7 @@ export default function CreateStore() {
                                                     <p className="text-sm font-medium text-slate-500">Retrieving available plans...</p>
                                                 </div>
                                             ) : (
-                                                plans.map((plan) => (
+                                                plans.map((plan: any) => (
                                                     <div
                                                         key={plan.id}
                                                         onClick={() => setFormData({ ...formData, planId: plan.id })}
@@ -254,8 +274,12 @@ export default function CreateStore() {
                                                                 </div>
                                                             </div>
                                                             <div className="text-right">
-                                                                <p className="text-lg font-black text-brand-600">${plan.price}</p>
-                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">per month</p>
+                                                                <p className="text-lg font-black text-brand-600">
+                                                                    ${formData.subscriptionBillingCycle === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice}
+                                                                </p>
+                                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                                    per {formData.subscriptionBillingCycle === 'yearly' ? 'year' : 'month'}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                     </div>

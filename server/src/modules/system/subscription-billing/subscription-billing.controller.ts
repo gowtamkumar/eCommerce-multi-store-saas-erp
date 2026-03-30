@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config'
 import { Response } from 'express'
 import { Public } from '../../../common/decorators/public.decorator'
 import { SubscriptionPlanEntity } from '../subscription-plan/entities/subscription-plan.entity'
+import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 import { CurrentSubscriptionResponseDto } from './dto/current-subscription-response.dto'
 import { SubscriptionInvoiceResponseDto } from './dto/subscription-invoice-response.dto'
 import { SubscriptionBillingService } from './subscription-billing.service'
@@ -70,10 +71,11 @@ export class SubscriptionBillingController {
   async initiatePayment(
     @RequestContext() ctx: RequestContextDto,
     @Body('planId') planId: string,
+    @Body('billingCycle') billingCycle: SubscriptionBillingCycle,
     @Body('frontendUrl') frontendUrl?: string,
   ): Promise<BaseApiSuccessResponse<{ gatewayUrl: string }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called initiatePayment.`)
-    const data = await this.billingService.initiateSubscriptionPayment(ctx.tenantId, planId, frontendUrl)
+    const data = await this.billingService.initiateSubscriptionPayment(ctx.tenantId, planId, billingCycle, frontendUrl)
     return {
       success: true,
       statusCode: 200,
