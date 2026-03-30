@@ -53,7 +53,10 @@ export class TenantService {
     let subscriptionPlan = null
     let billingCycle = subscriptionBillingCycle || SubscriptionBillingCycle.MONTHLY
     const now = new Date()
-    const endsAt = new Date()
+
+    // Trial duration: 14 days
+    const trialEndsAt = new Date()
+    trialEndsAt.setDate(now.getDate() + 14)
 
     if (planId) {
       console.log("planid");
@@ -64,13 +67,6 @@ export class TenantService {
       }
     }
 
-    // Dynamic Expiry Calculation based on Plan
-    if (billingCycle === SubscriptionBillingCycle.YEARLY) {
-      endsAt.setFullYear(now.getFullYear() + 1)
-    } else {
-      endsAt.setMonth(now.getMonth() + 1)
-    }
-
     console.log("Create tenant brfoere");
 
 
@@ -79,10 +75,10 @@ export class TenantService {
       {
         storeName,
         subdomain,
-        subscriptionStatus: SubscriptionStatus.ACTIVE,
+        subscriptionStatus: SubscriptionStatus.TRIAL,
         subscriptionBillingCycle: billingCycle,
         subscriptionStartsAt: now,
-        subscriptionEndsAt: endsAt,
+        subscriptionEndsAt: trialEndsAt,
       },
       subscriptionPlan,
     )

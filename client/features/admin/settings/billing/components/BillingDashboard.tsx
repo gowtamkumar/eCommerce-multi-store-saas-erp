@@ -77,10 +77,10 @@ export default function BillingDashboard() {
       setInitiating(planId);
       const res = await fetchAPI("/billing/initiate", {
         method: "POST",
-        body: JSON.stringify({ 
-          planId, 
+        body: JSON.stringify({
+          planId,
           billingCycle,
-          frontendUrl: window.location.origin 
+          frontendUrl: window.location.origin
         })
       });
 
@@ -113,8 +113,17 @@ export default function BillingDashboard() {
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-50 dark:bg-brand-900/20 rounded-full">
-              <Zap className="w-4 h-4 text-brand-600" />
-              <span className="text-xs font-black text-brand-700 dark:text-brand-400 uppercase tracking-widest">Current Subscription</span>
+              {subInfo?.status === 'trial' ? (
+                <>
+                  <Clock className="w-4 h-4 text-brand-600" />
+                  <span className="text-xs font-black text-brand-700 dark:text-brand-400 uppercase tracking-widest">Free Trial Mode</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 text-brand-600" />
+                  <span className="text-xs font-black text-brand-700 dark:text-brand-400 uppercase tracking-widest">Current Subscription</span>
+                </>
+              )}
             </div>
 
             <div className="space-y-1">
@@ -123,13 +132,18 @@ export default function BillingDashboard() {
               </h2>
               <p className="text-slate-500 dark:text-slate-400 flex items-center gap-2 font-medium">
                 {subInfo?.isExpired ? (
-                  <span className="flex items-center gap-1.5 text-rose-500 bg-rose-50 dark:bg-rose-900/20 px-3 py-1 rounded-full text-sm">
+                  <span className="flex items-center gap-1.5 text-rose-500 bg-rose-50 dark:bg-rose-900/20 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm">
                     <AlertCircle className="w-4 h-4" />
                     Expired on {subInfo?.endsAt ? dayjs(subInfo.endsAt).format('MMMM DD, YYYY') : 'N/A'}
                   </span>
+                ) : subInfo?.status === 'trial' ? (
+                  <span className="flex items-center gap-1.5 text-brand-600 bg-brand-50 dark:bg-brand-900/20 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm border border-brand-100 dark:border-brand-800 animate-pulse">
+                    <Clock className="w-4 h-4" />
+                    Trial Period: {subInfo?.endsAt ? dayjs(subInfo.endsAt).fromNow(true) : 'N/A'} remaining
+                  </span>
                 ) : (
-                  <span className="flex items-center gap-1.5 text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full text-sm">
-                    <CheckCircle2 className="w-4 h-4" />
+                  <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm">
+                    <ShieldCheck className="w-4 h-4" />
                     Active until {subInfo?.endsAt ? dayjs(subInfo.endsAt).format('MMMM DD, YYYY') : 'N/A'}
                   </span>
                 )}
@@ -153,10 +167,14 @@ export default function BillingDashboard() {
                 if (currentPlan) handleUpgrade(currentPlan.id);
               }}
               disabled={initiating !== null}
-              className="bg-brand-600 text-white px-8 py-5 rounded-3xl font-black uppercase tracking-widest hover:bg-brand-700 transition-all flex items-center gap-3 shadow-xl shadow-brand-600/20 active:scale-95 disabled:opacity-50"
+              className={`px-8 py-5 rounded-3xl font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50 ${
+                subInfo?.status === 'trial' 
+                ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white shadow-brand-600/20' 
+                : 'bg-brand-600 text-white hover:bg-brand-700 shadow-brand-600/20'
+              }`}
             >
               {initiating ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
-              Renew Now
+              {subInfo?.status === 'trial' ? 'Upgrade Plan' : 'Renew Now'}
             </button>
           </div>
         </div>
@@ -176,8 +194,8 @@ export default function BillingDashboard() {
                 key={c}
                 onClick={() => setBillingCycle(c as any)}
                 className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${billingCycle === c
-                    ? 'bg-white dark:bg-brand-600 text-brand-600 dark:text-white shadow-xl shadow-brand-500/10'
-                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'bg-white dark:bg-brand-600 text-brand-600 dark:text-white shadow-xl shadow-brand-500/10'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                   }`}
               >
                 {c}

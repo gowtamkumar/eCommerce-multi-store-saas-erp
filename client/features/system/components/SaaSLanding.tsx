@@ -143,9 +143,14 @@ export default function SaaSLanding() {
                       <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{plan.description || "The essentials to get your store up and running."}</p>
                     </div>
 
-                    <div className="flex items-baseline gap-1 mb-8">
+                    <div className="flex items-baseline gap-1 mb-2 font-display">
                       <span className="text-5xl font-black text-slate-900 dark:text-white">${Number(price).toFixed(0)}</span>
                       <span className="text-slate-500 dark:text-slate-400 font-bold">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                    </div>
+                    <div className="mb-8 font-bold">
+                      <span className="text-[10px] font-black text-brand-600 bg-brand-50/50 dark:bg-brand-900/30 px-3 py-1 rounded-full uppercase tracking-[0.2em]">
+                        14-Day Free Trial
+                      </span>
                     </div>
 
                     <div className="w-full h-px bg-slate-100 dark:bg-slate-800 mb-8" />
