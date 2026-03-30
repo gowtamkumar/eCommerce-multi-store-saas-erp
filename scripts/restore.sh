@@ -17,7 +17,7 @@
 
 # Database and backup details
 DB_NAME="multi_tenant_ecommerce"
-BACKUP_FILE="/backups/backup_20260325_171521.sql"
+BACKUP_FILE="/backups/backup_20260330_011356.sql"
 PG_USER="postgres"
 
 # Wait for PostgreSQL to be ready
