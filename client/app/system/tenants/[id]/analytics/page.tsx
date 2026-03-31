@@ -7,8 +7,8 @@ async function getTenantAnalyticsData(id: string) {
 
     try {
         const [analyticsRes, tenantRes] = await Promise.all([
-            fetchSuperAdminAPI(`/tenant-traffic/tenants/${id}/analytics`),
-            fetchSuperAdminAPI(`/tenant-traffic/tenants`)
+            fetchSuperAdminAPI(`/super-admin/tenants/${id}/analytics`),
+            fetchSuperAdminAPI(`/super-admin/tenants`)
         ]);
 
         if (!analyticsRes.success || !tenantRes.success) {

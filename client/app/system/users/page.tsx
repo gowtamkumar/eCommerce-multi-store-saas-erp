@@ -3,7 +3,7 @@ import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 
 async function getUsers() {
   try {
-    const res = await fetchSuperAdminAPI('/tenant-traffic/users');
+    const res = await fetchSuperAdminAPI('/super-admin/users');
     return res.users || res.data?.users || [];
   } catch (error) {
     console.error("Error fetching global users:", error);

@@ -103,7 +103,7 @@ export default function PlatformHealth() {
     useEffect(() => {
         const fetchHealth = async () => {
             try {
-                const result = await fetchSuperAdminAPI('/tenant-traffic/health');
+                const result = await fetchSuperAdminAPI('/super-admin/health');
                 const ss = result.data?.stats;
                 setData(result.data);
                 if (ss) {
