@@ -13,9 +13,9 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 export class AuthController {
   private readonly logger = new Logger(AuthController.name)
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
-  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/register')
   async register(
     @RequestContext() ctx: RequestContextDto,
@@ -81,7 +81,7 @@ export class AuthController {
     }
   }
 
-  @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
+  // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/forgot-password')
   async forgotPassword(
     @RequestContext() ctx: RequestContextDto,

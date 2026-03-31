@@ -65,7 +65,7 @@ import { join } from 'path'
     SeoModule,
 
     // Rate Limiting
-    AppThrottlerModule,
+    // AppThrottlerModule,
   ],
   controllers: [],
   providers: [

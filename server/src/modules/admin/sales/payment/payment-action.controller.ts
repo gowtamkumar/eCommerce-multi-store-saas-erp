@@ -15,9 +15,9 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 export class PaymentActionController {
   private readonly logger = new Logger(PaymentActionController.name)
 
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(private readonly paymentService: PaymentService) { }
 
-  @Throttle({ transactional: { limit: 10, ttl: 60000 } })
+  // @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Post('init')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)

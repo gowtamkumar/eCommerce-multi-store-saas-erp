@@ -28,7 +28,7 @@ import { CouponResponseDto } from './dto/coupon-response.dto'
 export class CouponController {
   private readonly logger = new Logger(CouponController.name)
 
-  constructor(private readonly couponService: CouponService) {}
+  constructor(private readonly couponService: CouponService) { }
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
@@ -68,7 +68,7 @@ export class CouponController {
     }
   }
 
-  @Throttle({ promo: { limit: 15, ttl: 60000 } })
+  // @Throttle({ promo: { limit: 15, ttl: 60000 } })
   @Post('validate')
   async validateCoupon(
     @RequestContext() ctx: RequestContextDto,

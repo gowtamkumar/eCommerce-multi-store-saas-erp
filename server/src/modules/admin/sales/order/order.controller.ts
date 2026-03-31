@@ -18,9 +18,9 @@ import { OrderResponseDto } from './dto/order-response.dto'
 export class OrderController {
   private readonly logger = new Logger(OrderController.name)
 
-  constructor(private readonly orderService: OrderService) {}
+  constructor(private readonly orderService: OrderService) { }
 
-  @Throttle({ transactional: { limit: 10, ttl: 60000 } })
+  // @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
   async createOrder(
