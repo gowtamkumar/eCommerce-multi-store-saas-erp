@@ -17,6 +17,7 @@ export class TenantStatusGuard implements CanActivate {
     const request = context.switchToHttp().getRequest()
     const tenantId = request.tenantId
     const user = request.user
+    console.log("user", user);
 
     // 1. Allow Super Admin to bypass all tenant status checks
     if (user?.role === UserRole.SUPER_ADMIN) {

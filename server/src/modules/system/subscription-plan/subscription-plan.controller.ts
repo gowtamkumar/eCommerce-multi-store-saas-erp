@@ -8,6 +8,8 @@ import { CreateSubscriptionPlanDto } from './dto/create-subscription-plan.dto'
 import { SubscriptionPlanResponseDto } from './dto/subscription-plan-response.dto'
 import { UpdateSubscriptionPlanDto } from './dto/update-subscription-plan.dto'
 import { SubscriptionPlanService } from './subscription-plan.service'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Controller('super-admin/plans')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -15,12 +17,14 @@ import { SubscriptionPlanService } from './subscription-plan.service'
 export class SubscriptionPlanController {
   private readonly logger = new Logger(SubscriptionPlanController.name)
 
-  constructor(private readonly planService: SubscriptionPlanService) {}
+  constructor(private readonly planService: SubscriptionPlanService) { }
 
   @Post()
   async createSubscriptionPlan(
+    @RequestContext() ctx: RequestContextDto,
     @Body() createDto: CreateSubscriptionPlanDto,
   ): Promise<BaseApiSuccessResponse<SubscriptionPlanResponseDto>> {
+    this.logger.log(`User "${ctx.user?.username || 'System'}" called createSubscriptionPlan.`)
     const plan = await this.planService.createSubscriptionPlan(createDto)
     return {
       success: true,
@@ -31,7 +35,10 @@ export class SubscriptionPlanController {
   }
 
   @Get()
-  async findAllSubscriptionPlans(): Promise<BaseApiSuccessResponse<SubscriptionPlanResponseDto[]>> {
+  async findAllSubscriptionPlans(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<SubscriptionPlanResponseDto[]>> {
+    this.logger.log(`User "${ctx.user?.username || 'System'}" called findAllSubscriptionPlans.`)
     const plans = await this.planService.findAllSubscriptionPlans()
     return {
       success: true,
@@ -43,8 +50,10 @@ export class SubscriptionPlanController {
 
   @Get(':id')
   async findOneSubscriptionPlan(
+    @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<SubscriptionPlanResponseDto>> {
+    this.logger.log(`User "${ctx.user?.username || 'System'}" called findOneSubscriptionPlan.`)
     const plan = await this.planService.findOneSubscriptionPlan(id)
     return {
       success: true,
@@ -56,9 +65,11 @@ export class SubscriptionPlanController {
 
   @Patch(':id')
   async updateSubscriptionPlan(
+    @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() updateDto: UpdateSubscriptionPlanDto,
   ): Promise<BaseApiSuccessResponse<SubscriptionPlanResponseDto>> {
+    this.logger.log(`User "${ctx.user?.username || 'System'}" called updateSubscriptionPlan.`)
     const plan = await this.planService.updateSubscriptionPlan(id, updateDto)
     return {
       success: true,
@@ -70,8 +81,10 @@ export class SubscriptionPlanController {
 
   @Delete(':id')
   async removeSubscriptionPlan(
+    @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<null>> {
+    this.logger.log(`User "${ctx.user?.username || 'System'}" called removeSubscriptionPlan.`)
     await this.planService.removeSubscriptionPlan(id)
     return {
       success: true,
