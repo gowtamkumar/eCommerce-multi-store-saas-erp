@@ -66,6 +66,12 @@ All entities extend `BaseEntity`, which includes:
     - `supplier_id`: `uuid` (nullable)
     - `tenant_id`: `uuid`
     - `user_id`: `uuid` (nullable)
+    - `meta_title`: `varchar(255)` (nullable)
+    - `meta_description`: `text` (nullable)
+    - `og_image`: `varchar(500)` (nullable)
+    - `is_new`: `boolean` (default: false)
+    - `is_hot`: `boolean` (default: false)
+    - `is_sale`: `boolean` (default: false)
 - **Relationships**:
     - `ManyToOne` -> `CategoryEntity` (category_id)
     - `ManyToOne` -> `BrandEntity` (brand_id)
@@ -541,6 +547,18 @@ All entities extend `BaseEntity`, which includes:
     - `ManyToOne` -> `TenantEntity` (tenant_id)
     - `ManyToOne` -> `UserEntity` (user_id)
 
+#### Wishlist Entity
+- **Table**: `wishlists`
+- **Fields**:
+    - `user_id`: `uuid`
+    - `product_id`: `uuid`
+    - `tenant_id`: `uuid`
+- **Relationships**:
+    - `ManyToOne` -> `UserEntity` (user_id)
+    - `ManyToOne` -> `ProductEntity` (product_id)
+    - `ManyToOne` -> `TenantEntity` (tenant_id)
+- **Indices**: Unique index on `(user_id, product_id, tenant_id)`
+
 #### Shipping Address Entity
 - **Table**: `shipping_addresses`
 - **Fields**:
@@ -592,8 +610,12 @@ All entities extend `BaseEntity`, which includes:
     - `name`: `varchar(255)`
     - `description`: `text` (nullable)
     - `price`: `decimal(10,2)` (default: 0)
+    - `monthly_price`: `decimal(10,2)` (default: 0)
+    - `yearly_price`: `decimal(10,2)` (default: 0)
+    - `billing_cycle`: `enum` (SubscriptionBillingCycle: `monthly`, `yearly`)
     - `features`: `jsonb` (default: [])
     - `is_active`: `boolean` (default: true)
+    - `is_popular`: `boolean` (default: false)
     - `user_id`: `uuid` (nullable)
 - **Relationships**:
     - `OneToMany` -> `TenantEntity`
@@ -607,6 +629,7 @@ All entities extend `BaseEntity`, which includes:
     - `subscription_plan_id`: `uuid`
     - `amount`: `decimal(10,2)`
     - `currency`: `varchar(10)` (default: 'USD')
+    - `billing_cycle`: `enum` (SubscriptionBillingCycle: `monthly`, `yearly`)
     - `status`: `enum` (PaymentStatus) (default: `pending`)
     - `transaction_id`: `varchar(255)` (nullable)
     - `billing_date`: `timestamptz` (default: now)
@@ -639,7 +662,7 @@ All entities extend `BaseEntity`, which includes:
     - `ssl_enabled`: `boolean` (default: false)
     - `subscription_plan_id`: `uuid` (nullable)
     - `subscription_billing_cycle`: `enum` (SubscriptionBillingCycle)
-    - `subscription_status`: `enum` (SubscriptionStatus)
+    - `subscription_status`: `enum` (SubscriptionStatus: `trial`, `active`, `past_due`, `canceled`, `expired`)
     - `subscription_starts_at`: `timestamptz` (nullable)
     - `subscription_ends_at`: `timestamptz` (nullable)
     - `user_id`: `uuid` (nullable)
