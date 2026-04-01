@@ -18,5 +18,15 @@ export class WishlistResponseDto {
 
   @Expose()
   @ApiProperty()
+  @Type(() => Object)
+  pricing: {
+    base_price: number
+    discount: number
+    tax: number
+    final_price: number
+  }
+
+  @Expose()
+  @ApiProperty()
   createdAt: Date
 }

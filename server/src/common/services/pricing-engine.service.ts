@@ -74,7 +74,7 @@ export class PricingEngineService {
   /**
    * Calculates logic for a single item against all promotions.
    */
-  private calculateItemPricing(item: PricingContextItem, activePromotions: PromotionEntity[]) {
+  public calculateItemPricing(item: PricingContextItem, activePromotions: PromotionEntity[]) {
     this.logger.debug('Calculating Item pricing via Engine')
     const basePrice = Number(item.variant?.price || item.product?.price || 0)
     const discountType = item.product?.discountType || DiscountType.FIXED

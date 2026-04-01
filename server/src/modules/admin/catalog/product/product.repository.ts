@@ -25,11 +25,19 @@ export class ProductRepository extends Repository<ProductEntity> {
     if (categoryId) query.andWhere('product.categoryId = :categoryId', { categoryId })
     if (brandId) query.andWhere('product.brandId = :brandId', { brandId })
 
+    const finalPriceExpr = `CASE 
+      WHEN product.discount_type = 'percentage' 
+      THEN (product.price * (1 - product.discount_amount / 100)) * (1 + COALESCE(product.tax_rate, 0) / 100)
+      WHEN product.discount_type = 'fixed' 
+      THEN (product.price - product.discount_amount) * (1 + COALESCE(product.tax_rate, 0) / 100)
+      ELSE product.price * (1 + COALESCE(product.tax_rate, 0) / 100)
+    END`
+
     if (filterDto.minPrice !== undefined && filterDto.minPrice !== null) {
-      query.andWhere('product.price >= :minPrice', { minPrice: Number(filterDto.minPrice) })
+      query.andWhere(`${finalPriceExpr} >= :minPrice`, { minPrice: Number(filterDto.minPrice) })
     }
     if (filterDto.maxPrice !== undefined && filterDto.maxPrice !== null) {
-      query.andWhere('product.price <= :maxPrice', { maxPrice: Number(filterDto.maxPrice) })
+      query.andWhere(`${finalPriceExpr} <= :maxPrice`, { maxPrice: Number(filterDto.maxPrice) })
     }
     if (q) {
       query.andWhere('(product.name ILIKE :q OR product.description ILIKE :q)', { q: `%${q}%` })
@@ -67,10 +75,18 @@ export class ProductRepository extends Repository<ProductEntity> {
   }
 
   async getPriceRange(tenantId: string, categoryId?: string) {
+    const finalPriceExpr = `CASE 
+      WHEN product.discount_type = 'percentage' 
+      THEN (product.price * (1 - product.discount_amount / 100)) * (1 + COALESCE(product.tax_rate, 0) / 100)
+      WHEN product.discount_type = 'fixed'
+      THEN (product.price - product.discount_amount) * (1 + COALESCE(product.tax_rate, 0) / 100)
+      ELSE product.price * (1 + COALESCE(product.tax_rate, 0) / 100)
+    END`
+
     const query = this.createQueryBuilder('product')
       .where('product.tenantId = :tenantId', { tenantId })
-      .select('MIN(product.price)', 'min')
-      .addSelect('MAX(product.price)', 'max')
+      .select(`MIN(${finalPriceExpr})`, 'min')
+      .addSelect(`MAX(${finalPriceExpr})`, 'max')
 
     if (categoryId) query.andWhere('product.categoryId = :categoryId', { categoryId })
     return query.getRawOne()

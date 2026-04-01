@@ -5,7 +5,6 @@ import Navbar from "@/components/layout/Navbar";
 import Price from "@/components/shared/Price";
 import { useCart } from "@/hooks/CartContext";
 import { useWishlist } from "@/hooks/WishlistContext";
-import { calculatePricing } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, ShoppingBag, Trash2, ArrowRight, ShoppingCart } from "lucide-react";
 import Link from "next/link";
@@ -42,7 +41,7 @@ export default function WishlistPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900">
       <Navbar />
-      
+
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="space-y-2">
@@ -87,12 +86,12 @@ export default function WishlistPage() {
             <AnimatePresence mode="popLayout">
               {wishlist.map((item) => {
                 const product = item.product;
-                const { finalPrice, discountAmount } = calculatePricing(
-                  Number(product.price || 0),
-                  Number(product.discountAmount || 0),
-                  product.discountType || 'fixed',
-                  0
-                );
+                const {
+                  base_price: basePrice,
+                  discount: discountAmount,
+                  tax: taxAmount,
+                  final_price: finalPrice,
+                } = item.pricing;
 
                 return (
                   <motion.div
@@ -112,7 +111,10 @@ export default function WishlistPage() {
                       <Trash2 className="w-4 h-4" />
                     </button>
 
-                    <Link href={`/products/${product.slug}`} className="block aspect-square overflow-hidden bg-slate-50 dark:bg-slate-900">
+                    <Link
+                      href={`/products/${product.slug}`}
+                      className="block aspect-square overflow-hidden bg-slate-50 dark:bg-slate-900"
+                    >
                       {product.images?.[0] ? (
                         <img
                           src={product.images[0]}
@@ -129,7 +131,7 @@ export default function WishlistPage() {
                     <div className="p-8">
                       <div className="mb-4">
                         <span className="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest mb-2 block">
-                          {product.category?.name || 'Collection'}
+                          {product.category?.name || "Collection"}
                         </span>
                         <Link href={`/products/${product.slug}`}>
                           <h3 className="text-xl font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-brand-600 transition-colors">
@@ -137,25 +139,23 @@ export default function WishlistPage() {
                           </h3>
                         </Link>
                       </div>
-
                       <div className="flex items-center justify-between gap-4">
                         <Price
                           amount={finalPrice}
                           className="text-2xl font-black text-slate-900 dark:text-white"
                           showOriginal={discountAmount > 0}
-                          originalAmount={Number(product.price)}
+                          originalAmount={Number(basePrice)}
                         />
-                        
+
                         <button
                           onClick={() => handleAddToCart(product)}
                           disabled={addingToCart === product.id || product.stock <= 0}
-                          className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all ${
-                            addingToCart === product.id
+                          className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all ${addingToCart === product.id
                               ? "bg-slate-100 text-slate-400 dark:bg-slate-800"
                               : product.stock <= 0
-                              ? "bg-slate-100 text-slate-400 dark:bg-slate-800 cursor-not-allowed"
-                              : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-brand-600 dark:hover:bg-brand-400 hover:text-white dark:hover:text-white shadow-lg active:scale-95"
-                          }`}
+                                ? "bg-slate-100 text-slate-400 dark:bg-slate-800 cursor-not-allowed"
+                                : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-brand-600 dark:hover:bg-brand-400 hover:text-white dark:hover:text-white shadow-lg active:scale-95"
+                            }`}
                         >
                           {addingToCart === product.id ? (
                             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -176,7 +176,7 @@ export default function WishlistPage() {
             </AnimatePresence>
           </div>
         ) : status === "unauthenticated" ? (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-24 px-6 text-center bg-white dark:bg-slate-800/50 rounded-[3rem] border border-dashed border-slate-200 dark:border-slate-700"
@@ -188,8 +188,8 @@ export default function WishlistPage() {
             <p className="text-slate-500 dark:text-slate-400 max-w-md mb-10 font-medium">
               Save your favorite items and access them across all your devices by logging into your account.
             </p>
-            <Link 
-              href="/login?callbackUrl=/wishlist" 
+            <Link
+              href="/login?callbackUrl=/wishlist"
               className="group flex items-center gap-3 bg-brand-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-brand-700 transition-all shadow-xl shadow-brand-500/20 active:scale-95"
             >
               Sign In
@@ -197,7 +197,7 @@ export default function WishlistPage() {
             </Link>
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-24 px-6 text-center bg-white dark:bg-slate-800/50 rounded-[3rem] border border-dashed border-slate-200 dark:border-slate-700"
@@ -209,8 +209,8 @@ export default function WishlistPage() {
             <p className="text-slate-500 dark:text-slate-400 max-w-md mb-10 font-medium">
               Explore our premium collection and save your favorite items for later.
             </p>
-            <Link 
-              href="/products" 
+            <Link
+              href="/products"
               className="group flex items-center gap-3 bg-brand-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-brand-700 transition-all shadow-xl shadow-brand-500/20 active:scale-95"
             >
               Start Shopping
@@ -218,7 +218,7 @@ export default function WishlistPage() {
             </Link>
           </motion.div>
         )
-}
+        }
       </main>
 
       <Footer />

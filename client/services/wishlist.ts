@@ -16,6 +16,12 @@ export interface WishlistItem {
       name: string;
     };
   };
+  pricing: {
+    base_price: number;
+    discount: number;
+    tax: number;
+    final_price: number;
+  };
 }
 
 export const getWishlist = async (): Promise<WishlistItem[]> => {
