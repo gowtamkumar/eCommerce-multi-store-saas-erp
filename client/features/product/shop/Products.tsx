@@ -7,7 +7,7 @@ import { getSiteSettings } from "@/services/getSettings";
 import { getTenantId } from "@/services/tenant";
 import Link from "next/link";
 import { Suspense } from "react";
-import ProductsClientWrapper from "@/features/product/admin/ProductsClientWrapper"; // New client wrapper for layout state
+import ProductsClientWrapper from "@/features/product/shop/ProductsClientWrapper"; // New client wrapper for layout state
 
 export async function generateMetadata() {
     const settings = await getSiteSettings();

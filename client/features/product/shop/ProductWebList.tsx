@@ -7,7 +7,7 @@ import { ArrowUpDown, Filter, Grid, List as ListIcon, Search, ShoppingBag, X } f
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import ProductCard from './ProductCard';
+import ProductCard from '../components/ProductCard';
 
 interface Product {
   id: string;

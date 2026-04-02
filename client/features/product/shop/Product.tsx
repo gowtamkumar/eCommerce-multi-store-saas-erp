@@ -5,8 +5,8 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 
 import FAQ from '@/features/admin/faq/components/FAQ';
-import ProductDetails from '@/features/product/admin/ProductDetails';
-import RelatedProducts from '@/features/product/admin/RelatedProducts';
+import ProductDetails from '@/features/product/shop/ProductDetails';
+import RelatedProducts from '@/features/product/shop/RelatedProducts';
 import Reviews from '@/features/storefront/profile/components/Reviews';
 import { fetchAPI } from "@/services/api";
 import { getSiteSettings } from '@/services/getSettings';
