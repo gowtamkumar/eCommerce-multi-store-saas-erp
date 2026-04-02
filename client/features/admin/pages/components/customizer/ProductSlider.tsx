@@ -166,7 +166,10 @@ export default function ProductSlider({
             >
               {products.map((product) => (
                 <motion.div key={product.id} className="carousel-item shrink-0 pb-4">
-                  <ProductCard product={product} />
+                  <ProductCard 
+                    product={product} 
+                    cardRadius={styles?.cardRadius}
+                  />
                 </motion.div>
               ))}
             </motion.div>

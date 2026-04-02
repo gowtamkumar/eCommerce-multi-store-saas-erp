@@ -3,6 +3,7 @@ import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-s
 import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pricing-strategy.factory'
 import { PromotionTargetStrategyFactory } from '@/common/strategies/promotion/promotion-target-strategy.factory'
 import { PromotionEntity } from '@/modules/admin/sales/promotion/entities/promotion.entity'
+import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum'
 import { PromotionType } from '@/modules/admin/sales/promotion/enums/promotion-type.enum'
 import { Injectable, Logger } from '@nestjs/common'
 
@@ -155,6 +156,12 @@ export class PricingEngineService {
     let orderLevelPromoDiscount = 0
 
     for (const promo of activePromotions || []) {
+      // ENTIRE_ORDER is handled at item level to find the 'Best Deal' among all candidates.
+      // At order level, we only process promotions that depend on the total cart value.
+      if (promo.targetType !== PromotionTargetType.MINIMUM_CART_VALUE) {
+        continue
+      }
+
       const targetStrategy = PromotionTargetStrategyFactory.create(promo.targetType)
       const applies = targetStrategy.isApplicable(promo, { cartTotal: payable })
 

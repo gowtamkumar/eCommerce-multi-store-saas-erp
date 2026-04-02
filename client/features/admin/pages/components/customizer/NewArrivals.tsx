@@ -145,7 +145,10 @@ export default function NewArrivals({
             `}</style>
             {products.map((product) => (
               <motion.div key={product.id || product._id} variants={itemVariants} className="pb-4">
-                <ProductCard product={product} />
+                <ProductCard
+                  product={product}
+                  cardRadius={styles?.cardRadius}
+                />
               </motion.div>
             ))}
           </motion.div>

@@ -8,6 +8,7 @@ import { useCart } from '@/hooks/CartContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { PromotionType } from '@/lib/enums/promotion-type.enum';
+import ProductCard, { PromotionTypeBadge } from '@/features/admin/product/components/ProductCard';
 
 interface Product {
     id: string;
@@ -79,150 +80,6 @@ function useCountdown(endDate?: string) {
     return timeLeft;
 }
 
-function PromotionTypeBadge({ type }: { type: string }) {
-    const configs: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-        specific_product: { label: 'Product Deal', icon: <Package className="w-3 h-3" />, color: 'bg-violet-500' },
-        specific_category: { label: 'Category Sale', icon: <Tag className="w-3 h-3" />, color: 'bg-blue-500' },
-        specific_brand: { label: 'Brand Offer', icon: <Crown className="w-3 h-3" />, color: 'bg-amber-500' },
-        entire_order: { label: 'Sitewide Deal', icon: <Zap className="w-3 h-3" />, color: 'bg-rose-500' },
-        minimum_cart_value: { label: 'Cart Bonus', icon: <ShoppingBag className="w-3 h-3" />, color: 'bg-emerald-500' },
-    };
-    const cfg = configs[type] || { label: 'Offer', icon: <Percent className="w-3 h-3" />, color: 'bg-slate-500' };
-    return (
-        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white ${cfg.color} shadow-sm`}>
-            {cfg.icon}
-            {cfg.label}
-        </span>
-    );
-}
-
-function OfferProductCard({ product }: { product: Product }) {
-    const { addToCart } = useCart();
-    const router = useRouter();
-    const [adding, setAdding] = useState(false);
-    const { settings } = useSettings();
-    const currency = settings?.currency || 'BDT';
-
-    const handleAddToCart = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (product.stock <= 0) return;
-        setAdding(true);
-        await addToCart(product.id, 1);
-        setAdding(false);
-    };
-
-    const hasPromoDiscount = product.promoDiscount > 0;
-    const displayPrice = hasPromoDiscount ? product.finalPrice : (Number(product.price) - Number(product.discountAmount || 0));
-    const originalPrice = Number(product.price);
-    const discountPct = product.promoDiscountPercentage || (
-        product.discountAmount > 0
-            ? Math.round((Number(product.discountAmount) / originalPrice) * 100)
-            : 0
-    );
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            whileHover={{ y: -4 }}
-            transition={{ duration: 0.25 }}
-            className="group relative flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
-        >
-            <Link href={`/products/${product.slug}`} className="flex flex-col h-full">
-                {/* Image */}
-                <div className="relative aspect-[4/5] overflow-hidden bg-slate-100 dark:bg-slate-800">
-                    {product.images?.[0] ? (
-                        <img
-                            src={product.images[0]}
-                            alt={product.name}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        />
-                    ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-slate-300 dark:text-slate-600">
-                            <span className="text-6xl">📦</span>
-                        </div>
-                    )}
-
-                    {/* Badges */}
-                    <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
-                        {product.stock <= 0 ? (
-                            <span className="px-2.5 py-1 bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow">
-                                Out of Stock
-                            </span>
-                        ) : (
-                            <>
-                                {discountPct > 0 && (
-                                    <span className="px-2.5 py-1 bg-gradient-to-r from-orange-500 to-rose-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow animate-pulse">
-                                        🏷️ -{discountPct}% OFF
-                                    </span>
-                                )}
-                                <PromotionTypeBadge type={product.promotionType} />
-                            </>
-                        )}
-                    </div>
-
-                    {/* Free Shipping Badge */}
-                    {product.promotionType === PromotionType.FREE_SHIPPING && (
-                        <div className="absolute bottom-3 left-3 right-3 z-10">
-                            <span className="w-full inline-block text-center px-2 py-1 bg-emerald-500 text-white text-[10px] font-bold rounded-lg shadow">
-                                🚚 FREE SHIPPING
-                            </span>
-                        </div>
-                    )}
-                </div>
-
-                {/* Info */}
-                <div className="flex flex-col flex-grow p-4">
-                    <div className="mb-1 flex items-center gap-2">
-                        {product.category && (
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                {product.category.name}
-                            </span>
-                        )}
-                    </div>
-
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3 line-clamp-2 leading-snug group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                        {product.name}
-                    </h3>
-
-                    <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <span className="text-lg font-bold text-brand-600 dark:text-brand-400">
-                                    {currency} {Number(displayPrice).toLocaleString()}
-                                </span>
-                                {(hasPromoDiscount || Number(product.discountAmount) > 0) && (
-                                    <span className="ml-2 text-xs text-slate-400 line-through">
-                                        {currency} {originalPrice.toLocaleString()}
-                                    </span>
-                                )}
-                            </div>
-
-                            {product.stock > 0 && (
-                                <motion.button
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={handleAddToCart}
-                                    className={`w-9 h-9 rounded-full flex items-center justify-center text-sm transition-all shadow-sm ${adding
-                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-                                        : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-brand-600 dark:hover:bg-brand-400 hover:text-white dark:hover:text-white'
-                                        }`}
-                                >
-                                    {adding ? (
-                                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                    ) : (
-                                        <ShoppingBag className="w-4 h-4" />
-                                    )}
-                                </motion.button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </Link>
-        </motion.div>
-    );
-}
 
 function PromotionSection({ group }: { group: OfferGroup }) {
     const timeLeft = useCountdown(group.promotion.endDate);
@@ -232,49 +89,47 @@ function PromotionSection({ group }: { group: OfferGroup }) {
     return (
         <section className="mb-16">
             {/* Promotion Header Card */}
-            <div className={`relative overflow-hidden rounded-2xl mb-6 p-6 ${isExpiringSoon
-                ? 'bg-gradient-to-r from-rose-600 via-orange-500 to-amber-500'
-                : 'bg-gradient-to-r from-brand-600 via-violet-600 to-purple-700'
+            <div className={`relative overflow-hidden rounded-[2.5rem] mb-8 p-10 md:p-12 ${isExpiringSoon
+                ? 'bg-gradient-to-br from-rose-900 via-orange-800 to-amber-900 text-white'
+                : 'bg-slate-50 dark:bg-slate-800/20 text-slate-900 dark:text-white border border-slate-100 dark:border-slate-800'
                 }`}>
-                {/* Decorative circles */}
-                <div className="absolute -top-8 -right-8 w-36 h-36 rounded-full bg-white/10" />
-                <div className="absolute -bottom-12 -left-6 w-48 h-48 rounded-full bg-white/5" />
+                {/* Glowing background blobs */}
+                {!isExpiringSoon && (
+                    <>
+                        <div className="absolute -top-12 -right-12 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl z-0" />
+                        <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-brand-600/5 rounded-full blur-3xl z-0" />
+                    </>
+                )}
 
-                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <BadgePercent className="w-5 h-5 text-white/80" />
+                <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-4">
                             <PromotionTypeBadge type={group.promotion.targetType} />
                         </div>
-                        <Link href={`/offers/${group.promotion.slug}`} className="group/title">
-                            <h2 className="text-xl md:text-2xl font-bold text-white mt-1 flex items-center gap-2 group-hover/title:translate-x-1 transition-transform">
+                        <Link href={`/offers/${group.promotion.slug}`} className="group/title inline-block">
+                            <h2 className="text-2xl md:text-3xl font-black mb-3 flex items-center gap-2 group-hover/title:text-brand-600 dark:group-hover/title:text-brand-400 transition-colors">
                                 {group.promotion.name}
-                                <ArrowRight className="w-5 h-5 opacity-0 group-hover/title:opacity-100 transition-opacity" />
+                                <ArrowRight className="w-6 h-6 opacity-0 group-hover/title:opacity-100 group-hover/title:translate-x-1 transition-all" />
                             </h2>
                         </Link>
                         {group.promotion.description && (
-                            <p className="text-white/70 text-sm mt-1">{group.promotion.description}</p>
+                            <p className="opacity-70 text-base font-medium mb-6 max-w-2xl">{group.promotion.description}</p>
                         )}
-                        <div className="flex flex-wrap gap-3 mt-3">
+                        <div className="flex flex-wrap gap-3">
                             {group.promotion.promotionType === PromotionType.PERCENTAGE && group.promotion.value && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
+                                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-black border ${isExpiringSoon ? 'bg-white/20 border-white/20' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm'}`}>
                                     <Percent className="w-4 h-4" />
                                     {group.promotion.value}% OFF
                                 </span>
                             )}
                             {group.promotion.promotionType === PromotionType.FIXED && group.promotion.value && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
+                                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-black border ${isExpiringSoon ? 'bg-white/20 border-white/20' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm'}`}>
                                     <Tag className="w-4 h-4" />
                                     Flat Discount — {group.promotion.value} OFF
                                 </span>
                             )}
-                            {group.promotion.promotionType === PromotionType.FREE_SHIPPING && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
-                                    🚚 Free Shipping
-                                </span>
-                            )}
                             {group.promotion.minOrderValue && (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-xl text-white text-sm font-bold">
+                                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-black border ${isExpiringSoon ? 'bg-white/20 border-white/20' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm'}`}>
                                     Min. Order: {group.promotion.minOrderValue}
                                 </span>
                             )}
@@ -283,25 +138,25 @@ function PromotionSection({ group }: { group: OfferGroup }) {
 
                     {/* Countdown Timer */}
                     {hasEndDate && (
-                        <div className="shrink-0">
-                            <p className="text-white/60 text-xs font-medium mb-2 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {isExpiringSoon ? '⚡ Expiring Soon!' : 'Ends In'}
+                        <div className={`rounded-3xl p-6 border flex flex-col items-center ${isExpiringSoon ? 'bg-white/10 border-white/10 backdrop-blur-xl' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-xl'}`}>
+                            <p className={`text-[10px] font-black mb-4 uppercase tracking-[0.2em] flex items-center gap-2 ${isExpiringSoon ? 'text-white' : 'text-slate-400'}`}>
+                                <Clock className={`w-3.5 h-3.5 ${isExpiringSoon ? 'text-amber-400' : 'text-brand-500'}`} />
+                                {isExpiringSoon ? 'FLASH DEAL' : 'Time Left'}
                             </p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
                                 {[
-                                    { v: timeLeft.days, l: 'Days' },
-                                    { v: timeLeft.hours, l: 'Hrs' },
-                                    { v: timeLeft.minutes, l: 'Min' },
-                                    { v: timeLeft.seconds, l: 'Sec' },
+                                    { v: timeLeft.days, l: 'D' },
+                                    { v: timeLeft.hours, l: 'H' },
+                                    { v: timeLeft.minutes, l: 'M' },
+                                    { v: timeLeft.seconds, l: 'S' },
                                 ].map(({ v, l }) => (
                                     <div key={l} className="flex flex-col items-center">
-                                        <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
-                                            <span className="text-xl font-bold text-white tabular-nums">
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all ${isExpiringSoon ? 'bg-white/10 border-white/10' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-inner'}`}>
+                                            <span className="text-lg font-black tabular-nums">
                                                 {String(v).padStart(2, '0')}
                                             </span>
                                         </div>
-                                        <span className="text-[10px] text-white/60 mt-1 font-medium">{l}</span>
+                                        <span className={`text-[9px] mt-2 font-black uppercase opacity-40`}>{l}</span>
                                     </div>
                                 ))}
                             </div>
@@ -311,10 +166,10 @@ function PromotionSection({ group }: { group: OfferGroup }) {
             </div>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
                 <AnimatePresence>
                     {group.products.map((product) => (
-                        <OfferProductCard key={`${group.promotion.id}-${product.id}`} product={product} />
+                        <ProductCard key={`${group.promotion.id}-${product.id}`} product={product} />
                     ))}
                 </AnimatePresence>
             </div>
@@ -364,14 +219,13 @@ export default function OffersPage({ offerGroups, promotions }: OffersPageProps)
                 {offersSettings.bannerShow && (
                     <div
                         style={bannerStyle}
-                        className={`relative overflow-hidden ${offersSettings.bannerFullWidth ? '' : 'rounded-3xl'} mb-12 flex flex-col items-center justify-center p-8 md:p-12 text-center ${!offersSettings.bannerBackgroundColor && !offersSettings.bannerImage ? 'bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900' : ''}`}
+                        className={`relative overflow-hidden ${offersSettings.bannerFullWidth ? '' : 'rounded-[3rem]'} mb-16 flex flex-col items-center justify-center p-12 md:p-24 text-center ${!offersSettings.bannerBackgroundColor && !offersSettings.bannerImage ? 'bg-slate-50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800' : ''}`}
                     >
                         {/* Glowing background blobs - only show if no image */}
                         {!offersSettings.bannerImage && (
                             <>
-                                <div className="absolute top-0 left-1/4 w-72 h-72 bg-violet-600/30 rounded-full blur-3xl pointer-events-none" />
-                                <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-rose-600/20 rounded-full blur-3xl pointer-events-none" />
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 bg-brand-500/20 rounded-full blur-3xl pointer-events-none" />
+                                <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl z-0" />
+                                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-brand-600/5 rounded-full blur-3xl z-0" />
                             </>
                         )}
 
@@ -393,10 +247,10 @@ export default function OffersPage({ offerGroups, promotions }: OffersPageProps)
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 }}
-                                className="text-4xl md:text-6xl font-bold mb-4"
+                                className="text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight tracking-tight"
                                 style={{ color: 'inherit' }}
                             >
-                                {(offersSettings.bannerHeadline || '').includes('🔥') ? (offersSettings.bannerHeadline || '').split(' ')[0] : '🔥'} {(offersSettings.bannerHeadline || '').replace(/🔥/g, '')}
+                                {(offersSettings.bannerHeadline || '').includes('🔥') ? (offersSettings.bannerHeadline || '').split(' ')[0] : '🔥'} {(offersSettings.bannerHeadline || '').replace(/🔥/g, '') || "Special Offers"}
                             </motion.h1>
                             <motion.p
                                 initial={{ opacity: 0, y: 10 }}
@@ -491,10 +345,10 @@ export default function OffersPage({ offerGroups, promotions }: OffersPageProps)
                                     <PromotionSectionHeader group={group} />
 
                                     {/* Products Grid */}
-                                    <div className={`grid ${gridCols} gap-4`}>
+                                    <div className={`grid ${gridCols} gap-8`}>
                                         <AnimatePresence>
                                             {group.products.map((product) => (
-                                                <OfferProductCard key={`${group.promotion.id}-${product.id}`} product={product} />
+                                                <ProductCard key={`${group.promotion.id}-${product.id}`} product={product} />
                                             ))}
                                         </AnimatePresence>
                                     </div>

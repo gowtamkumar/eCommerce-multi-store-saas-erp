@@ -17,6 +17,7 @@ export function formatCurrency(amount: number, currencySymbol?: string): string 
 }
 
 export function calculatePricing(price: number, discountAmount: number, discountType: DiscountType | string, taxRate: number) {
+
   let discountedPrice = price;
   if (discountAmount > 0) {
     if (discountType === DiscountType.PERCENTAGE) {
@@ -28,6 +29,8 @@ export function calculatePricing(price: number, discountAmount: number, discount
 
   const taxAmount = (discountedPrice * taxRate) / 100;
   const finalPrice = discountedPrice + taxAmount;
+
+  console.log("finalPrice", finalPrice);
 
   return {
     price,

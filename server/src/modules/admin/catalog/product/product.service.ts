@@ -35,7 +35,7 @@ export class ProductService {
     private readonly inventoryService: InventoryTransactionService,
     private readonly purchaseOrderService: PurchaseOrderService,
     private readonly promotionService: PromotionService,
-  ) {}
+  ) { }
 
   private async attachPromotions(product: any, tenantId: string): Promise<AugmentedProduct> {
     this.logger.log(`${this.attachPromotions.name} Service Called`)
@@ -45,14 +45,20 @@ export class ProductService {
       if (!activePromos || activePromos.length === 0) return product
 
       const applicablePromotions = activePromos.filter((promo) => {
-        if (promo.targetType === 'specific_product' && promo.targetId === product.id) return true
+        if (promo.targetType === PromotionTargetType.SPECIFIC_PRODUCT && promo.targetId === product.id)
+          return true
         if (
-          promo.targetType === 'specific_category' &&
+          promo.targetType === PromotionTargetType.SPECIFIC_CATEGORY &&
           (promo.targetId === product.categoryId ||
             (product.category && promo.targetId === product.category.id))
         )
           return true
-        if (promo.targetType === 'specific_brand' && promo.targetId === product.brandId) return true
+        if (
+          promo.targetType === PromotionTargetType.SPECIFIC_BRAND &&
+          promo.targetId === product.brandId
+        )
+          return true
+        if (promo.targetType === PromotionTargetType.ENTIRE_ORDER) return true
         return false
       })
 
@@ -86,7 +92,7 @@ export class ProductService {
       }
 
       return {
-        ...(product instanceof ProductEntity ? (product as any) : product),
+        ...(product instanceof ProductEntity ? (product as ProductEntity) : product),
         applicablePromotions,
         discountAmount: finalDiscountAmount,
         discountType: finalDiscountType,
@@ -125,6 +131,7 @@ export class ProductService {
             promo.targetId === product.brandId
           )
             return true
+          if (promo.targetType === PromotionTargetType.ENTIRE_ORDER) return true
           return false
         })
 
@@ -160,7 +167,7 @@ export class ProductService {
         }
 
         return {
-          ...(product instanceof ProductEntity ? (product as any) : product),
+          ...(product instanceof ProductEntity ? (product as ProductEntity) : product),
           applicablePromotions,
           discountAmount: finalDiscountAmount,
           discountType: finalDiscountType,

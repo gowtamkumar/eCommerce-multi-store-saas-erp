@@ -8,6 +8,7 @@ import { useCart } from '@/hooks/CartContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { PromotionType } from '@/lib/enums/promotion-type.enum';
+import ProductCard, { PromotionTypeBadge } from '@/features/admin/product/components/ProductCard';
 
 interface Product {
     id: string;
@@ -74,118 +75,6 @@ function useCountdown(endDate?: string) {
     return timeLeft;
 }
 
-function PromotionTypeBadge({ type }: { type: string }) {
-    const configs: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-        specific_product: { label: 'Product Deal', icon: <Package className="w-3 h-3" />, color: 'bg-violet-500' },
-        specific_category: { label: 'Category Sale', icon: <Tag className="w-3 h-3" />, color: 'bg-blue-500' },
-        specific_brand: { label: 'Brand Offer', icon: <Crown className="w-3 h-3" />, color: 'bg-amber-500' },
-        entire_order: { label: 'Sitewide Deal', icon: <Zap className="w-3 h-3" />, color: 'bg-rose-500' },
-        minimum_cart_value: { label: 'Cart Bonus', icon: <ShoppingBag className="w-3 h-3" />, color: 'bg-emerald-500' },
-    };
-    const cfg = configs[type] || { label: 'Offer', icon: <Percent className="w-3 h-3" />, color: 'bg-slate-500' };
-    return (
-        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white ${cfg.color} shadow-sm`}>
-            {cfg.icon}
-            {cfg.label}
-        </span>
-    );
-}
-
-function OfferProductCard({ product }: { product: Product }) {
-    const { addToCart } = useCart();
-    const [adding, setAdding] = useState(false);
-    const { settings } = useSettings();
-    const currency = settings?.currency || 'BDT';
-
-    const handleAddToCart = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (product.stock <= 0) return;
-        setAdding(true);
-        await addToCart(product.id, 1);
-        setAdding(false);
-    };
-
-    const hasPromoDiscount = product.promoDiscount > 0;
-    const displayPrice = hasPromoDiscount ? product.finalPrice : (Number(product.price) - Number(product.discountAmount || 0));
-    const originalPrice = Number(product.price);
-    const discountPct = product.promoDiscountPercentage || (
-        product.discountAmount > 0
-            ? Math.round((Number(product.discountAmount) / originalPrice) * 100)
-            : 0
-    );
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: -4 }}
-            className="group relative flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
-        >
-            <Link href={`/products/${product.slug}`} className="flex flex-col h-full">
-                <div className="relative aspect-[4/5] overflow-hidden bg-slate-100 dark:bg-slate-800">
-                    {product.images?.[0] ? (
-                        <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-slate-300 dark:text-slate-600">
-                            <span className="text-6xl">📦</span>
-                        </div>
-                    )}
-
-                    <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
-                        {product.stock <= 0 ? (
-                            <span className="px-2.5 py-1 bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow">Out of Stock</span>
-                        ) : (
-                            discountPct > 0 && (
-                                <span className="px-2.5 py-1 bg-gradient-to-r from-orange-500 to-rose-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow animate-pulse">
-                                    🏷️ -{discountPct}% OFF
-                                </span>
-                            )
-                        )}
-                    </div>
-                </div>
-
-                <div className="flex flex-col flex-grow p-4">
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3 line-clamp-2 leading-snug group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                        {product.name}
-                    </h3>
-
-                    <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <span className="text-lg font-bold text-brand-600 dark:text-brand-400">
-                                    {currency} {Number(displayPrice).toLocaleString()}
-                                </span>
-                                {(hasPromoDiscount || Number(product.discountAmount) > 0) && (
-                                    <span className="ml-2 text-xs text-slate-400 line-through">
-                                        {currency} {originalPrice.toLocaleString()}
-                                    </span>
-                                )}
-                            </div>
-
-                            {product.stock > 0 && (
-                                <motion.button
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={handleAddToCart}
-                                    className={`w-9 h-9 rounded-full flex items-center justify-center text-sm transition-all shadow-sm ${adding
-                                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-                                        : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-brand-600 dark:hover:bg-brand-400'
-                                        }`}
-                                >
-                                    {adding ? (
-                                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                    ) : (
-                                        <ShoppingBag className="w-4 h-4" />
-                                    )}
-                                </motion.button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </Link>
-        </motion.div>
-    );
-}
 
 export default function PromotionDetails({ promotion, products }: PromotionDetailsProps) {
     const timeLeft = useCountdown(promotion.endDate);
@@ -201,52 +90,62 @@ export default function PromotionDetails({ promotion, products }: PromotionDetai
                 </Link>
 
                 {/* Hero Header */}
-                <div className={`relative overflow-hidden rounded-3xl mb-12 p-8 md:p-12 ${isExpiringSoon
-                    ? 'bg-gradient-to-br from-rose-900 via-orange-800 to-amber-900'
-                    : 'bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900'
+                <div className={`relative overflow-hidden rounded-[3rem] mb-16 p-12 md:p-16 ${isExpiringSoon
+                    ? 'bg-gradient-to-br from-rose-900 via-orange-800 to-amber-900 text-white'
+                    : 'bg-slate-50 dark:bg-slate-800/20 text-slate-900 dark:text-white border border-slate-100 dark:border-slate-800'
                     }`}>
                     {/* Glowing background blobs */}
-                    <div className="absolute top-0 left-1/4 w-72 h-72 bg-violet-600/20 rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-rose-600/10 rounded-full blur-3xl pointer-events-none" />
+                    {!isExpiringSoon && (
+                        <>
+                            <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl z-0" />
+                            <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-brand-600/5 rounded-full blur-3xl z-0" />
+                        </>
+                    )}
+                    {isExpiringSoon && (
+                        <>
+                            <div className="absolute top-0 left-1/4 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+                            <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+                        </>
+                    )}
 
-                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-                        <div className="max-w-2xl">
-                            <div className="flex items-center gap-3 mb-4">
+                    <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-12">
+                        <div className="max-w-3xl">
+                            <div className="flex items-center gap-3 mb-6">
                                 <PromotionTypeBadge type={promotion.targetType} />
                                 {promotion.isActive ? (
-                                    <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-full border border-emerald-500/30">
+                                    <span className={`px-3 py-1.5 backdrop-blur-md text-[10px] font-black uppercase tracking-widest rounded-full border ${isExpiringSoon ? 'bg-white/10 text-white border-white/20' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'}`}>
                                         Active Now
                                     </span>
                                 ) : (
-                                    <span className="px-2.5 py-1 bg-slate-500/20 text-slate-400 text-[10px] font-bold uppercase tracking-wider rounded-full border border-slate-500/30">
+                                    <span className={`px-3 py-1.5 backdrop-blur-md text-[10px] font-black uppercase tracking-widest rounded-full border ${isExpiringSoon ? 'bg-white/10 text-white border-white/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
                                         Ended
                                     </span>
                                 )}
                             </div>
-                            <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
+                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight tracking-tight">
                                 {promotion.name}
                             </h1>
-                            <p className="text-slate-300 text-lg mb-6 leading-relaxed">
+                            <p className="text-lg md:text-xl font-medium opacity-80 mb-8 max-w-2xl">
                                 {promotion.description || "Grab these limited time deals while they last! Our best prices on premium products."}
                             </p>
 
                             <div className="flex flex-wrap gap-4">
                                 {promotion.promotionType === PromotionType.PERCENTAGE && promotion.value && (
-                                    <div className="flex flex-col bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 min-w-[120px]">
-                                        <span className="text-white/60 text-xs font-medium mb-1">Discount</span>
-                                        <span className="text-2xl font-bold text-white uppercase">{promotion.value}% OFF</span>
+                                    <div className={`flex flex-col rounded-3xl p-6 border min-w-[160px] ${isExpiringSoon ? 'bg-white/10 border-white/10' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm'}`}>
+                                        <span className="opacity-60 text-[10px] font-black uppercase tracking-widest mb-1">Discount</span>
+                                        <span className="text-3xl font-black">{promotion.value}% OFF</span>
                                     </div>
                                 )}
                                 {promotion.promotionType === PromotionType.FIXED && promotion.value && (
-                                    <div className="flex flex-col bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 min-w-[120px]">
-                                        <span className="text-white/60 text-xs font-medium mb-1">Flat Discount</span>
-                                        <span className="text-2xl font-bold text-white">{promotion.value} OFF</span>
+                                    <div className={`flex flex-col rounded-3xl p-6 border min-w-[160px] ${isExpiringSoon ? 'bg-white/10 border-white/10' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm'}`}>
+                                        <span className="opacity-60 text-[10px] font-black uppercase tracking-widest mb-1">Flat Discount</span>
+                                        <span className="text-3xl font-black">{promotion.value} OFF</span>
                                     </div>
                                 )}
                                 {promotion.minOrderValue && (
-                                    <div className="flex flex-col bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 min-w-[120px]">
-                                        <span className="text-white/60 text-xs font-medium mb-1">Min. Purchase</span>
-                                        <span className="text-2xl font-bold text-white">{promotion.minOrderValue}</span>
+                                    <div className={`flex flex-col rounded-3xl p-6 border min-w-[160px] ${isExpiringSoon ? 'bg-white/10 border-white/10' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm'}`}>
+                                        <span className="opacity-60 text-[10px] font-black uppercase tracking-widest mb-1">Min. Purchase</span>
+                                        <span className="text-3xl font-black">{promotion.minOrderValue}</span>
                                     </div>
                                 )}
                             </div>
@@ -254,12 +153,12 @@ export default function PromotionDetails({ promotion, products }: PromotionDetai
 
                         {/* Countdown Timer */}
                         {hasEndDate && (
-                            <div className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/10 flex flex-col items-center">
-                                <p className="text-white/60 text-xs font-bold mb-4 uppercase tracking-widest flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-amber-400" />
+                            <div className={`rounded-[3rem] p-8 border flex flex-col items-center ${isExpiringSoon ? 'bg-white/10 border-white/10 backdrop-blur-xl' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-xl'}`}>
+                                <p className={`text-[10px] font-black mb-6 uppercase tracking-[0.2em] flex items-center gap-2 ${isExpiringSoon ? 'text-white' : 'text-slate-400'}`}>
+                                    <Clock className={`w-4 h-4 ${isExpiringSoon ? 'text-amber-400' : 'text-brand-500'}`} />
                                     {isExpiringSoon ? 'Hurry! Expiring Soon' : 'Promotion Ends In'}
                                 </p>
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-4 sm:gap-6">
                                     {[
                                         { v: timeLeft.days, l: 'Days' },
                                         { v: timeLeft.hours, l: 'Hrs' },
@@ -267,12 +166,12 @@ export default function PromotionDetails({ promotion, products }: PromotionDetai
                                         { v: timeLeft.seconds, l: 'Sec' },
                                     ].map(({ v, l }) => (
                                         <div key={l} className="flex flex-col items-center">
-                                            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/10">
-                                                <span className="text-2xl font-black text-white tabular-nums">
+                                            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center border transition-all ${isExpiringSoon ? 'bg-white/10 border-white/10' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-inner'}`}>
+                                                <span className="text-2xl sm:text-3xl font-black tabular-nums">
                                                     {String(v).padStart(2, '0')}
                                                 </span>
                                             </div>
-                                            <span className="text-[10px] text-white/40 mt-2 font-bold uppercase tracking-widest">{l}</span>
+                                            <span className={`text-[10px] mt-3 font-black uppercase tracking-widest opacity-40`}>{l}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -296,9 +195,9 @@ export default function PromotionDetails({ promotion, products }: PromotionDetai
                         <p className="text-slate-500">There are currently no active products in this promotion.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
                         {products.map((product) => (
-                            <OfferProductCard key={product.id} product={product} />
+                            <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
                 )}
