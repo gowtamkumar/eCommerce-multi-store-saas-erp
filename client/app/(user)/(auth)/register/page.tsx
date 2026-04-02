@@ -1,4 +1,4 @@
-import Register from '@/features/user/auth/components/Register'
+import Register from '@/features/storefront/auth/components/Register'
 
 function page() {
   return (

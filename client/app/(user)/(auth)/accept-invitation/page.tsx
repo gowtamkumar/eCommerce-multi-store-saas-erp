@@ -1,6 +1,6 @@
 'use client';
 
-import AcceptInvitation from '@/features/user/auth/components/AcceptInvitation';
+import AcceptInvitation from '@/features/storefront/auth/components/AcceptInvitation';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 

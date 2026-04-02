@@ -4,7 +4,7 @@ import { fetchAPI } from "@/services/api";
 import { useEffect, useState, useMemo } from "react";
 import SectionHeader from "./SectionHeader";
 import { motion } from "framer-motion";
-import ProductCard from "@/features/admin/product/components/ProductCard";
+import ProductCard from "@/features/product/components/ProductCard";
 
 interface NewArrivalsProps {
   sectionId?: string;

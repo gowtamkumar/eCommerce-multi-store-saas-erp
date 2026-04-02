@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import SectionHeader from "./SectionHeader";
 import { animate, motion, useMotionValue } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import ProductCard from "@/features/admin/product/components/ProductCard";
+import ProductCard from "@/features/product/components/ProductCard";
 import { ProductSliderProps } from "../../../type";
 
 export default function ProductSlider({

@@ -144,17 +144,17 @@ export default function WishlistPage() {
                           amount={finalPrice}
                           className="text-2xl font-black text-slate-900 dark:text-white"
                           showOriginal={discountAmount > 0}
-                          originalAmount={Number(basePrice)}
+                          originalAmount={Number(basePrice) + Number(product.taxRate || 0)}
                         />
 
                         <button
                           onClick={() => handleAddToCart(product)}
                           disabled={addingToCart === product.id || product.stock <= 0}
                           className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all ${addingToCart === product.id
-                              ? "bg-slate-100 text-slate-400 dark:bg-slate-800"
-                              : product.stock <= 0
-                                ? "bg-slate-100 text-slate-400 dark:bg-slate-800 cursor-not-allowed"
-                                : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-brand-600 dark:hover:bg-brand-400 hover:text-white dark:hover:text-white shadow-lg active:scale-95"
+                            ? "bg-slate-100 text-slate-400 dark:bg-slate-800"
+                            : product.stock <= 0
+                              ? "bg-slate-100 text-slate-400 dark:bg-slate-800 cursor-not-allowed"
+                              : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-brand-600 dark:hover:bg-brand-400 hover:text-white dark:hover:text-white shadow-lg active:scale-95"
                             }`}
                         >
                           {addingToCart === product.id ? (

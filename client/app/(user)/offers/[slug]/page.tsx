@@ -1,7 +1,7 @@
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import WhatsAppWidget from '@/components/shared/WhatsAppWidget';
-import PromotionDetails from '@/features/admin/promotion/components/PromotionDetails';
+import PromotionDetails from '@/features/promotion/shop/PromotionDetails';
 import { getSiteSettings } from '@/services/getSettings';
 import { getPromotionBySlug } from '@/services/promotion';
 import { getTenantId } from '@/services/tenant';

@@ -1,4 +1,4 @@
-import VerifyEmail from '@/features/user/auth/components/VerifyEmail'
+import VerifyEmail from '@/features/storefront/auth/components/VerifyEmail'
 
 function page() {
     return (

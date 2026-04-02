@@ -1,7 +1,7 @@
 'use client';
 
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
-import ProductCard from '@/features/admin/product/components/ProductCard';
+import ProductCard from '@/features/product/components/ProductCard';
 import { Trash2, History } from 'lucide-react';
 
 export default function RecentlyViewedProducts() {

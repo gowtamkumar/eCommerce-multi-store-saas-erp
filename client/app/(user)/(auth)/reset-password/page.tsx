@@ -1,4 +1,4 @@
-import ResetPassword from '@/features/user/auth/components/ResetPassword'
+import ResetPassword from '@/features/storefront/auth/components/ResetPassword'
 
 function page() {
     return (

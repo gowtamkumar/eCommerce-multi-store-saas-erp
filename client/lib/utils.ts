@@ -33,7 +33,7 @@ export function calculatePricing(price: number, discountAmount: number, discount
   console.log("finalPrice", finalPrice);
 
   return {
-    price,
+    price: +price + Number(taxRate || 0),
     discountAmount,
     discountType,
     taxRate,

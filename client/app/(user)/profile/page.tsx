@@ -1,4 +1,4 @@
-import Profile from "@/features/user/profile/components/Profile";
+import Profile from "@/features/storefront/profile/components/Profile";
 
 export default function page() {
     return (

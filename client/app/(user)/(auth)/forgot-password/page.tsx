@@ -1,4 +1,4 @@
-import ForgotPassword from "@/features/user/auth/components/ForgotPassword"
+import ForgotPassword from "@/features/storefront/auth/components/ForgotPassword"
 
 function page() {
     return <ForgotPassword />

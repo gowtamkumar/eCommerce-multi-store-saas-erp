@@ -1,4 +1,4 @@
-import Login from "@/features/user/auth/components/Login"
+import Login from "@/features/storefront/auth/components/Login"
 
 function page() {
     return <Login />
