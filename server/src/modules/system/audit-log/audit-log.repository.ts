@@ -1,19 +1,21 @@
 import { Injectable } from '@nestjs/common'
-import { Between, DataSource, FindOptionsWhere, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Between, FindOptionsWhere, Repository } from 'typeorm'
 import { AuditLogEntity } from './entities/audit-log.entity'
 
 @Injectable()
-export class AuditLogRepository extends Repository<AuditLogEntity> {
-  constructor(private dataSource: DataSource) {
-    super(AuditLogEntity, dataSource.createEntityManager())
-  }
+export class AuditLogRepository {
+  constructor(
+    @InjectRepository(AuditLogEntity)
+    private readonly repo: Repository<AuditLogEntity>,
+  ) { }
 
   async createAndSave(tenantId: string, data: any): Promise<void> {
-    const entry = this.create({
+    const entry = this.repo.create({
       ...data,
       tenantId,
     })
-    await this.save(entry)
+    await this.repo.save(entry)
   }
 
   async findAllWithFilters(
@@ -41,7 +43,7 @@ export class AuditLogRepository extends Repository<AuditLogEntity> {
       where.createdAt = Between(new Date(from), new Date(to))
     }
 
-    return await this.findAndCount({
+    return await this.repo.findAndCount({
       where,
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
@@ -50,15 +52,16 @@ export class AuditLogRepository extends Repository<AuditLogEntity> {
   }
 
   async findById(id: string, tenantId: string): Promise<AuditLogEntity | null> {
-    return await this.findOne({ where: { id, tenantId } })
+    return await this.repo.findOne({ where: { id, tenantId } })
   }
 
   async deleteOlderThan(tenantId: string, cutoff: Date): Promise<void> {
-    await this.createQueryBuilder()
+    await this.repo.createQueryBuilder()
       .delete()
       .from(AuditLogEntity)
       .where('tenant_id = :tenantId', { tenantId })
       .andWhere('created_at < :cutoff', { cutoff })
       .execute()
   }
+
 }

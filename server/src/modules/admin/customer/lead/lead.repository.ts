@@ -1,19 +1,21 @@
 import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
 @Injectable()
-export class LeadRepository extends Repository<LeadEntity> {
-  constructor(private dataSource: DataSource) {
-    super(LeadEntity, dataSource.createEntityManager())
-  }
+export class LeadRepository {
+  constructor(
+    @InjectRepository(LeadEntity)
+    private readonly repo: Repository<LeadEntity>,
+  ) { }
 
   async findAllWithFilters(
     filterDto: any,
     tenantId: string,
   ): Promise<{ leads: LeadEntity[]; total: number }> {
     const { page = 1, limit = 10, q, status } = filterDto
-    const query = this.createQueryBuilder('lead').where('lead.tenantId = :tenantId', { tenantId })
+    const query = this.repo.createQueryBuilder('lead').where('lead.tenantId = :tenantId', { tenantId })
 
     if (status) {
       query.andWhere('lead.status = :status', { status })
@@ -33,16 +35,16 @@ export class LeadRepository extends Repository<LeadEntity> {
   }
 
   async findById(id: string, tenantId: string): Promise<LeadEntity | null> {
-    return this.findOne({ where: { id, tenantId } })
+    return this.repo.findOne({ where: { id, tenantId } })
   }
 
   async createAndSave(dto: any, tenantId: string): Promise<LeadEntity> {
-    const lead = this.create({ ...dto, tenantId } as LeadEntity)
-    return this.save(lead)
+    const lead = this.repo.create({ ...dto, tenantId } as LeadEntity)
+    return this.repo.save(lead)
   }
 
   async updateAndSave(lead: LeadEntity, dto: any): Promise<LeadEntity> {
     Object.assign(lead, dto)
-    return this.save(lead)
+    return this.repo.save(lead)
   }
 }

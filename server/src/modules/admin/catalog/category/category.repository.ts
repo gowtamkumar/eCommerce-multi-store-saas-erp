@@ -1,31 +1,33 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { CategoryEntity } from './entities/category.entity'
 
 @Injectable()
-export class CategoryRepository extends Repository<CategoryEntity> {
-  constructor(private dataSource: DataSource) {
-    super(CategoryEntity, dataSource.createEntityManager())
-  }
+export class CategoryRepository {
+  constructor(
+    @InjectRepository(CategoryEntity)
+    private readonly repo: Repository<CategoryEntity>,
+  ) { }
 
   async findBySlug(slug: string, tenantId: string): Promise<CategoryEntity | null> {
-    return this.findOne({ where: { slug, tenantId } })
+    return this.repo.findOne({ where: { slug, tenantId } })
   }
 
   async findById(id: string, tenantId: string): Promise<CategoryEntity | null> {
-    return this.findOne({ where: { id, tenantId } })
+    return this.repo.findOne({ where: { id, tenantId } })
   }
 
   async findAllByTenant(tenantId: string): Promise<CategoryEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { tenantId },
       order: { name: 'ASC' },
     })
   }
 
   async createAndSave(data: Partial<CategoryEntity>): Promise<CategoryEntity> {
-    const category = this.create(data as CategoryEntity)
-    return this.save(category)
+    const category = this.repo.create(data as CategoryEntity)
+    return this.repo.save(category)
   }
 
   async updateAndSave(
@@ -33,10 +35,11 @@ export class CategoryRepository extends Repository<CategoryEntity> {
     data: Partial<CategoryEntity>,
   ): Promise<CategoryEntity> {
     Object.assign(category, data)
-    return this.save(category)
+    return this.repo.save(category)
   }
 
   async removeCategory(category: CategoryEntity): Promise<void> {
-    await this.softRemove(category)
+    await this.repo.softRemove(category)
   }
+
 }

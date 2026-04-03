@@ -1,24 +1,26 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { SubscriberEntity } from './entities/subscriber.entity'
 
 @Injectable()
-export class SubscriberRepository extends Repository<SubscriberEntity> {
-  constructor(private dataSource: DataSource) {
-    super(SubscriberEntity, dataSource.createEntityManager())
-  }
+export class SubscriberRepository {
+  constructor(
+    @InjectRepository(SubscriberEntity)
+    private readonly repo: Repository<SubscriberEntity>,
+  ) { }
 
   async findByEmail(email: string): Promise<SubscriberEntity | null> {
-    return this.findOne({ where: { email } })
+    return this.repo.findOne({ where: { email } })
   }
 
   async createAndSave(dto: any): Promise<SubscriberEntity> {
-    const subscriber = this.create(dto as SubscriberEntity)
-    return this.save(subscriber)
+    const subscriber = this.repo.create(dto as SubscriberEntity)
+    return this.repo.save(subscriber)
   }
 
   async findAllDesc(): Promise<SubscriberEntity[]> {
-    return this.find({
+    return this.repo.find({
       order: { createdAt: 'DESC' },
     })
   }

@@ -11,6 +11,7 @@ import {
 } from '@/common/strategies/order/order-strategy.interface'
 import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
+import { InvoiceEntity } from '@/modules/admin/operations/finance/invoice/entities/invoice.entity'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
@@ -169,7 +170,7 @@ export class OrderService {
       })
 
       // Fetch invoice count and number if needed
-      const invoice = await manager.withRepository(this.invoiceService['invoiceRepository']).findOne({
+      const invoice = await manager.getRepository(InvoiceEntity).findOne({
         where: { orderId: savedOrder.id, tenantId }
       })
 

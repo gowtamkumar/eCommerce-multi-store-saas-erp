@@ -1,25 +1,27 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { WishlistEntity } from './entities/wishlist.entity'
 
 @Injectable()
-export class WishlistRepository extends Repository<WishlistEntity> {
-  constructor(private dataSource: DataSource) {
-    super(WishlistEntity, dataSource.createEntityManager())
-  }
+export class WishlistRepository {
+  constructor(
+    @InjectRepository(WishlistEntity)
+    private readonly repo: Repository<WishlistEntity>,
+  ) { }
 
   async findByUserAndProduct(
     userId: string,
     productId: string,
     tenantId: string,
   ): Promise<WishlistEntity | null> {
-    return this.findOne({
+    return this.repo.findOne({
       where: { userId, productId, tenantId },
     })
   }
 
   async findByUserId(userId: string, tenantId: string): Promise<WishlistEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { userId, tenantId },
       relations: ['product', 'product.variants', 'product.category'],
       order: { createdAt: 'DESC' },
@@ -27,18 +29,19 @@ export class WishlistRepository extends Repository<WishlistEntity> {
   }
 
   async clearWishlist(userId: string, tenantId: string): Promise<void> {
-    await this.delete({ userId, tenantId })
+    await this.repo.delete({ userId, tenantId })
   }
 
   async toggleWishlist(userId: string, productId: string, tenantId: string): Promise<boolean> {
     const existing = await this.findByUserAndProduct(userId, productId, tenantId)
     if (existing) {
-      await this.remove(existing)
+      await this.repo.remove(existing)
       return false // Removed
     } else {
-      const newItem = this.create({ userId, productId, tenantId })
-      await this.save(newItem)
+      const newItem = this.repo.create({ userId, productId, tenantId })
+      await this.repo.save(newItem)
       return true // Added
     }
   }
+
 }

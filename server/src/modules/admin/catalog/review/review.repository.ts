@@ -1,20 +1,22 @@
 import { ReviewStatus } from '@/common/enums/review-status.enum'
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { ReviewEntity } from './entities/review.entity'
 
 @Injectable()
-export class ReviewRepository extends Repository<ReviewEntity> {
-  constructor(private dataSource: DataSource) {
-    super(ReviewEntity, dataSource.createEntityManager())
-  }
+export class ReviewRepository {
+  constructor(
+    @InjectRepository(ReviewEntity)
+    private readonly repo: Repository<ReviewEntity>,
+  ) { }
 
   async findAllWithFilters(
     filterDto: any,
     tenantId: string,
   ): Promise<{ reviews: ReviewEntity[]; total: number }> {
     const { page, limit, q, status } = filterDto
-    const query = this.createQueryBuilder('review').where('review.tenantId = :tenantId', {
+    const query = this.repo.createQueryBuilder('review').where('review.tenantId = :tenantId', {
       tenantId,
     })
 
@@ -36,34 +38,35 @@ export class ReviewRepository extends Repository<ReviewEntity> {
   }
 
   async findPublicReviews(tenantId: string): Promise<ReviewEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { tenantId, status: ReviewStatus.APPROVED },
       order: { createdAt: 'DESC' },
     })
   }
 
   async findByProductReviews(productId: string, tenantId: string): Promise<ReviewEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { productId, tenantId },
       order: { createdAt: 'DESC' },
     })
   }
 
   async findById(id: string, tenantId: string): Promise<ReviewEntity | null> {
-    return this.findOne({ where: { id, tenantId } })
+    return this.repo.findOne({ where: { id, tenantId } })
   }
 
   async createAndSave(dto: any, tenantId: string): Promise<ReviewEntity> {
-    const review = this.create({ ...dto, tenantId } as ReviewEntity)
-    return this.save(review)
+    const review = this.repo.create({ ...dto, tenantId } as ReviewEntity)
+    return this.repo.save(review)
   }
 
   async updateAndSave(review: ReviewEntity, dto: any): Promise<ReviewEntity> {
     Object.assign(review, dto)
-    return this.save(review)
+    return this.repo.save(review)
   }
 
   async removeReview(review: ReviewEntity): Promise<void> {
-    await this.softRemove(review)
+    await this.repo.softRemove(review)
   }
+
 }

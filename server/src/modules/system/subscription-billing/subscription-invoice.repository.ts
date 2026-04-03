@@ -1,20 +1,22 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { SubscriptionInvoiceEntity } from './entities/subscription-invoice.entity'
 
 @Injectable()
-export class SubscriptionInvoiceRepository extends Repository<SubscriptionInvoiceEntity> {
-  constructor(private dataSource: DataSource) {
-    super(SubscriptionInvoiceEntity, dataSource.createEntityManager())
-  }
+export class SubscriptionInvoiceRepository {
+  constructor(
+    @InjectRepository(SubscriptionInvoiceEntity)
+    private readonly repo: Repository<SubscriptionInvoiceEntity>,
+  ) { }
 
   async createAndSave(data: any): Promise<SubscriptionInvoiceEntity> {
-    const invoice = this.create(data) as any
-    return await this.save(invoice)
+    const invoice = this.repo.create(data) as any
+    return await this.repo.save(invoice)
   }
 
   async findAllByTenant(tenantId: string): Promise<SubscriptionInvoiceEntity[]> {
-    return await this.find({
+    return await this.repo.find({
       where: { tenantId },
       relations: ['subscriptionPlan'],
       order: { billingDate: 'DESC' },
@@ -22,7 +24,7 @@ export class SubscriptionInvoiceRepository extends Repository<SubscriptionInvoic
   }
 
   async findByTransactionId(transactionId: string): Promise<SubscriptionInvoiceEntity | null> {
-    return await this.findOne({
+    return await this.repo.findOne({
       where: { transactionId },
       relations: ['subscriptionPlan'],
     })
@@ -33,6 +35,7 @@ export class SubscriptionInvoiceRepository extends Repository<SubscriptionInvoic
     data: any,
   ): Promise<SubscriptionInvoiceEntity> {
     Object.assign(invoice, data)
-    return await this.save(invoice)
+    return await this.repo.save(invoice)
   }
+
 }

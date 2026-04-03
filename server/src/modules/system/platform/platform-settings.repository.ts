@@ -1,19 +1,21 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { PlatformSettingsEntity } from './entities/platform-settings.entity'
 
 @Injectable()
-export class PlatformSettingsRepository extends Repository<PlatformSettingsEntity> {
-  constructor(private dataSource: DataSource) {
-    super(PlatformSettingsEntity, dataSource.createEntityManager())
-  }
+export class PlatformSettingsRepository {
+  constructor(
+    @InjectRepository(PlatformSettingsEntity)
+    private readonly repo: Repository<PlatformSettingsEntity>,
+  ) { }
 
   async findSettings(): Promise<PlatformSettingsEntity | null> {
-    return await this.findOne({ where: {} })
+    return await this.repo.findOne({ where: {} })
   }
 
   async createDefaultSettings(): Promise<PlatformSettingsEntity> {
-    const settings = this.create({
+    const settings = this.repo.create({
       brandName: 'YourSaaS',
       brandLogo: '',
       supportEmail: 'support@yoursaas.com',
@@ -72,7 +74,7 @@ export class PlatformSettingsRepository extends Repository<PlatformSettingsEntit
         },
       },
     })
-    return await this.save(settings)
+    return await this.repo.save(settings)
   }
 
   async updateAndSave(
@@ -80,6 +82,7 @@ export class PlatformSettingsRepository extends Repository<PlatformSettingsEntit
     data: any,
   ): Promise<PlatformSettingsEntity> {
     Object.assign(settings, data)
-    return await this.save(settings)
+    return await this.repo.save(settings)
   }
+
 }

@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, EntityManager, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { EntityManager, Repository } from 'typeorm'
 import { SupplierPaymentEntity } from './entities/supplier-payment.entity'
 
 @Injectable()
-export class SupplierPaymentRepository extends Repository<SupplierPaymentEntity> {
-  constructor(private dataSource: DataSource) {
-    super(SupplierPaymentEntity, dataSource.createEntityManager())
-  }
+export class SupplierPaymentRepository {
+  constructor(
+    @InjectRepository(SupplierPaymentEntity)
+    private readonly repo: Repository<SupplierPaymentEntity>,
+  ) { }
 
   private getRepo(manager?: EntityManager): Repository<SupplierPaymentEntity> {
-    return manager ? manager.getRepository(SupplierPaymentEntity) : this
+    return manager ? manager.getRepository(SupplierPaymentEntity) : this.repo
   }
 
   async createAndSave(
@@ -22,14 +24,14 @@ export class SupplierPaymentRepository extends Repository<SupplierPaymentEntity>
   }
 
   async findAllBySupplier(supplierId: string, tenantId: string): Promise<SupplierPaymentEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { supplierId, tenantId },
       order: { paymentDate: 'DESC' },
     })
   }
 
   async findAllPayments(tenantId: string): Promise<SupplierPaymentEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { tenantId },
       relations: ['supplier', 'purchaseOrder'],
       order: { paymentDate: 'DESC' },

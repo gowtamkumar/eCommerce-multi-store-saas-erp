@@ -1,30 +1,32 @@
-import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
-import { OrderReturnEntity } from './entities/order-return.entity'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
+import { Injectable } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { OrderReturnEntity } from './entities/order-return.entity'
 
 @Injectable()
-export class OrderReturnRepository extends Repository<OrderReturnEntity> {
-  constructor(private dataSource: DataSource) {
-    super(OrderReturnEntity, dataSource.createEntityManager())
-  }
+export class OrderReturnRepository {
+  constructor(
+    @InjectRepository(OrderReturnEntity)
+    private readonly repo: Repository<OrderReturnEntity>,
+  ) { }
 
   async createAndSaveReturn(
     dto: any,
     userId: string,
     tenantId: string,
   ): Promise<OrderReturnEntity> {
-    const returnRequest = this.create({
+    const returnRequest = this.repo.create({
       ...dto,
       userId,
       tenantId,
       status: ReturnStatus.PENDING,
     } as any) as unknown as OrderReturnEntity
-    return await (this.save(returnRequest) as Promise<OrderReturnEntity>)
+    return await (this.repo.save(returnRequest) as Promise<OrderReturnEntity>)
   }
 
   async findAllWithRelations(tenantId: string): Promise<OrderReturnEntity[]> {
-    return await this.find({
+    return await this.repo.find({
       where: { tenantId },
       order: { createdAt: 'DESC' },
       relations: ['order', 'order.items', 'order.items.product', 'order.items.variant', 'user'],
@@ -32,7 +34,7 @@ export class OrderReturnRepository extends Repository<OrderReturnEntity> {
   }
 
   async findByUserWithRelations(userId: string, tenantId: string): Promise<OrderReturnEntity[]> {
-    return await this.find({
+    return await this.repo.find({
       where: { userId, tenantId },
       order: { createdAt: 'DESC' },
       relations: ['order'],
@@ -40,14 +42,14 @@ export class OrderReturnRepository extends Repository<OrderReturnEntity> {
   }
 
   async findByIdWithRelations(id: string, tenantId: string): Promise<OrderReturnEntity | null> {
-    return await this.findOne({
+    return await this.repo.findOne({
       where: { id, tenantId },
       relations: ['order', 'order.items', 'order.items.product', 'order.items.variant', 'user'],
     })
   }
 
   async findById(id: string, tenantId: string): Promise<OrderReturnEntity | null> {
-    return await this.findOne({
+    return await this.repo.findOne({
       where: { id, tenantId },
     })
   }
@@ -61,6 +63,7 @@ export class OrderReturnRepository extends Repository<OrderReturnEntity> {
     if (adminComment) {
       returnRequest.adminComment = adminComment
     }
-    return await this.save(returnRequest)
+    return await this.repo.save(returnRequest)
   }
+
 }

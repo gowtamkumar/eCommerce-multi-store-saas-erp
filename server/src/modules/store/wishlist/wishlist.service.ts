@@ -14,7 +14,7 @@ export class WishlistService {
     private readonly productRepository: ProductRepository,
     private readonly pricingEngine: PricingEngineService,
     private readonly promotionService: PromotionService,
-  ) {}
+  ) { }
 
   async toggleWishlist(
     userId: string,

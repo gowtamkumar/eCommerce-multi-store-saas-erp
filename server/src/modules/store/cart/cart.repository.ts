@@ -1,35 +1,38 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { CartEntity } from './entities/cart.entity'
 
 @Injectable()
-export class CartRepository extends Repository<CartEntity> {
-  constructor(private dataSource: DataSource) {
-    super(CartEntity, dataSource.createEntityManager())
-  }
+export class CartRepository {
+  constructor(
+    @InjectRepository(CartEntity)
+    private readonly repo: Repository<CartEntity>,
+  ) { }
 
   async findByUserId(userId: string, tenantId: string): Promise<CartEntity | null> {
-    return await this.findOne({
+    return await this.repo.findOne({
       where: { userId, tenantId },
       relations: ['items', 'items.product', 'items.variant'],
     })
   }
 
   async createAndSave(userId: string, tenantId: string): Promise<CartEntity> {
-    const cart = this.create({
+    const cart = this.repo.create({
       userId,
       tenantId,
       items: [],
     })
-    return await this.save(cart)
+    return await this.repo.save(cart)
   }
 
   async saveCart(cart: CartEntity): Promise<CartEntity> {
-    return await this.save(cart)
+    return await this.repo.save(cart)
   }
 
   async updateCoupon(cart: CartEntity, code: string | null): Promise<CartEntity> {
     cart.appliedCouponCode = code ? code.toUpperCase() : null
-    return await this.save(cart)
+    return await this.repo.save(cart)
   }
+
 }

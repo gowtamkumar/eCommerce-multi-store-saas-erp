@@ -7,11 +7,11 @@ import { InjectRepository } from '@nestjs/typeorm'
 export class TenantRepository {
   constructor(
     @InjectRepository(TenantEntity)
-    private readonly tenantRepo: Repository<TenantEntity>,
+    private readonly repo: Repository<TenantEntity>,
   ) { }
 
   async findTenantById(id: string): Promise<TenantEntity | null> {
-    return await this.tenantRepo.findOne({ where: { id } })
+    return await this.repo.findOne({ where: { id } })
   }
 
   async findById(id: string): Promise<TenantEntity | null> {
@@ -19,50 +19,50 @@ export class TenantRepository {
   }
 
   async findByIdWithRelations(id: string): Promise<TenantEntity | null> {
-    return await this.tenantRepo.findOne({
+    return await this.repo.findOne({
       where: { id },
       relations: ['subscriptionPlan'],
     })
   }
 
   async findByIdWithUser(id: string): Promise<TenantEntity | null> {
-    return await this.tenantRepo.findOne({
+    return await this.repo.findOne({
       where: { id },
       relations: ['user'],
     })
   }
 
   async findBySubdomain(subdomain: string): Promise<TenantEntity | null> {
-    return await this.tenantRepo.findOne({ where: { subdomain } })
+    return await this.repo.findOne({ where: { subdomain } })
   }
 
   async findByCustomDomain(customDomain: string): Promise<TenantEntity | null> {
-    return await this.tenantRepo.findOne({ where: { customDomain } })
+    return await this.repo.findOne({ where: { customDomain } })
   }
 
   async findAllSorted(): Promise<TenantEntity[]> {
-    return await this.tenantRepo.find({
+    return await this.repo.find({
       order: { createdAt: 'DESC' },
     })
   }
 
   async findCountByStatus(status?: string): Promise<number> {
-    if (!status) return await this.tenantRepo.count()
-    return await this.tenantRepo.count({
+    if (!status) return await this.repo.count()
+    return await this.repo.count({
       where: { status: status as any },
     })
   }
 
   async createAndSave(dto: any, subscriptionPlan?: any): Promise<TenantEntity> {
-    const tenant = this.tenantRepo.create({
+    const tenant = this.repo.create({
       ...dto,
       subscriptionPlan,
     } as any) as unknown as TenantEntity
-    return await (this.tenantRepo.save(tenant) as Promise<TenantEntity>)
+    return await (this.repo.save(tenant) as Promise<TenantEntity>)
   }
 
   async updateAndSave(tenant: TenantEntity, dto: any): Promise<TenantEntity> {
     Object.assign(tenant, dto)
-    return await this.tenantRepo.save(tenant)
+    return await this.repo.save(tenant)
   }
 }

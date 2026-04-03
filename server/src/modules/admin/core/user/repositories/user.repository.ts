@@ -1,21 +1,23 @@
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { FilterUserDto } from '../dtos'
 import { UserEntity } from '../entities/user.entity'
 
 @Injectable()
-export class UserRepository extends Repository<UserEntity> {
-  constructor(private dataSource: DataSource) {
-    super(UserEntity, dataSource.createEntityManager())
-  }
+export class UserRepository {
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly repo: Repository<UserEntity>,
+  ) { }
 
   async findAllWithFilters(
     filterUserDto: FilterUserDto,
     tenantId: string,
   ): Promise<[UserEntity[], number]> {
     const { name, username, status, page, limit, q } = filterUserDto
-    const query = this.createQueryBuilder('user').where('user.tenantId = :tenantId', { tenantId })
+    const query = this.repo.createQueryBuilder('user').where('user.tenantId = :tenantId', { tenantId })
 
     if (name) {
       query.andWhere('user.name ILIKE :name', { name: `%${name}%` })
@@ -38,63 +40,63 @@ export class UserRepository extends Repository<UserEntity> {
   }
 
   async findAllCrossTenant(): Promise<UserEntity[]> {
-    return this.find({
+    return this.repo.find({
       relations: ['tenant'],
     })
   }
 
   async findById(id: string): Promise<UserEntity | null> {
-    return this.findOne({ where: { id } })
+    return this.repo.findOne({ where: { id } })
   }
 
   async findByIdAndTenant(id: string, tenantId: string): Promise<UserEntity | null> {
-    return this.findOne({ where: { id, tenantId } })
+    return this.repo.findOne({ where: { id, tenantId } })
   }
 
   async findByUsername(username: string, tenantId?: string): Promise<UserEntity | null> {
     const where: { username: string; tenantId?: string } = { username }
     if (tenantId) where.tenantId = tenantId
-    return this.findOne({ where })
+    return this.repo.findOne({ where })
   }
 
   async findByEmail(email: string, tenantId?: string): Promise<UserEntity | null> {
     const where: { email: string; tenantId?: string } = { email }
     if (tenantId) where.tenantId = tenantId
-    return this.findOne({ where })
+    return this.repo.findOne({ where })
   }
 
   async findByVerificationToken(token: string): Promise<UserEntity | null> {
-    return this.findOne({ where: { emailVerificationToken: token } })
+    return this.repo.findOne({ where: { emailVerificationToken: token } })
   }
 
   async findByResetToken(token: string): Promise<UserEntity | null> {
-    return this.findOne({ where: { resetPasswordToken: token } })
+    return this.repo.findOne({ where: { resetPasswordToken: token } })
   }
 
   async createAndSave(data: Partial<UserEntity>): Promise<UserEntity> {
-    const user = this.create(data as UserEntity)
-    return this.save(user)
+    const user = this.repo.create(data as UserEntity)
+    return this.repo.save(user)
   }
 
   async updateAndSave(user: UserEntity, data: Partial<UserEntity>): Promise<UserEntity> {
-    this.merge(user, data)
-    return this.save(user)
+    this.repo.merge(user, data)
+    return this.repo.save(user)
   }
 
   async deleteUser(user: UserEntity): Promise<UserEntity> {
-    return this.softRemove(user)
+    return this.repo.softRemove(user)
   }
 
   async countByTenant(tenantId: string): Promise<number> {
-    return this.count({ where: { tenantId } })
+    return this.repo.count({ where: { tenantId } })
   }
 
   async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
-    await this.update(userId, { refreshToken } as any)
+    await this.repo.update(userId, { refreshToken } as any)
   }
 
   async findUserWithRefreshToken(userId: string): Promise<UserEntity | null> {
-    return this.createQueryBuilder('user')
+    return this.repo.createQueryBuilder('user')
       .addSelect('user.refreshToken')
       .where('user.id = :userId', { userId })
       .getOne()
@@ -105,17 +107,18 @@ export class UserRepository extends Repository<UserEntity> {
     activeUsers: number
     inactiveUsers: number
   }> {
-    const totalUsers = await this.count()
-    const activeUsers = await this.count({ where: { status: UserStatus.ACTIVE } })
-    const inactiveUsers = await this.count({ where: { status: UserStatus.INACTIVE } })
+    const totalUsers = await this.repo.count()
+    const activeUsers = await this.repo.count({ where: { status: UserStatus.ACTIVE } })
+    const inactiveUsers = await this.repo.count({ where: { status: UserStatus.INACTIVE } })
     return { totalUsers, activeUsers, inactiveUsers }
   }
 
   async findTeamMembers(tenantId: string): Promise<UserEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { tenantId },
       order: { createdAt: 'DESC' },
       select: ['id', 'name', 'username', 'email', 'role', 'status', 'image', 'createdAt'],
     })
   }
+
 }

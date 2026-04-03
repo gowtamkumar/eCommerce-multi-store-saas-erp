@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { ProductAttributeEntity } from './entities/attribute.entity'
 
 @Injectable()
-export class ProductAttributeRepository extends Repository<ProductAttributeEntity> {
-  constructor(private dataSource: DataSource) {
-    super(ProductAttributeEntity, dataSource.createEntityManager())
-  }
+export class ProductAttributeRepository {
+  constructor(
+    @InjectRepository(ProductAttributeEntity)
+    private readonly repo: Repository<ProductAttributeEntity>,
+  ) { }
 
   async saveMultiple(
     attributes: any[],
@@ -15,12 +17,13 @@ export class ProductAttributeRepository extends Repository<ProductAttributeEntit
   ): Promise<ProductAttributeEntity[]> {
     if (!attributes || attributes.length === 0) return []
     const entities = attributes.map((attr) =>
-      this.create({ ...attr, productId, tenantId } as ProductAttributeEntity),
+      this.repo.create({ ...attr, productId, tenantId } as ProductAttributeEntity),
     )
-    return this.save(entities)
+    return this.repo.save(entities)
   }
 
   async deleteByProductId(productId: string, tenantId: string): Promise<void> {
-    await this.softDelete({ productId, tenantId })
+    await this.repo.softDelete({ productId, tenantId })
   }
+
 }

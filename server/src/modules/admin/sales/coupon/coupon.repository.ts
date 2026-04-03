@@ -1,21 +1,23 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, ILike, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { ILike, Repository } from 'typeorm'
 import { CouponEntity } from './entities/coupon.entity'
 
 @Injectable()
-export class CouponRepository extends Repository<CouponEntity> {
-  constructor(private dataSource: DataSource) {
-    super(CouponEntity, dataSource.createEntityManager())
-  }
+export class CouponRepository {
+  constructor(
+    @InjectRepository(CouponEntity)
+    private readonly repo: Repository<CouponEntity>,
+  ) { }
 
   async findByCode(code: string, tenantId: string): Promise<CouponEntity | null> {
-    return await this.findOne({
+    return await this.repo.findOne({
       where: { code: ILike(code), tenantId },
     })
   }
 
   async findById(id: string, tenantId: string): Promise<CouponEntity | null> {
-    return await this.findOne({
+    return await this.repo.findOne({
       where: { id, tenantId },
     })
   }
@@ -25,7 +27,7 @@ export class CouponRepository extends Repository<CouponEntity> {
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { search, isActive } = filterDto
 
-    const query = this.createQueryBuilder('coupon').where('coupon.tenantId = :tenantId', {
+    const query = this.repo.createQueryBuilder('coupon').where('coupon.tenantId = :tenantId', {
       tenantId,
     })
 
@@ -45,12 +47,12 @@ export class CouponRepository extends Repository<CouponEntity> {
   }
 
   async createAndSave(dto: any, tenantId: string): Promise<CouponEntity> {
-    const coupon = this.create({
+    const coupon = this.repo.create({
       ...dto,
       code: dto.code.toUpperCase(),
       tenantId,
     } as any) as unknown as CouponEntity
-    return await (this.save(coupon) as Promise<CouponEntity>)
+    return await (this.repo.save(coupon) as Promise<CouponEntity>)
   }
 
   async updateAndSave(coupon: CouponEntity, dto: any): Promise<CouponEntity> {
@@ -58,10 +60,11 @@ export class CouponRepository extends Repository<CouponEntity> {
       dto.code = dto.code.toUpperCase()
     }
     Object.assign(coupon, dto)
-    return await this.save(coupon)
+    return await this.repo.save(coupon)
   }
 
   async removeCoupon(coupon: CouponEntity): Promise<void> {
-    await this.softRemove(coupon)
+    await this.repo.softRemove(coupon)
   }
+
 }

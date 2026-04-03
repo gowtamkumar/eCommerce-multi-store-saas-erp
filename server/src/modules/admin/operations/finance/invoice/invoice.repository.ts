@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, EntityManager, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { EntityManager, Repository } from 'typeorm'
 import { InvoiceEntity } from './entities/invoice.entity'
 
 @Injectable()
-export class InvoiceRepository extends Repository<InvoiceEntity> {
-  constructor(private dataSource: DataSource) {
-    super(InvoiceEntity, dataSource.createEntityManager())
-  }
+export class InvoiceRepository {
+  constructor(
+    @InjectRepository(InvoiceEntity)
+    private readonly repo: Repository<InvoiceEntity>,
+  ) { }
 
   private getRepo(manager?: EntityManager): Repository<InvoiceEntity> {
-    return manager ? manager.getRepository(InvoiceEntity) : this
+    return manager ? manager.getRepository(InvoiceEntity) : this.repo
   }
 
   async checkInvoiceNumberExists(
@@ -32,7 +34,7 @@ export class InvoiceRepository extends Repository<InvoiceEntity> {
   }
 
   async findAllWithRelations(tenantId: string): Promise<InvoiceEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { tenantId },
       relations: ['order', 'order.items', 'order.items.product'],
       order: { createdAt: 'DESC' },
@@ -40,7 +42,7 @@ export class InvoiceRepository extends Repository<InvoiceEntity> {
   }
 
   async findByIdWithRelations(id: string, tenantId: string): Promise<InvoiceEntity | null> {
-    return this.findOne({
+    return this.repo.findOne({
       where: { id, tenantId },
       relations: ['order', 'order.items', 'order.items.product'],
     })
@@ -65,6 +67,6 @@ export class InvoiceRepository extends Repository<InvoiceEntity> {
   }
 
   async removeInvoice(invoice: InvoiceEntity): Promise<InvoiceEntity> {
-    return this.softRemove(invoice)
+    return this.repo.softRemove(invoice)
   }
 }

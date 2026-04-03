@@ -16,7 +16,7 @@ export class InvoiceService {
   constructor(
     private readonly invoiceRepository: InvoiceRepository,
     private readonly orderRepository: OrderRepository,
-  ) {}
+  ) { }
 
   async createInvoice(
     createInvoiceDto: CreateInvoiceDto,

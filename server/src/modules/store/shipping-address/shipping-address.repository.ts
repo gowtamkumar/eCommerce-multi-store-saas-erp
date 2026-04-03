@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { ShippingAddressEntity } from './entities/shipping-address.entity'
 
 @Injectable()
-export class ShippingAddressRepository extends Repository<ShippingAddressEntity> {
-  constructor(private dataSource: DataSource) {
-    super(ShippingAddressEntity, dataSource.createEntityManager())
-  }
+export class ShippingAddressRepository {
+  constructor(
+    @InjectRepository(ShippingAddressEntity)
+    private readonly repo: Repository<ShippingAddressEntity>,
+  ) { }
 
   async findAllByUserId(userId: string, tenantId: string): Promise<ShippingAddressEntity[]> {
-    return await this.find({
+    return await this.repo.find({
       where: { userId, tenantId },
       order: { isDefault: 'DESC' },
     })
@@ -20,24 +22,24 @@ export class ShippingAddressRepository extends Repository<ShippingAddressEntity>
     userId: string,
     tenantId: string,
   ): Promise<ShippingAddressEntity | null> {
-    return await this.findOne({ where: { id, userId, tenantId } })
+    return await this.repo.findOne({ where: { id, userId, tenantId } })
   }
 
   async unsetDefaults(userId: string, tenantId: string): Promise<void> {
-    await this.update({ userId, tenantId }, { isDefault: false })
+    await this.repo.update({ userId, tenantId }, { isDefault: false })
   }
 
   async createAndSave(userId: string, tenantId: string, data: any): Promise<ShippingAddressEntity> {
-    const address = this.create({ ...data, userId, tenantId }) as any
-    return await this.save(address)
+    const address = this.repo.create({ ...data, userId, tenantId }) as any
+    return await this.repo.save(address)
   }
 
   async updateAndSave(address: ShippingAddressEntity, data: any): Promise<ShippingAddressEntity> {
     Object.assign(address, data)
-    return await this.save(address)
+    return await this.repo.save(address)
   }
 
   async removeAddress(address: ShippingAddressEntity): Promise<void> {
-    await this.softRemove(address)
+    await this.repo.softRemove(address)
   }
 }

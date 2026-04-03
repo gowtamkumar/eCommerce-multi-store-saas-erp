@@ -1,28 +1,30 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, EntityManager, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { EntityManager, Repository } from 'typeorm'
 import { PurchaseOrderEntity } from './entities/purchase-order.entity'
 
 @Injectable()
-export class PurchaseOrderRepository extends Repository<PurchaseOrderEntity> {
-  constructor(private dataSource: DataSource) {
-    super(PurchaseOrderEntity, dataSource.createEntityManager())
-  }
+export class PurchaseOrderRepository {
+  constructor(
+    @InjectRepository(PurchaseOrderEntity)
+    private readonly repo: Repository<PurchaseOrderEntity>,
+  ) { }
 
   private getRepo(manager?: EntityManager): Repository<PurchaseOrderEntity> {
-    return manager ? manager.getRepository(PurchaseOrderEntity) : this
+    return manager ? manager.getRepository(PurchaseOrderEntity) : this.repo
   }
 
   async createAndSave(dto: any, tenantId: string, status: any): Promise<PurchaseOrderEntity> {
-    const order = this.create({
+    const order = this.repo.create({
       ...dto,
       tenantId,
       status,
     } as PurchaseOrderEntity)
-    return this.save(order)
+    return this.repo.save(order)
   }
 
   async findAllWithRelations(tenantId: string): Promise<PurchaseOrderEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { tenantId },
       relations: ['supplier'],
       order: { createdAt: 'DESC' },
@@ -50,7 +52,7 @@ export class PurchaseOrderRepository extends Repository<PurchaseOrderEntity> {
   }
 
   async findAllBySupplier(supplierId: string, tenantId: string): Promise<PurchaseOrderEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { supplierId, tenantId },
       relations: ['items'],
       order: { createdAt: 'DESC' },

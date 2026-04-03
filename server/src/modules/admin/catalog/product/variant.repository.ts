@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { ProductVariantEntity } from './entities/variant.entity'
 
 @Injectable()
-export class ProductVariantRepository extends Repository<ProductVariantEntity> {
-  constructor(private dataSource: DataSource) {
-    super(ProductVariantEntity, dataSource.createEntityManager())
-  }
+export class ProductVariantRepository {
+  constructor(
+    @InjectRepository(ProductVariantEntity)
+    private readonly repo: Repository<ProductVariantEntity>,
+  ) { }
 
   async findCombinationsForProducts(tenantId: string, categoryId?: string) {
-    const variantQuery = this.createQueryBuilder('variant')
+    const variantQuery = this.repo.createQueryBuilder('variant')
       .innerJoin('variant.product', 'product')
       .where('variant.tenantId = :tenantId', { tenantId })
       .select('variant.combination', 'combination')
@@ -21,7 +23,7 @@ export class ProductVariantRepository extends Repository<ProductVariantEntity> {
   }
 
   async findByProductId(productId: string, tenantId: string): Promise<ProductVariantEntity[]> {
-    return this.find({ where: { productId, tenantId } })
+    return this.repo.find({ where: { productId, tenantId } })
   }
 
   async saveNewVariant(
@@ -29,13 +31,13 @@ export class ProductVariantRepository extends Repository<ProductVariantEntity> {
     productId: string,
     tenantId: string,
   ): Promise<ProductVariantEntity> {
-    const variant = this.create({
+    const variant = this.repo.create({
       ...variantDto,
       productId,
       tenantId,
       stock: 0,
     } as ProductVariantEntity)
-    return this.save(variant)
+    return this.repo.save(variant)
   }
 
   async saveExistingVariant(
@@ -43,17 +45,17 @@ export class ProductVariantRepository extends Repository<ProductVariantEntity> {
     productId: string,
     tenantId: string,
   ): Promise<ProductVariantEntity> {
-    const variant = this.create({
+    const variant = this.repo.create({
       ...variantDto,
       productId,
       tenantId,
     } as ProductVariantEntity)
-    return this.save(variant)
+    return this.repo.save(variant)
   }
 
   async deleteByIds(ids: string[]): Promise<void> {
     if (ids.length > 0) {
-      await this.softDelete(ids)
+      await this.repo.softDelete(ids)
     }
   }
 
@@ -63,7 +65,7 @@ export class ProductVariantRepository extends Repository<ProductVariantEntity> {
     quantity: number,
     manager?: any,
   ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductVariantEntity) : this
+    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
     await repo.increment({ id, tenantId }, 'stock', quantity)
   }
 
@@ -73,7 +75,8 @@ export class ProductVariantRepository extends Repository<ProductVariantEntity> {
     quantity: number,
     manager?: any,
   ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductVariantEntity) : this
+    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
     await repo.decrement({ id, tenantId }, 'stock', quantity)
   }
+
 }

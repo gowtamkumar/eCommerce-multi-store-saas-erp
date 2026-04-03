@@ -1,42 +1,44 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { InvitationStatus, StaffInvitationEntity } from '../entities/staff-invitation.entity'
 
 @Injectable()
-export class StaffInvitationRepository extends Repository<StaffInvitationEntity> {
-  constructor(private dataSource: DataSource) {
-    super(StaffInvitationEntity, dataSource.createEntityManager())
-  }
+export class StaffInvitationRepository {
+  constructor(
+    @InjectRepository(StaffInvitationEntity)
+    private readonly repo: Repository<StaffInvitationEntity>,
+  ) { }
 
   async expireOldInvitations(email: string, tenantId: string): Promise<void> {
-    await this.update(
+    await this.repo.update(
       { email, tenantId, status: InvitationStatus.Pending },
       { status: InvitationStatus.Expired },
     )
   }
 
   async createAndSave(data: Partial<StaffInvitationEntity>): Promise<StaffInvitationEntity> {
-    const invitation = this.create(data as StaffInvitationEntity)
-    return this.save(invitation)
+    const invitation = this.repo.create(data as StaffInvitationEntity)
+    return this.repo.save(invitation)
   }
 
   async findByToken(token: string): Promise<StaffInvitationEntity | null> {
-    return this.findOne({ where: { token } })
+    return this.repo.findOne({ where: { token } })
   }
 
   async findByIdAndTenant(id: string, tenantId: string): Promise<StaffInvitationEntity | null> {
-    return this.findOne({ where: { id, tenantId } })
+    return this.repo.findOne({ where: { id, tenantId } })
   }
 
   async findAllByTenant(tenantId: string): Promise<StaffInvitationEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { tenantId },
       order: { createdAt: 'DESC' },
     })
   }
 
   async findPendingByTenant(tenantId: string): Promise<StaffInvitationEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { tenantId, status: InvitationStatus.Pending },
       order: { createdAt: 'DESC' },
     })
@@ -47,6 +49,6 @@ export class StaffInvitationRepository extends Repository<StaffInvitationEntity>
     data: Partial<StaffInvitationEntity>,
   ): Promise<StaffInvitationEntity> {
     Object.assign(invitation, data)
-    return this.save(invitation)
+    return this.repo.save(invitation)
   }
 }

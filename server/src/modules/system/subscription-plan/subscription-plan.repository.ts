@@ -1,41 +1,43 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { SubscriptionPlanEntity } from './entities/subscription-plan.entity'
 
 @Injectable()
-export class SubscriptionPlanRepository extends Repository<SubscriptionPlanEntity> {
-  constructor(private dataSource: DataSource) {
-    super(SubscriptionPlanEntity, dataSource.createEntityManager())
-  }
+export class SubscriptionPlanRepository {
+  constructor(
+    @InjectRepository(SubscriptionPlanEntity)
+    private readonly repo: Repository<SubscriptionPlanEntity>,
+  ) { }
 
   async createAndSave(data: any): Promise<SubscriptionPlanEntity> {
-    const plan = this.create(data) as any
-    return await this.save(plan)
+    const plan = this.repo.create(data) as any
+    return await this.repo.save(plan)
   }
 
   async findAllSortedByPrice(): Promise<SubscriptionPlanEntity[]> {
-    return await this.find({
+    return await this.repo.find({
       order: { monthlyPrice: 'ASC' },
     })
   }
 
   async findActiveSortedByPrice(): Promise<SubscriptionPlanEntity[]> {
-    return await this.find({
+    return await this.repo.find({
       where: { isActive: true },
       order: { monthlyPrice: 'ASC' },
     })
   }
 
   async findById(id: string): Promise<SubscriptionPlanEntity | null> {
-    return await this.findOne({ where: { id } })
+    return await this.repo.findOne({ where: { id } })
   }
 
   async updateAndSave(plan: SubscriptionPlanEntity, data: any): Promise<SubscriptionPlanEntity> {
     Object.assign(plan, data)
-    return await this.save(plan)
+    return await this.repo.save(plan)
   }
 
   async removePlan(plan: SubscriptionPlanEntity): Promise<void> {
-    await this.softRemove(plan)
+    await this.repo.softRemove(plan)
   }
 }

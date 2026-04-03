@@ -41,6 +41,7 @@ import { CouponRepository } from '@/modules/admin/sales/coupon/coupon.repository
 import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entity'
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { OrderReturnEntity } from '@/modules/admin/sales/order/entities/order-return.entity'
 import { OrderReturnRepository } from '@/modules/admin/sales/order/order-return.repository'
 import { OrderRepository } from '@/modules/admin/sales/order/order.repository'
 import { PaymentEntity } from '@/modules/admin/sales/payment/entities/payment.entity'
@@ -112,6 +113,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
       SubscriberEntity,
       StaffInvitationEntity,
       WishlistEntity,
+      OrderReturnEntity,
     ]),
   ],
   providers: [

@@ -1,22 +1,24 @@
 import { ProductStatus } from '@/common/enums/product-status.enum'
 import { Injectable, Logger } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { ProductEntity } from './entities/product.entity'
 
 @Injectable()
-export class ProductRepository extends Repository<ProductEntity> {
+export class ProductRepository {
   private readonly logger = new Logger(ProductRepository.name)
 
-  constructor(private dataSource: DataSource) {
-    super(ProductEntity, dataSource.createEntityManager())
-  }
+  constructor(
+    @InjectRepository(ProductEntity)
+    private readonly repo: Repository<ProductEntity>,
+  ) { }
 
   async findAllWithFilters(filterDto: any, tenantId: string): Promise<[ProductEntity[], number]> {
     const page = Math.max(1, parseInt(filterDto.page) || 1)
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { q, status, categoryId, brandId } = filterDto
 
-    const query = this.createQueryBuilder('product')
+    const query = this.repo.createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.variants', 'variants')
       .where('product.tenantId = :tenantId', { tenantId })
@@ -55,7 +57,7 @@ export class ProductRepository extends Repository<ProductEntity> {
           const params: Record<string, any> = {}
 
           filteredEntries.forEach(([key, values], index) => {
-            existsQuery += ` AND v.combination->>:key${index} IN (:...values${index})`
+            existsQuery += ` AND v.combination->>'key${index}' IN (:...values${index})`
             params[`key${index}`] = key
             params[`values${index}`] = values
           })
@@ -83,7 +85,7 @@ export class ProductRepository extends Repository<ProductEntity> {
       ELSE product.price * (1 + COALESCE(product.tax_rate, 0) / 100)
     END`
 
-    const query = this.createQueryBuilder('product')
+    const query = this.repo.createQueryBuilder('product')
       .where('product.tenantId = :tenantId', { tenantId })
       .select(`MIN(${finalPriceExpr})`, 'min')
       .addSelect(`MAX(${finalPriceExpr})`, 'max')
@@ -93,47 +95,47 @@ export class ProductRepository extends Repository<ProductEntity> {
   }
 
   async findBySlugWithRelations(slug: string, tenantId: string): Promise<ProductEntity | null> {
-    return this.findOne({
+    return this.repo.findOne({
       where: { slug, tenantId },
       relations: ['faqs', 'category', 'attributes', 'variants', 'reviews'],
     })
   }
 
   async findByIdWithRelations(id: string, tenantId: string): Promise<ProductEntity | null> {
-    return this.findOne({
+    return this.repo.findOne({
       where: { id, tenantId },
       relations: ['faqs', 'attributes', 'variants', 'category'],
     })
   }
 
   async findProductById(id: string, tenantId: string): Promise<ProductEntity | null> {
-    return this.findOne({
+    return this.repo.findOne({
       where: { id, tenantId },
       relations: ['variants'],
     })
   }
 
   async findBySlug(slug: string, tenantId: string): Promise<ProductEntity | null> {
-    return this.findOne({ where: { slug, tenantId } })
+    return this.repo.findOne({ where: { slug, tenantId } })
   }
 
   async createAndSave(data: any, tenantId: string): Promise<ProductEntity> {
-    const product = this.create({
+    const product = this.repo.create({
       ...data,
       tenantId,
       stock: 0,
     } as ProductEntity)
-    return this.save(product)
+    return this.repo.save(product)
   }
 
   async updateAndSave(product: ProductEntity, data: any): Promise<ProductEntity> {
     if ('categoryId' in data) product.category = null as any
     Object.assign(product, data)
-    return this.save(product)
+    return this.repo.save(product)
   }
 
   async removeProduct(product: ProductEntity): Promise<void> {
-    await this.softRemove(product)
+    await this.repo.softRemove(product)
   }
 
   async incrementStock(
@@ -142,7 +144,7 @@ export class ProductRepository extends Repository<ProductEntity> {
     quantity: number,
     manager?: any,
   ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this
+    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
     await repo.increment({ id, tenantId }, 'stock', quantity)
   }
 
@@ -152,12 +154,12 @@ export class ProductRepository extends Repository<ProductEntity> {
     quantity: number,
     manager?: any,
   ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this
+    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
     await repo.decrement({ id, tenantId }, 'stock', quantity)
   }
 
   async findLatestProducts(tenantId: string, limit: number): Promise<ProductEntity[]> {
-    return this.find({
+    return this.repo.find({
       where: { tenantId },
       relations: ['variants', 'category'],
       order: { createdAt: 'DESC' },
@@ -166,11 +168,11 @@ export class ProductRepository extends Repository<ProductEntity> {
   }
 
   async findAllCrossTenant(): Promise<ProductEntity[]> {
-    return this.find()
+    return this.repo.find()
   }
 
   async countProducts(tenantId: string): Promise<number> {
-    return this.count({ where: { tenantId } })
+    return this.repo.count({ where: { tenantId } })
   }
 
   async getOverviewStats(): Promise<{
@@ -178,9 +180,9 @@ export class ProductRepository extends Repository<ProductEntity> {
     activeProducts: number
     inactiveProducts: number
   }> {
-    const totalProducts = await this.count()
-    const activeProducts = await this.count({ where: { status: ProductStatus.ACTIVE } })
-    const inactiveProducts = await this.count({ where: { status: ProductStatus.INACTIVE } })
+    const totalProducts = await this.repo.count()
+    const activeProducts = await this.repo.count({ where: { status: ProductStatus.ACTIVE } })
+    const inactiveProducts = await this.repo.count({ where: { status: ProductStatus.INACTIVE } })
 
     return { totalProducts, activeProducts, inactiveProducts }
   }
@@ -192,7 +194,7 @@ export class ProductRepository extends Repository<ProductEntity> {
     limit?: number
   }): Promise<ProductEntity[]> {
     const { tenantId, targetType, targetId, limit = 20 } = params
-    const query = this.createQueryBuilder('product')
+    const query = this.repo.createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.brand', 'brand')
       .where('product.tenantId = :tenantId', { tenantId })
@@ -244,4 +246,5 @@ export class ProductRepository extends Repository<ProductEntity> {
         return { 'product.createdAt': 'DESC' }
     }
   }
+
 }

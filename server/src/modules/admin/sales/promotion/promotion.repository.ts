@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common'
-import { DataSource, Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { PromotionEntity } from './entities/promotion.entity'
 
 @Injectable()
-export class PromotionRepository extends Repository<PromotionEntity> {
-  constructor(private dataSource: DataSource) {
-    super(PromotionEntity, dataSource.createEntityManager())
-  }
+export class PromotionRepository {
+  constructor(
+    @InjectRepository(PromotionEntity)
+    private readonly repo: Repository<PromotionEntity>,
+  ) { }
 
   async findActivePromotions(tenantId: string, now: Date): Promise<PromotionEntity[]> {
-    return await this.createQueryBuilder('promotion')
+    return await this.repo.createQueryBuilder('promotion')
       .where('promotion.tenantId = :tenantId', { tenantId })
       .andWhere('promotion.isActive = true')
       .andWhere('(promotion.startDate IS NULL OR promotion.startDate <= :now)', { now })
@@ -23,7 +25,7 @@ export class PromotionRepository extends Repository<PromotionEntity> {
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { search, isActive } = filterDto
 
-    const query = this.createQueryBuilder('promotion').where('promotion.tenantId = :tenantId', {
+    const query = this.repo.createQueryBuilder('promotion').where('promotion.tenantId = :tenantId', {
       tenantId,
     })
 
@@ -43,31 +45,32 @@ export class PromotionRepository extends Repository<PromotionEntity> {
   }
 
   async findBySlug(slug: string, tenantId: string): Promise<PromotionEntity | null> {
-    return await this.findOne({
+    return await this.repo.findOne({
       where: { slug, tenantId },
     })
   }
 
   async findById(id: string, tenantId: string): Promise<PromotionEntity | null> {
-    return await this.findOne({
+    return await this.repo.findOne({
       where: { id, tenantId },
     })
   }
 
   async createAndSave(dto: any, tenantId: string): Promise<PromotionEntity> {
-    const promotion = this.create({
+    const promotion = this.repo.create({
       ...dto,
       tenantId,
     } as PromotionEntity)
-    return await this.save(promotion)
+    return await this.repo.save(promotion)
   }
 
   async updateAndSave(promotion: PromotionEntity, dto: any): Promise<PromotionEntity> {
     Object.assign(promotion, dto)
-    return await this.save(promotion)
+    return await this.repo.save(promotion)
   }
 
   async removePromotion(promotion: PromotionEntity): Promise<void> {
-    await this.softRemove(promotion)
+    await this.repo.softRemove(promotion)
   }
+
 }
