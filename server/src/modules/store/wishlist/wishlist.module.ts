@@ -10,4 +10,4 @@ import { PromotionModule } from '@/modules/admin/sales/promotion/promotion.modul
   providers: [WishlistService, PricingEngineService],
   exports: [WishlistService],
 })
-export class WishlistModule {}
+export class WishlistModule { }

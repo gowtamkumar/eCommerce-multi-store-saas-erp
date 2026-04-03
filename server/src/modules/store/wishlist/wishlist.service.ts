@@ -1,6 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { WishlistRepository } from './wishlist.repository'
-import { WishlistEntity } from './entities/wishlist.entity'
 import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
 import { PricingEngineService } from '@/common/services/pricing-engine.service'
 import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
@@ -24,7 +23,7 @@ export class WishlistService {
     this.logger.log(`${this.toggleWishlist.name} Service Called for user ${userId}`)
 
     // Check if product exists
-    const product = await this.productRepository.findOne({ where: { id: productId, tenantId } })
+    const product = await this.productRepository.findByIdWithRelations(productId, tenantId)
     if (!product) {
       throw new NotFoundException('Product not found')
     }
@@ -64,9 +63,6 @@ export class WishlistService {
 
   async removeFromWishlist(userId: string, productId: string, tenantId: string): Promise<void> {
     this.logger.log(`${this.removeFromWishlist.name} Service Called for user ${userId}`)
-    const item = await this.wishlistRepository.findByUserAndProduct(userId, productId, tenantId)
-    if (item) {
-      await this.wishlistRepository.remove(item)
-    }
+    await this.wishlistRepository.deleteWishlistItem(userId, productId, tenantId)
   }
 }

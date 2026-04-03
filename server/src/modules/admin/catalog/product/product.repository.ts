@@ -91,7 +91,7 @@ export class ProductRepository {
       .addSelect(`MAX(${finalPriceExpr})`, 'max')
 
     if (categoryId) query.andWhere('product.categoryId = :categoryId', { categoryId })
-    return query.getRawOne()
+    return await query.getRawOne()
   }
 
   async findBySlugWithRelations(slug: string, tenantId: string): Promise<ProductEntity | null> {
@@ -144,7 +144,7 @@ export class ProductRepository {
     quantity: number,
     manager?: any,
   ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
+    const repo = manager ? manager.getRepository(ProductEntity) : this
     await repo.increment({ id, tenantId }, 'stock', quantity)
   }
 
@@ -154,7 +154,7 @@ export class ProductRepository {
     quantity: number,
     manager?: any,
   ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
+    const repo = manager ? manager.getRepository(ProductEntity) : this
     await repo.decrement({ id, tenantId }, 'stock', quantity)
   }
 

@@ -14,7 +14,7 @@ export class InventoryTransactionService {
     private readonly repository: InventoryTransactionRepository,
     private readonly productRepository: ProductRepository,
     private readonly variantRepository: ProductVariantRepository,
-  ) {}
+  ) { }
 
   async createInventoryTransaction(
     dto: CreateInventoryTransactionDto,
@@ -62,11 +62,7 @@ export class InventoryTransactionService {
 
   async getStockSummaryInventoryTransactions(tenantId: string): Promise<any[]> {
     this.logger.log(`${this.getStockSummaryInventoryTransactions.name} Service Called`)
-    const products = await this.productRepository.find({
-      where: { tenantId },
-      relations: ['variants', 'category', 'supplier'],
-      order: { createdAt: 'DESC' },
-    })
+    const products: any = await this.repository.findByTenant(tenantId)
 
     return products.map((product) => {
       const hasVariants = product.variants && product.variants.length > 0
@@ -75,15 +71,15 @@ export class InventoryTransactionService {
         : product.stock
       const totalValue = hasVariants
         ? product.variants.reduce(
-            (sum, v) => sum + (v.stock || 0) * Number(v.price || product.price),
-            0,
-          )
+          (sum, v) => sum + (v.stock || 0) * Number(v.price || product.price),
+          0,
+        )
         : product.stock * Number(product.price)
 
       const isLowStock = hasVariants
         ? product.variants.some(
-            (v) => v.stock <= (v.lowStockThreshold ?? product.lowStockThreshold ?? 5),
-          )
+          (v) => v.stock <= (v.lowStockThreshold ?? product.lowStockThreshold ?? 5),
+        )
         : product.stock <= (product.lowStockThreshold ?? 5)
 
       const isOutOfStock = hasVariants
@@ -104,13 +100,13 @@ export class InventoryTransactionService {
         stockValue: totalValue,
         variants: hasVariants
           ? product.variants.map((v) => ({
-              id: v.id,
-              sku: v.sku,
-              combination: v.combination,
-              price: v.price || product.price,
-              stock: v.stock,
-              lowStockThreshold: v.lowStockThreshold || product.lowStockThreshold || 5,
-            }))
+            id: v.id,
+            sku: v.sku,
+            combination: v.combination,
+            price: v.price || product.price,
+            stock: v.stock,
+            lowStockThreshold: v.lowStockThreshold || product.lowStockThreshold || 5,
+          }))
           : [],
         lowStock: isLowStock,
         outOfStock: isOutOfStock,

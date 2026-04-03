@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { EntityManager, Repository } from 'typeorm'
+import { Repository } from 'typeorm'
 import { InvoiceEntity } from './entities/invoice.entity'
 
 @Injectable()
@@ -10,27 +10,19 @@ export class InvoiceRepository {
     private readonly repo: Repository<InvoiceEntity>,
   ) { }
 
-  private getRepo(manager?: EntityManager): Repository<InvoiceEntity> {
-    return manager ? manager.getRepository(InvoiceEntity) : this.repo
-  }
-
   async checkInvoiceNumberExists(
     invoiceNumber: string,
     tenantId: string,
-    manager?: EntityManager,
   ): Promise<boolean> {
-    const repo = this.getRepo(manager)
-    const exists = await repo.findOne({ where: { invoiceNumber, tenantId } })
+    const exists = await this.repo.findOne({ where: { invoiceNumber, tenantId } })
     return !!exists
   }
 
   async createAndSave(
     data: Partial<InvoiceEntity>,
-    manager?: EntityManager,
   ): Promise<InvoiceEntity> {
-    const repo = this.getRepo(manager)
-    const invoice = repo.create(data as InvoiceEntity)
-    return repo.save(invoice)
+    const invoice = this.repo.create(data as InvoiceEntity)
+    return this.repo.save(invoice)
   }
 
   async findAllWithRelations(tenantId: string): Promise<InvoiceEntity[]> {
@@ -51,22 +43,21 @@ export class InvoiceRepository {
   async findByOrderId(
     orderId: string,
     tenantId: string,
-    manager?: EntityManager,
   ): Promise<InvoiceEntity | null> {
-    return this.getRepo(manager).findOne({ where: { orderId, tenantId } })
+    return this.repo.findOne({ where: { orderId, tenantId } })
   }
 
   async updateAndSave(
     invoice: InvoiceEntity,
     data: Partial<InvoiceEntity>,
-    manager?: EntityManager,
   ): Promise<InvoiceEntity> {
-    const repo = this.getRepo(manager)
     Object.assign(invoice, data)
-    return repo.save(invoice)
+    return this.repo.save(invoice)
   }
 
   async removeInvoice(invoice: InvoiceEntity): Promise<InvoiceEntity> {
     return this.repo.softRemove(invoice)
   }
+
+
 }

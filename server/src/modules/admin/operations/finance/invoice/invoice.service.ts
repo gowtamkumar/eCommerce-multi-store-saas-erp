@@ -4,7 +4,6 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { EntityManager } from 'typeorm'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
 import { UpdateInvoiceDto } from './dto/update-invoice.dto'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { InvoiceRepository } from './invoice.repository'
 import { InvoiceEntity } from './entities/invoice.entity'
 
@@ -15,20 +14,16 @@ export class InvoiceService {
 
   constructor(
     private readonly invoiceRepository: InvoiceRepository,
-    private readonly orderRepository: OrderRepository,
+    private readonly orderRepo: OrderRepository,
   ) { }
 
   async createInvoice(
     createInvoiceDto: CreateInvoiceDto,
     tenantId: string,
-    manager?: EntityManager,
   ): Promise<InvoiceEntity> {
     this.logger.log(`${this.createInvoice.name} Service Called`)
-    const orderRepo = manager ? manager.getRepository(OrderEntity) : this.orderRepository
 
-    const order = await orderRepo.findOne({
-      where: { id: createInvoiceDto.orderId, tenantId },
-    })
+    const order = await this.orderRepo.findOrderById(createInvoiceDto.orderId, tenantId)
 
     if (!order) {
       throw new NotFoundException('Order not found')
@@ -45,7 +40,6 @@ export class InvoiceService {
       const exists = await this.invoiceRepository.checkInvoiceNumberExists(
         invoiceNumber,
         tenantId,
-        manager,
       )
       if (exists) {
         invoiceNumber = `INV-${year}${month}-${random + 1}`
@@ -62,7 +56,6 @@ export class InvoiceService {
         status: createInvoiceDto.status || InvoiceStatus.PENDING,
         userId: order.userId,
       } as any,
-      manager,
     )
   }
 
@@ -107,12 +100,11 @@ export class InvoiceService {
     orderId: string,
     status: InvoiceStatus,
     tenantId: string,
-    manager?: EntityManager,
   ): Promise<void> {
     this.logger.log(`${this.updateInvoiceStatusByOrderId.name} Service Called`)
-    const invoice = await this.invoiceRepository.findByOrderId(orderId, tenantId, manager)
+    const invoice = await this.invoiceRepository.findByOrderId(orderId, tenantId)
     if (invoice) {
-      await this.invoiceRepository.updateAndSave(invoice, { status }, manager)
+      await this.invoiceRepository.updateAndSave(invoice, { status })
     }
   }
 }

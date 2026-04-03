@@ -31,6 +31,13 @@ export class WishlistRepository {
   async clearWishlist(userId: string, tenantId: string): Promise<void> {
     await this.repo.delete({ userId, tenantId })
   }
+  async deleteWishlistItem(userId: string, productId: string, tenantId: string): Promise<void> {
+    const item = await this.findByUserAndProduct(userId, productId, tenantId)
+    if (item) {
+      await this.repo.remove(item)
+    }
+  }
+
 
   async toggleWishlist(userId: string, productId: string, tenantId: string): Promise<boolean> {
     const existing = await this.findByUserAndProduct(userId, productId, tenantId)

@@ -14,9 +14,11 @@ export class InventoryTransactionRepository {
     return await this.repo.find({
       where: { tenantId },
       order: { createdAt: 'DESC' },
-      relations: ['product'],
+      relations: ['variants', 'category', 'supplier']
     })
   }
+
+
 
   async findByProduct(productId: string, tenantId: string): Promise<InventoryTransactionEntity[]> {
     return await this.repo.find({
