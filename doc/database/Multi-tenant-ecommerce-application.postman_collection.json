@@ -1,0 +1,5483 @@
+{
+	"info": {
+		"_postman_id": "778ebb96-9d57-4816-a79c-5361f01af0cd",
+		"name": "Multi-tenant-ecommerce-application",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18546794"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"gowtamkumar\",\n    \"email\": \"admin@gmail.com\",\n    \"username\": \"admind\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/auth/register",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "super admin create",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Super Admin\",\n  \"email\": \"admin@gmail.com\",\n  \"username\": \"admind\",\n  \"password\": \"12345678\",\n  \"setupKey\": \"super-setup-2026\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/tenant-traffic/setup",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"tenant-traffic",
+								"setup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "users",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{URL}}/auth/users",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"auth",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"gowtam Kumar\",\n    \"phone\": \"+8801756716303\",\n    \"email\": \"gowtsama@gmail.com\",\n    \"username\": \"gowtamkumars\",\n    \"password\": \"1234567\",\n    \"role\": \"Admin\",\n    \"status\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/auth/logout",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6Ikdvd3RhbUt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsImlhdCI6MTcxNDEyNDc2MSwiZXhwIjoxNzE0NzI5NTYxfQ.G9JkgGQfI4sF-BBc5ql5kv9LgIG_R_g0Ou4s7DP7VHY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"gowtam Kumar\",\n    \"phone\": \"+8801756716303\",\n    \"email\": \"gowtsama@gmail.com\",\n    \"username\": \"gowtamkumars\",\n    \"password\": \"1234567\",\n    \"role\": \"Admin\",\n    \"status\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/auth/users/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"users",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get a single User",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwibmFtZSI6Ikdvd3RhbUt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsImlhdCI6MTcxNDEyNDc2MSwiZXhwIjoxNzE0NzI5NTYxfQ.G9JkgGQfI4sF-BBc5ql5kv9LgIG_R_g0Ou4s7DP7VHY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"gowtam Kumar\",\n    \"phone\": \"+8801756716303\",\n    \"email\": \"gowtsama@gmail.com\",\n    \"username\": \"gowtamkumars\",\n    \"password\": \"1234567\",\n    \"role\": \"Admin\",\n    \"status\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/auth/users/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"users",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete user",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"gowtam Kumar\",\n    \"phone\": \"+8801756716303\",\n    \"email\": \"gowtsama@gmail.com\",\n    \"username\": \"gowtamkumars\",\n    \"password\": \"1234567\",\n    \"role\": \"Admin\",\n    \"status\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/auth/users/65ad3c920a2727203a4739c1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"users",
+								"65ad3c920a2727203a4739c1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get me",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"gowtam Kumar\",\n    \"phone\": \"+8801756716303\",\n    \"email\": \"gowtsama@gmail.com\",\n    \"username\": \"gowtamkumars\",\n    \"password\": \"1234567\",\n    \"role\": \"Admin\",\n    \"status\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/auth/me",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admind\",\n    \"password\": \"12345678\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/admin/login",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"admin",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fotgot password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtS3VtYXIiLCJ1c2VybmFtZSI6Imdvd3RtYWt1bWFyIiwicm9sZSI6IkFkbWluIiwic3RhdHVzIjp0cnVlLCJpYXQiOjE3MTQxMDkyMjcsImV4cCI6MTcxNDcxNDAyN30.Mf_abqXLFX0XuPtfn3XaJVMp7V7NWaFbTUJFQc21lYw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"gowtamkumar2019@gmail.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/auth/forgot-password",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"forgot-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Ikdvd3RhbUt1bWFyIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTcyMTk2MzAwMSwiZXhwIjoxNzIyMDQ5NDAxfQ.POBWlIVBORSs9wzFPs1KxL3N1fixKqCrwN64QfxPYVA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"currentPassword\": \"arkopaul\",\n    \"newPassword\": \"12345678\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/auth/update-password",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"update-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtS3VtYXIiLCJ1c2VybmFtZSI6Imdvd3RtYWt1bWFyIiwicm9sZSI6IkFkbWluIiwic3RhdHVzIjp0cnVlLCJpYXQiOjE3MTQxMDk3ODQsImV4cCI6MTcxNDcxNDU4NH0.zqfTdXRYNGb3qbqJKkGg-MvTcHo89mwr5ol2fvyGmiw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Gowtam Kumar\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/auth/users/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"users",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwibmFtZSI6Ikdvd3RhbUt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsImlhdCI6MTcxNDcwNjkzOCwiZXhwIjoxNzE1MzExNzM4fQ.ACPlfcbA_aYhw3b6dL-GRKyw0IQX2V_Zct0yI9dloVs",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"password\": \"arkopaul\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/auth/reset-password/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZ293dGFta3VtYXIyMDE5QGdtYWlsLmNvbSIsImlhdCI6MTcxNzQ5MzY3NiwiZXhwIjoxNzE3NDk0Mjc2fQ.QTElbY_ff6F7mI6TTg9FLvRhmZVTGVkiYr56fyYSfuA",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"reset-password",
+								"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZ293dGFta3VtYXIyMDE5QGdtYWlsLmNvbSIsImlhdCI6MTcxNzQ5MzY3NiwiZXhwIjoxNzE3NDk0Mjc2fQ.QTElbY_ff6F7mI6TTg9FLvRhmZVTGVkiYr56fyYSfuA"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Bootcamp",
+			"item": [
+				{
+					"name": "get all bootcapm",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/api/v1/super-admin/health",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"super-admin",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get bootcapm",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/bootcamp/65aa86cd11cdb77c6c3d8bbe",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bootcamp",
+								"65aa86cd11cdb77c6c3d8bbe"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single  bootcapm",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"gowtam paul\",\n    \"website\": \"www.facebook.com\",\n    \"address\": \"Jashore\",\n    \"location\": \"ddd\",\n    \"slug\": \"ddd\",\n    \"description\": \"sadf\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/bootcamp/65aa86695186df139a64462e",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bootcamp",
+								"65aa86695186df139a64462e"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single  bootcapm",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/bootcamp/65aa86695186df139a64462e",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bootcamp",
+								"65aa86695186df139a64462e"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new Bootcamp",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"gowtam kumar\",\n    \"website\": \"www.facebook.com\",\n    \"address\": \"aaa\",\n    \"location\": \"ddd\",\n    \"slug\": \"ddd\",\n    \"description\": \"sadf\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/bootcamp",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bootcamp"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Discount",
+			"item": [
+				{
+					"name": "get all discount",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/discounts",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get discount",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/discounts/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Discount by Slug",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/discounts/slug/",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"slug",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single discount",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Imdvd3RhbWt1bWFyIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc0Mjk5ODE5NSwiZXhwIjoxNzQzMDg0NTk1fQ.tjZgTxYaxP9eHO3mW69m7dS8OPA9N61vW6IjljEux6Y",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Discount\",\n    \"scope\": \"Brand\",\n    \"promotionType\": \"Discount\",\n    \"discountStrategy\": \"Fixed\",\n    \"value\": 10,\n     \"startDate\": \"02-02-2025\",\n    \"endDate\": \"02-05-2025\",\n    \"applicableBrands\": [2]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/discounts/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single discount",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/discounts/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new discount",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Imdvd3RhbWt1bWFyIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc0MzA4NzI1MiwiZXhwIjoxNzQzMTczNjUyfQ.aiO24wH-5NHilMaUplB4RQP0-TOObql2UcNKMZWKA7s",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Category Discount\",\n    \"scope\": \"Category\",\n    \"promotionType\": \"Discount\",\n    \"discountStrategy\": \"Percentage\",\n    \"value\": 50,\n    \"applicableCategories\": [2]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/discounts",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Banner",
+			"item": [
+				{
+					"name": "get all discount",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/discounts",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get discount",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/discounts/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single discount",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Imdvd3RhbWt1bWFyIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc0Mjk5ODE5NSwiZXhwIjoxNzQzMDg0NTk1fQ.tjZgTxYaxP9eHO3mW69m7dS8OPA9N61vW6IjljEux6Y",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Discount\",\n    \"scope\": \"Brand\",\n    \"promotionType\": \"Discount\",\n    \"discountStrategy\": \"Fixed\",\n    \"value\": 10,\n     \"startDate\": \"02-02-2025\",\n    \"endDate\": \"02-05-2025\",\n    \"applicableBrands\": [2]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/discounts/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single discount",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/discounts/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new discount",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Imdvd3RhbWt1bWFyIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc0MzA4NzI1MiwiZXhwIjoxNzQzMTczNjUyfQ.aiO24wH-5NHilMaUplB4RQP0-TOObql2UcNKMZWKA7s",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Category Discount\",\n    \"scope\": \"Category\",\n    \"promotionType\": \"Discount\",\n    \"discountStrategy\": \"Percentage\",\n    \"value\": 50,\n    \"applicableCategories\": [2]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/discounts",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tenant",
+			"item": [
+				{
+					"name": "Gets",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/discounts",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/discounts/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Patch",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Imdvd3RhbWt1bWFyIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc0Mjk5ODE5NSwiZXhwIjoxNzQzMDg0NTk1fQ.tjZgTxYaxP9eHO3mW69m7dS8OPA9N61vW6IjljEux6Y",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Discount\",\n    \"scope\": \"Brand\",\n    \"promotionType\": \"Discount\",\n    \"discountStrategy\": \"Fixed\",\n    \"value\": 10,\n     \"startDate\": \"02-02-2025\",\n    \"endDate\": \"02-05-2025\",\n    \"applicableBrands\": [2]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/discounts/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/discounts/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Imdvd3RhbWt1bWFyIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc0MzA4NzI1MiwiZXhwIjoxNzQzMTczNjUyfQ.aiO24wH-5NHilMaUplB4RQP0-TOObql2UcNKMZWKA7s",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"storeName\": \"gowtam\",\n  \"subdomain\":\"gowtam\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/tenants",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"tenants"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Plan",
+			"item": [
+				{
+					"name": "Gets",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/plans",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"plans"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/discounts/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Patch",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Imdvd3RhbWt1bWFyIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc0Mjk5ODE5NSwiZXhwIjoxNzQzMDg0NTk1fQ.tjZgTxYaxP9eHO3mW69m7dS8OPA9N61vW6IjljEux6Y",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Discount\",\n    \"scope\": \"Brand\",\n    \"promotionType\": \"Discount\",\n    \"discountStrategy\": \"Fixed\",\n    \"value\": 10,\n     \"startDate\": \"02-02-2025\",\n    \"endDate\": \"02-05-2025\",\n    \"applicableBrands\": [2]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/discounts/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/discounts/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Imdvd3RhbWt1bWFyIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc0MzA4NzI1MiwiZXhwIjoxNzQzMTczNjUyfQ.aiO24wH-5NHilMaUplB4RQP0-TOObql2UcNKMZWKA7s",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Category Discount\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/plans",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"plans"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "get all Notifications",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/api/v1/notifications",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Read Notifications",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Ikdvd3RhbSBLdW1hciIsInVzZXJuYW1lIjoiZ293dGFta3VtYXIiLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3MzY0NzU1MzksImV4cCI6MTczNjU2MTkzOX0.fmCQR2j3oLHbfAApfFN36e81syQOtes2WMmb3fjAw08",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/api/v1/notifications/read/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"read",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clear Notifications",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Ikdvd3RhbSBLdW1hciIsInVzZXJuYW1lIjoiZ293dGFta3VtYXIiLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3MzY0NzU1MzksImV4cCI6MTczNjU2MTkzOX0.fmCQR2j3oLHbfAApfFN36e81syQOtes2WMmb3fjAw08",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/api/v1/notifications/clear",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"clear"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/notifications/12",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"12"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single  Notifications",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"order placed\",\n    \"type\": \"Order\",\n    \"message\": \"this product is onlyllll\",\n    \"isRead\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/notifications/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single  Notifications",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/notifications/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new Notifications",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"order placed\",\n    \"type\": \"Order\",\n    \"message\": \"this product is onlyllll\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/notifications",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"notifications"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reports",
+			"item": [
+				{
+					"name": "get Dashboard Report",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/reports/dashboard?startDate=01-02-2025&endDate=10-05-2025",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"reports",
+								"dashboard"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "01-02-2025"
+								},
+								{
+									"key": "endDate",
+									"value": "10-05-2025"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get top selling product",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/reports/top-selling-products",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"reports",
+								"top-selling-products"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dashboard Report",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Ikdvd3RhbSBLdW1hciIsImVtYWlsIjoiZ293dGFtcGF1bDBAZ21haWwuY29tIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc2NzM1NjMxMywiZXhwIjoxNzY3NDQyNzEzfQ.GLjPbAdYio8M28JaIjx486sHmMyTtp88ULQchjGElXg",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/reports/dashboard?startDate=01-02-2025&endDate=10-05-2026",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"reports",
+								"dashboard"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "01-02-2025"
+								},
+								{
+									"key": "endDate",
+									"value": "10-05-2026"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Brand",
+			"item": [
+				{
+					"name": "get all brand",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/brands",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"brands"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get brand",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/brands/272db4bc-76bb-427e-9d84-39a3b4e8059c",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"brands",
+								"272db4bc-76bb-427e-9d84-39a3b4e8059c"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Single a get brand",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/brands/c5878159-3af0-4559-a54a-7ee309b97afb",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"brands",
+										"c5878159-3af0-4559-a54a-7ee309b97afb"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Accept-Ranges",
+									"value": "bytes"
+								},
+								{
+									"key": "Age",
+									"value": "1250"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "public,max-age=0,must-revalidate"
+								},
+								{
+									"key": "Cache-Status",
+									"value": "\"Netlify Edge\"; hit"
+								},
+								{
+									"key": "Content-Encoding",
+									"value": "br"
+								},
+								{
+									"key": "Content-Length",
+									"value": "2435"
+								},
+								{
+									"key": "Content-Type",
+									"value": "text/html; charset=UTF-8"
+								},
+								{
+									"key": "Date",
+									"value": "Fri, 27 Mar 2026 01:47:19 GMT"
+								},
+								{
+									"key": "Etag",
+									"value": "\"bc3a3c9d6f3cceda38a619e40f0ea13a-ssl-df\""
+								},
+								{
+									"key": "Server",
+									"value": "Netlify"
+								},
+								{
+									"key": "Strict-Transport-Security",
+									"value": "max-age=31536000"
+								},
+								{
+									"key": "Vary",
+									"value": "Accept-Encoding"
+								},
+								{
+									"key": "X-Nf-Request-Id",
+									"value": "01KMPFJXXHGWKKKVG1906G7D86"
+								}
+							],
+							"cookie": [],
+							"body": "<!DOCTYPE html>\n<html mode=\"dark\" lang=\"en\" data-beasties-container>\n    <head>\n        <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n        <title>Documentation | NestJS - A progressive Node.js framework</title>\n        <base href=\"/\">\n        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, minimum-scale=1\">\n        <meta charset=\"utf-8\">\n        <meta name=\"description\" content=\"Nest is a framework for building efficient, scalable Node.js server-side applications. It uses progressive JavaScript, is built with TypeScript and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).\">\n        <meta name=\"robots\" content=\"noodp\">\n        <link rel=\"canonical\" href=\"https://docs.nestjs.com\">\n        <meta property=\"og:url\" content=\"https://docs.nestjs.com\">\n        <meta property=\"og:type\" content=\"website\">\n        <meta name=\"twitter:card\" content=\"summary\">\n        <meta property=\"og:site_name\" content=\"Documentation | NestJS - A progressive Node.js framework\">\n        <meta property=\"og:title\" content=\"Documentation | NestJS - A progressive Node.js framework\">\n        <meta property=\"og:description\" content=\"Nest is a framework for building efficient, scalable Node.js server-side applications. It uses progressive JavaScript, is built with TypeScript and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).\">\n        <meta property=\"og:image\" content=\"https://nestjs.com/img/nest-og.png\">\n        <meta property=\"og:image:width\" content=\"1200\">\n        <meta property=\"og:image:height\" content=\"650\">\n        <meta name=\"twitter:description\" content=\"Nest is a framework for building efficient, scalable Node.js server-side applications. It uses progressive JavaScript, is built with TypeScript and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).\">\n        <meta name=\"twitter:title\" content=\"Documentation | NestJS - A progressive Node.js framework\">\n        <link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/apple-touch-icon-precomposed.png\">\n        <link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/apple-touch-icon.png\">\n        <link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/assets/favicons/favicon-32x32.png\">\n        <link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"/assets/favicons/favicon-16x16.png\">\n        <link rel=\"icon\" type=\"image/x-icon\" href=\"/favicon.ico\">\n        <link rel=\"manifest\" href=\"/assets/favicons/manifest.json\">\n        <link rel=\"msapplication-config\" href=\"/assets/favicons/browserconfig.xml\">\n        <link rel=\"mask-icon\" href=\"/assets/favicons/safari-pinned-tab.svg\" color=\"#ed2945\">\n        <meta name=\"msapplication-TileColor\" content=\"#ed2945\">\n        <meta name=\"theme-color\" content=\"#ffffff\">\n        <style>@font-face{font-family:'Material Icons';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/materialicons/v145/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');}.material-icons{font-family:'Material Icons';font-weight:normal;font-style:normal;font-size:24px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;-webkit-font-feature-settings:'liga';-webkit-font-smoothing:antialiased;}</style>\n        <style>@font-face{font-family:'Inconsolata';font-style:normal;font-weight:400;font-stretch:100%;font-display:swap;src:url(https://fonts.gstatic.com/s/inconsolata/v37/QldgNThLqRwH-OJ1UHjlKENVzkWGVkL3GZQmAwLYxYWI2qfdm7Lpp4U8WRL2l2eY.woff2) format('woff2');unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;}@font-face{font-family:'Inconsolata';font-style:normal;font-weight:400;font-stretch:100%;font-display:swap;src:url(https://fonts.gstatic.com/s/inconsolata/v37/QldgNThLqRwH-OJ1UHjlKENVzkWGVkL3GZQmAwLYxYWI2qfdm7Lpp4U8WRP2l2eY.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}@font-face{font-family:'Inconsolata';font-style:normal;font-weight:400;font-stretch:100%;font-display:swap;src:url(https://fonts.gstatic.com/s/inconsolata/v37/QldgNThLqRwH-OJ1UHjlKENVzkWGVkL3GZQmAwLYxYWI2qfdm7Lpp4U8WR32lw.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}</style>\n        <style>@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qNa7lqDY.woff2) format('woff2');unicode-range:U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qPK7lqDY.woff2) format('woff2');unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qNK7lqDY.woff2) format('woff2');unicode-range:U+1F00-1FFF;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qO67lqDY.woff2) format('woff2');unicode-range:U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qN67lqDY.woff2) format('woff2');unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qNq7lqDY.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:400;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7l.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwmhduz8A.woff2) format('woff2');unicode-range:U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwkxduz8A.woff2) format('woff2');unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwmxduz8A.woff2) format('woff2');unicode-range:U+1F00-1FFF;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwlBduz8A.woff2) format('woff2');unicode-range:U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwmBduz8A.woff2) format('woff2');unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwmRduz8A.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3i54rwlxdu.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwmhduz8A.woff2) format('woff2');unicode-range:U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwkxduz8A.woff2) format('woff2');unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwmxduz8A.woff2) format('woff2');unicode-range:U+1F00-1FFF;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwlBduz8A.woff2) format('woff2');unicode-range:U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwmBduz8A.woff2) format('woff2');unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwmRduz8A.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}@font-face{font-family:'Source Sans Pro';font-style:normal;font-weight:700;font-display:swap;src:url(https://fonts.gstatic.com/s/sourcesanspro/v23/6xKydSBYKcSV-LCoeQqfX1RYOo3ig4vwlxdu.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}</style>\n        <script defer src=\"https://use.fontawesome.com/releases/v6.4.2/js/all.js\"></script>\n        <link href=\"https://cdn.carbonads.com\" rel=\"preconnect\" crossorigin>\n        <link href=\"https://cdn.jsdelivr.net\" rel=\"preconnect\" crossorigin>\n        <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/@docsearch/css@3\">\n        <script>\n      (function(i, s, o, g, r, a, m) {\n        i['GoogleAnalyticsObject'] = r;\n        (i[r] =\n          i[r] ||\n          function() {\n            (i[r].q = i[r].q || []).push(arguments);\n          }),\n          (i[r].l = 1 * new Date());\n        (a = s.createElement(o)), (m = s.getElementsByTagName(o)[0]);\n        a.async = 1;\n        a.src = g;\n        m.parentNode.insertBefore(a, m);\n      })(\n        window,\n        document,\n        'script',\n        'https://www.google-analytics.com/analytics.js',\n        'ga',\n      );\n\n      ga('create', 'UA-30617038-5', 'auto');\n      ga('send', 'pageview');\n    </script>\n        <style>:root{--docsearch-primary-color:#ed2945;--docsearch-highlight-color:#ed2945;--docsearch-logo-color:#ed2945;--docsearch-modal-background:#fafafa;--docsearch-searchbox-focus-background:transparent;--docsearch-searchbox-shadow:none;--primary-color:#ea2845;--primary-accent-color:#ea2868}body{font-size:16px;font-weight:400;font-family:Source Sans Pro,Helvetica Neue,sans-serif;font-display:swap;background-color:var(--background);color:var(--color);margin:0;-webkit-font-smoothing:antialiased;-webkit-transition:background .2s cubic-bezier(.7,0,.3,1);-moz-transition:background .2s cubic-bezier(.7,0,.3,1);-ms-transition:background .2s cubic-bezier(.7,0,.3,1);-o-transition:background .2s cubic-bezier(.7,0,.3,1);transition:background .2s cubic-bezier(.7,0,.3,1)}</style>\n        <link rel=\"stylesheet\" href=\"styles-MX72MIPH.css\" media=\"print\" onload=\"this.media='all'\">\n        <noscript>\n            <link rel=\"stylesheet\" href=\"styles-MX72MIPH.css\">\n        </noscript>\n    </head>\n    <body>\n        <app-root></app-root>\n        <script>\n      if ('serviceWorker' in navigator) {\n        navigator.serviceWorker\n          .getRegistrations()\n          .then(function(registrations) {\n            registrations.forEach(registration => {\n              registration\n                .unregister()\n                .then(function(register) {})\n                .catch(function(error) {});\n            });\n          });\n      }\n    </script>\n        <link rel=\"modulepreload\" href=\"chunk-QQYY3UCW.js\">\n        <link rel=\"modulepreload\" href=\"chunk-HWO3INMO.js\">\n        <link rel=\"modulepreload\" href=\"chunk-A6GBSRU4.js\">\n        <link rel=\"modulepreload\" href=\"chunk-AO7BAPTM.js\">\n        <link rel=\"modulepreload\" href=\"chunk-IPH2CUBH.js\">\n        <script src=\"polyfills-OQVFUOR5.js\" type=\"module\"></script>\n        <script src=\"main-TTFKQ7CV.js\" type=\"module\"></script>\n    </body>\n</html>\n<style>@font-face{font-family:'Inconsolata';font-style:normal;font-weight:400;font-stretch:100%;font-display:swap;src:url(https://fonts.gstatic.com/s/inconsolata/v37/QldgNThLqRwH-OJ1UHjlKENVzkWGVkL3GZQmAwLYxYWI2qfdm7Lpp4U8WRL2l2eY.woff2) format('woff2');unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;}@font-face{font-family:'Inconsolata';font-style:normal;font-weight:400;font-stretch:100%;font-display:swap;src:url(https://fonts.gstatic.com/s/inconsolata/v37/QldgNThLqRwH-OJ1UHjlKENVzkWGVkL3GZQmAwLYxYWI2qfdm7Lpp4U8WRP2l2eY.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;}@font-face{font-family:'Inconsolata';font-style:normal;font-weight:400;font-stretch:100%;font-display:swap;src:url(https://fonts.gstatic.com/s/inconsolata/v37/QldgNThLqRwH-OJ1UHjlKENVzkWGVkL3GZQmAwLYxYWI2qfdm7Lpp4U8WR32lw.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}</style>"
+						}
+					]
+				},
+				{
+					"name": "Update  a single brand",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"new brand 1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/brands/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"brands",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single brand",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/brands/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"brands",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new brand",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Suzuki\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/brands",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"brands"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Address",
+			"item": [
+				{
+					"name": "get all address",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/shipping-address",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"shipping-address"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get address",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/shipping-address/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"shipping-address",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single address",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"addressLine1\": \"jessroe\",\n    \"addressLine2\": \"khulna\",\n    \"state\": \"Uz\",\n    \"city\": \"kkk\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/shipping-address/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"shipping-address",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single address",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/shipping-address/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"shipping-address",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new address",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"Office\",\n    \"name\": \"Gowtam kumar\",\n    \"phoneNo\": \"01767164394\",\n    \"email\": \"gowtam@gmail.com\",\n    \"userId\": 1,\n    \"country\": \"Bangladesh\",\n    \"divisionId\": 1,\n    \"districtId\": 1,\n    \"upazilaId\": 1,\n    \"unionId\": 1,\n    \"address\": \"Kayem koala high school\",\n    \"status\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/shipping-address",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"shipping-address"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tax",
+			"item": [
+				{
+					"name": "get all tax",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/taxs",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"taxs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get tax",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/taxs/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"taxs",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single tax",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"10%\",\n    \"value\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/taxs/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"taxs",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single tax",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/taxs/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"taxs",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new tax",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"10%\",\n    \"value\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/taxs",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"taxs"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Color",
+			"item": [
+				{
+					"name": "Gets",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/colors",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"colors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/colors/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"colors",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"White\",\n    \"color\": \"white\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/colors/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"colors",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/colors/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"colors",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Green\",\n    \"color\": \"green\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/colors",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"colors"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Unit",
+			"item": [
+				{
+					"name": "get all unit",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/units",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"units"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get unit",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/units/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"units",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single unit",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Pisce\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/units/3",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"units",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single unit",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/units/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"units",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new unit",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Pisces\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/units",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"units"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Wishlists",
+			"item": [
+				{
+					"name": "get all wishlist",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "7f8b8b58-8659-4638-af2e-587bb9e82835",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/wishlist",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"wishlist"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get wishlist",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/wishlists/12",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"wishlists",
+								"12"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get wishlist Copy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/wishlists/12",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"wishlists",
+								"12"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single wishlist",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"7\",\n    \"productId\": \"5\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/wishlists/10",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"wishlists",
+								"10"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single wishlist",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/wishlists/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"wishlists",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new Wishlist",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": 2,\n    \"productId\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/wishlists",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"wishlists"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get user wishlist",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/wishlists/user-wishlist",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"wishlists",
+								"user-wishlist"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "File",
+			"item": [
+				{
+					"name": "get all tax",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {},
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Ikdvd3RhbUt1bWFyIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTcxNzM4NTg1NSwiZXhwIjoxNzE3NDcyMjU1fQ.nLcw0829q_8o13F60uWQ-Dnvkf1WUOstEYaQheN8ENE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{URL}}/uploads/file-1715318632752.png",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"uploads",
+								"file-1715318632752.png"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get image",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/public/gowtam.jpeg",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"public",
+								"gowtam.jpeg"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get file",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/taxs/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"taxs",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single file",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"Fixed Amount\",\n    \"value\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/taxs/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"taxs",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single file",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/taxs/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"taxs",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new file",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"type": "file",
+									"src": "/home/gowtamkumar/Downloads/aquarius-p015-1-500x500.jpg"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}/files/uploads",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"files",
+								"uploads"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "setting",
+			"item": [
+				{
+					"name": "get",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {},
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Ikdvd3RhbUt1bWFyIiwidXNlcm5hbWUiOiJnb3d0YW1rdW1hciIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTcxNzM4NTg1NSwiZXhwIjoxNzE3NDcyMjU1fQ.nLcw0829q_8o13F60uWQ-Dnvkf1WUOstEYaQheN8ENE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{URL}}/settings",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"settings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get image",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/public/gowtam.jpeg",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"public",
+								"gowtam.jpeg"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get file",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/taxs/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"taxs",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single file",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"Fixed Amount\",\n    \"value\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/taxs/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"taxs",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single file",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/taxs/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"taxs",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new file",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"type": "file",
+									"src": "/home/gowtamkumar/Pictures/Screenshots/Screenshot from 2025-02-10 21-54-33.png"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}/files/uploads",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"files",
+								"uploads"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Categoris",
+			"item": [
+				{
+					"name": "get all category",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/categories/antd",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"categories",
+								"antd"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get category",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/categories/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single category",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"cate jsu name change 31\",\n    \"urlSlug\": \"sdfasdfasdf4\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/categories/31",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"31"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single category",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/categories/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"categories",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Gets all",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/categories/all",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"categories",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new category",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"cat-2\",\n    \"urlSlug\": \"cat-2\"\n \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/categories",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"categories"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Size",
+			"item": [
+				{
+					"name": "get all size",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/sizes",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"sizes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get size",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/sizes/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"sizes",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single size",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"lg\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/sizes/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"sizes",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single size",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/sizes/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"sizes",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new size",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"lg\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/sizes",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"sizes"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Status",
+			"item": [
+				{
+					"name": "get all status",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/api/v1/status",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/status/5",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"status",
+								"5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single status",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Order Ready to Ship\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/status/5",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"status",
+								"5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single status",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/status/9",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"status",
+								"9"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new status",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Pending\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/status",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Payment",
+			"item": [
+				{
+					"name": "get all payment",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/payments",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"payments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get payment",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/payments/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"payments",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single payment",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"2024-04-11\",\n    \"orderId\": \"2\",\n    \"paymentMethod\": \"Online\",\n    \"amount\": 300\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/payments/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"payments",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single payment",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/payments/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"payments",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new payment",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"2024-04-11\",\n    \"orderId\": 1,\n    \"paymentMethod\": \"Online\",\n    \"amount\": 300\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/payments/online",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"payments",
+								"online"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Review",
+			"item": [
+				{
+					"name": "get all review",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/reviews",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"reviews"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get review",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/reviews/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reviews",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single review",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"Approved\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/reviews/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"reviews",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single review",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/reviews/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reviews",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new review",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": 10,\n    \"rating\": 4.5,\n    \"date\": \"2024-03-30\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/reviews",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"reviews"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Cart",
+			"item": [
+				{
+					"name": "get all Cart",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							},
+							{
+								"key": "",
+								"value": "e70063fd-c5b4-458b-a139-6130f2515580",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/carts",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"carts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get all user Cart",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/carts/user",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"carts",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "coupon apply with Cart list",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/carts/coupon-apply-cartlist?couponCode=4444",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"carts",
+								"coupon-apply-cartlist"
+							],
+							"query": [
+								{
+									"key": "couponCode",
+									"value": "4444"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "cart increment and decrement",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"Increment\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/carts/qty-up-down/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"carts",
+								"qty-up-down",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get Cart",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/carts",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"carts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single Cart",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"5\",\n    \"rating\": 4.5,\n    \"date\": \"2024-02-30\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/carts",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"carts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single Cart",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/carts/3",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"carts",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new Cart",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": 10,\n    \"productVariantId\": 7,\n    \"qty\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/carts",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"carts"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Menu",
+			"item": [
+				{
+					"name": "get all menus",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/menus/dashboard",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"menus",
+								"dashboard"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get Cart",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/menus",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"menus"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single Cart",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"main menu\",\n    \"items\": [{\n        \"name\": \"dfasdf\",\n        \"children\": [\n            {\n            \"label\": \"Home 1\",\n            \"url\": \"/\"\n            },\n            {\n            \"label\": \"About\",\n            \"url\": \"/about\"\n            }\n        ]\n    }],\n    \"userId\": 20\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/menus/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"menus",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single Cart",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/menus/6",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"menus",
+								"6"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new Menu",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6Imdvd3RhbSIsInVzZXJuYW1lIjoiZ293dGFta3VtYXIiLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3MzA2NDM1MTIsImV4cCI6MTczMDcyOTkxMn0.V2P8-_tkGSccYrf9tsKJ55TIw-En42aQYDUdc3qvJtE",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"main menu\",\n    \"items\": [{\n        \"name\": \"dfasdf\",\n        \"children\": [{\n            \"label\": \"Home\",\n            \"url\": \"/\"\n        }]\n    }],\n    \"userId\": 20\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/menus",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"menus"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Coupon",
+			"item": [
+				{
+					"name": "get all Coupon",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/coupons",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"coupons"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get Coupon",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/discounts/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single Coupon",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"couponCode\": \"2\",\n    \"type\": \"FreeShipping\",\n    \"value\": 300,\n    \"startDate\": \"01-09-2024\",\n    \"expiryDate\": \"08-09-2024\",\n    \"endDate\": \"08-09-2024\",\n    \"minOrderAmount\": \"200\",\n    \"usageCount\": 200\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/discounts/3",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"discounts",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single Coupon",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/coupons/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"coupons",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new Coupon",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"type\": \"Product\",\n        \"discountType\": \"Percentage\",\n        \"value\": 10,\n        \"startDate\": \"2025-01-17\",\n        \"expiryDate\": \"2025-01-26\",\n        \"minOrderAmount\": 1,\n        \"maxUser\": 10,\n        \"mincartValue\": 1,\n        \"maxDiscountValue\": 100,\n        \"usageLimit\": 10,\n        \"usagePerUser\": 2,\n        \"couponProducts\": [10],\n        \"active\": true\n   }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/coupons",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"coupons"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Product",
+			"item": [
+				{
+					"name": "get all product",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "7f8b8b58-8659-4638-af2e-587bb9e82835",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/products",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"products"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get product by slug",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwibmFtZSI6Ikdvd3RhbUt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsImlhdCI6MTcxNDU1ODI0MSwiZXhwIjoxNzE1MTYzMDQxfQ.Cnjs7IlnCGnXNERM3L26ttlRFSMurICg82dRacXpNVU",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/products/slug/new-product",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"products",
+								"slug",
+								"new-product"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwibmFtZSI6Ikdvd3RhbUt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsImlhdCI6MTcxNDU1ODI0MSwiZXhwIjoxNzE1MTYzMDQxfQ.Cnjs7IlnCGnXNERM3L26ttlRFSMurICg82dRacXpNVU",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/products",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"products"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single  product",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"hp laptop\",\n   \"tags\": [\"hello new\", \"new product\", \"nice product\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/products/22",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"products",
+								"22"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single product",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/products/665822bdc03e0ef89079e5f0",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"products",
+								"665822bdc03e0ef89079e5f0"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new product",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Ryzen 900g procceser with graphic\",\n   \"taxId\": 1,\n  \"images\": [\n    \"images-1737685950245.jpg\"\n  ],\n  \"thumbnailImage\": \"thumbnailImage-1737685933644.png\",\n  \"hoverImage\": \"hoverImage-1737685940554.jpg\",\n  \"brandId\": 1,\n  \"unitId\": 1,\n  \"limitPurchaseQty\": 33,\n  \"description\": \"ddd\",\n  \"shortDescription\": \"sss\",\n  \"enableReview\": true,\n  \"variant\": true,\n  \"alertQty\": 10,\n  \"status\": \"Active\",\n  \"productVariants\": [\n    {\n      \"unitPrice\": 2222,\n      \"purchasePrice\": 111,\n      \"default\": true,\n      \"sizeId\": 2,\n      \"colorId\": 1,\n      \"stockQty\": 20\n    }\n  ],\n  \"productCategories\": [2]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/products",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"products"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Product variants",
+			"item": [
+				{
+					"name": "get all product Variant",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwibmFtZSI6Ikdvd3RhbUt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsImlhdCI6MTcxNDU1ODI0MSwiZXhwIjoxNzE1MTYzMDQxfQ.Cnjs7IlnCGnXNERM3L26ttlRFSMurICg82dRacXpNVU",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/api/v1/product-variants",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"product-variants"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get product variant",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/product-variants/4",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"product-variants",
+								"4"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single  product variant",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwibmFtZSI6Ikdvd3RhbUt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsImlhdCI6MTcxNDU1ODI0MSwiZXhwIjoxNzE1MTYzMDQxfQ.Cnjs7IlnCGnXNERM3L26ttlRFSMurICg82dRacXpNVU",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"priduct variant\",\n    \"price\": 200,\n    \"stockQty\": 100,\n    \"productId\": \"5\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/product-variants/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"product-variants",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single product Variant",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/product-variants/4",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"product-variants",
+								"4"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new product Variant",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTEwNTAxLCJleHAiOjE3MTQ3MTUzMDF9.akjaUofRebDqrMZPcwvMRFnBbABy1wjcmErl_n4tMmk",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"nestjs\",\n    \"price\": 200,\n    \"stockQty\": 100,\n    \"productId\": \"5\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/product-variants",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"product-variants"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Order",
+			"item": [
+				{
+					"name": "orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/orders",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "new order",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"totalQty\": 3,\n    \"subTotal\": \"7332.60\",\n    \"totalItemsDiscount\": \"733.26\",\n    \"totalTax\": \"666.60\",\n    \"shippingCharge\": \"50.00\",\n    \"grandTotal\": \"7099.34\",\n    \"couponDiscount\": \"100.00\",\n    \"shippingAddressId\": 2,\n    \"couponId\": 1,\n    \"paymentMethod\": \"Cash\",\n    \"orderItems\": [\n        {\n                \"qty\": 3,\n                \"productVariantId\": 1,\n                \"productId\": 4,\n                \"unitPrice\": \"2222.00\",\n                \"purchasePrice\": \"111.00\",\n                \"taxAmount\": \"666.60\",\n                \"subTotal\": \"7332.60\",\n                \"discountAmount\": \"733.26\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/orders",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "single order",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/orders/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete order",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/orders/4",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"4"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "pudate order",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderDate\": \"2024-06-27\",\n    \"deliveryId\": 2,\n    \"isPaid\": true,\n    \"isShipped\": true,\n    \"orderTotalAmount\": 100.70,\n    \"netAmount\": 700.50,\n    \"shipingAmount\": 50,\n    \"phoneNo\": \"018938376533\",\n    \"note\": \"dfasdf\",\n    \"paymentStatus\": \"Paid\",\n    \"deliveryAddress\": \"jashore\",\n    \"orderItems\": [\n        {\n            \"totalAmount\": 200,\n            \"orderId\": 3,\n            \"productId\": 12,\n            \"price\": 50,\n            \"qty\": 11\n        },\n        {\n            \"totalAmount\": 300,\n            \"orderId\": 3,\n            \"productId\": 12,\n            \"price\": 70.50,\n            \"qty\": 10\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/orders/3",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "status change order",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"Canceled\"\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/orders/order-status-update/80",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"orders",
+								"order-status-update",
+								"80"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Order-tracking",
+			"item": [
+				{
+					"name": "get all order-tracking",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/api/v1/order-tracking",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"order-tracking"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get order-tracking",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/order-tracking/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"order-tracking",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single order-tracking",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": " {\n                    \"location\": \"asdfasdf\",\n                    \"status\": \"Order Placed\"\n }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/order-tracking/2",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"order-tracking",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single order-tracking",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/order-tracking/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"order-tracking",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new order-tracking",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderId\": 17,\n    \"location\": \"অর্ডারটি ডেলিভারি দেয়া হয়েছে\",\n    \"status\": \"Order Delivered\"\n    }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/order-tracking",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"order-tracking"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Geo-location",
+			"item": [
+				{
+					"name": "Districts",
+					"item": [
+						{
+							"name": "get all districts",
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {}
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{URL}}/api/v1/districts",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"districts"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Single a get districts",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/api/v1/discounts/2",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"discounts",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update  a single districts",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"couponCode\": \"2\",\n    \"type\": \"FreeShipping\",\n    \"value\": 300,\n    \"startDate\": \"01-09-2024\",\n    \"expiryDate\": \"08-09-2024\",\n    \"endDate\": \"08-09-2024\",\n    \"minOrderAmount\": \"200\",\n    \"usageCount\": 200\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{URL}}/api/v1/discounts/3",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"discounts",
+										"3"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete  a single districts",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/api/v1/discounts/4",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"discounts",
+										"4"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create a new districts",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n     \"couponCode\": \"xx\",\n     \"discountType\": \"Percentage\",\n     \"type\": \"Discount\",\n     \"value\": 10,\n     \"startDate\": \"2024-06-17T12:20:42.500Z\",\n     \"expiryDate\": \"2024-06-26T18:00:00.000Z\",\n     \"minOrderAmount\": 2000,\n     \"maxUser\": 10\n   }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{URL}}/api/v1/districts",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"districts"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Upazilas",
+					"item": [
+						{
+							"name": "get all upazilas",
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {}
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{URL}}/api/v1/upazilas",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"upazilas"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Single a get upazilas",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/api/v1/upazilas/2",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"upazilas",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update  a single upazilas",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"couponCode\": \"2\",\n    \"type\": \"FreeShipping\",\n    \"value\": 300,\n    \"startDate\": \"01-09-2024\",\n    \"expiryDate\": \"08-09-2024\",\n    \"endDate\": \"08-09-2024\",\n    \"minOrderAmount\": \"200\",\n    \"usageCount\": 200\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{URL}}/api/v1/upazilas/3",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"upazilas",
+										"3"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete  a single upazilas",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/api/v1/upazilas/4",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"upazilas",
+										"4"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create a new upazilas",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n     \"couponCode\": \"xx\",\n     \"discountType\": \"Percentage\",\n     \"type\": \"Discount\",\n     \"value\": 10,\n     \"startDate\": \"2024-06-17T12:20:42.500Z\",\n     \"expiryDate\": \"2024-06-26T18:00:00.000Z\",\n     \"minOrderAmount\": 2000,\n     \"maxUser\": 10\n   }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{URL}}/api/v1/upazilas",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"upazilas"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Division",
+					"item": [
+						{
+							"name": "get all division",
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {}
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{URL}}/api/v1/divisions/",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"divisions",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Single a get division",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/api/v1/discounts/2",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"discounts",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update  a single division",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"couponCode\": \"2\",\n    \"type\": \"FreeShipping\",\n    \"value\": 300,\n    \"startDate\": \"01-09-2024\",\n    \"expiryDate\": \"08-09-2024\",\n    \"endDate\": \"08-09-2024\",\n    \"minOrderAmount\": \"200\",\n    \"usageCount\": 200\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{URL}}/api/v1/discounts/3",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"discounts",
+										"3"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete  a single division",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/api/v1/discounts/4",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"discounts",
+										"4"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create a new division",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n     \"couponCode\": \"xx\",\n     \"discountType\": \"Percentage\",\n     \"type\": \"Discount\",\n     \"value\": 10,\n     \"startDate\": \"2024-06-17T12:20:42.500Z\",\n     \"expiryDate\": \"2024-06-26T18:00:00.000Z\",\n     \"minOrderAmount\": 2000,\n     \"maxUser\": 10\n   }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{URL}}/divisions/sync-geo-locations",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"divisions",
+										"sync-geo-locations"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Unions",
+					"item": [
+						{
+							"name": "get all unions",
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {}
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjJiMzlmNzI5ZTg2OGM2ZjBkMDA3OGEiLCJuYW1lIjoiR293dGFtIGt1bWFyIiwidXNlcm5hbWUiOiJnb3d0bWFrdW1hciIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6dHJ1ZSwiaWF0IjoxNzE0MTExMjY4LCJleHAiOjE3MTQ3MTYwNjh9.h02V153LCT_F6lQrMOF4TKw7btW3YrAFhKMM009hDBk",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{URL}}/api/v1/unions?upazilaId=175",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"unions"
+									],
+									"query": [
+										{
+											"key": "upazilaId",
+											"value": "175"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Single a get unions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/api/v1/discounts/2",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"discounts",
+										"2"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update  a single unions",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"couponCode\": \"2\",\n    \"type\": \"FreeShipping\",\n    \"value\": 300,\n    \"startDate\": \"01-09-2024\",\n    \"expiryDate\": \"08-09-2024\",\n    \"endDate\": \"08-09-2024\",\n    \"minOrderAmount\": \"200\",\n    \"usageCount\": 200\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{URL}}/api/v1/unions/3",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"unions",
+										"3"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete  a single unions",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/api/v1/unions/4",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"unions",
+										"4"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create a new unions",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n     \"couponCode\": \"xx\",\n     \"discountType\": \"Percentage\",\n     \"type\": \"Discount\",\n     \"value\": 10,\n     \"startDate\": \"2024-06-17T12:20:42.500Z\",\n     \"expiryDate\": \"2024-06-26T18:00:00.000Z\",\n     \"minOrderAmount\": 2000,\n     \"maxUser\": 10\n   }",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{URL}}/api/v1/unions",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"unions"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "sync-geo-location",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n     \"couponCode\": \"xx\",\n     \"discountType\": \"Percentage\",\n     \"type\": \"Discount\",\n     \"value\": 10,\n     \"startDate\": \"2024-06-17T12:20:42.500Z\",\n     \"expiryDate\": \"2024-06-26T18:00:00.000Z\",\n     \"minOrderAmount\": 2000,\n     \"maxUser\": 10\n   }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/divisions/sync-geo-locations",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"divisions",
+								"sync-geo-locations"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Pages",
+			"item": [
+				{
+					"name": "Home",
+					"item": [
+						{
+							"name": "get home",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/pages/slug/",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"pages",
+										"slug",
+										""
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "logs",
+			"item": [
+				{
+					"name": "audit-log",
+					"item": [
+						{
+							"name": "get",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{URL}}/audit-logs",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"audit-logs"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Post",
+			"item": [
+				{
+					"name": "get all review",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/posts",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"posts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get review",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/posts/new-post",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"posts",
+								"new-post"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single review",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"5\",\n    \"rating\": 4.5,\n    \"date\": \"2024-02-30\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/reviews/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reviews",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single review",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/posts/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"posts",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new review",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"5\",\n    \"rating\": 4.5,\n    \"date\": \"2024-02-30\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/reviews",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reviews"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Comment",
+			"item": [
+				{
+					"name": "get all review",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{URL}}/api/v1/reviews",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reviews"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Single a get review",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/reviews/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reviews",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update  a single review",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"5\",\n    \"rating\": 4.5,\n    \"date\": \"2024-02-30\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/reviews/1",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reviews",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete  a single review",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{URL}}/api/v1/reviews/7",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"reviews",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a new review",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"postId\": 1,\n    \"content\":\"fadgfsdfg\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{URL}}/api/v1/comments",
+							"host": [
+								"{{URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
