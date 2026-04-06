@@ -8,10 +8,11 @@ import { BrandEntity } from './entities/brand.entity'
 export class BrandService {
   private readonly logger = new Logger(BrandService.name)
 
-  constructor(private readonly brandRepo: BrandRepository) {}
+  constructor(private readonly brandRepo: BrandRepository) { }
 
   async createBrand(createBrandDto: CreateBrandDto, tenantId: string): Promise<BrandEntity> {
     this.logger.log(`${this.createBrand.name} Service Called`)
+
     const existing = await this.brandRepo.findBySlug(createBrandDto.slug, tenantId)
 
     if (existing) {

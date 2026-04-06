@@ -89,7 +89,7 @@ export default async function Product({ params }: { params: Promise<{ slug: stri
         <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
             <PaymentStatus />
             <Navbar />
-            <TrackRecentlyViewed product={product} />
+            {/* <TrackRecentlyViewed product={product} /> */}
             <ProductDetails product={product} />
             {
                 showReviews && product.reviews && product.reviews.length > 0 && product.isReview && (

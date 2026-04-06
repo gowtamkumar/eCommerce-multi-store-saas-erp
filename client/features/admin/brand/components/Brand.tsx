@@ -9,17 +9,11 @@ import type { Brand } from '../type';
 
 export default function Brand() {
     const [brands, setBrands] = useState<Brand[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [searchQuery, setSearchQuery] = useState<string>('');
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
-    const [formData, setFormData] = useState({
-        name: '',
-        slug: '',
-        description: '',
-        image: '',
-        website: '',
-    });
+    const [formData, setFormData] = useState<Brand>({} as Brand);
 
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
@@ -54,6 +48,8 @@ export default function Brand() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log("formData", formData);
+
         try {
             const url = editingBrand ? `/brands/${editingBrand.id}` : '/brands';
             const method = editingBrand ? 'PATCH' : 'POST';
@@ -96,13 +92,13 @@ export default function Brand() {
             setFormData({
                 name: brand.name,
                 slug: brand.slug,
-                description: brand.description || '',
-                image: brand.image || '',
-                website: brand.website || '',
+                description: brand.description,
+                image: brand.image,
+                website: brand.website,
             });
         } else {
             setEditingBrand(null);
-            setFormData({ name: '', slug: '', description: '', image: '', website: '' });
+            setFormData({} as Brand);
         }
         setIsModalOpen(true);
     };
@@ -194,7 +190,7 @@ export default function Brand() {
                                                     <Edit className="w-4 h-4" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(brand.id)}
+                                                    onClick={() => handleDelete(brand.id as string)}
                                                     className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
