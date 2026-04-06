@@ -6,18 +6,8 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, useMemo } from "react";
 import SectionHeader from "@/features/admin/pages/components/customizer/SectionHeader";
+import { BrandGridProps } from "../type";
 
-interface BrandGridProps {
-  sectionId?: string;
-  title?: string;
-  count?: number;
-  source?: 'all' | 'manual';
-  items?: any[];
-  columns?: number;
-  mobileColumns?: number;
-  styles?: any;
-  layout?: 'grid' | 'slider';
-}
 
 export default function BrandGrid({
   sectionId,
