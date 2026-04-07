@@ -1,4 +1,4 @@
-import ExpensesList from '@/features/admin/expense/components/ExpensesList';
+import Expense from '@/features/admin/expense/components/Expense';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function ExpensesPage() {
-    return <ExpensesList />;
+    return <Expense />;
 }

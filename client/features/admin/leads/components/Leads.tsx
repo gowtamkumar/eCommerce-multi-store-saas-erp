@@ -5,7 +5,7 @@ import { LeadStatus } from '@/lib/enums/lead-status.enum';
 import { ChevronLeft, ChevronRight, Download, Filter, Loader2, MessageSquare, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Pagination } from '../../../../customer/type';
+import { Pagination } from '../../customer/type';
 
 
 
