@@ -3,9 +3,10 @@ import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 
 @Entity('payments')
+@Index(['tenantId', 'createdAt'])
 export class PaymentEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'order_id' })
   orderId: string
@@ -23,6 +24,7 @@ export class PaymentEntity extends BaseEntity {
   // user: UserEntity;
 
   @Column({ type: 'varchar', name: 'transaction_id', length: 255 })
+  @Index()
   transactionId: string
 
   @Column({ type: 'decimal', name: 'amount', precision: 10, scale: 2 })

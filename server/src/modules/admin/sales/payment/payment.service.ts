@@ -18,6 +18,8 @@ import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoi
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { PaymentStrategyFactory } from '@/common/strategies/payment/payment-strategy.factory'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { PaginationDto } from '@/common/dto/pagination.dto'
 
 @Injectable()
 export class PaymentService {
@@ -29,6 +31,7 @@ export class PaymentService {
     private settingsService: SettingsService,
     private invoiceService: InvoiceService,
     private mailService: MailService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async initPayment(dto: InitPaymentDto, tenantId: string): Promise<{ gatewayUrl: string }> {
@@ -108,6 +111,7 @@ export class PaymentService {
       this.mailService.sendNewOrderNotification(orderWithRelations, order.tenantId)
     }
 
+    await this.cacheService.delCache(`payments:list`, order.tenantId)
     return { success: true }
   }
 
@@ -131,6 +135,7 @@ export class PaymentService {
       tenantId: order.tenantId,
     })
 
+    await this.cacheService.delCache(`payments:list`, order.tenantId)
     return { success: false }
   }
 
@@ -154,6 +159,7 @@ export class PaymentService {
       tenantId: order.tenantId,
     })
 
+    await this.cacheService.delCache(`payments:list`, order.tenantId)
     return { cancelled: true }
   }
 
@@ -162,9 +168,35 @@ export class PaymentService {
     return strategy.getRedirectUrl(gatewayResponse, defaultAppUrl)
   }
 
-  async findAllPayments(tenantId: string): Promise<PaymentEntity[]> {
+  async findAllPayments(
+    tenantId: string,
+    filterDto: PaginationDto,
+  ): Promise<{ items: PaymentEntity[]; total: number; page: number; limit: number; totalPages: number }> {
     this.logger.log(`${this.findAllPayments.name} Service Called`)
-    return await this.paymentRepository.findPaymentsByTenant(tenantId)
+    const { page = 1, limit = 20, q: search } = filterDto
+    const cacheKey = `payments:list:p${page}:l${limit}`
+
+    return this.cacheService.rememberCache(
+      cacheKey,
+      async () => {
+        const [items, total] = await this.paymentRepository.findPaymentsByTenant(
+          tenantId, page, limit, search,
+        )
+        return { items, total, page, limit, totalPages: Math.ceil(total / limit) }
+      },
+      300,
+      tenantId,
+    )
+  }
+
+  /**
+   * Raw unpaginated payment fetch — intended for internal report/aggregation use only.
+   * The public admin endpoint uses `findAllPayments` with pagination and caching.
+   */
+  async findAllPaymentsRaw(tenantId: string): Promise<PaymentEntity[]> {
+    this.logger.log(`${this.findAllPaymentsRaw.name} Service Called`)
+    const [items] = await this.paymentRepository.findPaymentsByTenant(tenantId, 1, 100000)
+    return items
   }
 
   async findAllPaymentsByCustomer(userId: string, tenantId: string): Promise<PaymentEntity[]> {

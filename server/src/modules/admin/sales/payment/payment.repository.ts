@@ -22,23 +22,45 @@ export class PaymentRepository {
     return await (this.repo.save(payment) as Promise<PaymentEntity>)
   }
 
-  async findPaymentsByTenant(tenantId: string): Promise<PaymentEntity[]> {
-    return await this.repo.find({
-      where: { tenantId },
-      order: { createdAt: 'DESC' },
-      relations: ['order'],
-    })
+  /**
+   * Server-side paginated list of payments for the admin dashboard.
+   * Replaces the previous unbounded `find()` that returned all records.
+   */
+  async findPaymentsByTenant(
+    tenantId: string,
+    page: number,
+    limit: number,
+    search?: string,
+  ): Promise<[PaymentEntity[], number]> {
+    const qb = this.repo
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.order', 'order')
+      .where('payment.tenantId = :tenantId', { tenantId })
+      .orderBy('payment.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    if (search) {
+      qb.andWhere(
+        '(payment.transactionId ILIKE :search OR order.customerName ILIKE :search OR CAST(payment.method AS TEXT) ILIKE :search)',
+        { search: `%${search}%` },
+      )
+    }
+
+    return qb.getManyAndCount()
   }
 
+  /**
+   * Fetch payments by user — uses QueryBuilder JOIN to avoid unreliable
+   * nested `where: { order: { userId } }` TypeORM patterns.
+   */
   async findPaymentsByUser(userId: string, tenantId: string): Promise<PaymentEntity[]> {
-    return await this.repo.find({
-      where: {
-        tenantId,
-        order: { userId },
-      },
-      order: { createdAt: 'DESC' },
-      relations: ['order'],
-    })
+    return this.repo
+      .createQueryBuilder('payment')
+      .innerJoinAndSelect('payment.order', 'order')
+      .where('payment.tenantId = :tenantId', { tenantId })
+      .andWhere('order.userId = :userId', { userId })
+      .orderBy('payment.createdAt', 'DESC')
+      .getMany()
   }
-
 }

@@ -4,8 +4,30 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { fetchAPI } from '@/services/api';
 import { ChevronLeft, ChevronRight, Loader2, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
+import toast from 'react-hot-toast';
 import { Payment } from '../type';
+
+// Memoized row — prevents full table repaint when parent state changes (e.g. search input)
+const PaymentRow = memo(({ payment, formatPrice }: { payment: Payment; formatPrice: (v: number) => string }) => (
+    <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+        <td className="px-6 py-4 text-slate-500 text-sm">{new Date(payment.createdAt).toLocaleDateString()}</td>
+        <td className="px-6 py-4 text-slate-500 font-mono text-xs">{payment.transactionId}</td>
+        <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{payment.order?.customerName || 'Unknown'}</td>
+        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">{formatPrice(payment.amount || 0)}</td>
+        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 capitalize">{payment.method}</td>
+        <td className="px-6 py-4">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                payment.status === 'completed' || payment.status === 'SUCCESS'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+            }`}>
+                {payment.status}
+            </span>
+        </td>
+    </tr>
+));
+PaymentRow.displayName = 'PaymentRow';
 
 
 export default function PaymentsPage() {
@@ -32,22 +54,23 @@ export default function PaymentsPage() {
             const params = new URLSearchParams({
                 page: page.toString(),
                 limit: '20',
-                search: search
+                q: search,
             });
             const res = await fetchAPI(`/payments?${params}`);
 
-            if (res.success && Array.isArray(res.data)) {
-                setPayments(res.data);
-                // Backend doesn't support pagination yet, so we mock it based on result length
+            // Backend now returns { items, total, page, limit, totalPages }
+            if (res.success && res.data?.items) {
+                setPayments(res.data.items);
                 setPagination({
-                    total: res.data.length,
-                    page: 1,
-                    limit: res.data.length,
-                    totalPages: 1
+                    total: res.data.total,
+                    page: res.data.page,
+                    limit: res.data.limit,
+                    totalPages: res.data.totalPages,
                 });
             }
         } catch (error) {
             console.error('Failed to fetch payments', error);
+            toast.error('Failed to load payment history');
         } finally {
             setLoading(false);
         }
@@ -111,21 +134,7 @@ export default function PaymentsPage() {
                                 </tr>
                             ) : (
                                 payments.map((payment) => (
-                                    <tr key={payment.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <td className="px-6 py-4 text-slate-500 text-sm">{new Date(payment.createdAt).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 text-slate-500 font-mono text-xs">{payment.transactionId}</td>
-                                        <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{payment.order?.customerName || 'Unknown'}</td>
-                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 font-medium">{formatPrice(payment.amount || 0)}</td>
-                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 capitalize">{payment.method}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${payment.status === 'SUCCESS'
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                                }`}>
-                                                {payment.status}
-                                            </span>
-                                        </td>
-                                    </tr>
+                                    <PaymentRow key={payment.id} payment={payment} formatPrice={formatPrice} />
                                 ))
                             )}
                         </tbody>
