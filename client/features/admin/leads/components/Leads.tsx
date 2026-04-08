@@ -72,8 +72,11 @@ export default function Lead() {
             });
             const res = await fetchAPI(`/leads?${params}`);
             if (res.success && res.data) {
-                setMessages(res.data.leads);
-                setPagination(res.data.pagination);
+                const data = Array.isArray(res.data) ? res.data : (res.data.leads || []);
+                setMessages(data);
+                if (res.pagination) {
+                    setPagination(res.pagination);
+                }
             }
         } catch (error) {
             console.error('Failed to fetch messages', error);
@@ -221,7 +224,7 @@ export default function Lead() {
                     </div>
                 </div>
                 <div className="text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                    Total: {pagination.total} subscribers
+                    Total: {pagination?.total || 0} subscribers
                 </div>
             </div>
 
@@ -271,11 +274,11 @@ export default function Lead() {
             </div>
 
             {/* Pagination Controls */}
-            {pagination.totalPages > 1 && (
+            {pagination?.totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-6">
                     <button
-                        onClick={() => handlePageChange(pagination.page - 1)}
-                        disabled={pagination.page === 1 || loading}
+                        onClick={() => handlePageChange((pagination?.page || 1) - 1)}
+                        disabled={(pagination?.page || 1) === 1 || loading}
                         className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                         <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
@@ -283,13 +286,13 @@ export default function Lead() {
 
                     <div className="flex items-center gap-1">
                         <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                            Page {pagination.page} of {pagination.totalPages}
+                            Page {pagination?.page || 1} of {pagination?.totalPages || 1}
                         </span>
                     </div>
 
                     <button
-                        onClick={() => handlePageChange(pagination.page + 1)}
-                        disabled={pagination.page === pagination.totalPages || loading}
+                        onClick={() => handlePageChange((pagination?.page || 1) + 1)}
+                        disabled={(pagination?.page || 1) === (pagination?.totalPages || 1) || loading}
                         className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                         <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
