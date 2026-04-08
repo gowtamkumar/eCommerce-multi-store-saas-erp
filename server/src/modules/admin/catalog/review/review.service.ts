@@ -2,16 +2,23 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto'
 import { ReviewRepository } from './review.repository'
 import { ReviewEntity } from './entities/review.entity'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
 @Injectable()
 export class ReviewService {
   private readonly logger = new Logger(ReviewService.name)
 
-  constructor(private readonly reviewRepository: ReviewRepository) {}
+  constructor(
+    private readonly reviewRepository: ReviewRepository,
+    private readonly cacheService: CacheService,
+  ) {}
 
   async createReview(dto: CreateReviewDto, tenantId: string): Promise<ReviewEntity> {
     this.logger.log(`${this.createReview.name} Service Called`)
-    return await this.reviewRepository.createAndSave(dto, tenantId)
+    const result = await this.reviewRepository.createAndSave(dto, tenantId)
+    await this.cacheService.delCache(`reviews:product:${dto.productId}`, tenantId)
+    await this.cacheService.delCache('reviews:public', tenantId)
+    return result
   }
 
   async findAllReviews(
@@ -24,12 +31,24 @@ export class ReviewService {
 
   async findPublicReviews(tenantId: string): Promise<ReviewEntity[]> {
     this.logger.log(`${this.findPublicReviews.name} Service Called`)
-    return await this.reviewRepository.findPublicReviews(tenantId)
+    const cacheKey = 'reviews:public'
+    return this.cacheService.rememberCache(
+      cacheKey,
+      () => this.reviewRepository.findPublicReviews(tenantId),
+      300,
+      tenantId
+    )
   }
 
   async findByProductReviews(productId: string, tenantId: string): Promise<ReviewEntity[]> {
     this.logger.log(`${this.findByProductReviews.name} Service Called`)
-    return await this.reviewRepository.findByProductReviews(productId, tenantId)
+    const cacheKey = `reviews:product:${productId}`
+    return this.cacheService.rememberCache(
+      cacheKey,
+      () => this.reviewRepository.findByProductReviews(productId, tenantId),
+      300,
+      tenantId
+    )
   }
 
   async updateReview(id: string, dto: UpdateReviewDto, tenantId: string): Promise<ReviewEntity> {
@@ -37,7 +56,10 @@ export class ReviewService {
     const review = await this.reviewRepository.findById(id, tenantId)
     if (!review) throw new NotFoundException('Review not found')
 
-    return await this.reviewRepository.updateAndSave(review, dto)
+    const result = await this.reviewRepository.updateAndSave(review, dto)
+    await this.cacheService.delCache(`reviews:product:${review.productId}`, tenantId)
+    await this.cacheService.delCache('reviews:public', tenantId)
+    return result
   }
 
   async removeReview(
@@ -49,6 +71,8 @@ export class ReviewService {
     if (!review) throw new NotFoundException('Review not found')
 
     await this.reviewRepository.removeReview(review)
+    await this.cacheService.delCache(`reviews:product:${review.productId}`, tenantId)
+    await this.cacheService.delCache('reviews:public', tenantId)
     return { success: true, message: 'Review deleted successfully' }
   }
 }

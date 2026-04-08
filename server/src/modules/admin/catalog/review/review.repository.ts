@@ -16,16 +16,16 @@ export class ReviewRepository {
     tenantId: string,
   ): Promise<{ reviews: ReviewEntity[]; total: number }> {
     const { page, limit, q, status } = filterDto
-    const query = this.repo.createQueryBuilder('review').where('review.tenantId = :tenantId', {
-      tenantId,
-    })
+    const query = this.repo.createQueryBuilder('review')
+      .leftJoinAndSelect('review.product', 'product')
+      .where('review.tenantId = :tenantId', { tenantId })
 
     if (status) {
       query.andWhere('review.status = :status', { status })
     }
 
     if (q) {
-      query.andWhere('(review.customerName ILIKE :q OR review.comment ILIKE :q)', { q: `%${q}%` })
+      query.andWhere('(review.customerName ILIKE :q OR review.comment ILIKE :q OR product.name ILIKE :q)', { q: `%${q}%` })
     }
 
     const [reviews, total] = await query

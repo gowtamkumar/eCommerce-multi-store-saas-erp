@@ -7,6 +7,7 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('reviews')
 @Index(['productId', 'status'])
+@Index(['tenantId', 'status'])
 export class ReviewEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'product_id' })
   productId: string
