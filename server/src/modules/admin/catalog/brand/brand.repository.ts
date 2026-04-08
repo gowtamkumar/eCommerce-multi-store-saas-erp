@@ -26,6 +26,26 @@ export class BrandRepository {
     })
   }
 
+  async findAllWithProductCounts(tenantId: string) {
+    return this.repo
+      .createQueryBuilder('brand')
+      .leftJoin('brand.products', 'product')
+      .where('brand.tenantId = :tenantId', { tenantId })
+      .select([
+        'brand.id as id',
+        'brand.name as name',
+        'brand.slug as slug',
+        'brand.description as description',
+        'brand.image as image',
+        'brand.website as website',
+        'brand.createdAt as "createdAt"',
+      ])
+      .addSelect('COUNT(product.id)', 'productCount')
+      .groupBy('brand.id')
+      .orderBy('brand.name', 'ASC')
+      .getRawMany()
+  }
+
   async createAndSave(data: Partial<BrandEntity>): Promise<BrandEntity> {
     const brand = this.repo.create(data as BrandEntity)
     return this.repo.save(brand)

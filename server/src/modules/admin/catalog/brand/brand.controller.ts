@@ -48,6 +48,22 @@ export class BrandController {
     }
   }
 
+  @Get('stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  async findAllBrandsWithStats(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllBrandsWithStats.`)
+    const result = await this.brandService.findAllBrandsWithStats(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `List of brands with stats`,
+      data: result,
+    }
+  }
+
   @Get(':id')
   async findOneBrand(
     @RequestContext() ctx: RequestContextDto,

@@ -80,7 +80,7 @@ export class ProductEntity extends BaseEntity {
   @Index()
   brandId: string
 
-  @ManyToOne(() => BrandEntity, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => BrandEntity, (brand) => brand.products, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'brand_id' })
   brand: BrandEntity
 

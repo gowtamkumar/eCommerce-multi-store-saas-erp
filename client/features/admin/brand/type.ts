@@ -5,6 +5,7 @@ export interface Brand {
     description: string;
     image?: string;
     website?: string;
+    productCount?: number;
 }
 
 export interface BrandFormProps {

@@ -1,7 +1,8 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
+import { ProductEntity } from '../../product/entities/product.entity'
 
 @Entity('brands')
 export class BrandEntity extends BaseEntity {
@@ -9,6 +10,7 @@ export class BrandEntity extends BaseEntity {
   name: string
 
   @Column()
+  @Index()
   slug: string
 
   @Column({ type: 'text', nullable: true })
@@ -20,7 +22,11 @@ export class BrandEntity extends BaseEntity {
   @Column({ nullable: true })
   website: string
 
+  @OneToMany(() => ProductEntity, (product) => product.brand)
+  products: ProductEntity[]
+
   @Column({ type: 'uuid', name: 'tenant_id' })
+  @Index()
   tenantId: string
 
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })

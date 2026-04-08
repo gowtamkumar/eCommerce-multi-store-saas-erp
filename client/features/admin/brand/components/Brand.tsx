@@ -27,7 +27,7 @@ export default function Brand() {
     const fetchBrands = async () => {
         setLoading(true);
         try {
-            const res = await fetchAPI('/brands');
+            const res = await fetchAPI('/brands/stats');
             if (res.success) {
                 setBrands(res.data);
             }
