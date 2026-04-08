@@ -43,6 +43,35 @@ export interface ExpenseBreakdownPoint {
     [key: string]: string | number;
 }
 
+export interface OperatingExpenseItem {
+    category: string;
+    amount: number;
+}
+
+export interface OperatingExpensesData {
+    total: number;
+    breakdown: OperatingExpenseItem[];
+}
+
+export interface ProfitLossData {
+    revenue: {
+        total: number;
+        orderCount: number;
+    };
+    cogs: {
+        total: number;
+        purchaseOrderCount: number;
+    };
+    operatingExpenses: OperatingExpensesData;
+    grossProfit: number;
+    netProfit: number;
+    profitMargin: number;
+    period: {
+        startDate: string;
+        endDate: string;
+    };
+}
+
 export interface FinanceKpis {
     totalRevenue: number;
     totalExpenses: number;

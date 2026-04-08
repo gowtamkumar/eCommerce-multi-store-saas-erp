@@ -19,7 +19,7 @@ export default function SupplierLedger() {
         const loadSuppliers = async () => {
             try {
                 const res = await fetchAPI('/suppliers');
-                setSuppliers(res.data || []);
+                setSuppliers(res.data.items || []);
             } catch (error) {
                 toast.error('Failed to load suppliers');
             } finally {
