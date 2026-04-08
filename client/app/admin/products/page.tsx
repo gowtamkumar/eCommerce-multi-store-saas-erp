@@ -1,6 +1,6 @@
-import DashboardProducts from '@/features/product/admin/DashboardProducts'
+import ProductDashboard from '@/features/product/admin/ProductDashboard'
 export default function page() {
   return (
-    <DashboardProducts />
+    <ProductDashboard />
   )
 }
