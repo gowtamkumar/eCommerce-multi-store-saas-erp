@@ -1,4 +1,4 @@
-import ReportExport from '@/features/admin/report/components/ReportExport';
+import ReportExportDashboard from '@/features/admin/report/components/ReportExportDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function ExportPage() {
-    return <ReportExport />;
+    return <ReportExportDashboard />;
 }
