@@ -41,7 +41,7 @@ export default function CouponDashboard() {
             });
             const res = await fetchAPI(`/coupons?${params}`);
             if (res.success && res.data) {
-                setCoupons(res.data.items || []);
+                setCoupons(res.data.coupons || []);
                 setPagination({
                     page: res.data.page || page,
                     limit: 10,

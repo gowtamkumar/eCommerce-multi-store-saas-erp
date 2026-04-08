@@ -1,7 +1,7 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
-import { createPromotion, updatePromotion, Promotion } from '@/services/promotion';
+import { createPromotion, updatePromotion } from '@/services/promotion';
 import { fetchAPI } from '@/services/api';
 import { motion } from 'framer-motion';
 import { Calendar, Copy, Percent, X, Check } from 'lucide-react';
@@ -10,6 +10,8 @@ import toast from 'react-hot-toast';
 import { DiscountType } from '@/lib/enums/discount-type.enum';
 import { PromotionType } from '@/lib/enums/promotion-type.enum';
 import { PromotionTargetType } from '@/lib/enums/promotion-target-type.enum';
+
+import type { Promotion } from '../types';
 
 interface PromotionFormProps {
     promotion?: Promotion | null;
