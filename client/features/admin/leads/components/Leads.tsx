@@ -3,11 +3,54 @@
 import { fetchAPI } from '@/services/api';
 import { LeadStatus } from '@/lib/enums/lead-status.enum';
 import { ChevronLeft, ChevronRight, Download, Filter, Loader2, MessageSquare, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import toast from 'react-hot-toast';
 import { Pagination } from '../../customer/type';
+import { useDebounce } from '@/hooks/useDebounce';
 
+interface LeadRowProps {
+    msg: any;
+    updatingStatus: string | null;
+    onStatusUpdate: (id: string, newStatus: string) => void;
+    getStatusColor: (status: string) => string;
+}
 
+const LeadRow = memo(({ msg, updatingStatus, onStatusUpdate, getStatusColor }: LeadRowProps) => {
+    return (
+        <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+            <td className="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                {new Date(msg.createdAt).toLocaleDateString()}
+            </td>
+            <td className="px-6 py-4">
+                <div className="font-medium text-slate-900 dark:text-white">{msg.name}</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">{msg.email}</div>
+            </td>
+            <td className="px-6 py-4 text-slate-900 dark:text-white">{msg.phone}</td>
+            <td className="px-6 py-4 text-slate-900 dark:text-white">{msg.subject}</td>
+            <td className="px-6 py-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={msg.message}>
+                {msg.message}
+            </td>
+            <td className="px-6 py-4">
+                <div className="flex items-center gap-2">
+                    <select
+                        value={msg.status}
+                        onChange={(e) => onStatusUpdate(msg.id, e.target.value)}
+                        disabled={updatingStatus === msg.id}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border-none cursor-pointer focus:ring-2 focus:ring-brand-500 outline-none transition-all appearance-none ${getStatusColor(msg.status)}`}
+                    >
+                        {Object.values(LeadStatus).map((status) => (
+                            <option key={status} value={status} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                                {status.toUpperCase()}
+                            </option>
+                        ))}
+                    </select>
+                    {updatingStatus === msg.id && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+                </div>
+            </td>
+        </tr>
+    );
+});
+LeadRow.displayName = 'LeadRow';
 
 export default function Lead() {
     const [messages, setMessages] = useState([]);
@@ -21,20 +64,10 @@ export default function Lead() {
     const [statusFilter, setStatusFilter] = useState('');
     const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
+    const debouncedSearch = useDebounce(searchQuery, 500);
 
-    useEffect(() => {
-        fetchMessages(1, debouncedSearch, statusFilter);
-    }, [debouncedSearch, statusFilter]);
-
-    const fetchMessages = async (page: number, search: string, status: string) => {
+    const fetchMessages = useCallback(async (page: number, search: string, status: string) => {
         setLoading(true);
         try {
             const params = new URLSearchParams({
@@ -53,15 +86,19 @@ export default function Lead() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const handlePageChange = (newPage: number) => {
+    useEffect(() => {
+        fetchMessages(1, debouncedSearch, statusFilter);
+    }, [debouncedSearch, statusFilter, fetchMessages]);
+
+    const handlePageChange = useCallback((newPage: number) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
             fetchMessages(newPage, debouncedSearch, statusFilter);
         }
-    };
+    }, [pagination.totalPages, debouncedSearch, statusFilter, fetchMessages]);
 
-    const handleStatusUpdate = async (id: string, newStatus: string) => {
+    const handleStatusUpdate = useCallback(async (id: string, newStatus: string) => {
         setUpdatingStatus(id);
         try {
             const res = await fetchAPI(`/leads/${id}`, {
@@ -82,7 +119,7 @@ export default function Lead() {
         } finally {
             setUpdatingStatus(null);
         }
-    };
+    }, []);
 
     const handleExport = async () => {
         try {
@@ -127,7 +164,7 @@ export default function Lead() {
         }
     };
 
-    const getStatusColor = (status: string) => {
+    const getStatusColor = useCallback((status: string) => {
         switch (status) {
             case LeadStatus.NEW:
                 return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
@@ -138,7 +175,7 @@ export default function Lead() {
             default:
                 return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
         }
-    };
+    }, []);
 
     return (
         <div>
@@ -225,37 +262,13 @@ export default function Lead() {
                                 </tr>
                             ) : (
                                 messages.map((msg: any) => (
-                                    <tr key={msg.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                                            {new Date(msg.createdAt).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="font-medium text-slate-900 dark:text-white">{msg.name}</div>
-                                            <div className="text-sm text-slate-500 dark:text-slate-400">{msg.email}</div>
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-900 dark:text-white">{msg.phone}</td>
-                                        <td className="px-6 py-4 text-slate-900 dark:text-white">{msg.subject}</td>
-                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={msg.message}>
-                                            {msg.message}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <select
-                                                    value={msg.status}
-                                                    onChange={(e) => handleStatusUpdate(msg.id, e.target.value)}
-                                                    disabled={updatingStatus === msg.id}
-                                                    className={`px-2.5 py-1 rounded-full text-xs font-semibold border-none cursor-pointer focus:ring-2 focus:ring-brand-500 outline-none transition-all appearance-none ${getStatusColor(msg.status)}`}
-                                                >
-                                                    {Object.values(LeadStatus).map((status) => (
-                                                        <option key={status} value={status} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
-                                                            {status.toUpperCase()}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                {updatingStatus === msg.id && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    <LeadRow
+                                        key={msg.id}
+                                        msg={msg}
+                                        updatingStatus={updatingStatus}
+                                        onStatusUpdate={handleStatusUpdate}
+                                        getStatusColor={getStatusColor}
+                                    />
                                 ))
                             )}
                         </tbody>

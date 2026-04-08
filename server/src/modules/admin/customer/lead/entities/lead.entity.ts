@@ -2,8 +2,12 @@ import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { LeadStatus } from '@/common/enums/lead-status.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
+/** Database Index: Optimizes default chronological sorts */
+@Index(['tenantId', 'createdAt'])
+/** Database Index: Optimizes dashboard status filtering */
+@Index(['tenantId', 'status', 'createdAt'])
 @Entity('leads')
 export class LeadEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
