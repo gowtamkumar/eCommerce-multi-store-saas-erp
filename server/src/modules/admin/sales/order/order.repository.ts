@@ -48,7 +48,6 @@ export class OrderRepository {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
-      .leftJoinAndSelect('items.variant', 'variant')
       .where('order.tenantId = :tenantId', { tenantId })
 
     if (status) {

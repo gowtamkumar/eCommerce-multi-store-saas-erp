@@ -22,6 +22,7 @@ import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { SiteSettingsRepository } from '@/modules/admin/settings/site-settings.repository'
 import { CartService } from '@/modules/store/cart/cart.service'
 import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Brackets, DataSource } from 'typeorm'
 import { PaymentEntity } from '../payment/entities/payment.entity'
@@ -45,6 +46,7 @@ export class OrderService {
     private readonly invoiceService: InvoiceService,
     private readonly shippingAddressService: ShippingAddressService,
     private readonly mailService: MailService,
+    private readonly cacheService: CacheService,
   ) { }
 
   async createOrder(createOrderDto: CreateOrderDto, tenantId: string): Promise<{ message: string; success: boolean; order: OrderEntity }> {
@@ -175,6 +177,8 @@ export class OrderService {
         ; (finalOrder as any).invoiceNumber = invoice.invoiceNumber
       }
 
+      await this.cacheService.delCache('orders:overview', tenantId)
+
       return { message: 'Order created successfully', success: true, order: finalOrder || savedOrder }
 
     })
@@ -294,6 +298,7 @@ export class OrderService {
       }
 
       await queryRunner.commitTransaction()
+      await this.cacheService.delCache('orders:overview', tenantId)
       return savedOrder
     } catch (err) {
       await queryRunner.rollbackTransaction()
@@ -317,6 +322,12 @@ export class OrderService {
 
   async orderOverview(tenantId?: string): Promise<{ totalOrders: number; pendingOrders: number; completedOrders: number; cancelledOrders: number }> {
     this.logger.log(`${this.orderOverview.name} Service Called`)
-    return await this.orderRepository.orderOverview(tenantId)
+    const cacheKey = 'orders:overview'
+    return this.cacheService.rememberCache(
+      cacheKey,
+      () => this.orderRepository.orderOverview(tenantId),
+      300,
+      tenantId
+    )
   }
 }

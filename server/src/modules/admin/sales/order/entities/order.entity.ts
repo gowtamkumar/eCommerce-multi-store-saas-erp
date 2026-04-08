@@ -3,12 +3,13 @@ import { OrderStatus } from '@/common/enums/order-status.enum'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Index } from 'typeorm'
 import { OrderItemEntity } from './order-item.entity'
 import { OrderReturnEntity } from './order-return.entity'
 import { ShippingAddressEntity } from '@/modules/store/shipping-address/entities/shipping-address.entity'
 
 @Entity('orders')
+@Index(['tenantId', 'createdAt'])
 export class OrderEntity extends BaseEntity {
   @Column({ type: 'varchar', name: 'customer_name', length: 255 })
   customerName: string

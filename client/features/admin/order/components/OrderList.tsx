@@ -7,7 +7,111 @@ import { CourierType } from '@/lib/enums/courier-type.enum';
 import { getOrderStatusStyles } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Eye, Loader2, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
+import { memo } from 'react';
 import type { OrderListProps } from '../type';
+
+const OrderRow = memo(({ 
+    order, 
+    formatPrice, 
+    onStatusChange, 
+    onCourierSelect, 
+    selectedCourierValue 
+}: any) => {
+    return (
+        <tr className="group hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
+            <td className="px-6 py-4">
+                <span className="font-mono text-xs font-bold text-slate-400 group-hover:text-brand-500 transition-colors">
+                    #{order.id.slice(-8).toUpperCase()}
+                </span>
+            </td>
+            <td className="px-6 py-4">
+                <div className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">{order.customerName}</span>
+                    <span className="text-xs text-slate-500 truncate max-w-[150px]">
+                        {order.items?.length > 1
+                            ? `${order.items[0]?.product?.name} + ${order.items.length - 1} more`
+                            : order.items?.[0]?.product?.name || 'Manual Order'}
+                    </span>
+                </div>
+            </td>
+            <td className="px-6 py-4">
+                <span className="text-sm font-black text-slate-900 dark:text-white">
+                    {formatPrice(order.totalAmount || 0)}
+                </span>
+            </td>
+            <td className="px-6 py-4">
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                    order.paymentStatus === PaymentStatus.PAID
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        : order.paymentStatus === PaymentStatus.FAILED
+                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                    }`}>
+                    {order.paymentStatus || 'PENDING'}
+                </span>
+            </td>
+            <td className="px-6 py-4 text-xs font-medium text-slate-500">
+                {new Date(order.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+            </td>
+            <td className="px-6 py-4">
+                <select
+                    value={order.status}
+                    onChange={(e) => onStatusChange(order.id, e.target.value)}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider cursor-pointer outline-none border-transparent focus:ring-2 focus:ring-brand-500/20 transition-all ${getOrderStatusStyles(order.status)}`}
+                >
+                    <option value={OrderStatus.PENDING}>Pending</option>
+                    <option value={OrderStatus.PROCESSING}>Processing</option>
+                    <option value={OrderStatus.SHIPPED}>Shipped</option>
+                    <option value={OrderStatus.COMPLETED}>Completed</option>
+                    <option value={OrderStatus.CANCELLED}>Cancelled</option>
+                </select>
+            </td>
+            <td className="px-6 py-4 text-xs">
+                {order.courierStatus ? (
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-black text-brand-600 uppercase tracking-widest">
+                                {order.courierStatus === 'MANUAL' ? 'DISPATCHED' : order.courierStatus}
+                            </span>
+                            {order.trackingId && (
+                                <a
+                                    href={order.courierStatus.toLowerCase() === CourierType.PATHAO.toString() ? 'https://tracking.pathao.com/' : 'https://steadfast.com.bd/tracking'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-slate-400 hover:text-brand-600 transition-colors"
+                                >
+                                    <Eye className="w-3.5 h-3.5" />
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    <select
+                        value={selectedCourierValue || ''}
+                        onChange={(e) => onCourierSelect(order, e.target.value)}
+                        className="px-3 py-1.5 rounded-xl text-[10px] font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer hover:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
+                    >
+                        <option value="">🚚 Ship Order</option>
+                        <option value={CourierType.STEADFAST}>Steadfast</option>
+                        <option value={CourierType.PATHAO}>Pathao</option>
+                        <option value={CourierType.IN_STORE}>Manual</option>
+                    </select>
+                )}
+            </td>
+            <td className="px-6 py-4 text-right">
+                <Link
+                    href={`/admin/orders/${order.id}`}
+                    className="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all inline-block"
+                    title="View Order Details"
+                >
+                    <Eye className="w-4.5 h-4.5" />
+                </Link>
+            </td>
+        </tr>
+    );
+});
+
+OrderRow.displayName = 'OrderRow';
 
 export default function OrderList({
     orders,
@@ -86,96 +190,14 @@ export default function OrderList({
                                 </tr>
                             ) : (
                                 orders.map((order) => (
-                                    <tr key={order.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <span className="font-mono text-xs font-bold text-slate-400 group-hover:text-brand-500 transition-colors">
-                                                #{order.id.slice(-8).toUpperCase()}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-slate-900 dark:text-white">{order.customerName}</span>
-                                                <span className="text-xs text-slate-500 truncate max-w-[150px]">
-                                                    {order.items?.length > 1
-                                                        ? `${order.items[0]?.product?.name} + ${order.items.length - 1} more`
-                                                        : order.items?.[0]?.product?.name || 'Manual Order'}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-sm font-black text-slate-900 dark:text-white">
-                                                {formatPrice(order.totalAmount || 0)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
-                                                order.paymentStatus === PaymentStatus.PAID
-                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                                    : order.paymentStatus === PaymentStatus.FAILED
-                                                        ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
-                                                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                                }`}>
-                                                {order.paymentStatus || 'PENDING'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-xs font-medium text-slate-500">
-                                            {new Date(order.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <select
-                                                value={order.status}
-                                                onChange={(e) => onStatusChange(order.id, e.target.value)}
-                                                className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider cursor-pointer outline-none border-transparent focus:ring-2 focus:ring-brand-500/20 transition-all ${getOrderStatusStyles(order.status)}`}
-                                            >
-                                                <option value={OrderStatus.PENDING}>Pending</option>
-                                                <option value={OrderStatus.PROCESSING}>Processing</option>
-                                                <option value={OrderStatus.SHIPPED}>Shipped</option>
-                                                <option value={OrderStatus.COMPLETED}>Completed</option>
-                                                <option value={OrderStatus.CANCELLED}>Cancelled</option>
-                                            </select>
-                                        </td>
-                                        <td className="px-6 py-4 text-xs">
-                                            {order.courierStatus ? (
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span className="text-[10px] font-black text-brand-600 uppercase tracking-widest">
-                                                            {order.courierStatus === 'MANUAL' ? 'DISPATCHED' : order.courierStatus}
-                                                        </span>
-                                                        {order.trackingId && (
-                                                            <a
-                                                                href={order.courierStatus.toLowerCase() === CourierType.PATHAO.toString() ? 'https://tracking.pathao.com/' : 'https://steadfast.com.bd/tracking'}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="text-slate-400 hover:text-brand-600 transition-colors"
-                                                            >
-                                                                <Eye className="w-3.5 h-3.5" />
-                                                            </a>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <select
-                                                    value={selectedCourier[order.id] || ''}
-                                                    onChange={(e) => onCourierSelect(order, e.target.value)}
-                                                    className="px-3 py-1.5 rounded-xl text-[10px] font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer hover:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
-                                                >
-                                                    <option value="">🚚 Ship Order</option>
-                                                    <option value={CourierType.STEADFAST}>Steadfast</option>
-                                                    <option value={CourierType.PATHAO}>Pathao</option>
-                                                    <option value={CourierType.IN_STORE}>Manual</option>
-                                                </select>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <Link
-                                                href={`/admin/orders/${order.id}`}
-                                                className="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all inline-block"
-                                                title="View Order Details"
-                                            >
-                                                <Eye className="w-4.5 h-4.5" />
-                                            </Link>
-                                        </td>
-                                    </tr>
+                                    <OrderRow 
+                                        key={order.id} 
+                                        order={order} 
+                                        formatPrice={formatPrice} 
+                                        onStatusChange={onStatusChange} 
+                                        onCourierSelect={onCourierSelect} 
+                                        selectedCourierValue={selectedCourier[order.id]} 
+                                    />
                                 ))
                             )}
                         </tbody>
