@@ -4,8 +4,11 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { EntityManager } from 'typeorm'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
 import { UpdateInvoiceDto } from './dto/update-invoice.dto'
+import { InvoiceService as InvoiceServiceBase } from './invoice.service'
 import { InvoiceRepository } from './invoice.repository'
 import { InvoiceEntity } from './entities/invoice.entity'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { PaginationDto } from '@/common/dto/pagination.dto'
 
 
 @Injectable()
@@ -15,6 +18,7 @@ export class InvoiceService {
   constructor(
     private readonly invoiceRepository: InvoiceRepository,
     private readonly orderRepo: OrderRepository,
+    private readonly cacheService: CacheService,
   ) { }
 
   async createInvoice(
@@ -46,7 +50,7 @@ export class InvoiceService {
       }
     }
 
-    return await this.invoiceRepository.createAndSave(
+    const invoice = await this.invoiceRepository.createAndSave(
       {
         ...createInvoiceDto,
         invoiceNumber,
@@ -57,16 +61,53 @@ export class InvoiceService {
         userId: order.userId,
       } as any,
     )
+
+    await this.cacheService.delCache(`invoices:list`, tenantId)
+    return invoice
   }
 
-  async findAllInvoices(tenantId: string): Promise<InvoiceEntity[]> {
+  async findAllInvoices(
+    tenantId: string,
+    paginationDto: PaginationDto,
+    status?: InvoiceStatus,
+  ): Promise<{ items: InvoiceEntity[]; total: number; page: number; limit: number; totalPages: number }> {
     this.logger.log(`${this.findAllInvoices.name} Service Called`)
-    return await this.invoiceRepository.findAllWithRelations(tenantId)
+    const { page = 1, limit = 20, q: search } = paginationDto
+    const cacheKey = `invoices:list:p${page}:l${limit}:q${search || ''}:s${status || ''}`
+
+    return this.cacheService.rememberCache(
+      cacheKey,
+      async () => {
+        const [items, total] = await this.invoiceRepository.findAllWithRelations(
+          tenantId,
+          page,
+          limit,
+          search,
+          status,
+        )
+        return {
+          items,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        }
+      },
+      300,
+      tenantId,
+    )
   }
 
   async findOneInvoice(id: string, tenantId: string): Promise<InvoiceEntity> {
     this.logger.log(`${this.findOneInvoice.name} Service Called`)
-    const invoice = await this.invoiceRepository.findByIdWithRelations(id, tenantId)
+    const cacheKey = `invoices:id:${id}`
+
+    const invoice = await this.cacheService.rememberCache(
+      cacheKey,
+      () => this.invoiceRepository.findByIdWithRelations(id, tenantId),
+      600,
+      tenantId,
+    )
 
     if (!invoice) {
       throw new NotFoundException('Invoice not found')
@@ -87,13 +128,19 @@ export class InvoiceService {
       updateData.dueDate = new Date(updateData.dueDate)
     }
 
-    return await this.invoiceRepository.updateAndSave(invoice, updateData)
+    const updatedInvoice = await this.invoiceRepository.updateAndSave(invoice, updateData)
+    await this.cacheService.delCache(`invoices:list`, tenantId)
+    await this.cacheService.delCache(`invoices:id:${id}`, tenantId)
+    return updatedInvoice
   }
 
   async removeInvoice(id: string, tenantId: string): Promise<InvoiceEntity> {
     this.logger.log(`${this.removeInvoice.name} Service Called`)
     const invoice = await this.findOneInvoice(id, tenantId)
-    return await this.invoiceRepository.removeInvoice(invoice)
+    const removedInvoice = await this.invoiceRepository.removeInvoice(invoice)
+    await this.cacheService.delCache(`invoices:list`, tenantId)
+    await this.cacheService.delCache(`invoices:id:${id}`, tenantId)
+    return removedInvoice
   }
 
   async updateInvoiceStatusByOrderId(
@@ -105,6 +152,8 @@ export class InvoiceService {
     const invoice = await this.invoiceRepository.findByOrderId(orderId, tenantId)
     if (invoice) {
       await this.invoiceRepository.updateAndSave(invoice, { status })
+      await this.cacheService.delCache(`invoices:list`, tenantId)
+      await this.cacheService.delCache(`invoices:id:${invoice.id}`, tenantId)
     }
   }
 }

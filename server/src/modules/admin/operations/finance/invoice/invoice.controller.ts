@@ -11,9 +11,12 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common'
+import { PaginationDto } from '@/common/dto/pagination.dto'
+import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'
 import { InvoiceResponseDto } from './dto/invoice-response.dto'
 import { UpdateInvoiceDto } from './dto/update-invoice.dto'
@@ -43,8 +46,14 @@ export class InvoiceController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findAllInvoices(
     @Request() req: any,
-  ): Promise<BaseApiSuccessResponse<InvoiceResponseDto[]>> {
-    const result = await this.invoiceService.findAllInvoices(req.user.tenantId)
+    @Query() paginationDto: PaginationDto,
+    @Query('status') status?: InvoiceStatus,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const result = await this.invoiceService.findAllInvoices(
+      req.user.tenantId,
+      paginationDto,
+      status,
+    )
     return {
       success: true,
       statusCode: 200,
