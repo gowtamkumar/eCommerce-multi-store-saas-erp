@@ -5,12 +5,15 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
-import { Body, Controller, Get, Logger, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Logger, Param, Patch, Post, UseGuards, Query } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import { PurchaseOrderResponseDto } from './dto/purchase-order-response.dto'
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from './dto/purchase-order.dto'
 import { RecordSupplierPaymentDto } from './dto/record-payment.dto'
 import { PurchaseOrderService } from './purchase-order.service'
+import { PaginationDto } from '@/common/dto/pagination.dto'
+import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
+import { PurchaseOrderPaymentStatus } from './enums/purchase-order-payment-status.enum'
 
 @ApiTags('Purchase Orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -32,7 +35,7 @@ export class PurchaseOrderController {
       success: true,
       statusCode: 201,
       message: 'Purchase Order created successfully',
-      data: result,
+      data: result as any,
     }
   }
 
@@ -40,9 +43,17 @@ export class PurchaseOrderController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findAllPurchaseOrder(
     @RequestContext() ctx: RequestContextDto,
-  ): Promise<BaseApiSuccessResponse<PurchaseOrderResponseDto[]>> {
+    @Query() paginationDto: PaginationDto,
+    @Query('status') status?: PurchaseOrderStatus,
+    @Query('paymentStatus') paymentStatus?: PurchaseOrderPaymentStatus,
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPurchaseOrder.`)
-    const result = await this.service.findAllPurchaseOrders(ctx.tenantId)
+    const result = await this.service.findAllPurchaseOrders(
+      ctx.tenantId,
+      paginationDto,
+      status,
+      paymentStatus,
+    )
     return {
       success: true,
       statusCode: 200,
@@ -63,7 +74,7 @@ export class PurchaseOrderController {
       success: true,
       statusCode: 200,
       message: 'Purchase order retrieved',
-      data: result,
+      data: result as any,
     }
   }
 
@@ -82,7 +93,7 @@ export class PurchaseOrderController {
       success: true,
       statusCode: 200,
       message: 'Purchase order status updated successfully',
-      data: result,
+      data: result as any,
     }
   }
 
@@ -99,7 +110,7 @@ export class PurchaseOrderController {
       success: true,
       statusCode: 201,
       message: 'Payment recorded successfully',
-      data: result,
+      data: result as any,
     }
   }
 }

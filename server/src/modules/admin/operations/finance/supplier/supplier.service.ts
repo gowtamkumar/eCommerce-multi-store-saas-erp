@@ -51,6 +51,20 @@ export class SupplierService {
     )
   }
 
+  async findAllSuppliersRaw(tenantId: string): Promise<SupplierEntity[]> {
+    this.logger.log(`${this.findAllSuppliersRaw.name} Service Called`)
+    const cacheKey = `suppliers:list:raw`
+    return this.cacheService.rememberCache(
+      cacheKey,
+      async () => {
+        const [items] = await this.repository.findAllByTenant(tenantId, 1, 9999)
+        return items
+      },
+      300,
+      tenantId,
+    )
+  }
+
   async findOneSupplier(id: string, tenantId: string): Promise<SupplierEntity> {
     this.logger.log(`${this.findOneSupplier.name} Service Called`)
     const cacheKey = `suppliers:id:${id}`

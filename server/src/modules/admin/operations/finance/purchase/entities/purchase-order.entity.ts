@@ -1,5 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Index } from 'typeorm'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
@@ -9,11 +9,14 @@ import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-status.enum'
 
 @Entity('purchase_orders')
+@Index(['tenantId', 'createdAt'])
 export class PurchaseOrderEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, name: 'reference_number' })
+  @Index()
   referenceNumber: string
 
   @Column({ type: 'uuid', name: 'supplier_id' })
+  @Index()
   supplierId: string
 
   @ManyToOne(() => SupplierEntity, { onDelete: 'RESTRICT' })
@@ -25,6 +28,7 @@ export class PurchaseOrderEntity extends BaseEntity {
     enum: PurchaseOrderStatus,
     default: PurchaseOrderStatus.DRAFT,
   })
+  @Index()
   status: PurchaseOrderStatus
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'total_amount' })
@@ -36,6 +40,7 @@ export class PurchaseOrderEntity extends BaseEntity {
     default: PurchaseOrderPaymentStatus.PENDING,
     name: 'payment_status',
   })
+  @Index()
   paymentStatus: PurchaseOrderPaymentStatus
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'paid_amount' })

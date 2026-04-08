@@ -148,12 +148,12 @@ export class ReportService {
   }
 
   async getProfitLossReport(tenantId: string, startDateStr?: string, endDateStr?: string) {
-    const [orders, payments, expenses, purchaseOrders] = await Promise.all([
+    const [orders, payments, expenses, purchaseOrders] = (await Promise.all([
       this.orderService.findAllOrders({ page: 1, limit: 1000 }, tenantId),
       this.paymentService.findAllPaymentsRaw(tenantId),
       this.expenseService.findAllExpenses(tenantId),
-      this.purchaseOrderService.findAllPurchaseOrders(tenantId),
-    ])
+      this.purchaseOrderService.findAllPurchaseOrdersRaw(tenantId),
+    ])) as [any, any, any, any]
 
     const ordersData = orders.orders || []
     const paymentsData = payments || []
@@ -512,12 +512,12 @@ export class ReportService {
   }
 
   async getFinanceSummary(tenantId: string) {
-    const [customerPayments, expenses, supplierPayments, purchaseOrders] = await Promise.all([
+    const [customerPayments, expenses, supplierPayments, purchaseOrders] = (await Promise.all([
       this.paymentService.findAllPaymentsRaw(tenantId),
       this.expenseService.findAllExpenses(tenantId),
       this.purchaseOrderService.findAllPaymentsByPurchaseOrder(tenantId),
-      this.purchaseOrderService.findAllPurchaseOrders(tenantId),
-    ])
+      this.purchaseOrderService.findAllPurchaseOrdersRaw(tenantId),
+    ])) as [any, any, any, any]
 
     const inflow = customerPayments.filter((p: any) => p.status === 'completed')
     const totalRevenue = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0)
@@ -575,7 +575,7 @@ export class ReportService {
           .map(([name, value]) => ({ name, value }))
           .sort((a, b) => b.value - a.value),
         supplierStats: {
-          totalSuppliers: (await this.supplierService.findAllSuppliers(tenantId)).length,
+          totalSuppliers: (await this.supplierService.findAllSuppliersRaw(tenantId)).length,
           totalPurchaseOrders: purchaseOrders.length,
           recentPurchaseOrders: purchaseOrders.slice(0, 5),
         },

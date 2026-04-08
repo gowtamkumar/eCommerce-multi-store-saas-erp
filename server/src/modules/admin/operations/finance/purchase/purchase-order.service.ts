@@ -11,6 +11,8 @@ import { InventoryTransactionReferenceType } from '@/common/enums/inventory-tran
 import { PurchaseOrderRepository } from './purchase-order.repository'
 import { SupplierPaymentRepository } from './supplier-payment.repository'
 import { SupplierPaymentEntity } from './entities/supplier-payment.entity'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { PaginationDto } from '@/common/dto/pagination.dto'
 
 @Injectable()
 export class PurchaseOrderService {
@@ -20,33 +22,86 @@ export class PurchaseOrderService {
     private readonly repository: PurchaseOrderRepository,
     private readonly paymentRepository: SupplierPaymentRepository,
     private readonly inventoryService: InventoryTransactionService,
+    private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
   ) {}
 
+  /**
+   * Creates a purchase order in DRAFT status.
+   * Invalidates list caches.
+   */
   async createPurchaseOrder(dto: CreatePurchaseOrderDto, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
     const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-    return await this.repository.createAndSave(
-      { ...dto, totalAmount },
+    
+    const result = await this.repository.createAndSave(
+      { ...dto, totalAmount } as any,
+    )
+    
+    await this.cacheService.delCache(`po:list`, tenantId)
+    return result
+  }
+
+  /**
+   * Returns paginated purchase orders with caching.
+   */
+  async findAllPurchaseOrders(
+    tenantId: string,
+    paginationDto: PaginationDto,
+    status?: PurchaseOrderStatus,
+    paymentStatus?: PurchaseOrderPaymentStatus,
+  ): Promise<{ items: PurchaseOrderEntity[]; total: number; page: number; limit: number; totalPages: number }> {
+    this.logger.log(`${this.findAllPurchaseOrders.name} Service Called`)
+    const { page = 1, limit = 20, q: search } = paginationDto
+    const cacheKey = `po:list:p${page}:l${limit}:q${search || ''}:s${status || ''}:ps${paymentStatus || ''}`
+
+    return this.cacheService.rememberCache(
+      cacheKey,
+      async () => {
+        const [items, total] = await this.repository.findAllByTenant(
+          tenantId,
+          page,
+          limit,
+          search,
+          status,
+          paymentStatus,
+        )
+        return {
+          items,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        }
+      },
+      300, // 5 min cache
       tenantId,
-      PurchaseOrderStatus.DRAFT,
     )
   }
 
-  async findAllPurchaseOrders(tenantId: string): Promise<PurchaseOrderEntity[]> {
-    this.logger.log(`${this.findAllPurchaseOrders.name} Service Called`)
-    return await this.repository.findAllWithRelations(tenantId)
-  }
-
+  /**
+   * Returns a single purchase order with detailed relations.
+   */
   async findOnePurchaseOrder(id: string, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.findOnePurchaseOrder.name} Service Called`)
-    const order = await this.repository.findByIdWithRelations(id, tenantId)
+    const cacheKey = `po:id:${id}`
+
+    const order = await this.cacheService.rememberCache(
+      cacheKey,
+      () => this.repository.findByIdWithRelations(id, tenantId),
+      600, // 10 min cache
+      tenantId,
+    )
+
     if (!order) {
       throw new NotFoundException('Purchase order not found')
     }
     return order
   }
 
+  /**
+   * Updates order status and handles inventory intake if RECEIVED.
+   */
   async updatePurchaseOrderStatus(id: string, dto: UpdatePurchaseOrderStatusDto, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.updatePurchaseOrderStatus.name} Service Called`)
     const order = await this.findOnePurchaseOrder(id, tenantId)
@@ -58,12 +113,17 @@ export class PurchaseOrderService {
       throw new BadRequestException(`Cannot change status of a ${order.status} order`)
     }
 
+    let result: PurchaseOrderEntity
     if (dto.status === PurchaseOrderStatus.RECEIVED) {
-      return await this.receivePurchaseOrder(order, tenantId)
+      result = await this.receivePurchaseOrder(order, tenantId)
+    } else {
+      order.status = dto.status
+      result = await this.repository.saveOrder(order)
     }
 
-    order.status = dto.status
-    return await this.repository.saveOrder(order)
+    await this.cacheService.delCache(`po:list`, tenantId)
+    await this.cacheService.delCache(`po:id:${id}`, tenantId)
+    return result
   }
 
   private async receivePurchaseOrder(order: PurchaseOrderEntity, tenantId: string): Promise<PurchaseOrderEntity> {
@@ -91,12 +151,14 @@ export class PurchaseOrderService {
             supplierId: order.supplierId,
           },
           tenantId,
+          queryRunner.manager,
         )
       }
 
       await queryRunner.commitTransaction()
       return savedOrder
     } catch (err) {
+      this.logger.error('Receive Purchase Order failed', err.stack)
       await queryRunner.rollbackTransaction()
       throw err
     } finally {
@@ -104,6 +166,10 @@ export class PurchaseOrderService {
     }
   }
 
+  /**
+   * Records a payment against the purchase order.
+   * Updates paidAmount and paymentStatus.
+   */
   async recordSupplierPayment(id: string, dto: RecordSupplierPaymentDto, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.recordSupplierPayment.name} Service Called`)
     const queryRunner = this.dataSource.createQueryRunner()
@@ -133,18 +199,34 @@ export class PurchaseOrderService {
         order.paymentStatus = PurchaseOrderPaymentStatus.PARTIAL
       }
 
-      if (order.payments) order.payments.push(savedPayment)
-      else order.payments = [savedPayment]
-
       const savedOrder = await this.repository.saveOrder(order, queryRunner.manager)
       await queryRunner.commitTransaction()
+      
+      await this.cacheService.delCache(`po:list`, tenantId)
+      await this.cacheService.delCache(`po:id:${id}`, tenantId)
+      
       return savedOrder
     } catch (err) {
+      this.logger.error('Record Payment failed', err.stack)
       await queryRunner.rollbackTransaction()
       throw err
     } finally {
       await queryRunner.release()
     }
+  }
+  
+  async findAllPurchaseOrdersRaw(tenantId: string): Promise<PurchaseOrderEntity[]> {
+    this.logger.log(`${this.findAllPurchaseOrdersRaw.name} Service Called`)
+    const cacheKey = `po:list:raw`
+    return this.cacheService.rememberCache(
+      cacheKey,
+      async () => {
+        const [items] = await this.repository.findAllByTenant(tenantId, 1, 9999)
+        return items
+      },
+      300,
+      tenantId,
+    )
   }
 
   async findAllBySupplier(supplierId: string, tenantId: string): Promise<PurchaseOrderEntity[]> {

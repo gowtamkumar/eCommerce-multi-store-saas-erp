@@ -1,5 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { PurchaseOrderEntity } from './purchase-order.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
@@ -8,6 +8,7 @@ import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/v
 @Entity('purchase_order_items')
 export class PurchaseOrderItemEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'purchase_order_id' })
+  @Index()
   purchaseOrderId: string
 
   @ManyToOne(() => PurchaseOrderEntity, (po: PurchaseOrderEntity) => po.items, {
