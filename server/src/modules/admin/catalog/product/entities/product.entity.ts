@@ -13,6 +13,8 @@ import { ProductAttributeEntity } from './attribute.entity'
 import { ProductVariantEntity } from './variant.entity'
 
 @Entity('products')
+@Index(['status'])
+@Index(['createdAt'])
 export class ProductEntity extends BaseEntity {
   @Column()
   name: string

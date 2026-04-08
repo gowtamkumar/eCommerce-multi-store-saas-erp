@@ -109,40 +109,36 @@ export class ProductService {
   ): Promise<AugmentedProduct[]> {
     this.logger.log(`${this.attachPromotionsMany.name} Service Called`)
     if (!products || products.length === 0) return products
+
     try {
       const activePromos = await this.promotionService.findActivePromotions(tenantId)
       if (!activePromos || activePromos.length === 0) return products
 
+      // Cache strategies to avoid repeated instantiation
+      const strategies: Record<string, any> = {}
+
       return products.map((product) => {
         const applicablePromotions = activePromos.filter((promo) => {
-          if (
-            promo.targetType === PromotionTargetType.SPECIFIC_PRODUCT &&
-            promo.targetId === product.id
-          )
-            return true
-          if (
-            promo.targetType === PromotionTargetType.SPECIFIC_CATEGORY &&
-            (promo.targetId === product.categoryId ||
-              (product.category && promo.targetId === product.category.id))
-          )
-            return true
-          if (
-            promo.targetType === PromotionTargetType.SPECIFIC_BRAND &&
-            promo.targetId === product.brandId
-          )
-            return true
-          if (promo.targetType === PromotionTargetType.ENTIRE_ORDER) return true
+          const type = promo.targetType
+          const id = promo.targetId
+
+          if (type === PromotionTargetType.ENTIRE_ORDER) return true
+          if (type === PromotionTargetType.SPECIFIC_PRODUCT && id === product.id) return true
+          if (type === PromotionTargetType.SPECIFIC_CATEGORY && (id === product.categoryId || id === product.category?.id)) return true
+          if (type === PromotionTargetType.SPECIFIC_BRAND && id === product.brandId) return true
+          
           return false
         })
 
-        let maxPromoDiscount = 0
         const basePrice = Number(product.price || 0)
+        let maxPromoDiscount = 0
 
         applicablePromotions.forEach((promo) => {
-          const promoDiscountStrategy = DiscountStrategyFactory.create(
-            promo.promotionType as string,
-          )
-          const calcDiscount = promoDiscountStrategy.calculate(basePrice, Number(promo.value))
+          const pType = promo.promotionType as string
+          if (!strategies[pType]) {
+            strategies[pType] = DiscountStrategyFactory.create(pType)
+          }
+          const calcDiscount = strategies[pType].calculate(basePrice, Number(promo.value))
           if (calcDiscount > maxPromoDiscount) {
             maxPromoDiscount = calcDiscount
           }
@@ -150,10 +146,12 @@ export class ProductService {
 
         const originalDiscountType = product.discountType || DiscountType.FIXED
         const originalRawDiscount = Number(product.discountAmount || 0)
-        const originalDiscountStrategy = DiscountStrategyFactory.create(
-          originalDiscountType as string,
-        )
-        const originalDiscountValue = originalDiscountStrategy.calculate(
+        
+        if (!strategies[originalDiscountType]) {
+          strategies[originalDiscountType] = DiscountStrategyFactory.create(originalDiscountType)
+        }
+        
+        const originalDiscountValue = strategies[originalDiscountType].calculate(
           basePrice,
           originalRawDiscount,
         )
@@ -174,7 +172,7 @@ export class ProductService {
         } as AugmentedProduct
       })
     } catch (error) {
-      console.error('Error attaching promotions many', error)
+      this.logger.error('Error attaching promotions many', error)
       return products
     }
   }
@@ -191,34 +189,44 @@ export class ProductService {
 
   async getFilterOptions(tenantId: string, categoryId?: string): Promise<any> {
     this.logger.log(`${this.getFilterOptions.name} Service Called`)
+    const cacheKey = `products:filter-options:${categoryId || 'all'}`
+    
+    return this.cache.rememberCache(
+      cacheKey,
+      async () => {
+        const [prices, brands, variants] = await Promise.all([
+          this.productRepository.getPriceRange(tenantId, categoryId),
+          this.brandRepository.findBrandsForProducts(tenantId, categoryId),
+          this.variantRepository.findCombinationsForProducts(tenantId, categoryId),
+        ])
 
-    const prices = await this.productRepository.getPriceRange(tenantId, categoryId)
-    const brands = await this.brandRepository.findBrandsForProducts(tenantId, categoryId)
-    const variants = await this.variantRepository.findCombinationsForProducts(tenantId, categoryId)
+        const attributeMap: Record<string, Set<string>> = {}
+        for (const v of variants) {
+          if (v.combination) {
+            for (const [key, value] of Object.entries(v.combination)) {
+              if (!attributeMap[key]) attributeMap[key] = new Set()
+              attributeMap[key].add(value as string)
+            }
+          }
+        }
 
-    const attributeMap: Record<string, Set<string>> = {}
-    variants.forEach((v) => {
-      if (v.combination) {
-        Object.entries(v.combination).forEach(([key, value]) => {
-          if (!attributeMap[key]) attributeMap[key] = new Set()
-          attributeMap[key].add(value as string)
-        })
-      }
-    })
+        const formattedAttributes = Object.entries(attributeMap).map(([name, values]) => ({
+          name,
+          values: Array.from(values),
+        }))
 
-    const formattedAttributes = Object.entries(attributeMap).map(([name, values]) => ({
-      name,
-      values: Array.from(values),
-    }))
-
-    return {
-      priceRange: {
-        min: Number(prices?.min || 0),
-        max: Number(prices?.max || 0),
+        return {
+          priceRange: {
+            min: Number(prices?.min || 0),
+            max: Number(prices?.max || 0),
+          },
+          brands,
+          attributes: formattedAttributes,
+        }
       },
-      brands,
-      attributes: formattedAttributes,
-    }
+      300, // 5 minutes
+      tenantId
+    )
   }
 
   async findBySlugProduct(slug: string, tenantId: string): Promise<ProductEntity> {
@@ -304,8 +312,17 @@ export class ProductService {
 
   async findLatestProducts(tenantId: string, limit: number = 10): Promise<AugmentedProduct[]> {
     this.logger.log(`${this.findLatestProducts.name} Service Called`)
-    const products = await this.productRepository.findLatestProducts(tenantId, limit)
-    return await this.attachPromotionsMany(products, tenantId)
+    const cacheKey = `products:latest:${limit}`
+    
+    return this.cache.rememberCache(
+      cacheKey,
+      async () => {
+        const products = await this.productRepository.findLatestProducts(tenantId, limit)
+        return await this.attachPromotionsMany(products, tenantId)
+      },
+      300, // 5 minutes
+      tenantId
+    )
   }
 
   async findOneProduct(id: string, tenantId: string): Promise<AugmentedProduct> {

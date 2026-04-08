@@ -42,15 +42,35 @@ export default function ProductList({ products, total, onOpenMobileFilters, sett
     setSearchQuery(searchParams.get('search') || '');
   }, [searchParams]);
 
+  // Debounced search effect
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      const currentSearch = searchParams.get('search') || '';
+      
+      if (searchQuery !== currentSearch) {
+        if (searchQuery.trim()) {
+          params.set('search', searchQuery);
+        } else {
+          params.delete('search');
+        }
+        params.delete('page');
+        router.push(`/products?${params.toString()}`);
+      }
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery, searchParams, router]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    // Manual trigger if user hits Enter, though the effect will handle it too
     const params = new URLSearchParams(searchParams.toString());
     if (searchQuery.trim()) {
       params.set('search', searchQuery);
     } else {
       params.delete('search');
     }
-    // Reset page on search
     params.delete('page');
     router.push(`/products?${params.toString()}`);
   };

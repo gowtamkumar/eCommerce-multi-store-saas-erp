@@ -1,9 +1,12 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 import { ProductEntity } from './product.entity'
 
 @Entity('product_variants')
+@Index(['sku', 'tenantId'], { unique: true })
+@Index(['productId'])
+@Index(['tenantId'])
 export class ProductVariantEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   sku: string

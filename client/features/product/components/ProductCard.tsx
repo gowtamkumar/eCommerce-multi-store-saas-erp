@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { Heart, ShoppingBag, Tag, Zap, Percent, Crown, Package } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { calculatePricing } from "@/lib/utils";
 
 interface ProductCardProps {
@@ -19,7 +19,7 @@ interface ProductCardProps {
   cardRadius?: 'small' | 'large' | 'none';
 }
 
-export function PromotionTypeBadge({ type }: { type: string }) {
+export const PromotionTypeBadge = memo(({ type }: { type: string }) => {
   const configs: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
     specific_product: { label: 'Product Deal', icon: <Package className="w-3 h-3" />, color: 'bg-violet-500' },
     specific_category: { label: 'Category Sale', icon: <Tag className="w-3 h-3" />, color: 'bg-blue-500' },
@@ -34,15 +34,15 @@ export function PromotionTypeBadge({ type }: { type: string }) {
       {cfg.label}
     </span>
   );
-}
+});
 
-export default function ProductCard({
+const ProductCard = memo(({
   product,
   priority = false,
   viewMode = 'grid',
   className = "",
   cardRadius
-}: ProductCardProps) {
+}: ProductCardProps) => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { settings } = useSettings();
@@ -52,9 +52,6 @@ export default function ProductCard({
 
   const currency = settings?.currency || 'BDT';
   const isWishlisted = isInWishlist(product.id);
-
-
-
 
   // Fallback for missing images
   const imageSrc = product.images?.[0] || "";
@@ -88,9 +85,6 @@ export default function ProductCard({
     product.discountType || 'fixed',
     Number(product.taxRate || 0)
   );
-
-  console.log("finalPrice", finalPrice);
-
 
   const basePrice = Number(product.price || 0);
   const discountPercentage = discountAmount > 0 && basePrice > 0
@@ -236,4 +230,8 @@ export default function ProductCard({
       </Link>
     </motion.div>
   );
-}
+});
+
+ProductCard.displayName = "ProductCard";
+
+export default ProductCard;

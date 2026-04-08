@@ -180,11 +180,22 @@ export class ProductRepository {
     activeProducts: number
     inactiveProducts: number
   }> {
-    const totalProducts = await this.repo.count()
-    const activeProducts = await this.repo.count({ where: { status: ProductStatus.ACTIVE } })
-    const inactiveProducts = await this.repo.count({ where: { status: ProductStatus.INACTIVE } })
+    const stats = await this.repo
+      .createQueryBuilder('product')
+      .select('COUNT(*)', 'total')
+      .addSelect(`COUNT(*) FILTER (WHERE status = :active)`, 'active')
+      .addSelect(`COUNT(*) FILTER (WHERE status = :inactive)`, 'inactive')
+      .setParameters({
+        active: ProductStatus.ACTIVE,
+        inactive: ProductStatus.INACTIVE,
+      })
+      .getRawOne()
 
-    return { totalProducts, activeProducts, inactiveProducts }
+    return {
+      totalProducts: parseInt(stats.total, 10),
+      activeProducts: parseInt(stats.active, 10),
+      inactiveProducts: parseInt(stats.inactive, 10),
+    }
   }
 
   async findOfferProducts(params: {

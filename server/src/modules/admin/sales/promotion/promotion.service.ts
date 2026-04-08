@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { PromotionRepository } from './promotion.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { CreatePromotionDto } from './dto/create-promotion.dto'
 import { UpdatePromotionDto } from './dto/update-promotion.dto'
 import { PromotionEntity } from './entities/promotion.entity'
@@ -14,6 +15,7 @@ export class PromotionService {
   constructor(
     private promotionRepository: PromotionRepository,
     private productRepository: ProductRepository,
+    private cache: CacheService,
   ) {}
 
   async createPromotion(createPromotionDto: CreatePromotionDto, tenantId: string): Promise<PromotionEntity> {
@@ -33,7 +35,9 @@ export class PromotionService {
       throw new ConflictException('Promotion with this slug already exists')
     }
 
-    return await this.promotionRepository.createAndSave(createPromotionDto, tenantId)
+    const saved = await this.promotionRepository.createAndSave(createPromotionDto, tenantId)
+    await this.cache.delCache(`promotions:active`, tenantId)
+    return saved
   }
 
   private generateSlug(name: string): string {
@@ -54,7 +58,14 @@ export class PromotionService {
 
   async findActivePromotions(tenantId: string): Promise<PromotionEntity[]> {
     this.logger.log(`${this.findActivePromotions.name} Service Called`)
-    return await this.promotionRepository.findActivePromotions(tenantId, new Date())
+    const cacheKey = `promotions:active`
+    
+    return this.cache.rememberCache(
+      cacheKey,
+      () => this.promotionRepository.findActivePromotions(tenantId, new Date()),
+      600, // 10 minutes
+      tenantId
+    )
   }
 
   async findOne(id: string, tenantId: string): Promise<PromotionEntity> {
@@ -80,13 +91,16 @@ export class PromotionService {
   async updatePromotion(id: string, updatePromotionDto: UpdatePromotionDto, tenantId: string): Promise<PromotionEntity> {
     this.logger.log(`${this.updatePromotion.name} Service Called`)
     const promotion = await this.findOne(id, tenantId)
-    return await this.promotionRepository.updateAndSave(promotion, updatePromotionDto)
+    const updated = await this.promotionRepository.updateAndSave(promotion, updatePromotionDto)
+    await this.cache.delCache(`promotions:active`, tenantId)
+    return updated
   }
 
   async removePromotion(id: string, tenantId: string): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removePromotion.name} Service Called`)
     const promotion = await this.findOne(id, tenantId)
     await this.promotionRepository.removePromotion(promotion)
+    await this.cache.delCache(`promotions:active`, tenantId)
     return { success: true, message: 'Promotion deleted successfully' }
   }
 
