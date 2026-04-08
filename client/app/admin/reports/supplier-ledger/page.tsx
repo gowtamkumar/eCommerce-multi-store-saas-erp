@@ -1,4 +1,4 @@
-import SupplierLedger from '@/features/admin/report/components/SupplierLedger';
+import SupplierLedgerDashboard from '@/features/admin/report/components/SupplierLedgerDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function SupplierLedgerPage() {
-    return <SupplierLedger />;
+    return <SupplierLedgerDashboard />;
 }

@@ -72,6 +72,36 @@ export interface ProfitLossData {
     };
 }
 
+export interface LedgerTransaction {
+    type: string;
+    id: string;
+    date: string;
+    status: string;
+    reference: string;
+    note?: string;
+    debit: number;
+    credit: number;
+    balance: number;
+}
+
+export interface LedgerSummary {
+    totalOrders: number;
+    totalPaid: number;
+    balance: number;
+}
+
+export interface SupplierShortInfo {
+    id: string;
+    name: string;
+    email: string;
+}
+
+export interface SupplierLedgerData {
+    supplier: SupplierShortInfo;
+    summary: LedgerSummary;
+    ledger: LedgerTransaction[];
+}
+
 export interface FinanceKpis {
     totalRevenue: number;
     totalExpenses: number;

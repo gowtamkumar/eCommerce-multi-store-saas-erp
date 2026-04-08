@@ -19,7 +19,7 @@ export default function CustomerLedger() {
         const loadCustomers = async () => {
             try {
                 const res = await fetchAPI('/users?limit=100');
-                setCustomers(res.data?.users || []);
+                setCustomers(res.data || []);
             } catch (error) {
                 toast.error('Failed to load customers');
             } finally {
