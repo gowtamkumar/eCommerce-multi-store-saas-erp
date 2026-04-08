@@ -1,20 +1,27 @@
 export interface ReturnRequest {
     id: string;
     orderId: string;
-    status: string;
+    status: 'pending' | 'approved' | 'rejected' | 'refunded';
     reason: string;
-    users: {
+    user?: {
         name: string;
         email: string;
     };
-    order: {
+    order?: {
         id: string;
         customerName: string;
+        customerEmail: string;
         items?: any[];
     };
     items: any[];
     createdAt: string;
     adminComment?: string;
+}
+
+export interface ReturnListProps {
+    returns: ReturnRequest[];
+    loading: boolean;
+    onStatusUpdate: (id: string, status: string, comment?: string) => void;
 }
 
 
