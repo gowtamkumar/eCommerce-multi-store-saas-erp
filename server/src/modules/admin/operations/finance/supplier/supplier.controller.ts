@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Patch, UseGuards, Logger } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Patch, UseGuards, Logger, Query } from '@nestjs/common'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { RolesGuard } from '@/common/guards/roles.guard'
@@ -12,6 +12,7 @@ import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { SupplierResponseDto } from './dto/supplier-response.dto'
+import { PaginationDto } from '@/common/dto/pagination.dto'
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('suppliers')
@@ -40,9 +41,10 @@ export class SupplierController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findAllSuppliers(
     @RequestContext() ctx: RequestContextDto,
-  ): Promise<BaseApiSuccessResponse<SupplierResponseDto[]>> {
+    @Query() paginationDto: PaginationDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllSuppliers.`)
-    const result = await this.service.findAllSuppliers(ctx.tenantId)
+    const result = await this.service.findAllSuppliers(ctx.tenantId, paginationDto)
     return {
       success: true,
       statusCode: 200,

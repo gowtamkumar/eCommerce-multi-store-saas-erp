@@ -18,11 +18,30 @@ export class SupplierRepository {
     return await this.repo.save(supplier)
   }
 
-  async findAllByTenant(tenantId: string): Promise<SupplierEntity[]> {
-    return await this.repo.find({
-      where: { tenantId },
-      order: { name: 'ASC' },
-    })
+  /**
+   * Fetches paginated suppliers for a tenant.
+   * Supports server-side searching on name and contact name.
+   */
+  async findAllByTenant(
+    tenantId: string,
+    page: number = 1,
+    limit: number = 20,
+    search?: string,
+  ): Promise<[SupplierEntity[], number]> {
+    const qb = this.repo.createQueryBuilder('supplier')
+      .where('supplier.tenantId = :tenantId', { tenantId })
+      .orderBy('supplier.name', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    if (search) {
+      qb.andWhere(
+        '(supplier.name ILIKE :search OR supplier.contactName ILIKE :search OR supplier.email ILIKE :search)',
+        { search: `%${search}%` },
+      )
+    }
+
+    return await qb.getManyAndCount()
   }
 
   async findByIdAndTenant(id: string, tenantId: string): Promise<SupplierEntity | null> {

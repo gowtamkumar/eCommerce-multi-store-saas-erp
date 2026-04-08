@@ -1,9 +1,10 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('suppliers')
+@Index(['tenantId', 'name'])
 export class SupplierEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   name: string
@@ -12,6 +13,7 @@ export class SupplierEntity extends BaseEntity {
   contactName: string
 
   @Column({ type: 'varchar', length: 255, nullable: true })
+  @Index()
   email: string
 
   @Column({ type: 'varchar', length: 50, nullable: true })
@@ -28,6 +30,7 @@ export class SupplierEntity extends BaseEntity {
   tenant: TenantEntity
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  @Index()
   userId: string
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
