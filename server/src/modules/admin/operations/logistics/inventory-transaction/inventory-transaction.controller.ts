@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards, Logger } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, UseGuards, Logger, Query } from '@nestjs/common'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { RolesGuard } from '@/common/guards/roles.guard'
@@ -9,6 +9,8 @@ import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { InventoryTransactionResponseDto } from './dto/inventory-transaction-response.dto'
+import { PaginationDto } from '@/common/dto/pagination.dto'
+import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('inventory-transactions')
@@ -39,16 +41,18 @@ export class InventoryTransactionController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findAllInventoryTransactions(
     @RequestContext() ctx: RequestContextDto,
-  ): Promise<BaseApiSuccessResponse<InventoryTransactionResponseDto[]>> {
+    @Query() pagination: PaginationDto,
+    @Query('type') type?: InventoryTransactionType,
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(
       `User "${ctx.user?.username || 'System'}" called findAllInventoryTransactions.`,
     )
-    const transactions = await this.service.findAllInventoryTransactions(ctx.tenantId)
+    const result = await this.service.findAllInventoryTransactions(ctx.tenantId, pagination, type)
     return {
       success: true,
       statusCode: 200,
       message: 'List of inventory transactions retrieved',
-      data: transactions as any,
+      data: result,
     }
   }
 

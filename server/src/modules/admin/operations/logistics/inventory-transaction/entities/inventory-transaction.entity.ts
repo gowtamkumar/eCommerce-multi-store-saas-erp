@@ -1,5 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
@@ -9,8 +9,10 @@ import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/enti
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('inventory_transactions')
+@Index(['tenantId', 'createdAt'])
 export class InventoryTransactionEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'product_id' })
+  @Index()
   productId: string
 
   @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
@@ -18,6 +20,7 @@ export class InventoryTransactionEntity extends BaseEntity {
   product: ProductEntity
 
   @Column({ type: 'uuid', name: 'variant_id', nullable: true })
+  @Index()
   variantId: string
 
   @ManyToOne(() => ProductVariantEntity, { onDelete: 'SET NULL', nullable: true })
@@ -35,6 +38,7 @@ export class InventoryTransactionEntity extends BaseEntity {
     type: 'enum',
     enum: InventoryTransactionType,
   })
+  @Index()
   type: InventoryTransactionType
 
   @Column({ type: 'int' })

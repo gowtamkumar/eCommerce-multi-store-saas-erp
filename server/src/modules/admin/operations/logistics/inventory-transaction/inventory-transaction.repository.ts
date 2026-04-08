@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { InventoryTransactionEntity } from './entities/inventory-transaction.entity'
+import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 
 @Injectable()
 export class InventoryTransactionRepository {
@@ -10,20 +11,46 @@ export class InventoryTransactionRepository {
     private readonly repo: Repository<InventoryTransactionEntity>,
   ) { }
 
-  async findByTenant(tenantId: string): Promise<InventoryTransactionEntity[]> {
-    return await this.repo.find({
-      where: { tenantId },
-      order: { createdAt: 'DESC' },
-      relations: ['variants', 'category', 'supplier']
-    })
+  /**
+   * Fetches paginated inventory transactions for the admin list view.
+   * Fixed broken relations (was using 'variants' which didn't exist) 
+   * and added server-side filtering.
+   */
+  async findByTenant(
+    tenantId: string,
+    page: number = 1,
+    limit: number = 20,
+    search?: string,
+    type?: InventoryTransactionType,
+  ): Promise<[InventoryTransactionEntity[], number]> {
+    const qb = this.repo.createQueryBuilder('it')
+      .leftJoinAndSelect('it.product', 'product')
+      .leftJoinAndSelect('it.variant', 'variant')
+      .leftJoinAndSelect('it.user', 'user')
+      .where('it.tenantId = :tenantId', { tenantId })
+      .orderBy('it.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    if (search) {
+      qb.andWhere(
+        '(product.name ILIKE :search OR it.referenceId ILIKE :search)',
+        { search: `%${search}%` }
+      )
+    }
+
+    if (type) {
+      qb.andWhere('it.type = :type', { type })
+    }
+
+    return await qb.getManyAndCount()
   }
-
-
 
   async findByProduct(productId: string, tenantId: string): Promise<InventoryTransactionEntity[]> {
     return await this.repo.find({
       where: { productId, tenantId },
       order: { createdAt: 'DESC' },
+      relations: ['product', 'variant', 'user']
     })
   }
 
