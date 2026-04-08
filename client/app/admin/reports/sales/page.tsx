@@ -1,11 +1,11 @@
-import SalesReport from '@/features/admin/report/components/SalesReport';
+import SalesAnalysisDashboard from '@/features/admin/report/components/SalesAnalysisDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Sales Report | Admin Dashboard',
+    title: 'Sales Analysis | Admin Dashboard',
     description: 'Detailed analysis of your store sales and performance',
 };
 
 export default function SalesPage() {
-    return <SalesReport />;
+    return <SalesAnalysisDashboard />;
 }
