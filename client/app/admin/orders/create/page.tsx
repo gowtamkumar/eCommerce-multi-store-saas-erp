@@ -1,4 +1,9 @@
 import CreateOrder from '@/features/admin/order/components/CreateOrder';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "Create Order",
+};
 
 export default function CreateOrderPage() {
     return (
