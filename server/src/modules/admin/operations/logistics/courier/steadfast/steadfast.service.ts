@@ -6,38 +6,46 @@ import { OrderStatus } from '@/common/enums/order-status.enum'
 import { OrderService } from '@/modules/admin/sales/order/order.service'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { CreateSteadfastOrderDto } from '@/modules/admin/operations/logistics/courier/steadfast/dto/create-order.dto'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
 @Injectable()
 export class SteadfastService {
   private readonly logger = new Logger(SteadfastService.name)
-  private baseUrl: string
-  private apiKey: string
-  private secretKey: string
 
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
     private readonly settingsService: SettingsService,
     private readonly orderService: OrderService,
+    private readonly cacheService: CacheService,
   ) {}
 
-  private async initializeCredentials(tenantId: string) {
-    this.logger.log(`${this.initializeCredentials.name} Service Called`)
-    try {
-      // Try to get credentials from settings first
-      const settings = await this.settingsService.findByTenantSettings(tenantId)
+  private async getCredentials(tenantId: string) {
+    this.logger.log(`${this.getCredentials.name} Service Called`)
+    const cacheKey = `steadfast:creds`
 
-      if (settings?.steadfastCourier) {
-        this.baseUrl = this.configService.get<string>('STEADFAST_BASE_URL')
-        this.apiKey = settings.steadfastCourier.apiKey
-        this.secretKey = settings.steadfastCourier.secretKey
-      }
-    } catch (error) {
-      this.logger.warn('Failed to load settings, using environment variables', error)
-      this.baseUrl = this.configService.get<string>('STEADFAST_BASE_URL')
-      this.apiKey = this.configService.get<string>('STEADFAST_API_KEY')
-      this.secretKey = this.configService.get<string>('STEADFAST_SECRET_KEY')
-    }
+    return this.cacheService.rememberCache(
+      cacheKey,
+      async () => {
+        let baseUrl = this.configService.get<string>('STEADFAST_BASE_URL')
+        let apiKey = this.configService.get<string>('STEADFAST_API_KEY')
+        let secretKey = this.configService.get<string>('STEADFAST_SECRET_KEY')
+
+        try {
+          const settings = await this.settingsService.findByTenantSettings(tenantId)
+          if (settings?.steadfastCourier) {
+            apiKey = settings.steadfastCourier.apiKey
+            secretKey = settings.steadfastCourier.secretKey
+          }
+        } catch (error) {
+          this.logger.warn('Failed to load settings, using defaults', error)
+        }
+
+        return { baseUrl, apiKey, secretKey }
+      },
+      600, // 10 minutes cache
+      tenantId,
+    )
   }
 
   async createSteadfastOrder(
@@ -45,10 +53,14 @@ export class SteadfastService {
     tenantId: string,
   ): Promise<any> {
     this.logger.log(`${this.createSteadfastOrder.name} Service Called`)
-    await this.initializeCredentials(tenantId)
     const { orderId } = createOrderDto
+    const creds = await this.getCredentials(tenantId)
 
     const order = await this.orderService.findOneForCourier(orderId, tenantId)
+
+    if (!order) {
+        throw new Error('Order not found')
+    }
 
     // Format phone number to ensure it's 11 digits starting with 0
     let formattedPhone = (order.customerPhone || '').replace(/\D/g, '')
@@ -76,19 +88,17 @@ export class SteadfastService {
     }
 
     try {
-      const url = `${this.baseUrl}/create_order`
+      const url = `${creds.baseUrl}/create_order`
 
       const response = await firstValueFrom(
         this.httpService.post(url, steadfastOrderData, {
           headers: {
-            'Api-Key': this.apiKey,
-            'Secret-Key': this.secretKey,
+            'Api-Key': creds.apiKey,
+            'Secret-Key': creds.secretKey,
             'Content-Type': 'application/json',
           },
         }),
       )
-
-      this.logger.log('Steadfast order created successfully')
 
       const responseData = response.data
       const trackingId = responseData.order?.tracking_code
