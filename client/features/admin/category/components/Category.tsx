@@ -28,7 +28,7 @@ export default function Categories() {
     const fetchCategories = async () => {
         setLoading(true);
         try {
-            const res = await fetchAPI('/categories');
+            const res = await fetchAPI('/categories/stats');
             if (res.success) {
                 setCategories(res.data);
             }

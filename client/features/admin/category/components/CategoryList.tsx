@@ -1,8 +1,55 @@
 'use client';
 
-import { Edit, Plus, Search, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import type { CategoryListProps } from '../type';
+import { Edit, Plus, Search, Trash2, Package } from 'lucide-react';
+import { memo, useState } from 'react';
+import type { Category, CategoryListProps } from '../type';
+
+const CategoryRow = memo(({ 
+    category, 
+    onEdit, 
+    onDelete 
+}: { 
+    category: Category; 
+    onEdit: (c: Category) => void; 
+    onDelete: (id: string) => void; 
+}) => (
+    <tr className="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+        <td className="px-6 py-4">
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-xl overflow-hidden">
+                    {category.image ? <img src={category.image} className="w-full h-full object-cover" /> : '📁'}
+                </div>
+                <span className="font-semibold text-slate-900 dark:text-white">{category.name}</span>
+            </div>
+        </td>
+        <td className="px-6 py-4 font-mono text-xs text-slate-500">/{category.slug}</td>
+        <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">{category.description || '-'}</td>
+        <td className="px-6 py-4">
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                <Package className="w-4 h-4" />
+                <span className="text-sm font-medium">{category.productCount || 0}</span>
+            </div>
+        </td>
+        <td className="px-6 py-4 text-right">
+            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                    onClick={() => onEdit(category)}
+                    className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                >
+                    <Edit className="w-4 h-4" />
+                </button>
+                <button
+                    onClick={() => category.id && onDelete(category.id)}
+                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+            </div>
+        </td>
+    </tr>
+));
+
+CategoryRow.displayName = 'CategoryRow';
 
 export default function CategoryList({ categories, loading, onEdit, onDelete, onAdd }: CategoryListProps) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -47,44 +94,23 @@ export default function CategoryList({ categories, loading, onEdit, onDelete, on
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Category</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Slug</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Description</th>
+                                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Products</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {loading ? (
-                                <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-500">Loading categories...</td></tr>
+                                <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">Loading categories...</td></tr>
                             ) : filteredCategories.length === 0 ? (
-                                <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-500">No categories found.</td></tr>
+                                <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">No categories found.</td></tr>
                             ) : (
                                 filteredCategories.map((category) => (
-                                    <tr key={category.id} className="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-xl overflow-hidden">
-                                                    {category.image ? <img src={category.image} className="w-full h-full object-cover" /> : '📁'}
-                                                </div>
-                                                <span className="font-semibold text-slate-900 dark:text-white">{category.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-xs text-slate-500">/{category.slug}</td>
-                                        <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">{category.description || '-'}</td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => onEdit(category)}
-                                                    className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => category.id && onDelete(category.id)}
-                                                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    <CategoryRow 
+                                        key={category.id} 
+                                        category={category} 
+                                        onEdit={onEdit} 
+                                        onDelete={onDelete} 
+                                    />
                                 ))
                             )}
                         </tbody>

@@ -4,6 +4,7 @@ export interface Category {
     slug: string;
     description: string;
     image?: string;
+    productCount?: number;
 }
 
 export interface CategoryListProps {

@@ -6,10 +6,10 @@ import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { CategoryService } from '@/modules/admin/catalog/category/category.service'
-import { CategoryResponseDto } from './dto/category-response.dto'
 import { CreateCategoryDto } from '@/modules/admin/catalog/category/dto/create-category.dto'
 import { UpdateCategoryDto } from '@/modules/admin/catalog/category/dto/update-category.dto'
-import { Body, Controller, Delete, Get, Logger, Param, Post, Patch, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { CategoryResponseDto } from './dto/category-response.dto'
 
 @Controller('categories')
 export class CategoryController {
@@ -44,6 +44,22 @@ export class CategoryController {
       success: true,
       statusCode: 200,
       message: `List of categories`,
+      data: result,
+    }
+  }
+
+  @Get('stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  async findAllCategoriesWithStats(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllCategoriesWithStats.`)
+    const result = await this.categoryService.findAllCategoriesWithStats(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: `List of categories with stats`,
       data: result,
     }
   }

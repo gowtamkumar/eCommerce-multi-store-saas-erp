@@ -1,16 +1,17 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { ProductEntity } from '../../product/entities/product.entity'
 
 @Entity('categories')
+@Index(['tenantId', 'slug'])
 export class CategoryEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   name: string
 
   @Column({ type: 'varchar', length: 255 })
-  slug: string
+  slug: string  
 
   @Column({ type: 'text', nullable: true })
   description: string

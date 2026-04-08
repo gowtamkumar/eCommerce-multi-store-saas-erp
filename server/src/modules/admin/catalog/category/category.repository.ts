@@ -25,6 +25,25 @@ export class CategoryRepository {
     })
   }
 
+  async findAllWithProductCounts(tenantId: string) {
+    return this.repo
+      .createQueryBuilder('category')
+      .leftJoin('category.products', 'product')
+      .where('category.tenantId = :tenantId', { tenantId })
+      .select([
+        'category.id as id',
+        'category.name as name',
+        'category.slug as slug',
+        'category.description as description',
+        'category.image as image',
+        'category.createdAt as "createdAt"',
+      ])
+      .addSelect('COUNT(product.id)', 'productCount')
+      .groupBy('category.id')
+      .orderBy('category.name', 'ASC')
+      .getRawMany()
+  }
+
   async createAndSave(data: Partial<CategoryEntity>): Promise<CategoryEntity> {
     const category = this.repo.create(data as CategoryEntity)
     return this.repo.save(category)
