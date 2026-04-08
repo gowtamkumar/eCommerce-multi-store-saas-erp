@@ -4,7 +4,6 @@ import { AuditLogInterceptor } from '@/common/interceptors/audit-log.interceptor
 import { LoggingInterceptor } from '@/common/interceptors/logging.interceptor'
 import { TransformInterceptor } from '@/common/interceptors/transform.interceptor'
 import { TenantContextMiddleware } from '@/common/middleware/tenant-context.middleware'
-import { AppThrottlerModule } from '@/common/throttler/throttler.module'
 import { DatabaseModule } from '@/database/database.module'
 import { PersistenceModule } from '@/database/persistence.module'
 import { CatalogModule } from '@/modules/admin/catalog/catalog.module'
@@ -26,6 +25,7 @@ import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { join } from 'path'
+import { CacheModule } from './modules/admin/operations/infra/cache/cache.module'
 
 @Module({
   imports: [
@@ -61,6 +61,8 @@ import { join } from 'path'
     // Other Features
     AuthModule,
     PaymentModule,
+
+    CacheModule,
 
     // Rate Limiting
     // AppThrottlerModule,

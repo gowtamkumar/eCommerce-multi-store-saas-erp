@@ -107,10 +107,19 @@ export class UserRepository {
     activeUsers: number
     inactiveUsers: number
   }> {
-    const totalUsers = await this.repo.count()
-    const activeUsers = await this.repo.count({ where: { status: UserStatus.ACTIVE } })
-    const inactiveUsers = await this.repo.count({ where: { status: UserStatus.INACTIVE } })
-    return { totalUsers, activeUsers, inactiveUsers }
+    const stats = await this.repo
+      .createQueryBuilder('user')
+      .select('COUNT(*)', 'totalUsers')
+      .addSelect(`COUNT(*) FILTER (WHERE user.status = :active)`, 'activeUsers')
+      .addSelect(`COUNT(*) FILTER (WHERE user.status = :inactive)`, 'inactiveUsers')
+      .setParameters({ active: UserStatus.ACTIVE, inactive: UserStatus.INACTIVE })
+      .getRawOne()
+
+    return {
+      totalUsers: parseInt(stats.totalUsers, 10) || 0,
+      activeUsers: parseInt(stats.activeUsers, 10) || 0,
+      inactiveUsers: parseInt(stats.inactiveUsers, 10) || 0,
+    }
   }
 
   async findTeamMembers(tenantId: string): Promise<UserEntity[]> {

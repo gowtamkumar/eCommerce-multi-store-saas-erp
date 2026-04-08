@@ -1,6 +1,6 @@
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { BadRequestException, Injectable, Logger, Query } from '@nestjs/common'
 
-import { OrderStatus } from '@/common/enums/order-status.enum'
 
 import { ProductService } from '@/modules/admin/catalog/product/product.service'
 import { PageService } from '@/modules/admin/content/page/page.service'
@@ -10,6 +10,7 @@ import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchas
 import { SupplierService } from '@/modules/admin/operations/finance/supplier/supplier.service'
 import { OrderService } from '@/modules/admin/sales/order/order.service'
 import { PaymentService } from '@/modules/admin/sales/payment/payment.service'
+import { ReportRepository } from './report.repository'
 
 @Injectable()
 export class ReportService {
@@ -24,55 +25,36 @@ export class ReportService {
     private readonly supplierService: SupplierService,
     private readonly purchaseOrderService: PurchaseOrderService,
     private readonly expenseService: ExpenseService,
+    private readonly reportRepo: ReportRepository,
+    private readonly cacheService: CacheService,
   ) {}
 
   async getAnalytics(tenantId: string) {
-    // Parallelize for performance
-    const [users, products, orders, pages] = await Promise.all([
-      this.userService.countByTenant(tenantId),
-      this.productService.countByTenant(tenantId),
-      this.orderService.countByTenant(tenantId),
-      this.pageService.countByTenant(tenantId),
-    ])
+    const cacheKey = `analytics` // CacheService handled tenantId prefixing
+    const cachedData = await this.cacheService.getCache<any>(cacheKey, tenantId)
+    if (cachedData) return cachedData
 
-    return {
+    const counts = await this.reportRepo.getGlobalCounts(tenantId)
+
+    const result = {
         counts: {
-          users,
-          products,
-          orders,
-          pages,
+          users: parseInt(counts.users, 10),
+          products: parseInt(counts.products, 10),
+          orders: parseInt(counts.orders, 10),
+          pages: parseInt(counts.pages, 10),
         },
         topPages: [], // Removed page tracking feature, return empty array for backwards compatibility
     }
+
+    await this.cacheService.setCache(cacheKey, result, 600000) // 10 mins cache
+    return result
   }
 
   async getDashboardReport(tenantId: string, period: string = 'month') {
-    // Fetch all data in parallel for backend processing
-    const [orders, products, payments, pages, suppliers, purchaseOrders] = await Promise.all([
-      this.orderService.findAllOrders({ page: 1, limit: 1000 }, tenantId),
-      this.productService.findAllProducts({ page: 1, limit: 1000 }, tenantId),
-      this.paymentService.findAllPayments(tenantId),
-      this.pageService.findAllPages(tenantId),
-      this.supplierService.findAllSuppliers(tenantId),
-      this.purchaseOrderService.findAllPurchaseOrders(tenantId),
-    ])
+    const cacheKey = `dashboard:${period}`
+    const cachedData = await this.cacheService.getCache<any>(cacheKey, tenantId)
+    if (cachedData) return cachedData
 
-    const paymentsData = payments || []
-    const ordersData = orders.orders || []
-    const productsData = products.products || []
-    const pagesData = pages || []
-
-    // 1. Basic Counts (All Time)
-    const activeOrders = ordersData.filter((o: any) => o.status === OrderStatus.PENDING).length
-    const totalProducts = productsData.length
-    const totalSales = paymentsData.reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
-    const totalPages = pagesData.length
-
-    // 2. Recent Items
-    const recentPages = pagesData.slice(0, 5)
-    const recentProducts = productsData.slice(0, 5)
-
-    // 3. Dynamic Period Calculation
     const now = new Date()
     let startDate: Date
 
@@ -89,120 +71,80 @@ export class ReportService {
         break
     }
 
-    const filteredPayments = paymentsData.filter((p: any) => new Date(p.createdAt) >= startDate)
-    const filteredOrders = ordersData.filter((o: any) => new Date(o.createdAt) >= startDate)
+    // Fetch optimized stats from SQL (parallelized)
+    const [stats, chartData, monthlySales, lowStockProductsRaw, products, recentPurchaseOrders] = await Promise.all([
+      this.reportRepo.getDashboardStats(tenantId, startDate),
+      this.reportRepo.getSalesChartData(tenantId, 7),
+      this.reportRepo.getMonthlyGrowth(tenantId),
+      this.reportRepo.getLowStockProducts(tenantId, 10),
+      this.productService.findAllProducts({ page: 1, limit: 5 }, tenantId),
+      this.reportRepo.getRecentPurchaseOrders(tenantId, 5),
+    ])
 
-    const periodSales = filteredPayments.reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
-    const periodOrders = filteredOrders.length
-
-    // 4. Monthly Growth (Always calculate for context)
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
-    const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1
-    const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear
-
-    const previousMonthSales = paymentsData
-      .filter((p: any) => {
-        const date = new Date(p.createdAt)
-        return date.getMonth() === previousMonth && date.getFullYear() === previousYear
-      })
-      .reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
-
+    const recentProducts = products.products || []
+    
+    // Calculate growth
     let monthlyGrowth: number | null = null
-    const thisMonthSales = paymentsData
-      .filter((p: any) => {
-        const date = new Date(p.createdAt)
-        return date.getMonth() === currentMonth && date.getFullYear() === currentYear
-      })
-      .reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
-
-    if (previousMonthSales > 0) {
-      monthlyGrowth = ((thisMonthSales - previousMonthSales) / previousMonthSales) * 100
-    } else if (thisMonthSales > 0) {
-      monthlyGrowth = 100
-    }
-
-    // 5. Sales Data (Last 7 Days for Chart)
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date()
-      d.setDate(d.getDate() - i)
-      return d.toISOString().split('T')[0]
-    }).reverse()
-
-    const salesData = last7Days.map((date) => {
-      const daySales = paymentsData
-        .filter((p: any) => {
-          const createdAt = p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt
-          return typeof createdAt === 'string' && createdAt.startsWith(date)
-        })
-        .reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
-      return {
-        name: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        sales: daySales,
+    if (monthlySales.length >= 2) {
+      const currentMonthSales = parseFloat(monthlySales[0].sales)
+      const prevMonthSales = parseFloat(monthlySales[1].sales)
+      if (prevMonthSales > 0) {
+        monthlyGrowth = ((currentMonthSales - prevMonthSales) / prevMonthSales) * 100
+      } else if (currentMonthSales > 0) {
+        monthlyGrowth = 100
       }
-    })
-
-    return {
-        totalSales,
-        periodSales,
-        periodOrders,
-        activeOrders,
-        totalProducts,
-        totalPages,
-        recentPages,
-        recentProducts,
-        salesData,
-        monthlyGrowth,
-        supplierStats: {
-          totalSuppliers: suppliers.length,
-          totalPurchaseOrders: purchaseOrders.length,
-          totalAmountDue: purchaseOrders.reduce(
-            (sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)),
-            0,
-          ),
-          recentPurchaseOrders: purchaseOrders.slice(0, 5),
-        },
-        counts: {
-          users: await this.userService.countByTenant(tenantId),
-          products: totalProducts,
-          orders: ordersData.length,
-          pages: totalPages,
-          suppliers: suppliers.length,
-          purchaseOrders: purchaseOrders.length,
-        },
-        lowStockCount: productsData.filter((p: any) => {
-          if (p.variants && p.variants.length > 0) {
-            return p.variants.some((v: any) => v.stock <= (v.lowStockThreshold || 5))
-          }
-          return p.stock <= (p.lowStockThreshold || 5)
-        }).length,
-        lowStockProducts: productsData
-          .filter((p: any) => {
-            if (p.variants && p.variants.length > 0) {
-              return p.variants.some((v: any) => v.stock <= (v.lowStockThreshold || 5))
-            }
-            return p.stock <= (p.lowStockThreshold || 5)
-          })
-          .map((p: any) => {
-            // For UI, determine if it's the base product or a variant that triggered the alert
-            const triggeringVariant = p.variants?.find(
-              (v: any) => v.stock <= (v.lowStockThreshold || 5),
-            )
-            return {
-              id: p.id,
-              name: p.name,
-              image: p.images?.[0],
-              stock: triggeringVariant ? triggeringVariant.stock : p.stock,
-              threshold: triggeringVariant
-                ? triggeringVariant.lowStockThreshold || 5
-                : p.lowStockThreshold || 5,
-              variantName: triggeringVariant
-                ? Object.values(triggeringVariant.combination).join(' / ')
-                : null,
-            }
-          })
-          .slice(0, 10),
     }
+
+    // Format chart data for UI
+    const salesData = chartData.map((d: any) => ({
+      name: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      sales: parseFloat(d.sales),
+    }))
+
+    const lowStockProducts = lowStockProductsRaw.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      image: p.images?.[0],
+      stock: p.stock,
+      threshold: p.threshold,
+      variantName: p.variantCombination 
+        ? Object.values(p.variantCombination).join(' / ') 
+        : null,
+    }))
+
+    const result = {
+      totalSales: parseFloat(stats.totalSales),
+      periodSales: parseFloat(stats.periodSales),
+      periodOrders: parseInt(stats.periodOrders, 10),
+      activeOrders: parseInt(stats.activeOrders, 10),
+      totalProducts: parseInt(stats.totalProducts, 10),
+      totalPages: parseInt(stats.totalPages, 10),
+      salesData,
+      monthlyGrowth,
+      recentProducts,
+      lowStockProducts,
+      supplierStats: {
+        totalSuppliers: parseInt(stats.totalSuppliers, 10),
+        totalPurchaseOrders: parseInt(stats.totalPurchaseOrders, 10),
+        totalAmountDue: parseFloat(stats.totalAmountDue),
+        recentPurchaseOrders: recentPurchaseOrders.map((po: any) => ({
+          ...po,
+          supplier: { name: po.supplierName } // For frontend compatibility
+        })),
+      },
+      counts: {
+        users: parseInt(stats.totalUsers, 10),
+        products: parseInt(stats.totalProducts, 10),
+        orders: parseInt(stats.periodOrders, 10), // This should probably be total orders count, but keeping consistency with existing keys
+        pages: parseInt(stats.totalPages, 10),
+        suppliers: parseInt(stats.totalSuppliers, 10),
+        purchaseOrders: parseInt(stats.totalPurchaseOrders, 10),
+      },
+      lowStockCount: parseInt(stats.lowStockCount, 10),
+    }
+
+    await this.cacheService.setCache(cacheKey, result, 600000) // 10 mins cache
+    return result
   }
 
   async getProfitLossReport(tenantId: string, startDateStr?: string, endDateStr?: string) {
@@ -245,7 +187,7 @@ export class ReportService {
     // Calculate COGS (Cost of Goods Sold)
     // Using actual Purchase Orders that are completed or approved
     const cogs = filteredPurchaseOrders
-      .filter((po: any) => po.status !== 'CANCELLED')
+      .filter((po: any) => po.status !== 'cancelled')
       .reduce((sum: number, po: any) => sum + (+po.totalAmount || 0), 0)
 
     const grossProfit = revenue - cogs
@@ -418,7 +360,7 @@ export class ReportService {
       this.purchaseOrderService.findAllPaymentsByPurchaseOrder(tenantId),
     ])
 
-    const inflow = customerPayments.filter((p: any) => p.status === 'SUCCESS')
+    const inflow = customerPayments.filter((p: any) => p.status === 'completed')
     const outflowExpenses = expenses
     const outflowSuppliers = supplierPayments
 
@@ -512,7 +454,7 @@ export class ReportService {
         const payments = await this.paymentService.findAllPayments(tenantId)
         const filtered = payments.filter(
           (p: any) =>
-            p.status === 'SUCCESS' &&
+            p.status === 'completed' &&
             new Date(p.createdAt) >= startDate &&
             new Date(p.createdAt) <= endDate,
         )
@@ -577,7 +519,7 @@ export class ReportService {
       this.purchaseOrderService.findAllPurchaseOrders(tenantId),
     ])
 
-    const inflow = customerPayments.filter((p: any) => p.status === 'SUCCESS')
+    const inflow = customerPayments.filter((p: any) => p.status === 'completed')
     const totalRevenue = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0)
     const totalOpExpenses = expenses.reduce((sum, e) => sum + (+e.amount || 0), 0)
     const totalSupplierPayments = supplierPayments.reduce((sum, sp) => sum + (+sp.amount || 0), 0)

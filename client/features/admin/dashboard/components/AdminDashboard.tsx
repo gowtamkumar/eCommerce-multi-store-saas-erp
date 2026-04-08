@@ -1,81 +1,160 @@
 'use client';
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
-import { Package, ShoppingBag, TrendingUp, History as HistoryIcon, Plus, Truck, Users, Activity, BarChart3, Store } from 'lucide-react';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { motion } from 'framer-motion';
+import { Activity, BarChart3, History as HistoryIcon, Package, Plus, ShoppingBag, Store, TrendingUp, Truck, Users } from 'lucide-react';
+import Link from 'next/link';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { DashboardStats } from '../types';
 
+// Memoized Stat Card Component
+const StatCard = React.memo(({
+    label,
+    value,
+    subValue,
+    icon: Icon,
+    colorClass,
+    bgClass,
+    borderColorClass,
+    loading,
+    isPrice = false,
+    formatPrice
+}: any) => (
+    <div className={`bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:${borderColorClass} group`}>
+        <div className="flex items-center justify-between mb-4">
+            <div>
+                <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">
+                    {label}
+                </p>
+                {loading ? (
+                    <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
+                ) : (
+                    <h3 className={`text-2xl font-black ${colorClass || 'text-slate-900 dark:text-white'} font-mono`}>
+                        {isPrice ? formatPrice(value) : value}
+                    </h3>
+                )}
+            </div>
+            <div className={`p-3 ${bgClass} rounded-2xl group-hover:scale-110 transition-transform`}>
+                <Icon className={`w-5 h-5 ${colorClass.replace('text-', 'text-').replace('dark:text-', 'text-')}`} />
+            </div>
+        </div>
+        <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
+            {subValue}
+        </div>
+    </div>
+));
+
+StatCard.displayName = 'StatCard';
+
+// Memoized Chart Widget
+const SalesChart = React.memo(({ data, loading }: any) => (
+    <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-2xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
+        <div className="flex items-center justify-between mb-8">
+            <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter italic">
+                    <TrendingUp className="w-6 h-6 text-brand-500" /> Sales Velocity
+                </h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Transaction flow performance</p>
+            </div>
+        </div>
+        <div className="h-[400px] w-full mt-4">
+            {loading ? (
+                <div className="w-full h-full bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-[32px]"></div>
+            ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={data}>
+                        <defs>
+                            <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
+                        <XAxis
+                            dataKey="name"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
+                            dy={15}
+                        />
+                        <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: '#0f172a',
+                                borderRadius: '24px',
+                                border: 'none',
+                                boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.5)',
+                                color: '#fff',
+                                padding: '20px'
+                            }}
+                            itemStyle={{ color: '#3b82f6', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                            labelStyle={{ color: '#94a3b8', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase' }}
+                        />
+                        <Area
+                            type="monotone"
+                            dataKey="sales"
+                            stroke="#3b82f6"
+                            strokeWidth={6}
+                            fillOpacity={1}
+                            fill="url(#colorSales)"
+                            animationDuration={1500}
+                        />
+                    </AreaChart>
+                </ResponsiveContainer>
+            )}
+        </div>
+    </div>
+));
+
+SalesChart.displayName = 'SalesChart';
 
 export default function AdminDashboard() {
     const { formatPrice } = useSettings();
     const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
-    const [stats, setStats] = useState<DashboardStats>({
-        totalSales: 0,
-        periodSales: 0,
-        periodOrders: 0,
-        activeOrders: 0,
-        totalProducts: 0,
-        totalPages: 0,
-        recentPages: [],
-        salesData: [],
-        monthlyGrowth: null,
-    });
-    const [recentProducts, setRecentProducts] = useState<any[]>([]);
+    const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchDashboardStats();
-    }, [period]);
-
-    const fetchDashboardStats = async () => {
+    const fetchDashboardStats = useCallback(async () => {
         try {
             setLoading(true);
             const response = await fetchAPI(`/report/dashboard?period=${period}`);
-
             if (response.success && response.data) {
-                const {
-                    totalSales,
-                    periodSales,
-                    periodOrders,
-                    activeOrders,
-                    totalProducts,
-                    totalPages,
-                    recentPages,
-                    recentProducts,
-                    salesData,
-                    monthlyGrowth,
-                    supplierStats,
-                    lowStockCount,
-                    lowStockProducts,
-                    counts
-                } = response.data;
-
-                setStats({
-                    totalSales,
-                    periodSales,
-                    periodOrders,
-                    activeOrders,
-                    totalProducts,
-                    totalPages,
-                    recentPages,
-                    salesData,
-                    monthlyGrowth,
-                    supplierStats,
-                    lowStockCount,
-                    lowStockProducts,
-                    counts
-                });
-                setRecentProducts(recentProducts);
+                setStats(response.data);
             }
         } catch (error) {
             console.error('Failed to fetch dashboard stats', error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [period]);
+
+    useEffect(() => {
+        fetchDashboardStats();
+    }, [fetchDashboardStats]);
+
+    const dashboardData = useMemo(() => {
+        if (!stats) return null;
+        return {
+            ...stats,
+            healthItems: [
+                { label: 'Users', val: stats.counts?.users || 0, color: 'bg-indigo-500' },
+                { label: 'Products', val: stats.counts?.products || 0, color: 'bg-emerald-500' },
+                { label: 'Orders', val: stats.counts?.orders || 0, color: 'bg-amber-500' },
+                { label: 'Pages', val: stats.counts?.pages || 0, color: 'bg-blue-500' },
+            ],
+            platformStats: [
+                { label: 'Merchant Users', value: stats.counts?.users || 0, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-500/20' },
+                { label: 'Total Products', value: stats.counts?.products || 0, icon: Store, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-500/20' },
+                { label: 'Customer Orders', value: stats.counts?.orders || 0, icon: BarChart3, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-500/20' },
+                { label: 'Store Pages', value: stats.counts?.pages || 0, icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-500/20' },
+            ]
+        };
+    }, [stats]);
 
     return (
         <div className="space-y-8 pb-12">
@@ -106,75 +185,45 @@ export default function AdminDashboard() {
 
             {/* Operational Status Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:border-brand-500/20 group">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">
-                                {period} Sales
-                            </p>
-                            {loading ? (
-                                <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
-                            ) : (
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-white font-mono">{formatPrice(stats.periodSales)}</h3>
-                            )}
-                        </div>
-                        <div className="p-3 bg-brand-50 dark:bg-brand-900/20 rounded-2xl group-hover:scale-110 transition-transform">
-                            <TrendingUp className="w-5 h-5 text-brand-600 dark:text-brand-400" />
-                        </div>
-                    </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
-                        {stats.periodOrders} orders this {period}
-                    </div>
-                </div>
+                <StatCard
+                    label={`${period} Sales`}
+                    value={stats?.periodSales || 0}
+                    subValue={`${stats?.periodOrders || 0} orders this ${period}`}
+                    icon={TrendingUp}
+                    colorClass="text-brand-600"
+                    bgClass="bg-brand-50 dark:bg-brand-900/20"
+                    borderColorClass="border-brand-500/20"
+                    loading={loading}
+                    isPrice={true}
+                    formatPrice={formatPrice}
+                />
 
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:border-blue-500/20 group">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Active Orders</p>
-                            {loading ? (
-                                <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
-                            ) : (
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-white font-mono">{stats.activeOrders}</h3>
-                            )}
-                        </div>
-                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl group-hover:scale-110 transition-transform">
-                            <ShoppingBag className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                    </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
-                        Awaiting fulfillment
-                    </div>
-                </div>
+                <StatCard
+                    label="Active Orders"
+                    value={stats?.activeOrders || 0}
+                    subValue="Awaiting fulfillment"
+                    icon={ShoppingBag}
+                    colorClass="text-blue-600 font-mono"
+                    bgClass="bg-blue-50 dark:bg-blue-900/20"
+                    borderColorClass="border-blue-500/20"
+                    loading={loading}
+                />
 
-
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:border-rose-500/20 group">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Inventory Alert</p>
-                            {loading ? (
-                                <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 animate-pulse rounded"></div>
-                            ) : (
-                                <h3 className="text-2xl font-black text-rose-500 font-mono">{stats.lowStockCount || 0}</h3>
-                            )}
-                        </div>
-                        <div className="p-3 bg-rose-50 dark:bg-rose-900/20 rounded-2xl group-hover:scale-110 transition-transform">
-                            <Package className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                        </div>
-                    </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
-                        Items with low stock
-                    </div>
-                </div>
+                <StatCard
+                    label="Inventory Alert"
+                    value={stats?.lowStockCount || 0}
+                    subValue="Items with low stock"
+                    icon={Package}
+                    colorClass="text-rose-500 font-mono"
+                    bgClass="bg-rose-50 dark:bg-rose-900/20"
+                    borderColorClass="border-rose-500/20"
+                    loading={loading}
+                />
             </div>
 
             {/* Platform Analytics Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { label: 'Merchant Users', value: stats.counts?.users || 0, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-500/20' },
-                    { label: 'Total Products', value: stats.counts?.products || 0, icon: Store, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-500/20' },
-                    { label: 'Customer Orders', value: stats.counts?.orders || 0, icon: BarChart3, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-500/20' },
-                    { label: 'Store Pages', value: stats.counts?.pages || 0, icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-500/20' },
-                ].map((s) => (
+                {dashboardData?.platformStats.map((s: any) => (
                     <div key={s.label} className={`bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 transition-all hover:shadow-lg hover:${s.border} group`}>
                         <div className="flex items-center justify-between mb-2">
                             <div className={`p-2.5 ${s.bg} dark:bg-slate-900/50 rounded-xl group-hover:rotate-12 transition-transform`}>
@@ -189,78 +238,14 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 {/* Sales Chart */}
-                <div className="lg:col-span-3 bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-2xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700">
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter italic">
-                                <TrendingUp className="w-6 h-6 text-brand-500" /> Sales Velocity
-                            </h3>
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Transaction flow performance</p>
-                        </div>
-                    </div>
-                    <div className="h-[400px] w-full mt-4">
-                        {loading ? (
-                            <div className="w-full h-full bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-[32px]"></div>
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={stats.salesData}>
-                                    <defs>
-                                        <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
-                                    <XAxis
-                                        dataKey="name"
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
-                                        dy={15}
-                                    />
-                                    <YAxis
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 800 }}
-                                    />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: '#0f172a',
-                                            borderRadius: '24px',
-                                            border: 'none',
-                                            boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.5)',
-                                            color: '#fff',
-                                            padding: '20px'
-                                        }}
-                                        itemStyle={{ color: '#3b82f6', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}
-                                        labelStyle={{ color: '#94a3b8', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase' }}
-                                    />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="sales"
-                                        stroke="#3b82f6"
-                                        strokeWidth={6}
-                                        fillOpacity={1}
-                                        fill="url(#colorSales)"
-                                        animationDuration={1500}
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        )}
-                    </div>
-                </div>
+                <SalesChart data={stats?.salesData || []} loading={loading} />
 
                 <div className="flex flex-col gap-6">
                     {/* Activity Distribution */}
                     <div className="bg-white dark:bg-slate-800 p-8 rounded-[40px] shadow-xl border border-slate-100 dark:border-slate-700">
                         <h3 className="text-lg font-black text-slate-900 dark:text-white mb-6 uppercase tracking-tighter italic">Platform Health</h3>
                         <div className="space-y-6">
-                            {[
-                                { label: 'Users', val: stats.counts?.users || 0, color: 'bg-indigo-500' },
-                                { label: 'Products', val: stats.counts?.products || 0, color: 'bg-emerald-500' },
-                                { label: 'Orders', val: stats.counts?.orders || 0, color: 'bg-amber-500' },
-                                { label: 'Pages', val: stats.counts?.pages || 0, color: 'bg-blue-500' },
-                            ].map((item) => (
+                            {dashboardData?.healthItems.map((item: any) => (
                                 <div key={item.label}>
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
@@ -312,7 +297,7 @@ export default function AdminDashboard() {
                                 Array.from({ length: 3 }).map((_, i) => (
                                     <div key={i} className="h-20 bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-2xl"></div>
                                 ))
-                            ) : stats.supplierStats?.recentPurchaseOrders?.length ? (
+                            ) : stats?.supplierStats?.recentPurchaseOrders?.length ? (
                                 stats.supplierStats.recentPurchaseOrders.map((po: any) => (
                                     <Link key={po.id} href={`/admin/purchases/${po.id}`} className="flex items-center justify-between p-4 rounded-3xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 hover:border-brand-500/30 transition-all group">
                                         <div className="flex items-center gap-4">
@@ -355,7 +340,7 @@ export default function AdminDashboard() {
                         Array.from({ length: 3 }).map((_, i) => (
                             <div key={i} className="h-24 bg-slate-50 dark:bg-slate-900/30 animate-pulse rounded-3xl"></div>
                         ))
-                    ) : stats.lowStockProducts?.length ? (
+                    ) : stats?.lowStockProducts?.length ? (
                         stats.lowStockProducts.map((item: any) => (
                             <Link key={item.id} href={`/admin/products/${item.id}`} className="flex items-center justify-between p-5 rounded-[32px] bg-rose-50/30 dark:bg-rose-900/10 border border-rose-100/50 dark:border-rose-900/20 hover:border-rose-500/30 transition-all group">
                                 <div className="flex items-center gap-4">
