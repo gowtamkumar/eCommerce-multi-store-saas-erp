@@ -1,4 +1,4 @@
-import FinanceDashboard from '@/features/admin/report/components/FinanceDashboard';
+import FinanceSummaryDashboard from '@/features/admin/report/components/FinanceSummaryDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function FinanceDashboardPage() {
-    return <FinanceDashboard />;
+    return <FinanceSummaryDashboard />;
 }

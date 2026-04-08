@@ -30,6 +30,39 @@ export interface SalesDashboardData {
     recentPages: RecentPage[];
 }
 
+export interface FinanceChartPoint {
+    name: string;
+    revenue: number;
+    expense: number;
+    [key: string]: string | number;
+}
+
+export interface ExpenseBreakdownPoint {
+    name: string;
+    value: number;
+    [key: string]: string | number;
+}
+
+export interface FinanceKpis {
+    totalRevenue: number;
+    totalExpenses: number;
+    netProfit: number;
+    totalAmountDue: number;
+    margin: number;
+}
+
+export interface SupplierStats {
+    totalSuppliers: number;
+    totalPurchaseOrders: number;
+}
+
+export interface FinanceDashboardData {
+    kpis: FinanceKpis;
+    chartData: FinanceChartPoint[];
+    expenseBreakdown: ExpenseBreakdownPoint[];
+    supplierStats: SupplierStats;
+}
+
 export interface SalesReportProps {
     data: SalesDashboardData | null;
     isLoading: boolean;
