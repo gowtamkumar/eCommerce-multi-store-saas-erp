@@ -43,3 +43,27 @@ export interface ProductStock {
 }
 
 export type FilterType = 'all' | 'lowStock' | 'outOfStock' | 'inStock';
+
+export interface InventoryStats {
+    totalProducts: number;
+    totalValue: number;
+    outOfStockCount: number;
+    lowStockCount: number;
+    inStockCount: number;
+}
+
+export interface InventoryStockListProps {
+    products: ProductStock[];
+    filteredProducts: ProductStock[];
+    loading: boolean;
+    searchQuery: string;
+    onSearchChange: (value: string) => void;
+    filter: FilterType;
+    onFilterChange: (filter: FilterType) => void;
+    stats: InventoryStats;
+    expandedIds: Set<string>;
+    onToggleExpand: (id: string) => void;
+    onAdjustProduct: (product: ProductStock) => void;
+    onAdjustVariant: (product: ProductStock, variant: VariantStock) => void;
+    formatPrice: (price: number) => string;
+}

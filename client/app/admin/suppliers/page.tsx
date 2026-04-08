@@ -1,7 +1,7 @@
-import SupplierList from '@/features/admin/supplier/components/SupplierList';
+import SupplierDashboard from '@/features/admin/supplier/components/SupplierDashboard';
 
 export default function page() {
     return (
-        <SupplierList />
+        <SupplierDashboard />
     );
 }

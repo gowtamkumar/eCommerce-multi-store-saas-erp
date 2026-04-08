@@ -92,8 +92,6 @@ export default function PurchaseOrderForm() {
                     fetchAPI('/suppliers'),
                     fetchAPI('/products?limit=100')
                 ]);
-                console.log("supRes", supRes);
-
                 setSuppliers(Array.isArray(supRes) ? supRes : (supRes?.data?.items || []));
                 setProducts(prodRes?.data || []);
             } catch (error) {
