@@ -2,12 +2,14 @@ import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { OrderEntity } from './order.entity'
 
 @Entity('order_returns')
+@Index(['tenantId', 'status'])
 export class OrderReturnEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'order_id' })
+  @Index()
   orderId: string
 
   @ManyToOne(() => OrderEntity, { onDelete: 'CASCADE' })

@@ -25,12 +25,21 @@ export class OrderReturnRepository {
     return await (this.repo.save(returnRequest) as Promise<OrderReturnEntity>)
   }
 
+  /**
+   * Fetches all return requests for the admin dashboard with only the fields
+   * needed to render the table. Avoids the deep order.items → product → variant
+   * join which caused catastrophic payload sizes at scale.
+   */
   async findAllWithRelations(tenantId: string): Promise<OrderReturnEntity[]> {
-    return await this.repo.find({
-      where: { tenantId },
-      order: { createdAt: 'DESC' },
-      relations: ['order', 'order.items', 'order.items.product', 'order.items.variant', 'user'],
-    })
+    return await this.repo
+      .createQueryBuilder('ret')
+      .leftJoin('ret.order', 'order')
+      .leftJoin('ret.user', 'user')
+      .addSelect(['order.id', 'order.customerName', 'order.customerEmail'])
+      .addSelect(['user.email'])
+      .where('ret.tenantId = :tenantId', { tenantId })
+      .orderBy('ret.createdAt', 'DESC')
+      .getMany()
   }
 
   async findByUserWithRelations(userId: string, tenantId: string): Promise<OrderReturnEntity[]> {
