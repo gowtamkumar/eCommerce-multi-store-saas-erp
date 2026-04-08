@@ -1,11 +1,11 @@
-import ProfitLossReport from '@/features/admin/report/components/ProfitLossReport';
+import ProfitLossDashboard from '@/features/admin/report/components/ProfitLossDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
     title: 'Profit & Loss Report | Admin Dashboard',
-    description: 'View your business profitability and expense breakdown',
+    description: 'Detailed analysis of business profitability, revenue, and expenses',
 };
 
 export default function ProfitLossPage() {
-    return <ProfitLossReport />;
+    return <ProfitLossDashboard />;
 }
