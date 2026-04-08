@@ -25,6 +25,11 @@ export interface ExpenseListProps {
     onAdd: () => void;
     pagination?: PaginationMeta;
     onPageChange?: (page: number) => void;
+    searchQuery: string;
+    onSearchChange: (value: string) => void;
+    categoryFilter: string;
+    onCategoryFilterChange: (value: string) => void;
+    isSearchLoading?: boolean;
 }
 
 export interface ExpenseFormProps {

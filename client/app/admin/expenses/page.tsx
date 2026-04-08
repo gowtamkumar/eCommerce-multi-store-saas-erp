@@ -1,4 +1,4 @@
-import Expense from '@/features/admin/expense/components/Expense';
+import ExpenseDashboard from '@/features/admin/expense/components/ExpenseDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -7,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function ExpensesPage() {
-    return <Expense />;
+    return (
+        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+            <ExpenseDashboard />
+        </div>
+    );
 }

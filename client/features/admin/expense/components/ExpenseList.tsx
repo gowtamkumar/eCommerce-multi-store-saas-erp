@@ -2,9 +2,10 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import dayjs from 'dayjs';
-import { Edit2, Plus, Receipt, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit2, Plus, Receipt, Trash2, ChevronLeft, ChevronRight, Search, Filter, Loader2 } from 'lucide-react';
 import { memo } from 'react';
 import type { ExpenseListProps } from '../types';
+import { EXPENSE_CATEGORIES } from '../types';
 
 const CATEGORY_COLORS: Record<string, string> = {
     SHIPPING:    'bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-900/20 dark:text-sky-400',
@@ -17,7 +18,6 @@ const CATEGORY_COLORS: Record<string, string> = {
     OTHER:       'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900/20 dark:text-rose-400',
 };
 
-// Memoized row to prevent cascading re-renders when parent state changes
 const ExpenseRow = memo(({ expense, onEdit, onDelete, formatPrice }: {
     expense: any,
     onEdit: (e: any) => void,
@@ -72,12 +72,16 @@ export default function ExpenseList({
     onAdd,
     pagination,
     onPageChange,
+    searchQuery,
+    onSearchChange,
+    categoryFilter,
+    onCategoryFilterChange,
+    isSearchLoading
 }: ExpenseListProps) {
     const { formatPrice } = useSettings();
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
@@ -97,8 +101,34 @@ export default function ExpenseList({
                 </button>
             </div>
 
-            {/* Table Card */}
-            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+            {/* Filters Bar */}
+            <div className="flex flex-col md:flex-row gap-4 bg-white dark:bg-slate-800 p-4 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm transition-all duration-300">
+                <div className="relative flex-1 group">
+                    <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isSearchLoading ? 'text-brand-500 animate-spin' : 'text-slate-400 group-focus-within:text-brand-500'}`} />
+                    <input
+                        type="text"
+                        placeholder="Search by title or reference number..."
+                        value={searchQuery}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-sm font-medium focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                    />
+                </div>
+                <div className="relative w-full md:w-52">
+                    <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <select
+                        value={categoryFilter}
+                        onChange={(e) => onCategoryFilterChange(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-brand-500 outline-none transition-all cursor-pointer appearance-none"
+                    >
+                        <option value="">All Categories</option>
+                        {EXPENSE_CATEGORIES.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden min-h-[400px]">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
@@ -111,10 +141,10 @@ export default function ExpenseList({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading ? (
+                            {loading && !expenses.length ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i}>
-                                        <td colSpan={5} className="px-6 py-6">
+                                        <td colSpan={5} className="px-6 py-6 text-center">
                                             <div className="h-10 bg-slate-100 dark:bg-slate-700/50 animate-pulse rounded-2xl" />
                                         </td>
                                     </tr>
@@ -143,7 +173,6 @@ export default function ExpenseList({
                     </table>
                 </div>
 
-                {/* Pagination Footer */}
                 {!loading && pagination && pagination.totalPages > 1 && (
                     <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">

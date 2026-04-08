@@ -1,17 +1,14 @@
 'use client';
 
-import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
 import { 
     ShoppingBag, Search, Plus, Eye, CheckCircle, XCircle, 
-    Clock, FileText, ChevronLeft, ChevronRight, Loader2, Filter 
+    FileText, ChevronLeft, ChevronRight, Filter 
 } from 'lucide-react';
-import { useEffect, useState, memo, useCallback } from 'react';
-import toast from 'react-hot-toast';
+import { memo } from 'react';
 import Link from 'next/link';
-import { useDebounce } from '@/hooks/useDebounce';
+import type { PurchaseOrderListProps } from '../types';
 
-// Memoized Purchase Order Row component
 const PurchaseOrderRow = memo(({ order, onReceive, formatPrice }: { 
     order: any, 
     onReceive: (id: string) => void, 
@@ -78,72 +75,19 @@ const PurchaseOrderRow = memo(({ order, onReceive, formatPrice }: {
 
 PurchaseOrderRow.displayName = 'PurchaseOrderRow';
 
-export default function PurchaseOrderList() {
-    const [orders, setOrders] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
+export default function PurchaseOrderList({
+    orders,
+    loading,
+    searchQuery,
+    onSearchChange,
+    statusFilter,
+    onStatusFilterChange,
+    pagination,
+    onPageChange,
+    onReceive,
+    isSearchLoading
+}: PurchaseOrderListProps) {
     const { formatPrice } = useSettings();
-    const [pagination, setPagination] = useState({
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0
-    });
-
-    const debouncedSearch = useDebounce(searchQuery, 500);
-
-    const fetchOrders = useCallback(async (page: number, q: string, status: string) => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: '10',
-                ...(q && { q }),
-                ...(status && { status })
-            });
-            const res = await fetchAPI(`/purchase-orders?${params}`);
-            
-            if (res.success && res.data) {
-                setOrders(res.data.items || []);
-                setPagination({
-                    page: res.data.page,
-                    limit: res.data.limit,
-                    total: res.data.total,
-                    totalPages: res.data.totalPages
-                });
-            }
-        } catch (error) {
-            console.error('Failed to fetch purchase orders', error);
-            toast.error('Failed to load purchase orders');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchOrders(1, debouncedSearch, statusFilter);
-    }, [debouncedSearch, statusFilter, fetchOrders]);
-
-    const handleReceive = useCallback(async (id: string) => {
-        const toastId = toast.loading('Receiving order and updating stock...');
-        try {
-            await fetchAPI(`/purchase-orders/${id}/status`, {
-                method: 'PATCH',
-                body: JSON.stringify({ status: 'RECEIVED' })
-            });
-            toast.success('Order received! Inventory updated.', { id: toastId });
-            fetchOrders(pagination.page, debouncedSearch, statusFilter);
-        } catch (error) {
-            toast.error('Failed to receive order', { id: toastId });
-        }
-    }, [pagination.page, debouncedSearch, statusFilter, fetchOrders]);
-
-    const handlePageChange = (newPage: number) => {
-        if (newPage >= 1 && newPage <= pagination.totalPages) {
-            fetchOrders(newPage, debouncedSearch, statusFilter);
-        }
-    };
 
     return (
         <div className="space-y-6">
@@ -166,13 +110,13 @@ export default function PurchaseOrderList() {
 
             {/* Filters Bar */}
             <div className="flex flex-col md:flex-row gap-4 bg-white dark:bg-slate-800 p-4 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
-                <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <div className="relative flex-1 group">
+                    <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${isSearchLoading ? 'text-brand-500 animate-spin' : 'text-slate-400 group-focus-within:text-brand-500'}`} />
                     <input
                         type="text"
                         placeholder="Search reference # or supplier name..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => onSearchChange(e.target.value)}
                         className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm font-medium"
                     />
                 </div>
@@ -180,7 +124,7 @@ export default function PurchaseOrderList() {
                     <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <select
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
+                        onChange={(e) => onStatusFilterChange(e.target.value)}
                         className="w-full pl-11 pr-4 py-3.5 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-brand-500 outline-none transition-all cursor-pointer appearance-none"
                     >
                         <option value="">All Statuses</option>
@@ -192,7 +136,7 @@ export default function PurchaseOrderList() {
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden min-h-[400px]">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
@@ -206,7 +150,7 @@ export default function PurchaseOrderList() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {loading ? (
+                            {loading && !orders.length ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i}>
                                         <td colSpan={6} className="px-6 py-8">
@@ -217,10 +161,10 @@ export default function PurchaseOrderList() {
                             ) : orders.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="py-24 text-center">
-                                        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800">
                                             <ShoppingBag className="w-8 h-8 text-slate-300" strokeWidth={1} />
                                         </div>
-                                        <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">No matching orders found</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No matching orders found</p>
                                     </td>
                                 </tr>
                             ) : (
@@ -228,7 +172,7 @@ export default function PurchaseOrderList() {
                                     <PurchaseOrderRow 
                                         key={order.id} 
                                         order={order} 
-                                        onReceive={handleReceive} 
+                                        onReceive={onReceive} 
                                         formatPrice={formatPrice} 
                                     />
                                 ))
@@ -242,19 +186,20 @@ export default function PurchaseOrderList() {
                     <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                             Index <span className="text-slate-900 dark:text-white px-1">{pagination.page}</span> of <span className="text-slate-900 dark:text-white px-1">{pagination.totalPages}</span>
+                            <span className="ml-2 text-slate-400 font-bold">({pagination.total} ENTITIES)</span>
                         </p>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => handlePageChange(pagination.page - 1)}
+                                onClick={() => onPageChange(pagination.page - 1)}
                                 disabled={pagination.page === 1}
-                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl disabled:opacity-50 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
+                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl disabled:opacity-40 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
                             >
                                 <ChevronLeft className="w-5 h-5" />
                             </button>
                             <button
-                                onClick={() => handlePageChange(pagination.page + 1)}
+                                onClick={() => onPageChange(pagination.page + 1)}
                                 disabled={pagination.page === pagination.totalPages}
-                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl disabled:opacity-50 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
+                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl disabled:opacity-40 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
                             >
                                 <ChevronRight className="w-5 h-5" />
                             </button>
