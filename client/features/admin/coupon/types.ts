@@ -16,6 +16,13 @@ export interface Coupon {
     updatedAt?: string;
 }
 
+export interface PaginationMeta {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
 export interface CouponListProps {
     coupons: Coupon[];
     loading: boolean;
@@ -24,6 +31,10 @@ export interface CouponListProps {
     onAdd: () => void;
     searchTerm: string;
     onSearchChange: (value: string) => void;
+    pagination?: PaginationMeta;
+    onPageChange?: (page: number) => void;
+    statusFilter?: string;
+    onStatusChange?: (value: string) => void;
 }
 
 export interface CouponFormProps {

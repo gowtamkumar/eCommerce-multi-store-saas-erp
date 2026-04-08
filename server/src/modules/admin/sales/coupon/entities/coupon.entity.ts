@@ -1,8 +1,13 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { DiscountType } from '@/common/enums/discount-type.enum'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
+
+/** Fast code lookups — used on every coupon validation */
+@Index(['tenantId', 'code'], { unique: true })
+/** Optimizes the active-coupons dashboard filter */
+@Index(['tenantId', 'isActive', 'expiryDate'])
 
 @Entity('coupons')
 export class CouponEntity extends BaseEntity {
