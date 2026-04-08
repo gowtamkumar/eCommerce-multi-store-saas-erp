@@ -1,4 +1,4 @@
-import Orders from "@/features/admin/order/components/Orders";
+import Order from "@/features/admin/order/components/Order";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -7,6 +7,6 @@ export const metadata: Metadata = {
 
 export default function page() {
   return (
-    <Orders />
+    <Order />
   );
 }

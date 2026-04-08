@@ -26,16 +26,8 @@ import { calculateShippingFee } from '@/lib/utils';
 import { ShippingZoneType } from '@/lib/enums/shipping-zone-type.enum';
 import { DiscountType } from '@/lib/enums/discount-type.enum';
 import { PaymentMethod } from '@/lib/enums/payment-method.enum';
+import { SelectedItem } from '../type';
 
-interface SelectedItem {
-    product: Product;
-    variant?: any;
-    quantity: number;
-    unitPrice: number;
-    discountAmount: number;
-    taxAmount: number; // Added taxAmount
-    totalAmount: number;
-}
 
 export default function CreateOrder() {
     const router = useRouter();
@@ -75,8 +67,8 @@ export default function CreateOrder() {
             const timer = setTimeout(async () => {
                 try {
                     const res = await fetchAPI(`/users?search=${customerSearch}`);
-                    if (res.data?.users) {
-                        setCustomers(res.data.users);
+                    if (res.data) {
+                        setCustomers(res.data);
                     }
                 } catch (err) {
                     console.error('Failed to fetch customers', err);
@@ -94,8 +86,8 @@ export default function CreateOrder() {
             const timer = setTimeout(async () => {
                 try {
                     const res = await fetchAPI(`/products?search=${productSearch}`);
-                    if (res.data?.products) {
-                        setProducts(res.data.products);
+                    if (res.data) {
+                        setProducts(res.data);
                     }
                 } catch (err) {
                     console.error('Failed to fetch products', err);

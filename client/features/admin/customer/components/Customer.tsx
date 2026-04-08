@@ -46,11 +46,12 @@ export default function Customer() {
                 search: search
             });
             const res = await fetchAPI(`/users?${params.toString()}`);
+            console.log("res", res);
 
             if (res.success && res.data) {
-                setUsers(res.data.users || []);
+                setUsers(res.data || []);
                 setPagination(res.data.pagination || {
-                    total: res.data.users?.length || 0,
+                    total: res.data?.length || 0,
                     page: 1,
                     limit: 20,
                     totalPages: 1
@@ -97,7 +98,7 @@ export default function Customer() {
         try {
             const method = selectedUser ? 'PATCH' : 'POST';
             const url = selectedUser ? `/users/${selectedUser.id}` : '/users';
-            
+
             const res = await fetchAPI(url, {
                 method,
                 body: JSON.stringify(formData)
