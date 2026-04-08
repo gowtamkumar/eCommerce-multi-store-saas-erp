@@ -1,7 +1,9 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
+/** Database Index: Optimizes default chronological lookups */
+@Index(['createdAt'])
 @Entity('subscribers')
 export class SubscriberEntity extends BaseEntity {
   @Column({ type: 'varchar', unique: true })

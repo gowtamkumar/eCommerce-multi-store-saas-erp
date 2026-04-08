@@ -1,19 +1,13 @@
 'use client';
 
-import { fetchAPI } from '@/services/api';
+import { useDebounce } from '@/hooks/useDebounce';
 import { LeadStatus } from '@/lib/enums/lead-status.enum';
+import { fetchAPI } from '@/services/api';
 import { ChevronLeft, ChevronRight, Download, Filter, Loader2, MessageSquare, Search } from 'lucide-react';
-import React, { useEffect, useState, useCallback, memo } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Pagination } from '../../customer/type';
-import { useDebounce } from '@/hooks/useDebounce';
-
-interface LeadRowProps {
-    msg: any;
-    updatingStatus: string | null;
-    onStatusUpdate: (id: string, newStatus: string) => void;
-    getStatusColor: (status: string) => string;
-}
+import { LeadRowProps } from '../type';
 
 const LeadRow = memo(({ msg, updatingStatus, onStatusUpdate, getStatusColor }: LeadRowProps) => {
     return (
@@ -96,7 +90,7 @@ export default function Lead() {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
             fetchMessages(newPage, debouncedSearch, statusFilter);
         }
-    }, [pagination.totalPages, debouncedSearch, statusFilter, fetchMessages]);
+    }, [pagination?.totalPages, debouncedSearch, statusFilter, fetchMessages]);
 
     const handleStatusUpdate = useCallback(async (id: string, newStatus: string) => {
         setUpdatingStatus(id);

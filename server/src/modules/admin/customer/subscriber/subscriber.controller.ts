@@ -2,7 +2,7 @@ import { Roles } from '@/common/decorators/roles.decorator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common'
 import { CreateSubscriberDto } from './dto/subscriber.dto'
 import { SubscriberService } from './subscriber.service'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
@@ -34,13 +34,21 @@ export class SubscriberController {
     UserRole.OPERATOR,
   )
   @Get()
-  async findAllSubscribers(): Promise<BaseApiSuccessResponse<SubscriberResponseDto[]>> {
-    const result = await this.subscriberService.findAllSubscribers()
+  async findAllSubscribers(
+    @Query() filterDto: any,
+  ): Promise<BaseApiSuccessResponse<SubscriberResponseDto[]>> {
+    const { subscribers, total } = await this.subscriberService.findAllSubscribers(filterDto)
     return {
       success: true,
       statusCode: 200,
       message: 'List of subscribers retrieved',
-      data: result as any,
+      data: subscribers as any,
+      pagination: {
+        total,
+        page: filterDto.page || 1,
+        limit: filterDto.limit || 10,
+        totalPages: Math.ceil(total / (filterDto.limit || 10)),
+      },
     }
   }
 }

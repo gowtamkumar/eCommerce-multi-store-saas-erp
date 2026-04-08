@@ -2,8 +2,10 @@
 
 import { fetchAPI } from '@/services/api';
 import { ChevronLeft, ChevronRight, Download, Loader2, Mail, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import toast from 'react-hot-toast';
+import { Pagination } from '../../customer/type';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Subscriber {
     id: string;
@@ -12,25 +14,54 @@ interface Subscriber {
     createdAt: string;
 }
 
+const SubscriberRow = memo(({ subscriber }: { subscriber: Subscriber }) => {
+    return (
+        <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+            <td className="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                {new Date(subscriber.createdAt).toLocaleDateString()}
+            </td>
+            <td className="px-6 py-4">
+                <div className="font-medium text-slate-900 dark:text-white">{subscriber.email}</div>
+            </td>
+            <td className="px-6 py-4">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${subscriber.isActive
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-400'
+                    }`}>
+                    {subscriber.isActive ? 'Active' : 'Inactive'}
+                </span>
+            </td>
+        </tr>
+    );
+});
+SubscriberRow.displayName = 'SubscriberRow';
+
 export default function Subscribers() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [pagination, setPagination] = useState<Pagination>({
+        total: 0,
+        page: 1,
+        limit: 20,
+        totalPages: 1
+    });
 
-    useEffect(() => {
-        fetchSubscribers();
-    }, []);
+    const debouncedSearch = useDebounce(searchQuery, 500);
 
-    const fetchSubscribers = async () => {
+    const fetchSubscribers = useCallback(async (page: number, search: string) => {
         setLoading(true);
         try {
-            const res = await fetchAPI('/subscribers');
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: '20',
+                search: search
+            });
+            const res = await fetchAPI(`/subscribers?${params}`);
             if (res) {
-                // Backend returns array directly or inside data? 
-                // Based on subscriber.controller.ts: return this.subscriberService.findAll();
-                // We'll handle both cases
                 const data = Array.isArray(res) ? res : res.data || [];
                 setSubscribers(data);
+                if (res.pagination) setPagination(res.pagination);
             }
         } catch (error) {
             console.error('Failed to fetch subscribers', error);
@@ -38,34 +69,54 @@ export default function Subscribers() {
         } finally {
             setLoading(false);
         }
+    }, []);
+
+    useEffect(() => {
+        fetchSubscribers(1, debouncedSearch);
+    }, [debouncedSearch, fetchSubscribers]);
+
+    const handlePageChange = useCallback((newPage: number) => {
+        if (newPage >= 1 && newPage <= pagination.totalPages) {
+            fetchSubscribers(newPage, debouncedSearch);
+        }
+    }, [pagination.totalPages, debouncedSearch, fetchSubscribers]);
+
+    const handleExport = async () => {
+        try {
+            const params = new URLSearchParams({
+                page: '1',
+                limit: '5000',
+                search: debouncedSearch
+            });
+            const res = await fetchAPI(`/subscribers?${params}`);
+            if (res && res.data) {
+                const leads = Array.isArray(res) ? res : res.data;
+                const headers = ['Date', 'Email', 'Status'];
+                const csvContent = [
+                    headers.join(','),
+                    ...leads.map((s: Subscriber) => [
+                        new Date(s.createdAt).toLocaleDateString(),
+                        `"${s.email}"`,
+                        s.isActive ? 'Active' : 'Inactive'
+                    ].join(','))
+                ].join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `subscribers_export_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                toast.success('Subscribers exported successfully');
+            }
+        } catch (error) {
+            console.error('Export failed', error);
+            toast.error('Failed to export leads');
+        }
     };
-
-    const handleExport = () => {
-        const headers = ['Date', 'Email', 'Status'];
-        const csvContent = [
-            headers.join(','),
-            ...subscribers.map(s => [
-                new Date(s.createdAt).toLocaleDateString(),
-                `"${s.email}"`,
-                s.isActive ? 'Active' : 'Inactive'
-            ].join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `subscribers_export_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast.success('Subscribers exported successfully');
-    };
-
-    const filteredSubscribers = subscribers.filter(s =>
-        s.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
     return (
         <div>
@@ -100,7 +151,7 @@ export default function Subscribers() {
                     />
                 </div>
                 <div className="text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                    Total: {filteredSubscribers.length} subscribers
+                    Total: {pagination.total} subscribers
                 </div>
             </div>
 
@@ -124,36 +175,48 @@ export default function Subscribers() {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : filteredSubscribers.length === 0 ? (
+                            ) : subscribers.length === 0 ? (
                                 <tr>
                                     <td colSpan={3} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                                         {searchQuery ? 'No subscribers match your search.' : 'No subscribers found.'}
                                     </td>
                                 </tr>
                             ) : (
-                                filteredSubscribers.map((subscriber) => (
-                                    <tr key={subscriber.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                                            {new Date(subscriber.createdAt).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="font-medium text-slate-900 dark:text-white">{subscriber.email}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${subscriber.isActive
-                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                                    : 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-400'
-                                                }`}>
-                                                {subscriber.isActive ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                    </tr>
+                                subscribers.map((subscriber) => (
+                                    <SubscriberRow key={subscriber.id} subscriber={subscriber} />
                                 ))
                             )}
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-6">
+                    <button
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={pagination.page === 1 || loading}
+                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                            Page {pagination.page} of {pagination.totalPages}
+                        </span>
+                    </div>
+
+                    <button
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={pagination.page === pagination.totalPages || loading}
+                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

@@ -19,9 +19,22 @@ export class SubscriberRepository {
     return this.repo.save(subscriber)
   }
 
-  async findAllDesc(): Promise<SubscriberEntity[]> {
-    return this.repo.find({
-      order: { createdAt: 'DESC' },
-    })
+  async findAllWithFilters(
+    filterDto: any,
+  ): Promise<{ subscribers: SubscriberEntity[]; total: number }> {
+    const { page = 1, limit = 10, search } = filterDto
+    const query = this.repo.createQueryBuilder('subscriber')
+
+    if (search) {
+      query.where('subscriber.email ILIKE :search', { search: `%${search}%` })
+    }
+
+    const [subscribers, total] = await query
+      .orderBy('subscriber.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount()
+
+    return { subscribers, total }
   }
 }
