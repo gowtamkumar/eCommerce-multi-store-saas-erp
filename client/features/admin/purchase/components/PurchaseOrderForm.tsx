@@ -9,15 +9,15 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 
 // Memoized Item Row to prevent form re-renders on price/qty updates
-const PurchaseOrderItemRow = memo(({ 
-    item, 
-    index, 
-    onUpdate, 
-    onRemove, 
-    formatPrice 
-}: { 
-    item: any, 
-    index: number, 
+const PurchaseOrderItemRow = memo(({
+    item,
+    index,
+    onUpdate,
+    onRemove,
+    formatPrice
+}: {
+    item: any,
+    index: number,
     onUpdate: (index: number, field: string, value: any) => void,
     onRemove: (index: number) => void,
     formatPrice: (p: number) => string
@@ -92,8 +92,10 @@ export default function PurchaseOrderForm() {
                     fetchAPI('/suppliers'),
                     fetchAPI('/products?limit=100')
                 ]);
-                setSuppliers(Array.isArray(supRes) ? supRes : (supRes.data || []));
-                setProducts(prodRes.data?.products || []);
+                console.log("supRes", supRes);
+
+                setSuppliers(Array.isArray(supRes) ? supRes : (supRes?.data?.items || []));
+                setProducts(prodRes?.data || []);
             } catch (error) {
                 console.error('Data loading failed', error);
             }
@@ -142,9 +144,9 @@ export default function PurchaseOrderForm() {
         });
     }, []);
 
-    const totalAmount = useMemo(() => 
+    const totalAmount = useMemo(() =>
         formData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0),
-    [formData.items]);
+        [formData.items]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -179,12 +181,12 @@ export default function PurchaseOrderForm() {
         }
     };
 
-    const filteredProductList = useMemo(() => 
+    const filteredProductList = useMemo(() =>
         products.filter(p =>
             p.name.toLowerCase().includes(searchProduct.toLowerCase()) &&
             !formData.items.find(item => item.productId === p.id && !p.variants?.length)
         ),
-    [products, searchProduct, formData.items]);
+        [products, searchProduct, formData.items]);
 
     return (
         <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-10 pb-32 pt-4 px-4">
@@ -316,7 +318,7 @@ export default function PurchaseOrderForm() {
                                         </tr>
                                     ) : (
                                         formData.items.map((item, idx) => (
-                                            <PurchaseOrderItemRow 
+                                            <PurchaseOrderItemRow
                                                 key={`${item.productId}-${item.variantId || 'base'}`}
                                                 item={item}
                                                 index={idx}
@@ -377,7 +379,7 @@ export default function PurchaseOrderForm() {
                         <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
                             <div className="bg-brand-50 dark:bg-brand-900/20 border border-brand-100 dark:border-brand-800 p-5 rounded-2xl">
                                 <p className="text-[10px] text-brand-700 dark:text-brand-300 font-bold leading-relaxed uppercase tracking-wide">
-                                    <strong className="block mb-1 text-xs">Lifecycle Protocol:</strong> 
+                                    <strong className="block mb-1 text-xs">Lifecycle Protocol:</strong>
                                     New records initialize in <span className="text-brand-900 dark:text-white">DRAFT</span> status. Inventory synchronization executes only upon transition to <span className="text-brand-900 dark:text-white">RECEIVED</span>.
                                 </p>
                             </div>
