@@ -102,6 +102,45 @@ export interface SupplierLedgerData {
     ledger: LedgerTransaction[];
 }
 
+export interface CustomerShortInfo {
+    id: string;
+    name: string;
+    email: string;
+}
+
+export interface CustomerLedgerData {
+    customer: CustomerShortInfo;
+    summary: LedgerSummary;
+    ledger: LedgerTransaction[];
+}
+
+export interface CashFlowChartItem {
+    date: string;
+    displayDate: string;
+    inflow: number;
+    outflow: number;
+}
+
+export interface CashMovement {
+    date: string;
+    reference: string;
+    category: string;
+    type: 'INFLOW' | 'OUTFLOW';
+    amount: number;
+}
+
+export interface CashFlowSummary {
+    totalInflow: number;
+    totalOutflow: number;
+    netCashFlow: number;
+}
+
+export interface CashFlowData {
+    summary: CashFlowSummary;
+    chartData: CashFlowChartItem[];
+    recentMovements: CashMovement[];
+}
+
 export interface FinanceKpis {
     totalRevenue: number;
     totalExpenses: number;

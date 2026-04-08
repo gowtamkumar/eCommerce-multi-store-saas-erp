@@ -1,11 +1,11 @@
-import CashFlowReport from '@/features/admin/report/components/CashFlowReport';
+import CashFlowDashboard from '@/features/admin/report/components/CashFlowDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Cash Flow Summary | Admin Dashboard',
-    description: 'Monitor your business liquidity with a unified view of inflows and outflows',
+    title: 'Cash Flow | Admin Dashboard',
+    description: 'Track money movement in and out of your business',
 };
 
 export default function CashFlowPage() {
-    return <CashFlowReport />;
+    return <CashFlowDashboard />;
 }
