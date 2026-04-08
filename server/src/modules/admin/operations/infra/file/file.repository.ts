@@ -11,7 +11,20 @@ export class FileRepository {
   ) { }
 
   async findAllByTenant(where: any): Promise<FileEntity[]> {
-    return await this.repo.find({ where })
+    return await this.repo.find({ where, order: { createdAt: 'DESC' } })
+  }
+
+  async findPaginatedByTenant(
+    where: any,
+    page: number,
+    limit: number
+  ): Promise<[FileEntity[], number]> {
+    return await this.repo.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    })
   }
 
   async findById(id: string): Promise<FileEntity | null> {

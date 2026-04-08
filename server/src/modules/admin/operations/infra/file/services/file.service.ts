@@ -11,15 +11,26 @@ export class FilesService {
 
   constructor(private readonly fileRepository: FileRepository) {}
 
-  async getFiles(filterFile: FilterFileDto, tenantId: string): Promise<FileEntity[]> {
+  async getFiles(filterFile: FilterFileDto, tenantId: string): Promise<any> {
     this.logger.log(`${this.getFiles.name} Service Called`)
-    const { filename, originalname } = filterFile
+    const { filename, originalname, page = 1, limit = 20 } = filterFile
 
     const newQuery: any = { tenantId }
 
     if (filename) newQuery.filename = filename
     if (originalname) newQuery.originalname = originalname
-    return this.fileRepository.findAllByTenant(newQuery)
+
+    // If a query explicitly wants all (e.g. limit=0 or undefined historically but we enforce defaults now)
+    // Actually, we enforce pagination for scalability
+    const [items, total] = await this.fileRepository.findPaginatedByTenant(newQuery, page, limit)
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
   }
 
   async getFile(id: string): Promise<FileEntity> {

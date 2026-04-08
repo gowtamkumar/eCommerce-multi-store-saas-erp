@@ -1,5 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm'
+import { Column, Entity, ManyToOne, JoinColumn, Index } from 'typeorm'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
 @Entity('files')
@@ -20,6 +20,7 @@ export class FileEntity extends BaseEntity {
   destination: string
 
   @Column({ nullable: true })
+  @Index()
   filename: string
 
   @Column({ name: 'pdf_file', nullable: true })
@@ -32,6 +33,7 @@ export class FileEntity extends BaseEntity {
   size: number
 
   @Column({ type: 'uuid', name: 'tenant_id' })
+  @Index()
   tenantId: string
 
   @Column({ type: 'uuid', name: 'user_id', nullable: true })

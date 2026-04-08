@@ -47,14 +47,16 @@ export default function Media() {
         setLoading(true);
         try {
             const params = new URLSearchParams({
-                filename: searchQuery // NestJS service filters by filename or originalname
+                filename: searchQuery,
+                page: page.toString(),
+                limit: '20'
             });
-            // Note: NestJS file service currently returns ALL matching files (no pagination)
+            
             const res = await fetchAPI(`/admin/media?${params}`);
 
-            if (res.data) {
+            if (res.data && res.data.items) {
                 const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '');
-                const mappedMedia: MediaItem[] = res.data.map((f: any) => {
+                const mappedMedia: MediaItem[] = res.data.items.map((f: any) => {
                     // Extract timestamp from filename (timestamp_name.ext)
                     let createdAt = new Date().toISOString();
                     const parts = f.filename?.split('_');
@@ -72,20 +74,15 @@ export default function Media() {
                     };
                 });
 
-                // Client-side pagination until backend supports it
-                const limit = 20;
-                const total = mappedMedia.length;
-                const totalPages = Math.ceil(total / limit);
-                const startIndex = (page - 1) * limit;
-                const paginatedMedia = mappedMedia.slice(startIndex, startIndex + limit);
-
-                setMedia(paginatedMedia);
+                setMedia(mappedMedia);
                 setPagination({
-                    total,
-                    page,
-                    limit,
-                    totalPages: totalPages || 1
+                    total: res.data.total,
+                    page: res.data.page,
+                    limit: res.data.limit,
+                    totalPages: res.data.totalPages || 1
                 });
+            } else {
+                setMedia([]);
             }
         } catch (error) {
             console.error('Error fetching media:', error);

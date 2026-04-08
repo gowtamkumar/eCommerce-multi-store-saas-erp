@@ -38,14 +38,14 @@ export class AdminMediaController {
   async findAllFiles(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterFileDto,
-  ): Promise<BaseApiSuccessResponse<FileResponseDto[]>> {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllFiles.`)
-    const files = await this.filesService.getFiles(filterDto, ctx.tenantId)
+    const result = await this.filesService.getFiles(filterDto, ctx.tenantId)
     return {
       success: true,
       statusCode: 200,
       message: 'Files retrieved successfully',
-      data: files,
+      data: result,
     }
   }
 
