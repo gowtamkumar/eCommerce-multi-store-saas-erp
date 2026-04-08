@@ -16,7 +16,7 @@ export interface Coupon {
     updatedAt?: string;
 }
 
-export interface PaginationMeta {
+export interface CouponPagination {
     page: number;
     limit: number;
     total: number;
@@ -29,12 +29,13 @@ export interface CouponListProps {
     onEdit: (coupon: Coupon) => void;
     onDelete: (id: string) => void;
     onAdd: () => void;
-    searchTerm: string;
+    searchQuery: string;
     onSearchChange: (value: string) => void;
-    pagination?: PaginationMeta;
-    onPageChange?: (page: number) => void;
-    statusFilter?: string;
-    onStatusChange?: (value: string) => void;
+    pagination: CouponPagination;
+    onPageChange: (page: number) => void;
+    statusFilter: string;
+    onStatusFilterChange: (value: string) => void;
+    isSearchLoading?: boolean;
 }
 
 export interface CouponFormProps {

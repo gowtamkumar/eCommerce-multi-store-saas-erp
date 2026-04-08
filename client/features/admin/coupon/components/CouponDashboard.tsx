@@ -1,47 +1,56 @@
 'use client';
 
 import { fetchAPI } from '@/services/api';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import CouponForm from './CouponForm';
+import dynamic from 'next/dynamic';
 import CouponList from './CouponList';
-import type { Coupon, PaginationMeta } from '../types';
+import type { Coupon, CouponPagination } from '../types';
 import { useDebounce } from '@/hooks/useDebounce';
 
-export default function Coupons() {
+// Lazy load the form to optimize bundle size
+const CouponForm = dynamic(() => import('./CouponForm'), {
+    loading: () => null,
+    ssr: false
+});
+
+export default function CouponDashboard() {
     const [coupons, setCoupons] = useState<Coupon[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
-    const [pagination, setPagination] = useState<PaginationMeta>({
-        page: 1, limit: 10, total: 0, totalPages: 0,
+    const [pagination, setPagination] = useState<CouponPagination>({
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 0,
     });
 
-    // 500ms debounce — prevents a new API call on every keystroke
-    const debouncedSearch = useDebounce(searchTerm, 500);
+    const debouncedSearch = useDebounce(searchQuery, 500);
 
-    const loadCoupons = useCallback(async (page: number, search: string, isActive: string) => {
+    const loadCoupons = useCallback(async (page: number, search: string, status: string) => {
         setLoading(true);
         try {
             const params = new URLSearchParams({
                 page: page.toString(),
                 limit: '10',
                 ...(search && { search }),
-                ...(isActive && { isActive }),
+                ...(status && { isActive: status }),
             });
             const res = await fetchAPI(`/coupons?${params}`);
             if (res.success && res.data) {
-                setCoupons(res.data.coupons || []);
+                setCoupons(res.data.items || []);
                 setPagination({
-                    page,
+                    page: res.data.page || page,
                     limit: 10,
                     total: res.data.total ?? 0,
                     totalPages: Math.ceil((res.data.total ?? 0) / 10),
                 });
             }
         } catch (error) {
+            console.error('Failed to load coupons', error);
             toast.error('Failed to load coupons');
         } finally {
             setLoading(false);
@@ -54,16 +63,17 @@ export default function Coupons() {
 
     const handleDelete = useCallback(async (id: string) => {
         if (!confirm('Are you sure you want to delete this coupon?')) return;
+        const toastId = toast.loading('Deleting coupon...');
         try {
             const res = await fetchAPI(`/coupons/${id}`, { method: 'DELETE' });
             if (res.success) {
-                toast.success('Coupon deleted');
+                toast.success('Coupon deleted', { id: toastId });
                 loadCoupons(pagination.page, debouncedSearch, statusFilter);
             } else {
-                toast.error(res.message || 'Failed to delete coupon');
+                toast.error(res.message || 'Failed to delete coupon', { id: toastId });
             }
-        } catch {
-            toast.error('Failed to delete coupon');
+        } catch (error) {
+            toast.error('Failed to delete coupon', { id: toastId });
         }
     }, [pagination.page, debouncedSearch, statusFilter, loadCoupons]);
 
@@ -83,6 +93,8 @@ export default function Coupons() {
         }
     }, [pagination.totalPages, debouncedSearch, statusFilter, loadCoupons]);
 
+    const isSearchLoading = useMemo(() => debouncedSearch !== searchQuery, [debouncedSearch, searchQuery]);
+
     return (
         <>
             <CouponList
@@ -91,23 +103,26 @@ export default function Coupons() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAdd={handleAdd}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
                 pagination={pagination}
                 onPageChange={handlePageChange}
                 statusFilter={statusFilter}
-                onStatusChange={setStatusFilter}
+                onStatusFilterChange={setStatusFilter}
+                isSearchLoading={isSearchLoading}
             />
 
-            <CouponForm
-                isOpen={isFormOpen}
-                initialData={selectedCoupon}
-                onClose={() => setIsFormOpen(false)}
-                onSuccess={() => {
-                    setIsFormOpen(false);
-                    loadCoupons(pagination.page, debouncedSearch, statusFilter);
-                }}
-            />
+            {isFormOpen && (
+                <CouponForm
+                    isOpen={isFormOpen}
+                    initialData={selectedCoupon}
+                    onClose={() => setIsFormOpen(false)}
+                    onSuccess={() => {
+                        setIsFormOpen(false);
+                        loadCoupons(pagination.page, debouncedSearch, statusFilter);
+                    }}
+                />
+            )}
         </>
     );
 }
