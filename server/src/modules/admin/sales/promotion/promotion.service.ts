@@ -47,13 +47,23 @@ export class PromotionService {
       .replace(/ +/g, '-')
   }
 
-  async findAllPromotions(filterDto: any, tenantId: string): Promise<{ promotions: PromotionEntity[]; total: number }> {
+  async findAllPromotions(
+    filterDto: any,
+    tenantId: string,
+  ): Promise<{ promotions: PromotionEntity[]; total: number }> {
     this.logger.log(`${this.findAllPromotions.name} Service Called`)
-    const [promotions, total] = await this.promotionRepository.findAllWithFilters(
-      filterDto,
+    const { page = 1, limit = 10, search = '', isActive } = filterDto
+    const cacheKey = `promotions:list:p${page}:l${limit}:q${search}:a${isActive ?? 'all'}`
+
+    return this.cache.rememberCache(
+      cacheKey,
+      async () => {
+        const [promotions, total] = await this.promotionRepository.findAllWithFilters(filterDto, tenantId)
+        return { promotions, total }
+      },
+      300, // 5 min TTL
       tenantId,
     )
-    return { promotions, total }
   }
 
   async findActivePromotions(tenantId: string): Promise<PromotionEntity[]> {
@@ -70,49 +80,77 @@ export class PromotionService {
 
   async findOne(id: string, tenantId: string): Promise<PromotionEntity> {
     this.logger.log(`${this.findOne.name} Service Called`)
-    const promotion = await this.promotionRepository.findById(id, tenantId)
-
-    if (!promotion) {
-      throw new NotFoundException('Promotion not found')
-    }
-
+    const promotion = await this.cache.rememberCache(
+      `promotions:id:${id}`,
+      () => this.promotionRepository.findById(id, tenantId),
+      600,
+      tenantId,
+    )
+    if (!promotion) throw new NotFoundException('Promotion not found')
     return promotion
   }
 
   async findOneBySlug(slug: string, tenantId: string): Promise<PromotionEntity> {
     this.logger.log(`${this.findOneBySlug.name} Service Called`)
-    const promotion = await this.promotionRepository.findBySlug(slug, tenantId)
-    if (!promotion) {
-      throw new NotFoundException('Promotion not found')
-    }
+    const promotion = await this.cache.rememberCache(
+      `promotions:slug:${slug}`,
+      () => this.promotionRepository.findBySlug(slug, tenantId),
+      600,
+      tenantId,
+    )
+    if (!promotion) throw new NotFoundException('Promotion not found')
     return promotion
   }
 
-  async updatePromotion(id: string, updatePromotionDto: UpdatePromotionDto, tenantId: string): Promise<PromotionEntity> {
+  async updatePromotion(
+    id: string,
+    updatePromotionDto: UpdatePromotionDto,
+    tenantId: string,
+  ): Promise<PromotionEntity> {
     this.logger.log(`${this.updatePromotion.name} Service Called`)
     const promotion = await this.findOne(id, tenantId)
     const updated = await this.promotionRepository.updateAndSave(promotion, updatePromotionDto)
-    await this.cache.delCache(`promotions:active`, tenantId)
+    // Invalidate all affected cache keys atomically
+    await Promise.all([
+      this.cache.delCache('promotions:active', tenantId),
+      this.cache.delCache('promotions:list', tenantId),
+      this.cache.delCache('promotions:offers', tenantId),
+      this.cache.delCache(`promotions:id:${id}`, tenantId),
+      this.cache.delCache(`promotions:slug:${promotion.slug}`, tenantId),
+    ])
     return updated
   }
 
-  async removePromotion(id: string, tenantId: string): Promise<{ success: boolean; message: string }> {
+  async removePromotion(
+    id: string,
+    tenantId: string,
+  ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removePromotion.name} Service Called`)
     const promotion = await this.findOne(id, tenantId)
     await this.promotionRepository.removePromotion(promotion)
-    await this.cache.delCache(`promotions:active`, tenantId)
+    await Promise.all([
+      this.cache.delCache('promotions:active', tenantId),
+      this.cache.delCache('promotions:list', tenantId),
+      this.cache.delCache('promotions:offers', tenantId),
+      this.cache.delCache(`promotions:id:${id}`, tenantId),
+      this.cache.delCache(`promotions:slug:${promotion.slug}`, tenantId),
+    ])
     return { success: true, message: 'Promotion deleted successfully' }
   }
 
   /**
    * Public endpoint: returns all active promotions with their applicable products.
    * Used by the customer storefront /offers page.
+   * Heavily cached — this is the highest-traffic public endpoint.
    */
-  async getOfferProducts(tenantId: string): Promise<{ promotions: PromotionEntity[]; offerGroups: any[] }> {
+  async getOfferProducts(
+    tenantId: string,
+  ): Promise<{ promotions: PromotionEntity[]; offerGroups: any[] }> {
     this.logger.log(`${this.getOfferProducts.name} Service Called`)
-
-    const now = new Date()
-
+    return this.cache.rememberCache(
+      'promotions:offers',
+      async () => {
+        const now = new Date()
     // Fetch all active, non-expired promotions for this tenant
     const promotions = await this.promotionRepository.findActivePromotions(tenantId, now)
 
@@ -175,6 +213,10 @@ export class PromotionService {
     }
 
     return { promotions, offerGroups }
+      },
+      600,
+      tenantId,
+    )
   }
 
   async getOfferProductsBySlug(slug: string, tenantId: string): Promise<{ promotion: PromotionEntity; products: any[] }> {

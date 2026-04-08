@@ -1,9 +1,14 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { PromotionType } from '../enums/promotion-type.enum'
 import { PromotionTargetType } from '../enums/promotion-target-type.enum'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+
+/** Optimizes the hot active-promotions query used by the storefront */
+@Index(['tenantId', 'isActive', 'startDate', 'endDate'])
+/** Optimizes slug-based public page lookups */
+@Index(['tenantId', 'slug'])
 
 @Entity('promotions')
 export class PromotionEntity extends BaseEntity {
