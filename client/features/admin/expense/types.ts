@@ -10,12 +10,21 @@ export interface Expense {
     updatedAt?: string;
 }
 
+export interface PaginationMeta {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
 export interface ExpenseListProps {
     expenses: Expense[];
     loading: boolean;
     onEdit: (expense: Expense) => void;
     onDelete: (id: string) => void;
     onAdd: () => void;
+    pagination?: PaginationMeta;
+    onPageChange?: (page: number) => void;
 }
 
 export interface ExpenseFormProps {

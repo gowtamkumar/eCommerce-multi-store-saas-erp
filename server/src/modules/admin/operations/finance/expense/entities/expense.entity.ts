@@ -1,9 +1,12 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { ExpenseCategory } from '@/common/enums/expense-category.enum'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
-
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
+/** Composite index for fast tenant-scoped date-ordered list queries */
+@Index(['tenantId', 'expenseDate'])
+/** Composite index for fast category-filtered queries per tenant */
+@Index(['tenantId', 'category'])
 @Entity('expenses')
 export class ExpenseEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })

@@ -151,7 +151,7 @@ export class ReportService {
     const [orders, payments, expenses, purchaseOrders] = (await Promise.all([
       this.orderService.findAllOrders({ page: 1, limit: 1000 }, tenantId),
       this.paymentService.findAllPaymentsRaw(tenantId),
-      this.expenseService.findAllExpenses(tenantId),
+      this.expenseService.findAllExpensesRaw(tenantId),
       this.purchaseOrderService.findAllPurchaseOrdersRaw(tenantId),
     ])) as [any, any, any, any]
 
@@ -356,7 +356,7 @@ export class ReportService {
   async getCashFlow(tenantId: string, @Query('period') period: string = 'last30days') {
     const [customerPayments, expenses, supplierPayments] = await Promise.all([
       this.paymentService.findAllPaymentsRaw(tenantId),
-      this.expenseService.findAllExpenses(tenantId),
+      this.expenseService.findAllExpensesRaw(tenantId),
       this.purchaseOrderService.findAllPaymentsByPurchaseOrder(tenantId),
     ])
 
@@ -465,7 +465,7 @@ export class ReportService {
         break
       }
       case 'expenses': {
-        const expenses = await this.expenseService.findAllExpenses(tenantId)
+        const expenses = await this.expenseService.findAllExpensesRaw(tenantId)
         const filtered = expenses.filter(
           (e: any) => new Date(e.expenseDate) >= startDate && new Date(e.expenseDate) <= endDate,
         )
@@ -514,7 +514,7 @@ export class ReportService {
   async getFinanceSummary(tenantId: string) {
     const [customerPayments, expenses, supplierPayments, purchaseOrders] = (await Promise.all([
       this.paymentService.findAllPaymentsRaw(tenantId),
-      this.expenseService.findAllExpenses(tenantId),
+      this.expenseService.findAllExpensesRaw(tenantId),
       this.purchaseOrderService.findAllPaymentsByPurchaseOrder(tenantId),
       this.purchaseOrderService.findAllPurchaseOrdersRaw(tenantId),
     ])) as [any, any, any, any]

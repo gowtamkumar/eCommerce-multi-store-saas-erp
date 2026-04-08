@@ -11,6 +11,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common'
@@ -43,12 +44,21 @@ export class ExpenseController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR)
   async findAllExpenses(
     @Request() req: any,
-  ): Promise<BaseApiSuccessResponse<ExpenseResponseDto[]>> {
-    const result = await this.expenseService.findAllExpenses(req.user.tenantId)
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('category') category?: string,
+    @Query('q') q?: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const result = await this.expenseService.findAllExpenses(req.user.tenantId, {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+      category,
+      q,
+    })
     return {
       success: true,
       statusCode: 200,
-      message: 'List of expenses retrieved',
+      message: 'Expenses retrieved',
       data: result,
     }
   }

@@ -3,29 +3,71 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ExpenseEntity } from './entities/expense.entity'
 
+interface FindAllOptions {
+  page?: number
+  limit?: number
+  category?: string
+  q?: string
+}
+
 @Injectable()
 export class ExpenseRepository {
   constructor(
     @InjectRepository(ExpenseEntity)
     private readonly repo: Repository<ExpenseEntity>,
-  ) { }
+  ) {}
 
   async createAndSave(dto: any, tenantId: string): Promise<ExpenseEntity> {
     const expense = this.repo.create({ ...dto, tenantId } as ExpenseEntity)
     return this.repo.save(expense)
   }
 
-  async findAllOrdered(tenantId: string): Promise<ExpenseEntity[]> {
-    return this.repo.find({
-      where: { tenantId },
-      order: { expenseDate: 'DESC', createdAt: 'DESC' },
-    })
+  /**
+   * Paginated, filterable query with QueryBuilder.
+   * Replaces the unbounded `find()` call to prevent memory exhaustion.
+   */
+  async findAllPaginated(
+    tenantId: string,
+    options: FindAllOptions = {},
+  ): Promise<[ExpenseEntity[], number]> {
+    const { page = 1, limit = 20, category, q } = options
+
+    const qb = this.repo
+      .createQueryBuilder('expense')
+      .where('expense.tenantId = :tenantId', { tenantId })
+      .orderBy('expense.expenseDate', 'DESC')
+      .addOrderBy('expense.createdAt', 'DESC')
+      .take(limit)
+      .skip((page - 1) * limit)
+
+    if (category) {
+      qb.andWhere('expense.category = :category', { category })
+    }
+
+    if (q) {
+      qb.andWhere(
+        '(LOWER(expense.title) LIKE :q OR LOWER(expense.referenceNumber) LIKE :q)',
+        { q: `%${q.toLowerCase()}%` },
+      )
+    }
+
+    return qb.getManyAndCount()
+  }
+
+  /**
+   * Raw (unpaginated) fetch for internal reporting use only.
+   * NOT exposed via the public API.
+   */
+  async findAllRaw(tenantId: string): Promise<ExpenseEntity[]> {
+    return this.repo
+      .createQueryBuilder('expense')
+      .where('expense.tenantId = :tenantId', { tenantId })
+      .orderBy('expense.expenseDate', 'DESC')
+      .getMany()
   }
 
   async findByIdAndTenant(id: string, tenantId: string): Promise<ExpenseEntity | null> {
-    return this.repo.findOne({
-      where: { id, tenantId },
-    })
+    return this.repo.findOne({ where: { id, tenantId } })
   }
 
   async updateAndSave(expense: ExpenseEntity, dto: any): Promise<ExpenseEntity> {
