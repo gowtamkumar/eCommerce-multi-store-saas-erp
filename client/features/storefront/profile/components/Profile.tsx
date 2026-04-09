@@ -1,12 +1,10 @@
 "use client";
 
-
-
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, Loader2, LogOut, MapPin, Package, ShieldCheck, User, Heart } from 'lucide-react';
+import { Calendar, Loader2, LogOut, MapPin, Package, ShieldCheck, User, Heart, ChevronRight } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -14,15 +12,15 @@ import { useEffect, useState } from 'react';
 import ProfileForm from './ProfileForm';
 
 const CustomerOrders = dynamic(() => import('./CustomerOrders'), {
-    loading: () => <div className="p-8 text-center text-slate-500">Loading Orders...</div>
+    loading: () => <div className="p-12 text-center text-slate-500 font-bold animate-pulse">Loading your orders...</div>
 });
 
 const ShippingAddresses = dynamic(() => import('./ShippingAddresses'), {
-    loading: () => <div className="p-8 text-center text-slate-500">Loading Addresses...</div>
+    loading: () => <div className="p-12 text-center text-slate-500 font-bold animate-pulse">Loading addresses...</div>
 });
 
 const WishlistComponent = dynamic(() => import('./WishlistComponent'), {
-    loading: () => <div className="p-8 text-center text-slate-500">Loading Wishlist...</div>
+    loading: () => <div className="p-12 text-center text-slate-500 font-bold animate-pulse">Loading wishlist...</div>
 });
 
 export default function Profile() {
@@ -71,195 +69,172 @@ export default function Profile() {
     if (status === 'loading') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="w-10 h-10 text-brand-500 animate-spin" />
-                    <p className="text-slate-500 font-bold animate-pulse">Loading secure profile...</p>
+                <div className="flex flex-col items-center gap-6">
+                    <div className="relative">
+                        <Loader2 className="w-12 h-12 text-brand-600 animate-spin" />
+                        <div className="absolute inset-0 bg-brand-500/20 blur-xl animate-pulse rounded-full" />
+                    </div>
+                    <p className="text-slate-500 text-sm font-black uppercase tracking-widest animate-pulse">Initializing Dashboard</p>
                 </div>
             </div>
         );
     }
 
-
     const tabs = [
-        { id: 'profile', label: 'My Profile', icon: User },
+        { id: 'personal', label: 'Personal Info', icon: User },
         { id: 'orders', label: 'Order History', icon: Package },
-        { id: 'wishlist', label: 'Wishlist', icon: Heart },
-        { id: 'addresses', label: 'Shipping Addresses', icon: MapPin },
-        { id: 'security', label: 'Security', icon: ShieldCheck },
-    ];
+        { id: 'wishlist', label: 'Wishlist Items', icon: Heart },
+        { id: 'addresses', label: 'Manage Addresses', icon: MapPin },
+        { id: 'security', label: 'Account Security', icon: ShieldCheck },
+    ] as const;
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
             <Navbar />
 
-            {/* Premium Header Banner */}
-            <div className="relative pt-32 pb-20 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-600/20 to-indigo-600/20 dark:from-brand-600/10 dark:to-indigo-600/10 -z-10" />
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full -z-20 opacity-30 dark:opacity-10 pointer-events-none">
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500 rounded-full blur-[120px]" />
-                    <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500 rounded-full blur-[120px]" />
-                </div>
-
+            <div className="flex-1 pt-24 pb-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col md:flex-row items-center gap-8">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="relative"
-                        >
-                            <div className="w-32 h-32 rounded-3xl overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl relative group">
-
-                                <img
-                                    src={session?.user?.image || "/images/placeholder-avatar.jpg"}
-                                    alt={session?.user?.name || "User"}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                />
-                            </div>
-                            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 border-4 border-white dark:border-slate-900 rounded-2xl shadow-lg" />
-                        </motion.div>
-
-                        <div className="flex-1 text-center md:text-left">
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.1 }}
-                            >
-                                <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
-                                    Hello, {session?.user?.name?.split(' ')[0]}!
-                                </h1>
-                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-slate-500 dark:text-slate-400">
-                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md rounded-lg text-sm font-medium border border-slate-200/50 dark:border-slate-700/50">
-                                        <Calendar className="w-4 h-4 text-brand-500" />
-                                        Joined {stats.memberSince || 'Member'}
-                                    </div>
-                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md rounded-lg text-sm font-medium border border-slate-200/50 dark:border-slate-700/50">
-                                        <Package className="w-4 h-4 text-brand-500" />
-                                        {stats.totalOrders} Orders
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center gap-3"
-                        >
-                            <button
-                                onClick={() => signOut()}
-                                className="px-6 py-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm flex items-center gap-2 group"
-                            >
-                                <LogOut className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-                                Logout
-                            </button>
-                        </motion.div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Dashboard Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 -mt-8">
-                <div className="flex flex-col lg:flex-row gap-8">
-                    {/* Sidebar Tabs */}
-                    <div className="lg:w-72 flex-shrink-0">
-                        <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl p-3 border border-white/20 dark:border-slate-700/50 shadow-xl shadow-slate-200/50 dark:shadow-none sticky top-24">
-                            <div className="space-y-1">
-                                {tabs.map((tab) => {
-                                    const Icon = tab.icon;
-                                    const isActive = activeTab === tab.id;
-                                    return (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => setActiveTab(tab.id as any)}
-                                            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all relative group ${isActive
-                                                ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20'
-                                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
-                                                }`}
-                                        >
-                                            {isActive && (
-                                                <motion.div
-                                                    layoutId="activeTabGlow"
-                                                    className="absolute inset-0 bg-brand-500/10 dark:bg-brand-400/5 rounded-2xl -z-10"
-                                                />
-                                            )}
-                                            <Icon className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400 dark:text-slate-500'}`} />
-                                            {tab.label}
-                                            {isActive && (
-                                                <motion.div
-                                                    layoutId="activeTabIndicator"
-                                                    className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-500 dark:bg-brand-400"
-                                                />
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700/50 px-4">
-                                <div className="p-4 bg-slate-900 dark:bg-slate-950 rounded-2xl relative overflow-hidden group">
-                                    <div className="relative z-10">
-                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Account Tier</p>
-                                        <div className="text-white font-black flex items-center gap-2">
-                                            Premium Member
-                                            <div className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></div>
-                                        </div>
-                                    </div>
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/20 rounded-full blur-2xl -mr-12 -mt-12 transition-transform duration-500 group-hover:scale-150" />
-                                </div>
-                            </div>
-                        </div>
+                    {/* Professional Breadcrumb/Meta */}
+                    <div className="flex items-center gap-2 mb-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                        <span>Profile</span>
+                        <ChevronRight className="w-3 h-3" />
+                        <span className="text-brand-600">{tabs.find(t => t.id === activeTab)?.label}</span>
                     </div>
 
-                    {/* Main Content Area */}
-                    <div className="flex-1">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={activeTab}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                            >
-                                {activeTab === 'personal' && (
-                                    <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-xl overflow-hidden">
-                                        <div className="p-8 border-b border-slate-100 dark:border-slate-700/50">
-                                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Profile Details</h3>
-                                            <p className="text-slate-500 dark:text-slate-400 text-sm">Update your personal information and address</p>
+                    <div className="flex flex-col lg:flex-row gap-8 items-start">
+                        {/* Sidebar Navigation */}
+                        <aside className="w-full lg:w-80 space-y-4 lg:sticky lg:top-28">
+                            {/* User Identity Card */}
+                            <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-200/50 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-none overflow-hidden relative group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 blur-[50px] -mr-16 -mt-16 group-hover:bg-brand-500/10 transition-colors" />
+                                
+                                <div className="relative flex items-center gap-4 mb-6">
+                                    <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-lg relative bg-slate-100 dark:bg-slate-800">
+                                        <img
+                                            src={session?.user?.image || "/images/placeholder-avatar.jpg"}
+                                            alt={session?.user?.name || "User"}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <div className="flex-1 overflow-hidden">
+                                        <h2 className="text-xl font-black text-slate-900 dark:text-white truncate">
+                                            {session?.user?.name}
+                                        </h2>
+                                        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate">
+                                            {session?.user?.email}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 pt-6 border-t border-slate-100 dark:border-slate-800">
+                                    <div className="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Orders</p>
+                                        <p className="text-lg font-black text-slate-900 dark:text-white font-mono">{stats.totalOrders}</p>
+                                    </div>
+                                    <div className="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Since</p>
+                                        <p className="text-xs font-black text-slate-900 dark:text-white">{stats.memberSince.split(' ')[0]} '{stats.memberSince.split(' ')[1]?.slice(-2)}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Nav Menu */}
+                            <nav className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2rem] p-3 border border-slate-200/50 dark:border-slate-800 shadow-xl shadow-slate-200/30 dark:shadow-none">
+                                <div className="space-y-1">
+                                    {tabs.map((tab) => {
+                                        const Icon = tab.icon;
+                                        const isActive = activeTab === tab.id;
+                                        return (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => setActiveTab(tab.id as any)}
+                                                className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-[13px] font-black transition-all relative group ${isActive
+                                                    ? 'text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-900/20 shadow-sm'
+                                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                                                    }`}
+                                            >
+                                                <Icon className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                                                <span className="tracking-tight uppercase tracking-widest text-[11px]">{tab.label}</span>
+                                                {isActive && (
+                                                    <motion.div
+                                                        layoutId="activeTabDot"
+                                                        className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-600 dark:bg-brand-400 shadow-[0_0_10px_rgba(79,70,229,0.5)]"
+                                                    />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/50 px-2">
+                                    <button
+                                        onClick={() => signOut()}
+                                        className="w-full flex items-center gap-3 px-5 py-3 rounded-2xl text-[11px] font-black text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 transition-all uppercase tracking-widest"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        Sign Out Account
+                                    </button>
+                                </div>
+                            </nav>
+                        </aside>
+
+                        {/* Content Area */}
+                        <div className="flex-1 w-full">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeTab}
+                                    initial={{ opacity: 0, y: 15 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -15 }}
+                                    transition={{ duration: 0.25, ease: "easeOut" }}
+                                    className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200/50 dark:border-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden"
+                                >
+                                    <div className="p-8 border-b border-slate-50 dark:border-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div>
+                                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                                                {tabs.find(t => t.id === activeTab)?.label}
+                                            </h3>
+                                            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold mt-1">
+                                                {activeTab === 'personal' && 'Manage your account details and profile information'}
+                                                {activeTab === 'orders' && 'Track and manage your recent purchase history'}
+                                                {activeTab === 'wishlist' && 'Products you have saved to buy later'}
+                                                {activeTab === 'addresses' && 'Manage your primary and secondary shipping locations'}
+                                                {activeTab === 'security' && 'Manage your account password and security preferences'}
+                                            </p>
                                         </div>
-                                        <ProfileForm variant={"personal" as "personal"} formData={formData} setFormData={setFormData} />
-                                    </div>
-                                )}
-
-                                {activeTab === 'orders' && (
-                                    <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-xl p-2 min-h-[500px]">
-                                        <CustomerOrders />
-                                    </div>
-                                )}
-
-                                {activeTab === 'addresses' && (
-                                    <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-xl min-h-[500px]">
-                                        <ShippingAddresses />
-                                    </div>
-                                )}
-
-                                {activeTab === 'wishlist' && (
-                                    <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-xl min-h-[500px]">
-                                        <WishlistComponent />
-                                    </div>
-                                )}
-
-
-                                {activeTab === 'security' && (
-                                    <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-xl overflow-hidden">
-                                        <div className="p-8 border-b border-slate-100 dark:border-slate-700/50">
-                                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Security Settings</h3>
-                                            <p className="text-slate-500 dark:text-slate-400 text-sm">Protect your account and change password</p>
+                                        <div className="flex -space-x-2">
+                                            <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-brand-500 flex items-center justify-center text-white text-[10px] font-black">P</div>
+                                            <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-indigo-500 flex items-center justify-center text-white text-[10px] font-black">R</div>
+                                            <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-900 dark:bg-slate-700 flex items-center justify-center text-white text-[10px] font-black">O</div>
                                         </div>
-                                        <ProfileForm variant={"security" as "security"} formData={formData} setFormData={setFormData} />
                                     </div>
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
+
+                                    <div className="min-h-[600px]">
+                                        {activeTab === 'personal' && (
+                                            <ProfileForm variant="personal" formData={formData} setFormData={setFormData} />
+                                        )}
+
+                                        {activeTab === 'orders' && (
+                                            <div className="p-2">
+                                                <CustomerOrders />
+                                            </div>
+                                        )}
+
+                                        {activeTab === 'addresses' && (
+                                            <ShippingAddresses />
+                                        )}
+
+                                        {activeTab === 'wishlist' && (
+                                            <WishlistComponent />
+                                        )}
+
+                                        {activeTab === 'security' && (
+                                            <ProfileForm variant="security" formData={formData} setFormData={setFormData} />
+                                        )}
+                                    </div>
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
                     </div>
                 </div>
             </div>
