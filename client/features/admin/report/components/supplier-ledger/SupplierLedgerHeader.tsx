@@ -2,13 +2,8 @@
 
 import { ChevronRight, Printer, Receipt, Users } from 'lucide-react';
 import React from 'react';
+import type { SupplierLedgerHeaderProps } from '../../types';
 
-interface SupplierLedgerHeaderProps {
-    suppliers: any[];
-    selectedSupplierId: string;
-    onSupplierChange: (id: string) => void;
-    hasLedgerData: boolean;
-}
 
 const SupplierLedgerHeader: React.FC<SupplierLedgerHeaderProps> = ({
     suppliers,

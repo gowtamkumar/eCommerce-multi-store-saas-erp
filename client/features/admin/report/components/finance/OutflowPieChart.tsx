@@ -1,14 +1,10 @@
 'use client';
 
 import { PieChart } from 'lucide-react';
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Cell, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { ExpenseBreakdownPoint } from '../../types';
+import type { OutflowPieChartProps } from '../../types';
 
-interface OutflowPieChartProps {
-    data: ExpenseBreakdownPoint[];
-    isLoading: boolean;
-}
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 

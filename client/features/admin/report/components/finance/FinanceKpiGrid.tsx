@@ -1,14 +1,10 @@
 'use client';
 
 import { BarChart3, DollarSign, TrendingUp, Truck, Wallet } from 'lucide-react';
-import React, { memo } from 'react';
-import { FinanceKpis } from '../../types';
+import { memo } from 'react';
+import type { FinanceKpiGridProps } from '../../types';
 
-interface FinanceKpiGridProps {
-    kpis?: FinanceKpis;
-    isLoading: boolean;
-    formatPrice: (price: number) => string;
-}
+
 
 const FinanceKpiGrid = memo(({ kpis, isLoading, formatPrice }: FinanceKpiGridProps) => {
     if (isLoading && !kpis) {

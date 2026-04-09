@@ -2,15 +2,9 @@
 
 import { Truck } from 'lucide-react';
 import Link from 'next/link';
-import React, { memo } from 'react';
-import { SupplierStats } from '../../types';
+import { memo } from 'react';
+import type { FinanceSupplyChainCardProps } from '../../types';
 
-interface FinanceSupplyChainCardProps {
-    stats?: SupplierStats;
-    payoutsDue: number;
-    isLoading: boolean;
-    formatPrice: (price: number) => string;
-}
 
 const FinanceSupplyChainCard = memo(({ stats, payoutsDue, isLoading, formatPrice }: FinanceSupplyChainCardProps) => {
     if (isLoading && !stats) {

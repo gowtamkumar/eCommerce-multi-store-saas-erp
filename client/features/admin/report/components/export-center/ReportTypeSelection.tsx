@@ -1,20 +1,9 @@
 'use client';
 
 import React from 'react';
+import type { ReportTypeSelectionProps } from '../../types';
 
-interface ReportType {
-    id: string;
-    name: string;
-    description: string;
-    icon: any;
-    color: string;
-}
 
-interface ReportTypeSelectionProps {
-    reports: ReportType[];
-    currentType: string;
-    onTypeChange: (type: string) => void;
-}
 
 const ReportTypeSelection: React.FC<ReportTypeSelectionProps> = ({ reports, currentType, onTypeChange }) => {
     return (
@@ -27,17 +16,15 @@ const ReportTypeSelection: React.FC<ReportTypeSelectionProps> = ({ reports, curr
                         <button
                             key={report.id}
                             onClick={() => onTypeChange(report.id)}
-                            className={`w-full text-left p-5 rounded-3xl border-2 transition-all duration-300 flex items-center gap-5 group ${
-                                isActive
+                            className={`w-full text-left p-5 rounded-3xl border-2 transition-all duration-300 flex items-center gap-5 group ${isActive
                                     ? 'bg-white dark:bg-slate-800 border-brand-600 shadow-xl shadow-brand-500/10 transform scale-[1.03]'
                                     : 'bg-white/50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-800'
-                            }`}
+                                }`}
                         >
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 ${
-                                isActive 
-                                    ? report.color 
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 ${isActive
+                                    ? report.color
                                     : 'bg-slate-100 dark:bg-slate-800 grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100'
-                            }`}>
+                                }`}>
                                 <report.icon className={`w-7 h-7 transition-transform duration-500 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
                             </div>
                             <div className="flex-1">

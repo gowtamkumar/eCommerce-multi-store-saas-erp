@@ -2,19 +2,13 @@
 
 import { BarChart3, Calendar, Download, Filter } from 'lucide-react';
 import React from 'react';
+import type { ProfitLossHeaderProps } from '../../types';
 
-interface ProfitLossHeaderProps {
-    startDate: string;
-    endDate: string;
-    onDateChange: (key: 'startDate' | 'endDate', value: string) => void;
-    onFilter: () => void;
-}
-
-export default function ProfitLossHeader({ 
-    startDate, 
-    endDate, 
-    onDateChange, 
-    onFilter 
+export default function ProfitLossHeader({
+    startDate,
+    endDate,
+    onDateChange,
+    onFilter
 }: ProfitLossHeaderProps) {
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();

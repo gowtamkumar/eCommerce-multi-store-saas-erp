@@ -1,15 +1,12 @@
 'use client';
 
 import dayjs from 'dayjs';
-import { ProfitLossData } from '../../types';
+import { memo } from 'react';
+import type { FinancialStatementProps } from '../../types';
 
-interface FinancialStatementProps {
-    data?: ProfitLossData | null;
-    isLoading: boolean;
-    formatPrice: (price: number) => string;
-}
 
-export default function FinancialStatement({ data, isLoading, formatPrice }: FinancialStatementProps) {
+
+const FinancialStatement = memo(({ data, isLoading, formatPrice }: FinancialStatementProps) => {
     if (isLoading && !data) {
         return (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm animate-pulse h-[500px]" />
@@ -67,4 +64,7 @@ export default function FinancialStatement({ data, isLoading, formatPrice }: Fin
             </div>
         </div>
     );
-}
+});
+
+FinancialStatement.displayName = 'FinancialStatement';
+export default FinancialStatement;

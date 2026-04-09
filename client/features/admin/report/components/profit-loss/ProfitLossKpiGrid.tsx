@@ -1,15 +1,12 @@
 'use client';
 
 import { ArrowDownRight, ArrowUpRight, TrendingDown, TrendingUp } from 'lucide-react';
-import type { ProfitLossData } from '../../types';
+import { memo } from 'react';
+import type { ProfitLossKpiGridProps } from '../../types';
 
-interface ProfitLossKpiGridProps {
-    data?: ProfitLossData | null;
-    isLoading: boolean;
-    formatPrice: (price: number) => string;
-}
 
-export default function ProfitLossKpiGrid({ data, isLoading, formatPrice }: ProfitLossKpiGridProps) {
+
+const ProfitLossKpiGrid = memo(({ data, isLoading, formatPrice }: ProfitLossKpiGridProps) => {
     if (isLoading && !data) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -88,4 +85,7 @@ export default function ProfitLossKpiGrid({ data, isLoading, formatPrice }: Prof
             </div>
         </div>
     );
-}
+});
+
+ProfitLossKpiGrid.displayName = 'ProfitLossKpiGrid';
+export default ProfitLossKpiGrid;

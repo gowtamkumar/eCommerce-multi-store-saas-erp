@@ -1,23 +1,10 @@
 'use client';
 
+import { Download, FileSpreadsheet, Filter } from 'lucide-react';
 import React from 'react';
-import { Filter, FileSpreadsheet, Download } from 'lucide-react';
+import type { ReportExportSettingsProps } from '../../types';
 
-interface ReportExportSettingsProps {
-    reportType: string;
-    startDate: string;
-    endDate: string;
-    onStartDateChange: (date: string) => void;
-    onEndDateChange: (date: string) => void;
-    suppliers: any[];
-    selectedSupplierId: string;
-    onSupplierChange: (id: string) => void;
-    customers: any[];
-    selectedCustomerId: string;
-    onCustomerChange: (id: string) => void;
-    onExport: () => void;
-    isLoading: boolean;
-}
+
 
 const ReportExportSettings: React.FC<ReportExportSettingsProps> = ({
     reportType,
@@ -34,8 +21,8 @@ const ReportExportSettings: React.FC<ReportExportSettingsProps> = ({
     onExport,
     isLoading
 }) => {
-    const isExportDisabled = isLoading || 
-        (reportType === 'supplier-ledger' && !selectedSupplierId) || 
+    const isExportDisabled = isLoading ||
+        (reportType === 'supplier-ledger' && !selectedSupplierId) ||
         (reportType === 'customer-ledger' && !selectedCustomerId);
 
     return (
@@ -45,7 +32,7 @@ const ReportExportSettings: React.FC<ReportExportSettingsProps> = ({
                     <Filter className="w-4 h-4 text-brand-600" />
                     Report Configuration
                 </h3>
-                
+
                 <div className="space-y-6">
                     {/* Date Range Selection */}
                     <div className="space-y-3">

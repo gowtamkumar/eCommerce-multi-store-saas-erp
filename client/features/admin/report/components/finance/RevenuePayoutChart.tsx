@@ -1,14 +1,10 @@
 'use client';
 
 import { TrendingUp } from 'lucide-react';
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { FinanceChartPoint } from '../../types';
+import type { RevenuePayoutChartProps } from '../../types';
 
-interface RevenuePayoutChartProps {
-    chartData: FinanceChartPoint[];
-    isLoading: boolean;
-}
 
 const RevenuePayoutChart = memo(({ chartData, isLoading }: RevenuePayoutChartProps) => {
     if (isLoading && chartData.length === 0) {

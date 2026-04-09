@@ -2,13 +2,9 @@
 
 import { BarChart3, ShoppingBag, Users } from 'lucide-react';
 import { memo } from 'react';
-import { SalesDashboardData } from '../../types';
+import type { SalesStatsGridProps } from '../../types';
 
-interface SalesStatsGridProps {
-    data: SalesDashboardData | null;
-    isLoading: boolean;
-    formatPrice: (price: number) => string;
-}
+
 
 const SalesStatsGrid = memo(({ data, isLoading, formatPrice }: SalesStatsGridProps) => {
     if (isLoading && !data) {

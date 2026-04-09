@@ -3,13 +3,8 @@
 import dayjs from 'dayjs';
 import { ShoppingBag, Wallet } from 'lucide-react';
 import React from 'react';
-import { CustomerShortInfo, LedgerTransaction } from '../../types';
+import { CustomerLedgerTableProps, LedgerTransaction } from '../../types';
 
-interface CustomerLedgerTableProps {
-    transactions: LedgerTransaction[];
-    formatPrice: (price: number) => string;
-    customerInfo: CustomerShortInfo;
-}
 
 const getStatusColor = (tx: LedgerTransaction) => {
     if (tx.type === 'PAYMENT') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';

@@ -186,3 +186,130 @@ export interface RecentProductsTableProps {
     products: RecentProduct[];
     isLoading: boolean;
 }
+
+export interface ProfitLossKpiGridProps {
+    data?: ProfitLossData | null;
+    isLoading: boolean;
+    formatPrice: (price: number) => string;
+}
+
+export interface FinancialStatementProps {
+    data?: ProfitLossData | null;
+    isLoading: boolean;
+    formatPrice: (price: number) => string;
+}
+
+
+export interface FinanceSupplyChainCardProps {
+    stats?: SupplierStats;
+    payoutsDue: number;
+    isLoading: boolean;
+    formatPrice: (price: number) => string;
+}
+
+export interface FinanceKpiGridProps {
+    kpis?: FinanceKpis;
+    isLoading: boolean;
+    formatPrice: (price: number) => string;
+}
+
+export interface ReportExportSettingsProps {
+    reportType: string;
+    startDate: string;
+    endDate: string;
+    onStartDateChange: (date: string) => void;
+    onEndDateChange: (date: string) => void;
+    suppliers: any[];
+    selectedSupplierId: string;
+    onSupplierChange: (id: string) => void;
+    customers: any[];
+    selectedCustomerId: string;
+    onCustomerChange: (id: string) => void;
+    onExport: () => void;
+    isLoading: boolean;
+}
+
+export interface CustomerLedgerHeaderProps {
+    customers: any[];
+    selectedCustomerId: string;
+    onCustomerChange: (id: string) => void;
+    hasLedgerData: boolean;
+}
+
+export interface CustomerLedgerSummaryProps {
+    summary: LedgerSummary;
+    formatPrice: (price: number) => string;
+}
+
+interface ReportType {
+    id: string;
+    name: string;
+    description: string;
+    icon: any;
+    color: string;
+}
+
+export interface ReportTypeSelectionProps {
+    reports: ReportType[];
+    currentType: string;
+    onTypeChange: (type: string) => void;
+}
+
+export interface CustomerLedgerTableProps {
+    transactions: LedgerTransaction[];
+    formatPrice: (price: number) => string;
+    customerInfo: CustomerShortInfo;
+}
+
+export interface ExpenseDistributionProps {
+    data?: OperatingExpensesData | null;
+    isLoading: boolean;
+}
+
+export interface OutflowPieChartProps {
+    data: ExpenseBreakdownPoint[];
+    isLoading: boolean;
+}
+
+export interface RevenuePayoutChartProps {
+    chartData: FinanceChartPoint[];
+    isLoading: boolean;
+}
+
+
+export interface ProfitLossHeaderProps {
+    startDate: string;
+    endDate: string;
+    onDateChange: (key: 'startDate' | 'endDate', value: string) => void;
+    onFilter: () => void;
+}
+
+export interface LowStockTableProps {
+    products: LowStockProduct[];
+    isLoading: boolean;
+}
+
+export interface SalesStatsGridProps {
+    data: SalesDashboardData | null;
+    isLoading: boolean;
+    formatPrice: (price: number) => string;
+}
+
+export interface SupplierLedgerHeaderProps {
+    suppliers: any[];
+    selectedSupplierId: string;
+    onSupplierChange: (id: string) => void;
+    hasLedgerData: boolean;
+}
+
+
+export interface SupplierLedgerSummaryProps {
+    summary: LedgerSummary;
+    formatPrice: (price: number) => string;
+}
+
+export interface SupplierLedgerTableProps {
+    transactions: LedgerTransaction[];
+    formatPrice: (price: number) => string;
+    supplierInfo: SupplierShortInfo;
+}

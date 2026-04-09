@@ -1,14 +1,10 @@
 'use client';
 
+import { ChevronRight, Printer, Receipt, Users } from 'lucide-react';
 import React from 'react';
-import { Receipt, Users, ChevronRight, Printer } from 'lucide-react';
+import { CustomerLedgerHeaderProps } from '../../types';
 
-interface CustomerLedgerHeaderProps {
-    customers: any[];
-    selectedCustomerId: string;
-    onCustomerChange: (id: string) => void;
-    hasLedgerData: boolean;
-}
+
 
 const CustomerLedgerHeader: React.FC<CustomerLedgerHeaderProps> = ({
     customers,

@@ -1,14 +1,12 @@
 'use client';
 
 import { BarChart3 } from 'lucide-react';
-import { OperatingExpensesData } from '../../types';
+import { memo } from 'react';
+import type { ExpenseDistributionProps } from '../../types';
 
-interface ExpenseDistributionProps {
-    data?: OperatingExpensesData | null;
-    isLoading: boolean;
-}
 
-export default function ExpenseDistribution({ data, isLoading }: ExpenseDistributionProps) {
+
+const ExpenseDistribution = memo(({ data, isLoading }: ExpenseDistributionProps) => {
     if (isLoading && !data) {
         return (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm animate-pulse h-[400px]" />
@@ -57,4 +55,7 @@ export default function ExpenseDistribution({ data, isLoading }: ExpenseDistribu
             </div>
         </div>
     );
-}
+});
+
+ExpenseDistribution.displayName = 'ExpenseDistribution';
+export default ExpenseDistribution;

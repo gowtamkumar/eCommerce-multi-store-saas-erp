@@ -2,12 +2,7 @@
 
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import React from 'react';
-import { LedgerSummary } from '../../types';
-
-interface SupplierLedgerSummaryProps {
-    summary: LedgerSummary;
-    formatPrice: (price: number) => string;
-}
+import type { SupplierLedgerSummaryProps } from '../../types';
 
 const SupplierLedgerSummary: React.FC<SupplierLedgerSummaryProps> = ({ summary, formatPrice }) => {
     const isPayable = summary.balance > 0;

@@ -4,9 +4,9 @@ import { fetchAPI } from '@/services/api';
 import { FileText, LayoutDashboard, Users, Wallet } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import ReportExportHeader from '../export-center/ReportExportHeader';
-import ReportExportSettings from '../export-center/ReportExportSettings';
-import ReportTypeSelection from '../export-center/ReportTypeSelection';
+import ReportExportHeader from './ReportExportHeader';
+import ReportExportSettings from './ReportExportSettings';
+import ReportTypeSelection from './ReportTypeSelection';
 
 const ReportExportDashboard: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);

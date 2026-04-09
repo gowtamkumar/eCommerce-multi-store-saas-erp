@@ -2,7 +2,7 @@
 
 import { memo } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { SalesTrendChartProps } from '../../types';
+import type { SalesTrendChartProps } from '../../types';
 
 
 const SalesTrendChart = memo(({ salesData, isLoading }: SalesTrendChartProps) => {
