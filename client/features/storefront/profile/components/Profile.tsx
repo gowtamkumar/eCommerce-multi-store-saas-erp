@@ -1,71 +1,76 @@
 "use client";
 
+
+
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, Loader2, LogOut, Package, ShieldCheck, User } from 'lucide-react';
+import { Calendar, Loader2, LogOut, MapPin, Package, ShieldCheck, User } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import CustomerOrders from './CustomerOrders';
 import ProfileForm from './ProfileForm';
-import ShippingAddresses from './ShippingAddresses';
-import { MapPin } from 'lucide-react';
+
+const CustomerOrders = dynamic(() => import('./CustomerOrders'), {
+    loading: () => <div className="p-8 text-center text-slate-500">Loading Orders...</div>
+});
+
+const ShippingAddresses = dynamic(() => import('./ShippingAddresses'), {
+    loading: () => <div className="p-8 text-center text-slate-500">Loading Addresses...</div>
+});
 
 export default function Profile() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses' | 'security'>('profile');
-    const [formData, setFormData] = useState({});
-    const [stats, setStats] = useState({ totalOrders: 0, memberSince: '' });
+    const [activeTab, setActiveTab] = useState<'personal' | 'orders' | 'addresses' | 'security'>('personal');
+
+    const [stats, setStats] = useState({
+        totalOrders: 0,
+        memberSince: 'Loading...'
+    });
+
+    const [formData, setFormData] = useState<any>({});
 
     useEffect(() => {
         if (status === 'unauthenticated') {
-            router.push('/login');
-        }
-        if (status === 'authenticated') {
-            fetchProfile();
+            router.push('/auth/login');
         }
     }, [status, router]);
 
-    const fetchProfile = async () => {
-        try {
-            const res = await fetchAPI('/users/profile');
-            if (res.data) {
-                setFormData(res.data);
-            }
-        } catch (error) {
-            console.error('Error fetching profile:', error);
+    useEffect(() => {
+        if (session?.user) {
+            setFormData(session.user);
         }
-    };
+    }, [session]);
 
     useEffect(() => {
-        const loadInitialData = async () => {
+        const fetchStats = async () => {
             try {
-
                 if (session?.user?.id) {
-                    const ordersData = await fetchAPI(`/orders/user/${session.user.id}`);
-                    console.log("ordersData", ordersData);
-
+                    const countData = await fetchAPI(`/orders/user/${session.user.id}/count`);
                     const user = session.user as any;
                     setStats({
-                        totalOrders: ordersData.data?.length || 0,
+                        totalOrders: countData.data || 0,
                         memberSince: user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Member'
                     });
                 }
-
             } catch (error) {
-                console.error("Failed to load profile data", error);
+                console.error('Failed to fetch stats', error);
             }
         };
-        loadInitialData();
-    }, [session]);
+
+        fetchStats();
+    }, [session?.user?.id]);
 
     if (status === 'loading') {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-                <Loader2 className="w-10 h-10 animate-spin text-brand-600" />
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-10 h-10 text-brand-500 animate-spin" />
+                    <p className="text-slate-500 font-bold animate-pulse">Loading secure profile...</p>
+                </div>
             </div>
         );
     }
@@ -189,10 +194,10 @@ export default function Profile() {
                                 <div className="p-4 bg-slate-900 dark:bg-slate-950 rounded-2xl relative overflow-hidden group">
                                     <div className="relative z-10">
                                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Account Tier</p>
-                                        <p className="text-white font-black flex items-center gap-2">
+                                        <div className="text-white font-black flex items-center gap-2">
                                             Premium Member
                                             <div className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></div>
-                                        </p>
+                                        </div>
                                     </div>
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/20 rounded-full blur-2xl -mr-12 -mt-12 transition-transform duration-500 group-hover:scale-150" />
                                 </div>
@@ -210,7 +215,7 @@ export default function Profile() {
                                 exit={{ opacity: 0, y: -20 }}
                                 transition={{ duration: 0.3, ease: "easeOut" }}
                             >
-                                {activeTab === 'profile' && (
+                                {activeTab === 'personal' && (
                                     <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-xl overflow-hidden">
                                         <div className="p-8 border-b border-slate-100 dark:border-slate-700/50">
                                             <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Profile Details</h3>

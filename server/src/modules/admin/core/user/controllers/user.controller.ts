@@ -23,6 +23,7 @@ import { InviteStaffDto } from '../dtos/invite-staff.dto'
 import { UpdatePasswordDto } from '../dtos/update-password.dto'
 import { UpdateUserDto } from '../dtos/update-user.dto'
 import { UserService } from '../services/user.service'
+import { StaffInvitationService } from '../services/staff-invitation.service'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { UserResponseDto } from '../dtos/user-response.dto'
 
@@ -31,7 +32,10 @@ import { UserResponseDto } from '../dtos/user-response.dto'
 export class UserController {
   private readonly logger = new Logger(UserController.name)
 
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly invitationService: StaffInvitationService,
+  ) {}
 
   @Get('/')
   @UseGuards(RolesGuard)
@@ -95,7 +99,12 @@ export class UserController {
     @Body() dto: InviteStaffDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.inviteStaff.name} Controller Called`)
-    const data = await this.userService.inviteStaff(dto, ctx.tenantId, ctx.userId)
+    const data = await this.invitationService.inviteStaff(
+      dto,
+      ctx.tenantId,
+      ctx.userId,
+      (email, tId) => this.userService.findUserByEmail(email, tId)
+    )
     return { success: true, statusCode: 201, message: data.message, data: data.invitation }
   }
 
@@ -106,7 +115,7 @@ export class UserController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.getInvitations.name} Controller Called`)
-    const data = await this.userService.getInvitations(ctx.tenantId)
+    const data = await this.invitationService.getInvitations(ctx.tenantId)
     return { success: true, statusCode: 200, message: 'Invitations', data }
   }
 
@@ -118,7 +127,7 @@ export class UserController {
     @Param('invitationId', ParseUUIDPipe) invitationId: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.revokeInvitation.name} Controller Called`)
-    const data = await this.userService.revokeInvitation(invitationId, ctx.tenantId)
+    const data = await this.invitationService.revokeInvitation(invitationId, ctx.tenantId)
     return { success: true, statusCode: 200, message: 'Invitation revoked', data }
   }
 

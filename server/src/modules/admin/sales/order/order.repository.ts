@@ -1,8 +1,8 @@
+import { OrderStatus } from '@/common/enums/order-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Brackets, Repository } from 'typeorm'
 import { OrderEntity } from './entities/order.entity'
-import { OrderStatus } from '@/common/enums/order-status.enum'
 
 @Injectable()
 export class OrderRepository {
@@ -73,10 +73,31 @@ export class OrderRepository {
     }
   }
 
-  async findByUserId(userId: string, tenantId: string, search?: string): Promise<OrderEntity[]> {
-    // this.logger.log(`${this.findByUserId.name} Service Called`)
+  async findByUserIdPaginated(
+    userId: string,
+    tenantId: string,
+    page: number = 1,
+    limit: number = 10,
+    search?: string
+  ): Promise<{ orders: OrderEntity[], total: number }> {
+    const skip = (page - 1) * limit;
+
     const queryBuilder = this.repo
       .createQueryBuilder('order')
+      // Select only necessary fields for the order list to improve performance
+      .select([
+        'order.id',
+        'order.customerName',
+        'order.totalAmount',
+        'order.currency',
+        'order.status',
+        'order.paymentStatus',
+        'order.createdAt',
+        'order.userId',
+        'order.tenantId',
+        'order.deliveryZone',
+        'order.address'
+      ])
       .leftJoinAndSelect('order.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
       .leftJoinAndSelect('items.variant', 'variant')
@@ -97,7 +118,17 @@ export class OrderRepository {
       )
     }
 
-    return await queryBuilder.orderBy('order.createdAt', 'DESC').getMany()
+    const [orders, total] = await queryBuilder
+      .orderBy('order.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return { orders, total };
+  }
+
+  async countByUserId(userId: string, tenantId: string): Promise<number> {
+    return this.repo.count({ where: { userId, tenantId } });
   }
   async orderOverview(tenantId?: string): Promise<{ totalOrders: number; pendingOrders: number; completedOrders: number; cancelledOrders: number }> {
     // this.logger.log(`${this.orderOverview.name} Service Called`)

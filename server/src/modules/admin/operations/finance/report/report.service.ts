@@ -1,5 +1,5 @@
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { BadRequestException, Injectable, Logger, Query } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 
 
 import { ProductService } from '@/modules/admin/catalog/product/product.service'
@@ -315,11 +315,13 @@ export class ReportService {
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [customer, orders, payments] = await Promise.all([
+        const [customer, ordersResult, payments] = await Promise.all([
           this.userService.findOneUser(customerId, tenantId),
           this.orderService.findByUserId(customerId, tenantId),
           this.paymentService.findAllPaymentsByCustomer(customerId, tenantId),
         ])
+
+        const orders = ordersResult?.orders || []
 
         // Combine and sort chronologically
         const transactions: any[] = [

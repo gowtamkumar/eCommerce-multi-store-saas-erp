@@ -1,21 +1,17 @@
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import {
-  BadRequestException,
   Injectable,
   Logger,
   NotFoundException,
-  UnauthorizedException,
+  UnauthorizedException
 } from '@nestjs/common'
 import * as bcrypt from 'bcrypt'
-import * as crypto from 'crypto'
 import { CreateUserDto, FilterUserDto, UpdatePasswordDto, UpdateUserDto } from '../dtos'
-import { AcceptInvitationDto, InviteStaffDto } from '../dtos/invite-staff.dto'
-import { InvitationStatus, StaffInvitationEntity } from '../entities/staff-invitation.entity'
+import { StaffInvitationEntity } from '../entities/staff-invitation.entity'
 import { UserEntity } from '../entities/user.entity'
-import { StaffInvitationRepository } from '../repositories/staff-invitation.repository'
 import { UserRepository } from '../repositories/user.repository'
+import { StaffInvitationService } from './staff-invitation.service'
 
 @Injectable()
 export class UserService {
@@ -23,9 +19,8 @@ export class UserService {
 
   constructor(
     private readonly userRepo: UserRepository,
-    private readonly invitationRepo: StaffInvitationRepository,
-    private readonly mailService: MailService,
     private readonly cacheService: CacheService,
+    private readonly invitationService: StaffInvitationService,
   ) {}
 
   async getUsers(
@@ -57,8 +52,24 @@ export class UserService {
   }
 
   async findUserById(id: string): Promise<UserEntity | null> {
-    this.logger.log(`${this.findUserById.name} Service Called`)
-    return this.userRepo.findById(id)
+    this.logger.log(`${this.findUserById.name} Service Called for ID: ${id}`)
+    const cacheKey = `user:profile:${id}`
+    
+    // Attempt to fetch from cache with logging
+    const cachedUser = await this.cacheService.getCache<UserEntity>(cacheKey)
+    if (cachedUser) {
+      this.logger.verbose(`Cache HIT for ${cacheKey}`)
+      return cachedUser
+    }
+
+    this.logger.verbose(`Cache MISS for ${cacheKey}. Fetching from DB...`)
+    const user = await this.userRepo.findById(id)
+    
+    if (user) {
+      await this.cacheService.setCache(cacheKey, user, 3600)
+    }
+    
+    return user
   }
 
   async findUserByUsername(username: string, tenantId?: string): Promise<UserEntity | null> {
@@ -83,9 +94,15 @@ export class UserService {
   }
 
   async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<UserEntity> {
-    this.logger.log(`${this.updateUser.name} Service Called`)
+    this.logger.log(`${this.updateUser.name} Service Called for ID: ${id}`)
     const user = await this.getUser(id)
-    return this.userRepo.updateAndSave(user, updateUserDto)
+    const result = await this.userRepo.updateAndSave(user, updateUserDto)
+    
+    const cacheKey = `user:profile:${id}`
+    await this.cacheService.delCache(cacheKey)
+    this.logger.verbose(`Cache INVALIDATED for ${cacheKey} due to profile update`)
+    
+    return result
   }
 
   async updatePassword(id: string, updatePasswordDto: UpdatePasswordDto): Promise<UserEntity> {
@@ -97,7 +114,9 @@ export class UserService {
     if (!valid) throw new UnauthorizedException('Password is not valid')
 
     const newHashedPassword = await bcrypt.hash(newPassword, 10)
-    return this.userRepo.updateAndSave(user, { password: newHashedPassword } as any)
+    const result = await this.userRepo.updateAndSave(user, { password: newHashedPassword } as any)
+    await this.cacheService.delCache(`user:profile:${id}`)
+    return result
   }
 
   async resetPassword(id: string, password: string): Promise<UserEntity> {
@@ -195,89 +214,7 @@ export class UserService {
     return this.userRepo.getOverviewStats()
   }
 
-  // ─── Team / Staff Invitation Methods ───────────────────────────────────────
-
-  async inviteStaff(
-    dto: InviteStaffDto,
-    tenantId: string,
-    invitedBy: string,
-  ): Promise<{ message: string; invitation: StaffInvitationEntity }> {
-    this.logger.log(`${this.inviteStaff.name} Service Called`)
-
-    const existingUser = await this.findUserByEmail(dto.email, tenantId)
-    if (existingUser) {
-      throw new BadRequestException('A user with this email already exists in your team.')
-    }
-
-    await this.invitationRepo.expireOldInvitations(dto.email, tenantId)
-
-    const token = crypto.randomBytes(32).toString('hex')
-    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000)
-
-    const invitation = await this.invitationRepo.createAndSave({
-      email: dto.email,
-      role: dto.role,
-      tenantId,
-      token,
-      expiresAt,
-      invitedBy,
-      status: InvitationStatus.Pending,
-    })
-
-    this.mailService.sendStaffInvitationEmail(dto.email, token, dto.role, tenantId)
-    await this.cacheService.delCache('team:members', tenantId)
-    return { message: `Invitation sent to ${dto.email}`, invitation }
-  }
-
-  async acceptInvitation(dto: AcceptInvitationDto): Promise<{ message: string; user: UserEntity }> {
-    this.logger.log(`${this.acceptInvitation.name} Service Called`)
-    const invitation = await this.invitationRepo.findByToken(dto.token)
-
-    if (!invitation) throw new NotFoundException('Invalid or expired invitation token.')
-    if (invitation.status !== InvitationStatus.Pending)
-      throw new BadRequestException('This invitation has already been used or expired.')
-
-    if (invitation.expiresAt < new Date()) {
-      await this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Expired })
-      throw new BadRequestException('This invitation has expired.')
-    }
-
-    const existingUsername = await this.findUserByUsername(dto.username, invitation.tenantId)
-    if (existingUsername) throw new BadRequestException('This username is already taken.')
-
-    const user = await this.createUser(
-      {
-        name: dto.name,
-        username: dto.username,
-        password: dto.password,
-        email: invitation.email,
-        role: invitation.role,
-        emailVerificationToken: null,
-      },
-      invitation.tenantId,
-    )
-
-    await this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Accepted })
-    await this.cacheService.delCache('team:members', invitation.tenantId)
-    return { message: 'Account created successfully. You can now log in.', user }
-  }
-
-  async getInvitations(tenantId: string): Promise<StaffInvitationEntity[]> {
-    this.logger.log(`${this.getInvitations.name} Service Called`)
-    return this.invitationRepo.findAllByTenant(tenantId)
-  }
-
-  async revokeInvitation(invitationId: string, tenantId: string): Promise<StaffInvitationEntity> {
-    this.logger.log(`${this.revokeInvitation.name} Service Called`)
-    const invitation = await this.invitationRepo.findByIdAndTenant(invitationId, tenantId)
-    if (!invitation) throw new NotFoundException('Invitation not found.')
-    if (invitation.status !== InvitationStatus.Pending)
-      throw new BadRequestException('Only pending invitations can be revoked.')
-
-    const result = await this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Expired })
-    await this.cacheService.delCache('team:members', tenantId)
-    return result
-  }
+  // Staff invitation methods are now handled by StaffInvitationService
 
   async getTeamMembers(
     tenantId: string,
@@ -290,7 +227,7 @@ export class UserService {
       async () => {
         const [members, pendingInvitations] = await Promise.all([
           this.userRepo.findTeamMembers(tenantId),
-          this.invitationRepo.findPendingByTenant(tenantId),
+          this.invitationService.findPendingByTenant(tenantId),
         ])
         return { members, pendingInvitations }
       },

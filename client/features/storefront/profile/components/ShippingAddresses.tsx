@@ -24,6 +24,88 @@ import {
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import React, { useCallback, memo } from 'react';
+
+// Memoized individual address item to prevent unnecessary re-renders
+const AddressItem = memo(({ 
+    address, 
+    onEdit, 
+    onDelete, 
+    onSetDefault,
+    getLabelIcon,
+    ShippingZoneType 
+}: { 
+    address: ShippingAddress, 
+    onEdit: (a: ShippingAddress) => void, 
+    onDelete: (id: string) => void, 
+    onSetDefault: (id: string) => void,
+    getLabelIcon: (l: string) => React.ReactNode,
+    ShippingZoneType: any
+}) => (
+    <div
+        className={`relative p-6 rounded-3xl border-2 transition-all group ${address.isDefault
+            ? 'border-brand-600/50 bg-brand-50/30 dark:bg-brand-900/10'
+            : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-slate-200 dark:hover:border-slate-700'
+        }`}
+    >
+        <div className="flex justify-between items-start mb-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                <span className="text-brand-600 dark:text-brand-400">
+                    {getLabelIcon(address.label || 'Home')}
+                </span>
+                <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    {address.label || 'Home'}
+                </span>
+            </div>
+            <div className="flex gap-1">
+                <button
+                    onClick={() => onEdit(address)}
+                    className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-lg transition-all"
+                    title="Edit"
+                >
+                    <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                    onClick={() => onDelete(address.id)}
+                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
+                    title="Delete"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+            </div>
+        </div>
+
+        <div className="space-y-1 mb-4">
+            <h4 className="font-bold text-slate-900 dark:text-white">{address.recipientName}</h4>
+            <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                {address.address}, {address.city}
+            </p>
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-500">
+                {address.phone}
+            </p>
+        </div>
+
+        <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/50">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                {address.zone === ShippingZoneType.INSIDE ? 'Inside City' : 'Outside City'}
+            </span>
+            {address.isDefault ? (
+                <span className="flex items-center gap-1 text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-md">
+                    <Check className="w-3 h-3" /> Default
+                </span>
+            ) : (
+                <button
+                    onClick={() => onSetDefault(address.id)}
+                    className="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest hover:underline"
+                >
+                    Set as Default
+                </button>
+            )}
+        </div>
+    </div>
+));
+
+AddressItem.displayName = 'AddressItem';
 
 export default function ShippingAddresses() {
     const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
@@ -42,11 +124,7 @@ export default function ShippingAddresses() {
         isDefault: false
     });
 
-    useEffect(() => {
-        fetchAddresses();
-    }, []);
-
-    const fetchAddresses = async () => {
+    const fetchAddresses = useCallback(async () => {
         try {
             setLoading(true);
             const data = await getShippingAddresses();
@@ -57,9 +135,13 @@ export default function ShippingAddresses() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const handleOpenForm = (address?: ShippingAddress) => {
+    useEffect(() => {
+        fetchAddresses();
+    }, [fetchAddresses]);
+
+    const handleOpenForm = useCallback((address?: ShippingAddress) => {
         if (address) {
             setEditingId(address.id);
             setFormData({
@@ -84,12 +166,12 @@ export default function ShippingAddresses() {
             });
         }
         setIsFormOpen(true);
-    };
+    }, [addresses.length]);
 
-    const handleCloseForm = () => {
+    const handleCloseForm = useCallback(() => {
         setIsFormOpen(false);
         setEditingId(null);
-    };
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -112,7 +194,7 @@ export default function ShippingAddresses() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = useCallback(async (id: string) => {
         if (!confirm('Are you sure you want to delete this address?')) return;
         try {
             await deleteShippingAddress(id);
@@ -122,9 +204,9 @@ export default function ShippingAddresses() {
             console.error('Error deleting address:', error);
             toast.error('Failed to delete address');
         }
-    };
+    }, [fetchAddresses]);
 
-    const handleSetDefault = async (id: string) => {
+    const handleSetDefault = useCallback(async (id: string) => {
         try {
             await setDefaultShippingAddress(id);
             toast.success('Default address updated');
@@ -133,15 +215,15 @@ export default function ShippingAddresses() {
             console.error('Error setting default address:', error);
             toast.error('Failed to update default address');
         }
-    };
+    }, [fetchAddresses]);
 
-    const getLabelIcon = (label: string) => {
+    const getLabelIcon = useCallback((label: string) => {
         switch (label.toLowerCase()) {
             case 'home': return <Home className="w-4 h-4" />;
             case 'office': return <Briefcase className="w-4 h-4" />;
             default: return <Building2 className="w-4 h-4" />;
         }
-    };
+    }, []);
 
     if (loading && addresses.length === 0) {
         return (
@@ -306,68 +388,15 @@ export default function ShippingAddresses() {
                             </div>
                         ) : (
                             addresses.map((address) => (
-                                <div
+                                <AddressItem
                                     key={address.id}
-                                    className={`relative p-6 rounded-3xl border-2 transition-all group ${address.isDefault
-                                        ? 'border-brand-600/50 bg-brand-50/30 dark:bg-brand-900/10'
-                                        : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-slate-200 dark:hover:border-slate-700'
-                                    }`}
-                                >
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
-                                            <span className="text-brand-600 dark:text-brand-400">
-                                                {getLabelIcon(address.label || 'Home')}
-                                            </span>
-                                            <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                                                {address.label || 'Home'}
-                                            </span>
-                                        </div>
-                                        <div className="flex gap-1">
-                                            <button
-                                                onClick={() => handleOpenForm(address)}
-                                                className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-lg transition-all"
-                                                title="Edit"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(address.id)}
-                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
-                                                title="Delete"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-1 mb-4">
-                                        <h4 className="font-bold text-slate-900 dark:text-white">{address.recipientName}</h4>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                                            {address.address}, {address.city}
-                                        </p>
-                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-500">
-                                            {address.phone}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800/50">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                            {address.zone === ShippingZoneType.INSIDE ? 'Inside City' : 'Outside City'}
-                                        </span>
-                                        {address.isDefault ? (
-                                            <span className="flex items-center gap-1 text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-md">
-                                                <Check className="w-3 h-3" /> Default
-                                            </span>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleSetDefault(address.id)}
-                                                className="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest hover:underline"
-                                            >
-                                                Set as Default
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
+                                    address={address}
+                                    onEdit={handleOpenForm}
+                                    onDelete={handleDelete}
+                                    onSetDefault={handleSetDefault}
+                                    getLabelIcon={getLabelIcon}
+                                    ShippingZoneType={ShippingZoneType}
+                                />
                             ))
                         )}
                     </motion.div>

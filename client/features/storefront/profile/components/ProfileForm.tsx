@@ -229,7 +229,7 @@ export default function ProfileForm({ variant, formData, setFormData }: { varian
                         <input
                             type="text"
                             required
-                            value={formData.name}
+                            value={formData.name ?? ''}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all placeholder:text-slate-400 font-medium"
                             placeholder="e.g. John Doe"
@@ -240,7 +240,7 @@ export default function ProfileForm({ variant, formData, setFormData }: { varian
                         <input
                             type="email"
                             required
-                            value={formData.email}
+                            value={formData.email ?? ''}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-500  font-medium"
                         />
@@ -250,7 +250,7 @@ export default function ProfileForm({ variant, formData, setFormData }: { varian
                         <input
                             type="tel"
                             required
-                            value={formData.phone}
+                            value={formData.phone ?? ''}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all placeholder:text-slate-400 font-medium"
                             placeholder="017XXXXXXXX"

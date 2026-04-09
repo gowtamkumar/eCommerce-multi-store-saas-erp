@@ -90,6 +90,29 @@ export class OrderController {
     }
   }
 
+  @Get('user/:userId/count')
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.STORE_MANAGER,
+    UserRole.SUPPORT,
+    UserRole.MARKETING,
+    UserRole.OPERATOR,
+    UserRole.USER,
+  )
+  async getUserOrderCount(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('userId') userId: string,
+  ): Promise<BaseApiSuccessResponse<number>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getUserOrderCount.`)
+    const count = await this.orderService.countByUserId(userId, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'User order count retrieved successfully',
+      data: count,
+    }
+  }
+
   @Get('user/:userId')
   @Roles(
     UserRole.ADMIN,
@@ -97,19 +120,30 @@ export class OrderController {
     UserRole.SUPPORT,
     UserRole.MARKETING,
     UserRole.OPERATOR,
+    UserRole.USER,
   )
   async getUserOrders(
     @RequestContext() ctx: RequestContextDto,
     @Param('userId') userId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
     @Query('search') search: string,
-  ): Promise<BaseApiSuccessResponse<OrderResponseDto[]>> {
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getUserOrders.`)
-    const orders = await this.orderService.findByUserId(userId, ctx.tenantId, search)
+    const { orders, total } = await this.orderService.findByUserId(userId, ctx.tenantId, page, limit, search)
     return {
       success: true,
       statusCode: 200,
       message: 'User orders retrieved successfully',
-      data: orders as any,
+      data: {
+        orders: orders as any,
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(total / limit),
+        },
+      },
     }
   }
 

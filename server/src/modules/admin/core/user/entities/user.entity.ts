@@ -7,6 +7,7 @@ import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 @Entity('users')
 @Index(['username', 'tenantId'], { unique: true })
 @Index(['email', 'tenantId'], { unique: true })
+@Index(['tenantId'])
 export class UserEntity extends BaseEntity {
   @Column()
   name: string

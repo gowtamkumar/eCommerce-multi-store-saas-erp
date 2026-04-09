@@ -211,9 +211,20 @@ export class OrderService {
     return order
   }
 
-  async findByUserId(userId: string, tenantId: string, search?: string): Promise<OrderEntity[]> {
+  async findByUserId(
+    userId: string,
+    tenantId: string,
+    page: number = 1,
+    limit: number = 10,
+    search?: string
+  ): Promise<{ orders: OrderEntity[], total: number }> {
     this.logger.log(`${this.findByUserId.name} Service Called`)
-    return await this.orderRepository.findByUserId(userId, tenantId, search)
+    return await this.orderRepository.findByUserIdPaginated(userId, tenantId, page, limit, search)
+  }
+
+  async countByUserId(userId: string, tenantId: string): Promise<number> {
+    this.logger.log(`${this.countByUserId.name} Service Called`)
+    return await this.orderRepository.countByUserId(userId, tenantId)
   }
 
   async updateOrder(id: string, updateOrderDto: UpdateOrderDto, tenantId: string): Promise<OrderEntity> {

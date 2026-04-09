@@ -4,6 +4,7 @@ import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { CreateUserDto } from '@/modules/admin/core/user/dtos/create-user.dto'
 import { UserDto } from '@/modules/admin/core/user/dtos/user.dto'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
+import { StaffInvitationService } from '@/modules/admin/core/user/services/staff-invitation.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
 import {
@@ -28,6 +29,7 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly tenantService: TenantService,
     private readonly configService: ConfigService,
+    private readonly staffInvitationService: StaffInvitationService,
   ) {}
 
   async register(
@@ -139,7 +141,7 @@ export class AuthService {
 
   async acceptInvitation(dto: any): Promise<{ message: string; user: UserEntity }> {
     this.logger.log(`${this.acceptInvitation.name} Service Called`)
-    return this.userService.acceptInvitation(dto)
+    return this.staffInvitationService.acceptInvitation(dto)
   }
 
   async getTokens(user: any): Promise<{ accessToken: string; refreshToken: string }> {
