@@ -7,6 +7,7 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('pages')
 @Index(['slug', 'tenantId'], { unique: true })
+@Index(['tenantId', 'isHomePage']) // Hot path: storefront home page lookup
 export class PageEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   title: string

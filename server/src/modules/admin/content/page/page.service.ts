@@ -9,7 +9,9 @@ import { PageRepository } from './page.repository'
 @Injectable()
 export class PageService {
   private readonly logger = new Logger(PageService.name)
-  private readonly CACHE_TTL = 300 // 5 minutes
+  // 5 minutes for regular pages; home page uses a longer TTL below
+  private readonly CACHE_TTL = 300
+  private readonly HOME_CACHE_TTL = 3600 // 1 hour - home page changes infrequently
 
   constructor(
     private readonly pageRepository: PageRepository,
@@ -63,15 +65,12 @@ export class PageService {
     this.logger.log(`${this.findHomePage.name} Service Called`)
     const cacheKey = `home`
 
-    const cached = await this.cache.getCache<PageEntity>(cacheKey, tenantId)
-    if (cached) return cached
-
-    const page = await this.pageRepository.findHomePage(tenantId)
-    if (page) {
-      await this.cache.setCache(cacheKey, page, this.CACHE_TTL, tenantId)
-    }
-
-    return page
+    return await this.cache.rememberCache<PageEntity | null>(
+      cacheKey,
+      () => this.pageRepository.findHomePage(tenantId),
+      this.HOME_CACHE_TTL,
+      tenantId,
+    )
   }
 
   async updatePage(id: string, dto: UpdatePageDto, tenantId: string): Promise<PageEntity> {

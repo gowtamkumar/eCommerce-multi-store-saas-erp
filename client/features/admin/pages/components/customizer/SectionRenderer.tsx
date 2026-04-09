@@ -1,25 +1,30 @@
 "use client";
-import BrandGrid from "@/features/admin/brand/components/BrandSlider";
-import FAQSection from "@/features/admin/faq/components/FAQSection";
-import BannerSlider from "@/features/admin/pages/components/customizer/BannerSlider";
+import dynamic from "next/dynamic";
+
+// --- Lightweight / structural components: loaded statically (always needed) ---
 import BuilderButton from "@/features/admin/pages/components/customizer/BuilderButton";
-import CategoryGrid from "@/features/admin/pages/components/customizer/CategoryGrid";
 import ContactSection from "@/features/admin/pages/components/customizer/ContactSection";
 import Divider from "@/features/admin/pages/components/customizer/Divider";
 import Heading from "@/features/admin/pages/components/customizer/Heading";
 import ImageBlock from "@/features/admin/pages/components/customizer/ImageBlock";
 import Newsletter from "@/features/admin/pages/components/customizer/Newsletter";
-import NewArrivals from "@/features/admin/pages/components/customizer/NewArrivals";
 import OfferBanner from "@/features/admin/pages/components/customizer/OfferBanner";
 import Paragraph from "@/features/admin/pages/components/customizer/Paragraph";
-import ProductSlider from "@/features/admin/pages/components/customizer/ProductSlider";
-import ReviewSection from "@/features/admin/pages/components/customizer/ReviewSection";
 import Spacer from "@/features/admin/pages/components/customizer/Spacer";
 import StatsCounter from "@/features/admin/pages/components/customizer/StatsCounter";
 import TextBlock from "@/features/admin/pages/components/customizer/TextBlock";
 import VideoBlock from "@/features/admin/pages/components/customizer/VideoBlock";
-import LandingCheckout from "@/features/admin/pages/components/customizer/LandingCheckout";
 import { CustomizerSection } from "@/types/customizer";
+
+// --- Heavy / data-driven components: lazy-loaded to reduce initial JS bundle ---
+const BannerSlider = dynamic(() => import("@/features/admin/pages/components/customizer/BannerSlider"), { ssr: true });
+const ProductSlider = dynamic(() => import("@/features/admin/pages/components/customizer/ProductSlider"), { ssr: true });
+const NewArrivals = dynamic(() => import("@/features/admin/pages/components/customizer/NewArrivals"), { ssr: true });
+const CategoryGrid = dynamic(() => import("@/features/admin/pages/components/customizer/CategoryGrid"), { ssr: true });
+const BrandGrid = dynamic(() => import("@/features/admin/brand/components/BrandSlider"), { ssr: true });
+const FAQSection = dynamic(() => import("@/features/admin/faq/components/FAQSection"), { ssr: true });
+const ReviewSection = dynamic(() => import("@/features/admin/pages/components/customizer/ReviewSection"), { ssr: true });
+const LandingCheckout = dynamic(() => import("@/features/admin/pages/components/customizer/LandingCheckout"), { ssr: false });
 
 interface SectionRendererProps {
   section: CustomizerSection;
