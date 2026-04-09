@@ -2,16 +2,16 @@ import { fetchAPI } from '@/services/api';
 import { Category, ProductAttribute, ProductVariant } from '@/types/product';
 import { Loader2, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import ProductVariants from './ProductVariants';
-import { ProductGeneralInfo } from './form/ProductGeneralInfo';
-import { ProductPricing } from './form/ProductPricing';
 import { ProductDetailsSidebar } from './form/ProductDetailsSidebar';
-import { ProductMedia } from './form/ProductMedia';
-import { ProductSEO } from './form/ProductSEO';
 import { ProductFAQs } from './form/ProductFAQs';
+import { ProductGeneralInfo } from './form/ProductGeneralInfo';
+import { ProductMedia } from './form/ProductMedia';
+import { ProductPricing } from './form/ProductPricing';
+import { ProductSEO } from './form/ProductSEO';
 
 interface ProductFormProps {
   initialData?: any;
@@ -63,7 +63,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     ]).then(([catRes, brandRes, supplierRes]) => {
       if (catRes.success) setCategories(catRes.data);
       if (brandRes.success) setBrands(brandRes.data);
-      if (supplierRes.success) setSuppliers(supplierRes.data);
+      if (supplierRes.success) setSuppliers(supplierRes.data.items);
     });
   }, []);
 

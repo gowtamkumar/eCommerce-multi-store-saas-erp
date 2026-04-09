@@ -1,18 +1,18 @@
-import { Body, Controller, Delete, Get, Param, Post, Patch, UseGuards, Logger, Query } from '@nestjs/common'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { PaginationDto } from '@/common/dto/pagination.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
-import { RolesGuard } from '@/common/guards/roles.guard'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RolesGuard } from '@/common/guards/roles.guard'
 import {
   CreateSupplierDto,
   UpdateSupplierDto,
 } from '@/modules/admin/operations/finance/supplier/dto/supplier.dto'
 import { SupplierService } from '@/modules/admin/operations/finance/supplier/supplier.service'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { SupplierResponseDto } from './dto/supplier-response.dto'
-import { PaginationDto } from '@/common/dto/pagination.dto'
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('suppliers')
@@ -49,7 +49,7 @@ export class SupplierController {
       success: true,
       statusCode: 200,
       message: 'List of suppliers retrieved',
-      data: result as any,
+      data: result
     }
   }
 

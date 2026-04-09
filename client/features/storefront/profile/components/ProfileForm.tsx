@@ -2,7 +2,7 @@
 
 import ImageModal from '@/components/shared/ImageModal';
 import { fetchAPI } from '@/services/api';
-import { Camera, Loader2, Lock, Save, User, Mail, Phone, ShieldCheck } from 'lucide-react';
+import { Camera, Loader2, Lock, Mail, Phone, Save, ShieldCheck, User } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -223,7 +223,7 @@ export default function ProfileForm({ variant, formData, setFormData }: { varian
                                 {formData.email}
                             </p>
                         </div>
-                        
+
                         <div className="flex flex-wrap gap-4">
                             <div className="px-4 py-2 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                                 Standard Account
