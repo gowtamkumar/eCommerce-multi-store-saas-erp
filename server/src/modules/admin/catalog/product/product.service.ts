@@ -13,11 +13,11 @@ import { PromotionTargetType } from '../../sales/promotion/enums/promotion-targe
 import { BrandRepository } from '../brand/brand.repository'
 import { ProductAttributeRepository } from './attribute.repository'
 import { CreateProductDto } from './dto/create-product.dto'
+import { FilterProductDto } from './dto/filter-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
+import { ProductEntity } from './entities/product.entity'
 import { ProductRepository } from './product.repository'
 import { ProductVariantRepository } from './variant.repository'
-import { ProductEntity } from './entities/product.entity'
-import { FilterProductDto } from './dto/filter-product.dto'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 

@@ -1,16 +1,17 @@
-'use client';
-
 import { fetchAPI } from '@/services/api';
 import { Category, ProductAttribute, ProductVariant } from '@/types/product';
-import { Image as ImageIcon, Layout, Loader2, MessageSquare, Plus, Save, Search, Star, Tag, Trash2 } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import ProductVariants from './ProductVariants';
-import RichEditor from '@/components/shared/RichEditor';
-import { calculatePricing } from '@/lib/utils';
-import { DiscountType } from '@/lib/enums/discount-type.enum';
 
+import ProductVariants from './ProductVariants';
+import { ProductGeneralInfo } from './form/ProductGeneralInfo';
+import { ProductPricing } from './form/ProductPricing';
+import { ProductDetailsSidebar } from './form/ProductDetailsSidebar';
+import { ProductMedia } from './form/ProductMedia';
+import { ProductSEO } from './form/ProductSEO';
+import { ProductFAQs } from './form/ProductFAQs';
 
 interface ProductFormProps {
   initialData?: any;
@@ -40,7 +41,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     categoryId: initialData?.categoryId || initialData?.category?.id || '',
     brandId: initialData?.brandId || initialData?.brand?.id || '',
     supplierId: initialData?.supplierId || initialData?.supplier?.id || '',
-    isReview: initialData?.isReview,
+    isReview: initialData?.isReview ?? true,
     attributes: initialData?.attributes || [] as ProductAttribute[],
     variants: initialData?.variants || [] as ProductVariant[],
     faqs: initialData?.faqs || [],
@@ -54,7 +55,6 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     isSale: initialData?.isSale || false,
   });
 
-
   useEffect(() => {
     Promise.all([
       fetchAPI('/categories'),
@@ -67,12 +67,25 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     });
   }, []);
 
-  const generateSlug = (text: string) => {
+  const generateSlug = useCallback((text: string) => {
     return text
       .toLowerCase()
+      .trim()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
-  };
+  }, []);
+
+  const handleUpdate = useCallback((updates: Partial<typeof formData>) => {
+    setFormData((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const handleFaqChange = useCallback((faqs: any[], faqSource: string, faqIds: string[]) => {
+    setFormData(prev => ({ ...prev, faqs, faqSource, faqIds }));
+  }, []);
+
+  const handleVariantChange = useCallback((attributes: any[], variants: any[]) => {
+    setFormData(prev => ({ ...prev, attributes, variants }));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +95,6 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       ...formData,
       price: parseFloat(formData.price),
       discountAmount: parseFloat(formData.discountAmount),
-      discountType: formData.discountType,
       taxRate: parseFloat(formData.taxRate) || 0,
       stock: parseInt(formData.stock),
       lowStockThreshold: parseInt(formData.lowStockThreshold),
@@ -91,32 +103,19 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       categoryId: formData.categoryId || null,
       brandId: formData.brandId || null,
       supplierId: formData.supplierId || null,
-      faqSource: formData.faqSource,
       faqIds: formData.faqSource === 'selection' ? formData.faqIds : [],
       faqs: formData.faqSource === 'manual' ? formData.faqs.map((f: any) => ({
         question: f.question,
         answer: f.answer,
         order: f.order
       })) : [],
-      variants: formData.variants.map((v: any) => {
-        const p = parseFloat(v.price);
-        const s = parseInt(v.stock);
-        const t = parseInt(v.lowStockThreshold || '5');
-        return {
-          ...v,
-          price: !isNaN(p) ? p : 0,
-          stock: !isNaN(s) ? s : 0,
-          lowStockThreshold: !isNaN(t) ? t : 5,
-        };
-      }),
-      metaTitle: formData.metaTitle || null,
-      metaDescription: formData.metaDescription || null,
-      ogImage: formData.ogImage || null,
-      isNew: formData.isNew,
-      isHot: formData.isHot,
-      isSale: formData.isSale,
+      variants: formData.variants.map((v: any) => ({
+        ...v,
+        price: parseFloat(v.price) || 0,
+        stock: parseInt(v.stock) || 0,
+        lowStockThreshold: parseInt(v.lowStockThreshold || '5'),
+      })),
     };
-
 
     try {
       const url = isEdit ? `/products/${initialData.id}` : '/products';
@@ -139,401 +138,77 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-[1200px]">
+    <form onSubmit={handleSubmit} className="max-w-[1200px] pb-20">
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Main Content Column */}
         <div className="flex-1 space-y-8">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-              <Layout className="w-5 h-5 text-brand-500" /> General Information
-            </h3>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Product Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Premium Wireless Headphones"
-                  value={formData.name}
-                  onChange={(e) => {
-                    const name = e.target.value;
-                    if (!isEdit) {
-                      setFormData({ ...formData, name, slug: generateSlug(name) });
-                    } else {
-                      setFormData({ ...formData, name });
-                    }
-                  }}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Slug (URL)</label>
-                <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/50">
-                  <span className="text-slate-400 text-sm">/products/</span>
-                  <input
-                    type="text"
-                    required
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: generateSlug(e.target.value) })}
-                    className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white text-sm font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Short Description</label>
-                <textarea
-                  value={formData.shortDescription}
-                  onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"
-                  rows={2}
-                  placeholder="A brief summary for listings..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Full Description</label>
-                <RichEditor
-                  content={formData.description}
-                  onChange={(content) => setFormData({ ...formData, description: content })}
-                  className="bg-white dark:bg-slate-900"
-                />
-              </div>
-            </div>
-          </div>
+          <ProductGeneralInfo
+            name={formData.name}
+            slug={formData.slug}
+            shortDescription={formData.shortDescription}
+            description={formData.description}
+            isEdit={isEdit}
+            onUpdate={handleUpdate}
+            generateSlug={generateSlug}
+          />
 
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Inventory & Variants</h3>
             <ProductVariants
               attributes={formData.attributes}
               variants={formData.variants}
-              basePrice={parseFloat(formData.price)}
+              basePrice={parseFloat(formData.price) || 0}
               stock={formData.stock}
-              onChange={(attributes, variants) => setFormData({ ...formData, attributes, variants })}
+              onChange={handleVariantChange}
             />
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-              <Search className="w-5 h-5 text-brand-500" /> SEO & Social Sharing
-            </h3>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Meta Title</label>
-                <input
-                  type="text"
-                  placeholder="SEO Title"
-                  value={formData.metaTitle}
-                  onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Meta Description</label>
-                <textarea
-                  placeholder="SEO Description"
-                  value={formData.metaDescription}
-                  onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Custom OG Image URL</label>
-                <input
-                  type="text"
-                  placeholder="https://example.com/image.jpg"
-                  value={formData.ogImage}
-                  onChange={(e) => setFormData({ ...formData, ogImage: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                />
-                <p className="mt-1 text-[10px] text-slate-400 italic">* If left empty, the first product image will be used.</p>
-              </div>
-            </div>
-          </div>
+          <ProductSEO
+            metaTitle={formData.metaTitle}
+            metaDescription={formData.metaDescription}
+            ogImage={formData.ogImage}
+            onUpdate={handleUpdate}
+          />
 
           <ProductFAQs
             faqs={formData.faqs}
             faqSource={formData.faqSource}
             faqIds={formData.faqIds}
-            onChange={(faqs, faqSource, faqIds) => setFormData({ ...formData, faqs, faqSource, faqIds })}
+            onChange={handleFaqChange}
           />
         </div>
 
         {/* Sidebar Column */}
         <div className="w-full lg:w-[350px] space-y-8">
-          {/* Status & Category */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                <Layout className="w-4 h-4" /> Visibility
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-              >
-                <option value="active">Active (Visible)</option>
-                <option value="inactive">Inactive (Hidden)</option>
-              </select>
-            </div>
+          <ProductDetailsSidebar
+            status={formData.status}
+            categoryId={formData.categoryId}
+            brandId={formData.brandId}
+            supplierId={formData.supplierId}
+            isReview={formData.isReview}
+            isNew={formData.isNew}
+            isHot={formData.isHot}
+            isSale={formData.isSale}
+            categories={categories}
+            brands={brands}
+            suppliers={suppliers}
+            onUpdate={handleUpdate}
+          />
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                <Tag className="w-4 h-4" /> Category
-              </label>
-              <select
-                value={formData.categoryId}
-                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-              >
-                <option value="">No Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <ProductPricing
+            price={formData.price}
+            discountAmount={formData.discountAmount}
+            discountType={formData.discountType}
+            taxRate={formData.taxRate}
+            stock={formData.stock}
+            lowStockThreshold={formData.lowStockThreshold}
+            onUpdate={handleUpdate}
+          />
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                <Tag className="w-4 h-4" /> Brand
-              </label>
-              <select
-                value={formData.brandId}
-                onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-              >
-                <option value="">No Brand</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                <Plus className="w-4 h-4" /> Main Supplier
-              </label>
-              <select
-                value={formData.supplierId}
-                onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-              >
-                <option value="">No Supplier</option>
-                {suppliers.map((sup) => (
-                  <option key={sup.id} value={sup.id}>
-                    {sup.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Pricing */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 space-y-6">
-            <h4 className="font-bold text-slate-900 dark:text-white">Pricing</h4>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Base Price</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Discount Type</label>
-              <select
-                value={formData.discountType}
-                onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-              >
-                <option value={DiscountType.PERCENTAGE}>Percentage (%)</option>
-                <option value={DiscountType.FIXED}>Fixed Amount ($)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Discount Value</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">
-                  {formData.discountType === DiscountType.PERCENTAGE ? '%' : '$'}
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step={formData.discountType === DiscountType.PERCENTAGE ? '1' : '0.01'}
-                  max={formData.discountType === DiscountType.PERCENTAGE ? '100' : undefined}
-                  value={formData.discountAmount}
-                  onChange={(e) => setFormData({ ...formData, discountAmount: e.target.value })}
-                  className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all font-mono"
-                />
-              </div>
-              {(() => {
-                const {
-                  price,
-                  discountAmount,
-                  taxRate,
-                  discountedPrice,
-                  taxAmount,
-                  finalPrice
-                } = calculatePricing(
-                  parseFloat(formData.price) || 0,
-                  parseFloat(formData.discountAmount) || 0,
-                  formData.discountType,
-                  parseFloat(formData.taxRate) || 0
-                );
-
-                if (price > 0 && (discountAmount > 0 || taxRate > 0)) {
-                  return (
-                    <div className="mt-2 text-sm text-slate-600 dark:text-slate-400 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-1 border border-slate-100 dark:border-slate-800">
-                      <div className="flex justify-between">
-                        <span>Base Price:</span>
-                        <span>${price.toFixed(2)}</span>
-                      </div>
-                      {discountAmount > 0 && (
-                        <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                          <span>Discount ({formData.discountType === DiscountType.PERCENTAGE ? `${discountAmount}%` : `$${discountAmount}`}):</span>
-                          <span>-${(price - discountedPrice).toFixed(2)}</span>
-                        </div>
-                      )}
-                      {taxRate > 0 && (
-                        <div className="flex justify-between text-rose-600 dark:text-rose-400">
-                          <span>Tax ({taxRate}%):</span>
-                          <span>+${taxAmount.toFixed(2)}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between font-bold text-slate-900 dark:text-white pt-1 border-t border-slate-200 dark:border-slate-700">
-                        <span>Final Price:</span>
-                        <span>${finalPrice.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Tax Rate (%)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">%</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  value={formData.taxRate}
-                  onChange={(e) => setFormData({ ...formData, taxRate: e.target.value })}
-                  className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all font-mono"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Stock Quantity</label>
-              <input
-                type="number"
-                required
-                min="0"
-                value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all mb-4"
-              />
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Low Stock Alert Threshold</label>
-              <input
-                type="number"
-                required
-                min="0"
-                value={formData.lowStockThreshold}
-                onChange={(e) => setFormData({ ...formData, lowStockThreshold: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 outline-none transition-all"
-              />
-              <p className="mt-2 text-[10px] text-slate-400 leading-relaxed italic">
-                * You will receive an alert when stock drops to or below this level.
-              </p>
-            </div>
-          </div>
-
-          {/* Images */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-              <ImageIcon className="w-4 h-4" /> Media URLs
-            </label>
-            <textarea
-              required
-              value={formData.images}
-              onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none text-xs font-mono"
-              rows={4}
-              placeholder="Comma separated URLs..."
-            />
-          </div>
-
-          Review Logic - Currently disabled as backend support was removed
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
-              <MessageSquare className="w-4 h-4" /> Review Mode
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, isReview: !formData.isReview })}
-                className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-2 ${formData.isReview
-                  ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-500 text-brand-600'
-                  : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-brand-200'
-                  }`}
-              >
-                <Star className="w-4 h-4" />
-                <span className="text-[10px] font-bold uppercase">Reviews</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
-              <Tag className="w-4 h-4" /> Product Badges
-            </label>
-            <div className="space-y-3">
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-all">
-                <input
-                  type="checkbox"
-                  checked={formData.isNew}
-                  onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                />
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">New Arrival</span>
-              </label>
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-all">
-                <input
-                  type="checkbox"
-                  checked={formData.isHot}
-                  onChange={(e) => setFormData({ ...formData, isHot: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                />
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Hot Product</span>
-              </label>
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-all">
-                <input
-                  type="checkbox"
-                  checked={formData.isSale}
-                  onChange={(e) => setFormData({ ...formData, isSale: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                />
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">On Sale</span>
-              </label>
-            </div>
-          </div>
-
+          <ProductMedia
+            images={formData.images}
+            onUpdate={handleUpdate}
+          />
 
           <button
             type="submit"
@@ -553,174 +228,3 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   );
 }
 
-function ProductFAQs({ faqs, faqSource: initialSource, faqIds: initialFaqIds, onChange }: { faqs: any[], faqSource?: string, faqIds?: string[], onChange: (faqs: any[], faqSource: string, faqIds: string[]) => void }) {
-  const [source, setSource] = useState<string>(initialSource || 'manual');
-  const [faqIds, setFaqIds] = useState<string[]>(initialFaqIds || []);
-  const [dbFaqs, setDbFaqs] = useState<any[]>([]);
-
-  useEffect(() => {
-    // Fetch FAQs from database
-    fetchAPI('/faqs?limit=100')
-      .then((res) => {
-        if (res.success && res.data?.faqs) {
-          setDbFaqs(res.data.faqs);
-        }
-      })
-      .catch((err) => console.error('Error fetching FAQs:', err));
-  }, []);
-
-  // Sync source changes with parent
-  useEffect(() => {
-    onChange(faqs, source, faqIds);
-  }, [source, faqIds]);
-
-  const addFaq = () => {
-    const updated = [...faqs, { question: '', answer: '', order: faqs.length }];
-    onChange(updated, source, faqIds);
-  };
-
-  const removeFaq = (index: number) => {
-    const updated = faqs.filter((_, i) => i !== index);
-    onChange(updated, source, faqIds);
-  };
-
-  const updateFaq = (index: number, field: string, value: string) => {
-    const newFaqs = [...faqs];
-    newFaqs[index] = { ...newFaqs[index], [field]: value };
-    onChange(newFaqs, source, faqIds);
-  };
-
-  const addFaqId = (id: string) => {
-    if (!faqIds.includes(id)) {
-      const updated = [...faqIds, id];
-      setFaqIds(updated);
-    }
-  };
-
-  const removeFaqId = (index: number) => {
-    const updated = faqIds.filter((_, i) => i !== index);
-    setFaqIds(updated);
-  };
-
-  return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-brand-500" /> Product FAQs
-        </h3>
-      </div>
-
-      <div className="space-y-4">
-        {/* Source Selection */}
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-            FAQ Source
-          </label>
-          <select
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-          >
-            <option value="manual">Manual Entry</option>
-            <option value="selection">Select from Database</option>
-          </select>
-        </div>
-
-        {source === 'selection' ? (
-          <div className="space-y-4">
-            {/* Selected FAQs Display */}
-            <div className="space-y-2">
-              {faqIds.map((id, idx) => {
-                const faq = dbFaqs.find(f => f.id === id);
-                return (
-                  <div key={`${id}-${idx}`} className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                    <span className="text-sm flex-1 truncate text-slate-900 dark:text-white">
-                      {faq?.question || 'Unknown FAQ'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeFaqId(idx)}
-                      className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Add FAQ Dropdown */}
-            <select
-              value=""
-              onChange={(e) => {
-                if (e.target.value) {
-                  addFaqId(e.target.value);
-                }
-              }}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-            >
-              <option value="">+ Select a FAQ from database...</option>
-              {dbFaqs
-                .filter(f => !faqIds.includes(f.id))
-                .map((f: any) => (
-                  <option key={f.id} value={f.id}>{f.question}</option>
-                ))
-              }
-            </select>
-
-          </div>
-        ) : (
-          <>
-            {/* Manual Entry */}
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={addFaq}
-                className="text-sm font-bold text-brand-600 dark:text-brand-400 hover:text-brand-700 flex items-center gap-1"
-              >
-                <Plus className="w-4 h-4" /> Add Question
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {faqs.length === 0 ? (
-                <div className="text-center py-8 bg-slate-50 dark:bg-slate-900/50 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 text-sm">
-                  No FAQs added yet.
-                </div>
-              ) : (
-                faqs.map((faq, index) => (
-                  <div key={index} className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 relative group">
-                    <button
-                      type="button"
-                      onClick={() => removeFaq(index)}
-                      className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors"
-                      title="Remove FAQ"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <div className="space-y-3 pr-8">
-                      <input
-                        type="text"
-                        placeholder="Question"
-                        value={faq.question}
-                        onChange={(e) => updateFaq(index, 'question', e.target.value)}
-                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
-                      />
-                      <textarea
-                        placeholder="Answer"
-                        value={faq.answer}
-                        onChange={(e) => updateFaq(index, 'answer', e.target.value)}
-                        rows={2}
-                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none"
-                      />
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
