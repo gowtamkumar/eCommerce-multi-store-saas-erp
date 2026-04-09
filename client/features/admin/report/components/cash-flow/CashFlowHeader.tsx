@@ -1,13 +1,11 @@
 'use client';
 
+import { Download, Wallet } from 'lucide-react';
 import React from 'react';
-import { Wallet, Download } from 'lucide-react';
+import type { CashFlowHeaderProps } from '../../types';
 
-interface CashFlowHeaderProps {
-    onExport: () => void;
-}
 
-const CashFlowHeader: React.FC<CashFlowHeaderProps> = ({ onExport }) => {
+const CashFlowHeader: React.FC<CashFlowHeaderProps> = React.memo(({ onExport }) => {
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
             <div>
@@ -29,6 +27,6 @@ const CashFlowHeader: React.FC<CashFlowHeaderProps> = ({ onExport }) => {
             </div>
         </div>
     );
-};
+})
 
 export default React.memo(CashFlowHeader);

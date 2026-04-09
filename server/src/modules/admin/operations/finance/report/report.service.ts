@@ -378,7 +378,7 @@ export class ReportService {
     )
   }
 
-  async getCashFlow(tenantId: string, @Query('period') period: string = 'last30days') {
+  async getCashFlow(tenantId: string, period: string = 'last30days') {
     const cacheKey = `cashflow:${period}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -390,10 +390,8 @@ export class ReportService {
         ])
 
         const inflow = customerPayments.filter((p: any) => p.status === 'completed')
-        const outflowExpenses = expenses
-        const outflowSuppliers = supplierPayments
 
-        // Combine all movements
+        // Combine all movements into a single array
         const movements: any[] = [
           ...inflow.map((p) => ({
             date: p.createdAt,
@@ -402,14 +400,14 @@ export class ReportService {
             category: 'Sales',
             reference: p.transactionId,
           })),
-          ...outflowExpenses.map((e) => ({
+          ...expenses.map((e) => ({
             date: e.expenseDate,
             amount: +e.amount,
             type: 'OUTFLOW',
             category: e.category,
             reference: e.description,
           })),
-          ...outflowSuppliers.map((sp) => ({
+          ...supplierPayments.map((sp) => ({
             date: sp.paymentDate,
             amount: +sp.amount,
             type: 'OUTFLOW',
@@ -418,7 +416,26 @@ export class ReportService {
           })),
         ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-        // Group by day for the last 30 days
+        // Optimization: Single-pass grouping by date (O(N) instead of O(Days * N))
+        const dailyAggregates = new Map<string, { inflow: number; outflow: number }>()
+
+        movements.forEach((m) => {
+          const mDate = m.date instanceof Date ? m.date : new Date(m.date)
+          const dateStr = mDate.toISOString().split('T')[0]
+          
+          if (!dailyAggregates.has(dateStr)) {
+            dailyAggregates.set(dateStr, { inflow: 0, outflow: 0 })
+          }
+          
+          const aggregate = dailyAggregates.get(dateStr)!
+          if (m.type === 'INFLOW') {
+            aggregate.inflow += m.amount
+          } else {
+            aggregate.outflow += m.amount
+          }
+        })
+
+        // Generate the last 30 days time series
         const last30Days = Array.from({ length: 30 }, (_, i) => {
           const d = new Date()
           d.setDate(d.getDate() - i)
@@ -426,31 +443,20 @@ export class ReportService {
         }).reverse()
 
         const chartData = last30Days.map((date) => {
-          const dayMovements = movements.filter((m) => {
-            const d = m.date instanceof Date ? m.date.toISOString() : m.date
-            return typeof d === 'string' && d.startsWith(date)
-          })
-
-          const dayInflow = dayMovements
-            .filter((m) => m.type === 'INFLOW')
-            .reduce((sum, m) => sum + m.amount, 0)
-          const dayOutflow = dayMovements
-            .filter((m) => m.type === 'OUTFLOW')
-            .reduce((sum, m) => sum + m.amount, 0)
-
+          const agg = dailyAggregates.get(date) || { inflow: 0, outflow: 0 }
           return {
             date,
             displayDate: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            inflow: dayInflow,
-            outflow: dayOutflow,
-            net: dayInflow - dayOutflow,
+            inflow: agg.inflow,
+            outflow: agg.outflow,
+            net: agg.inflow - agg.outflow,
           }
         })
 
         const totalInflow = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0)
         const totalOutflow =
-          outflowExpenses.reduce((sum, e) => sum + (+e.amount || 0), 0) +
-          outflowSuppliers.reduce((sum, sp) => sum + (+sp.amount || 0), 0)
+          expenses.reduce((sum, e) => sum + (+e.amount || 0), 0) +
+          supplierPayments.reduce((sum, sp) => sum + (+sp.amount || 0), 0)
 
         return {
             summary: {

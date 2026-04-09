@@ -313,3 +313,7 @@ export interface SupplierLedgerTableProps {
     formatPrice: (price: number) => string;
     supplierInfo: SupplierShortInfo;
 }
+
+export interface CashFlowHeaderProps {
+    onExport: () => void;
+}
