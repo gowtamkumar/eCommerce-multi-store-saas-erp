@@ -191,7 +191,10 @@ export class TenantService {
 
     if (customDomain) {
       tenant = await this.findByCustomDomain(customDomain)
-    } else if (subdomain) {
+    }
+
+    // Fallback to subdomain check if custom domain is not found or not provided
+    if (!tenant && subdomain) {
       tenant = await this.findBySubdomain(subdomain)
     }
 
