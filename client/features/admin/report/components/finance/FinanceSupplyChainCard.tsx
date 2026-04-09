@@ -2,8 +2,7 @@
 
 import { Truck } from 'lucide-react';
 import Link from 'next/link';
-import React from 'react';
-import { SupplierStats } from '../types';
+import { SupplierStats } from '../../types';
 
 interface FinanceSupplyChainCardProps {
     stats?: SupplierStats;

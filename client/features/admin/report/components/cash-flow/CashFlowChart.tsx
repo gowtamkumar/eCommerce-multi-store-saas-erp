@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
-import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell } from 'recharts';
-import type { CashFlowChartItem } from '../types';
 import { BarChart3 } from 'lucide-react';
+import React from 'react';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import type { CashFlowChartItem } from '../../types';
 
 interface CashFlowChartProps {
     chartData: CashFlowChartItem[];

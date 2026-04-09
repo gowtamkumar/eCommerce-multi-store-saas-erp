@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
 import dayjs from 'dayjs';
-import { CashMovement } from '../types';
+import React from 'react';
+import { CashMovement } from '../../types';
 
 interface CashFlowMovementTableProps {
     movements: CashMovement[];

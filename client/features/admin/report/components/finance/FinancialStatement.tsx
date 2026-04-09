@@ -1,8 +1,7 @@
 'use client';
 
 import dayjs from 'dayjs';
-import React from 'react';
-import { ProfitLossData } from '../types';
+import { ProfitLossData } from '../../types';
 
 interface FinancialStatementProps {
     data?: ProfitLossData | null;
@@ -34,7 +33,7 @@ export default function FinancialStatement({ data, isLoading, formatPrice }: Fin
                     <span className="text-slate-600 dark:text-slate-300">Cost of Goods Sold (COGS)</span>
                     <span className="text-orange-600 dark:text-orange-400 font-medium font-mono">({formatPrice(data?.cogs?.total || 0)})</span>
                 </div>
-                
+
                 <div className="flex justify-between py-3 bg-slate-50 dark:bg-slate-900/50 px-4 rounded-xl border border-slate-100 dark:border-slate-800">
                     <span className="text-slate-900 dark:text-white font-bold">Gross Profit</span>
                     <span className="text-slate-900 dark:text-white font-bold text-lg font-mono">{formatPrice(data?.grossProfit || 0)}</span>

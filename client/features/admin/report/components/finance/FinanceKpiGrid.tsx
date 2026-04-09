@@ -1,8 +1,7 @@
 'use client';
 
-import { BarChart3, DollarSign, Truck, Wallet, TrendingUp } from 'lucide-react';
-import React from 'react';
-import { FinanceKpis } from '../types';
+import { BarChart3, DollarSign, TrendingUp, Truck, Wallet } from 'lucide-react';
+import { FinanceKpis } from '../../types';
 
 interface FinanceKpiGridProps {
     kpis?: FinanceKpis;
@@ -64,9 +63,9 @@ export default function FinanceKpiGrid({ kpis, isLoading, formatPrice }: Finance
                 <p className="text-xs font-bold text-white/70 uppercase tracking-widest">Margin</p>
                 <h3 className="text-3xl font-black mt-1">{kpis?.margin?.toFixed(1)}%</h3>
                 <div className="mt-4 w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
-                    <div 
-                        className="bg-white h-full transition-all duration-1000 ease-out" 
-                        style={{ width: `${Math.min(100, kpis?.margin || 0)}%` }} 
+                    <div
+                        className="bg-white h-full transition-all duration-1000 ease-out"
+                        style={{ width: `${Math.min(100, kpis?.margin || 0)}%` }}
                     />
                 </div>
             </div>

@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
 import dayjs from 'dayjs';
-import { Wallet, CreditCard } from 'lucide-react';
-import { LedgerTransaction, SupplierShortInfo } from '../types';
+import { CreditCard, Wallet } from 'lucide-react';
+import React from 'react';
+import { LedgerTransaction, SupplierShortInfo } from '../../types';
 
 interface SupplierLedgerTableProps {
     transactions: LedgerTransaction[];

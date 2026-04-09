@@ -1,8 +1,7 @@
 'use client';
 
+import { ChevronRight, Printer, Receipt, Users } from 'lucide-react';
 import React from 'react';
-import { Receipt, Users, ChevronRight, Printer } from 'lucide-react';
-import { SupplierShortInfo } from '../types';
 
 interface SupplierLedgerHeaderProps {
     suppliers: any[];

@@ -3,7 +3,7 @@
 import dayjs from 'dayjs';
 import { Package } from 'lucide-react';
 import { memo } from 'react';
-import { RecentProductsTableProps } from '../types';
+import { RecentProductsTableProps } from '../../types';
 
 
 

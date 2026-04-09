@@ -1,4 +1,4 @@
-import ReportExportDashboard from '@/features/admin/report/components/ReportExportDashboard';
+import ReportExportDashboard from '@/features/admin/report/components/export-center/ReportExportDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

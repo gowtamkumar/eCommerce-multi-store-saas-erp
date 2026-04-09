@@ -1,4 +1,4 @@
-import SalesAnalysisDashboard from '@/features/admin/report/components/SalesAnalysisDashboard';
+import SalesAnalysisDashboard from '@/features/admin/report/components/sales-analysis/SalesAnalysisDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

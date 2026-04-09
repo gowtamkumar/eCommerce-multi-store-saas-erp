@@ -1,8 +1,7 @@
 'use client';
 
 import { BarChart3 } from 'lucide-react';
-import React from 'react';
-import { OperatingExpensesData } from '../types';
+import { OperatingExpensesData } from '../../types';
 
 interface ExpenseDistributionProps {
     data?: OperatingExpensesData | null;

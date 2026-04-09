@@ -1,4 +1,4 @@
-import CustomerLedgerDashboard from '@/features/admin/report/components/CustomerLedgerDashboard';
+import CustomerLedgerDashboard from '@/features/admin/report/components/customer-ledger/CustomerLedgerDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

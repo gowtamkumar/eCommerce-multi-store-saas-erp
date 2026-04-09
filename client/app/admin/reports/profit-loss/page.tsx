@@ -1,4 +1,4 @@
-import ProfitLossDashboard from '@/features/admin/report/components/ProfitLossDashboard';
+import ProfitLossDashboard from '@/features/admin/report/components/profit-loss/ProfitLossDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

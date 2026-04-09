@@ -2,7 +2,6 @@
 
 import dayjs from 'dayjs';
 import { FileText } from 'lucide-react';
-import React from 'react';
 import type { RecentPage } from '../types';
 
 interface TopPagesTableProps {

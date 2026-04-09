@@ -1,8 +1,8 @@
 'use client';
 
+import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import React from 'react';
-import { ArrowUpRight, ArrowDownLeft } from 'lucide-react';
-import { LedgerSummary } from '../types';
+import { LedgerSummary } from '../../types';
 
 interface CustomerLedgerSummaryProps {
     summary: LedgerSummary;

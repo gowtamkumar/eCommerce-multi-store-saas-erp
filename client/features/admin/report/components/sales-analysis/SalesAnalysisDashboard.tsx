@@ -2,14 +2,14 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
-import { TrendingUp, Download } from 'lucide-react';
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { Download, TrendingUp } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import type { SalesDashboardData } from '../types';
-import SalesStatsGrid from './SalesStatsGrid';
-import SalesTrendChart from './SalesTrendChart';
+import type { SalesDashboardData } from '../../types';
 import LowStockTable from './LowStockTable';
 import RecentProductsTable from './RecentProductsTable';
+import SalesStatsGrid from './SalesStatsGrid';
+import SalesTrendChart from './SalesTrendChart';
 
 export default function SalesAnalysisDashboard() {
     const { formatPrice } = useSettings();

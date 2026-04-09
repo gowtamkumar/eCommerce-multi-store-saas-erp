@@ -1,47 +1,47 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
-import toast from 'react-hot-toast';
+import { fetchAPI } from '@/services/api';
 import { Search } from 'lucide-react';
-import { SupplierLedgerData } from '../types';
-import SupplierLedgerHeader from './SupplierLedgerHeader';
-import SupplierLedgerSummary from './SupplierLedgerSummary';
-import SupplierLedgerTable from './SupplierLedgerTable';
+import React, { useCallback, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { CustomerLedgerData } from '../../types';
+import CustomerLedgerHeader from './CustomerLedgerHeader';
+import CustomerLedgerSummary from './CustomerLedgerSummary';
+import CustomerLedgerTable from './CustomerLedgerTable';
 
-const SupplierLedgerDashboard: React.FC = () => {
+const CustomerLedgerDashboard: React.FC = () => {
     const { formatPrice } = useSettings();
-    const [suppliers, setSuppliers] = useState<any[]>([]);
-    const [selectedSupplierId, setSelectedSupplierId] = useState('');
-    const [ledgerData, setLedgerData] = useState<SupplierLedgerData | null>(null);
+    const [customers, setCustomers] = useState<any[]>([]);
+    const [selectedCustomerId, setSelectedCustomerId] = useState('');
+    const [ledgerData, setLedgerData] = useState<CustomerLedgerData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-    // Initial load: Fetch all suppliers for the dropdown
+    // Initial load: Fetch all customers for the dropdown
     useEffect(() => {
-        const loadSuppliers = async () => {
+        const loadCustomers = async () => {
             try {
-                const res = await fetchAPI('/suppliers');
-                setSuppliers(res.data.items || []);
+                const res = await fetchAPI('/customer');
+                setCustomers(res.data.items || []);
             } catch (error) {
-                toast.error('Failed to load suppliers');
+                toast.error('Failed to load customers');
             } finally {
                 setIsInitialLoading(false);
             }
         };
-        loadSuppliers();
+        loadCustomers();
     }, []);
 
-    // Fetch ledger data for the selected supplier
-    const fetchLedger = useCallback(async (supplierId: string) => {
-        if (!supplierId) {
+    // Fetch ledger data for the selected customer
+    const fetchLedger = useCallback(async (customerId: string) => {
+        if (!customerId) {
             setLedgerData(null);
             return;
         }
         try {
             setIsLoading(true);
-            const res = await fetchAPI(`/report/supplier-ledger/${supplierId}`);
+            const res = await fetchAPI(`/report/customer-ledger/${customerId}`);
             setLedgerData(res.data);
         } catch (error) {
             console.error('Ledger fetch error:', error);
@@ -54,15 +54,15 @@ const SupplierLedgerDashboard: React.FC = () => {
 
     // Trigger fetch when selection changes
     useEffect(() => {
-        if (selectedSupplierId) {
-            fetchLedger(selectedSupplierId);
+        if (selectedCustomerId) {
+            fetchLedger(selectedCustomerId);
         } else {
             setLedgerData(null);
         }
-    }, [selectedSupplierId, fetchLedger]);
+    }, [selectedCustomerId, fetchLedger]);
 
-    const handleSupplierChange = useCallback((id: string) => {
-        setSelectedSupplierId(id);
+    const handleCustomerChange = useCallback((id: string) => {
+        setSelectedCustomerId(id);
     }, []);
 
     if (isInitialLoading) {
@@ -71,28 +71,28 @@ const SupplierLedgerDashboard: React.FC = () => {
                 <div className="inline-block p-4 bg-slate-100 dark:bg-slate-800 rounded-full mb-4">
                     <Search className="w-8 h-8 text-slate-400" />
                 </div>
-                <p className="font-medium">Initializing supplier records...</p>
+                <p className="font-medium">Initializing customer records...</p>
             </div>
         );
     }
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <SupplierLedgerHeader
-                suppliers={suppliers}
-                selectedSupplierId={selectedSupplierId}
-                onSupplierChange={handleSupplierChange}
+            <CustomerLedgerHeader
+                customers={customers}
+                selectedCustomerId={selectedCustomerId}
+                onCustomerChange={handleCustomerChange}
                 hasLedgerData={!!ledgerData}
             />
 
-            {!selectedSupplierId ? (
+            {!selectedCustomerId ? (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-12 text-center flex flex-col items-center justify-center space-y-4">
                     <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-full">
                         <Search className="w-8 h-8 text-slate-400" />
                     </div>
                     <div className="max-w-xs">
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Choose a Supplier</h3>
-                        <p className="text-slate-500 text-sm mt-1">Select a supplier from the list above to view their transactional history and account balance.</p>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Choose a Customer</h3>
+                        <p className="text-slate-500 text-sm mt-1">Select a customer from the list above to view their transactional history and account balance.</p>
                     </div>
                 </div>
             ) : isLoading ? (
@@ -102,15 +102,15 @@ const SupplierLedgerDashboard: React.FC = () => {
                 </div>
             ) : ledgerData ? (
                 <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
-                    <SupplierLedgerSummary
+                    <CustomerLedgerSummary
                         summary={ledgerData.summary}
                         formatPrice={formatPrice}
                     />
 
-                    <SupplierLedgerTable
+                    <CustomerLedgerTable
                         transactions={ledgerData.ledger}
                         formatPrice={formatPrice}
-                        supplierInfo={ledgerData.supplier}
+                        customerInfo={ledgerData.customer}
                     />
                 </div>
             ) : null}
@@ -118,4 +118,4 @@ const SupplierLedgerDashboard: React.FC = () => {
     );
 };
 
-export default SupplierLedgerDashboard;
+export default CustomerLedgerDashboard;

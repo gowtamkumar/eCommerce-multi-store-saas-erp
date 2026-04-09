@@ -1,8 +1,8 @@
 'use client';
 
 import { Package } from 'lucide-react';
-import React, { memo } from 'react';
-import { LowStockProduct } from '../types';
+import { memo } from 'react';
+import { LowStockProduct } from '../../types';
 
 interface LowStockTableProps {
     products: LowStockProduct[];
@@ -52,11 +52,10 @@ const LowStockTable = memo(({ products, isLoading }: LowStockTableProps) => {
                                         <span className="text-sm font-medium text-slate-700 dark:text-slate-200 line-clamp-1">{product.name}</span>
                                     </td>
                                     <td className="p-4 text-right">
-                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${
-                                            product.stock <= 5 
-                                            ? 'text-rose-600 bg-rose-50 dark:bg-rose-900/30' 
-                                            : 'text-amber-600 bg-amber-50 dark:bg-amber-900/30'
-                                        }`}>
+                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${product.stock <= 5
+                                                ? 'text-rose-600 bg-rose-50 dark:bg-rose-900/30'
+                                                : 'text-amber-600 bg-amber-50 dark:bg-amber-900/30'
+                                            }`}>
                                             {product.stock} left
                                         </span>
                                     </td>

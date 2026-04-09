@@ -1,8 +1,8 @@
 'use client';
 
+import { ArrowDownRight, ArrowUpRight, TrendingDown, TrendingUp } from 'lucide-react';
 import React from 'react';
-import { ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown } from 'lucide-react';
-import { CashFlowSummary } from '../types';
+import { CashFlowSummary } from '../../types';
 
 interface CashFlowKpiGridProps {
     summary: CashFlowSummary;
@@ -45,7 +45,7 @@ const CashFlowKpiGrid: React.FC<CashFlowKpiGridProps> = ({ summary, formatPrice 
                     </p>
                 </div>
                 <div className="absolute -bottom-2 -right-2 opacity-10">
-                   <div className="w-24 h-24 bg-white rounded-full"></div>
+                    <div className="w-24 h-24 bg-white rounded-full"></div>
                 </div>
             </div>
         </div>

@@ -2,14 +2,14 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
-import React, { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import type { FinanceDashboardData } from '../types';
+import type { FinanceDashboardData } from '../../types';
 import FinanceKpiGrid from './FinanceKpiGrid';
-import RevenuePayoutChart from './RevenuePayoutChart';
+import FinanceQuickActions from './FinanceQuickActions';
 import FinanceSupplyChainCard from './FinanceSupplyChainCard';
 import OutflowPieChart from './OutflowPieChart';
-import FinanceQuickActions from './FinanceQuickActions';
+import RevenuePayoutChart from './RevenuePayoutChart';
 
 export default function FinanceSummaryDashboard() {
     const { formatPrice } = useSettings();

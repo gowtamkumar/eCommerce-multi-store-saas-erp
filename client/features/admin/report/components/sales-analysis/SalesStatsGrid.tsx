@@ -1,8 +1,8 @@
 'use client';
 
 import { BarChart3, ShoppingBag, Users } from 'lucide-react';
-import React, { memo } from 'react';
-import { SalesDashboardData } from '../types';
+import { memo } from 'react';
+import { SalesDashboardData } from '../../types';
 
 interface SalesStatsGridProps {
     data: SalesDashboardData | null;

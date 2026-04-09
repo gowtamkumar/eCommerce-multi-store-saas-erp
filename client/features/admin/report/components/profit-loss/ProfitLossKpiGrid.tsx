@@ -1,8 +1,7 @@
 'use client';
 
 import { ArrowDownRight, ArrowUpRight, TrendingDown, TrendingUp } from 'lucide-react';
-import React from 'react';
-import type { ProfitLossData } from '../types';
+import type { ProfitLossData } from '../../types';
 
 interface ProfitLossKpiGridProps {
     data?: ProfitLossData | null;

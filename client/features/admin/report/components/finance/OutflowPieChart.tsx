@@ -1,9 +1,8 @@
 'use client';
 
 import { PieChart } from 'lucide-react';
-import React from 'react';
 import { Cell, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { ExpenseBreakdownPoint } from '../types';
+import { ExpenseBreakdownPoint } from '../../types';
 
 interface OutflowPieChartProps {
     data: ExpenseBreakdownPoint[];
@@ -43,11 +42,11 @@ export default function OutflowPieChart({ data, isLoading }: OutflowPieChartProp
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
-                        <Tooltip 
-                            contentStyle={{ 
-                                backgroundColor: '#1e293b', 
-                                border: 'none', 
-                                borderRadius: '12px', 
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: '#1e293b',
+                                border: 'none',
+                                borderRadius: '12px',
                                 color: '#fff',
                                 fontSize: '10px'
                             }}

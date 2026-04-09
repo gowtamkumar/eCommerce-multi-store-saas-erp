@@ -1,9 +1,8 @@
 'use client';
 
 import { TrendingUp } from 'lucide-react';
-import React from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { FinanceChartPoint } from '../types';
+import { FinanceChartPoint } from '../../types';
 
 interface RevenuePayoutChartProps {
     chartData: FinanceChartPoint[];
@@ -39,45 +38,45 @@ export default function RevenuePayoutChart({ chartData, isLoading }: RevenuePayo
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.5} />
-                        <XAxis 
-                            dataKey="name" 
-                            axisLine={false} 
-                            tickLine={false} 
-                            tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} 
+                        <XAxis
+                            dataKey="name"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }}
                             dy={10}
                         />
-                        <YAxis 
-                            axisLine={false} 
-                            tickLine={false} 
-                            tick={{ fill: '#94a3b8', fontSize: 10 }} 
+                        <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#94a3b8', fontSize: 10 }}
                             dx={-10}
                         />
-                        <Tooltip 
-                            contentStyle={{ 
-                                backgroundColor: '#1e293b', 
-                                border: 'none', 
-                                borderRadius: '16px', 
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: '#1e293b',
+                                border: 'none',
+                                borderRadius: '16px',
                                 color: '#fff',
                                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-                            }} 
+                            }}
                             cursor={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '5 5' }}
                         />
-                        <Area 
-                            type="monotone" 
-                            dataKey="revenue" 
-                            stroke="#3b82f6" 
-                            strokeWidth={4} 
-                            fillOpacity={1} 
-                            fill="url(#colorRev)" 
+                        <Area
+                            type="monotone"
+                            dataKey="revenue"
+                            stroke="#3b82f6"
+                            strokeWidth={4}
+                            fillOpacity={1}
+                            fill="url(#colorRev)"
                             animationDuration={1500}
                         />
-                        <Area 
-                            type="monotone" 
-                            dataKey="expense" 
-                            stroke="#f43f5e" 
-                            strokeWidth={4} 
-                            fillOpacity={1} 
-                            fill="url(#colorExp)" 
+                        <Area
+                            type="monotone"
+                            dataKey="expense"
+                            stroke="#f43f5e"
+                            strokeWidth={4}
+                            fillOpacity={1}
+                            fill="url(#colorExp)"
                             animationDuration={1500}
                         />
                     </AreaChart>

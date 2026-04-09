@@ -3,13 +3,13 @@
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
 import dayjs from 'dayjs';
-import React, { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { ProfitLossData } from '../types';
+import { ProfitLossData } from '../../types';
+import ExpenseDistribution from '../expense/ExpenseDistribution';
+import FinancialStatement from '../finance/FinancialStatement';
+import ProfitLossKpiGrid from '../profit-loss/ProfitLossKpiGrid';
 import ProfitLossHeader from './ProfitLossHeader';
-import ProfitLossKpiGrid from './ProfitLossKpiGrid';
-import FinancialStatement from './FinancialStatement';
-import ExpenseDistribution from './ExpenseDistribution';
 
 export default function ProfitLossDashboard() {
     const { formatPrice } = useSettings();
@@ -46,14 +46,14 @@ export default function ProfitLossDashboard() {
 
     return (
         <div className="space-y-6">
-            <ProfitLossHeader 
+            <ProfitLossHeader
                 startDate={dateRange.startDate}
                 endDate={dateRange.endDate}
                 onDateChange={handleDateChange}
                 onFilter={fetchReport}
             />
 
-            <ProfitLossKpiGrid 
+            <ProfitLossKpiGrid
                 data={data}
                 isLoading={isLoading}
                 formatPrice={formatPrice}
@@ -61,14 +61,14 @@ export default function ProfitLossDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
-                    <FinancialStatement 
+                    <FinancialStatement
                         data={data}
                         isLoading={isLoading}
                         formatPrice={formatPrice}
                     />
                 </div>
                 <div className="lg:col-span-1">
-                    <ExpenseDistribution 
+                    <ExpenseDistribution
                         data={data?.operatingExpenses}
                         isLoading={isLoading}
                     />

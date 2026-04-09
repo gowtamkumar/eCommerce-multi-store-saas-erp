@@ -1,4 +1,4 @@
-import FinanceSummaryDashboard from '@/features/admin/report/components/FinanceSummaryDashboard';
+import FinanceSummaryDashboard from '@/features/admin/report/components/finance/FinanceSummaryDashboard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
