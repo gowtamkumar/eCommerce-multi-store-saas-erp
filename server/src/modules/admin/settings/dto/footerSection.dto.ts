@@ -1,4 +1,5 @@
-import { IsArray, IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator'
+import { Type } from 'class-transformer'
+import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { NavbarLinkDto } from './navbarLink.dto'
 
 export class FooterSectionDto {
@@ -12,6 +13,8 @@ export class FooterSectionDto {
 
   @IsArray()
   @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => NavbarLinkDto)
   links?: NavbarLinkDto[]
 }
 
@@ -78,5 +81,7 @@ export class FooterSettingsDto {
 
   @IsOptional()
   @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => FooterSectionDto)
   sections?: FooterSectionDto[]
 }
