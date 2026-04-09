@@ -10,6 +10,8 @@ interface FindAllOptions {
   limit?: number
   category?: string
   q?: string
+  startDate?: Date
+  endDate?: Date
 }
 
 @Injectable()
@@ -38,8 +40,8 @@ export class ExpenseService {
     options: FindAllOptions = {},
   ): Promise<{ items: ExpenseEntity[]; total: number; page: number; limit: number; totalPages: number }> {
     this.logger.log(`${this.findAllExpenses.name} Service Called`)
-    const { page = 1, limit = 20, category, q } = options
-    const cacheKey = `expenses:list:p${page}:l${limit}:cat${category || 'all'}:q${q || ''}`
+    const { page = 1, limit = 20, category, q, startDate, endDate } = options
+    const cacheKey = `expenses:list:p${page}:l${limit}:cat${category || 'all'}:q${q || ''}:s${startDate?.getTime()}:e${endDate?.getTime()}`
 
     return this.cacheService.rememberCache(
       cacheKey,
@@ -62,12 +64,12 @@ export class ExpenseService {
    * Raw (unpaginated) fetch for internal use by `ReportService`.
    * Bypasses API-layer pagination.
    */
-  async findAllExpensesRaw(tenantId: string): Promise<ExpenseEntity[]> {
+  async findAllExpensesRaw(tenantId: string, startDate?: Date, endDate?: Date): Promise<ExpenseEntity[]> {
     this.logger.log(`${this.findAllExpensesRaw.name} Service Called`)
-    const cacheKey = 'expenses:raw'
+    const cacheKey = `expenses:raw:${startDate?.getTime()}:${endDate?.getTime()}`
     return this.cacheService.rememberCache(
       cacheKey,
-      () => this.expenseRepository.findAllRaw(tenantId),
+      () => this.expenseRepository.findAllRaw(tenantId, startDate, endDate),
       300,
       tenantId,
     )

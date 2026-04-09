@@ -490,13 +490,7 @@ export class ReportService {
 
     switch (type) {
       case 'sales': {
-        const payments = await this.paymentService.findAllPaymentsRaw(tenantId)
-        const filtered = payments.filter(
-          (p: any) =>
-            p.status === 'completed' &&
-            new Date(p.createdAt) >= startDate &&
-            new Date(p.createdAt) <= endDate,
-        )
+        const filtered = await this.paymentService.findAllPaymentsRaw(tenantId, startDate, endDate)
         csvContent = 'Date,Transaction ID,Order ID,Amount,Currency,Method\n'
         filtered.forEach((p: any) => {
           csvContent += `${p.createdAt},${p.transactionId},${p.orderId},${p.amount},${p.currency},${p.method}\n`
@@ -504,10 +498,7 @@ export class ReportService {
         break
       }
       case 'expenses': {
-        const expenses = await this.expenseService.findAllExpensesRaw(tenantId)
-        const filtered = expenses.filter(
-          (e: any) => new Date(e.expenseDate) >= startDate && new Date(e.expenseDate) <= endDate,
-        )
+        const filtered = await this.expenseService.findAllExpensesRaw(tenantId, startDate, endDate)
         csvContent = 'Date,Category,Description,Amount,Tenant ID\n'
         filtered.forEach((e: any) => {
           csvContent += `${e.expenseDate},${e.category},"${e.description || ''}",${e.amount},${e.tenantId}\n`

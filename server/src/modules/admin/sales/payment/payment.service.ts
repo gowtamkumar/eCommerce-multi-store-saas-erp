@@ -170,17 +170,17 @@ export class PaymentService {
 
   async findAllPayments(
     tenantId: string,
-    filterDto: PaginationDto,
+    filterDto: PaginationDto & { startDate?: Date; endDate?: Date },
   ): Promise<{ items: PaymentEntity[]; total: number; page: number; limit: number; totalPages: number }> {
     this.logger.log(`${this.findAllPayments.name} Service Called`)
-    const { page = 1, limit = 20, q: search } = filterDto
-    const cacheKey = `payments:list:p${page}:l${limit}`
+    const { page = 1, limit = 20, q: search, startDate, endDate } = filterDto
+    const cacheKey = `payments:list:p${page}:l${limit}:${startDate?.getTime()}:${endDate?.getTime()}`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
         const [items, total] = await this.paymentRepository.findPaymentsByTenant(
-          tenantId, page, limit, search,
+          tenantId, page, limit, search, startDate, endDate
         )
         return { items, total, page, limit, totalPages: Math.ceil(total / limit) }
       },
@@ -193,9 +193,9 @@ export class PaymentService {
    * Raw unpaginated payment fetch — intended for internal report/aggregation use only.
    * The public admin endpoint uses `findAllPayments` with pagination and caching.
    */
-  async findAllPaymentsRaw(tenantId: string): Promise<PaymentEntity[]> {
+  async findAllPaymentsRaw(tenantId: string, startDate?: Date, endDate?: Date): Promise<PaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsRaw.name} Service Called`)
-    const [items] = await this.paymentRepository.findPaymentsByTenant(tenantId, 1, 100000)
+    const [items] = await this.paymentRepository.findPaymentsByTenant(tenantId, 1, 100000, undefined, startDate, endDate)
     return items
   }
 

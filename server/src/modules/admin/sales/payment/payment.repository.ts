@@ -31,6 +31,8 @@ export class PaymentRepository {
     page: number,
     limit: number,
     search?: string,
+    startDate?: Date,
+    endDate?: Date,
   ): Promise<[PaymentEntity[], number]> {
     const qb = this.repo
       .createQueryBuilder('payment')
@@ -45,6 +47,14 @@ export class PaymentRepository {
         '(payment.transactionId ILIKE :search OR order.customerName ILIKE :search OR CAST(payment.method AS TEXT) ILIKE :search)',
         { search: `%${search}%` },
       )
+    }
+
+    if (startDate) {
+      qb.andWhere('payment.createdAt >= :startDate', { startDate })
+    }
+
+    if (endDate) {
+      qb.andWhere('payment.createdAt <= :endDate', { endDate })
     }
 
     return qb.getManyAndCount()

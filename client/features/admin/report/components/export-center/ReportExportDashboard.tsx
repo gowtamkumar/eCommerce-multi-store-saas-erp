@@ -40,8 +40,8 @@ const ReportExportDashboard: React.FC = () => {
         } else if (reportType === 'customer-ledger') {
             const loadCustomers = async () => {
                 try {
-                    const res = await fetchAPI('/users?limit=100');
-                    setCustomers(res.data?.users || []);
+                    const res = await fetchAPI('/customer');
+                    setCustomers(res.data?.items || []);
                 } catch (error) {
                     toast.error('Failed to load customers');
                 }
@@ -121,4 +121,4 @@ const ReportExportDashboard: React.FC = () => {
     );
 };
 
-export default ReportExportDashboard;
+export default React.memo(ReportExportDashboard);
