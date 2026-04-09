@@ -1,51 +1,65 @@
 'use client';
-import ConfirmModal from '@/components/shared/ConfirmModal';
-import { fetchAPI } from '@/services/api';
-import { Edit, HelpCircle, Plus, Search, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
+import { Edit, HelpCircle, Plus, Search, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import ConfirmModal from '@/components/shared/ConfirmModal';
+import DebouncedInput from '@/components/shared/DebouncedInput';
+import { fetchAPI } from '@/services/api';
+import { FAQModal } from './FAQModal';
 import type { FAQ } from '../type';
 
+const ITEMS_PER_PAGE = 10;
 
 export default function FAQs() {
     const [faqs, setFaqs] = useState<FAQ[]>([]);
+    const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    
+    // Modal & Action State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingFaq, setEditingFaq] = useState<FAQ | null>(null);
-    const [formData, setFormData] = useState({
-        question: '',
-        answer: '',
-        order: 0,
-        status: 'active' as 'active' | 'inactive',
-    });
-
     const [confirmModal, setConfirmModal] = useState({
         isOpen: false,
+        id: '',
         title: '',
         message: '',
-        onConfirm: () => { },
     });
 
-    useEffect(() => {
-        fetchFaqs();
-    }, []);
-
-    const fetchFaqs = async () => {
+    const fetchFaqs = useCallback(async (currentPage: number, search: string) => {
+        setLoading(true);
         try {
-            const res = await fetchAPI('/faqs?limit=100');
-            if (res.success && res.data?.faqs) {
-                setFaqs(res.data.faqs);
+            const queryParams = new URLSearchParams({
+                page: currentPage.toString(),
+                limit: ITEMS_PER_PAGE.toString(),
+                ...(search && { q: search }),
+            });
+
+            const res = await fetchAPI(`/faqs?${queryParams.toString()}`);
+            if (res.success && res.data) {
+                setFaqs(res.data.faqs || []);
+                setTotal(res.data.total || 0);
             }
         } catch (error) {
             toast.error('Failed to load FAQs');
+            console.error(error);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    useEffect(() => {
+        fetchFaqs(page, searchQuery);
+    }, [page, searchQuery, fetchFaqs]);
+
+    const handleSearch = useCallback((val: string) => {
+        setSearchQuery(val);
+        setPage(1); // Reset to first page on new search
+    }, []);
+
+    const handleModalSubmit = async (formData: any) => {
         try {
             const url = editingFaq ? `/faqs/${editingFaq.id}` : '/faqs';
             const method = editingFaq ? 'PATCH' : 'POST';
@@ -57,139 +71,135 @@ export default function FAQs() {
 
             if (res.success) {
                 toast.success(`FAQ ${editingFaq ? 'updated' : 'created'} successfully`);
-                fetchFaqs();
-                closeModal();
+                fetchFaqs(page, searchQuery);
+                setIsModalOpen(false);
+                setEditingFaq(null);
             }
         } catch (error) {
             toast.error('Error saving FAQ');
         }
     };
 
-    const handleDelete = (id: string) => {
-        setConfirmModal({
-            isOpen: true,
-            title: 'Delete FAQ',
-            message: 'Are you sure you want to delete this FAQ? This action cannot be undone.',
-            onConfirm: async () => {
-                try {
-                    await fetchAPI(`/faqs/${id}`, { method: 'DELETE' });
-                    setFaqs(faqs.filter(f => f.id !== id));
-                    toast.success('FAQ deleted successfully');
-                } catch (error) {
-                    toast.error('Error deleting FAQ');
-                }
-            },
-        });
-    };
-
-    const openModal = (faq?: FAQ) => {
-        if (faq) {
-            setEditingFaq(faq);
-            setFormData({
-                question: faq.question,
-                answer: faq.answer,
-                order: faq.order || 0,
-                status: faq.status,
-            });
-        } else {
-            setEditingFaq(null);
-            setFormData({ question: '', answer: '', order: faqs.length, status: 'active' });
+    const handleDelete = async () => {
+        if (!confirmModal.id) return;
+        try {
+            const res = await fetchAPI(`/faqs/${confirmModal.id}`, { method: 'DELETE' });
+            if (res.success) {
+                toast.success('FAQ deleted successfully');
+                fetchFaqs(page, searchQuery);
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+            }
+        } catch (error) {
+            toast.error('Error deleting FAQ');
         }
+    };
+
+    const openModal = useCallback((faq?: FAQ) => {
+        setEditingFaq(faq || null);
         setIsModalOpen(true);
-    };
+    }, []);
 
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setEditingFaq(null);
-    };
-
-    const filteredFaqs = faqs.filter(f =>
-        f.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        f.answer.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const totalPages = useMemo(() => Math.ceil(total / ITEMS_PER_PAGE), [total]);
 
     return (
-        <div className="space-y-8">
-            <div className="flex justify-between items-center">
+        <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Header Area */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-display">FAQs</h1>
+                    <h1 className="text-3xl font-black text-slate-900 dark:text-white font-display">FAQs</h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-1">Manage frequently asked questions for your store.</p>
                 </div>
                 <button
                     onClick={() => openModal()}
-                    className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-brand-500/20"
+                    className="w-full md:w-auto px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-500/20 active:scale-[0.98]"
                 >
-                    <Plus className="w-5 h-5" />
+                    <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
                     Add FAQ
                 </button>
             </div>
 
-            <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <input
+            {/* Search Bar */}
+            <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 transition-colors group-focus-within:text-brand-500" />
+                <DebouncedInput
                     type="text"
-                    placeholder="Search FAQs..."
+                    placeholder="Search questions or answers..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                    onChange={handleSearch}
+                    className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-sm"
                 />
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+            {/* Content Table */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden transition-all">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
-                            <tr>
-                                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Order</th>
-                                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Question</th>
-                                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Answer</th>
-                                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
-                                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-right">Actions</th>
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400"># Order</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">FAQ Content</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {loading ? (
-                                <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">Loading FAQs...</td></tr>
-                            ) : filteredFaqs.length === 0 ? (
-                                <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">No FAQs found.</td></tr>
+                                Array.from({ length: 3 }).map((_, i) => (
+                                    <tr key={i} className="animate-pulse">
+                                        <td colSpan={4} className="px-6 py-8"><div className="h-4 bg-slate-100 dark:bg-slate-700 rounded w-full" /></td>
+                                    </tr>
+                                ))
+                            ) : faqs.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-12 text-center">
+                                        <div className="flex flex-col items-center gap-2 text-slate-400">
+                                            <HelpCircle className="w-12 h-12 opacity-20" />
+                                            <p className="font-bold">No FAQs found.</p>
+                                        </div>
+                                    </td>
+                                </tr>
                             ) : (
-                                filteredFaqs.map((faq) => (
+                                faqs.map((faq) => (
                                     <tr key={faq.id} className="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="w-8 h-8 rounded-lg bg-brand-100 dark:bg-brand-900/20 flex items-center justify-center">
-                                                <span className="text-sm font-bold text-brand-600 dark:text-brand-400">{faq.order}</span>
+                                        <td className="px-6 py-6">
+                                            <div className="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center border border-brand-100 dark:border-brand-800">
+                                                <span className="text-xs font-black text-brand-600 dark:text-brand-400">{faq.order}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-start gap-2">
-                                                <HelpCircle className="w-5 h-5 text-brand-500 mt-0.5 flex-shrink-0" />
-                                                <span className="font-semibold text-slate-900 dark:text-white">{faq.question}</span>
+                                        <td className="px-6 py-6">
+                                            <div className="space-y-1 max-w-xl">
+                                                <h4 className="font-bold text-slate-900 dark:text-white leading-snug">{faq.question}</h4>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{faq.answer}</p>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-slate-500 max-w-md">
-                                            <div className="line-clamp-2">{faq.answer}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${faq.status === 'active'
-                                                ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                                        <td className="px-6 py-6">
+                                            <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors ${faq.status === 'active'
+                                                ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
                                                 : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
                                                 }`}>
                                                 {faq.status}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <td className="px-6 py-6 text-right">
+                                            <div className="flex items-center justify-end gap-1 md:opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                                                 <button
                                                     onClick={() => openModal(faq)}
-                                                    className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                                    className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all"
+                                                    title="Edit FAQ"
                                                 >
-                                                    <Edit className="w-4 h-4" />
+                                                    <Edit className="w-4.5 h-4.5" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(faq.id)}
-                                                    className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                    onClick={() => setConfirmModal({
+                                                        isOpen: true,
+                                                        id: faq.id,
+                                                        title: 'Delete FAQ',
+                                                        message: 'Are you sure you want to delete this FAQ? This action cannot be undone.'
+                                                    })}
+                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                                                    title="Delete FAQ"
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
+                                                    <Trash2 className="w-4.5 h-4.5" />
                                                 </button>
                                             </div>
                                         </td>
@@ -199,83 +209,60 @@ export default function FAQs() {
                         </tbody>
                     </table>
                 </div>
-            </div>
 
-            {/* FAQ Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden">
-                        <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                                {editingFaq ? 'Edit FAQ' : 'New FAQ'}
-                            </h2>
-                            <button onClick={closeModal} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors">
-                                <X className="w-5 h-5" />
+                {/* Pagination */}
+                {!loading && totalPages > 1 && (
+                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <p className="text-xs font-bold text-slate-500">
+                            Showing <span className="text-slate-900 dark:text-white">{faqs.length}</span> of <span className="text-slate-900 dark:text-white">{total}</span> FAQs
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-40 transition-all hover:bg-slate-50"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <div className="flex items-center gap-1">
+                                {Array.from({ length: totalPages }).map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setPage(i + 1)}
+                                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${page === i + 1
+                                            ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20'
+                                            : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500'
+                                            }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-40 transition-all hover:bg-slate-50"
+                            >
+                                <ChevronRight className="w-4 h-4" />
                             </button>
                         </div>
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Question</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.question}
-                                    onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500"
-                                    placeholder="What is your return policy?"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Answer</label>
-                                <textarea
-                                    required
-                                    value={formData.answer}
-                                    onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-                                    rows={5}
-                                    placeholder="We accept returns within 30 days..."
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Order</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={formData.order}
-                                        onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Status</label>
-                                    <select
-                                        value={formData.status}
-                                        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500"
-                                    >
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="pt-4">
-                                <button
-                                    type="submit"
-                                    className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold transition-all shadow-lg"
-                                >
-                                    {editingFaq ? 'Update FAQ' : 'Create FAQ'}
-                                </button>
-                            </div>
-                        </form>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
+
+            {/* Modals */}
+            <FAQModal
+                isOpen={isModalOpen}
+                editingFaq={editingFaq}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={handleModalSubmit}
+                defaultOrder={total}
+            />
 
             <ConfirmModal
                 isOpen={confirmModal.isOpen}
-                onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
-                onConfirm={confirmModal.onConfirm}
+                onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={handleDelete}
                 title={confirmModal.title}
                 message={confirmModal.message}
                 isDangerous={true}

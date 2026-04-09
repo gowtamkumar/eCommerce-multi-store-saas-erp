@@ -4,9 +4,12 @@ import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.
 import { PageEntity } from '@/modules/admin/content/page/entities/page.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('faqs')
+@Index(['tenantId', 'status'])
+@Index(['tenantId', 'productId'])
+@Index(['tenantId', 'pageId'])
 export class FaqEntity extends BaseEntity {
   @Column({ type: 'text' })
   question: string
@@ -17,9 +20,11 @@ export class FaqEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 100, default: 'General' })
   category: string
 
+  @Index()
   @Column({ type: 'int', default: 0 })
   order: number
 
+  @Index()
   @Column({
     type: 'enum',
     enum: FaqStatus,
@@ -27,6 +32,7 @@ export class FaqEntity extends BaseEntity {
   })
   status: FaqStatus
 
+  @Index()
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
 
