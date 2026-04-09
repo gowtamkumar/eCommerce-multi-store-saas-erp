@@ -1,4 +1,5 @@
 import { UserRole } from '@/common/enums/user/user-role.enum'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import {
   BadRequestException,
@@ -24,6 +25,7 @@ export class UserService {
     private readonly userRepo: UserRepository,
     private readonly invitationRepo: StaffInvitationRepository,
     private readonly mailService: MailService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async getUsers(
@@ -108,7 +110,11 @@ export class UserService {
   async deleteUser(id: string): Promise<UserEntity> {
     this.logger.log(`${this.deleteUser.name} Service Called`)
     const user = await this.getUser(id)
-    return this.userRepo.deleteUser(user)
+    const result = await this.userRepo.deleteUser(user)
+    if (user.tenantId) {
+      await this.cacheService.delCache('team:members', user.tenantId)
+    }
+    return result
   }
 
   validateUser(user: UserEntity, password: string): Promise<boolean> {
@@ -219,6 +225,7 @@ export class UserService {
     })
 
     this.mailService.sendStaffInvitationEmail(dto.email, token, dto.role, tenantId)
+    await this.cacheService.delCache('team:members', tenantId)
     return { message: `Invitation sent to ${dto.email}`, invitation }
   }
 
@@ -251,6 +258,7 @@ export class UserService {
     )
 
     await this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Accepted })
+    await this.cacheService.delCache('team:members', invitation.tenantId)
     return { message: 'Account created successfully. You can now log in.', user }
   }
 
@@ -266,26 +274,37 @@ export class UserService {
     if (invitation.status !== InvitationStatus.Pending)
       throw new BadRequestException('Only pending invitations can be revoked.')
 
-    return this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Expired })
+    const result = await this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Expired })
+    await this.cacheService.delCache('team:members', tenantId)
+    return result
   }
 
   async getTeamMembers(
     tenantId: string,
   ): Promise<{ members: UserEntity[]; pendingInvitations: StaffInvitationEntity[] }> {
     this.logger.log(`${this.getTeamMembers.name} Service Called`)
+    const cacheKey = 'team:members'
 
-    const [members, pendingInvitations] = await Promise.all([
-      this.userRepo.findTeamMembers(tenantId),
-      this.invitationRepo.findPendingByTenant(tenantId),
-    ])
-
-    return { members, pendingInvitations }
+    return this.cacheService.rememberCache(
+      cacheKey,
+      async () => {
+        const [members, pendingInvitations] = await Promise.all([
+          this.userRepo.findTeamMembers(tenantId),
+          this.invitationRepo.findPendingByTenant(tenantId),
+        ])
+        return { members, pendingInvitations }
+      },
+      600, // 10 min cache
+      tenantId,
+    )
   }
 
   async updateTeamMemberRole(memberId: string, role: UserRole, tenantId: string): Promise<UserEntity> {
     this.logger.log(`${this.updateTeamMemberRole.name} Service Called`)
     const user = await this.userRepo.findByIdAndTenant(memberId, tenantId)
     if (!user) throw new NotFoundException('Team member not found.')
-    return this.userRepo.updateAndSave(user, { role })
+    const result = await this.userRepo.updateAndSave(user, { role })
+    await this.cacheService.delCache('team:members', tenantId)
+    return result
   }
 }

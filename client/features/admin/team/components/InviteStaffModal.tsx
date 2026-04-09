@@ -1,13 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Mail, UserCog, Loader2 } from 'lucide-react';
 import { UserRole } from '@/lib/enums/user-role.enum';
+import { Loader2, Mail, UserCog, X } from 'lucide-react';
+import { useState } from 'react';
+import { InviteStaffModalProps } from '../type';
 
-interface InviteStaffModalProps {
-    onClose: () => void;
-    onInvited: () => void;
-}
 
 const roles = [
     { value: UserRole.ADMIN, label: 'Admin', description: 'Full access to all features.' },
