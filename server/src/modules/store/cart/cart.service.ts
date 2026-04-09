@@ -202,30 +202,37 @@ export class CartService {
     // Clear existing items
     if (cart.items && cart.items.length > 0) {
       await this.cartItemRepository.removeItems(cart.items)
-      cart.items = [] // Reset locally
+      cart.items = []
     }
 
-    // Add new items
-    for (const item of items) {
-      let { productId, variantId, quantity } = item
+    // Phase 1: Resolve all variant IDs in PARALLEL (was sequential N+1 loop)
+    const resolvedItems = await Promise.all(
+      items.map(async (item) => {
+        let { productId, variantId, quantity } = item
 
-      // If variantId is not provided, check if the product has variants and pick the first one
-      if (!variantId) {
-        const product = await this.productRepository.findProductById(productId, tenantId)
-
-        if (product && product.variants && product.variants.length > 0) {
-          variantId = product.variants[0].id
+        if (!variantId) {
+          const product = await this.productRepository.findProductById(productId, tenantId)
+          if (product?.variants?.length > 0) {
+            variantId = product.variants[0].id
+          }
         }
-      }
 
-      await this.cartItemRepository.createAndSave({
-        cartId: cart.id,
-        productId,
-        variantId: variantId || null,
-        quantity: Number(quantity),
-        tenantId,
+        return { productId, variantId: variantId || null, quantity: Number(quantity) }
       })
-    }
+    )
+
+    // Phase 2: Persist all resolved items in PARALLEL
+    await Promise.all(
+      resolvedItems.map((item) =>
+        this.cartItemRepository.createAndSave({
+          cartId: cart.id,
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity,
+          tenantId,
+        })
+      )
+    )
 
     return this.createOrGetCart(userId, tenantId)
   }

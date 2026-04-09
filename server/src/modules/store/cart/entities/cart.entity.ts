@@ -2,8 +2,10 @@ import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { CartItemEntity } from './cart-item.entity'
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 
+/** Hot path: findByUserId — must not full-scan on every cart load */
+@Index(['userId', 'tenantId'])
 @Entity('carts')
 export class CartEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'user_id' })

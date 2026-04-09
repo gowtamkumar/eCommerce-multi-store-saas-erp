@@ -32,10 +32,9 @@ export class WishlistRepository {
     await this.repo.delete({ userId, tenantId })
   }
   async deleteWishlistItem(userId: string, productId: string, tenantId: string): Promise<void> {
-    const item = await this.findByUserAndProduct(userId, productId, tenantId)
-    if (item) {
-      await this.repo.remove(item)
-    }
+    // Direct delete: the unique index on (userId, productId, tenantId) makes this safe
+    // and atomic without a prior SELECT — halves the DB round trips vs findOne+remove
+    await this.repo.delete({ userId, productId, tenantId })
   }
 
 

@@ -1,13 +1,13 @@
 "use client";
 
+import { calculatePricing } from "@/lib/utils";
 import { fetchAPI } from "@/services/api";
 import * as cartApi from "@/services/cart";
 import { Cart, CartItem } from "@/services/cart";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { calculatePricing } from "@/lib/utils";
 
 interface CartContextType {
   cart: Cart | null;
@@ -130,14 +130,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [status, session?.user?.accessToken]);
 
 
-  const addToCart = async (productId: string, quantity: number, variantId?: string) => {
+  const addToCart = useCallback(async (productId: string, quantity: number, variantId?: string) => {
     // If Guest
     if (!session?.user) {
       setLoading(true);
       try {
-        // Fetch product details for local representation (simplified)
-        // ideally we have them, but we need to construct a CartItem
-        // We'll fetch basic info from API (public) to store pretty name/image in local cart
         const productRes = await fetchAPI(`/products/${productId}`);
         const product = productRes.data || productRes;
 
@@ -155,11 +152,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         let newItems = [...currentCart.items];
 
         if (existingItemIndex > -1) {
-          newItems[existingItemIndex].quantity += quantity;
-          newItems[existingItemIndex].line_total = newItems[existingItemIndex].quantity * newItems[existingItemIndex].pricing.final_price;
+          const updatedItem = { ...newItems[existingItemIndex] };
+          updatedItem.quantity += quantity;
+          updatedItem.line_total = updatedItem.quantity * updatedItem.pricing.final_price;
+          newItems[existingItemIndex] = updatedItem;
         } else {
-          // Create new item structure
-          // Need to handle variants if present
           let variantData = null;
           let price = product.price;
 
@@ -175,7 +172,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             }
           }
 
-          // Apply discount and tax logic
           const { finalPrice, discountAmount: discount, taxAmount } = calculatePricing(
             price,
             Number(product.discountAmount || 0),
@@ -203,10 +199,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           });
         }
 
-        // Recalculate summary
-        const newSummary = recalcLocalSummary(newItems);
-
-        const updatedCart = { ...currentCart, items: newItems, summary: newSummary };
+        const updatedCart = { ...currentCart, items: newItems, summary: recalcLocalSummary(newItems) };
         setCart(updatedCart);
         localStorage.setItem("temp_cart", JSON.stringify(updatedCart));
         toast.success("Added to cart");
@@ -218,8 +211,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return;
     }
-
-
 
     // If Logged In
     try {
@@ -233,9 +224,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user, cart, refreshCart]);
 
-  const updateQuantity = async (itemId: string, quantity: number) => {
+  const updateQuantity = useCallback(async (itemId: string, quantity: number) => {
     if (!session?.user) {
       if (!cart) return;
       const newItems = cart.items.map(item => {
@@ -265,9 +256,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error("Update quantity error", error);
       toast.error("Failed to update quantity");
     }
-  };
+  }, [session?.user, cart, refreshCart]);
 
-  const removeItem = async (itemId: string) => {
+  const removeItem = useCallback(async (itemId: string) => {
     if (!session?.user) {
       if (!cart) return;
       const newItems = cart.items.filter(item => item.cart_item_id !== itemId);
@@ -290,9 +281,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error("Remove item error", error);
       toast.error("Failed to remove item");
     }
-  };
+  }, [session?.user, cart, refreshCart]);
 
-  const clearCart = async () => {
+  const clearCart = useCallback(async () => {
     if (!session?.user) {
       setCart(null);
       localStorage.removeItem("temp_cart");
@@ -308,9 +299,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error("Clear cart error", error);
       toast.error("Failed to clear cart");
     }
-  };
+  }, [session?.user]);
 
-  const applyCoupon = async (code: string) => {
+  const applyCoupon = useCallback(async (code: string) => {
     if (!session?.user) {
       toast.error("Please login to apply coupons");
       return;
@@ -327,9 +318,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user, refreshCart]);
 
-  const removeCoupon = async () => {
+  const removeCoupon = useCallback(async () => {
     if (!session?.user) {
       return;
     }
@@ -345,7 +336,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user, refreshCart]);
 
   const items = cart?.items || [];
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
