@@ -20,22 +20,52 @@ export class PathaoService {
     private cacheService: CacheService,
   ) {}
 
-  private async getAccessToken(credentials: any, tenantId: string): Promise<string> {
-    this.logger.log(`${this.getAccessToken.name} Service Called`)
-    const cacheKey = `pathao:token`
+  /**
+   * Internal helper to get authenticated credentials for Pathao API calls.
+   * Leverages caching to minimize redundant setting lookups and token issuance.
+   */
+  private async getAuthenticatedClient(tenantId: string) {
+    this.logger.log(`${this.getAuthenticatedClient.name} Called for tenant: ${tenantId}`)
     
-    return this.cacheService.rememberCache(
-      cacheKey,
+    // 1. Fetch & Cache Credentials
+    const creds = await this.cacheService.rememberCache(
+      `pathao:creds`,
+      async () => {
+        const settings = await this.settingsService.findByTenantSettings(tenantId)
+        const courier = settings?.pathaoCourier
+        
+        if (!courier?.pathaoClientId || !courier?.pathaoClientSecret || !courier?.pathaoUsername || !courier?.pathaoPassword || !courier?.pathaoStoreId) {
+          throw new Error('Pathao configuration is incomplete.')
+        }
+
+        return {
+          baseURL: courier.sandboxMode
+            ? this.configService.get<string>('PATHAO_SENDBOX_BASE_URL')
+            : this.configService.get<string>('PATHAO_BASE_URL'),
+          clientId: courier.pathaoClientId,
+          clientSecret: courier.pathaoClientSecret,
+          username: courier.pathaoUsername,
+          password: courier.pathaoPassword,
+          pathaoStoreId: Number(courier.pathaoStoreId)
+        }
+      },
+      600,
+      tenantId
+    )
+
+    // 2. Fetch & Cache Access Token
+    const accessToken = await this.cacheService.rememberCache(
+      `pathao:token`,
       async () => {
         try {
           const response = await firstValueFrom(
             this.httpService.post(
-              `${credentials.baseURL}/aladdin/api/v1/issue-token`,
+              `${creds.baseURL}/aladdin/api/v1/issue-token`,
               {
-                client_id: credentials.clientId,
-                client_secret: credentials.clientSecret,
-                username: credentials.username,
-                password: credentials.password,
+                client_id: creds.clientId,
+                client_secret: creds.clientSecret,
+                username: creds.username,
+                password: creds.password,
                 grant_type: 'password',
               },
               {
@@ -48,62 +78,15 @@ export class PathaoService {
           )
           return response.data.access_token
         } catch (error) {
-          this.logger.error('Failed to authenticate with Pathao', error.response?.data || error.message)
-          throw new Error(
-            `Pathao Authentication failed: ${error.response?.data?.message || error.message}`,
-          )
+          this.logger.error('Pathao token exchange failed', error.response?.data || error.message)
+          throw new Error('Pathao Authentication failed')
         }
       },
-      3600, // 1 hour TTL
+      3600,
       tenantId
     )
-  }
 
-  private async fetchCredentials(tenantId: string) {
-    this.logger.log(`${this.fetchCredentials.name} Service Called`)
-    const cacheKey = `pathao:creds`
-    
-    return this.cacheService.rememberCache(
-      cacheKey,
-      async () => {
-        let baseURL: string
-        let clientId: string
-        let clientSecret: string
-        let username: string
-        let password: string
-        let pathaoStoreId: number
-
-        const settings = await this.settingsService.findByTenantSettings(tenantId)
-
-        if (settings?.pathaoCourier) {
-          const courier = settings.pathaoCourier
-          if (
-            courier.pathaoClientId &&
-            courier.pathaoClientSecret &&
-            courier.pathaoUsername &&
-            courier.pathaoPassword
-          ) {
-            baseURL = courier.sandboxMode
-              ? this.configService.get<string>('PATHAO_SENDBOX_BASE_URL')
-              : this.configService.get<string>('PATHAO_BASE_URL')
-
-            clientId = courier.pathaoClientId
-            clientSecret = courier.pathaoClientSecret
-            username = courier.pathaoUsername
-            password = courier.pathaoPassword
-            pathaoStoreId = Number(settings.pathaoCourier.pathaoStoreId)
-          }
-        }
-
-        if (!clientId || !clientSecret || !username || !password || !pathaoStoreId) {
-          throw new Error('Pathao credentials are NOT configured.')
-        }
-
-        return { baseURL, clientId, clientSecret, username, password, pathaoStoreId }
-      },
-      600, // 10 mins cache for creds
-      tenantId
-    )
+    return { baseURL: creds.baseURL, accessToken, storeId: creds.pathaoStoreId }
   }
 
   async createPathaoOrder(
@@ -112,8 +95,7 @@ export class PathaoService {
   ): Promise<any> {
     this.logger.log(`${this.createPathaoOrder.name} Service Called`)
     const { orderId } = createOrderDto
-    const creds = await this.fetchCredentials(tenantId)
-    const accessToken = await this.getAccessToken(creds, tenantId)
+    const client = await this.getAuthenticatedClient(tenantId)
 
     const order: any = await this.orderService.findOneForCourier(orderId, tenantId)
 
@@ -123,7 +105,7 @@ export class PathaoService {
 
     // Map order data to Pathao format
     const pathaoOrderData = {
-      store_id: creds.pathaoStoreId,
+      store_id: client.storeId,
       merchant_order_id: order.id.slice(-8).toUpperCase(),
       recipient_name: order.customerName,
       recipient_phone: order.customerPhone || '01700000000',
@@ -144,9 +126,9 @@ export class PathaoService {
 
     try {
       const response = await firstValueFrom(
-        this.httpService.post(`${creds.baseURL}/aladdin/api/v1/orders`, pathaoOrderData, {
+        this.httpService.post(`${client.baseURL}/aladdin/api/v1/orders`, pathaoOrderData, {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${client.accessToken}`,
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },
@@ -174,8 +156,7 @@ export class PathaoService {
 
   async getCities(tenantId: string) {
     this.logger.log(`${this.getCities.name} Service Called`)
-    const creds = await this.fetchCredentials(tenantId)
-    const accessToken = await this.getAccessToken(creds, tenantId)
+    const client = await this.getAuthenticatedClient(tenantId)
     const cacheKey = `pathao:cities`
 
     return this.cacheService.rememberCache(
@@ -184,10 +165,10 @@ export class PathaoService {
         try {
           const response = await firstValueFrom(
             this.httpService.get(
-              `${creds.baseURL}/aladdin/api/v1/countries/1/city-list`,
+              `${client.baseURL}/aladdin/api/v1/countries/1/city-list`,
               {
                 headers: {
-                  Authorization: `Bearer ${accessToken}`,
+                  Authorization: `Bearer ${client.accessToken}`,
                   Accept: 'application/json',
                 },
               },
@@ -206,8 +187,7 @@ export class PathaoService {
 
   async getZones(cityId: number, tenantId: string) {
     this.logger.log(`${this.getZones.name} Service Called`)
-    const creds = await this.fetchCredentials(tenantId)
-    const accessToken = await this.getAccessToken(creds, tenantId)
+    const client = await this.getAuthenticatedClient(tenantId)
     const cacheKey = `pathao:zones:${cityId}`
 
     return this.cacheService.rememberCache(
@@ -216,10 +196,10 @@ export class PathaoService {
         try {
           const response = await firstValueFrom(
             this.httpService.get(
-              `${creds.baseURL}/aladdin/api/v1/cities/${cityId}/zone-list`,
+              `${client.baseURL}/aladdin/api/v1/cities/${cityId}/zone-list`,
               {
                 headers: {
-                  Authorization: `Bearer ${accessToken}`,
+                  Authorization: `Bearer ${client.accessToken}`,
                   Accept: 'application/json',
                 },
               },
@@ -238,8 +218,7 @@ export class PathaoService {
 
   async getAreas(zoneId: number, tenantId: string) {
     this.logger.log(`${this.getAreas.name} Service Called`)
-    const creds = await this.fetchCredentials(tenantId)
-    const accessToken = await this.getAccessToken(creds, tenantId)
+    const client = await this.getAuthenticatedClient(tenantId)
     const cacheKey = `pathao:areas:${zoneId}`
 
     return this.cacheService.rememberCache(
@@ -248,10 +227,10 @@ export class PathaoService {
         try {
           const response = await firstValueFrom(
             this.httpService.get(
-              `${creds.baseURL}/aladdin/api/v1/zones/${zoneId}/area-list`,
+              `${client.baseURL}/aladdin/api/v1/zones/${zoneId}/area-list`,
               {
                 headers: {
-                  Authorization: `Bearer ${accessToken}`,
+                  Authorization: `Bearer ${client.accessToken}`,
                   Accept: 'application/json',
                 },
               },

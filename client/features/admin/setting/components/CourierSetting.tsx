@@ -1,312 +1,221 @@
+import React, { useState, memo, useCallback } from "react";
 import { motion } from "framer-motion";
+import { Truck, Eye, EyeOff, Globe, MapPin, CreditCard } from "lucide-react";
 
-export default function CourierSetting({ formData, setFormData }: any) {
-    return <motion.div
-        key="courier"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.2 }}
-        className="space-y-6"
-    >
-        <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-brand-100 dark:bg-brand-900/30 rounded-lg">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-5 h-5 text-brand-600"
-                >
-                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                </svg>
+/**
+ * Reusable InputField with visibility toggle for secrets.
+ */
+const InputField = memo(({ label, type = "text", value, onChange, placeholder, isSecret }: any) => {
+    const [showSecret, setShowSecret] = useState(false);
+    const inputType = isSecret ? (showSecret ? "text" : "password") : type;
+
+    return (
+        <div className="space-y-1.5">
+            <div className="flex justify-between items-center">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    {label}
+                </label>
+                {isSecret && (
+                    <button
+                        type="button"
+                        onClick={() => setShowSecret(!showSecret)}
+                        className="text-slate-400 hover:text-brand-500 transition-colors"
+                    >
+                        {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                )}
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                Courier Configuration
-            </h2>
+            <input
+                type={inputType}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
+                placeholder={placeholder}
+            />
         </div>
+    );
+});
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* <div className="space-y-1.5 md:col-span-2">
-                                                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                                        Pathao Base URL
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={formData.pathaoCourier.pathaoBaseUrl}
-                                                        onChange={(e) =>
-                                                            setFormData({
-                                                                ...formData,
-                                                                pathaoCourier: {
-                                                                    ...formData.pathaoCourier,
-                                                                    pathaoBaseUrl: e.target.value,
-                                                                },
-                                                            })
-                                                        }
-                                                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                                                        placeholder="https://api-hermes.pathao.com"
-                                                    />
-                                                </div> */}
+InputField.displayName = "InputField";
 
-                <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        Pathao Client ID
-                    </label>
+const PathaoSection = memo(({ pathaoCourier, onChange }: any) => (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Globe className="w-5 h-5 text-orange-500" />
+            Pathao Courier Settings
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InputField
+                label="Pathao Client ID"
+                value={pathaoCourier.pathaoClientId}
+                onChange={(val: string) => onChange("pathaoCourier", "pathaoClientId", val)}
+                placeholder="Enter Client ID"
+            />
+            <InputField
+                label="Pathao Client Secret"
+                isSecret
+                value={pathaoCourier.pathaoClientSecret}
+                onChange={(val: string) => onChange("pathaoCourier", "pathaoClientSecret", val)}
+                placeholder="Enter Client Secret"
+            />
+            <InputField
+                label="Pathao Username"
+                value={pathaoCourier.pathaoUsername}
+                onChange={(val: string) => onChange("pathaoCourier", "pathaoUsername", val)}
+                placeholder="Enter Username"
+            />
+            <InputField
+                label="Pathao Password"
+                isSecret
+                value={pathaoCourier.pathaoPassword}
+                onChange={(val: string) => onChange("pathaoCourier", "pathaoPassword", val)}
+                placeholder="Enter Pathao Password"
+            />
+            <InputField
+                label="Pathao Store ID"
+                value={pathaoCourier.pathaoStoreId}
+                onChange={(val: string) => onChange("pathaoCourier", "pathaoStoreId", val)}
+                placeholder="Enter Pathao Store ID"
+            />
+            <div className="space-y-1.5 md:col-span-2">
+                <label className="flex items-center gap-2 cursor-pointer">
                     <input
-                        type="text"
-                        value={formData.pathaoCourier.pathaoClientId}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                pathaoCourier: {
-                                    ...formData.pathaoCourier,
-                                    pathaoClientId: e.target.value,
-                                },
-                            })
-                        }
-                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                        placeholder="Enter Client ID"
+                        type="checkbox"
+                        checked={pathaoCourier.sandboxMode}
+                        onChange={(e) => onChange("pathaoCourier", "sandboxMode", e.target.checked)}
+                        className="w-4 h-4 text-brand-600 rounded focus:ring-brand-500"
                     />
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        Pathao Client Secret
-                    </label>
-                    <input
-                        type="password"
-                        value={formData.pathaoCourier.pathaoClientSecret}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                pathaoCourier: {
-                                    ...formData.pathaoCourier,
-                                    pathaoClientSecret: e.target.value,
-                                },
-                            })
-                        }
-                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                        placeholder="Enter Client Secret"
-                    />
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        Pathao Username
-                    </label>
-                    <input
-                        type="text"
-                        value={formData.pathaoCourier.pathaoUsername}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                pathaoCourier: {
-                                    ...formData.pathaoCourier,
-                                    pathaoUsername: e.target.value,
-                                },
-                            })
-                        }
-                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                        placeholder="Enter Username"
-                    />
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        Pathao Password
-                    </label>
-                    <input
-                        type="password"
-                        value={formData.pathaoCourier.pathaoPassword}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                pathaoCourier: {
-                                    ...formData.pathaoCourier,
-                                    pathaoPassword: e.target.value,
-                                },
-                            })
-                        }
-                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                        placeholder="Enter Pathao Password"
-                    />
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        Pathao Store ID
-                    </label>
-                    <input
-                        type="text"
-                        value={formData.pathaoCourier.pathaoStoreId}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                pathaoCourier: {
-                                    ...formData.pathaoCourier,
-                                    pathaoStoreId: e.target.value,
-                                },
-                            })
-                        }
-                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                        placeholder="Enter Pathao Store ID"
-                    />
-                </div>
-
-                <div className="space-y-1.5 md:col-span-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={formData.pathaoCourier.sandboxMode}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    pathaoCourier: {
-                                        ...formData.pathaoCourier,
-                                        sandboxMode: e.target.checked,
-                                    },
-                                })
-                            }
-                            className="w-4 h-4 text-brand-600 rounded focus:ring-brand-500"
-                        />
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                            Sandbox Mode
-                        </span>
-                    </label>
-                    <p className="text-xs text-slate-500 pl-6">
-                        Enable this for testing configation without real
-                        transactions.
-                    </p>
-                </div>
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        Sandbox Mode
+                    </span>
+                </label>
+                <p className="text-xs text-slate-500 pl-6">
+                    Enable this for testing configuration without real transactions.
+                </p>
             </div>
         </div>
+    </div>
+));
 
-        {/* Steadfast Courier Section */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm mt-6">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Steadfast Courier Settings</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+PathaoSection.displayName = "PathaoSection";
 
-                <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        API Key
-                    </label>
-                    <input
-                        type="text"
-                        value={formData.steadfastCourier.apiKey}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                steadfastCourier: {
-                                    ...formData.steadfastCourier,
-                                    apiKey: e.target.value,
-                                },
-                            })
-                        }
-                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                        placeholder="Enter API Key"
-                    />
-                </div>
+const SteadfastSection = memo(({ steadfastCourier, onChange }: any) => (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm mt-6">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-blue-500" />
+            Steadfast Courier Settings
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InputField
+                label="API Key"
+                value={steadfastCourier.apiKey}
+                onChange={(val: string) => onChange("steadfastCourier", "apiKey", val)}
+                placeholder="Enter API Key"
+            />
+            <InputField
+                label="Secret Key"
+                isSecret
+                value={steadfastCourier.secretKey}
+                onChange={(val: string) => onChange("steadfastCourier", "secretKey", val)}
+                placeholder="Enter Secret Key"
+            />
+        </div>
+    </div>
+));
 
-                <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        Secret Key
-                    </label>
-                    <input
-                        type="password"
-                        value={formData.steadfastCourier.secretKey}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                steadfastCourier: {
-                                    ...formData.steadfastCourier,
-                                    secretKey: e.target.value,
-                                },
-                            })
-                        }
-                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                        placeholder="Enter Secret Key"
-                    />
-                </div>
+SteadfastSection.displayName = "SteadfastSection";
+
+const ShippingRatesSection = memo(({ shippingConfig, onChange }: any) => (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm mt-6">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-emerald-500" />
+            Shipping Rates & Thresholds
+        </h3>
+        <p className="text-sm text-slate-500 mb-6">Set the default flat delivery rates for Inside City and Outside City deliveries.</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Inside City Fee</label>
+                <input
+                    type="number"
+                    min="0"
+                    value={shippingConfig.insideCityFee}
+                    onChange={(e) => onChange("shippingConfig", "insideCityFee", Number(e.target.value))}
+                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
+                    placeholder="e.g. 60"
+                />
+            </div>
+            <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Outside City Fee</label>
+                <input
+                    type="number"
+                    min="0"
+                    value={shippingConfig.outsideCityFee}
+                    onChange={(e) => onChange("shippingConfig", "outsideCityFee", Number(e.target.value))}
+                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
+                    placeholder="e.g. 120"
+                />
+            </div>
+            <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Free Shipping Threshold</label>
+                <input
+                    type="number"
+                    min="0"
+                    value={shippingConfig.freeShippingThreshold}
+                    onChange={(e) => onChange("shippingConfig", "freeShippingThreshold", Number(e.target.value))}
+                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
+                    placeholder="e.g. 5000 (0 to disable)"
+                />
             </div>
         </div>
+    </div>
+));
 
-        {/* Shipping Rates Configuration */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm mt-6">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Shipping Rates & Thresholds</h3>
-            <p className="text-sm text-slate-500 mb-6">Set the default flat delivery rates for Inside City and Outside City deliveries.</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+ShippingRatesSection.displayName = "ShippingRatesSection";
 
-                <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        Inside City Fee
-                    </label>
-                    <input
-                        type="number"
-                        min="0"
-                        value={formData.shippingConfig.insideCityFee}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                shippingConfig: {
-                                    ...formData.shippingConfig,
-                                    insideCityFee: Number(e.target.value),
-                                },
-                            })
-                        }
-                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                        placeholder="e.g. 60"
-                    />
+function CourierSetting({ formData, setFormData }: any) {
+    const handleFieldChange = useCallback((module: string, field: string, value: any) => {
+        setFormData((prev: any) => ({
+            ...prev,
+            [module]: {
+                ...prev[module],
+                [field]: value,
+            },
+        }));
+    }, [setFormData]);
+
+    return (
+        <motion.div
+            key="courier"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
+        >
+            <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 bg-brand-100 dark:bg-brand-900/30 rounded-lg">
+                    <Truck className="w-5 h-5 text-brand-600" />
                 </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        Outside City Fee
-                    </label>
-                    <input
-                        type="number"
-                        min="0"
-                        value={formData.shippingConfig.outsideCityFee}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                shippingConfig: {
-                                    ...formData.shippingConfig,
-                                    outsideCityFee: Number(e.target.value),
-                                },
-                            })
-                        }
-                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                        placeholder="e.g. 120"
-                    />
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        Free Shipping Threshold
-                    </label>
-                    <input
-                        type="number"
-                        min="0"
-                        value={formData.shippingConfig.freeShippingThreshold}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                shippingConfig: {
-                                    ...formData.shippingConfig,
-                                    freeShippingThreshold: Number(e.target.value),
-                                },
-                            })
-                        }
-                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200"
-                        placeholder="e.g. 5000 (0 to disable)"
-                    />
-                </div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                    Courier & Shipping Configuration
+                </h2>
             </div>
-        </div>
-    </motion.div>
+
+            <PathaoSection 
+                pathaoCourier={formData.pathaoCourier} 
+                onChange={handleFieldChange} 
+            />
+
+            <SteadfastSection 
+                steadfastCourier={formData.steadfastCourier} 
+                onChange={handleFieldChange} 
+            />
+
+            <ShippingRatesSection 
+                shippingConfig={formData.shippingConfig} 
+                onChange={handleFieldChange} 
+            />
+        </motion.div>
+    );
 }
+
+export default memo(CourierSetting);

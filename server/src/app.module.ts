@@ -39,6 +39,8 @@ import { CacheModule } from './modules/admin/operations/infra/cache/cache.module
     }),
     DatabaseModule,
     PersistenceModule,
+    SettingsModule,
+    CacheModule,
 
     // Core & System Domains
     AdminModule,
@@ -56,13 +58,10 @@ import { CacheModule } from './modules/admin/operations/infra/cache/cache.module
     CustomerModule,
     ContentModule,
     OperationsModule,
-    SettingsModule,
 
     // Other Features
     AuthModule,
     PaymentModule,
-
-    CacheModule,
 
     // Rate Limiting
     // AppThrottlerModule,

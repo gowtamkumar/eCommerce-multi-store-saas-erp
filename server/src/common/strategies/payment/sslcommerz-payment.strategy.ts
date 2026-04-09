@@ -23,11 +23,9 @@ export class SslCommerzPaymentStrategy implements PaymentStrategy {
     const is_live = !settings.payment?.sslCommerzIsSandbox
     const app_url = callbackUrl
 
-    console.log("options", options);
-
-
     if (!store_id || !store_passwd) {
-      throw new BadRequestException('SSLCommerz gateway not configured')
+      this.logger.error(`SSLCommerz configuration missing for tenant: ${tenantId}`)
+      throw new BadRequestException('SSLCommerz gateway not configured properly')
     }
 
     const tran_id = order.transactionId || `TRAN_${order.id}_${Date.now()}`
