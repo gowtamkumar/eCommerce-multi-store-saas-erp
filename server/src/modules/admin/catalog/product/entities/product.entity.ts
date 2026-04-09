@@ -15,6 +15,8 @@ import { ProductVariantEntity } from './variant.entity'
 @Entity('products')
 @Index(['status'])
 @Index(['createdAt'])
+@Index(['tenantId', 'status'])      // Hot path: storefront product list filter
+@Index(['tenantId', 'createdAt'])   // Hot path: ORDER BY newest products per tenant
 export class ProductEntity extends BaseEntity {
   @Column()
   name: string

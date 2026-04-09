@@ -182,9 +182,22 @@ export class ProductService {
     tenantId: string,
   ): Promise<{ products: AugmentedProduct[]; total: number }> {
     this.logger.log(`${this.findAllProducts.name} Service Called`)
-    const [products, total] = await this.productRepository.findAllWithFilters(filterDto, tenantId)
-    const productsWithPromotions = await this.attachPromotionsMany(products, tenantId)
-    return { products: productsWithPromotions, total }
+
+    // Build a deterministic cache key from the filter parameters to absorb
+    // repeated identical requests (e.g. multiple users on the same category page).
+    const filterKey = JSON.stringify(filterDto)
+    const cacheKey = `products:list:${filterKey}`
+
+    return this.cache.rememberCache(
+      cacheKey,
+      async () => {
+        const [products, total] = await this.productRepository.findAllWithFilters(filterDto, tenantId)
+        const productsWithPromotions = await this.attachPromotionsMany(products, tenantId)
+        return { products: productsWithPromotions, total }
+      },
+      60, // 60-second TTL — short enough to reflect stock/price updates
+      tenantId,
+    )
   }
 
   async getFilterOptions(tenantId: string, categoryId?: string): Promise<any> {
@@ -329,22 +342,17 @@ export class ProductService {
     this.logger.log(`${this.findOneProduct.name} Service Called`)
     const cacheKey = `product:${id}`
 
-    const cached = await this.cache.getCache(cacheKey, tenantId)
-
-    if (cached) {
-      console.log('Get from cache', cached ? 'HIT' : 'MISS')
-      return cached as AugmentedProduct
-    }
-
-    console.log('Get from db')
-
-    const product = await this.productRepository.findByIdWithRelations(id, tenantId)
-
-    if (!product) {
-      throw new NotFoundException('Product not found')
-    }
-
-    await this.cache.setCache(cacheKey, product, 300, tenantId)
+    // Use rememberCache for consistent error handling and atomic get/set
+    const product = await this.cache.rememberCache(
+      cacheKey,
+      async () => {
+        const p = await this.productRepository.findByIdWithRelations(id, tenantId)
+        if (!p) throw new NotFoundException('Product not found')
+        return p
+      },
+      300, // 5 minutes
+      tenantId,
+    )
 
     return await this.attachPromotions(product, tenantId)
   }

@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpDown, Filter, Grid, List as ListIcon, Search, ShoppingBag, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import ProductCard from '../components/ProductCard';
 
 interface Product {
@@ -42,12 +42,12 @@ export default function ProductList({ products, total, onOpenMobileFilters, sett
     setSearchQuery(searchParams.get('search') || '');
   }, [searchParams]);
 
-  // Debounced search effect
+  // Debounced search: only navigates when user stops typing for 500ms
   useEffect(() => {
     const handler = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString());
       const currentSearch = searchParams.get('search') || '';
-      
+
       if (searchQuery !== currentSearch) {
         if (searchQuery.trim()) {
           params.set('search', searchQuery);
@@ -62,9 +62,8 @@ export default function ProductList({ products, total, onOpenMobileFilters, sett
     return () => clearTimeout(handler);
   }, [searchQuery, searchParams, router]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    // Manual trigger if user hits Enter, though the effect will handle it too
     const params = new URLSearchParams(searchParams.toString());
     if (searchQuery.trim()) {
       params.set('search', searchQuery);
@@ -73,13 +72,37 @@ export default function ProductList({ products, total, onOpenMobileFilters, sett
     }
     params.delete('page');
     router.push(`/products?${params.toString()}`);
-  };
+  }, [searchQuery, searchParams, router]);
 
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('sort', e.target.value);
     router.push(`/products?${params.toString()}`);
-  };
+  }, [searchParams, router]);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('search');
+    router.push(`/products?${params.toString()}`);
+  }, [searchParams, router]);
+
+  const handleClearAllFilters = useCallback(() => {
+    router.push('/products');
+  }, [router]);
+
+  // Memoize grid class to avoid recomputing inline IIFE on every render
+  const gridClass = useMemo(() => {
+    const cols = (settings?.productsPerRow || 4) as 2 | 3 | 4 | 5 | 6;
+    const gridCols: Record<number, string> = {
+      2: 'lg:grid-cols-2',
+      3: 'lg:grid-cols-3',
+      4: 'lg:grid-cols-4',
+      5: 'lg:grid-cols-5',
+      6: 'lg:grid-cols-6',
+    };
+    return `grid grid-cols-1 sm:grid-cols-2 ${gridCols[cols] || 'lg:grid-cols-4'} gap-6 sm:gap-8`;
+  }, [settings?.productsPerRow]);
 
   const currentSort = searchParams.get('sort') || 'newest';
 
@@ -110,12 +133,7 @@ export default function ProductList({ products, total, onOpenMobileFilters, sett
             {searchQuery && (
               <button
                 type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  const params = new URLSearchParams(searchParams.toString());
-                  params.delete('search');
-                  router.push(`/products?${params.toString()}`);
-                }}
+                onClick={handleClearSearch}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-all"
               >
                 <X className="w-3.5 h-3.5" />
@@ -166,20 +184,7 @@ export default function ProductList({ products, total, onOpenMobileFilters, sett
 
       {/* Product Grid/List */}
       {products.length > 0 ? (
-        <div className={viewMode === 'grid'
-          ? (() => {
-            const cols = (settings?.productsPerRow || 4) as 2 | 3 | 4 | 5 | 6;
-            const gridCols = {
-              2: 'lg:grid-cols-2',
-              3: 'lg:grid-cols-3',
-              4: 'lg:grid-cols-4',
-              5: 'lg:grid-cols-5',
-              6: 'lg:grid-cols-6',
-            }[cols] || 'lg:grid-cols-4';
-            return `grid grid-cols-1 sm:grid-cols-2 ${gridCols} gap-6 sm:gap-8`;
-          })()
-          : "space-y-4"
-        }>
+        <div className={viewMode === 'grid' ? gridClass : 'space-y-4'}>
           <AnimatePresence mode="popLayout">
             {products.map((product) => (
               <motion.div
@@ -208,10 +213,7 @@ export default function ProductList({ products, total, onOpenMobileFilters, sett
             We couldn't find any products matching your current filters. Try broadening your search or resetting all filters.
           </p>
           <button
-            onClick={() => {
-              // Clear all filters
-              router.push(`/products`);
-            }}
+            onClick={handleClearAllFilters}
             className="px-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-2xl hover:shadow-2xl hover:scale-105 active:scale-[0.98] transition-all"
           >
             Clear All Filters
