@@ -139,6 +139,38 @@ export class PromotionService {
   }
 
   /**
+   * Shared helper: enriches a raw product with computed promotion discount fields.
+   * Extracted to eliminate duplication between getOfferProducts and getOfferProductsBySlug.
+   */
+  private enrichProductWithPromo(p: any, promotion: PromotionEntity): any {
+    const basePrice = Number(p.price)
+    let promoDiscount = 0
+
+    if (promotion.promotionType === PromotionType.PERCENTAGE && promotion.value) {
+      promoDiscount = Math.round((basePrice * Number(promotion.value)) / 100)
+    } else if (promotion.promotionType === PromotionType.FIXED && promotion.value) {
+      promoDiscount = Number(promotion.value)
+    }
+
+    const finalPrice = Math.max(0, basePrice - promoDiscount)
+
+    return {
+      ...p,
+      promoDiscount,
+      promoDiscountPercentage:
+        promotion.promotionType === PromotionType.PERCENTAGE
+          ? Number(promotion.value)
+          : basePrice > 0
+            ? Math.round((promoDiscount / basePrice) * 100)
+            : 0,
+      finalPrice,
+      promotionId: promotion.id,
+      promotionName: promotion.name,
+      promotionType: promotion.promotionType,
+    }
+  }
+
+  /**
    * Public endpoint: returns all active promotions with their applicable products.
    * Used by the customer storefront /offers page.
    * Heavily cached — this is the highest-traffic public endpoint.
@@ -151,70 +183,39 @@ export class PromotionService {
       'promotions:offers',
       async () => {
         const now = new Date()
-    // Fetch all active, non-expired promotions for this tenant
-    const promotions = await this.promotionRepository.findActivePromotions(tenantId, now)
+        const promotions = await this.promotionRepository.findActivePromotions(tenantId, now)
 
-    if (!promotions.length) {
-      return { promotions: [], offerGroups: [] }
-    }
-
-    const getProducts = (promo: PromotionEntity) =>
-      this.productRepository.findOfferProducts({
-        tenantId,
-        targetType: promo.targetType,
-        targetId: promo.targetId,
-        limit:
-          promo.targetType === PromotionTargetType.ENTIRE_ORDER ||
-          promo.targetType === PromotionTargetType.MINIMUM_CART_VALUE
-            ? 12
-            : 20,
-      })
-
-    const offerGroups: Array<{
-      promotion: PromotionEntity
-      products: any[]
-    }> = []
-
-    for (const promotion of promotions) {
-      let products = await getProducts(promotion)
-
-      // Attach computed promo discount to each product
-      const enrichedProducts = products.map((p) => {
-        const basePrice = Number(p.price)
-        let promoDiscount = 0
-
-        if (promotion.promotionType === PromotionType.PERCENTAGE && promotion.value) {
-          promoDiscount = Math.round((basePrice * Number(promotion.value)) / 100)
-        } else if (promotion.promotionType === PromotionType.FIXED && promotion.value) {
-          promoDiscount = Number(promotion.value)
+        if (!promotions.length) {
+          return { promotions: [], offerGroups: [] }
         }
 
-        const finalPrice = Math.max(0, basePrice - promoDiscount)
+        // Fetch products for ALL promotions in PARALLEL (was sequential N+1 loop)
+        const productResults = await Promise.all(
+          promotions.map((promo) =>
+            this.productRepository.findOfferProducts({
+              tenantId,
+              targetType: promo.targetType,
+              targetId: promo.targetId,
+              limit:
+                promo.targetType === PromotionTargetType.ENTIRE_ORDER ||
+                promo.targetType === PromotionTargetType.MINIMUM_CART_VALUE
+                  ? 12
+                  : 20,
+            })
+          )
+        )
 
-        return {
-          ...p,
-          promoDiscount,
-          promoDiscountPercentage:
-            promotion.promotionType === PromotionType.PERCENTAGE
-              ? Number(promotion.value)
-              : basePrice > 0
-                ? Math.round((promoDiscount / basePrice) * 100)
-                : 0,
-          finalPrice,
-          promotionId: promotion.id,
-          promotionName: promotion.name,
-          promotionType: promotion.promotionType,
-        }
-      })
+        // Build enriched offer groups — filter out empty groups
+        const offerGroups = promotions
+          .map((promotion, i) => ({
+            promotion,
+            products: productResults[i].map((p) => this.enrichProductWithPromo(p, promotion)),
+          }))
+          .filter((g) => g.products.length > 0)
 
-      if (enrichedProducts.length > 0) {
-        offerGroups.push({ promotion, products: enrichedProducts })
-      }
-    }
-
-    return { promotions, offerGroups }
+        return { promotions, offerGroups }
       },
-      600,
+      900, // 15 minutes — invalidated on write; read-heavy endpoint
       tenantId,
     )
   }
@@ -235,33 +236,8 @@ export class PromotionService {
 
     const products = await this.getProductsForPromotion(promotion, tenantId)
 
-    const enrichedProducts = products.map((p) => {
-      const basePrice = Number(p.price)
-      let promoDiscount = 0
-
-      if (promotion.promotionType === PromotionType.PERCENTAGE && promotion.value) {
-        promoDiscount = Math.round((basePrice * Number(promotion.value)) / 100)
-      } else if (promotion.promotionType === PromotionType.FIXED && promotion.value) {
-        promoDiscount = Number(promotion.value)
-      }
-
-      const finalPrice = Math.max(0, basePrice - promoDiscount)
-
-      return {
-        ...p,
-        promoDiscount,
-        promoDiscountPercentage:
-          promotion.promotionType === PromotionType.PERCENTAGE
-            ? Number(promotion.value)
-            : basePrice > 0
-              ? Math.round((promoDiscount / basePrice) * 100)
-              : 0,
-        finalPrice,
-        promotionId: promotion.id,
-        promotionName: promotion.name,
-        promotionType: promotion.promotionType,
-      }
-    })
+    // Use shared helper — no duplication
+    const enrichedProducts = products.map((p) => this.enrichProductWithPromo(p, promotion))
 
     return { promotion, products: enrichedProducts }
   }

@@ -7,6 +7,10 @@ import { getSiteSettings } from '@/services/getSettings';
 import { getTenantId } from '@/services/tenant';
 import Link from 'next/link';
 
+// ISR: Regenerate every 60 seconds. Offers change infrequently;
+// cache serves most visits instantly while staying reasonably fresh.
+export const revalidate = 60;
+
 export async function generateMetadata() {
     const settings = await getSiteSettings();
     return {
@@ -42,12 +46,24 @@ export default async function OffersRoutePage() {
         );
     }
 
-    const { offerGroups, promotions } = await getOffersData();
+    // Fetch offers data and site settings in PARALLEL to save waterfall latency
+    const [{ offerGroups, promotions }, settings] = await Promise.all([
+        getOffersData(),
+        getSiteSettings(),
+    ]);
+
+    // Pass offersSettings as a prop so OffersPage never needs a client-side
+    // useSettings() fetch — eliminating a redundant network round-trip.
+    const offersSettings = settings?.offersPage;
 
     return (
         <main className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
             <Navbar />
-            <OffersPage offerGroups={offerGroups} promotions={promotions} />
+            <OffersPage
+                offerGroups={offerGroups}
+                promotions={promotions}
+                offersSettings={offersSettings}
+            />
             <Footer />
             <WhatsAppWidget />
         </main>

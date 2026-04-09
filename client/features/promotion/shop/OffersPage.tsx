@@ -1,14 +1,12 @@
 'use client';
 
-import { useSettings } from '@/hooks/SettingsContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ShoppingBag, Tag, Zap, Percent, BadgePercent, Crown, Package, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import { useCart } from '@/hooks/CartContext';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
-import { PromotionType } from '@/lib/enums/promotion-type.enum';
 import ProductCard, { PromotionTypeBadge } from '@/features/product/components/ProductCard';
+import { useSettings } from '@/hooks/SettingsContext';
+import { PromotionType } from '@/lib/enums/promotion-type.enum';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowRight, BadgePercent, Clock, Package, Percent, Tag, Zap } from 'lucide-react';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface Product {
     id: string;
@@ -51,6 +49,8 @@ interface OfferGroup {
 interface OffersPageProps {
     offerGroups: OfferGroup[];
     promotions: Promotion[];
+    /** Passed from SSR to avoid a redundant client-side useSettings() fetch */
+    offersSettings?: any;
 }
 
 // Countdown timer hook
@@ -177,40 +177,53 @@ function PromotionSection({ group }: { group: OfferGroup }) {
     );
 }
 
-export default function OffersPage({ offerGroups, promotions }: OffersPageProps) {
+export default function OffersPage({ offerGroups, promotions, offersSettings: propSettings }: OffersPageProps) {
+    // Use SSR-provided settings if available; fall back to client context only when needed
+    // (e.g. when component is used outside of offers route)
     const { settings } = useSettings();
-    const offersSettings = settings?.offersPage || {
+    const offersSettings = propSettings ?? settings?.offersPage ?? {
         bannerShow: true,
         bannerHeadline: "Special Deals & Offers",
         bannerSubheadline: "Save big on our hottest promotions — grab these deals before they're gone!",
         showFilters: true,
-        productsPerRow: 5
+        productsPerRow: 5,
     };
 
     const [activeTab, setActiveTab] = useState<string>('all');
 
-    const filteredGroups = activeTab === 'all'
-        ? offerGroups
-        : offerGroups.filter(g => g.promotion.id === activeTab);
+    const handleTabChange = useCallback((id: string) => setActiveTab(id), []);
 
-    const totalProducts = offerGroups.reduce((sum, g) => sum + g.products.length, 0);
+    // Memoize derived values to prevent recomputation on every render
+    const filteredGroups = useMemo(
+        () => activeTab === 'all' ? offerGroups : offerGroups.filter(g => g.promotion.id === activeTab),
+        [activeTab, offerGroups]
+    );
 
-    const gridCols = {
-        2: 'grid-cols-2 lg:grid-cols-2',
-        3: 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3',
-        4: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
-        5: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
-        6: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6'
-    }[offersSettings.productsPerRow || 5] || 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
+    const totalProducts = useMemo(
+        () => offerGroups.reduce((sum, g) => sum + g.products.length, 0),
+        [offerGroups]
+    );
 
-    const bannerStyle = {
+    const gridCols = useMemo(() => {
+        // Explicit block body keeps the dep array unambiguous for formatters
+        const colMap: Record<number, string> = {
+            2: 'grid-cols-2 lg:grid-cols-2',
+            3: 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3',
+            4: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+            5: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
+            6: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6',
+        };
+        return colMap[offersSettings.productsPerRow || 5] ?? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
+    }, [offersSettings.productsPerRow]);
+
+    const bannerStyle = useMemo(() => ({
         height: offersSettings.bannerShow ? `${offersSettings.bannerHeight || 400}px` : '0px',
         backgroundColor: offersSettings.bannerBackgroundColor || undefined,
         backgroundImage: offersSettings.bannerImage ? `url(${offersSettings.bannerImage})` : undefined,
-        backgroundSize: 'cover',
+        backgroundSize: 'cover' as const,
         backgroundPosition: 'center',
-        color: offersSettings.bannerTextColor || '#ffffff'
-    };
+        color: offersSettings.bannerTextColor || '#ffffff',
+    }), [offersSettings]);
 
     return (
         <div className="pt-32 pb-24">
@@ -288,7 +301,7 @@ export default function OffersPage({ offerGroups, promotions }: OffersPageProps)
                 {offersSettings.showFilters && offerGroups.length > 1 && (
                     <div className="flex flex-wrap gap-2 mb-10">
                         <button
-                            onClick={() => setActiveTab('all')}
+                            onClick={() => handleTabChange('all')}
                             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'all'
                                 ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg'
                                 : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300'
@@ -299,7 +312,7 @@ export default function OffersPage({ offerGroups, promotions }: OffersPageProps)
                         {offerGroups.map((group) => (
                             <button
                                 key={group.promotion.id}
-                                onClick={() => setActiveTab(group.promotion.id)}
+                                onClick={() => handleTabChange(group.promotion.id)}
                                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${activeTab === group.promotion.id
                                     ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20'
                                     : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-brand-400'
