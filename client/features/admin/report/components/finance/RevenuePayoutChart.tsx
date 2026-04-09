@@ -1,6 +1,7 @@
 'use client';
 
 import { TrendingUp } from 'lucide-react';
+import React, { memo } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { FinanceChartPoint } from '../../types';
 
@@ -9,7 +10,7 @@ interface RevenuePayoutChartProps {
     isLoading: boolean;
 }
 
-export default function RevenuePayoutChart({ chartData, isLoading }: RevenuePayoutChartProps) {
+const RevenuePayoutChart = memo(({ chartData, isLoading }: RevenuePayoutChartProps) => {
     if (isLoading && chartData.length === 0) {
         return (
             <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm animate-pulse h-[450px]" />
@@ -89,4 +90,7 @@ export default function RevenuePayoutChart({ chartData, isLoading }: RevenuePayo
             )}
         </div>
     );
-}
+});
+
+RevenuePayoutChart.displayName = 'RevenuePayoutChart';
+export default RevenuePayoutChart;

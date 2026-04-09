@@ -1,6 +1,7 @@
 'use client';
 
 import { BarChart3, DollarSign, TrendingUp, Truck, Wallet } from 'lucide-react';
+import React, { memo } from 'react';
 import { FinanceKpis } from '../../types';
 
 interface FinanceKpiGridProps {
@@ -9,7 +10,7 @@ interface FinanceKpiGridProps {
     formatPrice: (price: number) => string;
 }
 
-export default function FinanceKpiGrid({ kpis, isLoading, formatPrice }: FinanceKpiGridProps) {
+const FinanceKpiGrid = memo(({ kpis, isLoading, formatPrice }: FinanceKpiGridProps) => {
     if (isLoading && !kpis) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -71,4 +72,7 @@ export default function FinanceKpiGrid({ kpis, isLoading, formatPrice }: Finance
             </div>
         </div>
     );
-}
+});
+
+FinanceKpiGrid.displayName = 'FinanceKpiGrid';
+export default FinanceKpiGrid;

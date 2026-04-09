@@ -2,9 +2,9 @@
 
 import { Briefcase, ChevronRight, CreditCard, Wallet } from 'lucide-react';
 import Link from 'next/link';
-import React from 'react';
+import React, { memo } from 'react';
 
-export default function FinanceQuickActions() {
+const FinanceQuickActions = memo(() => {
     const actions = [
         {
             href: "/admin/reports/profit-loss",
@@ -62,4 +62,7 @@ export default function FinanceQuickActions() {
             ))}
         </div>
     );
-}
+});
+
+FinanceQuickActions.displayName = 'FinanceQuickActions';
+export default FinanceQuickActions;

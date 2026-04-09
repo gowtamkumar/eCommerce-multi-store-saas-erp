@@ -2,6 +2,7 @@
 
 import { Truck } from 'lucide-react';
 import Link from 'next/link';
+import React, { memo } from 'react';
 import { SupplierStats } from '../../types';
 
 interface FinanceSupplyChainCardProps {
@@ -11,7 +12,7 @@ interface FinanceSupplyChainCardProps {
     formatPrice: (price: number) => string;
 }
 
-export default function FinanceSupplyChainCard({ stats, payoutsDue, isLoading, formatPrice }: FinanceSupplyChainCardProps) {
+const FinanceSupplyChainCard = memo(({ stats, payoutsDue, isLoading, formatPrice }: FinanceSupplyChainCardProps) => {
     if (isLoading && !stats) {
         return (
             <div className="bg-slate-900 p-8 rounded-3xl shadow-2xl animate-pulse h-[320px]" />
@@ -55,4 +56,7 @@ export default function FinanceSupplyChainCard({ stats, payoutsDue, isLoading, f
             </Link>
         </div>
     );
-}
+});
+
+FinanceSupplyChainCard.displayName = 'FinanceSupplyChainCard';
+export default FinanceSupplyChainCard;

@@ -1,6 +1,7 @@
 'use client';
 
 import { PieChart } from 'lucide-react';
+import React, { memo } from 'react';
 import { Cell, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { ExpenseBreakdownPoint } from '../../types';
 
@@ -11,7 +12,7 @@ interface OutflowPieChartProps {
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
-export default function OutflowPieChart({ data, isLoading }: OutflowPieChartProps) {
+const OutflowPieChart = memo(({ data, isLoading }: OutflowPieChartProps) => {
     if (isLoading && data.length === 0) {
         return (
             <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm animate-pulse h-[220px]" />
@@ -61,4 +62,7 @@ export default function OutflowPieChart({ data, isLoading }: OutflowPieChartProp
             )}
         </div>
     );
-}
+});
+
+OutflowPieChart.displayName = 'OutflowPieChart';
+export default OutflowPieChart;
