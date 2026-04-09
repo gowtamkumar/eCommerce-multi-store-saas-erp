@@ -1,20 +1,23 @@
 import UserList from "@/features/system/components/UserList";
 import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 
-async function getUsers() {
+async function getUsersData() {
   try {
-    const res = await fetchSuperAdminAPI('/super-admin/users');
-    return res.users || res.data?.users || [];
+    const res = await fetchSuperAdminAPI('/super-admin/users?page=1&limit=10');
+    return {
+      users: res.data?.users || [],
+      pagination: res.data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 }
+    };
   } catch (error) {
     console.error("Error fetching global users:", error);
-    return [];
+    return { users: [], pagination: { total: 0, page: 1, limit: 10, totalPages: 1 } };
   }
 }
 
 export default async function GlobalUsersPage() {
-  const users = await getUsers();
+  const { users, pagination } = await getUsersData();
 
   return (
-    <UserList initialUsers={users} />
+    <UserList initialUsers={users} initialPagination={pagination} />
   );
 }

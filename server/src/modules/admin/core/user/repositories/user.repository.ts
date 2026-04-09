@@ -39,10 +39,28 @@ export class UserRepository {
       .getManyAndCount()
   }
 
-  async findAllCrossTenant(): Promise<UserEntity[]> {
-    return this.repo.find({
-      relations: ['tenant'],
-    })
+  async findAllCrossTenant(filterDto: FilterUserDto): Promise<[UserEntity[], number]> {
+    const { page = 1, limit = 10, q, role, status } = filterDto
+    const query = this.repo.createQueryBuilder('user')
+      .leftJoinAndSelect('user.tenant', 'tenant')
+
+    if (q) {
+      query.andWhere('(user.name ILIKE :q OR user.email ILIKE :q OR user.username ILIKE :q)', { q: `%${q}%` })
+    }
+
+    if (role) {
+      query.andWhere('user.role = :role', { role })
+    }
+
+    if (status) {
+      query.andWhere('user.status = :status', { status })
+    }
+
+    return await query
+      .orderBy('user.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount()
   }
 
   async findById(id: string): Promise<UserEntity | null> {

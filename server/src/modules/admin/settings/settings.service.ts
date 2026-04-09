@@ -29,7 +29,7 @@ export class SettingsService {
           settings = await this.settingsRepository.createAndSave({}, tenantId)
         }
 
-        const tenant = await this.tenantRepository.findTenantById(tenantId)
+        const tenant = await this.tenantRepository.findById(tenantId)
         let effectiveStatus = tenant?.status
 
         // Check if subscription has logically expired

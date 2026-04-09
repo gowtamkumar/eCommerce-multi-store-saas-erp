@@ -1,327 +1,224 @@
 'use client';
 
-import { UserRole } from '@/lib/enums/user-role.enum';
-import { UserStatus } from '@/lib/enums/user-status.enum';
 import { fetchAPI } from '@/services/api';
-import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, CheckCircle, Info, Loader2, Search, Shield, Store, User as UserIcon, X } from 'lucide-react';
-import { useState } from 'react';
+import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
+import { AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Loader2, Search, Terminal } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-  createdAt: string;
-  username: string;
-  phone?: string;
-  address?: string;
-  tenantId?: {
-    id: string;
-    storeName: string;
-    subdomain: string;
-  };
-}
+import { UserStatus } from '@/lib/enums/user-status.enum';
+import { PaginationMeta, User, UserListProps } from '../types/user-management.types';
+import UserDetailsModal from './UserDetailsModal';
+import UserRow from './UserRow';
 
-interface UserListProps {
-  initialUsers: User[];
-}
-
-export default function UserList({ initialUsers }: UserListProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+export default function UserList({ initialUsers, initialPagination }: UserListProps) {
+  // Data State
   const [users, setUsers] = useState<User[]>(initialUsers);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [pagination, setPagination] = useState<PaginationMeta>(initialPagination);
+
+  // UI State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const filteredUsers = users.filter((u) =>
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  const handleStatusChange = async (userId: string, newStatus: UserStatus) => {
+  /**
+   * Fetch users from server with pagination and search
+   */
+  const fetchUsers = useCallback(async (page: number, q: string) => {
+    setIsLoading(true);
+    try {
+      const endpoint = `/super-admin/users?page=${page}&limit=${pagination.limit}${q ? `&q=${q}` : ''}`;
+      const res = await fetchSuperAdminAPI(endpoint);
+
+      if (res.success) {
+        setUsers(res.data.users);
+        setPagination(res.data.pagination);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to refresh users');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [pagination.limit]);
+
+  // Refetch when search or page changes
+  useEffect(() => {
+    fetchUsers(1, debouncedSearch);
+  }, [debouncedSearch, fetchUsers]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchUsers(newPage, debouncedSearch);
+    }
+  };
+
+  const handleStatusChange = useCallback(async (userId: string, newStatus: UserStatus) => {
     setUpdatingId(userId);
     try {
+      // Note: Endpoint might need to be adjusted based on actual API design
       const res = await fetchAPI(`/tenant-traffic/users/${userId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus }),
       });
 
       if (res.success) {
-        setUsers(users.map(u => u.id === userId ? { ...u, status: newStatus } : u));
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus } : u));
         if (selectedUser?.id === userId) {
-          setSelectedUser({ ...selectedUser, status: newStatus });
+          setSelectedUser(prev => prev ? { ...prev, status: newStatus } : null);
         }
         toast.success(`User status updated to ${newStatus}`);
-      } else {
-        toast.error(res.message || 'Failed to update status');
       }
-    } catch (error) {
-      toast.error('Connection error while updating status');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update status');
     } finally {
       setUpdatingId(null);
     }
-  };
+  }, [selectedUser]);
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Global User Management</h1>
-          <p className="text-slate-500 dark:text-slate-400">Manage all {users.length} users across the entire platform.</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">System Identity Repository</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Monitoring {pagination.total} neural identities across the network cluster.</p>
         </div>
         <div className="flex gap-4 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <div className="relative flex-1 md:w-80">
+            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isLoading ? 'text-indigo-500' : 'text-slate-400'}`} />
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder="Query by identity name or mail..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm antialiased"
+              className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium shadow-sm"
             />
+            {isLoading && (
+              <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
+      {/* Table Section */}
+      <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-700 overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-900/50">
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">User</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Associated Store</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Joined</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Action & Status</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Identity Node</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Access Tier</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Partition Association</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Sync Date</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">System Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {filteredUsers.length === 0 ? (
+              {isLoading && users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-slate-500 italic font-medium">No users found matching your search.</td>
+                  <td colSpan={5} className="px-6 py-32 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                      </div>
+                      <p className="text-sm font-black uppercase tracking-widest text-slate-400">Syncing database records...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-32 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <Terminal className="w-12 h-12 text-slate-200 dark:text-slate-700" />
+                      <p className="text-sm font-black uppercase tracking-widest text-slate-400">Zero matches found in repository</p>
+                    </div>
+                  </td>
                 </tr>
               ) : (
                 <AnimatePresence mode="popLayout">
-                  {filteredUsers.map((user) => (
-                    <motion.tr
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
+                  {users.map((user) => (
+                    <UserRow
                       key={user.id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors group"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 transition-transform group-hover:scale-110">
-                            <UserIcon className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900 dark:text-white capitalize">{user.name}</p>
-                            <p className="text-xs text-slate-500 font-medium">{user.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {user.role === UserRole.SUPER_ADMIN ? (
-                            <Shield className="w-4 h-4 text-rose-500" />
-                          ) : user.role === UserRole.ADMIN ? (
-                            <Shield className="w-4 h-4 text-indigo-500" />
-                          ) : (
-                            <UserIcon className="w-4 h-4 text-slate-400" />
-                          )}
-                          <span className={`text-xs font-bold uppercase ${user.role === UserRole.SUPER_ADMIN ? 'text-rose-500' :
-                            user.role === UserRole.ADMIN ? 'text-indigo-500' : 'text-slate-500'
-                            }`}>
-                            {user.role?.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {user.tenantId ? (
-                          <div className="flex items-center gap-2 text-slate-900 dark:text-white text-sm">
-                            <Store className="w-4 h-4 text-indigo-400" />
-                            <span className="font-semibold">{user.tenantId.storeName}</span>
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded">
-                              {user.tenantId.subdomain}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-2 py-1 bg-slate-50 dark:bg-slate-900/50 rounded-lg">Platform</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 font-medium">
-                        {new Date(user.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-3">
-                          <button
-                            onClick={() => setSelectedUser(user)}
-                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"
-                            title="View Details"
-                          >
-                            <Info className="w-5 h-5" />
-                          </button>
-
-                          <div className="relative">
-                            {updatingId === user.id ? (
-                              <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
-                            ) : (
-                              <select
-                                value={user.status}
-                                onChange={(e) => handleStatusChange(user.id, e.target.value as UserStatus)}
-                                className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border-0 outline-none cursor-pointer appearance-none transition-all pr-1 ${user.status === UserStatus.ACTIVE
-                                  ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400'
-                                  : 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400'
-                                  }`}
-                              >
-                                <option value={UserStatus.ACTIVE}>Active</option>
-                                <option value={UserStatus.BLOCKED}>Blocked</option>
-                              </select>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </motion.tr>
+                      user={user}
+                      updatingId={updatingId}
+                      onStatusChange={handleStatusChange}
+                      onSelectUser={setSelectedUser}
+                    />
                   ))}
                 </AnimatePresence>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Section */}
+        <div className="px-8 py-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:row justify-between items-center gap-4">
+          <div className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+            Showing <span className="text-slate-900 dark:text-white">{users.length}</span> of <span className="text-slate-900 dark:text-white">{pagination.total}</span> Records
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page <= 1 || isLoading}
+              className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm"
+              title="Previous Page"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                let pageNum = i + 1;
+                // Simple windowing logic
+                if (pagination.totalPages > 5 && pagination.page > 3) {
+                  pageNum = pagination.page - 3 + i + 1;
+                }
+                if (pageNum > pagination.totalPages) return null;
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${pagination.page === pageNum
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                      : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 shadow-sm'
+                      }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page >= pagination.totalPages || isLoading}
+              className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 disabled:opacity-30 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm"
+              title="Next Page"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* User Details Modal */}
-      <AnimatePresence>
-        {selectedUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedUser(null)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
-            >
-              {/* Modal Content */}
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/20">
-                      <UserIcon className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-black text-slate-900 dark:text-white capitalize">{selectedUser.name}</h2>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">@{selectedUser.username}</span>
-                        <div className="w-1 h-1 bg-slate-300 rounded-full" />
-                        <span className="text-xs font-bold text-indigo-500 uppercase tracking-widest">{selectedUser.role?.replace('_', ' ')}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSelectedUser(null)}
-                    className="p-3 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl transition-all"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Contact Information</h3>
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                          <CheckCircle className="w-4 h-4 text-emerald-500" />
-                          <div className="flex-1 overflow-hidden">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mb-1">Email</p>
-                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">{selectedUser.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                          <CheckCircle className="w-4 h-4 text-indigo-500" />
-                          <div className="flex-1 overflow-hidden">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mb-1">Phone</p>
-                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{selectedUser.phone || 'Not provided'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Location</h3>
-                      <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{selectedUser.address || 'No address saved.'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Platform Context</h3>
-                      <div className="p-5 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-inner">
-                        <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-200/50 dark:border-slate-700/50">
-                          <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center text-indigo-500 shadow-sm">
-                            <Store className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mb-1">Store Membership</p>
-                            <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedUser.tenantId?.storeName || 'General Platform'}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="text-center flex-1">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mb-1">Orders</p>
-                            <p className="text-lg font-black text-slate-900 dark:text-white">0</p>
-                          </div>
-                          <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
-                          <div className="text-center flex-1">
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mb-1">Status</p>
-                            <span className={`text-xs font-black uppercase ${selectedUser.status === UserStatus.ACTIVE ? 'text-emerald-500' : 'text-rose-500'}`}>
-                              {selectedUser.status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 mt-auto">
-                      <button
-                        onClick={() => handleStatusChange(selectedUser.id, selectedUser.status === UserStatus.ACTIVE ? UserStatus.BLOCKED : UserStatus.ACTIVE)}
-                        className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 shadow-xl ${selectedUser.status === UserStatus.ACTIVE
-                          ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20'
-                          : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
-                          }`}
-                      >
-                        {selectedUser.status === UserStatus.ACTIVE ? (
-                          <>
-                            <AlertCircle className="w-4 h-4" />
-                            Block User
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-4 h-4" />
-                            Unblock User
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <UserDetailsModal
+        user={selectedUser}
+        updatingId={updatingId}
+        onClose={() => setSelectedUser(null)}
+        onStatusChange={handleStatusChange}
+      />
     </div>
   );
 }

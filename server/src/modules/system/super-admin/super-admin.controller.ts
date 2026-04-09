@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { ProductService } from '@/modules/admin/catalog/product/product.service'
 import { PageService } from '@/modules/admin/content/page/page.service'
+import { FilterUserDto } from '@/modules/admin/core/user/dtos'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { OrderService } from '@/modules/admin/sales/order/order.service'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
@@ -23,9 +24,8 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import si from 'systeminformation'
-import { TrafficService } from './traffic.service'
 import { SubscriptionPlanService } from '../subscription-plan/subscription-plan.service'
-import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
+import { TrafficService } from './traffic.service'
 
 @Controller('super-admin')
 export class SuperAdminController {
@@ -230,38 +230,7 @@ export class SuperAdminController {
   @Get('/tenants/analytics')
   async getTenantAnalytics(): Promise<BaseApiSuccessResponse<any[]>> {
     try {
-      const tenants = await this.tenantService.findAllTenants()
-      const traffic = await this.trafficService.getTrafficStats(30)
-
-      const analytics = await Promise.all(
-        tenants.map(async (tenant) => {
-          const [users, products, orders, pages] = await Promise.all([
-            this.userService.countByTenant(tenant.id),
-            this.productService.countByTenant(tenant.id),
-            this.orderService.countByTenant(tenant.id),
-            this.pageService.countByTenant(tenant.id),
-          ])
-
-          const tenantTraffic = traffic.filter((t: any) => t.tenantId === tenant.id)
-          const totalTraffic = tenantTraffic.reduce((acc, t) => acc + t.requestCount, 0)
-
-          return {
-            id: tenant.id,
-            storeName: tenant.storeName,
-            subdomain: tenant.subdomain,
-            subscriptionPlan: tenant.subscriptionPlan,
-            status: tenant.status,
-            stats: {
-              users,
-              products,
-              orders,
-              pages,
-              traffic: totalTraffic,
-            },
-          }
-        }),
-      )
-
+      const analytics = await this.tenantService.getBulkTenantAnalytics()
       return {
         success: true,
         statusCode: 200,
@@ -281,26 +250,12 @@ export class SuperAdminController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     try {
-      const [users, products, orders, pages] = await Promise.all([
-        this.userService.countByTenant(id),
-        this.productService.countByTenant(id),
-        this.orderService.countByTenant(id),
-        this.pageService.countByTenant(id),
-      ])
-
+      const data = await this.tenantService.getDetailedAnalytics(id)
       return {
         success: true,
         statusCode: 200,
         message: 'Detailed tenant analytics retrieved',
-        data: {
-          counts: {
-            users,
-            products,
-            orders,
-            pages,
-          },
-          topPages: [], // Page tracking disabled per user request
-        },
+        data,
       }
     } catch (error) {
       this.logger.error(`[SuperAdmin] Error fetching detailed analytics for tenant ${id}:`, error)
@@ -311,8 +266,13 @@ export class SuperAdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/users')
-  async getAllUsers(): Promise<BaseApiSuccessResponse<any>> {
-    const users = await this.userService.findAllUsersCrossTenant()
+  async getAllUsers(
+    @Query() filterDto: FilterUserDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const [users, total] = await this.userService.findAllUsersCrossTenant(filterDto)
+    const page = Number(filterDto.page) || 1
+    const limit = Number(filterDto.limit) || 10
+
     return {
       success: true,
       statusCode: 200,
@@ -320,10 +280,10 @@ export class SuperAdminController {
       data: {
         users,
         pagination: {
-          total: users.length,
-          page: 1,
-          limit: users.length,
-          totalPages: 1,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
         },
       },
     }

@@ -10,12 +10,11 @@ export class TenantRepository {
     private readonly repo: Repository<TenantEntity>,
   ) { }
 
-  async findTenantById(id: string): Promise<TenantEntity | null> {
-    return await this.repo.findOne({ where: { id } })
-  }
-
+  /**
+   * Find a tenant by ID
+   */
   async findById(id: string): Promise<TenantEntity | null> {
-    return await this.findTenantById(id)
+    return await this.repo.findOne({ where: { id } })
   }
 
   async findByIdWithRelations(id: string): Promise<TenantEntity | null> {
@@ -43,7 +42,35 @@ export class TenantRepository {
   async findAllSorted(): Promise<TenantEntity[]> {
     return await this.repo.find({
       order: { createdAt: 'DESC' },
+      relations: ['subscriptionPlan'],
     })
+  }
+
+  /**
+   * Efficiently fetch tenant counts grouped by status in a single query
+   */
+  async getTenantStats(): Promise<Record<string, number>> {
+    const stats = await this.repo
+      .createQueryBuilder('tenant')
+      .select('tenant.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('tenant.status')
+      .getRawMany()
+
+    const result = {
+      total: 0,
+      active: 0,
+      suspended: 0,
+      archived: 0,
+    }
+
+    stats.forEach((stat) => {
+      const count = parseInt(stat.count, 10)
+      result[stat.status] = count
+      result.total += count
+    })
+
+    return result
   }
 
   async findCountByStatus(status?: string): Promise<number> {
@@ -53,15 +80,21 @@ export class TenantRepository {
     })
   }
 
-  async createAndSave(dto: any, subscriptionPlan?: any): Promise<TenantEntity> {
+  async createAndSave(
+    dto: Partial<TenantEntity>,
+    subscriptionPlan?: any,
+  ): Promise<TenantEntity> {
     const tenant = this.repo.create({
       ...dto,
       subscriptionPlan,
-    } as any) as unknown as TenantEntity
-    return await (this.repo.save(tenant) as Promise<TenantEntity>)
+    })
+    return await this.repo.save(tenant)
   }
 
-  async updateAndSave(tenant: TenantEntity, dto: any): Promise<TenantEntity> {
+  async updateAndSave(
+    tenant: TenantEntity,
+    dto: Partial<TenantEntity>,
+  ): Promise<TenantEntity> {
     Object.assign(tenant, dto)
     return await this.repo.save(tenant)
   }

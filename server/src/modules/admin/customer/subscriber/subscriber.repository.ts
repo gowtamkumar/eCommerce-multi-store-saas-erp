@@ -10,8 +10,8 @@ export class SubscriberRepository {
     private readonly repo: Repository<SubscriberEntity>,
   ) { }
 
-  async findByEmail(email: string): Promise<SubscriberEntity | null> {
-    return this.repo.findOne({ where: { email } })
+  async findByEmail(email: string, tenantId: string): Promise<SubscriberEntity | null> {
+    return this.repo.findOne({ where: { email, tenantId } })
   }
 
   async createAndSave(dto: any): Promise<SubscriberEntity> {
@@ -21,12 +21,17 @@ export class SubscriberRepository {
 
   async findAllWithFilters(
     filterDto: any,
+    tenantId?: string,
   ): Promise<{ subscribers: SubscriberEntity[]; total: number }> {
     const { page = 1, limit = 10, search } = filterDto
     const query = this.repo.createQueryBuilder('subscriber')
 
+    if (tenantId) {
+      query.andWhere('subscriber.tenantId = :tenantId', { tenantId })
+    }
+
     if (search) {
-      query.where('subscriber.email ILIKE :search', { search: `%${search}%` })
+      query.andWhere('subscriber.email ILIKE :search', { search: `%${search}%` })
     }
 
     const [subscribers, total] = await query

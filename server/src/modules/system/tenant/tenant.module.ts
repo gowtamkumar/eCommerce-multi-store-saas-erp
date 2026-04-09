@@ -5,11 +5,21 @@ import { Module } from '@nestjs/common'
 import { OnboardController } from './public-tenant.controller'
 import { TenantController } from './tenant.controller'
 import { TenantService } from './tenant.service'
+import { TenantRepository } from './tenant.repository'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { TenantEntity } from './entities/tenant.entity'
+import { UserModule } from '@/modules/admin/core/user/user.module'
 
 @Module({
-  imports: [SettingsModule, MailModule, SubscriptionPlanModule],
+  imports: [
+    TypeOrmModule.forFeature([TenantEntity]),
+    SettingsModule,
+    MailModule,
+    SubscriptionPlanModule,
+    UserModule,
+  ],
   controllers: [TenantController, OnboardController],
-  providers: [TenantService],
-  exports: [TenantService],
+  providers: [TenantService, TenantRepository],
+  exports: [TenantService, TenantRepository],
 })
-export class TenantModule {}
+export class TenantModule { }

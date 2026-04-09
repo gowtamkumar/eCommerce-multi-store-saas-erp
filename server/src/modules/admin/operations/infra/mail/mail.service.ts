@@ -156,7 +156,7 @@ export class MailService {
     return this.cacheService.rememberCache(
       `tenant:${tenantId}:baseurl`,
       async () => {
-        const tenant = await this.tenantRepo.findTenantById(tenantId)
+        const tenant = await this.tenantRepo.findById(tenantId)
         if (!tenant) return appUrl
 
         if (tenant.customDomain) {

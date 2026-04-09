@@ -32,9 +32,9 @@ export class UserService {
     return { users, total }
   }
 
-  async findAllUsersCrossTenant(): Promise<UserEntity[]> {
+  async findAllUsersCrossTenant(filterDto: FilterUserDto): Promise<[UserEntity[], number]> {
     this.logger.log(`${this.findAllUsersCrossTenant.name} Service Called`)
-    return this.userRepo.findAllCrossTenant()
+    return this.userRepo.findAllCrossTenant(filterDto)
   }
 
   async getUser(id: string): Promise<UserEntity> {

@@ -4,23 +4,17 @@ import { notFound } from "next/navigation";
 
 
 async function getTenantAnalyticsData(id: string) {
-
     try {
-        const [analyticsRes, tenantRes] = await Promise.all([
-            fetchSuperAdminAPI(`/super-admin/tenants/${id}/analytics`),
-            fetchSuperAdminAPI(`/super-admin/tenants`)
-        ]);
+        const res = await fetchSuperAdminAPI(`/super-admin/tenants/${id}/analytics`);
 
-        if (!analyticsRes.success || !tenantRes.success) {
-            console.error("[SuperAdmin] API error:", analyticsRes.message || tenantRes.message);
+        if (!res.success) {
+            console.error("[SuperAdmin] API error:", res.message);
             return null;
         }
 
-        const tenant = tenantRes.data.find((t: any) => t.id === id);
-
         return {
-            analytics: analyticsRes.data,
-            tenantName: tenant?.storeName || 'Unknown Merchant'
+            analytics: res.data,
+            tenantName: res.data.tenantInfo?.storeName || 'Unknown Merchant'
         };
     } catch (error) {
         console.error("[SuperAdmin] Fetch error in getTenantAnalyticsData:", error);
