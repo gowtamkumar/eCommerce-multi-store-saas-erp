@@ -10,6 +10,7 @@ import { ShippingAddressEntity } from '@/modules/store/shipping-address/entities
 
 @Entity('orders')
 @Index(['tenantId', 'createdAt'])
+@Index(['tenantId', 'status'])
 export class OrderEntity extends BaseEntity {
   @Column({ type: 'varchar', name: 'customer_name', length: 255 })
   customerName: string

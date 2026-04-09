@@ -1,7 +1,7 @@
 'use client';
 
 import { Package } from 'lucide-react';
-import React from 'react';
+import React, { memo } from 'react';
 import { LowStockProduct } from '../types';
 
 interface LowStockTableProps {
@@ -9,7 +9,7 @@ interface LowStockTableProps {
     isLoading: boolean;
 }
 
-export default function LowStockTable({ products, isLoading }: LowStockTableProps) {
+const LowStockTable = memo(({ products, isLoading }: LowStockTableProps) => {
     return (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col h-full">
             <div className="p-6 border-b border-slate-100 dark:border-slate-700">
@@ -68,4 +68,7 @@ export default function LowStockTable({ products, isLoading }: LowStockTableProp
             </div>
         </div>
     );
-}
+});
+
+LowStockTable.displayName = 'LowStockTable';
+export default LowStockTable;

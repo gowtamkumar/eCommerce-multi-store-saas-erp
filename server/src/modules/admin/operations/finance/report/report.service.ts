@@ -31,120 +31,121 @@ export class ReportService {
 
   async getAnalytics(tenantId: string) {
     const cacheKey = `analytics` // CacheService handled tenantId prefixing
-    const cachedData = await this.cacheService.getCache<any>(cacheKey, tenantId)
-    if (cachedData) return cachedData
-
-    const counts = await this.reportRepo.getGlobalCounts(tenantId)
-
-    const result = {
-        counts: {
-          users: parseInt(counts.users, 10),
-          products: parseInt(counts.products, 10),
-          orders: parseInt(counts.orders, 10),
-          pages: parseInt(counts.pages, 10),
-        },
-        topPages: [], // Removed page tracking feature, return empty array for backwards compatibility
-    }
-
-    await this.cacheService.setCache(cacheKey, result, 600000) // 10 mins cache
-    return result
+    return this.cacheService.rememberCache(
+      cacheKey,
+      async () => {
+        const counts = await this.reportRepo.getGlobalCounts(tenantId)
+        return {
+          counts: {
+            users: parseInt(counts.users, 10),
+            products: parseInt(counts.products, 10),
+            orders: parseInt(counts.orders, 10),
+            pages: parseInt(counts.pages, 10),
+          },
+          topPages: [], // Removed page tracking feature, return empty array for backwards compatibility
+        }
+      },
+      600, // 10 mins cache
+      tenantId,
+    )
   }
 
   async getDashboardReport(tenantId: string, period: string = 'month') {
     const cacheKey = `dashboard:${period}`
-    const cachedData = await this.cacheService.getCache<any>(cacheKey, tenantId)
-    if (cachedData) return cachedData
+    return this.cacheService.rememberCache(
+      cacheKey,
+      async () => {
+        const now = new Date()
+        let startDate: Date
 
-    const now = new Date()
-    let startDate: Date
+        switch (period) {
+          case 'day':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+            break
+          case 'week':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+            break
+          case 'month':
+          default:
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+            break
+        }
 
-    switch (period) {
-      case 'day':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        break
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-        break
-      case 'month':
-      default:
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-        break
-    }
+        // Fetch optimized stats from SQL (parallelized)
+        const [stats, chartData, monthlySales, lowStockProductsRaw, products, recentPurchaseOrders] = await Promise.all([
+          this.reportRepo.getDashboardStats(tenantId, startDate),
+          this.reportRepo.getSalesChartData(tenantId, 7),
+          this.reportRepo.getMonthlyGrowth(tenantId),
+          this.reportRepo.getLowStockProducts(tenantId, 10),
+          this.productService.findAllProducts({ page: 1, limit: 5 }, tenantId),
+          this.reportRepo.getRecentPurchaseOrders(tenantId, 5),
+        ])
 
-    // Fetch optimized stats from SQL (parallelized)
-    const [stats, chartData, monthlySales, lowStockProductsRaw, products, recentPurchaseOrders] = await Promise.all([
-      this.reportRepo.getDashboardStats(tenantId, startDate),
-      this.reportRepo.getSalesChartData(tenantId, 7),
-      this.reportRepo.getMonthlyGrowth(tenantId),
-      this.reportRepo.getLowStockProducts(tenantId, 10),
-      this.productService.findAllProducts({ page: 1, limit: 5 }, tenantId),
-      this.reportRepo.getRecentPurchaseOrders(tenantId, 5),
-    ])
+        const recentProducts = products.products || []
 
-    const recentProducts = products.products || []
-    
-    // Calculate growth
-    let monthlyGrowth: number | null = null
-    if (monthlySales.length >= 2) {
-      const currentMonthSales = parseFloat(monthlySales[0].sales)
-      const prevMonthSales = parseFloat(monthlySales[1].sales)
-      if (prevMonthSales > 0) {
-        monthlyGrowth = ((currentMonthSales - prevMonthSales) / prevMonthSales) * 100
-      } else if (currentMonthSales > 0) {
-        monthlyGrowth = 100
-      }
-    }
+        // Calculate growth
+        let monthlyGrowth: number | null = null
+        if (monthlySales.length >= 2) {
+          const currentMonthSales = parseFloat(monthlySales[0].sales)
+          const prevMonthSales = parseFloat(monthlySales[1].sales)
+          if (prevMonthSales > 0) {
+            monthlyGrowth = ((currentMonthSales - prevMonthSales) / prevMonthSales) * 100
+          } else if (currentMonthSales > 0) {
+            monthlyGrowth = 100
+          }
+        }
 
-    // Format chart data for UI
-    const salesData = chartData.map((d: any) => ({
-      name: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      sales: parseFloat(d.sales),
-    }))
+        // Format chart data for UI
+        const salesData = chartData.map((d: any) => ({
+          name: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          sales: parseFloat(d.sales),
+        }))
 
-    const lowStockProducts = lowStockProductsRaw.map((p: any) => ({
-      id: p.id,
-      name: p.name,
-      image: p.images?.[0],
-      stock: p.stock,
-      threshold: p.threshold,
-      variantName: p.variantCombination 
-        ? Object.values(p.variantCombination).join(' / ') 
-        : null,
-    }))
+        const lowStockProducts = lowStockProductsRaw.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          image: p.images?.[0],
+          stock: p.stock,
+          threshold: p.threshold,
+          variantName: p.variantCombination 
+            ? Object.values(p.variantCombination).join(' / ') 
+            : null,
+        }))
 
-    const result = {
-      totalSales: parseFloat(stats.totalSales),
-      periodSales: parseFloat(stats.periodSales),
-      periodOrders: parseInt(stats.periodOrders, 10),
-      activeOrders: parseInt(stats.activeOrders, 10),
-      totalProducts: parseInt(stats.totalProducts, 10),
-      totalPages: parseInt(stats.totalPages, 10),
-      salesData,
-      monthlyGrowth,
-      recentProducts,
-      lowStockProducts,
-      supplierStats: {
-        totalSuppliers: parseInt(stats.totalSuppliers, 10),
-        totalPurchaseOrders: parseInt(stats.totalPurchaseOrders, 10),
-        totalAmountDue: parseFloat(stats.totalAmountDue),
-        recentPurchaseOrders: recentPurchaseOrders.map((po: any) => ({
-          ...po,
-          supplier: { name: po.supplierName } // For frontend compatibility
-        })),
+        return {
+          totalSales: parseFloat(stats.totalSales),
+          periodSales: parseFloat(stats.periodSales),
+          periodOrders: parseInt(stats.periodOrders, 10),
+          activeOrders: parseInt(stats.activeOrders, 10),
+          totalProducts: parseInt(stats.totalProducts, 10),
+          totalPages: parseInt(stats.totalPages, 10),
+          salesData,
+          monthlyGrowth,
+          recentProducts,
+          lowStockProducts,
+          supplierStats: {
+            totalSuppliers: parseInt(stats.totalSuppliers, 10),
+            totalPurchaseOrders: parseInt(stats.totalPurchaseOrders, 10),
+            totalAmountDue: parseFloat(stats.totalAmountDue),
+            recentPurchaseOrders: recentPurchaseOrders.map((po: any) => ({
+              ...po,
+              supplier: { name: po.supplierName } // For frontend compatibility
+            })),
+          },
+          counts: {
+            users: parseInt(stats.totalUsers, 10),
+            products: parseInt(stats.totalProducts, 10),
+            orders: parseInt(stats.periodOrders, 10), // This should probably be total orders count, but keeping consistency with existing keys
+            pages: parseInt(stats.totalPages, 10),
+            suppliers: parseInt(stats.totalSuppliers, 10),
+            purchaseOrders: parseInt(stats.totalPurchaseOrders, 10),
+          },
+          lowStockCount: parseInt(stats.lowStockCount, 10),
+        }
       },
-      counts: {
-        users: parseInt(stats.totalUsers, 10),
-        products: parseInt(stats.totalProducts, 10),
-        orders: parseInt(stats.periodOrders, 10), // This should probably be total orders count, but keeping consistency with existing keys
-        pages: parseInt(stats.totalPages, 10),
-        suppliers: parseInt(stats.totalSuppliers, 10),
-        purchaseOrders: parseInt(stats.totalPurchaseOrders, 10),
-      },
-      lowStockCount: parseInt(stats.lowStockCount, 10),
-    }
-
-    await this.cacheService.setCache(cacheKey, result, 600000) // 10 mins cache
-    return result
+      600, // 10 mins cache
+      tenantId,
+    )
   }
 
   async getProfitLossReport(tenantId: string, startDateStr?: string, endDateStr?: string) {

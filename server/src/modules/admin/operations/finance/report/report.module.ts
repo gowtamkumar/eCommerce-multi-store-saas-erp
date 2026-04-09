@@ -12,6 +12,7 @@ import { ExpenseModule } from '../expense/expense.module'
 import { InvoiceModule } from '../invoice/invoice.module'
 import { PurchaseModule } from '../purchase/purchase.module'
 import { SupplierModule } from '../supplier/supplier.module'
+import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SupplierModule } from '../supplier/supplier.module'
     SupplierModule,
     ExpenseModule,
     InvoiceModule,
+    CacheModule,
   ],
   controllers: [ReportController],
   providers: [ReportService, ReportRepository],

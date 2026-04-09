@@ -1,15 +1,11 @@
 'use client';
 
-import React from 'react';
+import { memo } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { SalesTrendPoint } from '../types';
+import { SalesTrendChartProps } from '../types';
 
-interface SalesTrendChartProps {
-    salesData: SalesTrendPoint[];
-    isLoading: boolean;
-}
 
-export default function SalesTrendChart({ salesData, isLoading }: SalesTrendChartProps) {
+const SalesTrendChart = memo(({ salesData, isLoading }: SalesTrendChartProps) => {
     if (isLoading && salesData.length === 0) {
         return (
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -79,4 +75,7 @@ export default function SalesTrendChart({ salesData, isLoading }: SalesTrendChar
             )}
         </div>
     );
-}
+});
+
+SalesTrendChart.displayName = 'SalesTrendChart';
+export default SalesTrendChart;

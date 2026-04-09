@@ -7,6 +7,7 @@ import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 
 @Entity('payments')
 @Index(['tenantId', 'createdAt'])
+@Index(['tenantId', 'status', 'createdAt'])
 export class PaymentEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'order_id' })
   orderId: string

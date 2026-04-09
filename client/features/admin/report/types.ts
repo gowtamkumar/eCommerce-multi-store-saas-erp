@@ -168,3 +168,21 @@ export interface SalesReportProps {
     onPeriodChange: (period: string) => void;
     onExport: () => void;
 }
+
+export interface SalesTrendChartProps {
+    salesData: SalesTrendPoint[];
+    isLoading: boolean;
+}
+
+export interface RecentProduct {
+    id: string;
+    name: string;
+    createdAt: string;
+    price: number;
+    stock: number;
+}
+
+export interface RecentProductsTableProps {
+    products: RecentProduct[];
+    isLoading: boolean;
+}

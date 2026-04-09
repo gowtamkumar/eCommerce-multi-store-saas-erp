@@ -1,7 +1,7 @@
 'use client';
 
 import { BarChart3, ShoppingBag, Users } from 'lucide-react';
-import React from 'react';
+import React, { memo } from 'react';
 import { SalesDashboardData } from '../types';
 
 interface SalesStatsGridProps {
@@ -10,7 +10,7 @@ interface SalesStatsGridProps {
     formatPrice: (price: number) => string;
 }
 
-export default function SalesStatsGrid({ data, isLoading, formatPrice }: SalesStatsGridProps) {
+const SalesStatsGrid = memo(({ data, isLoading, formatPrice }: SalesStatsGridProps) => {
     if (isLoading && !data) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -75,4 +75,7 @@ export default function SalesStatsGrid({ data, isLoading, formatPrice }: SalesSt
             </div>
         </div>
     );
-}
+});
+
+SalesStatsGrid.displayName = 'SalesStatsGrid';
+export default SalesStatsGrid;

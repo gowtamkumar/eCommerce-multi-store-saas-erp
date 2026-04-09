@@ -10,6 +10,7 @@ import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-stat
 
 @Entity('purchase_orders')
 @Index(['tenantId', 'createdAt'])
+@Index(['tenantId', 'status'])
 export class PurchaseOrderEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, name: 'reference_number' })
   @Index()

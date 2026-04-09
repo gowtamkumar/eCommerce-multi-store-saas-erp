@@ -9,7 +9,7 @@ import type { SalesDashboardData } from '../types';
 import SalesStatsGrid from './SalesStatsGrid';
 import SalesTrendChart from './SalesTrendChart';
 import LowStockTable from './LowStockTable';
-import TopPagesTable from './TopPagesTable';
+import RecentProductsTable from './RecentProductsTable';
 
 export default function SalesAnalysisDashboard() {
     const { formatPrice } = useSettings();
@@ -91,8 +91,8 @@ export default function SalesAnalysisDashboard() {
                     products={data?.lowStockProducts || []}
                     isLoading={isLoading}
                 />
-                <TopPagesTable
-                    pages={data?.recentPages || []}
+                <RecentProductsTable
+                    products={(data as any)?.recentProducts || []}
                     isLoading={isLoading}
                 />
             </div>
