@@ -1,5 +1,3 @@
-"use client";
-
 import { CustomizerSection, SectionType } from '@/types/customizer';
 import {
   closestCenter,
@@ -45,7 +43,7 @@ import {
   CreditCard,
   ShoppingBag,
 } from 'lucide-react';
-import { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 interface SidebarProps {
   sections: CustomizerSection[];
@@ -128,18 +126,7 @@ function findBlockInTree(blocks: CustomizerSection[], id: string): CustomizerSec
   return null;
 }
 
-function findParentArray(blocks: CustomizerSection[], id: string): CustomizerSection[] | null {
-  if (blocks.some(b => b.id === id)) return blocks;
-  for (const block of blocks) {
-    if (block.children) {
-      const found = findParentArray(block.children, id);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-// Flatten tree for dnd-kit sortable context (we only sort top level or siblings, but this basic implementation handles full flattening for drag overlay)
+// Flatten tree for dnd-kit sortable context
 function flattenTree(blocks: CustomizerSection[]): CustomizerSection[] {
   let flat: CustomizerSection[] = [];
   blocks.forEach(block => {
@@ -152,18 +139,8 @@ function flattenTree(blocks: CustomizerSection[]): CustomizerSection[] {
 }
 
 
-// Recursive Sortable Item Property
-interface SortableItemProps {
-  section: CustomizerSection;
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
-  onDelete: (id: string, e: React.MouseEvent) => void;
-  onAddChild: (parentId: string, type: SectionType) => void;
-  onOpenComponentModal: (id: string) => void;
-  depth?: number;
-}
-
-function SortableItem({ section, selectedId, onSelect, onDelete, onAddChild, onOpenComponentModal, depth = 0 }: SortableItemProps) {
+// Recursive Sortable Item component, memoized for stability
+const SortableItem = React.memo(({ section, selectedId, onSelect, onDelete, onAddChild, onOpenComponentModal, depth = 0 }: SortableItemProps) => {
   const {
     attributes,
     listeners,
@@ -174,13 +151,12 @@ function SortableItem({ section, selectedId, onSelect, onDelete, onAddChild, onO
   } = useSortable({ id: section.id, data: { ...section } });
 
   const [expanded, setExpanded] = useState(true);
-  const [showComponentSelector, setShowComponentSelector] = useState(false);
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : 1,
-    marginLeft: `${depth * 12}px`, // Indentation for children
+    marginLeft: `${depth * 12}px`,
   };
 
   const isActive = selectedId === section.id;
@@ -205,7 +181,6 @@ function SortableItem({ section, selectedId, onSelect, onDelete, onAddChild, onO
         {isStructural && (!section.children || section.children.length === 0) && (
           <div className="w-4"></div>
         )}
-
 
         <div className={`p-1.5 rounded-md ${isActive ? 'bg-brand-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
           <Icon className="w-3.5 h-3.5" />
@@ -238,7 +213,6 @@ function SortableItem({ section, selectedId, onSelect, onDelete, onAddChild, onO
               depth={depth + 1}
             />
           ))}
-          {/* Quick Add inside structural block */}
           <div className="ml-3 mt-1 pl-1">
             <button
               onClick={(e) => {
@@ -256,33 +230,19 @@ function SortableItem({ section, selectedId, onSelect, onDelete, onAddChild, onO
       )}
     </div>
   );
+});
+
+interface SortableItemProps {
+  section: CustomizerSection;
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+  onDelete: (id: string, e: React.MouseEvent) => void;
+  onAddChild: (parentId: string, type: SectionType) => void;
+  onOpenComponentModal: (id: string) => void;
+  depth?: number;
 }
 
-// Draggable item for the Library Panel
-function DraggableLibraryItem({ type, onClick }: { type: SectionType, onClick: () => void }) {
-  const { attributes, listeners, setNodeRef } = useDraggable({
-    id: `library-${type}`,
-    data: { isLibraryItem: true, type }
-  });
-
-  const Icon = SECTION_ICONS[type] || Layout;
-
-  return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      onClick={onClick}
-      className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500 hover:bg-brand-50/30 dark:hover:bg-brand-900/10 transition-all text-[10px] font-medium text-slate-600 dark:text-slate-400 cursor-grab active:cursor-grabbing group"
-    >
-      <Icon className="w-4 h-4 group-hover:text-brand-600 transition-colors" />
-      <span className="truncate w-full text-center">{getLabel(type)}</span>
-    </div>
-  );
-}
-
-
-export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: SidebarProps) {
+const Sidebar = React.memo(({ sections, selectedId, onSelect, onUpdate }: SidebarProps) => {
   const [isAddSectionOpen, setIsAddSectionOpen] = useState(true);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [modalTargetId, setModalTargetId] = useState<string | null>(null);
@@ -357,36 +317,22 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     setActiveDragId(null);
-
     if (!over) return;
-
-    // Handle dropping from Library
     if (active.id.toString().startsWith('library-')) {
       const draggedType = active.id.toString().replace('library-', '') as SectionType;
-
       const targetNode = findBlockInTree(sections, over.id as string);
-
       if (targetNode && ['section', 'row', 'column'].includes(targetNode.type)) {
-        // Drop inside structural node
         addNode(draggedType, targetNode.id);
       } else {
-        // Drop at root
         addNode(draggedType);
       }
       return;
     }
-
     if (active.id === over.id) return;
-
-    // Moving existing blocks
     const sourceNode = findBlockInTree(sections, active.id as string);
     const targetNode = findBlockInTree(sections, over.id as string);
-
     if (!sourceNode || !targetNode) return;
-
     let newTree = removeBlockFromTree(sections, active.id as string);
-
-    // If dropping ON a structural node, put it inside it as a child
     if (['section', 'row', 'column'].includes(targetNode.type)) {
       newTree = updateBlockInTree(newTree, targetNode.id, (block) => {
         return { ...block, children: [...(block.children || []), sourceNode] };
@@ -394,8 +340,6 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
       onUpdate(newTree);
       return;
     }
-
-    // Otherwise, dropping on a normal node. Insert sibling
     const recursiveInsert = (blocks: CustomizerSection[]): CustomizerSection[] => {
       const index = blocks.findIndex(b => b.id === targetNode.id);
       if (index !== -1) {
@@ -410,11 +354,10 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
         return b;
       });
     };
-
     onUpdate(recursiveInsert(newTree));
   };
 
-  const flatBlocks = flattenTree(sections);
+  const flatBlocks = useMemo(() => flattenTree(sections), [sections]);
   const activeDragNode = activeDragId ? flatBlocks.find(b => b.id === activeDragId) : null;
 
   return (
@@ -492,7 +435,6 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
         </button>
 
         <div className={`grid grid-cols-2 gap-2 flex-1 overflow-y-auto space-y-1 mb-4 transition-all duration-300 ${isAddSectionOpen ? 'max-h-96 pb-4 opacity-100' : 'max-h-0 pb-0 opacity-0'}`}>
-          {/* Prioritize Layout Elements */}
           <div className="col-span-2 mb-2 pb-2 border-b border-slate-100 dark:border-slate-800">
             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Layout</p>
             <div className="grid grid-cols-3 gap-2">
@@ -501,7 +443,6 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
               ))}
             </div>
           </div>
-
 
           {(Object.keys(SECTION_ICONS) as SectionType[]).filter(t => !['section', 'row', 'column'].includes(t)).map((type) => (
             <DraggableLibraryItem
@@ -522,7 +463,6 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
         </div>
       </div>
 
-      {/* Component Library Modal */}
       {modalTargetId && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4" onClick={() => setModalTargetId(null)}>
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800" onClick={e => e.stopPropagation()}>
@@ -563,4 +503,29 @@ export default function Sidebar({ sections, selectedId, onSelect, onUpdate }: Si
       )}
     </div>
   );
+});
+
+// Draggable item for the Library Panel
+function DraggableLibraryItem({ type, onClick }: { type: SectionType, onClick: () => void }) {
+  const { attributes, listeners, setNodeRef } = useDraggable({
+    id: `library-${type}`,
+    data: { isLibraryItem: true, type }
+  });
+
+  const Icon = SECTION_ICONS[type] || Layout;
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      onClick={onClick}
+      className="flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500 hover:bg-brand-50/30 dark:hover:bg-brand-900/10 transition-all text-[10px] font-medium text-slate-600 dark:text-slate-400 cursor-grab active:cursor-grabbing group"
+    >
+      <Icon className="w-4 h-4 group-hover:text-brand-600 transition-colors" />
+      <span className="truncate w-full text-center">{getLabel(type)}</span>
+    </div>
+  );
 }
+
+export default Sidebar;

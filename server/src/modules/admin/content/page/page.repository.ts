@@ -28,6 +28,16 @@ export class PageRepository {
       where.status = status
     }
     return this.repo.find({
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        isHomePage: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        userId: true,
+      },
       where,
       order: { createdAt: 'DESC' },
     })

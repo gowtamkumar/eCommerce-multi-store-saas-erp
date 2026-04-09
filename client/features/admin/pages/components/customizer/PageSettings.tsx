@@ -1,31 +1,27 @@
-"use client";
-
 import { PageData } from '@/types/customizer';
 import { ChevronDown, ChevronUp, Globe, Layout, Search, Type } from 'lucide-react';
-import { useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import DebouncedInput from './DebouncedInput';
 
 interface PageSettingsProps {
   data: PageData;
   onUpdate: (data: PageData) => void;
 }
 
-export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
+const PageSettings = React.memo(({ data, onUpdate }: PageSettingsProps) => {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
-  const handleChange = (key: keyof PageData, value: any) => {
+  const handleChange = useCallback((key: keyof PageData, value: any) => {
     let updated = { ...data, [key]: value };
-
-    // If setting as home page, force slug to /
     if (key === 'isHomePage' && value === true) {
       updated.slug = '/';
     }
-
     onUpdate(updated);
-  };
+  }, [data, onUpdate]);
 
   return (
     <div className="p-6 space-y-8 animate-in fade-in slide-in-from-left-4 duration-300">
@@ -39,10 +35,10 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 uppercase">Page Title</label>
-            <input
+            <DebouncedInput
               type="text"
               value={data.title}
-              onChange={(e) => handleChange('title', e.target.value)}
+              onChange={(val) => handleChange('title', val)}
               className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
               placeholder="e.g. Home Page"
             />
@@ -80,10 +76,10 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
             <label className="text-[10px] font-bold text-slate-500 uppercase">URL Slug</label>
             <div className="relative">
               <span className="absolute left-3 top-2 text-slate-400 text-sm">/</span>
-              <input
+              <DebouncedInput
                 type="text"
                 value={data.slug}
-                onChange={(e) => handleChange('slug', e.target.value)}
+                onChange={(val) => handleChange('slug', val)}
                 disabled={data.isHomePage}
                 className={`w-full pl-6 pr-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all ${data.isHomePage ? 'opacity-50 cursor-not-allowed' : ''}`}
                 placeholder="page-slug"
@@ -106,10 +102,10 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 uppercase">Meta Title</label>
-            <input
+            <DebouncedInput
               type="text"
               value={data.metaTitle || ''}
-              onChange={(e) => handleChange('metaTitle', e.target.value)}
+              onChange={(val) => handleChange('metaTitle', val)}
               className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
               placeholder="Google search title"
             />
@@ -118,11 +114,11 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 uppercase">Meta Description</label>
-            <textarea
+            <DebouncedInput
+              as="textarea"
               value={data.metaDescription || ''}
-              onChange={(e) => handleChange('metaDescription', e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+              onChange={(val) => handleChange('metaDescription', val)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all min-h-[100px]"
               placeholder="What this page is about..."
             />
             <p className="text-[9px] text-slate-400">Optimal: 150-160 characters. Current: {data.metaDescription?.length || 0}</p>
@@ -130,10 +126,10 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 uppercase">OG Image URL</label>
-            <input
+            <DebouncedInput
               type="text"
               value={data.ogImage || ''}
-              onChange={(e) => handleChange('ogImage', e.target.value)}
+              onChange={(val) => handleChange('ogImage', val)}
               className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
               placeholder="https://example.com/og-image.jpg"
             />
@@ -149,7 +145,6 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
         </div>
 
         <div className="space-y-4">
-          {/* Headings Typography - Collapsible */}
           <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800/30">
             <button
               onClick={() => toggleExpand('typography-headings')}
@@ -200,10 +195,10 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-500 uppercase">Size</label>
-                    <input
+                    <DebouncedInput
                       type="text"
                       value={data.typography?.headingFontSize || ''}
-                      onChange={(e) => handleChange('typography', { ...data.typography, headingFontSize: e.target.value })}
+                      onChange={(val) => handleChange('typography', { ...data.typography, headingFontSize: val })}
                       placeholder="2rem"
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                     />
@@ -212,10 +207,10 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Line Height</label>
-                  <input
+                  <DebouncedInput
                     type="text"
                     value={data.typography?.headingLineHeight || ''}
-                    onChange={(e) => handleChange('typography', { ...data.typography, headingLineHeight: e.target.value })}
+                    onChange={(val) => handleChange('typography', { ...data.typography, headingLineHeight: val })}
                     placeholder="1.2"
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                   />
@@ -224,7 +219,6 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
             )}
           </div>
 
-          {/* Paragraphs Typography - Collapsible */}
           <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800/30">
             <button
               onClick={() => toggleExpand('typography-paragraphs')}
@@ -270,10 +264,10 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-500 uppercase">Size</label>
-                    <input
+                    <DebouncedInput
                       type="text"
                       value={data.typography?.paragraphFontSize || ''}
-                      onChange={(e) => handleChange('typography', { ...data.typography, paragraphFontSize: e.target.value })}
+                      onChange={(val) => handleChange('typography', { ...data.typography, paragraphFontSize: val })}
                       placeholder="16px"
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                     />
@@ -282,10 +276,10 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">Line Height</label>
-                  <input
+                  <DebouncedInput
                     type="text"
                     value={data.typography?.paragraphLineHeight || ''}
-                    onChange={(e) => handleChange('typography', { ...data.typography, paragraphLineHeight: e.target.value })}
+                    onChange={(val) => handleChange('typography', { ...data.typography, paragraphLineHeight: val })}
                     placeholder="1.6"
                     className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                   />
@@ -294,7 +288,6 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
             )}
           </div>
 
-          {/* Base Font Size (kept for backwards compatibility) */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 uppercase">Base Font Size</label>
             <div className="flex items-center gap-2">
@@ -334,4 +327,6 @@ export default function PageSettings({ data, onUpdate }: PageSettingsProps) {
       </section>
     </div>
   );
-}
+});
+
+export default PageSettings;

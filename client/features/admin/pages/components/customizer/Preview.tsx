@@ -1,8 +1,6 @@
-"use client";
-
 import SectionRenderer from '@/features/admin/pages/components/customizer/SectionRenderer';
 import { CustomizerSection } from '@/types/customizer';
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface PreviewProps {
   sections: CustomizerSection[];
@@ -24,7 +22,7 @@ interface PreviewProps {
   };
 }
 
-export default function Preview({ sections, viewMode, selectedId, onSelect, typography }: PreviewProps) {
+const Preview = React.memo(({ sections, viewMode, selectedId, onSelect, typography }: PreviewProps) => {
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Scroll to selected section
@@ -90,4 +88,6 @@ export default function Preview({ sections, viewMode, selectedId, onSelect, typo
       </div>
     </div>
   );
-}
+});
+
+export default Preview;

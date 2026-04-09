@@ -4,7 +4,7 @@ import { fetchAPI } from '@/services/api';
 import { CustomizerSection, PageData } from '@/types/customizer';
 import { ArrowLeft, Eye, Layout, Monitor, Save, Settings, Smartphone } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import PageSettings from './PageSettings';
 import Preview from './Preview';
@@ -99,6 +99,14 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
     ? findSectionDeep(data.content.sections, selectedSectionId)
     : undefined;
 
+  const handleClosePanel = useCallback(() => setSelectedSectionId(null), []);
+  const handleUpdateSection = useCallback((updated: CustomizerSection) => {
+    setData(prev => {
+      const newSections = replaceSectionDeep(prev.content.sections, updated);
+      return { ...prev, content: { ...prev.content, sections: newSections } };
+    });
+  }, []);
+
   return (
     <div className="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100">
       {/* Header */}
@@ -170,7 +178,7 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
                 sections={data.content.sections}
                 selectedId={selectedSectionId}
                 onSelect={setSelectedSectionId}
-                onUpdate={(sections: CustomizerSection[]) => setData({ ...data, content: { ...data.content, sections } })}
+                onUpdate={useCallback((sections: CustomizerSection[]) => setData({ ...data, content: { ...data.content, sections } }), [data, setData])}
               />
             ) : (
               <PageSettings
@@ -198,11 +206,8 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
             <SettingsPanel
               section={selectedSection}
               viewMode={viewMode}
-              onClose={() => setSelectedSectionId(null)}
-              onUpdate={(updated: CustomizerSection) => {
-                const newSections = replaceSectionDeep(data.content.sections, updated);
-                setData({ ...data, content: { ...data.content, sections: newSections } });
-              }}
+              onClose={handleClosePanel}
+              onUpdate={handleUpdateSection}
             />
           )}
         </aside>

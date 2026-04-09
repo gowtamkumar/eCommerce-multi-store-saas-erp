@@ -1,5 +1,6 @@
 import { ProductService } from '@/modules/admin/catalog/product/product.service'
 import { FaqService } from '@/modules/admin/content/faq/faq.service'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto'
 import { PageEntity } from './entities/page.entity'
@@ -8,12 +9,14 @@ import { PageRepository } from './page.repository'
 @Injectable()
 export class PageService {
   private readonly logger = new Logger(PageService.name)
+  private readonly CACHE_TTL = 300 // 5 minutes
 
   constructor(
     private readonly pageRepository: PageRepository,
     private readonly productService: ProductService,
     private readonly faqService: FaqService,
-  ) {}
+    private readonly cache: CacheService,
+  ) { }
 
   async createPage(dto: CreatePageDto, tenantId: string): Promise<PageEntity> {
     this.logger.log(`${this.createPage.name} Service Called`)
@@ -22,6 +25,7 @@ export class PageService {
 
     if (dto.isHomePage) {
       await this.pageRepository.unsetHomePage(tenantId)
+      await this.invalidatePageCache(tenantId, 'home')
     }
 
     return await this.pageRepository.createAndSave(dto, tenantId)
@@ -41,14 +45,33 @@ export class PageService {
 
   async findBySlugPage(slug: string, tenantId: string): Promise<PageEntity> {
     this.logger.log(`${this.findBySlugPage.name} Service Called`)
+    const cacheKey = `slug:${slug}`
+
+    const cached = await this.cache.getCache<PageEntity>(cacheKey, tenantId)
+    if (cached) return cached
+
     const page = await this.pageRepository.findBySlug(slug, tenantId)
     if (!page) throw new NotFoundException('Page not found')
-    return JSON.parse(JSON.stringify(page))
+
+    const result = JSON.parse(JSON.stringify(page))
+    await this.cache.setCache(cacheKey, result, this.CACHE_TTL, tenantId)
+
+    return result
   }
 
   async findHomePage(tenantId: string): Promise<PageEntity | null> {
     this.logger.log(`${this.findHomePage.name} Service Called`)
-    return await this.pageRepository.findHomePage(tenantId)
+    const cacheKey = `home`
+
+    const cached = await this.cache.getCache<PageEntity>(cacheKey, tenantId)
+    if (cached) return cached
+
+    const page = await this.pageRepository.findHomePage(tenantId)
+    if (page) {
+      await this.cache.setCache(cacheKey, page, this.CACHE_TTL, tenantId)
+    }
+
+    return page
   }
 
   async updatePage(id: string, dto: UpdatePageDto, tenantId: string): Promise<PageEntity> {
@@ -58,13 +81,19 @@ export class PageService {
     if (dto.slug && dto.slug !== page.slug) {
       const existing = await this.pageRepository.findBySlug(dto.slug, tenantId)
       if (existing) throw new ConflictException('Slug already exists for this tenant')
+      await this.invalidatePageCache(tenantId, page.slug)
     }
 
     if (dto.isHomePage && !page.isHomePage) {
       await this.pageRepository.unsetHomePage(tenantId)
+      await this.invalidatePageCache(tenantId, 'home')
     }
 
-    return await this.pageRepository.updateAndSave(page, dto)
+    const updated = await this.pageRepository.updateAndSave(page, dto)
+    await this.invalidatePageCache(tenantId, updated.slug)
+    if (updated.isHomePage) await this.invalidatePageCache(tenantId, 'home')
+
+    return updated
   }
 
   async removePage(
@@ -74,6 +103,9 @@ export class PageService {
     this.logger.log(`${this.removePage.name} Service Called`)
     const page = await this.findOnePage(id, tenantId)
     await this.pageRepository.removePage(page)
+    await this.invalidatePageCache(tenantId, page.slug)
+    if (page.isHomePage) await this.invalidatePageCache(tenantId, 'home')
+
     return { success: true, message: 'Page deleted successfully' }
   }
 
@@ -82,30 +114,48 @@ export class PageService {
     return await this.pageRepository.findAllCrossTenant()
   }
 
-  // Load FAQs for a page with faq-section
+  // Optimized: Load FAQs as a single batch operation instead of per-section redundant calls
   async enrichPageWithFaqs(page: PageEntity): Promise<PageEntity> {
     this.logger.log(`${this.enrichPageWithFaqs.name} Service Called`)
     if (!page.sections || page.sections.length === 0) return page
 
-    const enrichedSections = await Promise.all(
-      page.sections.map(async (section) => {
-        if (section.type === 'faq-section' as any) {
-          const source = section.settings?.source || 'page'
+    const faqSections = page.sections.filter(s => s.type === 'faq-section' as any)
+    if (faqSections.length === 0) return page
 
-          let faqs = []
-          if (source === 'page') {
-            faqs = await this.faqService.findByPageFaq(page.id, page.tenantId)
-          } else if (source === 'global') {
-            faqs = await this.faqService.findGlobalFaqs(page.tenantId)
-          } else if (source === 'specific' && section.settings?.faqIds) {
-            faqs = await this.faqService.findByIdsFaq(section.settings.faqIds, page.tenantId)
-          }
+    // Collect all specific IDs and handle "global" vs "page" logic separately
+    const specificFaqIds = new Set<string>()
+    let needsGlobal = false
+    let needsPageFaqs = false
 
-          return { ...section, data: { faqs } }
+    faqSections.forEach(section => {
+      const source = section.settings?.source || 'page'
+      if (source === 'page') needsPageFaqs = true
+      else if (source === 'global') needsGlobal = true
+      else if (source === 'specific' && section.settings?.faqIds) {
+        section.settings.faqIds.forEach((id: string) => specificFaqIds.add(id))
+      }
+    })
+
+    // Batch fetch needed data
+    const [pageFaqs, globalFaqs, specificFaqs] = await Promise.all([
+      needsPageFaqs ? this.faqService.findByPageFaq(page.id, page.tenantId) : Promise.resolve([]),
+      needsGlobal ? this.faqService.findGlobalFaqs(page.tenantId) : Promise.resolve([]),
+      specificFaqIds.size > 0 ? this.faqService.findByIdsFaq(Array.from(specificFaqIds), page.tenantId) : Promise.resolve([])
+    ])
+
+    const enrichedSections = page.sections.map((section) => {
+      if (section.type === 'faq-section' as any) {
+        const source = section.settings?.source || 'page'
+        let faqs = []
+        if (source === 'page') faqs = pageFaqs
+        else if (source === 'global') faqs = globalFaqs
+        else if (source === 'specific' && section.settings?.faqIds) {
+          faqs = specificFaqs.filter(f => section.settings.faqIds.includes(f.id))
         }
-        return section
-      }),
-    )
+        return { ...section, data: { faqs } }
+      }
+      return section
+    })
 
     return { ...page, sections: enrichedSections } as PageEntity
   }
@@ -113,5 +163,13 @@ export class PageService {
   async countByTenant(tenantId: string): Promise<number> {
     this.logger.log(`${this.countByTenant.name} Service Called`)
     return await this.pageRepository.countByTenant(tenantId)
+  }
+
+  private async invalidatePageCache(tenantId: string, slug?: string) {
+    if (slug === 'home') {
+      await this.cache.delCache('home', tenantId)
+    } else if (slug) {
+      await this.cache.delCache(`slug:${slug}`, tenantId)
+    }
   }
 }
