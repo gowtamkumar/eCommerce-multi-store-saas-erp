@@ -55,9 +55,11 @@ export class PageService {
     const page = await this.pageRepository.findBySlug(slug, tenantId)
     if (!page) throw new NotFoundException('Page not found')
 
-    const result = JSON.parse(JSON.stringify(page))
+    // Enrich with FAQ data before caching (Critical Fix)
+    const enriched = await this.enrichPageWithFaqs(page)
+    const result = JSON.parse(JSON.stringify(enriched))
+    
     await this.cache.setCache(cacheKey, result, this.CACHE_TTL, tenantId)
-
     return result
   }
 
@@ -65,12 +67,18 @@ export class PageService {
     this.logger.log(`${this.findHomePage.name} Service Called`)
     const cacheKey = `home`
 
-    return await this.cache.rememberCache<PageEntity | null>(
-      cacheKey,
-      () => this.pageRepository.findHomePage(tenantId),
-      this.HOME_CACHE_TTL,
-      tenantId,
-    )
+    const cached = await this.cache.getCache<PageEntity>(cacheKey, tenantId)
+    if (cached) return cached
+
+    const page = await this.pageRepository.findHomePage(tenantId)
+    if (!page) return null
+
+    // Enrich with FAQ data before caching (Critical Fix)
+    const enriched = await this.enrichPageWithFaqs(page)
+    const result = JSON.parse(JSON.stringify(enriched))
+
+    await this.cache.setCache(cacheKey, result, this.HOME_CACHE_TTL, tenantId)
+    return result
   }
 
   async updatePage(id: string, dto: UpdatePageDto, tenantId: string): Promise<PageEntity> {
