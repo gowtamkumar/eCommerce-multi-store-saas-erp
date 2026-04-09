@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
 import { SubscriptionPlanRepository } from '@/modules/system/subscription-plan/subscription-plan.repository'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
@@ -23,28 +24,38 @@ export class SubscriptionBillingService {
     private readonly tenantRepository: TenantRepository,
     private readonly planRepository: SubscriptionPlanRepository,
     private readonly configService: ConfigService,
+    private readonly cacheService: CacheService,
   ) { }
 
   async getCurrentSubscription(tenantId: string): Promise<CurrentSubscriptionResponseDto> {
     this.logger.log(`${this.getCurrentSubscription.name} Called for tenant: ${tenantId}`)
-    const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
+    const cacheKey = `subscription:${tenantId}:current`
 
-    if (!tenant) {
-      throw new NotFoundException('Tenant not found')
-    }
-
-    return {
-      planName: tenant.subscriptionPlan?.name || 'No Plan',
-      status: tenant.subscriptionStatus,
-      startsAt: tenant.subscriptionStartsAt,
-      endsAt: tenant.subscriptionEndsAt,
-      billingCycle: tenant.subscriptionBillingCycle,
-      isExpired: tenant.isExpired,
-    }
+    return this.cacheService.rememberCache(
+      cacheKey,
+      async () => {
+        const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
+        if (!tenant) throw new NotFoundException('Tenant not found')
+        return {
+          planName: tenant.subscriptionPlan?.name || 'No Plan',
+          status: tenant.subscriptionStatus,
+          startsAt: tenant.subscriptionStartsAt,
+          endsAt: tenant.subscriptionEndsAt,
+          billingCycle: tenant.subscriptionBillingCycle,
+          isExpired: tenant.isExpired,
+        }
+      },
+      3600, // 1 hour
+      tenantId
+    )
   }
 
   async getAvailablePlans(): Promise<SubscriptionPlanEntity[]> {
-    return await this.planRepository.findActiveSortedByPrice()
+    return this.cacheService.rememberCache(
+      'subscription:plans:active',
+      () => this.planRepository.findActiveSortedByPrice(),
+      86400 // 24 hours
+    )
   }
 
   async getBillingHistory(tenantId: string): Promise<SubscriptionInvoiceEntity[]> {
@@ -195,6 +206,10 @@ export class SubscriptionBillingService {
         subscriptionBillingCycle: record.billingCycle,
         status: TenantStatus.ACTIVE,
       })
+
+      // Invalidate current subscription cache
+      await this.cacheService.delCache(`subscription:${tenant.id}:current`, tenant.id)
+
       this.logger.log(`Tenant ${tenant.id} subscription updated: Plan ${plan.name}, startsAt: ${currentDate}, endsAt: ${newEndsAt}`)
     }
 

@@ -25,3 +25,22 @@ export interface BillingInvoice {
     billingDate: string;
     plan: { name: string };
 }
+
+export interface InvoiceHistoryProps {
+    history: BillingInvoice[];
+}
+
+export interface PlanCardProps {
+    plan: Plan;
+    isCurrent: boolean;
+    billingCycle: 'monthly' | 'yearly';
+    handleUpgrade: (id: string) => void;
+    initiating: string | null;
+}
+
+export interface SubscriptionOverviewProps {
+    subInfo: SubscriptionInfo | null;
+    plans: Plan[];
+    handleUpgrade: (id: string) => void;
+    initiating: string | null;
+}
