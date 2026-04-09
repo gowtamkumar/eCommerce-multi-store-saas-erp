@@ -15,6 +15,7 @@ export interface WishlistItem {
     category?: {
       name: string;
     };
+    taxRate?: number;
   };
   pricing: {
     base_price: number;

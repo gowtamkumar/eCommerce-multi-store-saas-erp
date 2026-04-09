@@ -72,9 +72,10 @@ export const useDownloadInvoice = () => {
     doc.text(`Invoice #: ${displayInvoiceNum}`, margin, 56);
     doc.setFont('helvetica', 'normal');
     doc.text(`Date: ${order?.createdAt ? dayjs(order.createdAt).format('MMMM D, YYYY') : dayjs().format('MMMM D, YYYY')}`, margin, 61);
-    doc.text(`Payment: ${order?.paymentMethod || 'N/A'}`, margin, 66);
+    doc.text(`Payment Mode: ${order?.paymentMethod || 'N/A'}`, margin, 66);
+    doc.text(`Status: ${order?.paymentStatus || 'N/A'}`, margin, 71);
     if (order?.transactionId) {
-      doc.text(`TXN: ${order.transactionId}`, margin, 71);
+      doc.text(`TXN: ${order.transactionId}`, margin, 76);
     }
 
     // Bill To
@@ -96,7 +97,7 @@ export const useDownloadInvoice = () => {
       customerY += height + 1;
       doc.text(`Phone: ${shipping.phone}`, customerDetailsX, customerY);
       customerY += 4;
-      doc.text(`Zone: ${(shipping.zone || order.deliveryZone || 'Inside').toUpperCase()}`, customerDetailsX, customerY);
+      doc.text(`Zone: ${(shipping.zone || order.deliveryZone || 'Inside').toUpperCase()} DELIVERY`, customerDetailsX, customerY);
       customerY += 4;
     } else if (order?.address) {
       const height = addWrappedText(`${order.address}${order.city ? ', ' + order.city : ''}`, customerDetailsX, customerY, 70, 4);
@@ -105,7 +106,7 @@ export const useDownloadInvoice = () => {
         doc.text(`Phone: ${order.customerPhone}`, customerDetailsX, customerY);
         customerY += 4;
       }
-      doc.text(`Zone: ${(order.deliveryZone || 'Inside').toUpperCase()}`, customerDetailsX, customerY);
+      doc.text(`Zone: ${(order.deliveryZone || 'Inside').toUpperCase()} DELIVERY`, customerDetailsX, customerY);
       customerY += 4;
     }
 
@@ -123,14 +124,13 @@ export const useDownloadInvoice = () => {
       
       const unitPrice = Number(item.unitPrice || 0);
       const discount = Number(item.discountAmount || 0);
-      const netPrice = unitPrice - discount;
 
       return [
-        fullName,
+        { content: fullName, styles: { fontStyle: 'bold' } },
         item.quantity || 0,
         formatPrice(unitPrice),
         discount > 0 ? `-${formatPrice(discount)}` : '0',
-        formatPrice(item.totalAmount || (netPrice * item.quantity))
+        formatPrice(item.totalAmount || ((unitPrice - discount) * item.quantity))
       ];
     });
 
@@ -141,7 +141,8 @@ export const useDownloadInvoice = () => {
       headStyles: { 
         fillColor: [79, 70, 229],
         fontSize: 10,
-        halign: 'left'
+        halign: 'left',
+        textColor: [255, 255, 255]
       },
       columnStyles: {
         0: { cellWidth: 'auto' },
@@ -150,7 +151,7 @@ export const useDownloadInvoice = () => {
         3: { halign: 'right', cellWidth: 30 },
         4: { halign: 'right', cellWidth: 30 },
       },
-      styles: { fontSize: 9, cellPadding: 4 },
+      styles: { fontSize: 9, cellPadding: 4, textColor: [50, 50, 50] },
       alternateRowStyles: { fillColor: [250, 250, 250] }
     });
 
@@ -164,7 +165,7 @@ export const useDownloadInvoice = () => {
 
     let currentY = finalY;
     const subtotal = (order?.items || []).reduce((acc: number, item: any) => acc + (Number(item.unitPrice) * item.quantity), 0);
-    const totalDiscount = (order?.items || []).reduce((acc: number, item: any) => acc + (Number(item.discountAmount) * item.quantity), 0);
+    const itemDiscounts = (order?.items || []).reduce((acc: number, item: any) => acc + (Number(item.discountAmount) * item.quantity), 0);
     
     // Subtotal
     doc.text('Subtotal:', totalsX, currentY);
@@ -172,19 +173,27 @@ export const useDownloadInvoice = () => {
     doc.text(formatPrice(subtotal), pageWidth - margin, currentY, { align: 'right' });
     currentY += 6;
 
-    // Discount
-    if (totalDiscount > 0 || Number(order?.couponDiscountAmount) > 0) {
-        const disc = totalDiscount + Number(order?.couponDiscountAmount || 0);
+    // Item Discounts
+    if (itemDiscounts > 0) {
         doc.setTextColor(100);
-        doc.text('Discount:', totalsX, currentY);
-        doc.setTextColor(220, 38, 38); // Red
-        doc.text(`-${formatPrice(disc)}`, pageWidth - margin, currentY, { align: 'right' });
+        doc.text('Item Discount:', totalsX, currentY);
+        doc.setTextColor(220, 38, 38);
+        doc.text(`-${formatPrice(itemDiscounts)}`, pageWidth - margin, currentY, { align: 'right' });
+        currentY += 6;
+    }
+
+    // Coupon Discount
+    if (Number(order?.couponDiscountAmount) > 0) {
+        doc.setTextColor(100);
+        doc.text(`Coupon Save (${order.appliedCoupon || 'PROMO'}):`, totalsX, currentY);
+        doc.setTextColor(220, 38, 38);
+        doc.text(`-${formatPrice(order.couponDiscountAmount)}`, pageWidth - margin, currentY, { align: 'right' });
         currentY += 6;
     }
 
     // Shipping
     doc.setTextColor(100);
-    doc.text('Shipping:', totalsX, currentY);
+    doc.text('Shipping Fee:', totalsX, currentY);
     doc.setTextColor(0);
     doc.text(Number(order?.shippingFee) === 0 ? 'FREE' : formatPrice(order?.shippingFee || 0), pageWidth - margin, currentY, { align: 'right' });
     currentY += 6;
@@ -192,7 +201,7 @@ export const useDownloadInvoice = () => {
     // Tax
     if (Number(order?.taxAmount) > 0) {
         doc.setTextColor(100);
-        doc.text('Tax:', totalsX, currentY);
+        doc.text('Total Tax:', totalsX, currentY);
         doc.setTextColor(0);
         doc.text(formatPrice(order.taxAmount), pageWidth - margin, currentY, { align: 'right' });
         currentY += 6;
@@ -200,10 +209,11 @@ export const useDownloadInvoice = () => {
 
     // Grand Total
     currentY += 2;
-    doc.setDrawColor(200);
+    doc.setDrawColor(230);
     doc.line(totalsX, currentY - 4, pageWidth - margin, currentY - 4);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0);
     doc.text('Grand Total:', totalsX, currentY);
     doc.setTextColor(79, 70, 229);
     doc.text(formatPrice(order?.totalAmount || 0), pageWidth - margin, currentY, { align: 'right' });

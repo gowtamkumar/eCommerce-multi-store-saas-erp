@@ -56,6 +56,8 @@ export interface Order {
   currencyRate?: number;
   deliveryZone?: string;
   city?: string;
+  appliedCoupon?: string;
+  couponDiscountAmount?: number;
 }
 
 export interface ReturnRequest {

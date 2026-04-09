@@ -1,15 +1,9 @@
-import React from 'react';
-import { Eye, FileText, Package } from 'lucide-react';
-import { getOrderStatusStyles } from '@/lib/utils';
 import { ReturnStatus } from '@/lib/enums/return-status.enum';
+import { getOrderStatusStyles } from '@/lib/utils';
+import { Eye, FileText, Package } from 'lucide-react';
+import React from 'react';
+import { OrderListItemProps } from '../type';
 
-interface OrderListItemProps {
-    order: any;
-    formatPrice: (price: number) => string;
-    onViewDetail: (order: any) => void;
-    onDownloadInvoice: (order: any) => void;
-    getReturnStatus: (order: any, productId: string, variantId?: string) => ReturnStatus | null;
-}
 
 const OrderListItem = React.memo(({
     order,

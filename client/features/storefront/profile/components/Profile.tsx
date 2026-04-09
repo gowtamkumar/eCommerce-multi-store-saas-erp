@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, Loader2, LogOut, MapPin, Package, ShieldCheck, User } from 'lucide-react';
+import { Calendar, Loader2, LogOut, MapPin, Package, ShieldCheck, User, Heart } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -21,10 +21,14 @@ const ShippingAddresses = dynamic(() => import('./ShippingAddresses'), {
     loading: () => <div className="p-8 text-center text-slate-500">Loading Addresses...</div>
 });
 
+const WishlistComponent = dynamic(() => import('./WishlistComponent'), {
+    loading: () => <div className="p-8 text-center text-slate-500">Loading Wishlist...</div>
+});
+
 export default function Profile() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'personal' | 'orders' | 'addresses' | 'security'>('personal');
+    const [activeTab, setActiveTab] = useState<'personal' | 'orders' | 'addresses' | 'wishlist' | 'security'>('personal');
 
     const [stats, setStats] = useState({
         totalOrders: 0,
@@ -79,6 +83,7 @@ export default function Profile() {
     const tabs = [
         { id: 'profile', label: 'My Profile', icon: User },
         { id: 'orders', label: 'Order History', icon: Package },
+        { id: 'wishlist', label: 'Wishlist', icon: Heart },
         { id: 'addresses', label: 'Shipping Addresses', icon: MapPin },
         { id: 'security', label: 'Security', icon: ShieldCheck },
     ];
@@ -234,6 +239,12 @@ export default function Profile() {
                                 {activeTab === 'addresses' && (
                                     <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-xl min-h-[500px]">
                                         <ShippingAddresses />
+                                    </div>
+                                )}
+
+                                {activeTab === 'wishlist' && (
+                                    <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-xl min-h-[500px]">
+                                        <WishlistComponent />
                                     </div>
                                 )}
 

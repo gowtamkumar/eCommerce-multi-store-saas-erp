@@ -84,20 +84,6 @@ export class OrderRepository {
 
     const queryBuilder = this.repo
       .createQueryBuilder('order')
-      // Select only necessary fields for the order list to improve performance
-      .select([
-        'order.id',
-        'order.customerName',
-        'order.totalAmount',
-        'order.currency',
-        'order.status',
-        'order.paymentStatus',
-        'order.createdAt',
-        'order.userId',
-        'order.tenantId',
-        'order.deliveryZone',
-        'order.address'
-      ])
       .leftJoinAndSelect('order.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
       .leftJoinAndSelect('items.variant', 'variant')
