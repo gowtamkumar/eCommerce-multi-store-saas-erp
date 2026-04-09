@@ -1,8 +1,9 @@
 "use client";
 
 import { useCart } from "@/hooks/CartContext";
-import { useWishlist } from "@/hooks/WishlistContext";
 import { useSettings } from "@/hooks/SettingsContext";
+import { useWishlist } from "@/hooks/WishlistContext";
+import { UserRole } from "@/lib/enums/user-role.enum";
 import { fetchAPI } from "@/services/api";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, BadgePercent, Command, Facebook, Grid, Heart, Home, Instagram, Lock, LogOut, Menu, Phone, Search, ShoppingBag, Twitter, User, X } from "lucide-react";
@@ -13,7 +14,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import CurrencySwitcher from "../shared/CurrencySwitcher";
 import UserDropdown from "./UserDropdown";
-import { UserRole } from "@/lib/enums/user-role.enum";
 
 const Navbar = () => {
   const { data: session } = useSession();
@@ -265,7 +265,7 @@ const Navbar = () => {
       )}
 
       <Link
-        href="/wishlist"
+        href="/profile"
         className="p-2 rounded-full hover:bg-white/10 transition-colors relative group"
         title="Wishlist"
       >

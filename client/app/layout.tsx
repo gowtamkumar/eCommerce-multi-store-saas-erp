@@ -2,7 +2,6 @@ import AuthProvider from "@/hooks/AuthProvider";
 import { SettingsProvider } from "@/hooks/SettingsContext";
 import ToasterProvider from "@/hooks/ToasterProvider";
 import { getSiteSettings } from "@/services/getSettings";
-import { Inter, Outfit } from "next/font/google";
 import Script from "next/script";
 import "../styles/typography.css";
 import "./globals.css";
@@ -21,7 +20,7 @@ export default async function RootLayout({
   const { googleSiteVerification, facebookDomainVerification, googleAnalyticsId, facebookPixelId } = settings.marketing || {};
 
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <head>
         {googleSiteVerification && <meta name="google-site-verification" content={googleSiteVerification} />}
         {facebookDomainVerification && <meta name="facebook-domain-verification" content={facebookDomainVerification} />}
