@@ -1,9 +1,10 @@
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { SettingsService } from '@/modules/admin/settings/settings.service'
+import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as nodemailer from 'nodemailer'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
-import { SiteSettingsRepository } from '@/modules/admin/settings/site-settings.repository'
 
 @Injectable()
 export class MailService {
@@ -13,7 +14,8 @@ export class MailService {
   constructor(
     private configService: ConfigService,
     private tenantRepo: TenantRepository,
-    private settingsRepo: SiteSettingsRepository,
+    private settingsService: SettingsService,
+    private cacheService: CacheService,
   ) {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
@@ -34,7 +36,7 @@ export class MailService {
         from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),
       }
 
-    const settings = await this.settingsRepo.findByTenantId(tenantId)
+    const settings = await this.settingsService.findByTenantSettings(tenantId)
     if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
       const port = Number(settings.smtp.port) || 587
 
@@ -146,32 +148,39 @@ export class MailService {
   }
 
   private async getTenantBaseUrl(tenantId: string): Promise<string> {
-    this.logger.log(`${this.getTenantBaseUrl.name} Service Called`)
+    this.logger.log(`${this.getTenantBaseUrl.name} Service Called for tenant: ${tenantId}`)
     const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000')
 
     if (!tenantId) return appUrl
 
-    const tenant = await this.tenantRepo.findTenantById(tenantId)
-    if (!tenant) return appUrl
+    return this.cacheService.rememberCache(
+      `tenant:${tenantId}:baseurl`,
+      async () => {
+        const tenant = await this.tenantRepo.findTenantById(tenantId)
+        if (!tenant) return appUrl
 
-    if (tenant.customDomain) {
-      const protocol = appUrl.startsWith('https') ? 'https' : 'http'
-      return `${protocol}://${tenant.customDomain}`
-    }
+        if (tenant.customDomain) {
+          const protocol = appUrl.startsWith('https') ? 'https' : 'http'
+          return `${protocol}://${tenant.customDomain}`
+        }
 
-    try {
-      const url = new URL(appUrl)
-      url.hostname = `${tenant.subdomain}.${url.hostname}`
-      // Remove trailing slash if present
-      return url.toString().replace(/\/$/, '')
-    } catch (e) {
-      return appUrl
-    }
+        try {
+          const url = new URL(appUrl)
+          url.hostname = `${tenant.subdomain}.${url.hostname}`
+          // Remove trailing slash if present
+          return url.toString().replace(/\/$/, '')
+        } catch (e) {
+          return appUrl
+        }
+      },
+      3600, // 1 hour
+      tenantId
+    )
   }
 
   async sendNewOrderNotification(order: OrderEntity, tenantId: string) {
-    this.logger.log(`${this.sendNewOrderNotification.name} Service Called`)
-    const settings = await this.settingsRepo.findByTenantId(tenantId)
+    this.logger.log(`${this.sendNewOrderNotification.name} Service Called for order: ${order.id}`)
+    const settings = await this.settingsService.findByTenantSettings(tenantId)
     if (!settings || !settings.contactEmail) {
       this.logger.warn(`No contact email configured for tenant ${tenantId}. Skipping notification.`)
       return

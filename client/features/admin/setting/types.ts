@@ -34,3 +34,10 @@ export enum TabTypeEnum {
     OFFERS_PAGE = "offersPage",
     LABEL = "label",
 }
+
+
+
+export interface SectionProps {
+    formData: any;
+    setFormData: (data: any) => void;
+}

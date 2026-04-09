@@ -1,11 +1,15 @@
-import { forwardRef, Module } from '@nestjs/common'
+import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
+import { SettingsModule } from '@/modules/admin/settings/settings.module'
+import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { MailService } from './mail.service'
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
-import { SettingsModule } from '@/modules/admin/settings/settings.module'
 
 @Module({
-  imports: [ConfigModule],
+  imports: [
+    ConfigModule,
+    SettingsModule,
+    CacheModule
+  ],
   providers: [MailService],
   exports: [MailService],
 })
