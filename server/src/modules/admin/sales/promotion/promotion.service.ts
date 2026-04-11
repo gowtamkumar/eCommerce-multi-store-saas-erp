@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { PromotionRepository } from './promotion.repository'
-import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
+import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { CreatePromotionDto } from './dto/create-promotion.dto'
 import { UpdatePromotionDto } from './dto/update-promotion.dto'
@@ -16,7 +16,7 @@ export class PromotionService {
     private promotionRepository: PromotionRepository,
     private productRepository: ProductRepository,
     private cache: CacheService,
-  ) {}
+  ) { }
 
   async createPromotion(createPromotionDto: CreatePromotionDto, tenantId: string): Promise<PromotionEntity> {
     this.logger.log(`${this.createPromotion.name} Service Called`)
@@ -69,7 +69,7 @@ export class PromotionService {
   async findActivePromotions(tenantId: string): Promise<PromotionEntity[]> {
     this.logger.log(`${this.findActivePromotions.name} Service Called`)
     const cacheKey = `promotions:active`
-    
+
     return this.cache.rememberCache(
       cacheKey,
       () => this.promotionRepository.findActivePromotions(tenantId, new Date()),
@@ -198,7 +198,7 @@ export class PromotionService {
               targetId: promo.targetId,
               limit:
                 promo.targetType === PromotionTargetType.ENTIRE_ORDER ||
-                promo.targetType === PromotionTargetType.MINIMUM_CART_VALUE
+                  promo.targetType === PromotionTargetType.MINIMUM_CART_VALUE
                   ? 12
                   : 20,
             })
@@ -249,8 +249,8 @@ export class PromotionService {
       targetId: promotion.targetId,
       limit:
         promotion.targetType === PromotionTargetType.SPECIFIC_PRODUCT ||
-        promotion.targetType === PromotionTargetType.SPECIFIC_CATEGORY ||
-        promotion.targetType === PromotionTargetType.SPECIFIC_BRAND
+          promotion.targetType === PromotionTargetType.SPECIFIC_CATEGORY ||
+          promotion.targetType === PromotionTargetType.SPECIFIC_BRAND
           ? 50
           : 24,
     })

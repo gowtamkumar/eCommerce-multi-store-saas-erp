@@ -24,7 +24,7 @@ export class PurchaseOrderService {
     private readonly inventoryService: InventoryTransactionService,
     private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   /**
    * Creates a purchase order in DRAFT status.
@@ -35,12 +35,12 @@ export class PurchaseOrderService {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
     const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
     console.log("dto", dto);
-    
+
     const result = await this.repository.createAndSave(
       { ...dto, totalAmount, tenantId } as any,
     )
     console.log("result", result);
-    
+
     await this.cacheService.delCache(`po:list`, tenantId)
     return result
   }
@@ -121,7 +121,7 @@ export class PurchaseOrderService {
       result = await this.receivePurchaseOrder(order, tenantId)
     } else {
       order.status = dto.status
-      result = await this.repository.saveOrder(order)
+      result = await this.repository.savePurchaseOrder(order)
     }
 
     await this.cacheService.delCache(`po:list`, tenantId)
@@ -137,7 +137,7 @@ export class PurchaseOrderService {
 
     try {
       order.status = PurchaseOrderStatus.RECEIVED
-      const savedOrder = await this.repository.saveOrder(order, queryRunner.manager)
+      const savedOrder = await this.repository.savePurchaseOrder(order, queryRunner.manager)
 
       for (const item of order.items) {
         const productId = item.productId || (item.product as any)?.id
@@ -183,7 +183,7 @@ export class PurchaseOrderService {
       const order = await this.repository.findByIdWithRelations(id, tenantId, queryRunner.manager)
       if (!order) throw new NotFoundException('Purchase order not found')
 
-      const savedPayment = await this.paymentRepository.createAndSave(
+      await this.paymentRepository.createAndSave(
         {
           ...dto,
           purchaseOrderId: order.id,
@@ -202,12 +202,12 @@ export class PurchaseOrderService {
         order.paymentStatus = PurchaseOrderPaymentStatus.PARTIAL
       }
 
-      const savedOrder = await this.repository.saveOrder(order, queryRunner.manager)
+      const savedOrder = await this.repository.savePurchaseOrder(order, queryRunner.manager)
       await queryRunner.commitTransaction()
-      
+
       await this.cacheService.delCache(`po:list`, tenantId)
       await this.cacheService.delCache(`po:id:${id}`, tenantId)
-      
+
       return savedOrder
     } catch (err) {
       this.logger.error('Record Payment failed', err.stack)
@@ -217,7 +217,7 @@ export class PurchaseOrderService {
       await queryRunner.release()
     }
   }
-  
+
   async findAllPurchaseOrdersRaw(tenantId: string): Promise<PurchaseOrderEntity[]> {
     this.logger.log(`${this.findAllPurchaseOrdersRaw.name} Service Called`)
     const cacheKey = `po:list:raw`

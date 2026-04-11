@@ -1,9 +1,7 @@
 import { Module } from '@nestjs/common'
 import { InventoryTransactionModule } from '../../logistics/inventory-transaction/inventory-transaction.module'
 import { PurchaseOrderController } from './purchase-order.controller'
-import { PurchaseOrderRepository } from './purchase-order.repository'
 import { PurchaseOrderService } from './purchase-order.service'
-import { SupplierPaymentRepository } from './supplier-payment.repository'
 
 @Module({
   imports: [InventoryTransactionModule],
@@ -11,4 +9,4 @@ import { SupplierPaymentRepository } from './supplier-payment.repository'
   providers: [PurchaseOrderService],
   exports: [PurchaseOrderService],
 })
-export class PurchaseModule {}
+export class PurchaseModule { }

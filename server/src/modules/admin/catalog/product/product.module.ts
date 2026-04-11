@@ -4,20 +4,26 @@ import { InventoryTransactionModule } from '@/modules/admin/operations/logistics
 import { PromotionModule } from '@/modules/admin/sales/promotion/promotion.module'
 import { Module } from '@nestjs/common'
 import { ReviewModule } from '../review/review.module'
-import { ProductAttributeRepository } from './attribute.repository'
-import { ProductController } from './product.controller'
-import { ProductRepository } from './product.repository'
-import { ProductService } from './product.service'
-import { ProductVariantRepository } from './variant.repository'
+import { ProductController } from './controllers/product.controller'
+import { ProductService } from './services/product.service'
+import { BullModule } from '@nestjs/bullmq'
+import { QueueModule } from '@/modules/admin/operations/infra/queue/queue.module'
+import { ProductProcessor } from './queue/product.processor'
+import { ProductQueue } from './queue/product.queue'
 
 @Module({
-  imports: [ReviewModule, CacheModule, InventoryTransactionModule, PurchaseModule, PromotionModule],
+  imports: [
+    QueueModule, // 👈 for queue
+    BullModule.registerQueue({ name: 'product' }), // 👈 register queue
+    ReviewModule, CacheModule, InventoryTransactionModule, PurchaseModule, PromotionModule],
   controllers: [ProductController],
   providers: [
     ProductService,
+    ProductProcessor,
+    ProductQueue
   ],
   exports: [
     ProductService,
   ],
 })
-export class ProductModule {}
+export class ProductModule { }

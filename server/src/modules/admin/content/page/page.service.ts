@@ -1,4 +1,4 @@
-import { ProductService } from '@/modules/admin/catalog/product/product.service'
+import { ProductService } from '@/modules/admin/catalog/product/services/product.service'
 import { FaqService } from '@/modules/admin/content/faq/faq.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
@@ -58,7 +58,7 @@ export class PageService {
     // Enrich with FAQ data before caching (Critical Fix)
     const enriched = await this.enrichPageWithFaqs(page)
     const result = JSON.parse(JSON.stringify(enriched))
-    
+
     await this.cache.setCache(cacheKey, result, this.CACHE_TTL, tenantId)
     return result
   }

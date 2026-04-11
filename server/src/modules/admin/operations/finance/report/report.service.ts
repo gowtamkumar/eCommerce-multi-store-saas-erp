@@ -2,7 +2,7 @@ import { CacheService } from '@/modules/admin/operations/infra/cache/cache.servi
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 
 
-import { ProductService } from '@/modules/admin/catalog/product/product.service'
+import { ProductService } from '@/modules/admin/catalog/product/services/product.service'
 import { PageService } from '@/modules/admin/content/page/page.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { ExpenseService } from '@/modules/admin/operations/finance/expense/expense.service'
@@ -27,7 +27,7 @@ export class ReportService {
     private readonly expenseService: ExpenseService,
     private readonly reportRepo: ReportRepository,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   async getAnalytics(tenantId: string) {
     const cacheKey = `analytics` // CacheService handled tenantId prefixing
@@ -107,8 +107,8 @@ export class ReportService {
           image: p.images?.[0],
           stock: p.stock,
           threshold: p.threshold,
-          variantName: p.variantCombination 
-            ? Object.values(p.variantCombination).join(' / ') 
+          variantName: p.variantCombination
+            ? Object.values(p.variantCombination).join(' / ')
             : null,
         }))
 
@@ -213,30 +213,30 @@ export class ReportService {
         const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0
 
         return {
-            period: {
-              startDate,
-              endDate,
-            },
-            revenue: {
-              total: revenue,
-              orderCount: filteredOrders.length,
-            },
-            cogs: {
-              total: cogs,
-              purchaseOrderCount: filteredPurchaseOrders.length,
-            },
-            grossProfit,
-            operatingExpenses: {
-              total: totalOperatingExpenses,
-              breakdown: Object.keys(categorizedExpenses)
-                .map((category) => ({
-                  category,
-                  amount: categorizedExpenses[category],
-                }))
-                .sort((a, b) => b.amount - a.amount),
-            },
-            netProfit,
-            profitMargin,
+          period: {
+            startDate,
+            endDate,
+          },
+          revenue: {
+            total: revenue,
+            orderCount: filteredOrders.length,
+          },
+          cogs: {
+            total: cogs,
+            purchaseOrderCount: filteredPurchaseOrders.length,
+          },
+          grossProfit,
+          operatingExpenses: {
+            total: totalOperatingExpenses,
+            breakdown: Object.keys(categorizedExpenses)
+              .map((category) => ({
+                category,
+                amount: categorizedExpenses[category],
+              }))
+              .sort((a, b) => b.amount - a.amount),
+          },
+          netProfit,
+          profitMargin,
         }
       },
       600, // 10 mins cache
@@ -291,18 +291,18 @@ export class ReportService {
         const totalPaid = payments.reduce((sum, p) => sum + (+p.amount || 0), 0)
 
         return {
-            supplier: {
-              id: supplier.id,
-              name: supplier.name,
-              email: supplier.email,
-              phone: supplier.phone,
-            },
-            summary: {
-              totalOrders,
-              totalPaid,
-              balance: runningBalance,
-            },
-            ledger: ledger.reverse(), // Newest first for UI
+          supplier: {
+            id: supplier.id,
+            name: supplier.name,
+            email: supplier.email,
+            phone: supplier.phone,
+          },
+          summary: {
+            totalOrders,
+            totalPaid,
+            balance: runningBalance,
+          },
+          ledger: ledger.reverse(), // Newest first for UI
         }
       },
       600, // 10 mins cache
@@ -361,18 +361,18 @@ export class ReportService {
           .reduce((sum, p) => sum + (+p.amount || 0), 0)
 
         return {
-            customer: {
-              id: customer.id,
-              name: customer.name,
-              email: customer.email,
-              phone: customer.phone,
-            },
-            summary: {
-              totalOrders,
-              totalPaid,
-              balance: runningBalance,
-            },
-            ledger: ledger.reverse(), // Newest first for UI
+          customer: {
+            id: customer.id,
+            name: customer.name,
+            email: customer.email,
+            phone: customer.phone,
+          },
+          summary: {
+            totalOrders,
+            totalPaid,
+            balance: runningBalance,
+          },
+          ledger: ledger.reverse(), // Newest first for UI
         }
       },
       600, // 10 mins cache
@@ -424,11 +424,11 @@ export class ReportService {
         movements.forEach((m) => {
           const mDate = m.date instanceof Date ? m.date : new Date(m.date)
           const dateStr = mDate.toISOString().split('T')[0]
-          
+
           if (!dailyAggregates.has(dateStr)) {
             dailyAggregates.set(dateStr, { inflow: 0, outflow: 0 })
           }
-          
+
           const aggregate = dailyAggregates.get(dateStr)!
           if (m.type === 'INFLOW') {
             aggregate.inflow += m.amount
@@ -461,13 +461,13 @@ export class ReportService {
           supplierPayments.reduce((sum, sp) => sum + (+sp.amount || 0), 0)
 
         return {
-            summary: {
-              totalInflow,
-              totalOutflow,
-              netCashFlow: totalInflow - totalOutflow,
-            },
-            chartData,
-            recentMovements: movements.reverse().slice(0, 10),
+          summary: {
+            totalInflow,
+            totalOutflow,
+            netCashFlow: totalInflow - totalOutflow,
+          },
+          chartData,
+          recentMovements: movements.reverse().slice(0, 10),
         }
       },
       600, // 10 mins cache
@@ -538,8 +538,8 @@ export class ReportService {
     }
 
     return {
-        csv: csvContent,
-        filename,
+      csv: csvContent,
+      filename,
     }
   }
 
@@ -599,22 +599,22 @@ export class ReportService {
         categories['Supplier Payouts'] = totalSupplierPayments
 
         return {
-            kpis: {
-              totalRevenue,
-              totalExpenses,
-              netProfit: totalRevenue - totalExpenses,
-              margin: totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue) * 100 : 0,
-              totalAmountDue,
-            },
-            chartData,
-            expenseBreakdown: Object.entries(categories)
-              .map(([name, value]) => ({ name, value }))
-              .sort((a, b) => b.value - a.value),
-            supplierStats: {
-              totalSuppliers: (await this.supplierService.findAllSuppliersRaw(tenantId)).length,
-              totalPurchaseOrders: purchaseOrders.length,
-              recentPurchaseOrders: purchaseOrders.slice(0, 5),
-            },
+          kpis: {
+            totalRevenue,
+            totalExpenses,
+            netProfit: totalRevenue - totalExpenses,
+            margin: totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue) * 100 : 0,
+            totalAmountDue,
+          },
+          chartData,
+          expenseBreakdown: Object.entries(categories)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value),
+          supplierStats: {
+            totalSuppliers: (await this.supplierService.findAllSuppliersRaw(tenantId)).length,
+            totalPurchaseOrders: purchaseOrders.length,
+            recentPurchaseOrders: purchaseOrders.slice(0, 5),
+          },
         }
       },
       600, // 10 mins cache

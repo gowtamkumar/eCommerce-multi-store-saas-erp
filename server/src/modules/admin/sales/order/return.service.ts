@@ -3,8 +3,8 @@ import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.dto'
 import { OrderReturnRepository } from '@/modules/admin/sales/order/order-return.repository'
 import { OrderRepository } from '@/modules/admin/sales/order/order.repository'
-import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
-import { ProductVariantRepository } from '@/modules/admin/catalog/product/variant.repository'
+import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
+import { ProductVariantRepository } from '@/modules/admin/catalog/product/repositories/variant.repository'
 import { OrderReturnEntity } from './entities/order-return.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
@@ -18,7 +18,7 @@ export class ReturnService {
     private productRepository: ProductRepository,
     private variantRepository: ProductVariantRepository,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   async createReturnRequest(userId: string, tenantId: string, dto: CreateReturnDto): Promise<OrderReturnEntity> {
     this.logger.log(`${this.createReturnRequest.name} Service Called`)

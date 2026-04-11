@@ -26,6 +26,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { join } from 'path'
 import { CacheModule } from './modules/admin/operations/infra/cache/cache.module'
+import { QueueModule } from './modules/admin/operations/infra/queue/queue.module'
 
 @Module({
   imports: [
@@ -62,6 +63,9 @@ import { CacheModule } from './modules/admin/operations/infra/cache/cache.module
     // Other Features
     AuthModule,
     PaymentModule,
+
+    // Queue
+    QueueModule,
 
     // Rate Limiting
     // AppThrottlerModule,

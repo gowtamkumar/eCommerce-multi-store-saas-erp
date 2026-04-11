@@ -2,8 +2,8 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logistics/inventory-transaction/dto/create-inventory-transaction.dto'
 import { InventoryTransactionRepository } from './inventory-transaction.repository'
-import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
-import { ProductVariantRepository } from '@/modules/admin/catalog/product/variant.repository'
+import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
+import { ProductVariantRepository } from '@/modules/admin/catalog/product/repositories/variant.repository'
 import { InventoryTransactionEntity } from './entities/inventory-transaction.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { PaginationDto } from '@/common/dto/pagination.dto'
@@ -53,11 +53,11 @@ export class InventoryTransactionService {
     }
 
     const transaction = await this.repository.createAndSave(dto, tenantId, manager)
-    
+
     // Invalidate inventory caches
     await this.cacheService.delCache(`inventory:list`, tenantId)
     await this.cacheService.delCache(`inventory:summary`, tenantId)
-    
+
     return transaction
   }
 
@@ -107,7 +107,7 @@ export class InventoryTransactionService {
    */
   async getStockSummaryInventoryTransactions(tenantId: string): Promise<any[]> {
     this.logger.log(`${this.getStockSummaryInventoryTransactions.name} Service Called`)
-    
+
     return this.cacheService.rememberCache(
       `inventory:summary`,
       async () => {

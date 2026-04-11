@@ -21,11 +21,7 @@ export class PurchaseOrderRepository {
     manager?: EntityManager,
   ): Promise<PurchaseOrderEntity> {
     const repo = this.getRepo(manager)
-    console.log("purchase order repo", repo);
-    
     const purchaseOrder = repo.create(data as PurchaseOrderEntity)
-    console.log("purchaseOrder", purchaseOrder);
-    
     return repo.save(purchaseOrder)
   }
 
@@ -76,7 +72,7 @@ export class PurchaseOrderRepository {
     })
   }
 
-  async saveOrder(
+  async savePurchaseOrder(
     order: PurchaseOrderEntity,
     manager?: EntityManager,
   ): Promise<PurchaseOrderEntity> {

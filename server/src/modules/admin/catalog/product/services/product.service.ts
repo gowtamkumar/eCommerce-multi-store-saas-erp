@@ -10,15 +10,16 @@ import { InventoryTransactionService } from '@/modules/admin/operations/logistic
 import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { DataSource } from 'typeorm'
-import { PromotionTargetType } from '../../sales/promotion/enums/promotion-target-type.enum'
-import { BrandRepository } from '../brand/brand.repository'
-import { ProductAttributeRepository } from './attribute.repository'
-import { CreateProductDto } from './dto/create-product.dto'
-import { FilterProductDto } from './dto/filter-product.dto'
-import { UpdateProductDto } from './dto/update-product.dto'
-import { ProductEntity } from './entities/product.entity'
-import { ProductRepository } from './product.repository'
-import { ProductVariantRepository } from './variant.repository'
+import { PromotionTargetType } from '../../../sales/promotion/enums/promotion-target-type.enum'
+import { BrandRepository } from '../../brand/brand.repository'
+import { ProductAttributeRepository } from '../repositories/attribute.repository'
+import { CreateProductDto } from '../dto/create-product.dto'
+import { FilterProductDto } from '../dto/filter-product.dto'
+import { UpdateProductDto } from '../dto/update-product.dto'
+import { ProductEntity } from '../entities/product.entity'
+import { ProductRepository } from '../repositories/product.repository'
+import { ProductVariantRepository } from '../repositories/variant.repository'
+import { ProductQueue } from '../queue/product.queue'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 
@@ -37,6 +38,7 @@ export class ProductService {
     private readonly purchaseOrderService: PurchaseOrderService,
     private readonly promotionService: PromotionService,
     private readonly dataSource: DataSource,
+    private readonly productQueue: ProductQueue
   ) { }
 
   private async attachPromotions(product: any, tenantId: string): Promise<AugmentedProduct> {
@@ -128,7 +130,7 @@ export class ProductService {
           if (type === PromotionTargetType.SPECIFIC_PRODUCT && id === product.id) return true
           if (type === PromotionTargetType.SPECIFIC_CATEGORY && (id === product.categoryId || id === product.category?.id)) return true
           if (type === PromotionTargetType.SPECIFIC_BRAND && id === product.brandId) return true
-          
+
           return false
         })
 
@@ -148,11 +150,11 @@ export class ProductService {
 
         const originalDiscountType = product.discountType || DiscountType.FIXED
         const originalRawDiscount = Number(product.discountAmount || 0)
-        
+
         if (!strategies[originalDiscountType]) {
           strategies[originalDiscountType] = DiscountStrategyFactory.create(originalDiscountType)
         }
-        
+
         const originalDiscountValue = strategies[originalDiscountType].calculate(
           basePrice,
           originalRawDiscount,
@@ -205,7 +207,7 @@ export class ProductService {
   async getFilterOptions(tenantId: string, categoryId?: string): Promise<any> {
     this.logger.log(`${this.getFilterOptions.name} Service Called`)
     const cacheKey = `products:filter-options:${categoryId || 'all'}`
-    
+
     return this.cache.rememberCache(
       cacheKey,
       async () => {
@@ -258,7 +260,7 @@ export class ProductService {
   async findLatestProducts(tenantId: string, limit: number = 10): Promise<AugmentedProduct[]> {
     this.logger.log(`${this.findLatestProducts.name} Service Called`)
     const cacheKey = `products:latest:${limit}`
-    
+
     return this.cache.rememberCache(
       cacheKey,
       async () => {
@@ -291,76 +293,73 @@ export class ProductService {
 
   async createProduct(createProductDto: CreateProductDto, tenantId: string): Promise<ProductEntity> {
     this.logger.log(`${this.createProduct.name} Service Called`)
-    const existing = await this.productRepository.findBySlug(createProductDto.slug, tenantId)
 
-    if (existing) {
-      throw new ConflictException('Product with this slug already exists')
-    }
+    let poData: any = null
 
-    const { faqs, attributes, variants, ...productData } = createProductDto
+    const savedProduct = await this.dataSource.transaction(async (manager) => {
+      const existing = await this.productRepository.findBySlug(createProductDto.slug, tenantId)
+      if (existing) throw new ConflictException('Product with this slug already exists')
 
-    const savedProduct = await this.productRepository.createAndSave(productData, tenantId)
+      const { faqs, attributes, variants, ...productData } = createProductDto
+      const product = await this.productRepository.createAndSave(productData, tenantId)
 
-    const poItems = []
+      const poItems = []
 
-    if (productData.stock > 0 && (!variants || variants.length === 0)) {
-      poItems.push({
-        productId: savedProduct.id,
-        quantity: productData.stock,
-        unitPrice: productData.price,
-      })
-    }
+      // Base stock if no variants
+      if (productData.stock > 0 && (!variants || variants.length === 0)) {
+        poItems.push({
+          productId: product.id,
+          quantity: productData.stock,
+          unitPrice: productData.price,
+        })
+      }
 
-    if (faqs && faqs.length > 0) {
-      await this.faqRepository.saveMultiple(faqs, savedProduct.id, tenantId)
-    }
+      if (faqs && faqs.length > 0) {
+        await this.faqRepository.saveMultiple(faqs, product.id, tenantId, manager)
+      }
 
-    if (attributes && attributes.length > 0) {
-      await this.attributeRepository.saveMultiple(attributes, savedProduct.id, tenantId)
-    }
+      if (attributes && attributes.length > 0) {
+        await this.attributeRepository.saveMultiple(attributes, product.id, tenantId, manager)
+      }
 
-    if (variants && variants.length > 0) {
-      for (const variantDto of variants) {
-        const savedVariant = await this.variantRepository.saveNewVariant(
-          variantDto,
-          savedProduct.id,
-          tenantId,
-        )
+      if (variants && variants.length > 0) {
+        for (const variantDto of variants) {
+          const savedVariant = await this.variantRepository.saveNewVariant(
+            variantDto,
+            product.id,
+            tenantId,
+            manager,
+          )
 
-        if (variantDto.stock > 0) {
-          poItems.push({
-            productId: savedProduct.id,
-            variantId: savedVariant.id,
-            quantity: variantDto.stock,
-            unitPrice: variantDto.price || productData.price,
-          })
+          if (variantDto.stock > 0) {
+            poItems.push({
+              productId: product.id,
+              variantId: savedVariant.id,
+              quantity: variantDto.stock,
+              unitPrice: variantDto.price || productData.price,
+            })
+          }
         }
       }
-    }
 
-    if (poItems.length > 0 && createProductDto.supplierId) {
-      const po = await this.purchaseOrderService.createPurchaseOrder(
-        {
+      if (poItems.length > 0 && createProductDto.supplierId) {
+        poData = {
           supplierId: createProductDto.supplierId,
-          referenceNumber: `INITIAL_${savedProduct.slug.toUpperCase()}_${Date.now()}`,
+          referenceNumber: `INITIAL_${product.slug.toUpperCase()}_${Date.now()}`,
           items: poItems,
-        },
-        tenantId,
-      )
+        }
+      }
 
-      await this.purchaseOrderService.updatePurchaseOrderStatus(
-        po.id,
-        { status: PurchaseOrderStatus.RECEIVED },
-        tenantId,
-      )
+      return product
+    })
+
+    if (poData) {
+      await this.productQueue.createPO(poData, tenantId) // background-job
     }
 
-    const newProduct = await this.findOneProduct(savedProduct.id, tenantId)
-    return newProduct
+    return await this.findOneProduct(savedProduct.id, tenantId)
   }
 
-
- 
   async updateProduct(
     id: string,
     updateProductDto: UpdateProductDto,
@@ -368,7 +367,9 @@ export class ProductService {
   ): Promise<AugmentedProduct> {
     this.logger.log(`${this.updateProduct.name} Service Called`)
 
-    return await this.dataSource.transaction(async (manager) => {
+    let poData: any = null
+
+    await this.dataSource.transaction(async (manager) => {
       // 1. Fetch Fresh Product (bypassing potentially stale cache for update)
       const product = await this.productRepository.findByIdWithRelations(id, tenantId)
       if (!product) throw new NotFoundException('Product not found')
@@ -392,21 +393,23 @@ export class ProductService {
 
       // 5. Update FAQs
       if (faqs) {
-        await this.faqRepository.deleteByProductId(product.id, tenantId)
+        await this.faqRepository.deleteByProductId(product.id, tenantId, manager)
         if (faqs.length > 0) {
-          await this.faqRepository.saveMultiple(faqs, product.id, tenantId)
+          await this.faqRepository.saveMultiple(faqs, product.id, tenantId, manager)
         }
       }
 
       // 6. Update Attributes
       if (attributes) {
-        await this.attributeRepository.deleteByProductId(product.id, tenantId)
+        await this.attributeRepository.deleteByProductId(product.id, tenantId, manager)
         if (attributes.length > 0) {
-          await this.attributeRepository.saveMultiple(attributes, product.id, tenantId)
+          await this.attributeRepository.saveMultiple(attributes, product.id, tenantId, manager)
         }
       }
 
-      // 7. Update Variants
+      // 7. Update Variants & Handle POs
+      const poItems = []
+
       if (variants) {
         const existingVariants = await this.variantRepository.findByProductId(product.id, tenantId)
         const existingVariantIds = existingVariants.map((v) => v.id)
@@ -428,7 +431,6 @@ export class ProductService {
           await this.variantRepository.saveExistingVariant(variantDto, product.id, tenantId, manager)
         }
 
-        const poItems = []
         for (const variantDto of newVariants) {
           const savedVariant = await this.variantRepository.saveNewVariant(
             variantDto,
@@ -453,36 +455,40 @@ export class ProductService {
           }
         }
 
-        // Create Purchase Order if needed
-        //TODO, here need to event-driven approach because when product update variat id no create
-        //  then show error here have use transcation so throw error then not create variant 
-        if (poItems.length > 0 && product.supplierId) {
-          const po = await this.purchaseOrderService.createPurchaseOrder(
-            {
-              supplierId: product.supplierId,
-              referenceNumber: `UPDATE_VAR_${product.slug.toUpperCase()}_${Date.now()}`,
-              items: poItems,
-            },
-            tenantId,
-          )
-
-          await this.purchaseOrderService.updatePurchaseOrderStatus(
-            po.id,
-            { status: PurchaseOrderStatus.RECEIVED },
-            tenantId,
-          )
-        }
-
         // Delete Variants not present in the update
         const toDeleteIds = existingVariantIds.filter((dbId) => !incomingVariantIds.includes(dbId))
         if (toDeleteIds.length > 0) {
           await this.variantRepository.deleteByIds(toDeleteIds, manager)
         }
+      } else {
+        // If NO variants, check if base stock was updated and needs a PO
+        if (productData.stock > 0 && product.supplierId) {
+          poItems.push({
+            productId: product.id,
+            quantity: productData.stock,
+            unitPrice: product.price,
+          })
+        }
+      }
+
+      // Prepare Background Job data if needed
+      if (poItems.length > 0 && product.supplierId) {
+        poData = {
+          supplierId: product.supplierId,
+          referenceNumber: `UPDATE_VAR_${product.slug.toUpperCase()}_${Date.now()}`,
+          items: poItems,
+        }
       }
 
       await this.cache.delCache(`product:${id}`, tenantId)
-      return await this.findOneProduct(id, tenantId)
     })
+
+    // Trigger background job AFTER transaction commits
+    if (poData) {
+      await this.productQueue.createPO(poData, tenantId)
+    }
+
+    return await this.findOneProduct(id, tenantId)
   }
 
   async removeProduct(

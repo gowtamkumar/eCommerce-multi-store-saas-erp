@@ -85,14 +85,16 @@ export class FaqRepository {
     await this.repo.softRemove(faq)
   }
 
-  async saveMultiple(faqs: any[], productId: string, tenantId: string): Promise<FaqEntity[]> {
+  async saveMultiple(faqs: any[], productId: string, tenantId: string, manager?: any): Promise<FaqEntity[]> {
     if (!faqs || faqs.length === 0) return []
-    const entities = faqs.map((faq) => this.repo.create({ ...faq, productId, tenantId } as FaqEntity))
-    return this.repo.save(entities)
+    const repo = manager ? manager.getRepository(FaqEntity) : this.repo
+    const entities = faqs.map((faq) => repo.create({ ...faq, productId, tenantId } as FaqEntity))
+    return repo.save(entities)
   }
 
-  async deleteByProductId(productId: string, tenantId: string): Promise<void> {
-    await this.repo.softDelete({ productId, tenantId })
+  async deleteByProductId(productId: string, tenantId: string, manager?: any): Promise<void> {
+    const repo = manager ? manager.getRepository(FaqEntity) : this.repo
+    await repo.softDelete({ productId, tenantId })
   }
 
 }

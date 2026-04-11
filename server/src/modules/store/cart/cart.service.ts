@@ -1,6 +1,6 @@
 import { DiscountType } from '@/common/enums/discount-type.enum'
 import { PricingEngineService } from '@/common/services/pricing-engine.service'
-import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
+import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
 import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
 import { SiteSettingsRepository } from '@/modules/admin/settings/site-settings.repository'
@@ -24,7 +24,7 @@ export class CartService {
     private readonly couponService: CouponService,
     private readonly promotionService: PromotionService,
     private readonly pricingEngine: PricingEngineService,
-  ) {}
+  ) { }
 
   async createOrGetCart(userId: string, tenantId: string): Promise<CartResponseDto> {
     this.logger.log(`${this.createOrGetCart.name} Service Called`)

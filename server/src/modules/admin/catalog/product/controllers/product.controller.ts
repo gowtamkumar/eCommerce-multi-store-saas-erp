@@ -17,13 +17,13 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
-import { CreateReviewDto } from '../review/dto/review.dto'
-import { ReviewService } from '../review/review.service'
-import { CreateProductDto } from './dto/create-product.dto'
-import { FilterProductDto } from './dto/filter-product.dto'
-import { ProductResponseDto } from './dto/product-response.dto'
-import { UpdateProductDto } from './dto/update-product.dto'
-import { ProductService } from './product.service'
+import { CreateReviewDto } from '../../review/dto/review.dto'
+import { ReviewService } from '../../review/review.service'
+import { CreateProductDto } from '../dto/create-product.dto'
+import { FilterProductDto } from '../dto/filter-product.dto'
+import { ProductResponseDto } from '../dto/product-response.dto'
+import { UpdateProductDto } from '../dto/update-product.dto'
+import { ProductService } from '../services/product.service'
 
 @Controller('products')
 export class ProductController {
@@ -32,7 +32,7 @@ export class ProductController {
   constructor(
     private readonly productService: ProductService,
     private readonly reviewService: ReviewService,
-  ) {}
+  ) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)

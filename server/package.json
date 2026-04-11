@@ -29,6 +29,7 @@
   "dependencies": {
     "@nest-lab/throttler-storage-redis": "^1.2.0",
     "@nestjs/axios": "^4.0.1",
+    "@nestjs/bullmq": "^11.0.4",
     "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^11.1.10",
     "@nestjs/config": "^4.0.2",
@@ -42,6 +43,7 @@
     "@nestjs/typeorm": "^11.0.0",
     "axios": "^1.13.4",
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.73.4",
     "cache-manager": "^7.2.8",
     "cache-manager-redis-yet": "^5.1.5",
     "class-transformer": "^0.5.1",
