@@ -367,7 +367,8 @@ export class ProductService {
 
     if (updateProductDto.slug && updateProductDto.slug !== product.slug) {
       const existing = await this.productRepository.findBySlug(updateProductDto.slug, tenantId)
-
+      console.log("find product by slug and tenantId", existing);
+      
       if (existing) {
         throw new ConflictException('Product with this slug already exists')
       }
@@ -375,8 +376,13 @@ export class ProductService {
 
     const { faqs, attributes, variants, ...productData } = updateProductDto
 
+    console.log("updateProductDto data", updateProductDto);
+    
+
     await this.productRepository.updateAndSave(product as any as ProductEntity, productData)
 
+    console.log("faq");
+    
     if (faqs) {
       await this.faqRepository.deleteByProductId(product.id, tenantId)
       if (faqs.length > 0) {
@@ -420,9 +426,17 @@ export class ProductService {
             unitPrice: variantDto.price || product.price,
           })
         }
+      
+        
       }
 
+      console.log("variant log", poItems);
+      console.log("tenantId", tenantId);
+      
       if (poItems.length > 0 && product.supplierId) {
+        console.log("product.supplierId", product.supplierId);
+        console.log("product.slug", product.slug);
+        
         const po = await this.purchaseOrderService.createPurchaseOrder(
           {
             supplierId: product.supplierId,
@@ -431,6 +445,9 @@ export class ProductService {
           },
           tenantId,
         )
+
+        console.log("purchase order log", po);
+        
 
         await this.purchaseOrderService.updatePurchaseOrderStatus(
           po.id,
@@ -449,6 +466,9 @@ export class ProductService {
         }
       }
     }
+
+    console.log("product log", product);
+    
 
     await this.cache.delCache(`product:${id}`, tenantId)
 

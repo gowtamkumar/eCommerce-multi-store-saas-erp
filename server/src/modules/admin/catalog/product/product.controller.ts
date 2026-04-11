@@ -12,8 +12,8 @@ import {
   Get,
   Logger,
   Param,
-  Post,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common'
@@ -141,6 +141,8 @@ export class ProductController {
     @Body() updateProductDto: UpdateProductDto,
   ): Promise<BaseApiSuccessResponse<ProductResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateProduct.`)
+    console.log("ctx", ctx);
+    
     const result = await this.productService.updateProduct(id, updateProductDto, ctx.tenantId)
     return {
       success: true,

@@ -1,18 +1,18 @@
+import { PaginationDto } from '@/common/dto/pagination.dto'
+import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
+import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
+import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { DataSource } from 'typeorm'
+import { InventoryTransactionService } from '../../logistics/inventory-transaction/inventory-transaction.service'
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from './dto/purchase-order.dto'
 import { RecordSupplierPaymentDto } from './dto/record-payment.dto'
 import { PurchaseOrderEntity } from './entities/purchase-order.entity'
+import { SupplierPaymentEntity } from './entities/supplier-payment.entity'
 import { PurchaseOrderPaymentStatus } from './enums/purchase-order-payment-status.enum'
-import { InventoryTransactionService } from '../../logistics/inventory-transaction/inventory-transaction.service'
-import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
-import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
-import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { PurchaseOrderRepository } from './purchase-order.repository'
 import { SupplierPaymentRepository } from './supplier-payment.repository'
-import { SupplierPaymentEntity } from './entities/supplier-payment.entity'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { PaginationDto } from '@/common/dto/pagination.dto'
 
 @Injectable()
 export class PurchaseOrderService {
@@ -33,10 +33,13 @@ export class PurchaseOrderService {
   async createPurchaseOrder(dto: CreatePurchaseOrderDto, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
     const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+    console.log("dto", dto);
+    console.log("tenantId", tenantId);
     
     const result = await this.repository.createAndSave(
-      { ...dto, totalAmount } as any,
+      { ...dto, totalAmount, tenantId } as any,
     )
+    console.log("result", result);
     
     await this.cacheService.delCache(`po:list`, tenantId)
     return result
