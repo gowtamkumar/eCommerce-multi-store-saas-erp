@@ -21,7 +21,7 @@ export class ProductProcessor extends WorkerHost {
         this.logger.log(`Processing job ${job.id} of type ${job.name}`);
         try {
             switch (job.name) {
-                case 'create-po':
+                case 'create-purchase-order':
                     return await this.handleCreatePO(job.data);
                 case 'update-stock':
                     return await this.handleUpdateStock(job.data);

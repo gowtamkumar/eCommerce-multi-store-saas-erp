@@ -6,8 +6,8 @@ import { PurchaseOrderService } from './purchase-order.service'
 
 @Module({
   imports: [
-    InventoryTransactionModule,
     BullModule.registerQueue({ name: 'product' }),
+    InventoryTransactionModule,
   ],
   controllers: [PurchaseOrderController],
   providers: [PurchaseOrderService],

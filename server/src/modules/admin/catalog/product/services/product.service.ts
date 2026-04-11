@@ -1,10 +1,8 @@
 import { DiscountType } from '@/common/enums/discount-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
-import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
 import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
-import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchase/purchase-order.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
@@ -19,7 +17,8 @@ import { UpdateProductDto } from '../dto/update-product.dto'
 import { ProductEntity } from '../entities/product.entity'
 import { ProductRepository } from '../repositories/product.repository'
 import { ProductVariantRepository } from '../repositories/variant.repository'
-import { ProductQueue } from '../queue/product.queue'
+import { InjectQueue } from '@nestjs/bullmq'
+import { Queue } from 'bullmq'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 
@@ -35,10 +34,9 @@ export class ProductService {
     private brandRepository: BrandRepository,
     private cache: CacheService,
     private readonly inventoryService: InventoryTransactionService,
-    private readonly purchaseOrderService: PurchaseOrderService,
     private readonly promotionService: PromotionService,
     private readonly dataSource: DataSource,
-    private readonly productQueue: ProductQueue
+    @InjectQueue('product') private readonly productQueue: Queue,
   ) { }
 
   private async attachPromotions(product: any, tenantId: string): Promise<AugmentedProduct> {
@@ -354,7 +352,7 @@ export class ProductService {
     })
 
     if (poData) {
-      await this.productQueue.createPO(poData, tenantId) // background-job
+      await this.productQueue.add('create-po', { ...poData, tenantId })
     }
 
     return await this.findOneProduct(savedProduct.id, tenantId)
@@ -485,7 +483,7 @@ export class ProductService {
 
     // Trigger background job AFTER transaction commits
     if (poData) {
-      await this.productQueue.createPO(poData, tenantId)
+      await this.productQueue.add('create-purchase-order', { ...poData, tenantId })
     }
 
     return await this.findOneProduct(id, tenantId)
