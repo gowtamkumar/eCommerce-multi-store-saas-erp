@@ -255,6 +255,40 @@ export class ProductService {
     return await this.attachPromotions(product, tenantId)
   }
 
+  async findLatestProducts(tenantId: string, limit: number = 10): Promise<AugmentedProduct[]> {
+    this.logger.log(`${this.findLatestProducts.name} Service Called`)
+    const cacheKey = `products:latest:${limit}`
+    
+    return this.cache.rememberCache(
+      cacheKey,
+      async () => {
+        const products = await this.productRepository.findLatestProducts(tenantId, limit)
+        return await this.attachPromotionsMany(products, tenantId)
+      },
+      300, // 5 minutes
+      tenantId
+    )
+  }
+
+  async findOneProduct(id: string, tenantId: string): Promise<AugmentedProduct> {
+    this.logger.log(`${this.findOneProduct.name} Service Called`)
+    const cacheKey = `product:${id}`
+
+    // Use rememberCache for consistent error handling and atomic get/set
+    const product = await this.cache.rememberCache(
+      cacheKey,
+      async () => {
+        const p = await this.productRepository.findByIdWithRelations(id, tenantId)
+        if (!p) throw new NotFoundException('Product not found')
+        return p
+      },
+      300, // 5 minutes
+      tenantId,
+    )
+
+    return await this.attachPromotions(product, tenantId)
+  }
+
   async createProduct(createProductDto: CreateProductDto, tenantId: string): Promise<ProductEntity> {
     this.logger.log(`${this.createProduct.name} Service Called`)
     const existing = await this.productRepository.findBySlug(createProductDto.slug, tenantId)
@@ -325,40 +359,8 @@ export class ProductService {
     return newProduct
   }
 
-  async findLatestProducts(tenantId: string, limit: number = 10): Promise<AugmentedProduct[]> {
-    this.logger.log(`${this.findLatestProducts.name} Service Called`)
-    const cacheKey = `products:latest:${limit}`
-    
-    return this.cache.rememberCache(
-      cacheKey,
-      async () => {
-        const products = await this.productRepository.findLatestProducts(tenantId, limit)
-        return await this.attachPromotionsMany(products, tenantId)
-      },
-      300, // 5 minutes
-      tenantId
-    )
-  }
 
-  async findOneProduct(id: string, tenantId: string): Promise<AugmentedProduct> {
-    this.logger.log(`${this.findOneProduct.name} Service Called`)
-    const cacheKey = `product:${id}`
-
-    // Use rememberCache for consistent error handling and atomic get/set
-    const product = await this.cache.rememberCache(
-      cacheKey,
-      async () => {
-        const p = await this.productRepository.findByIdWithRelations(id, tenantId)
-        if (!p) throw new NotFoundException('Product not found')
-        return p
-      },
-      300, // 5 minutes
-      tenantId,
-    )
-
-    return await this.attachPromotions(product, tenantId)
-  }
-
+ 
   async updateProduct(
     id: string,
     updateProductDto: UpdateProductDto,
@@ -452,6 +454,8 @@ export class ProductService {
         }
 
         // Create Purchase Order if needed
+        //TODO, here need to event-driven approach because when product update variat id no create
+        //  then show error here have use transcation so throw error then not create variant 
         if (poItems.length > 0 && product.supplierId) {
           const po = await this.purchaseOrderService.createPurchaseOrder(
             {

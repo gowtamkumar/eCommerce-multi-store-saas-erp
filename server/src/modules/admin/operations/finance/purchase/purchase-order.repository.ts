@@ -1,8 +1,8 @@
+import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
 import { PurchaseOrderEntity } from './entities/purchase-order.entity'
-import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { PurchaseOrderPaymentStatus } from './enums/purchase-order-payment-status.enum'
 
 @Injectable()
@@ -21,8 +21,12 @@ export class PurchaseOrderRepository {
     manager?: EntityManager,
   ): Promise<PurchaseOrderEntity> {
     const repo = this.getRepo(manager)
-    const order = repo.create(data as PurchaseOrderEntity)
-    return repo.save(order)
+    console.log("purchase order repo", repo);
+    
+    const purchaseOrder = repo.create(data as PurchaseOrderEntity)
+    console.log("purchaseOrder", purchaseOrder);
+    
+    return repo.save(purchaseOrder)
   }
 
   /**
