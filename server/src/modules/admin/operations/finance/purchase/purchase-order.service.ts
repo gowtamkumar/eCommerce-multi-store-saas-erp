@@ -4,8 +4,9 @@ import { InventoryTransactionType } from '@/common/enums/inventory-transaction-t
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { InjectQueue } from '@nestjs/bullmq'
+import { Queue } from 'bullmq'
 import { DataSource } from 'typeorm'
-import { InventoryTransactionService } from '../../logistics/inventory-transaction/inventory-transaction.service'
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from './dto/purchase-order.dto'
 import { RecordSupplierPaymentDto } from './dto/record-payment.dto'
 import { PurchaseOrderEntity } from './entities/purchase-order.entity'
@@ -21,9 +22,9 @@ export class PurchaseOrderService {
   constructor(
     private readonly repository: PurchaseOrderRepository,
     private readonly paymentRepository: SupplierPaymentRepository,
-    private readonly inventoryService: InventoryTransactionService,
     private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
+    @InjectQueue('product') private readonly productQueue: Queue,
   ) { }
 
   /**
@@ -34,13 +35,9 @@ export class PurchaseOrderService {
   async createPurchaseOrder(dto: CreatePurchaseOrderDto, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
     const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-    console.log("dto", dto);
-
     const result = await this.repository.createAndSave(
       { ...dto, totalAmount, tenantId } as any,
     )
-    console.log("result", result);
-
     await this.cacheService.delCache(`po:list`, tenantId)
     return result
   }
@@ -143,19 +140,17 @@ export class PurchaseOrderService {
         const productId = item.productId || (item.product as any)?.id
         const variantId = item.variantId || (item.variant as any)?.id
 
-        await this.inventoryService.createInventoryTransaction(
-          {
-            productId,
-            variantId: variantId || null,
-            quantity: item.quantity,
-            type: InventoryTransactionType.IN,
-            referenceType: InventoryTransactionReferenceType.PURCHASE,
-            referenceId: order.id,
-            supplierId: order.supplierId,
-          },
+        // Dispatch background job for each item's stock update
+        await this.productQueue.add('update-stock', {
+          productId,
+          variantId: variantId || null,
+          quantity: item.quantity,
+          type: InventoryTransactionType.IN,
+          referenceType: InventoryTransactionReferenceType.PURCHASE,
+          referenceId: order.id,
+          supplierId: order.supplierId,
           tenantId,
-          queryRunner.manager,
-        )
+        })
       }
 
       await queryRunner.commitTransaction()

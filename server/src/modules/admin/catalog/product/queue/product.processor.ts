@@ -23,8 +23,8 @@ export class ProductProcessor extends WorkerHost {
             switch (job.name) {
                 case 'create-po':
                     return await this.handleCreatePO(job.data);
-                // case 'update-stock':
-                //     return await this.handleUpdateStock(job.data);
+                case 'update-stock':
+                    return await this.handleUpdateStock(job.data);
                 default:
                     this.logger.warn(`Unknown job name: ${job.name}`);
             }
@@ -53,7 +53,7 @@ export class ProductProcessor extends WorkerHost {
     }
 
     async handleUpdateStock(data: any) {
-        const { productId, variantId, quantity, type, tenantId } = data;
+        const { productId, variantId, quantity, type, referenceType, referenceId, supplierId, tenantId } = data;
         this.logger.log(`Updating stock for product ${productId} (variant: ${variantId || 'none'}) for tenant ${tenantId}`);
 
         await this.inventoryService.createInventoryTransaction({
@@ -61,7 +61,9 @@ export class ProductProcessor extends WorkerHost {
             variantId,
             quantity,
             type,
-            referenceType: InventoryTransactionReferenceType.ORDER
+            referenceType: referenceType || InventoryTransactionReferenceType.ORDER,
+            referenceId,
+            supplierId
         }, tenantId);
 
         this.logger.log(`Stock Updated Successfully for product ${productId}`);
