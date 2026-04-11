@@ -9,6 +9,7 @@ import { CacheService } from '@/modules/admin/operations/infra/cache/cache.servi
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { DataSource } from 'typeorm'
 import { PromotionTargetType } from '../../sales/promotion/enums/promotion-target-type.enum'
 import { BrandRepository } from '../brand/brand.repository'
 import { ProductAttributeRepository } from './attribute.repository'
@@ -35,6 +36,7 @@ export class ProductService {
     private readonly inventoryService: InventoryTransactionService,
     private readonly purchaseOrderService: PurchaseOrderService,
     private readonly promotionService: PromotionService,
+    private readonly dataSource: DataSource,
   ) { }
 
   private async attachPromotions(product: any, tenantId: string): Promise<AugmentedProduct> {
@@ -363,116 +365,120 @@ export class ProductService {
     tenantId: string,
   ): Promise<AugmentedProduct> {
     this.logger.log(`${this.updateProduct.name} Service Called`)
-    const product = await this.findOneProduct(id, tenantId)
 
-    if (updateProductDto.slug && updateProductDto.slug !== product.slug) {
-      const existing = await this.productRepository.findBySlug(updateProductDto.slug, tenantId)
-      console.log("find product by slug and tenantId", existing);
-      
-      if (existing) {
-        throw new ConflictException('Product with this slug already exists')
-      }
-    }
+    return await this.dataSource.transaction(async (manager) => {
+      // 1. Fetch Fresh Product (bypassing potentially stale cache for update)
+      const product = await this.productRepository.findByIdWithRelations(id, tenantId)
+      if (!product) throw new NotFoundException('Product not found')
 
-    const { faqs, attributes, variants, ...productData } = updateProductDto
-
-    console.log("updateProductDto data", updateProductDto);
-    
-
-    await this.productRepository.updateAndSave(product as any as ProductEntity, productData)
-
-    console.log("faq");
-    
-    if (faqs) {
-      await this.faqRepository.deleteByProductId(product.id, tenantId)
-      if (faqs.length > 0) {
-        await this.faqRepository.saveMultiple(faqs, product.id, tenantId)
-      }
-    }
-
-    if (attributes) {
-      await this.attributeRepository.deleteByProductId(product.id, tenantId)
-      if (attributes.length > 0) {
-        await this.attributeRepository.saveMultiple(attributes, product.id, tenantId)
-      }
-    }
-
-    if (variants) {
-      const existingVariants = await this.variantRepository.findByProductId(product.id, tenantId)
-      const existingVariantIds = existingVariants.map((v) => v.id)
-
-      const incomingVariantsWithId = variants.filter((v: any) => v.id)
-      const incomingVariantIds = incomingVariantsWithId.map((v: any) => v.id)
-      const newVariants = variants.filter((v: any) => !v.id)
-
-      for (const variantDto of incomingVariantsWithId) {
-        await this.variantRepository.saveExistingVariant(variantDto, product.id, tenantId)
+      // 2. Slug Validation
+      if (updateProductDto.slug && updateProductDto.slug !== product.slug) {
+        const existing = await this.productRepository.findBySlug(updateProductDto.slug, tenantId)
+        if (existing) throw new ConflictException('Product with this slug already exists')
       }
 
-      const poItems = []
+      const { faqs, attributes, variants, ...productData } = updateProductDto
 
-      for (const variantDto of newVariants) {
-        const savedVariant = await this.variantRepository.saveNewVariant(
-          variantDto,
-          product.id,
-          tenantId,
-        )
-
-        if (variantDto.stock > 0) {
-          poItems.push({
-            productId: product.id,
-            variantId: savedVariant.id,
-            quantity: variantDto.stock,
-            unitPrice: variantDto.price || product.price,
-          })
-        }
-      
-        
+      // 3. Handle Base Stock vs Variants
+      // If variants are being added/updated, base product stock should likely be 0
+      if (variants && variants.length > 0) {
+        productData.stock = 0
       }
 
-      console.log("variant log", poItems);
-      console.log("tenantId", tenantId);
-      
-      if (poItems.length > 0 && product.supplierId) {
-        console.log("product.supplierId", product.supplierId);
-        console.log("product.slug", product.slug);
-        
-        const po = await this.purchaseOrderService.createPurchaseOrder(
-          {
-            supplierId: product.supplierId,
-            referenceNumber: `INITIAL_VAR_${product.slug.toUpperCase()}_${Date.now()}`,
-            items: poItems,
-          },
-          tenantId,
-        )
+      // 4. Update Base Product
+      await this.productRepository.updateAndSave(product, productData, manager)
 
-        console.log("purchase order log", po);
-        
-
-        await this.purchaseOrderService.updatePurchaseOrderStatus(
-          po.id,
-          { status: PurchaseOrderStatus.RECEIVED },
-          tenantId,
-        )
-      }
-
-      const toDeleteIds = existingVariantIds.filter((dbId) => !incomingVariantIds.includes(dbId))
-
-      if (toDeleteIds.length > 0) {
-        try {
-          await this.variantRepository.deleteByIds(toDeleteIds)
-        } catch (error) {
-          console.warn(`Failed to delete variants ${toDeleteIds.join(', ')}: ${error.message}`)
+      // 5. Update FAQs
+      if (faqs) {
+        await this.faqRepository.deleteByProductId(product.id, tenantId)
+        if (faqs.length > 0) {
+          await this.faqRepository.saveMultiple(faqs, product.id, tenantId)
         }
       }
-    }
 
-    console.log("product log", product);
-    
+      // 6. Update Attributes
+      if (attributes) {
+        await this.attributeRepository.deleteByProductId(product.id, tenantId)
+        if (attributes.length > 0) {
+          await this.attributeRepository.saveMultiple(attributes, product.id, tenantId)
+        }
+      }
 
-    await this.cache.delCache(`product:${id}`, tenantId)
+      // 7. Update Variants
+      if (variants) {
+        const existingVariants = await this.variantRepository.findByProductId(product.id, tenantId)
+        const existingVariantIds = existingVariants.map((v) => v.id)
 
-    return await this.findOneProduct(id, tenantId)
+        const incomingVariantsWithId = variants.filter((v: any) => v.id)
+        const incomingVariantIds = incomingVariantsWithId.map((v: any) => v.id)
+        const newVariants = variants.filter((v: any) => !v.id)
+
+        // SKU Uniqueness Check for new variants
+        for (const v of newVariants) {
+          const duplicate = await this.variantRepository.findBySku(v.sku, tenantId, manager)
+          if (duplicate) {
+            throw new ConflictException(`Variant with SKU ${v.sku} already exists in another product`)
+          }
+        }
+
+        // Update Existing Variants
+        for (const variantDto of incomingVariantsWithId) {
+          await this.variantRepository.saveExistingVariant(variantDto, product.id, tenantId, manager)
+        }
+
+        const poItems = []
+        for (const variantDto of newVariants) {
+          const savedVariant = await this.variantRepository.saveNewVariant(
+            variantDto,
+            product.id,
+            tenantId,
+            manager,
+          )
+
+          if (variantDto.stock > 0) {
+            // Priority: Use purchase order if supplier exists
+            if (product.supplierId) {
+              poItems.push({
+                productId: product.id,
+                variantId: savedVariant.id,
+                quantity: variantDto.stock,
+                unitPrice: variantDto.price || product.price,
+              })
+            } else {
+              // Fallback: Directly increment stock if no supplier
+              await this.variantRepository.incrementStock(savedVariant.id, tenantId, variantDto.stock, manager)
+            }
+          }
+        }
+
+        // Create Purchase Order if needed
+        if (poItems.length > 0 && product.supplierId) {
+          const po = await this.purchaseOrderService.createPurchaseOrder(
+            {
+              supplierId: product.supplierId,
+              referenceNumber: `UPDATE_VAR_${product.slug.toUpperCase()}_${Date.now()}`,
+              items: poItems,
+            },
+            tenantId,
+          )
+
+          await this.purchaseOrderService.updatePurchaseOrderStatus(
+            po.id,
+            { status: PurchaseOrderStatus.RECEIVED },
+            tenantId,
+          )
+        }
+
+        // Delete Variants not present in the update
+        const toDeleteIds = existingVariantIds.filter((dbId) => !incomingVariantIds.includes(dbId))
+        if (toDeleteIds.length > 0) {
+          await this.variantRepository.deleteByIds(toDeleteIds, manager)
+        }
+      }
+
+      await this.cache.delCache(`product:${id}`, tenantId)
+      return await this.findOneProduct(id, tenantId)
+    })
   }
 
   async removeProduct(

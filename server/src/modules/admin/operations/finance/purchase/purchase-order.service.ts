@@ -33,13 +33,9 @@ export class PurchaseOrderService {
   async createPurchaseOrder(dto: CreatePurchaseOrderDto, tenantId: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
     const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-    console.log("dto", dto);
-    console.log("tenantId", tenantId);
-    
     const result = await this.repository.createAndSave(
       { ...dto, totalAmount, tenantId } as any,
     )
-    console.log("result", result);
     
     await this.cacheService.delCache(`po:list`, tenantId)
     return result

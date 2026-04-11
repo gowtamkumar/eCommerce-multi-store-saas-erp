@@ -128,10 +128,11 @@ export class ProductRepository {
     return this.repo.save(product)
   }
 
-  async updateAndSave(product: ProductEntity, data: any): Promise<ProductEntity> {
+  async updateAndSave(product: ProductEntity, data: any, manager?: any): Promise<ProductEntity> {
+    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
     if ('categoryId' in data) product.category = null as any
     Object.assign(product, data)
-    return this.repo.save(product)
+    return repo.save(product)
   }
 
   async removeProduct(product: ProductEntity): Promise<void> {

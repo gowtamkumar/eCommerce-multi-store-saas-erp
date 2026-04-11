@@ -30,32 +30,42 @@ export class ProductVariantRepository {
     variantDto: any,
     productId: string,
     tenantId: string,
+    manager?: any,
   ): Promise<ProductVariantEntity> {
-    const variant = this.repo.create({
+    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    const variant = repo.create({
       ...variantDto,
       productId,
       tenantId,
       stock: 0,
     } as ProductVariantEntity)
-    return this.repo.save(variant)
+    return repo.save(variant)
   }
 
   async saveExistingVariant(
     variantDto: any,
     productId: string,
     tenantId: string,
+    manager?: any,
   ): Promise<ProductVariantEntity> {
-    const variant = this.repo.create({
+    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    const variant = repo.create({
       ...variantDto,
       productId,
       tenantId,
     } as ProductVariantEntity)
-    return this.repo.save(variant)
+    return repo.save(variant)
   }
 
-  async deleteByIds(ids: string[]): Promise<void> {
+  async findBySku(sku: string, tenantId: string, manager?: any): Promise<ProductVariantEntity | null> {
+    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    return repo.findOne({ where: { sku, tenantId } })
+  }
+
+  async deleteByIds(ids: string[], manager?: any): Promise<void> {
     if (ids.length > 0) {
-      await this.repo.softDelete(ids)
+      const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+      await repo.softDelete(ids)
     }
   }
 
