@@ -12,7 +12,7 @@ export class ProductProcessor extends WorkerHost {
 
     constructor(
         private readonly purchaseOrderService: PurchaseOrderService,
-        // private readonly inventoryService: InventoryTransactionService,
+        private readonly inventoryService: InventoryTransactionService,
     ) {
         super();
     }
@@ -52,18 +52,18 @@ export class ProductProcessor extends WorkerHost {
         this.logger.log(`PO ${po.id} Created and Received Successfully`);
     }
 
-    // async handleUpdateStock(data: any) {
-    //     const { productId, variantId, quantity, type, tenantId } = data;
-    //     this.logger.log(`Updating stock for product ${productId} (variant: ${variantId || 'none'}) for tenant ${tenantId}`);
+    async handleUpdateStock(data: any) {
+        const { productId, variantId, quantity, type, tenantId } = data;
+        this.logger.log(`Updating stock for product ${productId} (variant: ${variantId || 'none'}) for tenant ${tenantId}`);
 
-    //     await this.inventoryService.createInventoryTransaction({
-    //         productId,
-    //         variantId,
-    //         quantity,
-    //         type,
-    //         referenceType: InventoryTransactionReferenceType.ORDER
-    //     }, tenantId);
+        await this.inventoryService.createInventoryTransaction({
+            productId,
+            variantId,
+            quantity,
+            type,
+            referenceType: InventoryTransactionReferenceType.ORDER
+        }, tenantId);
 
-    //     this.logger.log(`Stock Updated Successfully for product ${productId}`);
-    // }
+        this.logger.log(`Stock Updated Successfully for product ${productId}`);
+    }
 }
