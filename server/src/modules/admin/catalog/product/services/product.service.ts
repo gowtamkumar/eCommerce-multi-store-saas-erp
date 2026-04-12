@@ -6,19 +6,19 @@ import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
+import { InjectQueue } from '@nestjs/bullmq'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { Queue } from 'bullmq'
 import { DataSource } from 'typeorm'
 import { PromotionTargetType } from '../../../sales/promotion/enums/promotion-target-type.enum'
 import { BrandRepository } from '../../brand/brand.repository'
-import { ProductAttributeRepository } from '../repositories/attribute.repository'
 import { CreateProductDto } from '../dto/create-product.dto'
 import { FilterProductDto } from '../dto/filter-product.dto'
 import { UpdateProductDto } from '../dto/update-product.dto'
 import { ProductEntity } from '../entities/product.entity'
+import { ProductAttributeRepository } from '../repositories/attribute.repository'
 import { ProductRepository } from '../repositories/product.repository'
 import { ProductVariantRepository } from '../repositories/variant.repository'
-import { InjectQueue } from '@nestjs/bullmq'
-import { Queue } from 'bullmq'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 
@@ -37,7 +37,7 @@ export class ProductService {
     private readonly promotionService: PromotionService,
     private readonly dataSource: DataSource,
     @InjectQueue('product') private readonly productQueue: Queue,
-  ) { }
+  ) {}
 
   private async attachPromotions(product: any, tenantId: string): Promise<AugmentedProduct> {
     this.logger.log(`${this.attachPromotions.name} Service Called`)
@@ -47,7 +47,10 @@ export class ProductService {
       if (!activePromos || activePromos.length === 0) return product
 
       const applicablePromotions = activePromos.filter((promo) => {
-        if (promo.targetType === PromotionTargetType.SPECIFIC_PRODUCT && promo.targetId === product.id)
+        if (
+          promo.targetType === PromotionTargetType.SPECIFIC_PRODUCT &&
+          promo.targetId === product.id
+        )
           return true
         if (
           promo.targetType === PromotionTargetType.SPECIFIC_CATEGORY &&
@@ -126,7 +129,11 @@ export class ProductService {
 
           if (type === PromotionTargetType.ENTIRE_ORDER) return true
           if (type === PromotionTargetType.SPECIFIC_PRODUCT && id === product.id) return true
-          if (type === PromotionTargetType.SPECIFIC_CATEGORY && (id === product.categoryId || id === product.category?.id)) return true
+          if (
+            type === PromotionTargetType.SPECIFIC_CATEGORY &&
+            (id === product.categoryId || id === product.category?.id)
+          )
+            return true
           if (type === PromotionTargetType.SPECIFIC_BRAND && id === product.brandId) return true
 
           return false
@@ -173,10 +180,17 @@ export class ProductService {
           discountType: finalDiscountType,
         } as AugmentedProduct
       })
-    } catch (error) {
+    }catch(error){
       this.logger.error('Error attaching promotions many', error)
       return products
     }
+  }
+
+  private generateSku(productSlug: string, combination: Record<string, string>): string {
+    const values = Object.values(combination).map(v => String(v).toLowerCase().replace(/[^a-z0-9]/g, '')).join('-')
+    const suffix = Math.random().toString(36).substring(2, 6).toUpperCase()
+    const base = values ? `${productSlug.toUpperCase()}-${values.toUpperCase()}` : productSlug.toUpperCase()
+    return `${base}-${suffix}`
   }
 
   async findAllProducts(
@@ -193,7 +207,10 @@ export class ProductService {
     return this.cache.rememberCache(
       cacheKey,
       async () => {
-        const [products, total] = await this.productRepository.findAllWithFilters(filterDto, tenantId)
+        const [products, total] = await this.productRepository.findAllWithFilters(
+          filterDto,
+          tenantId,
+        )
         const productsWithPromotions = await this.attachPromotionsMany(products, tenantId)
         return { products: productsWithPromotions, total }
       },
@@ -240,7 +257,7 @@ export class ProductService {
         }
       },
       300, // 5 minutes
-      tenantId
+      tenantId,
     )
   }
 
@@ -266,7 +283,7 @@ export class ProductService {
         return await this.attachPromotionsMany(products, tenantId)
       },
       300, // 5 minutes
-      tenantId
+      tenantId,
     )
   }
 
@@ -289,7 +306,10 @@ export class ProductService {
     return await this.attachPromotions(product, tenantId)
   }
 
-  async createProduct(createProductDto: CreateProductDto, tenantId: string): Promise<ProductEntity> {
+  async createProduct(
+    createProductDto: CreateProductDto,
+    tenantId: string,
+  ): Promise<ProductEntity> {
     this.logger.log(`${this.createProduct.name} Service Called`)
 
     let poData: any = null
@@ -416,20 +436,54 @@ export class ProductService {
         const incomingVariantIds = incomingVariantsWithId.map((v: any) => v.id)
         const newVariants = variants.filter((v: any) => !v.id)
 
-        // SKU Uniqueness Check for new variants
-        for (const v of newVariants) {
-          const duplicate = await this.variantRepository.findBySku(v.sku, tenantId, manager)
-          if (duplicate) {
-            throw new ConflictException(`Variant with SKU ${v.sku} already exists in another product`)
-          }
+        // 7a. Validate All Incoming SKUs (Unique within request)
+        const skusInRequest = variants.filter((v: any) => v.sku).map((v: any) => v.sku)
+        const uniqueSkusInRequest = new Set(skusInRequest)
+        if (uniqueSkusInRequest.size !== skusInRequest.length) {
+          throw new ConflictException('Duplicate SKUs found in the request')
         }
 
-        // Update Existing Variants
+        // 7b. Delete Variants not present in the update (DO THIS FIRST to free up SKUs)
+        const toDeleteIds = existingVariantIds.filter((dbId) => !incomingVariantIds.includes(dbId))
+        if (toDeleteIds.length > 0) {
+          await this.variantRepository.deleteByIds(toDeleteIds, manager)
+        }
+
+        // 7c. Handle Existing Variants
         for (const variantDto of incomingVariantsWithId) {
-          await this.variantRepository.saveExistingVariant(variantDto, product.id, tenantId, manager)
+          if (variantDto.sku) {
+            const duplicate = await this.variantRepository.findBySku(variantDto.sku, tenantId, manager, true)
+            if (duplicate && duplicate.productId !== product.id) {
+              throw new ConflictException(`SKU ${variantDto.sku} is already used by another product`)
+            }
+          }
+          await this.variantRepository.saveExistingVariant(
+            variantDto,
+            product.id,
+            tenantId,
+            manager,
+          )
         }
 
+        // 7d. Handle New Variants
         for (const variantDto of newVariants) {
+          // Auto-generate SKU if missing
+          if (!variantDto.sku) {
+            variantDto.sku = this.generateSku(product.slug, variantDto.combination)
+          }
+
+          // Check for conflicts (including soft-deleted)
+          const duplicate = await this.variantRepository.findBySku(variantDto.sku, tenantId, manager, true)
+          if (duplicate) {
+            if (duplicate.productId !== product.id) {
+              throw new ConflictException(`Variant with SKU ${variantDto.sku} already exists in another product`)
+            } else {
+              // If it belongs to same product but was soft-deleted, we might have a problem with the unique index
+              // unless we use the existing ID. But here we assume it's a conflict.
+              throw new ConflictException(`SKU ${variantDto.sku} conflict with a deleted variant. Please use a different SKU.`)
+            }
+          }
+
           const savedVariant = await this.variantRepository.saveNewVariant(
             variantDto,
             product.id,
@@ -438,7 +492,6 @@ export class ProductService {
           )
 
           if (variantDto.stock > 0) {
-            // Priority: Use purchase order if supplier exists
             if (product.supplierId) {
               poItems.push({
                 productId: product.id,
@@ -447,16 +500,14 @@ export class ProductService {
                 unitPrice: variantDto.price || product.price,
               })
             } else {
-              // Fallback: Directly increment stock if no supplier
-              await this.variantRepository.incrementStock(savedVariant.id, tenantId, variantDto.stock, manager)
+              await this.variantRepository.incrementStock(
+                savedVariant.id,
+                tenantId,
+                variantDto.stock,
+                manager,
+              )
             }
           }
-        }
-
-        // Delete Variants not present in the update
-        const toDeleteIds = existingVariantIds.filter((dbId) => !incomingVariantIds.includes(dbId))
-        if (toDeleteIds.length > 0) {
-          await this.variantRepository.deleteByIds(toDeleteIds, manager)
         }
       } else {
         // If NO variants, check if base stock was updated and needs a PO

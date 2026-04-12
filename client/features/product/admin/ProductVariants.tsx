@@ -86,7 +86,10 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
 
       if (existing) return existing;
 
-      const sku = `SKU-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      const comboValues = Object.values(combo).map(v => String(v).toUpperCase().replace(/[^A-Z0-9]/g, '')).join('-');
+      const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const sku = comboValues ? `SKU-${comboValues}-${randomSuffix}` : `SKU-${randomSuffix}`;
+
       return {
         sku,
         price: +basePrice || 0,

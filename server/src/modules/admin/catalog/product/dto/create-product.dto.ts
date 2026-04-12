@@ -45,7 +45,8 @@ class ProductAttributeDto {
 class ProductVariantDto {
   @ApiProperty()
   @IsString()
-  sku: string
+  @IsOptional()
+  sku?: string
 
   @ApiProperty({ required: false })
   @IsNumber()

@@ -57,9 +57,9 @@ export class ProductVariantRepository {
     return repo.save(variant)
   }
 
-  async findBySku(sku: string, tenantId: string, manager?: any): Promise<ProductVariantEntity | null> {
+  async findBySku(sku: string, tenantId: string, manager?: any, withDeleted: boolean = false): Promise<ProductVariantEntity | null> {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
-    return repo.findOne({ where: { sku, tenantId } })
+    return repo.findOne({ where: { sku, tenantId }, withDeleted })
   }
 
   async deleteByIds(ids: string[], manager?: any): Promise<void> {
