@@ -1,6 +1,7 @@
 import { Logger, ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { NestExpressApplication } from '@nestjs/platform-express'
+import compression from 'compression'
 import cookieParser from 'cookie-parser'
 import { json } from 'express'
 import { AppModule } from './app.module'
@@ -29,6 +30,7 @@ async function bootstrap() {
     credentials: true,
   })
 
+  app.use(compression())
   app.use(cookieParser())
   app.use(json({ limit: '20mb' }))
 
