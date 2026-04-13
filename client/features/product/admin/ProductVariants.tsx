@@ -16,7 +16,6 @@ interface ProductVariantsProps {
 export default function ProductVariants({ attributes, variants, basePrice, stock, onChange }: ProductVariantsProps) {
   const [localAttributes, setLocalAttributes] = useState<ProductAttribute[]>(attributes);
   const [localVariants, setLocalVariants] = useState<ProductVariant[]>(variants);
-  const [showGenerator, setShowGenerator] = useState(false);
   const [isOptionsExpanded, setIsOptionsExpanded] = useState(true);
   const [isVariantsExpanded, setIsVariantsExpanded] = useState(true);
 
@@ -100,7 +99,6 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
     });
     setLocalVariants(newVariants);
     onChange(localAttributes, newVariants);
-    setShowGenerator(false);
   };
 
   const updateVariant = (index: number, data: Partial<ProductVariant>) => {

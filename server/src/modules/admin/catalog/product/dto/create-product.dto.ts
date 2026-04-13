@@ -46,6 +46,11 @@ class ProductVariantDto {
   @ApiProperty()
   @IsString()
   @IsOptional()
+  id?: string
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
   sku?: string
 
   @ApiProperty({ required: false })

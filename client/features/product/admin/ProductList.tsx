@@ -1,8 +1,8 @@
 'use client';
 
-import { Edit, Eye, Plus, Search, Trash2, LayoutTemplate } from 'lucide-react';
-import Link from 'next/link';
 import { useSettings } from '@/hooks/SettingsContext';
+import { Edit, Eye, LayoutTemplate, Plus, Search, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { ProductListProps } from './types';
 
 export default function ProductList({
@@ -51,7 +51,7 @@ export default function ProductList({
                                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Name</th>
                                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Slug</th>
                                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Price</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Stock</th>
+                                {/* <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Stock</th> */}
                                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Status</th>
                                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Added</th>
                                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Updated</th>
@@ -94,7 +94,7 @@ export default function ProductList({
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{product.stock}</td>
+                                        {/* <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{product.stock}</td> */}
                                         <td className="px-6 py-4">
                                             <select
                                                 value={product.status}
