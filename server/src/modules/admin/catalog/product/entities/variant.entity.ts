@@ -14,6 +14,9 @@ export class ProductVariantEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   price: number // Override base price
 
+  @Column({ type: 'boolean', default: false, name: 'is_default' })
+  isDefault: boolean
+
   @Column({ type: 'int', default: 0 })
   stock: number
 

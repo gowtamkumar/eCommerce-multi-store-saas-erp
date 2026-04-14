@@ -58,6 +58,11 @@ class ProductVariantDto {
   @IsOptional()
   price?: number
 
+  @ApiProperty({ required: false, default: false })
+  @IsBoolean()
+  @IsOptional()
+  isDefault?: boolean
+
   @ApiProperty()
   @IsNumber()
   @Min(0)

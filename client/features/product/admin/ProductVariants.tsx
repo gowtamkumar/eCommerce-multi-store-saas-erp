@@ -1,7 +1,7 @@
 'use client';
 
 import { ProductAttribute, ProductVariant } from '@/types/product';
-import { ChevronDown, ChevronUp, DollarSign, Layers, Package, Plus, Tag, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, DollarSign, Layers, Package, Plus, Star, Tag, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -213,6 +213,22 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
               {localVariants.map((variant, idx) => (
                 <div key={idx} className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all">
                   <div className="flex flex-wrap items-center gap-4">
+                    {/* Default Variant Selector */}
+                    <div className="flex items-center justify-center w-10">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = localVariants.map((v, i) => ({ ...v, isDefault: i === idx }));
+                          setLocalVariants(updated);
+                          onChange(localAttributes, updated);
+                        }}
+                        className={`p-2 rounded-lg transition-all ${variant.isDefault ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/20' : 'text-slate-300 hover:text-slate-400'}`}
+                        title={variant.isDefault ? "Default Variant" : "Set as Default"}
+                      >
+                        <Star className={`w-5 h-5 ${variant.isDefault ? 'fill-amber-500' : ''}`} />
+                      </button>
+                    </div>
+
                     {/* Label from combination */}
                     <div className="flex-1 min-w-[200px]">
                       <div className="flex flex-wrap gap-1.5">

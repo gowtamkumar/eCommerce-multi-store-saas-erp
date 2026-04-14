@@ -13,6 +13,7 @@ export interface ProductVariant {
   stock: number;
   lowStockThreshold?: number;
   images?: string[];
+  isDefault?: boolean;
   combination: Record<string, string>;
 }
 

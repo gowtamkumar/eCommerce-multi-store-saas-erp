@@ -9,7 +9,7 @@ import { PromotionService } from '@/modules/admin/sales/promotion/promotion.serv
 import { InjectQueue } from '@nestjs/bullmq'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Queue } from 'bullmq'
-import { DataSource } from 'typeorm'
+import { DataSource, Not } from 'typeorm'
 import { PromotionTargetType } from '../../../sales/promotion/enums/promotion-target-type.enum'
 import { BrandRepository } from '../../brand/brand.repository'
 import { CreateProductDto } from '../dto/create-product.dto'
@@ -20,6 +20,7 @@ import { ProductAttributeRepository } from '../repositories/attribute.repository
 import { ProductRepository } from '../repositories/product.repository'
 import { ProductVariantRepository } from '../repositories/variant.repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { ProductVariantEntity } from '../entities/variant.entity'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 
@@ -69,7 +70,8 @@ export class ProductService {
       })
 
       let maxPromoDiscount = 0
-      const basePrice = Number(product.price || 0)
+      const defaultVariant = (product.variants || []).find((v: any) => v.isDefault)
+      const basePrice = Number(defaultVariant?.price ?? product.price ?? 0)
 
       applicablePromotions.forEach((promo) => {
         const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as string)
@@ -140,7 +142,8 @@ export class ProductService {
           return false
         })
 
-        const basePrice = Number(product.price || 0)
+        const defaultVariant = (product.variants || []).find((v: any) => v.isDefault)
+        const basePrice = Number(defaultVariant?.price ?? product.price ?? 0)
         let maxPromoDiscount = 0
 
         applicablePromotions.forEach((promo) => {
@@ -351,6 +354,11 @@ export class ProductService {
             manager,
           )
 
+          // If this variant is default, ensure others are not (though handled in update usually)
+          if (variantDto.isDefault) {
+            await manager.update(ProductVariantEntity, { productId: product.id, id: Not(savedVariant.id) }, { isDefault: false })
+          }
+
           if (variantDto.stock > 0) {
             poItems.push({
               productId: product.id,
@@ -435,7 +443,7 @@ export class ProductService {
         const existingVariantIds = existingVariants.map((v) => v.id)
 
         console.log("variants", variants);
-        
+
         const incomingVariantsWithId = variants.filter((v: any) => v.id)
         const incomingVariantIds = incomingVariantsWithId.map((v: any) => v.id)
         const newVariants = variants.filter((v: any) => !v.id)
@@ -467,6 +475,10 @@ export class ProductService {
             tenantId,
             manager,
           )
+
+          if (variantDto.isDefault) {
+            await manager.update(ProductVariantEntity, { productId: product.id, tenantId, id: Not(variantDto.id) }, { isDefault: false })
+          }
         }
 
         // 7d. Handle New Variants
@@ -494,6 +506,10 @@ export class ProductService {
             tenantId,
             manager,
           )
+
+          if (variantDto.isDefault) {
+            await manager.update(ProductVariantEntity, { productId: product.id, tenantId, id: Not(savedVariant.id) }, { isDefault: false })
+          }
 
           if (variantDto.stock > 0) {
             if (product.supplierId) {
