@@ -72,6 +72,7 @@ export class ProductService {
       let maxPromoDiscount = 0
       const defaultVariant = (product.variants || []).find((v: any) => v.isDefault)
       const basePrice = Number(defaultVariant?.price ?? product.price ?? 0)
+      const images = defaultVariant?.images?.length > 0 ? defaultVariant.images : product.images
 
       applicablePromotions.forEach((promo) => {
         const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as string)
@@ -104,6 +105,8 @@ export class ProductService {
         applicablePromotions,
         discountAmount: finalDiscountAmount,
         discountType: finalDiscountType,
+        images: images,
+        price: basePrice, // Optional: ensure the serialized price is also correct
       } as AugmentedProduct
     } catch (error) {
       console.error('Error attaching promotions', error)
@@ -144,6 +147,7 @@ export class ProductService {
 
         const defaultVariant = (product.variants || []).find((v: any) => v.isDefault)
         const basePrice = Number(defaultVariant?.price ?? product.price ?? 0)
+        const images = defaultVariant?.images?.length > 0 ? defaultVariant.images : product.images
         let maxPromoDiscount = 0
 
         applicablePromotions.forEach((promo) => {
@@ -182,6 +186,8 @@ export class ProductService {
           applicablePromotions,
           discountAmount: finalDiscountAmount,
           discountType: finalDiscountType,
+          images: images,
+          price: basePrice, // Ensure the serialized price is correct
         } as AugmentedProduct
       })
     } catch (error) {

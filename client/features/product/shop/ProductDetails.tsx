@@ -50,8 +50,12 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
   useEffect(() => {
     if (product?.attributes?.length > 0) {
       const initialAttrs: Record<string, string> = {};
+      const defaultVariant = (product.variants || []).find((v: any) => v.isDefault);
+
       product.attributes.forEach((attr: any) => {
-        if (attr.values?.length > 0) {
+        if (defaultVariant?.combination?.[attr.name]) {
+          initialAttrs[attr.name] = defaultVariant.combination[attr.name];
+        } else if (attr.values?.length > 0) {
           initialAttrs[attr.name] = attr.values[0];
         }
       });
