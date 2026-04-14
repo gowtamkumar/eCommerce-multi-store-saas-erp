@@ -35,6 +35,7 @@ export interface Product {
   shortDescription?: string;
   price: number;
   discountAmount?: number;
+  discountType?: 'fixed' | 'percentage';
   images: string[];
   features?: string[];
   stock: number;
@@ -43,6 +44,9 @@ export interface Product {
   status: 'active' | 'inactive';
   categoryId?: string;
   category?: Category;
+  brand?: { id: string; name: string };
+  supplier?: { id: string; name: string };
+  applicablePromotions?: any[];
   faqs?: Array<{ question: string; answer: string; order?: number }>;
   attributes?: ProductAttribute[];
   variants?: ProductVariant[];

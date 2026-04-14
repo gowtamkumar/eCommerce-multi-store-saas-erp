@@ -104,7 +104,7 @@ export class ProductRepository {
   async findByIdWithRelations(id: string, tenantId: string): Promise<ProductEntity | null> {
     return this.repo.findOne({
       where: { id, tenantId },
-      relations: ['faqs', 'attributes', 'variants', 'category'],
+      relations: ['faqs', 'attributes', 'variants', 'category', 'supplier'],
     })
   }
 
