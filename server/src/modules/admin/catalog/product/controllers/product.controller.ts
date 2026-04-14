@@ -42,7 +42,7 @@ export class ProductController {
     @Body() createProductDto: CreateProductDto,
   ): Promise<BaseApiSuccessResponse<ProductResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called create.`)
-    const result = await this.productService.createProduct(createProductDto, ctx.tenantId)
+    const result = await this.productService.createProduct(createProductDto, ctx)
     return {
       success: true,
       statusCode: 201,

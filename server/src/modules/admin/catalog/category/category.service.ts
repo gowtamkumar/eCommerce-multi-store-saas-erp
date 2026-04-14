@@ -12,7 +12,7 @@ export class CategoryService {
   constructor(
     private readonly categoryRepo: CategoryRepository,
     private readonly cache: CacheService,
-  ) {}
+  ) { }
 
   async createCategory(
     createCategoryDto: CreateCategoryDto,
@@ -37,7 +37,7 @@ export class CategoryService {
   async findAllCategories(tenantId: string): Promise<CategoryEntity[]> {
     this.logger.log(`${this.findAllCategories.name} Service Called`)
     const cacheKey = `categories:list`
-    
+
     return this.cache.rememberCache(
       cacheKey,
       () => this.categoryRepo.findAllByTenant(tenantId),

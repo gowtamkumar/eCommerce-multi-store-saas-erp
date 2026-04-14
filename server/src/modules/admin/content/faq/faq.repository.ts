@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { In, Repository } from 'typeorm'
 import { FaqEntity } from './entities/faq.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class FaqRepository {

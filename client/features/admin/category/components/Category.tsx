@@ -29,6 +29,7 @@ export default function Categories() {
         setLoading(true);
         try {
             const res = await fetchAPI('/categories/stats');
+
             if (res.success) {
                 setCategories(res.data);
             }

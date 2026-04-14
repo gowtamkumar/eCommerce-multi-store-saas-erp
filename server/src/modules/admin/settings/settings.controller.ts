@@ -15,13 +15,14 @@ import { SettingsService } from './settings.service'
 export class SettingsController {
   private readonly logger = new Logger(SettingsController.name)
 
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(private readonly settingsService: SettingsService) { }
 
   @Get()
   @PublicDuringExpiration()
   async findByTenantSettings(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SiteSettingsResponseDto>> {
+    console.log('ctx', ctx)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByTenantSettings.`)
     const settings = await this.settingsService.findByTenantSettings(ctx.tenantId)
     return {

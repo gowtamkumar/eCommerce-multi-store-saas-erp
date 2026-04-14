@@ -19,6 +19,7 @@ import { ProductEntity } from '../entities/product.entity'
 import { ProductAttributeRepository } from '../repositories/attribute.repository'
 import { ProductRepository } from '../repositories/product.repository'
 import { ProductVariantRepository } from '../repositories/variant.repository'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 
@@ -37,7 +38,7 @@ export class ProductService {
     private readonly promotionService: PromotionService,
     private readonly dataSource: DataSource,
     @InjectQueue('product') private readonly productQueue: Queue,
-  ) {}
+  ) { }
 
   private async attachPromotions(product: any, tenantId: string): Promise<AugmentedProduct> {
     this.logger.log(`${this.attachPromotions.name} Service Called`)
@@ -180,7 +181,7 @@ export class ProductService {
           discountType: finalDiscountType,
         } as AugmentedProduct
       })
-    }catch(error){
+    } catch (error) {
       this.logger.error('Error attaching promotions many', error)
       return products
     }
@@ -308,9 +309,10 @@ export class ProductService {
 
   async createProduct(
     createProductDto: CreateProductDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<ProductEntity> {
     this.logger.log(`${this.createProduct.name} Service Called`)
+    const tenantId = ctx.tenantId
 
     let poData: any = null
 
