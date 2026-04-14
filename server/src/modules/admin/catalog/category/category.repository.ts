@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CategoryEntity } from './entities/category.entity'
+import { ProductEntity } from '../product/entities/product.entity'
 
 @Injectable()
 export class CategoryRepository {
@@ -28,8 +29,6 @@ export class CategoryRepository {
   async findAllWithProductCounts(tenantId: string) {
     return this.repo
       .createQueryBuilder('category')
-      .leftJoin('category.products', 'product')
-      .where('category.tenantId = :tenantId', { tenantId })
       .select([
         'category.id as id',
         'category.name as name',
@@ -38,8 +37,15 @@ export class CategoryRepository {
         'category.image as image',
         'category.createdAt as "createdAt"',
       ])
-      .addSelect('COUNT(product.id)', 'productCount')
-      .groupBy('category.id')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(p.id)', 'count')
+          .from(ProductEntity, 'p')
+          .where('p.categoryId = category.id')
+          .andWhere('p.deletedAt IS NULL')
+          .andWhere('p.tenantId = :tenantId', { tenantId })
+      }, 'productCount')
+      .where('category.tenantId = :tenantId', { tenantId })
       .orderBy('category.name', 'ASC')
       .getRawMany()
   }

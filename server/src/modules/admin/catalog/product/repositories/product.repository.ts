@@ -130,7 +130,15 @@ export class ProductRepository {
 
   async updateAndSave(product: ProductEntity, data: any, manager?: any): Promise<ProductEntity> {
     const repo = manager ? manager.getRepository(ProductEntity) : this.repo
-    if ('categoryId' in data) product.category = null as any
+
+    // When updating raw IDs (categoryId, brandId, supplierId), we must 
+    // remove the corresponding relation objects if they are already loaded.
+    // Setting to null would explicitly unset the relation in the DB,
+    // while 'delete' tells TypeORM to ignore the relation and use the ID scalar instead.
+    if ('categoryId' in data) delete (product as any).category
+    if ('brandId' in data) delete (product as any).brand
+    if ('supplierId' in data) delete (product as any).supplier
+
     Object.assign(product, data)
     return repo.save(product)
   }
