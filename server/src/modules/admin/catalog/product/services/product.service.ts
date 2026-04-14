@@ -434,6 +434,8 @@ export class ProductService {
         const existingVariants = await this.variantRepository.findByProductId(product.id, tenantId)
         const existingVariantIds = existingVariants.map((v) => v.id)
 
+        console.log("variants", variants);
+        
         const incomingVariantsWithId = variants.filter((v: any) => v.id)
         const incomingVariantIds = incomingVariantsWithId.map((v: any) => v.id)
         const newVariants = variants.filter((v: any) => !v.id)
