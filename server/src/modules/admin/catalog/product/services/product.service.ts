@@ -69,18 +69,9 @@ export class ProductService {
         return false
       })
 
-      let maxPromoDiscount = 0
       const defaultVariant = (product.variants || []).find((v: any) => v.isDefault)
       const basePrice = Number(defaultVariant?.price ?? product.price ?? 0)
       const images = defaultVariant?.images?.length > 0 ? defaultVariant.images : product.images
-
-      applicablePromotions.forEach((promo) => {
-        const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as string)
-        const calcDiscount = promoDiscountStrategy.calculate(basePrice, Number(promo.value))
-        if (calcDiscount > maxPromoDiscount) {
-          maxPromoDiscount = calcDiscount
-        }
-      })
 
       const originalDiscountType = product.discountType || DiscountType.FIXED
       const originalRawDiscount = Number(product.discountAmount || 0)
@@ -92,16 +83,22 @@ export class ProductService {
         originalRawDiscount,
       )
 
+      let bestDiscountValue = originalDiscountValue
       let finalDiscountAmount = originalRawDiscount
-      let finalDiscountType = originalDiscountType
+      let finalDiscountType = originalDiscountType as DiscountType
 
-      if (maxPromoDiscount > originalDiscountValue) {
-        finalDiscountAmount = maxPromoDiscount
-        finalDiscountType = DiscountType.FIXED
-      }
+      applicablePromotions.forEach((promo) => {
+        const promoDiscountStrategy = DiscountStrategyFactory.create(promo.promotionType as string)
+        const calcDiscount = promoDiscountStrategy.calculate(basePrice, Number(promo.value))
+        if (calcDiscount > bestDiscountValue) {
+          bestDiscountValue = calcDiscount
+          finalDiscountAmount = Number(promo.value)
+          finalDiscountType = promo.promotionType as DiscountType
+        }
+      })
 
       return {
-        ...(product instanceof ProductEntity ? (product as ProductEntity) : product),
+        ...product,
         applicablePromotions,
         discountAmount: finalDiscountAmount,
         discountType: finalDiscountType,
@@ -148,19 +145,6 @@ export class ProductService {
         const defaultVariant = (product.variants || []).find((v: any) => v.isDefault)
         const basePrice = Number(defaultVariant?.price ?? product.price ?? 0)
         const images = defaultVariant?.images?.length > 0 ? defaultVariant.images : product.images
-        let maxPromoDiscount = 0
-
-        applicablePromotions.forEach((promo) => {
-          const pType = promo.promotionType as string
-          if (!strategies[pType]) {
-            strategies[pType] = DiscountStrategyFactory.create(pType)
-          }
-          const calcDiscount = strategies[pType].calculate(basePrice, Number(promo.value))
-          if (calcDiscount > maxPromoDiscount) {
-            maxPromoDiscount = calcDiscount
-          }
-        })
-
         const originalDiscountType = product.discountType || DiscountType.FIXED
         const originalRawDiscount = Number(product.discountAmount || 0)
 
@@ -173,13 +157,22 @@ export class ProductService {
           originalRawDiscount,
         )
 
+        let bestDiscountValue = originalDiscountValue
         let finalDiscountAmount = originalRawDiscount
-        let finalDiscountType = originalDiscountType
+        let finalDiscountType = originalDiscountType as DiscountType
 
-        if (maxPromoDiscount > originalDiscountValue) {
-          finalDiscountAmount = maxPromoDiscount
-          finalDiscountType = DiscountType.FIXED
-        }
+        applicablePromotions.forEach((promo) => {
+          const pType = promo.promotionType as string
+          if (!strategies[pType]) {
+            strategies[pType] = DiscountStrategyFactory.create(pType)
+          }
+          const calcDiscount = strategies[pType].calculate(basePrice, Number(promo.value))
+          if (calcDiscount > bestDiscountValue) {
+            bestDiscountValue = calcDiscount
+            finalDiscountAmount = Number(promo.value)
+            finalDiscountType = promo.promotionType as DiscountType
+          }
+        })
 
         return {
           ...(product instanceof ProductEntity ? (product as ProductEntity) : product),

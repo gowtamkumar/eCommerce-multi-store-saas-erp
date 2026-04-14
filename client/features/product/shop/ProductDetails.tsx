@@ -152,10 +152,11 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
 
   const basePrice = Number(currentPrice || 0);
 
-  const discountPercent =
-    discountAmt > 0 && basePrice > 0
+  const discountPercent = product.discountType === 'percentage'
+    ? Number(product.discountAmount)
+    : (discountAmt > 0 && basePrice > 0
       ? Math.round((discountAmt / basePrice) * 100)
-      : 0;
+      : 0);
 
   const validPromotions = product.applicablePromotions?.filter((p: any) => p.isActive) || [];
 

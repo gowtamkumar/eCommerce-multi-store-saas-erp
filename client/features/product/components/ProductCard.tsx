@@ -87,9 +87,11 @@ const ProductCard = memo(({
   );
 
   const basePrice = Number(product.price || 0);
-  const discountPercentage = discountAmount > 0 && basePrice > 0
-    ? Math.round((discountAmount / basePrice) * 100)
-    : 0;
+  const discountPercentage = product.discountType === 'percentage'
+    ? Number(product.discountAmount)
+    : (discountAmount > 0 && basePrice > 0
+      ? Math.round((discountAmount / basePrice) * 100)
+      : 0);
 
   // Promotions labels
   const hasPromo = product.applicablePromotions && product.applicablePromotions.length > 0;

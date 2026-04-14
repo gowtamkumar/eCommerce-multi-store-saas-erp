@@ -51,7 +51,7 @@ export default function PromotionForm({ promotion, onClose, onSuccess }: Promoti
                 const category = await fetchAPI('/categories')
                 setCategories(category.data || []);
                 const product = await fetchAPI('/products?limit=100')
-                setProducts(product?.data?.products || []);
+                setProducts(product?.data || []);
             } catch (err) {
                 console.log("err", err);
             }
