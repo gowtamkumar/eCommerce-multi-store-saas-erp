@@ -18,7 +18,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { CreateReviewDto } from '../../review/dto/review.dto'
-import { ReviewService } from '../../review/review.service'
+import { ReviewService } from '../../review/services/review.service'
 import { CreateProductDto } from '../dto/create-product.dto'
 import { FilterProductDto } from '../dto/filter-product.dto'
 import { ProductResponseDto } from '../dto/product-response.dto'

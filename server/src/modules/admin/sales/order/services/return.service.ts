@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.dto'
-import { OrderReturnRepository } from '@/modules/admin/sales/order/order-return.repository'
-import { OrderRepository } from '@/modules/admin/sales/order/order.repository'
+import { OrderReturnRepository } from '@/modules/admin/sales/order/repositoris/order-return.repository'
+import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { ProductVariantRepository } from '@/modules/admin/catalog/product/repositories/variant.repository'
-import { OrderReturnEntity } from './entities/order-return.entity'
+import { OrderReturnEntity } from '../entities/order-return.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
 @Injectable()

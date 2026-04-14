@@ -7,13 +7,13 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
 import { DataSource } from 'typeorm'
-import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from './dto/purchase-order.dto'
-import { RecordSupplierPaymentDto } from './dto/record-payment.dto'
-import { PurchaseOrderEntity } from './entities/purchase-order.entity'
-import { SupplierPaymentEntity } from './entities/supplier-payment.entity'
-import { PurchaseOrderPaymentStatus } from './enums/purchase-order-payment-status.enum'
-import { PurchaseOrderRepository } from './purchase-order.repository'
-import { SupplierPaymentRepository } from './supplier-payment.repository'
+import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from '../dto/purchase-order.dto'
+import { RecordSupplierPaymentDto } from '../dto/record-payment.dto'
+import { PurchaseOrderEntity } from '../entities/purchase-order.entity'
+import { SupplierPaymentEntity } from '../entities/supplier-payment.entity'
+import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-status.enum'
+import { PurchaseOrderRepository } from '../repositories/purchase-order.repository'
+import { SupplierPaymentRepository } from '../repositories/supplier-payment.repository'
 
 @Injectable()
 export class PurchaseOrderService {

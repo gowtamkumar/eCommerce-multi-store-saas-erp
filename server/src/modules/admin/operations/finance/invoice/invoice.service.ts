@@ -1,5 +1,5 @@
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
-import { OrderRepository } from '@/modules/admin/sales/order/order.repository'
+import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { EntityManager } from 'typeorm'
 import { CreateInvoiceDto } from './dto/create-invoice.dto'

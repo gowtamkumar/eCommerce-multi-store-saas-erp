@@ -9,7 +9,7 @@ import { ProductService } from '@/modules/admin/catalog/product/services/product
 import { PageService } from '@/modules/admin/content/page/page.service'
 import { FilterUserDto } from '@/modules/admin/core/user/dtos'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
-import { OrderService } from '@/modules/admin/sales/order/order.service'
+import { OrderService } from '@/modules/admin/sales/order/services/order.service'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
 import {
   Body,

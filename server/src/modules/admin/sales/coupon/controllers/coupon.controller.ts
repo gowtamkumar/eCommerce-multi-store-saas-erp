@@ -15,13 +15,13 @@ import { UserRole } from '@/common/enums/user/user-role.enum'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
-import { CouponService } from './coupon.service'
-import { CreateCouponDto } from './dto/create-coupon.dto'
-import { UpdateCouponDto } from './dto/update-coupon.dto'
+import { CouponService } from '../services/coupon.service'
+import { CreateCouponDto } from '../dto/create-coupon.dto'
+import { UpdateCouponDto } from '../dto/update-coupon.dto'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
-import { CouponResponseDto } from './dto/coupon-response.dto'
+import { CouponResponseDto } from '../dto/coupon-response.dto'
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('coupons')

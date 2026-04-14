@@ -15,7 +15,7 @@ import { InvoiceEntity } from '@/modules/admin/operations/finance/invoice/entiti
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
-import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
+import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.service'
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
@@ -25,11 +25,11 @@ import { ShippingAddressService } from '@/modules/store/shipping-address/shippin
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Brackets, DataSource } from 'typeorm'
-import { PaymentEntity } from '../payment/entities/payment.entity'
-import { PaymentRepository } from '../payment/payment.repository'
+import { PaymentEntity } from '../../payment/entities/payment.entity'
+import { PaymentRepository } from '../../payment/repositoris/payment.repository'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
-import { OrderRepository } from './order.repository'
+import { OrderRepository } from '../repositoris/order.repository'
 
 
 @Injectable()

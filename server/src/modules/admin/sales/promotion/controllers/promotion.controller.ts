@@ -18,16 +18,16 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
-import { CreatePromotionDto } from './dto/create-promotion.dto'
-import { PromotionResponseDto } from './dto/promotion-response.dto'
-import { UpdatePromotionDto } from './dto/update-promotion.dto'
-import { PromotionService } from './promotion.service'
+import { CreatePromotionDto } from '../dto/create-promotion.dto'
+import { PromotionResponseDto } from '../dto/promotion-response.dto'
+import { UpdatePromotionDto } from '../dto/update-promotion.dto'
+import { PromotionService } from '../services/promotion.service'
 
 @Controller('promotions')
 export class PromotionController {
   private readonly logger = new Logger(PromotionController.name)
 
-  constructor(private readonly promotionService: PromotionService) {}
+  constructor(private readonly promotionService: PromotionService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)

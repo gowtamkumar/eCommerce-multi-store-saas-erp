@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
-import { CouponController } from './coupon.controller'
+import { CouponController } from './controllers/coupon.controller'
 import { CouponEntity } from './entities/coupon.entity'
-import { CouponRepository } from './coupon.repository'
-import { CouponService } from './coupon.service'
+import { CouponRepository } from './repositoris/coupon.repository'
+import { CouponService } from './services/coupon.service'
 
 @Module({
   imports: [TypeOrmModule.forFeature([CouponEntity]), CacheModule],
@@ -12,4 +12,4 @@ import { CouponService } from './coupon.service'
   providers: [CouponService, CouponRepository],
   exports: [CouponService],
 })
-export class CouponModule {}
+export class CouponModule { }

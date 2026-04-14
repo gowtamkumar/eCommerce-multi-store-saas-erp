@@ -2,7 +2,7 @@ import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { OrderReturnEntity } from './entities/order-return.entity'
+import { OrderReturnEntity } from '../entities/order-return.entity'
 
 @Injectable()
 export class OrderReturnRepository {

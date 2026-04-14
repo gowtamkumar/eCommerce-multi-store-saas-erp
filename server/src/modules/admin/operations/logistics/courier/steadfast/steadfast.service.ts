@@ -1,7 +1,7 @@
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { CreateSteadfastOrderDto } from '@/modules/admin/operations/logistics/courier/steadfast/dto/create-order.dto'
-import { OrderService } from '@/modules/admin/sales/order/order.service'
+import { OrderService } from '@/modules/admin/sales/order/services/order.service'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { HttpService } from '@nestjs/axios'
 import { Injectable, Logger } from '@nestjs/common'
@@ -18,7 +18,7 @@ export class SteadfastService {
     private readonly settingsService: SettingsService,
     private readonly orderService: OrderService,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   private async getCredentials(tenantId: string) {
     this.logger.log(`${this.getCredentials.name} Service Called`)

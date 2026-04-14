@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchase/purchase-order.service';
+import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchase/services/purchase-order.service';
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service';
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum';
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum';

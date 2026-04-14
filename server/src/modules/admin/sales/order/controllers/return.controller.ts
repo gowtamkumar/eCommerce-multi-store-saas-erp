@@ -3,20 +3,20 @@ import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.dto'
-import { ReturnService } from '@/modules/admin/sales/order/return.service'
+import { ReturnService } from '@/modules/admin/sales/order/services/return.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Roles } from '@/common/decorators/roles.decorator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
-import { OrderReturnResponseDto } from './dto/order-return-response.dto'
+import { OrderReturnResponseDto } from '../dto/order-return-response.dto'
 
 @Controller('returns')
 @UseGuards(JwtAuthGuard)
 export class ReturnController {
   private readonly logger = new Logger(ReturnController.name)
 
-  constructor(private readonly returnService: ReturnService) {}
+  constructor(private readonly returnService: ReturnService) { }
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)

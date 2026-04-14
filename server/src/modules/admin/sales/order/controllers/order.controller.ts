@@ -7,11 +7,11 @@ import { RolesGuard } from '@/common/guards/roles.guard'
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
 import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
-import { OrderService } from '@/modules/admin/sales/order/order.service'
+import { OrderService } from '@/modules/admin/sales/order/services/order.service'
 import { Body, Controller, Get, Logger, Param, Post, Patch, Query, UseGuards } from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
 import { RequestContextDto } from 'src/common/dto/request-context.dto'
-import { OrderResponseDto } from './dto/order-response.dto'
+import { OrderResponseDto } from '../dto/order-response.dto'
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('orders')

@@ -2,7 +2,7 @@ import { OrderStatus } from '@/common/enums/order-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Brackets, Repository } from 'typeorm'
-import { OrderEntity } from './entities/order.entity'
+import { OrderEntity } from '../entities/order.entity'
 
 @Injectable()
 export class OrderRepository {

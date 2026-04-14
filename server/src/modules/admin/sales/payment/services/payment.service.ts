@@ -5,10 +5,10 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common'
-import { InitPaymentDto } from './dto/payment.dto'
-import { PaymentEntity } from './entities/payment.entity'
-import { OrderRepository } from '@/modules/admin/sales/order/order.repository'
-import { PaymentRepository } from './payment.repository'
+import { InitPaymentDto } from '../dto/payment.dto'
+import { PaymentEntity } from '../entities/payment.entity'
+import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
+import { PaymentRepository } from '../repositoris/payment.repository'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
@@ -32,7 +32,7 @@ export class PaymentService {
     private invoiceService: InvoiceService,
     private mailService: MailService,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   async initPayment(dto: InitPaymentDto, tenantId: string): Promise<{ gatewayUrl: string }> {
     this.logger.log(`${this.initPayment.name} Service Called`)

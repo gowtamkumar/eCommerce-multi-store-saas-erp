@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
-import { ReviewController } from './review.controller'
-import { ReviewService } from './review.service'
+import { ReviewController } from './controllers/review.controller'
+import { ReviewService } from './services/review.service'
 
 @Module({
   imports: [],
@@ -8,4 +8,4 @@ import { ReviewService } from './review.service'
   providers: [ReviewService],
   exports: [ReviewService],
 })
-export class ReviewModule {}
+export class ReviewModule { }

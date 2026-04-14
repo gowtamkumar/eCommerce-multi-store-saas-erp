@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { WishlistRepository } from './wishlist.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { PricingEngineService } from '@/common/services/pricing-engine.service'
-import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
+import { PromotionService } from '@/modules/admin/sales/promotion/services/promotion.service'
 
 @Injectable()
 export class WishlistService {

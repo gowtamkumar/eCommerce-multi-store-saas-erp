@@ -1,10 +1,10 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common'
-import { CreateCouponDto } from './dto/create-coupon.dto'
-import { UpdateCouponDto } from './dto/update-coupon.dto'
-import { CouponRepository } from './coupon.repository'
+import { CreateCouponDto } from '../dto/create-coupon.dto'
+import { UpdateCouponDto } from '../dto/update-coupon.dto'
+import { CouponRepository } from '../repositoris/coupon.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
-import { CouponEntity } from './entities/coupon.entity'
+import { CouponEntity } from '../entities/coupon.entity'
 
 @Injectable()
 export class CouponService {
@@ -13,7 +13,7 @@ export class CouponService {
   constructor(
     private readonly couponRepository: CouponRepository,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   async createCoupon(createCouponDto: CreateCouponDto, tenantId: string): Promise<CouponEntity> {
     this.logger.log(`${this.createCoupon.name} Service Called`)

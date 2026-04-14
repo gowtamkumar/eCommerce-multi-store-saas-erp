@@ -2,9 +2,9 @@ import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoic
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { SettingsModule } from '@/modules/admin/settings/settings.module'
 import { Module } from '@nestjs/common'
-import { PaymentActionController } from './payment-action.controller'
-import { PaymentController } from './payment.controller'
-import { PaymentService } from './payment.service'
+import { PaymentActionController } from './controllers/payment-action.controller'
+import { PaymentController } from './controllers/payment.controller'
+import { PaymentService } from './services/payment.service'
 
 @Module({
   imports: [SettingsModule, InvoiceModule, MailModule],
@@ -12,4 +12,4 @@ import { PaymentService } from './payment.service'
   providers: [PaymentService],
   exports: [PaymentService],
 })
-export class PaymentModule {}
+export class PaymentModule { }

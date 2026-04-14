@@ -2,8 +2,8 @@ import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
-import { PurchaseOrderEntity } from './entities/purchase-order.entity'
-import { PurchaseOrderPaymentStatus } from './enums/purchase-order-payment-status.enum'
+import { PurchaseOrderEntity } from '../entities/purchase-order.entity'
+import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-status.enum'
 
 @Injectable()
 export class PurchaseOrderRepository {

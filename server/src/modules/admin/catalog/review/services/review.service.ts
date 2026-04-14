@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto'
-import { ReviewRepository } from './review.repository'
-import { ReviewEntity } from './entities/review.entity'
+import { CreateReviewDto, UpdateReviewDto } from '../dto/review.dto'
+import { ReviewRepository } from '../repositoris/review.repository'
+import { ReviewEntity } from '../entities/review.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
 @Injectable()
@@ -11,7 +11,7 @@ export class ReviewService {
   constructor(
     private readonly reviewRepository: ReviewRepository,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   async createReview(dto: CreateReviewDto, tenantId: string): Promise<ReviewEntity> {
     this.logger.log(`${this.createReview.name} Service Called`)

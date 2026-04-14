@@ -2,7 +2,7 @@ import { ReviewStatus } from '@/common/enums/review-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { ReviewEntity } from './entities/review.entity'
+import { ReviewEntity } from '../entities/review.entity'
 
 @Injectable()
 export class ReviewRepository {

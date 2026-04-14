@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
-import { SupplierPaymentEntity } from './entities/supplier-payment.entity'
+import { SupplierPaymentEntity } from '../entities/supplier-payment.entity'
 
 @Injectable()
 export class SupplierPaymentRepository {

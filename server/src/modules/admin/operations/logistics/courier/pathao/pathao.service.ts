@@ -1,7 +1,7 @@
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { CreatePathaoOrderDto } from '@/modules/admin/operations/logistics/courier/pathao/dto/create-order.dto'
-import { OrderService } from '@/modules/admin/sales/order/order.service'
+import { OrderService } from '@/modules/admin/sales/order/services/order.service'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { HttpService } from '@nestjs/axios'
 import { Injectable, Logger } from '@nestjs/common'
@@ -18,7 +18,7 @@ export class PathaoService {
     private settingsService: SettingsService,
     private orderService: OrderService,
     private cacheService: CacheService,
-  ) {}
+  ) { }
 
   /**
    * Internal helper to get authenticated credentials for Pathao API calls.
@@ -26,14 +26,14 @@ export class PathaoService {
    */
   private async getAuthenticatedClient(tenantId: string) {
     this.logger.log(`${this.getAuthenticatedClient.name} Called for tenant: ${tenantId}`)
-    
+
     // 1. Fetch & Cache Credentials
     const creds = await this.cacheService.rememberCache(
       `pathao:creds`,
       async () => {
         const settings = await this.settingsService.findByTenantSettings(tenantId)
         const courier = settings?.pathaoCourier
-        
+
         if (!courier?.pathaoClientId || !courier?.pathaoClientSecret || !courier?.pathaoUsername || !courier?.pathaoPassword || !courier?.pathaoStoreId) {
           throw new Error('Pathao configuration is incomplete.')
         }

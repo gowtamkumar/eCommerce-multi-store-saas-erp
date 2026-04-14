@@ -6,7 +6,7 @@ import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
 import { CartService } from '@/modules/store/cart/cart.service'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
-import { CouponService } from '@/modules/admin/sales/coupon/coupon.service'
+import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.service'
 
 export interface OrderCreationContext {
   tenantId: string

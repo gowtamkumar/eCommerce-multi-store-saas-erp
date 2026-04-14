@@ -7,14 +7,14 @@ import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { Controller, Get, Logger, Query, UseGuards } from '@nestjs/common'
-import { PaymentService } from './payment.service'
+import { PaymentService } from '../services/payment.service'
 
 @Controller('payments')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PaymentController {
   private readonly logger = new Logger(PaymentController.name)
 
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(private readonly paymentService: PaymentService) { }
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.MARKETING)

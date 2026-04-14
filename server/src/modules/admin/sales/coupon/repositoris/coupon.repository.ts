@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { ILike, Repository } from 'typeorm'
-import { CouponEntity } from './entities/coupon.entity'
+import { CouponEntity } from '../entities/coupon.entity'
 
 @Injectable()
 export class CouponRepository {

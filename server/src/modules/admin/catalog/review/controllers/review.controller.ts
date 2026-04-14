@@ -17,16 +17,16 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
-import { FilterReviewDto } from './dto/filter-review.dto'
-import { ReviewResponseDto } from './dto/review-response.dto'
-import { CreateReviewDto, UpdateReviewDto } from './dto/review.dto'
-import { ReviewService } from './review.service'
+import { FilterReviewDto } from '../dto/filter-review.dto'
+import { ReviewResponseDto } from '../dto/review-response.dto'
+import { CreateReviewDto, UpdateReviewDto } from '../dto/review.dto'
+import { ReviewService } from '../services/review.service'
 
 @Controller('reviews')
 export class ReviewController {
   private readonly logger = new Logger(ReviewController.name)
 
-  constructor(private readonly reviewService: ReviewService) {}
+  constructor(private readonly reviewService: ReviewService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)

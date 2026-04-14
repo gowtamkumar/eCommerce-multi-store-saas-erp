@@ -6,10 +6,10 @@ import { ProductService } from '@/modules/admin/catalog/product/services/product
 import { PageService } from '@/modules/admin/content/page/page.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { ExpenseService } from '@/modules/admin/operations/finance/expense/expense.service'
-import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchase/purchase-order.service'
+import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchase/services/purchase-order.service'
 import { SupplierService } from '@/modules/admin/operations/finance/supplier/supplier.service'
-import { OrderService } from '@/modules/admin/sales/order/order.service'
-import { PaymentService } from '@/modules/admin/sales/payment/payment.service'
+import { OrderService } from '@/modules/admin/sales/order/services/order.service'
+import { PaymentService } from '@/modules/admin/sales/payment/services/payment.service'
 import { ReportRepository } from './report.repository'
 
 @Injectable()

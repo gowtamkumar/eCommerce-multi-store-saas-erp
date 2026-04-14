@@ -5,7 +5,7 @@ import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-s
 import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
-import { PromotionService } from '@/modules/admin/sales/promotion/promotion.service'
+import { PromotionService } from '@/modules/admin/sales/promotion/services/promotion.service'
 import { InjectQueue } from '@nestjs/bullmq'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Queue } from 'bullmq'

@@ -1,12 +1,12 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { PromotionRepository } from './promotion.repository'
+import { PromotionRepository } from '../repositories/promotion.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { CreatePromotionDto } from './dto/create-promotion.dto'
-import { UpdatePromotionDto } from './dto/update-promotion.dto'
-import { PromotionEntity } from './entities/promotion.entity'
-import { PromotionTargetType } from './enums/promotion-target-type.enum'
-import { PromotionType } from './enums/promotion-type.enum'
+import { CreatePromotionDto } from '../dto/create-promotion.dto'
+import { UpdatePromotionDto } from '../dto/update-promotion.dto'
+import { PromotionEntity } from '../entities/promotion.entity'
+import { PromotionTargetType } from '../enums/promotion-target-type.enum'
+import { PromotionType } from '../enums/promotion-type.enum'
 
 @Injectable()
 export class PromotionService {
