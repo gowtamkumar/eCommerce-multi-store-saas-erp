@@ -4,7 +4,7 @@ import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
 import { OrderStatus } from "@/lib/enums/order-status.enum";
 import { PaymentStatus } from "@/lib/enums/payment-status.enum";
-import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, updateOrderStatus } from "@/lib/utils";
+import { getOrderStatusStyles, handleCreatePathaoOrder, handleCreateSteadfastOrder, handleManualDispatch, updateOrderStatus } from "@/lib/utils";
 import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
 import { Order } from "@/types/order";
 import {
@@ -111,6 +111,8 @@ export default function OrderDetailsPage({
             await handleCreateSteadfastOrder(order, setCreatingOrder);
         } else if (courier === CourierType.PATHAO) {
             await handleCreatePathaoOrder(order, setCreatingPathaoOrder);
+        } else if (courier === CourierType.IN_STORE) {
+            await handleManualDispatch(order, setCreatingOrder);
         }
     };
 
@@ -461,6 +463,7 @@ export default function OrderDetailsPage({
                         <option value="">🚚 Create Courier Order</option>
                         <option value={CourierType.STEADFAST}>📦 Steadfast</option>
                         <option value={CourierType.PATHAO}>🚚 Pathao</option>
+                        <option value={CourierType.IN_STORE}>🚚 Manual</option>
                     </select>
                 </div>
             </div>
