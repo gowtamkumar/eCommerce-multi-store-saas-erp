@@ -19,12 +19,13 @@ import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.serv
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { SiteSettingsRepository } from '@/modules/admin/settings/site-settings.repository'
 import { CartService } from '@/modules/store/cart/cart.service'
 import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { Brackets, DataSource } from 'typeorm'
+import { DataSource } from 'typeorm'
+import { InjectQueue } from '@nestjs/bullmq'
+import { Queue } from 'bullmq'
 import { PaymentEntity } from '../../payment/entities/payment.entity'
 import { PaymentRepository } from '../../payment/repositoris/payment.repository'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
@@ -45,39 +46,32 @@ export class OrderService {
     private readonly couponService: CouponService,
     private readonly invoiceService: InvoiceService,
     private readonly shippingAddressService: ShippingAddressService,
-    private readonly mailService: MailService,
     private readonly cacheService: CacheService,
+    @InjectQueue('order') private readonly orderQueue: Queue,
   ) { }
 
   async createOrder(createOrderDto: CreateOrderDto, tenantId: string): Promise<{ message: string; success: boolean; order: OrderEntity }> {
     this.logger.log(`${this.createOrder.name} Service Called`)
 
-    return await this.dataSource.transaction(async (manager) => {
-      console.log("transaction start");
+    const result = await this.dataSource.transaction(async (manager) => {
       // 1. Initial Data Fetching
       const settings = await manager.findOne(SiteSettingsEntity, { where: { tenantId } })
-
-      console.log("settings", settings);
 
       const user = createOrderDto.userId
         ? await manager.findOne(UserEntity, { where: { id: createOrderDto.userId, tenantId } })
         : null
-
-      console.log("Address Resolution up");
       // 2. Address Resolution
       let resolvedAddress = createOrderDto.address
       if (createOrderDto.shippingAddressId && createOrderDto.userId) {
         try {
-          console.log("Address Resolution inside");
           const savedAddress = await this.shippingAddressService.findShippingAddress(
             createOrderDto.shippingAddressId,
             createOrderDto.userId,
             tenantId,
           )
-          console.log("Address Resolution inside donw");
           resolvedAddress = `${savedAddress.recipientName}, ${savedAddress.address}${savedAddress.city ? ', ' + savedAddress.city : ''}`
         } catch (err) {
-          // Fallback to provided address is already handled by default initialization
+          this.logger.error('Failed to resolve shipping address', err)
         }
       }
 
@@ -90,14 +84,9 @@ export class OrderService {
         couponService: this.couponService,
       }
       console.log("Initialize Context & Strategy");
-
-
       const strategy = OrderStrategyFactory.create(createOrderDto)
-      console.log(" Resolve Items up");
       // 4. Resolve Items
       const processedItems = await strategy.resolveItems(createOrderDto, context, deps)
-      console.log(" Resolve Items down");
-      console.log(" Initialize Order Entity up");
       // 5. Initialize Order Entity
       const order = manager.create(OrderEntity, {
         customerName: createOrderDto.customerName,
@@ -136,52 +125,36 @@ export class OrderService {
         await this.cartService.clearCart(user.id, tenantId)
       }
 
-      try {
-        await this.invoiceService.createInvoice(
-          {
-            orderId: savedOrder.id,
-            issueDate: new Date(),
-            status:
-              savedOrder.paymentStatus === PaymentStatus.PAID
-                ? InvoiceStatus.PAID
-                : InvoiceStatus.PENDING,
-          } as any,
-          tenantId,
-        )
-      } catch (invoiceError) {
-        this.logger.error('Failed to auto-create invoice', invoiceError)
-      }
-
-      // 10. Admin Notification (for manual payments)
-      if (savedOrder.paymentMethod === PaymentMethod.COD) {
-        const orderWithRelations = await manager.findOne(OrderEntity, {
-          where: { id: savedOrder.id, tenantId },
-          relations: ['items', 'items.product', 'items.variant'],
-        })
-        if (orderWithRelations) {
-          this.mailService.sendNewOrderNotification(orderWithRelations, tenantId)
-        }
-      }
-
       const finalOrder = await manager.findOne(OrderEntity, {
         where: { id: savedOrder.id, tenantId },
         relations: ['items', 'items.product', 'items.variant'],
       })
-
-      // Fetch invoice count and number if needed
-      const invoice = await manager.getRepository(InvoiceEntity).findOne({
-        where: { orderId: savedOrder.id, tenantId }
-      })
-
-      if (finalOrder && invoice) {
-        ; (finalOrder as any).invoiceNumber = invoice.invoiceNumber
-      }
 
       await this.cacheService.delCache('orders:overview', tenantId)
 
       return { message: 'Order created successfully', success: true, order: finalOrder || savedOrder }
 
     })
+
+    // 10. Queue background jobs after successful transaction commit
+    try {
+      await this.orderQueue.add('create-invoice', {
+        orderId: result.order.id,
+        tenantId,
+        paymentStatus: result.order.paymentStatus
+      }, { removeOnComplete: true })
+
+      if (result.order.paymentMethod === PaymentMethod.COD) {
+        await this.orderQueue.add('send-order-notification', {
+          orderId: result.order.id,
+          tenantId
+        }, { removeOnComplete: true })
+      }
+    } catch (jobError) {
+      this.logger.error('Failed to enqueue order background jobs', jobError)
+    }
+
+    return result
   }
 
   async findAllOrders(filterDto: any, tenantId: string): Promise<{ orders: OrderEntity[]; total: number }> {
@@ -319,12 +292,6 @@ export class OrderService {
     }
   }
 
-  // async findAllOrders(filterDto: any, tenantId: string) {
-  //     this.logger.log(`${this.findAllOrders.name} Service Called`);
-  //   return await this.orderRepository.find({
-  //     order: { createdAt: 'DESC' },
-  //   })
-  // }
 
   async countByTenant(tenantId: string): Promise<number> {
     this.logger.log(`${this.countByTenant.name} Service Called`)

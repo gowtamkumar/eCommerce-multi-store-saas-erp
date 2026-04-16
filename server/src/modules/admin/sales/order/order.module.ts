@@ -10,9 +10,14 @@ import { CartModule } from '@/modules/store/cart/cart.module'
 import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping-address.module'
 import { Module } from '@nestjs/common'
 import { PaymentModule } from '../payment/payment.module'
+import { BullModule } from '@nestjs/bullmq'
+import { OrderProcessor } from './queue/order.processor'
 
 @Module({
   imports: [
+    BullModule.registerQueue({
+      name: 'order',
+    }),
     CouponModule,
     PaymentModule,
     CartModule,
@@ -22,7 +27,7 @@ import { PaymentModule } from '../payment/payment.module'
     MailModule,
   ],
   controllers: [OrderController, ReturnController], // Registered
-  providers: [OrderService, ReturnService], // Registered
+  providers: [OrderService, ReturnService, OrderProcessor], // Registered
   exports: [OrderService, ReturnService],
 })
 export class OrderModule { }
