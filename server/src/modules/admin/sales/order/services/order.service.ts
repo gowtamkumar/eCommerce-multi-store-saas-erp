@@ -85,8 +85,10 @@ export class OrderService {
       }
       console.log("Initialize Context & Strategy");
       const strategy = OrderStrategyFactory.create(createOrderDto)
+      console.log("Strategy", strategy);
       // 4. Resolve Items
       const processedItems = await strategy.resolveItems(createOrderDto, context, deps)
+      console.log("Resolve Items");
       // 5. Initialize Order Entity
       const order = manager.create(OrderEntity, {
         customerName: createOrderDto.customerName,

@@ -34,7 +34,7 @@ export class CartOrderStrategy extends BaseOrderStrategy implements OrderCreatio
     }
 
     // Attach cart to context for total calculation if needed
-    ;(context as any).cart = cart
+    ; (context as any).cart = cart
 
     return processedItems
   }
@@ -60,7 +60,6 @@ export class CartOrderStrategy extends BaseOrderStrategy implements OrderCreatio
     )
 
     const shippingFee = await this.calculateShipping(
-      order,
       preCouponTotal - couponDiscountAmount,
       isFreeShipping,
       dto,

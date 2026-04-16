@@ -6,8 +6,10 @@ import { CartOrderStrategy } from './cart-order.strategy'
 export class OrderStrategyFactory {
   static create(dto: CreateOrderDto): OrderCreationStrategy {
     if (dto.items && dto.items.length > 0) {
+      console.log("Direct Order Strategy");
       return new DirectOrderStrategy()
     }
+    console.log("Cart Order Strategy");
     return new CartOrderStrategy()
   }
 }

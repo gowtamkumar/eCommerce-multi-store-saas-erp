@@ -140,7 +140,6 @@ export abstract class BaseOrderStrategy {
   }
 
   protected async calculateShipping(
-    order: OrderEntity,
     totalAfterCoupon: number,
     isFreeShipping: boolean,
     dto: CreateOrderDto,

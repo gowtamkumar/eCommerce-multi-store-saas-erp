@@ -42,7 +42,6 @@ export class DirectOrderStrategy extends BaseOrderStrategy implements OrderCreat
     )
 
     const shippingFee = await this.calculateShipping(
-      order,
       preCouponTotal - couponDiscountAmount,
       isFreeShipping,
       dto,
