@@ -4,11 +4,7 @@ import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
-import { OrderStrategyFactory } from '@/common/strategies/order/order-strategy.factory'
-import {
-  OrderCreationContext,
-  OrderServiceDependencies,
-} from '@/common/strategies/order/order-strategy.interface'
+import { OrderProcessHelper } from './order-process.helper'
 import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 import { InvoiceEntity } from '@/modules/admin/operations/finance/invoice/entities/invoice.entity'
@@ -19,10 +15,11 @@ import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.serv
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
 import { CartService } from '@/modules/store/cart/cart.service'
 import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
@@ -47,6 +44,7 @@ export class OrderService {
     private readonly invoiceService: InvoiceService,
     private readonly shippingAddressService: ShippingAddressService,
     private readonly cacheService: CacheService,
+    private readonly orderProcessHelper: OrderProcessHelper,
     @InjectQueue('order') private readonly orderQueue: Queue,
   ) { }
 
@@ -75,21 +73,43 @@ export class OrderService {
         }
       }
 
-      console.log("Initialize Context & Strategy up");
-      // 3. Initialize Context & Strategy
-      const context: OrderCreationContext = { tenantId, manager, user, settings }
-      const deps: OrderServiceDependencies = {
-        cartService: this.cartService,
-        inventoryService: this.inventoryService,
-        couponService: this.couponService,
+      // 3. Resolve Items Source (Direct vs Cart)
+      let rawItems = []
+      let preCouponTotal = 0
+      let cartId = null
+
+      if (createOrderDto.items && createOrderDto.items.length > 0) {
+        rawItems = createOrderDto.items
+      } else if (user?.id) {
+        const cart = await this.cartService.createOrGetCart(user.id, tenantId)
+        if (!cart.items || cart.items.length === 0) {
+          throw new BadRequestException('Order must contain at least one item')
+        }
+        rawItems = cart.items.map(item => ({
+          productId: item.product.id,
+          variantId: item.variant?.id,
+          quantity: item.quantity,
+          pricing: item.pricing,
+        }))
+        preCouponTotal = cart.summary.subtotal - cart.summary.offer_discount
+        cartId = (cart as any).id
+      } else {
+        throw new BadRequestException('Invalid order source: no items provided and no user cart found.')
       }
-      console.log("Initialize Context & Strategy");
-      const strategy = OrderStrategyFactory.create(createOrderDto)
-      console.log("Strategy", strategy);
-      // 4. Resolve Items
-      const processedItems = await strategy.resolveItems(createOrderDto, context, deps)
-      console.log("Resolve Items");
-      // 5. Initialize Order Entity
+
+      // 4. Transform & Deduct Stock
+      const processedItems: OrderItemEntity[] = []
+      for (const item of rawItems) {
+        const orderItem = await this.orderProcessHelper.processItem(item, tenantId, manager)
+        processedItems.push(orderItem)
+      }
+
+      // Determine Subtotal if not already set by Cart
+      if (!preCouponTotal) {
+        preCouponTotal = processedItems.reduce((acc, item) => acc + item.totalAmount, 0)
+      }
+
+      // 5. Create Order Entity
       const order = manager.create(OrderEntity, {
         customerName: createOrderDto.customerName,
         customerEmail: createOrderDto.customerEmail,
@@ -109,33 +129,52 @@ export class OrderService {
         deliveryZone: createOrderDto.shippingZone,
       })
 
-      // 6. Calculate Totals (includes Coupons & Shipping)
-      await strategy.calculateTotals(order, processedItems, createOrderDto, context, deps)
+      // 6. Apply Discounts & Shipping
+      const { couponDiscountAmount, isFreeShipping } = await this.orderProcessHelper.applyCoupon(
+        order,
+        preCouponTotal,
+        createOrderDto.appliedCouponCode,
+        tenantId,
+      )
 
-      // 7. Save Order
+      const shippingFee = await this.orderProcessHelper.calculateShipping(
+        preCouponTotal - couponDiscountAmount,
+        isFreeShipping,
+        createOrderDto,
+        settings,
+        tenantId,
+      )
+
+      order.shippingFee = shippingFee
+      order.totalAmount = preCouponTotal - couponDiscountAmount + shippingFee
+      order.taxAmount = processedItems.reduce(
+        (acc, item) => acc + Number(item.taxAmount) * item.quantity,
+        0,
+      )
+
+      // 7. Persist Order
       const savedOrder = await manager.save(order)
 
-      // 8. Update Inventory Transactions with order reference ID
+      // 8. Link Inventory Transactions
       await manager.update(
         InventoryTransactionEntity,
         { referenceType: InventoryTransactionReferenceType.ORDER, referenceId: null, tenantId },
         { referenceId: savedOrder.id },
       )
 
-      // 9. Post-Order Processing
-      if (user?.id && !createOrderDto.items) {
+      // 9. Cleanup
+      if (cartId && user?.id) {
         await this.cartService.clearCart(user.id, tenantId)
       }
+
+      await this.cacheService.delCache('orders:overview', tenantId)
 
       const finalOrder = await manager.findOne(OrderEntity, {
         where: { id: savedOrder.id, tenantId },
         relations: ['items', 'items.product', 'items.variant'],
       })
 
-      await this.cacheService.delCache('orders:overview', tenantId)
-
       return { message: 'Order created successfully', success: true, order: finalOrder || savedOrder }
-
     })
 
     // 10. Queue background jobs after successful transaction commit

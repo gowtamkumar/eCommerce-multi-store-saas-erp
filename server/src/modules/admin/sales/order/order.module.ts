@@ -12,6 +12,7 @@ import { Module } from '@nestjs/common'
 import { PaymentModule } from '../payment/payment.module'
 import { BullModule } from '@nestjs/bullmq'
 import { OrderProcessor } from './queue/order.processor'
+import { OrderProcessHelper } from './services/order-process.helper'
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { OrderProcessor } from './queue/order.processor'
     MailModule,
   ],
   controllers: [OrderController, ReturnController], // Registered
-  providers: [OrderService, ReturnService, OrderProcessor], // Registered
+  providers: [OrderService, ReturnService, OrderProcessor, OrderProcessHelper], // Registered
   exports: [OrderService, ReturnService],
 })
 export class OrderModule { }

@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
@@ -9,18 +9,30 @@ import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-s
 import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pricing-strategy.factory'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
-import { OrderCreationContext, OrderServiceDependencies } from './order-strategy.interface'
 import { ShippingStrategyFactory } from '@/common/strategies/shipping/shipping-strategy.factory'
-import { ShippingZoneType } from '@/common/enums/shipping-zone-type.enum'
+import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
+import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.service'
+import { EntityManager } from 'typeorm'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 
-export abstract class BaseOrderStrategy {
-  protected async processItem(
+@Injectable()
+export class OrderProcessHelper {
+  private readonly logger = new Logger(OrderProcessHelper.name)
+
+  constructor(
+    private readonly inventoryService: InventoryTransactionService,
+    private readonly couponService: CouponService,
+  ) { }
+
+  /**
+   * Processes a single item: validates product/variant, checks stock, and deducts inventory.
+   */
+  async processItem(
     itemDto: any,
-    context: OrderCreationContext,
-    deps: OrderServiceDependencies,
+    tenantId: string,
+    manager: EntityManager,
   ): Promise<OrderItemEntity> {
     const { productId, variantId, quantity, pricing: itemPricingDto } = itemDto
-    const { manager, tenantId } = context
 
     const product = await manager.findOne(ProductEntity, {
       where: { id: productId, tenantId },
@@ -51,8 +63,8 @@ export abstract class BaseOrderStrategy {
       )
     }
 
-    // Deduct stock immediately
-    await deps.inventoryService.createInventoryTransaction(
+    // Deduct stock immediately (Synchronous within transaction)
+    await this.inventoryService.createInventoryTransaction(
       {
         productId: product.id,
         variantId: variant?.id,
@@ -103,22 +115,24 @@ export abstract class BaseOrderStrategy {
     return orderItem
   }
 
-  protected async applyCoupon(
+  /**
+   * Validates and applies a coupon to the order.
+   */
+  async applyCoupon(
     order: OrderEntity,
     preCouponTotal: number,
-    couponCode: string,
-    context: OrderCreationContext,
-    deps: OrderServiceDependencies,
+    couponCode: string | undefined,
+    tenantId: string,
   ): Promise<{ couponDiscountAmount: number; isFreeShipping: boolean }> {
     let couponDiscountAmount = 0
     let isFreeShipping = false
 
     if (couponCode) {
       try {
-        const validation = await deps.couponService.validateCoupon(
+        const validation = await this.couponService.validateCoupon(
           couponCode,
           preCouponTotal,
-          context.tenantId,
+          tenantId,
         )
         if (validation.valid) {
           couponDiscountAmount = validation.discountAmount
@@ -129,24 +143,29 @@ export abstract class BaseOrderStrategy {
             isFreeShipping = true
           }
 
-          await deps.couponService.incrementUsage(validation.coupon.id, context.tenantId)
+          await this.couponService.incrementUsage(validation.coupon.id, tenantId)
         }
       } catch (error) {
-        // Log error but continue
+        this.logger.warn(`Coupon validation failed for code: ${couponCode}`, error.message)
       }
     }
 
     return { couponDiscountAmount, isFreeShipping }
   }
 
-  protected async calculateShipping(
+  /**
+   * Calculates shipping fees based on the zone and free shipping eligibility.
+   */
+  async calculateShipping(
     totalAfterCoupon: number,
     isFreeShipping: boolean,
     dto: CreateOrderDto,
-    context: OrderCreationContext,
+    settings: SiteSettingsEntity | null,
+    tenantId: string,
   ): Promise<number> {
-    const strategy = ShippingStrategyFactory.create(dto.shippingZone as ShippingZoneType)
-    let shippingFee = strategy.calculate(context.settings?.shippingConfig, totalAfterCoupon)
+    const shippingZone = (dto.shippingZone as any) || 'standard'
+    const strategy = ShippingStrategyFactory.create(shippingZone)
+    let shippingFee = strategy.calculate(settings?.shippingConfig, totalAfterCoupon)
 
     if (isFreeShipping) {
       shippingFee = 0
