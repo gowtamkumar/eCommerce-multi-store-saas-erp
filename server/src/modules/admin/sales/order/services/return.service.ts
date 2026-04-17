@@ -1,11 +1,13 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
+
+import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
+import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.dto'
 import { FilterReturnDto } from '../dto/filter-return.dto'
 import { OrderReturnRepository } from '@/modules/admin/sales/order/repositoris/order-return.repository'
 import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
-import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
-import { ProductVariantRepository } from '@/modules/admin/catalog/product/repositories/variant.repository'
+import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { OrderReturnEntity } from '../entities/order-return.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
@@ -16,8 +18,7 @@ export class ReturnService {
   constructor(
     private returnRepository: OrderReturnRepository,
     private orderRepository: OrderRepository,
-    private productRepository: ProductRepository,
-    private variantRepository: ProductVariantRepository,
+    private inventoryService: InventoryTransactionService,
     private readonly cacheService: CacheService,
   ) { }
 
@@ -113,7 +114,7 @@ export class ReturnService {
 
     // Logic for APPROVAL
     if (status === ReturnStatus.APPROVED && returnRequest.status !== ReturnStatus.APPROVED) {
-      await this.restockItems(returnRequest.items, tenantId)
+      await this.restockItems(returnRequest, tenantId)
     }
 
     const updated = await this.returnRepository.updateStatus(returnRequest, status, adminComment)
@@ -122,16 +123,21 @@ export class ReturnService {
     return updated
   }
 
-  private async restockItems(items: any[], tenantId: string) {
+  private async restockItems(returnRequest: OrderReturnEntity, tenantId: string) {
     this.logger.log(`${this.restockItems.name} Service Called`)
-    for (const item of items) {
-      const { productId, variantId, quantity } = item
-
-      if (variantId) {
-        await this.variantRepository.incrementStock(variantId, tenantId, quantity)
-      } else {
-        await this.productRepository.incrementStock(productId, tenantId, quantity)
-      }
+    for (const item of returnRequest.items) {
+      await this.inventoryService.createInventoryTransaction(
+        {
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity,
+          type: InventoryTransactionType.IN,
+          referenceType: InventoryTransactionReferenceType.RETURN,
+          referenceId: returnRequest.id,
+        },
+        tenantId,
+      )
     }
   }
 }
+

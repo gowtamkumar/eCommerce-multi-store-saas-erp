@@ -3,4 +3,5 @@ export enum InventoryTransactionReferenceType {
   PURCHASE = 'purchase',
   ADJUSTMENT = 'adjustment',
   INITIAL = 'initial',
+  RETURN = 'return',
 }
