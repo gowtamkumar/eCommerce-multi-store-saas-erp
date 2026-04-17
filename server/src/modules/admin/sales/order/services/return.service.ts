@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.dto'
+import { FilterReturnDto } from '../dto/filter-return.dto'
 import { OrderReturnRepository } from '@/modules/admin/sales/order/repositoris/order-return.repository'
 import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
@@ -55,16 +56,23 @@ export class ReturnService {
     return result
   }
 
-  async findAllReturns(tenantId: string): Promise<OrderReturnEntity[]> {
+  async findAllReturns(
+    tenantId: string,
+    filterDto: FilterReturnDto,
+  ): Promise<{ data: OrderReturnEntity[]; total: number }> {
     this.logger.log(`${this.findAllReturns.name} Service Called`)
-    // 2-minute cache: safe for admin-only list that doesn't need real-time precision
+
+    // Create a unique cache key based on the filter parameters
+    const cacheKey = `returns:all:${JSON.stringify(filterDto)}`
+
     return this.cacheService.rememberCache(
-      'returns:all',
-      () => this.returnRepository.findAllWithRelations(tenantId),
-      120,
+      cacheKey,
+      () => this.returnRepository.findPaginated(tenantId, filterDto),
+      120, // 2-minute cache
       tenantId,
     )
   }
+
 
   async findByUser(userId: string, tenantId: string): Promise<OrderReturnEntity[]> {
     this.logger.log(`${this.findByUser.name} Service Called`)

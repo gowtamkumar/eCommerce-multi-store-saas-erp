@@ -4,4 +4,6 @@ export * from './filter-order.dto'
 export * from './order-response.dto'
 export * from './order-return-response.dto'
 export * from './update-order.dto'
+export * from './filter-return.dto'
+
 

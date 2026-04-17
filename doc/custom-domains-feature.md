@@ -1,138 +1,183 @@
-# Custom Domain Implementation Design Doc
+# Multi-Tenant Custom Domain & Subdomain Implementation
 
-## Overview
-Enable tenants to connect their own domains (e.g., `shop.mybrand.com` or `www.mybrand.com`) to their store running on our Multi-tenant SaaS (e.g., `my-saas.com`).
+As a senior engineer, implementing custom domains and subdomains requires a mix of infrastructure configuration, DNS management, and application-level routing. Below is the architectural breakdown and implementation guide.
 
-## 1. Architecture
+## 1. Core Architecture
 
-### Request Flow
-1.  **Browser Request**: User visits `shop.mybrand.com`.
-2.  **DNS Resolution**: `shop.mybrand.com` (CNAME) -> `gateway.my-saas.com` (Your Server IP).
-3.  **Reverse Proxy (Caddy/Nginx)**: Handles SSL termination.
-    *   *Critical Step*: Must dynamically load certificates for `shop.mybrand.com`.
-4.  **Application Server (Next.js/NestJS)**:
-    *   Receives request with `Host: shop.mybrand.com`.
-    *   **Middleware**: Looks up Tenant by `customDomain`.
-    *   **Routing**: Rewrites URL to serve the correct tenant content.
+The goal is to route requests from different hostnames to a single application instance, where the tenant is identified dynamically.
 
-## 2. Database Schema Changes
+### 1.1 Architecture Visualization
 
-Modify **`TenantEntity`** (and corresponding DTOs/Schemas):
+```mermaid
+sequenceDiagram
+    participant U as Visitor (User)
+    participant D as DNS (Cloudflare/Route53)
+    participant C as Caddy Proxy (Port 443)
+    participant B as NestJS Backend (API)
+    participant F as Next.js Frontend (App)
 
-```typescript
-@Entity('tenants')
-export class TenantEntity {
-    // ... existing fields
+    U->>D: Resolves shop.customer.com
+    D->>C: Points to Gateway IP
+    C->>B: GET /api/tenants/check-domain?domain=shop.customer.com
+    Note over C,B: On-Demand TLS Check
+    B-->>C: 200 OK (Domain is Active)
+    C->>C: Fetches SSL Certificate (Let's Encrypt)
+    C->>F: Proxies Request (Host: shop.customer.com)
+    F->>F: Middleware Rewrites to /tenants/tenant-slug
+    F-->>U: Serves Tenant Storefront
+```
 
-    @Column({ nullable: true, unique: true })
-    customDomain: string; // e.g., "shop.mybrand.com"
+### 1.2 DNS Setup Relationship
 
-    @Column({ 
-        type: 'enum', 
-        enum: ['PENDING', 'VERIFIED', 'ACTIVE', 'FAILED'],
-        default: 'PENDING' 
-    })
-    domainStatus: string;
+```mermaid
+graph TD
+    subgraph "Customer DNS"
+        CD[shop.customer.com] -- CNAME --> GW[gateway.mysaas.com]
+        VD[_mysaas-verify.shop.customer.com] -- TXT --> TC[Verification Code]
+    end
 
-    @Column({ nullable: true })
-    domainVerificationCode: string; // e.g., "poly-verify=ae83-29fd"
+    subgraph "SaaS Infrastructure"
+        GW -- A Record --> IP[Server IP: 1.2.3.4]
+        IP --> Caddy[Caddy Reverse Proxy]
+        Caddy --> NestJS[Backend API]
+        Caddy --> NextJS[Frontend App]
+    end
+```
 
-    @Column({ default: false })
-    sslEnabled: boolean;
+
+### Subdomains vs. Custom Domains
+- **Subdomains** (`tenant1.mysaas.com`): Easier to set up. We control the main domain DNS. We typically use a wildcard CNAME (`*.mysaas.com`) pointing to our server.
+- **Custom Domains** (`shop.customer.com`): Harder to set up. The customer controls the DNS. They must point a CNAME to our "Gateway" domain.
+
+### The "Gateway" Strategy
+Do not ask customers to point to your IP address directly (A Record). If your IP changes, all their domains break.
+Instead, use a **Gateway Domain**:
+- User sets: `CNAME shop.customer.com` -> `gateway.mysaas.com`
+- You set: `A gateway.mysaas.com` -> `1.2.3.4` (Your Server IP)
+
+---
+
+## 2. Infrastructure: The Reverse Proxy (Caddy)
+
+For a SaaS, you need **On-Demand TLS**. Manually running Certbot for every customer domain is not scalable and will hit rate limits.
+
+### Caddy Configuration (Recommended)
+Caddy handles SSL termination and automatically fetches certificates for any domain that hits it, *provided* you verify it belongs to a tenant.
+
+```caddyfile
+# Caddyfile
+{
+    on_demand_tls {
+        # Ask our backend if this domain is allowed before getting a cert
+        ask http://localhost:4000/api/tenants/check-domain
+        interval 2m
+        burst 5
+    }
+}
+
+:443 {
+    tls {
+        on_demand
+    }
+
+    # Pass the actual host to our application
+    reverse_proxy localhost:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+    }
 }
 ```
 
-## 3. Implementation Phases
+---
 
-### Phase 1: Domain Management (CRUD)
-**API Endpoints:**
-- `POST /api/tenants/domain`: User submits a domain.
-    - Action: Save to DB, generate `domainVerificationCode`, set status `PENDING`.
-- `GET /api/tenants/domain`: Get current status and instructions.
-- `DELETE /api/tenants/domain`: Remove association.
+## 3. Real-World Implementation (Code Examples)
 
-**Frontend UI:**
-- Input field for domain.
-- **Instructions Box**:
-    > Log in to your DNS provider and add:
-    > - **Type**: CNAME | **Host**: (subdomain) | **Value**: gateway.my-saas.com
-    > - **Type**: TXT | **Host**: @ | **Value**: poly-verify=ae83-29fd
-- "Verify" Button.
+### A. Backend: Domain Verification Logic (NestJS)
+When a user adds a domain, you MUST verify ownership via a TXT record to prevent "Domain Takeover".
 
-### Phase 2: Verification Logic (Backend)
-Endpoint: `POST /api/tenants/domain/verify`
-
-**Logic (Node.js):**
 ```typescript
-import { resolveTxt, resolveCname } from 'dns/promises';
+// tenant.service.ts
+import { resolveTxt } from 'dns/promises';
 
-async function verifyDomain(domain: string, expectedCode: string) {
+async verifyDomainOwnership(domain: string, expectedToken: string): Promise<boolean> {
   try {
-    // 1. Check ownership (TXT record)
-    const txtRecords = await resolveTxt(domain); // or the root domain
-    const hasCode = txtRecords.flat().includes(expectedCode);
-
-    if (!hasCode) throw new Error("TXT record not found");
-
-    // 2. Check pointing (CNAME/A record)
-    // Optional but good for UX: ensure it actually points to us before activating
-    return true;
-  } catch (err) {
+    // We look for a TXT record like: _mysaas-verify.shop.customer.com
+    const records = await resolveTxt(`_mysaas-verify.${domain}`);
+    const tokenFound = records.flat().includes(expectedToken);
+    
+    if (tokenFound) {
+      // Update tenant status to ACTIVE in DB
+      return true;
+    }
+    return false;
+  } catch (error) {
+    this.logger.error(`DNS Verification failed for ${domain}`, error);
     return false;
   }
 }
 ```
 
-### Phase 3: The Proxy & SSL (Infrastructure)
-
-#### Option A: Caddy Server (Recommended 🌟)
-Caddy automatically manages SSL certificates on-demand.
-
-**Caddyfile Config:**
-```caddyfile
-:443 {
-    tls {
-        on_demand
-    }
-    reverse_proxy localhost:3000
+### B. Backend: Caddy Permission Check
+```typescript
+// tenant.controller.ts
+@Get('check-domain')
+async checkDomain(@Query('domain') domain: string) {
+  const tenant = await this.tenantService.findByCustomDomain(domain);
+  if (tenant && tenant.customDomainStatus === 'ACTIVE') {
+    return { status: 200 }; // Caddy will issue SSL
+  }
+  throw new ForbiddenException(); // Caddy will refuse SSL
 }
 ```
-*Note: You need to configure Caddy to ask your API "Is this domain allowed?" to prevent abuse.*
 
-#### Option B: Nginx + Lua/Certbot (Complex)
-Requires writing Lua scripts in OpenResty to dynamically handshake SSL, or running a cron job that runs `certbot` for every new verifying domain. **Not recommended for MVP.**
+### C. Application Middleware (Next.js)
+This handles internal routing. If someone visits `shop.customer.com`, we rewrite them to the tenant's store page.
 
-### Phase 4: Application Routing (Next.js Middleware)
-**`middleware.ts`**:
 ```typescript
+// middleware.ts
 import { NextResponse } from 'next/server';
 
-export async function middleware(req) {
-  const hostname = req.headers.get('host'); // e.g. shop.coolbrand.com
-  const isCustomDomain = !hostname.includes('my-saas.com');
+export function middleware(req) {
+  const url = req.nextUrl;
+  const hostname = req.headers.get('host');
 
-  if (isCustomDomain) {
-    // 1. Fetch tenant via internal API or cache
-    // const tenant = await getTenantByDomain(hostname);
-    
-    // 2. Rewrite path
-    // return NextResponse.rewrite(new URL(`/tenants/${tenant.slug}${req.nextUrl.pathname}`, req.url));
-    
-    // For now, mapping to existing dynamic page route:
-    return NextResponse.rewrite(new URL(`/${hostname}${req.nextUrl.pathname}`, req.url));
+  // 1. Skip internal routes and APIs
+  if (url.pathname.startsWith('/_next') || url.pathname.startsWith('/api')) {
+    return NextResponse.next();
   }
+
+  // 2. Resolve Tenant
+  // For subdomains: tenant1.mysaas.com
+  // For custom domains: shop.customer.com
+  const isCustom = !hostname.endsWith('mysaas.com');
+  const tenantSlug = isCustom ? hostname : hostname.split('.')[0];
+
+  // 3. Rewrite Path
+  // Internally serve /tenants/[slug]/...
+  return NextResponse.rewrite(new URL(`/tenants/${tenantSlug}${url.pathname}`, req.url));
 }
 ```
-*Note: You likely need to adjust your app structure to handle dynamic updates based on host.*
 
-## 4. Security Considerations
-1.  **Domain Takeover**: Verify ownership (TXT record) *before* allowing the domain to route traffic.
-2.  **Rate Limiting**: Limit how many times a user can hit "Verify".
-3.  **DDoS**: Use Cloudflare or similar in front of your Caddy server if possible.
+---
 
-## 5. Summary Checklist
-- [ ] Add `customDomain` fields to DB.
-- [ ] Build "Add Domain" UI + DNS Instructions.
-- [ ] Implement Node.js DNS verification logic.
-- [ ] Set up Caddy (or similar) for handling incoming traffic on port 80/443.
-- [ ] Update Next.js Middleware to route `Custom Domain` -> `Tenant Store`.
+## 4. Real-World Workflow (Steps for User)
+
+1.  **In SaaS Dashboard**:
+    - User enters `shop.mybrand.com`.
+    - System generates a verification token: `mysaas-v=8f3j...`.
+2.  **In User's DNS Provider (e.g., GoDaddy/Cloudflare)**:
+    - User adds **TXT** record: `_mysaas-verify` -> `mysaas-v=8f3j...`.
+    - User adds **CNAME** record: `shop` -> `gateway.mysaas.com`.
+3.  **Verification**:
+    - User clicks "Verify" in your app.
+    - Your backend checks the TXT record. If valid, set status to `ACTIVE`.
+4.  **Live**:
+    - Visitor visits `shop.mybrand.com`.
+    - Caddy sees the request, asks your API "Is this domain active?", API says "Yes".
+    - Caddy gets SSL, proxies to Next.js.
+    - Next.js Middleware sees `Host: shop.mybrand.com`, rewrites to the tenant's store.
+
+## 5. Security Considerations
+- **Rate Limiting**: Limit DNS checks to prevent abuse.
+- **Reserved Subdomains**: Do not let users register `admin`, `api`, `support`, `www`, etc.
+- **SSL Limits**: Caddy handles this, but be aware of Let's Encrypt rate limits for new registrations per week.

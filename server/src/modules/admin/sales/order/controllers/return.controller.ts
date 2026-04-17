@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards, Logger } from '@nestjs/common'
+import { FilterReturnDto } from '@/modules/admin/sales/order/dto/filter-return.dto'
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, Logger } from '@nestjs/common'
+
 import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
@@ -60,16 +62,26 @@ export class ReturnController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findAllReturns(
     @RequestContext() ctx: RequestContextDto,
-  ): Promise<BaseApiSuccessResponse<OrderReturnResponseDto[]>> {
+    @Query() filterDto: FilterReturnDto,
+  ): Promise<BaseApiSuccessResponse<{ data: OrderReturnResponseDto[]; pagination: any }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllReturns.`)
-    const result = await this.returnService.findAllReturns(ctx.tenantId)
+    const { data, total } = await this.returnService.findAllReturns(ctx.tenantId, filterDto)
     return {
       success: true,
       statusCode: 200,
-      message: 'All return requests retrieved',
-      data: result as any,
+      message: 'Return requests retrieved successfully',
+      data: {
+        data: data as any,
+        pagination: {
+          total,
+          page: filterDto.page,
+          limit: filterDto.limit,
+          totalPages: Math.ceil(total / filterDto.limit),
+        },
+      },
     }
   }
+
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)

@@ -87,7 +87,8 @@ export default function ReturnList({ returns, loading }: ReturnListProps) {
                                 <td colSpan={7} className="p-12 text-center text-slate-500">
                                     <div className="flex items-center justify-center gap-3">
                                         <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
-                                        <span className="font-semibold text-lg">Loading requirements...</span>
+                                        <span className="font-semibold text-lg">Loading return requests...</span>
+
                                     </div>
                                 </td>
                             </tr>
