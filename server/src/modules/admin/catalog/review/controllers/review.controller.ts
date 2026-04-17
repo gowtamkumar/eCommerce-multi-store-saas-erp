@@ -42,7 +42,7 @@ export class ReviewController {
     @Body() dto: CreateReviewDto,
   ): Promise<BaseApiSuccessResponse<ReviewResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createReview.`)
-    const result = await this.reviewService.createReview(dto, ctx.tenantId)
+    const result = await this.reviewService.createReview(dto, ctx)
     return {
       success: true,
       statusCode: 201,

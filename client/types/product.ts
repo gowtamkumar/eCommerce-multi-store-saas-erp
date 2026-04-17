@@ -59,10 +59,12 @@ export interface Product {
 
 export interface Review {
   id: string;
-  customerName: string;
-  customerEmail: string;
   rating: number;
   comment: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
+  user: {
+    name: string;
+    email: string;
+  }
 }

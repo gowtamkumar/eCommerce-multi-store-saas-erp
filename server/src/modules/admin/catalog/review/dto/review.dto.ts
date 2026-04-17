@@ -7,13 +7,7 @@ export class CreateReviewDto {
   @IsString()
   productId: string
 
-  @ApiProperty()
-  @IsString()
-  customerName: string
 
-  @ApiProperty()
-  @IsString()
-  customerEmail: string
 
   @ApiProperty()
   @IsNumber()

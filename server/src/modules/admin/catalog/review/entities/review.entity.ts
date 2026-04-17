@@ -16,11 +16,6 @@ export class ReviewEntity extends BaseEntity {
   @JoinColumn({ name: 'product_id' })
   product: ProductEntity
 
-  @Column({ type: 'varchar', name: 'customer_name', length: 255 })
-  customerName: string
-
-  @Column({ type: 'varchar', name: 'customer_email', length: 255 })
-  customerEmail: string
 
   @Column({ type: 'int', default: 5 })
   rating: number
@@ -42,10 +37,10 @@ export class ReviewEntity extends BaseEntity {
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 
-  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  @Column({ type: 'uuid', name: 'user_id' })
   userId: string
 
-  @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
 }

@@ -35,7 +35,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
     const [reviews, setReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState(0);
-    const { settings, formatPrice } = useSettings();
+    const { formatPrice } = useSettings();
 
     useEffect(() => {
         if (!id) return;
@@ -46,6 +46,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                     fetchAPI(`/products/${id}`),
                     fetchAPI(`/products/${id}/reviews`)
                 ]);
+
 
                 if (productRes.success && productRes.data) {
                     setProduct(productRes.data);
@@ -495,7 +496,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                 </div>
 
                 <div className="grid gap-6">
-                    {reviews.length === 0 ? (
+                    {reviews?.length === 0 ? (
                         <div className="py-24 text-center bg-white dark:bg-slate-800 rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-slate-800">
                             <TrendingDown className="w-16 h-16 mx-auto mb-4 text-slate-200 dark:text-slate-700" />
                             <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">No consumer data yet</p>
@@ -506,7 +507,7 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                                 <div className="flex flex-col md:flex-row gap-8">
                                     <div className="flex-shrink-0 text-center space-y-3">
                                         <div className="w-20 h-20 bg-brand-50 dark:bg-brand-900/10 rounded-[2rem] flex items-center justify-center text-3xl font-black text-brand-600 border border-brand-100 dark:border-brand-900/30">
-                                            {review.customerName.charAt(0)}
+                                            {review.user?.name?.charAt(0)}
                                         </div>
                                         <div className="flex items-center justify-center gap-1">
                                             {[1, 2, 3, 4, 5].map(s => <Star key={s} className={`w-3 h-3 ${s <= review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 dark:text-slate-700'}`} />)}
@@ -515,8 +516,8 @@ export default function ProductReviewPage({ params }: { params: Promise<{ id: st
                                     <div className="flex-1">
                                         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                                             <div>
-                                                <h4 className="text-lg font-black text-slate-900 dark:text-white mb-0.5">{review.customerName}</h4>
-                                                <p className="text-xs font-bold text-slate-400">{review.customerEmail}</p>
+                                                <h4 className="text-lg font-black text-slate-900 dark:text-white mb-0.5">{review.user?.name}</h4>
+                                                <p className="text-xs font-bold text-slate-400">{review.user?.email}</p>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${review.status === ReviewStatus.APPROVED ? 'bg-green-50 text-green-600 border border-green-100' :

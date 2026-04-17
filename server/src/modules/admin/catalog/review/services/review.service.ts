@@ -3,6 +3,7 @@ import { CreateReviewDto, UpdateReviewDto } from '../dto/review.dto'
 import { ReviewRepository } from '../repositoris/review.repository'
 import { ReviewEntity } from '../entities/review.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class ReviewService {
@@ -13,11 +14,11 @@ export class ReviewService {
     private readonly cacheService: CacheService,
   ) { }
 
-  async createReview(dto: CreateReviewDto, tenantId: string): Promise<ReviewEntity> {
+  async createReview(dto: CreateReviewDto, ctx: RequestContextDto): Promise<ReviewEntity> {
     this.logger.log(`${this.createReview.name} Service Called`)
-    const result = await this.reviewRepository.createAndSave(dto, tenantId)
-    await this.cacheService.delCache(`reviews:product:${dto.productId}`, tenantId)
-    await this.cacheService.delCache('reviews:public', tenantId)
+    const result = await this.reviewRepository.createAndSave({ ...dto, userId: ctx.userId }, ctx.tenantId)
+    await this.cacheService.delCache(`reviews:product:${dto.productId}`, ctx.tenantId)
+    await this.cacheService.delCache('reviews:public', ctx.tenantId)
     return result
   }
 

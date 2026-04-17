@@ -21,11 +21,11 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
-      <head>
+      <head suppressHydrationWarning>
         {googleSiteVerification && <meta name="google-site-verification" content={googleSiteVerification} />}
         {facebookDomainVerification && <meta name="facebook-domain-verification" content={facebookDomainVerification} />}
       </head>
-      <body className={`antialiased`}>
+      <body className={`antialiased`} suppressHydrationWarning>
         {/* Google Analytics */}
         {googleAnalyticsId && (
           <>

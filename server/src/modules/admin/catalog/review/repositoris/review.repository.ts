@@ -18,6 +18,7 @@ export class ReviewRepository {
     const { page, limit, q, status } = filterDto
     const query = this.repo.createQueryBuilder('review')
       .leftJoinAndSelect('review.product', 'product')
+      .leftJoinAndSelect('review.user', 'user')
       .where('review.tenantId = :tenantId', { tenantId })
 
     if (status) {
@@ -25,7 +26,7 @@ export class ReviewRepository {
     }
 
     if (q) {
-      query.andWhere('(review.customerName ILIKE :q OR review.comment ILIKE :q OR product.name ILIKE :q)', { q: `%${q}%` })
+      query.andWhere('(user.name ILIKE :q OR review.comment ILIKE :q OR product.name ILIKE :q)', { q: `%${q}%` })
     }
 
     const [reviews, total] = await query
@@ -40,6 +41,7 @@ export class ReviewRepository {
   async findPublicReviews(tenantId: string): Promise<ReviewEntity[]> {
     return this.repo.find({
       where: { tenantId, status: ReviewStatus.APPROVED },
+      relations: ['user'],
       order: { createdAt: 'DESC' },
     })
   }
@@ -47,6 +49,7 @@ export class ReviewRepository {
   async findByProductReviews(productId: string, tenantId: string): Promise<ReviewEntity[]> {
     return this.repo.find({
       where: { productId, tenantId },
+      relations: ['user'],
       order: { createdAt: 'DESC' },
     })
   }

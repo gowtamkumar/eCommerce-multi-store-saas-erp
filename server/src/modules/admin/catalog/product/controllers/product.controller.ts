@@ -189,7 +189,7 @@ export class ProductController {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createReviewProduct.`)
     // Ensure the productId in the body matches the URL param
     createReviewDto.productId = productId
-    const result = await this.reviewService.createReview(createReviewDto, ctx.tenantId)
+    const result = await this.reviewService.createReview(createReviewDto, ctx)
     return {
       success: true,
       statusCode: 201,
