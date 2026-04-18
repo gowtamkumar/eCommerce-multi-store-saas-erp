@@ -4,14 +4,13 @@ import { PurchaseOrderStatus } from '@/lib/enums/purchase-order.type.enum';
 import { fetchAPI } from '@/services/api';
 import { ArrowLeft, Calendar, CheckCircle, CreditCard, FileText, History, Landmark, Package, Plus, Truck, XCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { getPaymentStatusBadge, getStatusBadge } from './comonfun';
 
 export default function PurchaseOrderDetails() {
     const { id } = useParams();
-    const router = useRouter();
     const { formatPrice } = useSettings();
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);

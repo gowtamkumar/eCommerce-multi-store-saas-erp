@@ -20,6 +20,7 @@ export class ExpenseRepository {
   ) {}
 
   async createAndSave(dto: any, tenantId: string): Promise<ExpenseEntity> {
+    console.log(dto)
     const expense = this.repo.create({ ...dto, tenantId } as ExpenseEntity)
     return this.repo.save(expense)
   }

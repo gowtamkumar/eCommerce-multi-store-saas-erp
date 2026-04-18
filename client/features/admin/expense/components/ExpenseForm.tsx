@@ -1,8 +1,8 @@
 'use client';
 
 import { fetchAPI } from '@/services/api';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Receipt, DollarSign, Calendar, Tag, FileText, Hash } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Calendar, DollarSign, FileText, Hash, Receipt, Save, Tag, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { EXPENSE_CATEGORIES, type ExpenseFormProps } from '../types';
@@ -14,7 +14,7 @@ export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }:
     const [formData, setFormData] = useState({
         title: '',
         amount: '',
-        category: 'OTHER',
+        category: 'other',
         expenseDate: new Date().toISOString().split('T')[0],
         referenceNumber: '',
         description: ''
@@ -161,7 +161,7 @@ export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }:
                                             className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all appearance-none"
                                         >
                                             {EXPENSE_CATEGORIES.map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
+                                                <option key={cat.value} value={cat.value}>{cat.label}</option>
                                             ))}
                                         </select>
                                     </div>

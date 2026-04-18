@@ -2,20 +2,20 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import dayjs from 'dayjs';
-import { Edit2, Plus, Receipt, Trash2, ChevronLeft, ChevronRight, Search, Filter, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit2, Filter, Plus, Receipt, Search, Trash2 } from 'lucide-react';
 import { memo } from 'react';
 import type { ExpenseListProps } from '../types';
 import { EXPENSE_CATEGORIES } from '../types';
 
 const CATEGORY_COLORS: Record<string, string> = {
-    SHIPPING:    'bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-900/20 dark:text-sky-400',
-    PACKAGING:   'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400',
-    MARKETING:   'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/20 dark:text-purple-400',
-    SOFTWARE:    'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400',
-    SALARIES:    'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400',
-    UTILITIES:   'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400',
+    SHIPPING: 'bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-900/20 dark:text-sky-400',
+    PACKAGING: 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400',
+    MARKETING: 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/20 dark:text-purple-400',
+    SOFTWARE: 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400',
+    SALARIES: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400',
+    UTILITIES: 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400',
     MAINTENANCE: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300',
-    OTHER:       'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900/20 dark:text-rose-400',
+    OTHER: 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900/20 dark:text-rose-400',
 };
 
 const ExpenseRow = memo(({ expense, onEdit, onDelete, formatPrice }: {
@@ -122,7 +122,7 @@ export default function ExpenseList({
                     >
                         <option value="">All Categories</option>
                         {EXPENSE_CATEGORIES.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
+                            <option key={cat.value} value={cat.value}>{cat.label}</option>
                         ))}
                     </select>
                 </div>
