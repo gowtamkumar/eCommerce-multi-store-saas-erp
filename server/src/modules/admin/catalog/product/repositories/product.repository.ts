@@ -231,6 +231,7 @@ export class ProductRepository {
         'product.stock',
         'product.categoryId',
         'product.brandId',
+        'product.createdAt',
         'category.id',
         'category.name',
         'category.slug',

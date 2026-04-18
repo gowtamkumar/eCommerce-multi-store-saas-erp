@@ -7,51 +7,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, BadgePercent, Clock, Package, Percent, Tag, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { OfferGroup, OffersPageProps } from '../types';
 
-interface Product {
-    id: string;
-    name: string;
-    slug: string;
-    price: number;
-    discountAmount: number;
-    images: string[];
-    shortDescription?: string;
-    stock: number;
-    category?: { id: string; name: string; slug: string };
-    brand?: { id: string; name: string };
-    promoDiscount: number;
-    promoDiscountPercentage: number;
-    finalPrice: number;
-    promotionId: string;
-    promotionName: string;
-    promotionType: PromotionType;
-}
-
-interface Promotion {
-    id: string;
-    name: string;
-    slug: string;
-    description?: string;
-    promotionType: PromotionType;
-    value?: number;
-    targetType: string;
-    minOrderValue?: number;
-    startDate?: string;
-    endDate?: string;
-    isActive: boolean;
-}
-
-interface OfferGroup {
-    promotion: Promotion;
-    products: Product[];
-}
-
-interface OffersPageProps {
-    offerGroups: OfferGroup[];
-    promotions: Promotion[];
-    /** Passed from SSR to avoid a redundant client-side useSettings() fetch */
-    offersSettings?: any;
-}
 
 // Countdown timer hook
 function useCountdown(endDate?: string) {
@@ -180,6 +137,9 @@ function PromotionSection({ group }: { group: OfferGroup }) {
 export default function OffersPage({ offerGroups, promotions, offersSettings: propSettings }: OffersPageProps) {
     // Use SSR-provided settings if available; fall back to client context only when needed
     // (e.g. when component is used outside of offers route)
+    console.log("offerGroups", offerGroups);
+    console.log("promotions", promotions);
+
     const { settings } = useSettings();
     const offersSettings = propSettings ?? settings?.offersPage ?? {
         bannerShow: true,

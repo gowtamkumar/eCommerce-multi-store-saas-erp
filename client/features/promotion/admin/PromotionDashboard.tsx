@@ -38,8 +38,8 @@ export default function PromotionDashboard() {
         setLoading(true);
         try {
             const res = await getPromotions(page, pagination.limit, search);
-
-            // Handle standard API response structure
+            console.log("promotion", res);
+            // Handle standard API response structure   
             if (res.success && res.data) {
                 const data = res.data.promotions || [];
                 const total = res.data.total || 0;
@@ -76,7 +76,7 @@ export default function PromotionDashboard() {
             const res = await deletePromotion(id);
             if (res.success) {
                 toast.success('Promotion deleted');
-                loadPromotions();
+                loadPromotions(pagination.page, debouncedSearch);
             } else {
                 toast.error(res.message || 'Failed to delete promotion');
             }

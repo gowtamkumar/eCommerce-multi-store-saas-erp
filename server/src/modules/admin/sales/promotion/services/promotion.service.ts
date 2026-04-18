@@ -1,12 +1,12 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { PromotionRepository } from '../repositories/promotion.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreatePromotionDto } from '../dto/create-promotion.dto'
 import { UpdatePromotionDto } from '../dto/update-promotion.dto'
 import { PromotionEntity } from '../entities/promotion.entity'
 import { PromotionTargetType } from '../enums/promotion-target-type.enum'
 import { PromotionType } from '../enums/promotion-type.enum'
+import { PromotionRepository } from '../repositories/promotion.repository'
 
 @Injectable()
 export class PromotionService {
@@ -36,7 +36,12 @@ export class PromotionService {
     }
 
     const saved = await this.promotionRepository.createAndSave(createPromotionDto, tenantId)
-    await this.cache.delCache(`promotions:active`, tenantId)
+    // Invalidate all affected cache keys
+    await Promise.all([
+      this.cache.delCache('promotions:active', tenantId),
+      this.cache.delCache('promotions:list', tenantId),
+      this.cache.delCache('promotions:offers', tenantId),
+    ])
     return saved
   }
 

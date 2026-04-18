@@ -1,52 +1,29 @@
 'use client';
 
-import { useSettings } from '@/hooks/SettingsContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ShoppingBag, Tag, Zap, Percent, BadgePercent, Crown, Package, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
-import { useCart } from '@/hooks/CartContext';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { PromotionType } from '@/lib/enums/promotion-type.enum';
 import ProductCard, { PromotionTypeBadge } from '@/features/product/components/ProductCard';
+import { PromotionType } from '@/lib/enums/promotion-type.enum';
+import { ArrowLeft, Clock, Package, ShoppingBag } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { PromotionDetailsProps } from '../types';
 
-interface Product {
-    id: string;
-    name: string;
-    slug: string;
-    price: number;
-    discountAmount: number;
-    images: string[];
-    shortDescription?: string;
-    stock: number;
-    category?: { id: string; name: string; slug: string };
-    brand?: { id: string; name: string };
-    promoDiscount: number;
-    promoDiscountPercentage: number;
-    finalPrice: number;
-    promotionId: string;
-    promotionName: string;
-    promotionType: PromotionType;
-}
 
-interface Promotion {
-    id: string;
-    name: string;
-    slug: string;
-    description?: string;
-    promotionType: PromotionType;
-    value?: number;
-    targetType: string;
-    minOrderValue?: number;
-    startDate?: string;
-    endDate?: string;
-    isActive: boolean;
-}
 
-interface PromotionDetailsProps {
-    promotion: Promotion;
-    products: Product[];
-}
+// interface Promotion {
+//     id: string;
+//     name: string;
+//     slug: string;
+//     description?: string;
+//     promotionType: PromotionType;
+//     value?: number;
+//     targetType: string;
+//     minOrderValue?: number;
+//     startDate?: string;
+//     endDate?: string;
+//     isActive: boolean;
+// }
+
+
 
 // Countdown timer hook (reused from OffersPage)
 function useCountdown(endDate?: string) {
