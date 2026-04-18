@@ -1,8 +1,9 @@
 'use client';
 
-import { fetchAPI } from '@/services/api';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useEffect, useState, useCallback } from 'react';
+import { PurchaseOrderStatus } from '@/lib/enums/purchase-order.type.enum';
+import { fetchAPI } from '@/services/api';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { PurchaseOrder, PurchaseOrderPagination } from '../types';
 import PurchaseOrderList from './PurchaseOrderList';
@@ -58,7 +59,7 @@ export default function PurchaseOrderDashboard() {
         try {
             await fetchAPI(`/purchase-orders/${id}/status`, {
                 method: 'PATCH',
-                body: JSON.stringify({ status: 'RECEIVED' })
+                body: JSON.stringify({ status: PurchaseOrderStatus.RECEIVED })
             });
             toast.success('Order received! Inventory updated.', { id: toastId });
             fetchOrders(pagination.page, debouncedSearch, statusFilter);

@@ -208,11 +208,14 @@ export class PurchaseOrderService {
       )
 
       order.paidAmount = Number(order.paidAmount || 0) + Number(dto.amount)
+      const totalAmount = Number(order.totalAmount)
 
-      if (order.paidAmount >= order.totalAmount) {
+      if (order.paidAmount >= totalAmount) {
         order.paymentStatus = PurchaseOrderPaymentStatus.PAID
       } else if (order.paidAmount > 0) {
         order.paymentStatus = PurchaseOrderPaymentStatus.PARTIAL
+      } else {
+        order.paymentStatus = PurchaseOrderPaymentStatus.PENDING
       }
 
       const savedOrder = await this.repository.savePurchaseOrder(order, queryRunner.manager)

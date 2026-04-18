@@ -1,11 +1,13 @@
 'use client';
 import { useSettings } from '@/hooks/SettingsContext';
+import { PurchaseOrderStatus } from '@/lib/enums/purchase-order.type.enum';
 import { fetchAPI } from '@/services/api';
 import { ArrowLeft, Calendar, CheckCircle, CreditCard, FileText, History, Landmark, Package, Plus, Truck, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { getPaymentStatusBadge, getStatusBadge } from './comonfun';
 
 export default function PurchaseOrderDetails() {
     const { id } = useParams();
@@ -42,7 +44,7 @@ export default function PurchaseOrderDetails() {
         try {
             await fetchAPI(`/purchase-orders/${id}/status`, {
                 method: 'PATCH',
-                body: JSON.stringify({ status: 'RECEIVED' })
+                body: JSON.stringify({ status: PurchaseOrderStatus.RECEIVED })
             });
             toast.success('Order received! Inventory updated.', { id: toastId });
             fetchOrder();
@@ -88,23 +90,24 @@ export default function PurchaseOrderDetails() {
         );
     }
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 uppercase tracking-tighter">DRAFT</span>;
-            case 'PENDING': return <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600 uppercase tracking-tighter">PENDING</span>;
-            case 'RECEIVED': return <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-600 flex items-center gap-1 w-fit uppercase tracking-tighter"><CheckCircle className="w-3 h-3" /> RECEIVED</span>;
-            case 'CANCELLED': return <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600 flex items-center gap-1 w-fit uppercase tracking-tighter"><XCircle className="w-3 h-3" /> CANCELLED</span>;
-            default: return <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 uppercase tracking-tighter">{status}</span>;
-        }
-    };
+    // const getStatusBadge = (status: string) => {
+    //     switch (status) {
+    //         case PurchaseOrderStatus.DRAFT: return <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 uppercase tracking-tighter">DRAFT</span>;
+    //         case PurchaseOrderStatus.PENDING: return <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600 uppercase tracking-tighter">PENDING</span>;
+    //         case PurchaseOrderStatus.RECEIVED: return <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-600 flex items-center gap-1 w-fit uppercase tracking-tighter"><CheckCircle className="w-3 h-3" /> RECEIVED</span>;
+    //         case PurchaseOrderStatus.CANCELLED: return <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600 flex items-center gap-1 w-fit uppercase tracking-tighter"><XCircle className="w-3 h-3" /> CANCELLED</span>;
+    //         default: return <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 uppercase tracking-tighter">{status}</span>;
+    //     }
+    // };
 
-    const getPaymentStatusBadge = (status: string) => {
-        switch (status) {
-            case 'PAID': return <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-600 uppercase tracking-widest border border-emerald-200 shadow-sm">PAID</span>;
-            case 'PARTIAL': return <span className="px-3 py-1 rounded-full text-xs font-black bg-orange-100 text-orange-600 uppercase tracking-widest border border-orange-200 shadow-sm">PARTIAL</span>;
-            default: return <span className="px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-600 uppercase tracking-widest border border-rose-200 shadow-sm">UNPAID</span>;
-        }
-    };
+    // const getPaymentStatusBadge = (status: string) => {
+    //     switch (status) {
+    //         case PurchaseOrderPaymentStatus.PAID: return <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-600 uppercase tracking-widest border border-emerald-200 shadow-sm">PAID</span>;
+    //         case PurchaseOrderPaymentStatus.PARTIAL: return <span className="px-3 py-1 rounded-full text-xs font-black bg-orange-100 text-orange-600 uppercase tracking-widest border border-orange-200 shadow-sm">PARTIAL</span>;
+    //         case PurchaseOrderPaymentStatus.PENDING:
+    //         default: return <span className="px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-600 uppercase tracking-widest border border-rose-200 shadow-sm">UNPAID</span>;
+    //     }
+    // };
 
     const balance = order.totalAmount - (order.paidAmount || 0);
 

@@ -1,28 +1,27 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
-import { 
-    ShoppingBag, Search, Plus, Eye, CheckCircle, XCircle, 
-    FileText, ChevronLeft, ChevronRight, Filter 
+import { PurchaseOrderStatus } from '@/lib/enums/purchase-order.type.enum';
+import {
+    CheckCircle,
+    ChevronLeft, ChevronRight,
+    Eye,
+    FileText,
+    Filter,
+    Plus,
+    Search,
+    ShoppingBag
 } from 'lucide-react';
-import { memo } from 'react';
 import Link from 'next/link';
+import { memo } from 'react';
 import type { PurchaseOrderListProps } from '../types';
+import { getPaymentStatusBadge, getStatusBadge } from './comonfun';
 
-const PurchaseOrderRow = memo(({ order, onReceive, formatPrice }: { 
-    order: any, 
-    onReceive: (id: string) => void, 
-    formatPrice: (p: number) => string 
+const PurchaseOrderRow = memo(({ order, onReceive, formatPrice }: {
+    order: any,
+    onReceive: (id: string) => void,
+    formatPrice: (p: number) => string
 }) => {
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return <span className="px-2 py-1 rounded-md text-[10px] font-black tracking-widest bg-slate-100 text-slate-500 uppercase">Draft</span>;
-            case 'PENDING': return <span className="px-2 py-1 rounded-md text-[10px] font-black tracking-widest bg-blue-100 text-blue-600 uppercase border border-blue-200">Pending</span>;
-            case 'RECEIVED': return <span className="px-2 py-1 rounded-md text-[10px] font-black tracking-widest bg-emerald-100 text-emerald-600 uppercase flex items-center gap-1 border border-emerald-200"><CheckCircle className="w-3 h-3" /> Received</span>;
-            case 'CANCELLED': return <span className="px-2 py-1 rounded-md text-[10px] font-black tracking-widest bg-red-100 text-red-600 uppercase flex items-center gap-1 border border-red-200"><XCircle className="w-3 h-3" /> Cancelled</span>;
-            default: return <span className="px-2 py-1 rounded-md text-[10px] font-black tracking-widest bg-slate-100 text-slate-600 uppercase">{status}</span>;
-        }
-    };
 
     return (
         <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
@@ -45,6 +44,9 @@ const PurchaseOrderRow = memo(({ order, onReceive, formatPrice }: {
             </td>
             <td className="px-6 py-4 font-black text-slate-900 dark:text-white font-mono">
                 {formatPrice(order.totalAmount)}
+            </td>
+            <td className="px-6 py-4">
+                {getPaymentStatusBadge(order.paymentStatus)}
             </td>
             <td className="px-6 py-4">
                 {getStatusBadge(order.status)}
@@ -128,10 +130,10 @@ export default function PurchaseOrderList({
                         className="w-full pl-11 pr-4 py-3.5 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-brand-500 outline-none transition-all cursor-pointer appearance-none"
                     >
                         <option value="">All Statuses</option>
-                        <option value="DRAFT">Draft</option>
-                        <option value="PENDING">Pending</option>
-                        <option value="RECEIVED">Received</option>
-                        <option value="CANCELLED">Cancelled</option>
+                        <option value={PurchaseOrderStatus.DRAFT}>Draft</option>
+                        <option value={PurchaseOrderStatus.PENDING}>Pending</option>
+                        <option value={PurchaseOrderStatus.RECEIVED}>Received</option>
+                        <option value={PurchaseOrderStatus.CANCELLED}>Cancelled</option>
                     </select>
                 </div>
             </div>
@@ -145,6 +147,7 @@ export default function PurchaseOrderList({
                                 <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Identity</th>
                                 <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Entity</th>
                                 <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Fiscal Total</th>
+                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Fiscal State</th>
                                 <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Lifecycle</th>
                                 <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Settings</th>
                             </tr>
@@ -153,14 +156,14 @@ export default function PurchaseOrderList({
                             {loading && !orders.length ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i}>
-                                        <td colSpan={6} className="px-6 py-8">
+                                        <td colSpan={7} className="px-6 py-8">
                                             <div className="h-12 bg-slate-100 dark:bg-slate-700/50 animate-pulse rounded-2xl" />
                                         </td>
                                     </tr>
                                 ))
                             ) : orders.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="py-24 text-center">
+                                <tr key={1}>
+                                    <td colSpan={7} className="py-24 text-center">
                                         <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800">
                                             <ShoppingBag className="w-8 h-8 text-slate-300" strokeWidth={1} />
                                         </div>
@@ -169,11 +172,11 @@ export default function PurchaseOrderList({
                                 </tr>
                             ) : (
                                 orders.map((order) => (
-                                    <PurchaseOrderRow 
-                                        key={order.id} 
-                                        order={order} 
-                                        onReceive={onReceive} 
-                                        formatPrice={formatPrice} 
+                                    <PurchaseOrderRow
+                                        key={order.id}
+                                        order={order}
+                                        onReceive={onReceive}
+                                        formatPrice={formatPrice}
                                     />
                                 ))
                             )}
