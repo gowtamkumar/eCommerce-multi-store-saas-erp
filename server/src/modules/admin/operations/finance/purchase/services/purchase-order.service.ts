@@ -3,8 +3,8 @@ import { InventoryTransactionReferenceType } from '@/common/enums/inventory-tran
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Queue } from 'bullmq'
 import { DataSource } from 'typeorm'
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from '../dto/purchase-order.dto'
@@ -25,19 +25,20 @@ export class PurchaseOrderService {
     private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
     @InjectQueue('product') private readonly productQueue: Queue,
-  ) { }
+  ) {}
 
   /**
    * Creates a purchase order in DRAFT status.
    * Invalidates list caches.
    */
 
-  async createPurchaseOrder(dto: CreatePurchaseOrderDto, tenantId: string): Promise<PurchaseOrderEntity> {
+  async createPurchaseOrder(
+    dto: CreatePurchaseOrderDto,
+    tenantId: string,
+  ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
     const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-    const result = await this.repository.createAndSave(
-      { ...dto, totalAmount, tenantId } as any,
-    )
+    const result = await this.repository.createAndSave({ ...dto, totalAmount, tenantId } as any)
     await this.cacheService.delCache(`po:list`, tenantId)
     return result
   }
@@ -50,7 +51,13 @@ export class PurchaseOrderService {
     paginationDto: PaginationDto,
     status?: PurchaseOrderStatus,
     paymentStatus?: PurchaseOrderPaymentStatus,
-  ): Promise<{ items: PurchaseOrderEntity[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<{
+    items: PurchaseOrderEntity[]
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }> {
     this.logger.log(`${this.findAllPurchaseOrders.name} Service Called`)
     const { page = 1, limit = 20, q: search } = paginationDto
     const cacheKey = `po:list:p${page}:l${limit}:q${search || ''}:s${status || ''}:ps${paymentStatus || ''}`
@@ -102,7 +109,11 @@ export class PurchaseOrderService {
   /**
    * Updates order status and handles inventory intake if RECEIVED.
    */
-  async updatePurchaseOrderStatus(id: string, dto: UpdatePurchaseOrderStatusDto, tenantId: string): Promise<PurchaseOrderEntity> {
+  async updatePurchaseOrderStatus(
+    id: string,
+    dto: UpdatePurchaseOrderStatusDto,
+    tenantId: string,
+  ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.updatePurchaseOrderStatus.name} Service Called`)
     const order = await this.findOnePurchaseOrder(id, tenantId)
 
@@ -126,7 +137,10 @@ export class PurchaseOrderService {
     return result
   }
 
-  private async receivePurchaseOrder(order: PurchaseOrderEntity, tenantId: string): Promise<PurchaseOrderEntity> {
+  private async receivePurchaseOrder(
+    order: PurchaseOrderEntity,
+    tenantId: string,
+  ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.receivePurchaseOrder.name} Service Called`)
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
@@ -168,7 +182,11 @@ export class PurchaseOrderService {
    * Records a payment against the purchase order.
    * Updates paidAmount and paymentStatus.
    */
-  async recordSupplierPayment(id: string, dto: RecordSupplierPaymentDto, tenantId: string): Promise<PurchaseOrderEntity> {
+  async recordSupplierPayment(
+    id: string,
+    dto: RecordSupplierPaymentDto,
+    tenantId: string,
+  ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.recordSupplierPayment.name} Service Called`)
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
@@ -232,7 +250,10 @@ export class PurchaseOrderService {
     return await this.repository.findAllBySupplier(supplierId, tenantId)
   }
 
-  async findAllPaymentsBySupplier(supplierId: string, tenantId: string): Promise<SupplierPaymentEntity[]> {
+  async findAllPaymentsBySupplier(
+    supplierId: string,
+    tenantId: string,
+  ): Promise<SupplierPaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsBySupplier.name} Service Called`)
     return await this.paymentRepository.findAllBySupplier(supplierId, tenantId)
   }

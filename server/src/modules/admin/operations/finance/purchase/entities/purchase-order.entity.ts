@@ -1,11 +1,11 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Index } from 'typeorm'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
-import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { PurchaseOrderItemEntity } from '@/modules/admin/operations/finance/purchase/entities/purchase-order-item.entity'
 import { SupplierPaymentEntity } from '@/modules/admin/operations/finance/purchase/entities/supplier-payment.entity'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-status.enum'
 
 @Entity('purchase_orders')
