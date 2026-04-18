@@ -144,7 +144,7 @@ export default function Subscribers() {
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col md:row justify-between items-start md:items-center gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div className="flex items-center gap-5">
                     <div className="w-14 h-14 bg-gradient-to-br from-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-brand-500/20">
                         <Mail className="w-7 h-7" />

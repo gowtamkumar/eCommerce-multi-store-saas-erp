@@ -15,6 +15,7 @@ export default function CouponForm({ initialData, onClose, onSuccess, isOpen }: 
     const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState<Partial<Coupon>>({
+        code: '',
         discountType: DiscountType.PERCENTAGE,
         amount: 0,
         minPurchaseAmount: 0,
@@ -30,7 +31,7 @@ export default function CouponForm({ initialData, onClose, onSuccess, isOpen }: 
             });
         } else {
             setFormData({
-
+                code: '',
                 discountType: DiscountType.PERCENTAGE,
                 amount: 0,
                 minPurchaseAmount: 0,

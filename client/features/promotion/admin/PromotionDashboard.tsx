@@ -1,11 +1,11 @@
 'use client';
 
 import { useSettings } from '@/hooks/SettingsContext';
-import { deletePromotion, getPromotions, Promotion } from '@/services/promotion';
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import toast from 'react-hot-toast';
-import dynamic from 'next/dynamic';
 import { useDebounce } from '@/hooks/useDebounce';
+import { deletePromotion, getPromotions, Promotion } from '@/services/promotion';
+import dynamic from 'next/dynamic';
+import { useCallback, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import type { PromotionPagination } from '../types';
 import PromotionList from './PromotionList';
 
@@ -34,32 +34,40 @@ export default function PromotionDashboard() {
 
     const debouncedSearch = useDebounce(searchQuery, 500);
 
-    const loadPromotions = useCallback(async (page = pagination.page, search = debouncedSearch) => {
+    const loadPromotions = useCallback(async (page: number, search: string) => {
         setLoading(true);
         try {
             const res = await getPromotions(page, pagination.limit, search);
-            // Handle different API response shapes
-            const data = res.data?.promotions || res.promotions || [];
-            const total = res.data?.total || res.total || 0;
 
-            setPromotions(data);
-            setPagination(prev => ({
-                ...prev,
-                total,
-                totalPages: Math.ceil(total / prev.limit),
-                page
-            }));
+            // Handle standard API response structure
+            if (res.success && res.data) {
+                const data = res.data.promotions || [];
+                const total = res.data.total || 0;
+
+                setPromotions(data);
+                setPagination(prev => ({
+                    ...prev,
+                    total,
+                    totalPages: Math.ceil(total / prev.limit),
+                    page
+                }));
+            } else {
+                // Handle unexpected response shapes if any
+                const data = res.promotions || res.data || [];
+                const total = res.total || 0;
+                setPromotions(Array.isArray(data) ? data : []);
+            }
         } catch (error) {
             console.error('Error loading promotions:', error);
             toast.error('Failed to load promotional offers');
         } finally {
             setLoading(false);
         }
-    }, [debouncedSearch, pagination.limit]);
+    }, [pagination.limit]);
 
     useEffect(() => {
-        loadPromotions(1);
-    }, [debouncedSearch]);
+        loadPromotions(1, debouncedSearch);
+    }, [debouncedSearch, loadPromotions]);
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this promotional offer?')) return;
@@ -117,7 +125,7 @@ export default function PromotionDashboard() {
                     onClose={() => setIsFormOpen(false)}
                     onSuccess={() => {
                         setIsFormOpen(false);
-                        loadPromotions();
+                        loadPromotions(pagination.page, debouncedSearch);
                     }}
                 />
             )}
