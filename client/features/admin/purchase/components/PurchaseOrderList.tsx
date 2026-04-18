@@ -60,7 +60,7 @@ const PurchaseOrderRow = memo(({ order, onReceive, formatPrice }: {
                     >
                         <Eye className="w-4 h-4" />
                     </Link>
-                    {order.status !== 'RECEIVED' && order.status !== 'CANCELLED' && (
+                    {order.status !== PurchaseOrderStatus.RECEIVED && order.status !== PurchaseOrderStatus.CANCELLED && (
                         <button
                             onClick={() => onReceive(order.id)}
                             className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors border border-transparent hover:border-emerald-200"

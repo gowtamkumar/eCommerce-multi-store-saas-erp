@@ -90,25 +90,6 @@ export default function PurchaseOrderDetails() {
         );
     }
 
-    // const getStatusBadge = (status: string) => {
-    //     switch (status) {
-    //         case PurchaseOrderStatus.DRAFT: return <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 uppercase tracking-tighter">DRAFT</span>;
-    //         case PurchaseOrderStatus.PENDING: return <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600 uppercase tracking-tighter">PENDING</span>;
-    //         case PurchaseOrderStatus.RECEIVED: return <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-600 flex items-center gap-1 w-fit uppercase tracking-tighter"><CheckCircle className="w-3 h-3" /> RECEIVED</span>;
-    //         case PurchaseOrderStatus.CANCELLED: return <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-600 flex items-center gap-1 w-fit uppercase tracking-tighter"><XCircle className="w-3 h-3" /> CANCELLED</span>;
-    //         default: return <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 uppercase tracking-tighter">{status}</span>;
-    //     }
-    // };
-
-    // const getPaymentStatusBadge = (status: string) => {
-    //     switch (status) {
-    //         case PurchaseOrderPaymentStatus.PAID: return <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-600 uppercase tracking-widest border border-emerald-200 shadow-sm">PAID</span>;
-    //         case PurchaseOrderPaymentStatus.PARTIAL: return <span className="px-3 py-1 rounded-full text-xs font-black bg-orange-100 text-orange-600 uppercase tracking-widest border border-orange-200 shadow-sm">PARTIAL</span>;
-    //         case PurchaseOrderPaymentStatus.PENDING:
-    //         default: return <span className="px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-600 uppercase tracking-widest border border-rose-200 shadow-sm">UNPAID</span>;
-    //     }
-    // };
-
     const balance = order.totalAmount - (order.paidAmount || 0);
 
     return (
@@ -129,7 +110,7 @@ export default function PurchaseOrderDetails() {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    {order.status !== 'RECEIVED' && order.status !== 'CANCELLED' && (
+                    {order.status !== PurchaseOrderStatus.RECEIVED && order.status !== PurchaseOrderStatus.CANCELLED && (
                         <button
                             onClick={handleReceive}
                             className="px-8 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-black transition-all shadow-xl shadow-brand-500/30 hover:scale-[1.02] active:scale-95 flex items-center gap-3"
@@ -226,7 +207,7 @@ export default function PurchaseOrderDetails() {
                                 </div>
                             </div>
 
-                            {balance > 0 && (
+                            {balance > 0 && order.status !== PurchaseOrderStatus.CANCELLED && (
                                 <button
                                     onClick={() => setIsPaymentModalOpen(true)}
                                     className="w-full py-4 bg-slate-900 dark:bg-brand-600 hover:bg-black dark:hover:bg-brand-700 text-white rounded-2xl font-black transition-all shadow-xl shadow-slate-900/20 active:scale-95 flex items-center justify-center gap-3"
