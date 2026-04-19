@@ -1,10 +1,10 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { FilterUserDto } from '../dtos'
 import { UserEntity } from '../entities/user.entity'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class UserRepository {

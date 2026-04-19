@@ -1,7 +1,7 @@
-import { Expose, Type } from 'class-transformer'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
+import { Expose, Type } from 'class-transformer'
 
 export class OrderItemResponseDto {
   @Expose()
@@ -94,7 +94,7 @@ export class OrderResponseDto {
   deliveryZone: string
 
   @Expose()
-  userId: string
+  userId?: string | null
 
   @Expose()
   tenantId: string

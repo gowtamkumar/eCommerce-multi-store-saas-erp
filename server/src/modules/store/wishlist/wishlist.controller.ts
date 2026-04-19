@@ -33,7 +33,7 @@ export class WishlistController {
     @Body() dto: AddToWishlistDto,
   ): Promise<BaseApiSuccessResponse<{ added: boolean }>> {
     this.logger.verbose(`User "${ctx.userId}" calling toggleWishlist for product ${dto.productId}`)
-    const result = await this.wishlistService.toggleWishlist(ctx.userId, dto.productId, ctx.tenantId)
+    const result = await this.wishlistService.toggleWishlist(ctx, dto.productId)
     return {
       success: true,
       statusCode: 201,
@@ -48,7 +48,7 @@ export class WishlistController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<WishlistResponseDto[]>> {
     this.logger.verbose(`User "${ctx.userId}" calling getWishlist`)
-    const result = await this.wishlistService.getWishlist(ctx.userId, ctx.tenantId)
+    const result = await this.wishlistService.getWishlist(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -64,7 +64,7 @@ export class WishlistController {
     @Param('productId') productId: string,
   ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.userId}" calling removeFromWishlist for product ${productId}`)
-    await this.wishlistService.removeFromWishlist(ctx.userId, productId, ctx.tenantId)
+    await this.wishlistService.removeFromWishlist(ctx, productId)
     return {
       success: true,
       statusCode: 200,
@@ -77,7 +77,7 @@ export class WishlistController {
   @ApiOperation({ summary: 'Clear the entire wishlist for the current user' })
   async clearWishlist(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.userId}" calling clearWishlist`)
-    await this.wishlistService.clearWishlist(ctx.userId, ctx.tenantId)
+    await this.wishlistService.clearWishlist(ctx)
     return {
       success: true,
       statusCode: 200,

@@ -10,7 +10,7 @@ export class PaymentResponseDto {
   orderId: string
 
   @Expose()
-  userId: string
+  userId?: string | null
 
   @Expose()
   transactionId: string

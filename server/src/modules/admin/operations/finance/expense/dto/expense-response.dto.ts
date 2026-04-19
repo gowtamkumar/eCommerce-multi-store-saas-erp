@@ -1,5 +1,5 @@
-import { Expose } from 'class-transformer'
 import { ExpenseCategory } from '@/common/enums/expense-category.enum'
+import { Expose } from 'class-transformer'
 
 export class ExpenseResponseDto {
   @Expose()
@@ -27,7 +27,7 @@ export class ExpenseResponseDto {
   tenantId: string
 
   @Expose()
-  userId: string
+  userId?: string | null
 
   @Expose()
   createdAt: Date

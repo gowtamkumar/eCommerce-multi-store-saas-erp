@@ -1,7 +1,7 @@
-import { Expose } from 'class-transformer'
-import { IsDate } from 'class-validator'
 import { ReviewStatus } from '@/common/enums/review-status.enum'
 import { UserResponseDto } from '@/modules/admin/core/user/dtos/user-response.dto'
+import { Expose } from 'class-transformer'
+import { IsDate } from 'class-validator'
 
 export class ReviewResponseDto {
   @Expose()
@@ -11,10 +11,10 @@ export class ReviewResponseDto {
   productId: string
 
   @Expose()
-  userId: string
+  userId?: string | null
 
   @Expose()
-  user: UserResponseDto
+  user?: UserResponseDto | null
 
   @Expose()
   rating: number

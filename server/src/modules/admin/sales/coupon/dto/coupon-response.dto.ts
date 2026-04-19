@@ -39,7 +39,7 @@ export class CouponResponseDto {
   tenantId: string
 
   @Expose()
-  userId: string
+  userId?: string | null
 
   @Expose()
   createdAt: Date

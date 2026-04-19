@@ -1,25 +1,25 @@
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import {
   Body,
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   ParseIntPipe,
   Post,
   Query,
   Req,
   UseGuards,
-  Logger,
 } from '@nestjs/common'
 import { Request } from 'express'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { AuditLogService } from './audit-log.service'
+import { AuditLogResponseDto } from './dto/audit-log-response.dto'
 import { CreateAuditLogDto } from './dto/create-audit-log.dto'
 import { QueryAuditLogDto } from './dto/query-audit-log.dto'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
-import { AuditLogResponseDto } from './dto/audit-log-response.dto'
 
 @Controller('audit-logs')
 @UseGuards(JwtAuthGuard)
@@ -49,7 +49,7 @@ export class AuditLogController {
 
     const userAgent = req.headers['ctx.user-agent']
 
-    await this.auditLogService.log(ctx.tenantId, dto, ipAddress as string, userAgent as string)
+    await this.auditLogService.log(ctx, dto, ipAddress as string, userAgent as string)
     return {
       success: true,
       statusCode: 201,
@@ -68,7 +68,7 @@ export class AuditLogController {
     @Query() query: QueryAuditLogDto,
   ): Promise<BaseApiSuccessResponse<{ data: AuditLogResponseDto[]; meta: any }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllAuditLogs.`)
-    const result = await this.auditLogService.findAllAuditLogs(ctx.tenantId, query)
+    const result = await this.auditLogService.findAllAuditLogs(ctx, query)
     return {
       success: true,
       statusCode: 200,
@@ -87,7 +87,7 @@ export class AuditLogController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<AuditLogResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneAuditLog.`)
-    const entry = await this.auditLogService.findOneAuditLog(id, ctx.tenantId)
+    const entry = await this.auditLogService.findOneAuditLog(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -106,7 +106,7 @@ export class AuditLogController {
     @Param('days', ParseIntPipe) days: number,
   ): Promise<BaseApiSuccessResponse<{ message: string }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called purgeOldLogs.`)
-    const result = await this.auditLogService.deleteOlderThanAuditLogs(ctx.tenantId, days)
+    const result = await this.auditLogService.deleteOlderThanAuditLogs(ctx, days)
     return {
       success: true,
       statusCode: 200,

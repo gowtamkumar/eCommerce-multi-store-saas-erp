@@ -1,3 +1,4 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
@@ -52,7 +53,7 @@ export class AuthService {
 
     const user = await this.userService.createUser(
       { ...registerCredentialDto, emailVerificationToken: verificationToken, role: UserRole.USER },
-      tenantId,
+      { tenantId } as RequestContextDto,
     )
 
     if (!user) {

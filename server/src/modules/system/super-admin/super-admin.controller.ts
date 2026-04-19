@@ -1,5 +1,6 @@
 import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
@@ -9,12 +10,14 @@ import { ProductService } from '@/modules/admin/catalog/product/services/product
 import { PageService } from '@/modules/admin/content/page/page.service'
 import { FilterUserDto } from '@/modules/admin/core/user/dtos'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { OrderService } from '@/modules/admin/sales/order/services/order.service'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
 import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Logger,
   Param,
   Patch,
@@ -26,8 +29,6 @@ import {
 import si from 'systeminformation'
 import { SubscriptionPlanService } from '../subscription-plan/subscription-plan.service'
 import { TrafficService } from './traffic.service'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { HttpCode } from '@nestjs/common'
 
 @Controller('super-admin')
 export class SuperAdminController {
@@ -62,7 +63,7 @@ export class SuperAdminController {
       emailVerificationToken: null,
       role: UserRole.SUPER_ADMIN,
       isAdmin: true,
-    })
+    } as any, { tenantId: 'system', userId: 'system' } as RequestContextDto)
 
     // Create Initial Subscription Plans if none exist
     const existingPlans = await this.planService.findAllSubscriptionPlans()
@@ -76,7 +77,7 @@ export class SuperAdminController {
         features: ['Unlimited Products', 'Custom Domains', 'Advanced Analytics', 'Priority Support'],
         isActive: true,
         isPopular: true,
-      })
+      }, { tenantId: 'system', userId: 'system' } as RequestContextDto)
 
       await this.planService.createSubscriptionPlan({
         name: 'Enterprise',
@@ -87,7 +88,7 @@ export class SuperAdminController {
         features: ['Priority 24/7 Support', 'Dedicated Account Manager', 'Custom API Access', 'SLA Guarantee'],
         isActive: true,
         isPopular: false,
-      })
+      }, { tenantId: 'system', userId: 'system' } as RequestContextDto)
     }
 
     return {

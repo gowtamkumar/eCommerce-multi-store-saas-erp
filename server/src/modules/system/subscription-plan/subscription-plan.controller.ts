@@ -25,7 +25,7 @@ export class SubscriptionPlanController {
     @Body() createDto: CreateSubscriptionPlanDto,
   ): Promise<BaseApiSuccessResponse<SubscriptionPlanResponseDto>> {
     this.logger.log(`User "${ctx.user?.username || 'System'}" called createSubscriptionPlan.`)
-    const plan = await this.planService.createSubscriptionPlan(createDto)
+    const plan = await this.planService.createSubscriptionPlan(createDto, ctx)
     return {
       success: true,
       statusCode: 201,

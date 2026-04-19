@@ -31,7 +31,7 @@ export class PurchaseOrderResponseDto {
   tenantId: string
 
   @Expose()
-  userId: string
+  userId?: string | null
 
   @Expose()
   createdAt: Date

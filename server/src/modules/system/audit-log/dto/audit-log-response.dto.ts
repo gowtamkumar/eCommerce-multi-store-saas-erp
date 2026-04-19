@@ -8,7 +8,7 @@ export class AuditLogResponseDto {
   tenantId: string;
 
   @Expose()
-  userId: string | null;
+  userId?: string | null;
 
   @Expose()
   action: string;

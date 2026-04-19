@@ -1,14 +1,16 @@
-import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
 @Entity('users')
 @Index(['username', 'tenantId'], { unique: true })
 @Index(['email', 'tenantId'], { unique: true })
 @Index(['tenantId'])
-export class UserEntity extends BaseEntity {
+export class UserEntity {
+  @PrimaryGeneratedColumn('uuid')
+  id: string
+  
   @Column()
   name: string
 
@@ -65,4 +67,13 @@ export class UserEntity extends BaseEntity {
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
+
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
+  createdAt: Date
+  
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
+  updatedAt: Date
+  
+  @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
+  deletedAt?: Date
 }

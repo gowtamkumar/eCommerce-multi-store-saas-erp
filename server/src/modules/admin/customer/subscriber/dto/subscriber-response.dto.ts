@@ -11,7 +11,7 @@ export class SubscriberResponseDto {
   isActive: boolean
 
   @Expose()
-  userId: string
+  userId?: string | null
 
   @Expose()
   createdAt: Date

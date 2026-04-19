@@ -188,7 +188,7 @@ export class UserController {
   ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.createUser.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createUser.`)
-    const user = await this.userService.createUser(createUserDto, ctx.tenantId)
+    const user = await this.userService.createUser(createUserDto, ctx)
 
     return {
       success: true,

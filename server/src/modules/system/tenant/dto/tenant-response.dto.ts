@@ -45,7 +45,7 @@ export class TenantResponseDto {
   subscriptionEndsAt: Date | null;
 
   @Expose()
-  userId: string | null;
+  userId?: string | null;
 
   @Expose()
   isExpired: boolean;

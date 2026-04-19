@@ -9,7 +9,7 @@ export class OrderReturnResponseDto {
   orderId: string
 
   @Expose()
-  userId: string
+  userId?: string | null
 
   @Expose()
   status: ReturnStatus

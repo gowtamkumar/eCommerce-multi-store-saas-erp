@@ -6,7 +6,7 @@ export class ShippingAddressResponseDto {
   id: string;
 
   @Expose()
-  userId: string;
+  userId?: string | null;
 
   @Expose()
   tenantId: string;
