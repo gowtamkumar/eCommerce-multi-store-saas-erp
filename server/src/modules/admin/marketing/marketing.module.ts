@@ -5,4 +5,4 @@ import { CampaignModule } from './campaign/campaign.module'
   imports: [CampaignModule],
   exports: [CampaignModule],
 })
-export class MarketingModule {}
+export class MarketingModule { }

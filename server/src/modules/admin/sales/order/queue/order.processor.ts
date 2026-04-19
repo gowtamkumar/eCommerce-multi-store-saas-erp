@@ -4,6 +4,7 @@ import { Logger } from '@nestjs/common'
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { SmsService } from '@/modules/admin/operations/infra/sms/sms.service'
+import { PushService } from '@/modules/admin/operations/infra/push/push.service'
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderService } from '../services/order.service'
 
@@ -15,6 +16,7 @@ export class OrderProcessor extends WorkerHost {
     private readonly invoiceService: InvoiceService,
     private readonly mailService: MailService,
     private readonly smsService: SmsService,
+    private readonly pushService: PushService,
     private readonly orderService: OrderService,
   ) {
     super()
@@ -75,6 +77,25 @@ export class OrderProcessor extends WorkerHost {
         } catch (smsError) {
           this.logger.error(`Failed to send SMS notification for order ${orderId}`, smsError.stack)
           // Don't throw - we don't want to fail the whole job if only SMS fails
+        }
+      }
+
+      // 3. Send Web Push Notification (if linked to a user)
+      if (orderWithRelations.userId) {
+        try {
+          const brandName = orderWithRelations.tenant?.storeName || 'our store'
+          await this.pushService.sendToUser(
+            orderWithRelations.userId,
+            {
+              title: `Order #${orderWithRelations.id} Confirmed`,
+              body: `Thank you for shopping at ${brandName}. Your order total is ${orderWithRelations.currency} ${Number(orderWithRelations.totalAmount).toFixed(2)}.`,
+              url: `/account/orders/${orderWithRelations.id}`,
+            },
+            tenantId,
+          )
+          this.logger.log(`Push notification triggered successfully for order ${orderId}`)
+        } catch (pushError) {
+          this.logger.error(`Failed to trigger push notification for order ${orderId}`, pushError.stack)
         }
       }
     } else {

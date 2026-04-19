@@ -116,16 +116,17 @@ export class CampaignProcessor extends WorkerHost {
       } else if (campaign.type === CampaignType.SMS && recipient.phone) {
         const res = await this.smsService.sendSms(recipient.phone, message.text, tenantId)
         success = res.success
-      } else if (
-        campaign.type === CampaignType.PUSH &&
-        (recipient.pushToken || recipient.fcmToken)
-      ) {
-        const res = await this.pushService.sendPushNotification(
-          recipient.pushToken || recipient.fcmToken,
-          { title: message.title, body: message.body, imageUrl: message.imageUrl },
-          tenantId,
-        )
-        success = res.success
+      } else if (campaign.type === CampaignType.PUSH) {
+        try {
+          await this.pushService.sendToUser(
+            userId,
+            { title: message.title, body: message.body, imageUrl: message.imageUrl },
+            tenantId,
+          )
+          success = true
+        } catch (e) {
+          success = false
+        }
       }
 
       if (success) {

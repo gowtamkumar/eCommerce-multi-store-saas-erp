@@ -6,6 +6,8 @@ import Script from "next/script";
 import "../styles/typography.css";
 import "./globals.css";
 
+import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+
 // const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 // const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 
@@ -65,6 +67,7 @@ export default async function RootLayout({
         <AuthProvider>
           <SettingsProvider initialSettings={settings}>
             <ToasterProvider />
+            <PushNotificationPrompt />
             {children}
           </SettingsProvider>
         </AuthProvider>
