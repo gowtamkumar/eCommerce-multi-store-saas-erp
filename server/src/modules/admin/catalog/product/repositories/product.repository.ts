@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ProductEntity } from '../entities/product.entity'
+import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum'
 
 @Injectable()
 export class ProductRepository {
@@ -239,13 +240,13 @@ export class ProductRepository {
         'brand.name',
       ])
 
-    if (targetType === 'SPECIFIC_PRODUCT' && targetId) {
+    if (targetType === PromotionTargetType.SPECIFIC_PRODUCT && targetId) {
       query.andWhere('product.id = :id', { id: targetId })
       const product = await query.getOne()
       return product ? [product] : []
-    } else if (targetType === 'SPECIFIC_CATEGORY' && targetId) {
+    } else if (targetType === PromotionTargetType.SPECIFIC_CATEGORY && targetId) {
       query.andWhere('product.categoryId = :categoryId', { categoryId: targetId })
-    } else if (targetType === 'SPECIFIC_BRAND' && targetId) {
+    } else if (targetType === PromotionTargetType.SPECIFIC_BRAND && targetId) {
       query.andWhere('product.brandId = :brandId', { brandId: targetId })
     }
 

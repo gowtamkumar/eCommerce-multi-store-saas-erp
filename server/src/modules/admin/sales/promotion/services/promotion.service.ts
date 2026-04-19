@@ -1,3 +1,4 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
@@ -7,7 +8,6 @@ import { PromotionEntity } from '../entities/promotion.entity'
 import { PromotionTargetType } from '../enums/promotion-target-type.enum'
 import { PromotionType } from '../enums/promotion-type.enum'
 import { PromotionRepository } from '../repositories/promotion.repository'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class PromotionService {
@@ -198,12 +198,13 @@ export class PromotionService {
       async () => {
         const now = new Date()
         const promotions = await this.promotionRepository.findActivePromotions(tenantId, now)
+        this.logger.log(`Found ${promotions.length} active promotions for tenant: ${tenantId}`)
 
         if (!promotions.length) {
           return { promotions: [], offerGroups: [] }
         }
 
-        // Fetch products for ALL promotions in PARALLEL (was sequential N+1 loop)
+        // Fetch products for ALL promotions in PARALLEL
         const productResults = await Promise.all(
           promotions.map((promo) =>
             this.productRepository.findOfferProducts({
@@ -221,12 +222,17 @@ export class PromotionService {
 
         // Build enriched offer groups — filter out empty groups
         const offerGroups = promotions
-          .map((promotion, i) => ({
-            promotion,
-            products: productResults[i].map((p) => this.enrichProductWithPromo(p, promotion)),
-          }))
+          .map((promotion, i) => {
+            const products = productResults[i].map((p) => this.enrichProductWithPromo(p, promotion))
+            this.logger.log(`Promotion "${promotion.name}" has ${products.length} products.`)
+            return {
+              promotion,
+              products,
+            }
+          })
           .filter((g) => g.products.length > 0)
 
+        this.logger.log(`Returning ${offerGroups.length} offer groups after filtering empty ones.`)
         return { promotions, offerGroups }
       },
       900, // 15 minutes — invalidated on write; read-heavy endpoint

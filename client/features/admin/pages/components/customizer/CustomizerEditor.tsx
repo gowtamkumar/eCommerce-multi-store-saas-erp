@@ -107,6 +107,12 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
     });
   }, []);
 
+  const handleUpdateSections = useCallback(
+    (sections: CustomizerSection[]) =>
+      setData(prev => ({ ...prev, content: { ...prev.content, sections } })),
+    [],
+  );
+
   return (
     <div className="h-screen flex flex-col bg-slate-100 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100">
       {/* Header */}
@@ -178,7 +184,7 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
                 sections={data.content.sections}
                 selectedId={selectedSectionId}
                 onSelect={setSelectedSectionId}
-                onUpdate={useCallback((sections: CustomizerSection[]) => setData({ ...data, content: { ...data.content, sections } }), [data, setData])}
+                onUpdate={handleUpdateSections}
               />
             ) : (
               <PageSettings
