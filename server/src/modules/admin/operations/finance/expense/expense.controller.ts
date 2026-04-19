@@ -8,6 +8,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   Patch,
   Post,
@@ -25,6 +26,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 @Controller('expenses')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ExpenseController {
+  private readonly logger = new Logger(ExpenseController.name)
+
   constructor(private readonly expenseService: ExpenseService) {}
 
   @Post()
@@ -33,6 +36,7 @@ export class ExpenseController {
     @Body() createExpenseDto: CreateExpenseDto,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<ExpenseResponseDto>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createExpense.`)
     const result = await this.expenseService.createExpense(createExpenseDto, ctx)
     return {
       success: true,
@@ -51,6 +55,7 @@ export class ExpenseController {
     @Query('category') category?: string,
     @Query('q') q?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllExpenses.`)
     const result = await this.expenseService.findAllExpenses(ctx, {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
@@ -71,6 +76,7 @@ export class ExpenseController {
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<ExpenseResponseDto>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneExpense.`)
     const result = await this.expenseService.findOneExpense(id, ctx)
     return {
       success: true,
@@ -87,6 +93,7 @@ export class ExpenseController {
     @Body() updateExpenseDto: UpdateExpenseDto,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<ExpenseResponseDto>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateExpense.`)
     const result = await this.expenseService.updateExpense(id, updateExpenseDto, ctx)
     return {
       success: true,
@@ -102,6 +109,7 @@ export class ExpenseController {
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<null>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeExpense.`)
     await this.expenseService.removeExpense(id, ctx)
     return {
       success: true,

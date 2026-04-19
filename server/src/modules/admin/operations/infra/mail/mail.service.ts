@@ -1,3 +1,4 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
@@ -5,7 +6,6 @@ import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as nodemailer from 'nodemailer'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class MailService {

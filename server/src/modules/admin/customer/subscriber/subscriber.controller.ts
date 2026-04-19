@@ -5,7 +5,7 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Logger, Post, Query, UseGuards } from '@nestjs/common'
 import { SubscriberResponseDto } from './dto/subscriber-response.dto'
 import { CreateSubscriberDto } from './dto/subscriber.dto'
 import { SubscriberService } from './subscriber.service'
@@ -14,6 +14,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Controller('subscribers')
 export class SubscriberController {
+  private readonly logger = new Logger(SubscriberController.name)
+
   constructor(private readonly subscriberService: SubscriberService) {}
 
   @Post()
@@ -21,6 +23,7 @@ export class SubscriberController {
     @Body() createSubscriberDto: CreateSubscriberDto,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SubscriberResponseDto>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createSubscriber.`)
     const result = await this.subscriberService.createSubscriber(createSubscriberDto, ctx)
     return {
       success: true,
@@ -44,6 +47,7 @@ export class SubscriberController {
     @Query() filterDto: any,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SubscriberResponseDto[]>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllSubscribers.`)
     const { subscribers, total } = await this.subscriberService.findAllSubscribers(
       filterDto, 
       ctx
