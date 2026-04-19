@@ -120,10 +120,11 @@ export class ProductRepository {
     return this.repo.findOne({ where: { slug, tenantId } })
   }
 
-  async createAndSave(data: any, tenantId: string): Promise<ProductEntity> {
+  async createAndSave(data: any, tenantId: string, userId?: string): Promise<ProductEntity> {
     const product = this.repo.create({
       ...data,
       tenantId,
+      userId,
       stock: 0,
     } as ProductEntity)
     return this.repo.save(product)

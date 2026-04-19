@@ -54,9 +54,6 @@ export class FaqEntity extends BaseEntity {
   @JoinColumn({ name: 'page_id' })
   page: PageEntity
 
-  @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string
-
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity

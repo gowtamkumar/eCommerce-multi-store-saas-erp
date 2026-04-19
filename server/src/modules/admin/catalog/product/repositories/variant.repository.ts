@@ -30,6 +30,7 @@ export class ProductVariantRepository {
     variantDto: any,
     productId: string,
     tenantId: string,
+    userId?: string,
     manager?: any,
   ): Promise<ProductVariantEntity> {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
@@ -37,6 +38,7 @@ export class ProductVariantRepository {
       ...variantDto,
       productId,
       tenantId,
+      userId,
       stock: 0,
     } as ProductVariantEntity)
     return repo.save(variant)
@@ -46,6 +48,7 @@ export class ProductVariantRepository {
     variantDto: any,
     productId: string,
     tenantId: string,
+    userId?: string,
     manager?: any,
   ): Promise<ProductVariantEntity> {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
@@ -53,6 +56,7 @@ export class ProductVariantRepository {
       ...variantDto,
       productId,
       tenantId,
+      userId,
     } as ProductVariantEntity)
     return repo.save(variant)
   }

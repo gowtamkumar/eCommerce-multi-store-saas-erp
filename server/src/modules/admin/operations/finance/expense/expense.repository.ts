@@ -19,9 +19,8 @@ export class ExpenseRepository {
     private readonly repo: Repository<ExpenseEntity>,
   ) {}
 
-  async createAndSave(dto: any, tenantId: string): Promise<ExpenseEntity> {
-    console.log(dto)
-    const expense = this.repo.create({ ...dto, tenantId } as ExpenseEntity)
+  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<ExpenseEntity> {
+    const expense = this.repo.create({ ...dto, tenantId, userId } as ExpenseEntity)
     return this.repo.save(expense)
   }
 

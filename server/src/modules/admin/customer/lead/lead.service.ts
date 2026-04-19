@@ -17,7 +17,7 @@ export class LeadService {
   async createLead(dto: CreateLeadDto, ctx: RequestContextDto): Promise<LeadEntity> {
     this.logger.log(`${this.createLead.name} Service Called`)
     const tenantId = ctx.tenantId
-    const lead = await this.leadRepository.createAndSave(dto, tenantId)
+    const lead = await this.leadRepository.createAndSave(dto, tenantId, ctx.userId)
     await this.cache.delCache('leads:list', tenantId)
     return lead
   }

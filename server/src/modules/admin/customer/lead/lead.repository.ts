@@ -38,8 +38,8 @@ export class LeadRepository {
     return this.repo.findOne({ where: { id, tenantId } })
   }
 
-  async createAndSave(dto: any, tenantId: string): Promise<LeadEntity> {
-    const lead = this.repo.create({ ...dto, tenantId } as LeadEntity)
+  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<LeadEntity> {
+    const lead = this.repo.create({ ...dto, tenantId, userId } as LeadEntity)
     return this.repo.save(lead)
   }
 

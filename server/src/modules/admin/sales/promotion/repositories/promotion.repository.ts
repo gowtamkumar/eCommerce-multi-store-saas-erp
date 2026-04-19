@@ -56,10 +56,11 @@ export class PromotionRepository {
     })
   }
 
-  async createAndSave(dto: any, tenantId: string): Promise<PromotionEntity> {
+  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<PromotionEntity> {
     const promotion = this.repo.create({
       ...dto,
       tenantId,
+      userId,
     } as PromotionEntity)
     return await this.repo.save(promotion)
   }

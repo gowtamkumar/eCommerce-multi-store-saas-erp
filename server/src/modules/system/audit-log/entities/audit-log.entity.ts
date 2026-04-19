@@ -14,9 +14,6 @@ export class AuditLogEntity extends BaseEntity {
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 
-  @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string
-
   /** e.g. CREATE, UPDATE, DELETE, LOGIN, LOGOUT */
   @Column({ type: 'varchar', length: 100 })
   action: string

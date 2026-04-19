@@ -50,8 +50,8 @@ export class CategoryRepository {
       .getRawMany()
   }
 
-  async createAndSave(data: Partial<CategoryEntity>): Promise<CategoryEntity> {
-    const category = this.repo.create(data as CategoryEntity)
+  async createAndSave(data: Partial<CategoryEntity>, userId?: string): Promise<CategoryEntity> {
+    const category = this.repo.create({ ...data, userId } as CategoryEntity)
     return this.repo.save(category)
   }
 

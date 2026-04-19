@@ -54,7 +54,7 @@ export class InventoryTransactionService {
       }
     }
 
-    const transaction = await this.repository.createAndSave(dto, tenantId, manager)
+    const transaction = await this.repository.createAndSave(dto, tenantId, ctx.userId, manager)
 
     // Invalidate inventory caches
     await this.cacheService.delCache(`inventory:list`, tenantId)

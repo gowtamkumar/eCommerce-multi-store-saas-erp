@@ -82,10 +82,12 @@ export class TenantRepository {
 
   async createAndSave(
     dto: Partial<TenantEntity>,
+    userId?: string,
     subscriptionPlan?: any,
   ): Promise<TenantEntity> {
     const tenant = this.repo.create({
       ...dto,
+      userId,
       subscriptionPlan,
     })
     return await this.repo.save(tenant)

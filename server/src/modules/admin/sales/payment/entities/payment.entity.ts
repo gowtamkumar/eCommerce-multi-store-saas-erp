@@ -3,7 +3,7 @@ import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('payments')
 @Index(['tenantId', 'createdAt'])
@@ -17,9 +17,6 @@ export class PaymentEntity extends BaseEntity {
   order: OrderEntity
 
   // TODO: Add user entity and relation
-  @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string
-
   // @ManyToOne(() => UserEntity, { onDelete: 'SET NULL' })
   // @JoinColumn({ name: 'user_id' })
   // user: UserEntity;

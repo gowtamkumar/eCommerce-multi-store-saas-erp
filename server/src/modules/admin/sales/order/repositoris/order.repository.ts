@@ -14,6 +14,12 @@ export class OrderRepository {
     private readonly repo: Repository<OrderEntity>,
   ) { }
 
+  async createAndSave(data: any, tenantId: string, userId?: string, manager?: any): Promise<OrderEntity> {
+    const repo = manager ? manager.getRepository(OrderEntity) : this.repo
+    const order = repo.create({ ...data, tenantId, userId })
+    return repo.save(order)
+  }
+
   async findOrderById(id: string, tenantId: string): Promise<OrderEntity | null> {
     return await this.repo.findOne({
       where: { id, tenantId },

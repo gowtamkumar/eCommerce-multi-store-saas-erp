@@ -46,11 +46,12 @@ export class CouponRepository {
       .getManyAndCount()
   }
 
-  async createAndSave(dto: any, tenantId: string): Promise<CouponEntity> {
+  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<CouponEntity> {
     const coupon = this.repo.create({
       ...dto,
       code: dto.code.toUpperCase(),
       tenantId,
+      userId,
     } as any) as unknown as CouponEntity
     return await (this.repo.save(coupon) as Promise<CouponEntity>)
   }

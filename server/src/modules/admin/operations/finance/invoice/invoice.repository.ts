@@ -21,8 +21,9 @@ export class InvoiceRepository {
 
   async createAndSave(
     data: Partial<InvoiceEntity>,
+    userId?: string,
   ): Promise<InvoiceEntity> {
-    const invoice = this.repo.create(data as InvoiceEntity)
+    const invoice = this.repo.create({ ...data, userId } as InvoiceEntity)
     return this.repo.save(invoice)
   }
 

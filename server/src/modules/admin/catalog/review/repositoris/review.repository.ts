@@ -58,8 +58,8 @@ export class ReviewRepository {
     return this.repo.findOne({ where: { id, tenantId } })
   }
 
-  async createAndSave(dto: any, tenantId: string): Promise<ReviewEntity> {
-    const review = this.repo.create({ ...dto, tenantId } as ReviewEntity)
+  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<ReviewEntity> {
+    const review = this.repo.create({ ...dto, tenantId, userId } as ReviewEntity)
     return this.repo.save(review)
   }
 

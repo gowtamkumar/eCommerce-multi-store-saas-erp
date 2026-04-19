@@ -7,9 +7,6 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 @Entity('wishlists')
 @Index(['userId', 'productId', 'tenantId'], { unique: true })
 export class WishlistEntity extends BaseEntity {
-  @Column({ type: 'uuid', name: 'user_id' })
-  userId: string
-
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity

@@ -37,7 +37,7 @@ export class PromotionService {
       throw new ConflictException('Promotion with this slug already exists')
     }
 
-    const saved = await this.promotionRepository.createAndSave(createPromotionDto, tenantId)
+    const saved = await this.promotionRepository.createAndSave(createPromotionDto, tenantId, ctx.userId)
     // Invalidate all affected cache keys
     await Promise.all([
       this.cache.delCache('promotions:active', tenantId),

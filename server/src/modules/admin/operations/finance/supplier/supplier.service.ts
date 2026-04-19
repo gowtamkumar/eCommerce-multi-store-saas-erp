@@ -18,7 +18,7 @@ export class SupplierService {
   async createSupplier(dto: CreateSupplierDto, ctx: RequestContextDto): Promise<SupplierEntity> {
     this.logger.log(`${this.createSupplier.name} Service Called`)
     const tenantId = ctx.tenantId
-    const result = await this.repository.createAndSave(dto, tenantId)
+    const result = await this.repository.createAndSave(dto, tenantId, ctx.userId)
     await this.cacheService.delCache(`suppliers:list`, tenantId)
     return result
   }

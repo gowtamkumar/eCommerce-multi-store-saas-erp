@@ -37,9 +37,6 @@ export class PurchaseOrderItemEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 10, scale: 2, name: 'unit_price' })
   unitPrice: number
 
-  @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string
-
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity

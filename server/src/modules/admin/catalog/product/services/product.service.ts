@@ -329,7 +329,7 @@ export class ProductService {
       if (existing) throw new ConflictException('Product with this slug already exists')
 
       const { faqs, attributes, variants, ...productData } = createProductDto
-      const product = await this.productRepository.createAndSave(productData, tenantId)
+      const product = await this.productRepository.createAndSave(productData, tenantId, ctx.userId)
 
       const poItems = []
 
@@ -342,22 +342,23 @@ export class ProductService {
         })
       }
 
-      if (faqs && faqs.length > 0) {
-        await this.faqRepository.saveMultiple(faqs, product.id, tenantId, manager)
-      }
-
-      if (attributes && attributes.length > 0) {
-        await this.attributeRepository.saveMultiple(attributes, product.id, tenantId, manager)
-      }
-
-      if (variants && variants.length > 0) {
-        for (const variantDto of variants) {
-          const savedVariant = await this.variantRepository.saveNewVariant(
-            variantDto,
-            product.id,
-            tenantId,
-            manager,
-          )
+        if (faqs && faqs.length > 0) {
+          await this.faqRepository.saveMultiple(faqs, product.id, tenantId, ctx.userId, manager)
+        }
+  
+        if (attributes && attributes.length > 0) {
+          await this.attributeRepository.saveMultiple(attributes, product.id, tenantId, ctx.userId, manager)
+        }
+  
+        if (variants && variants.length > 0) {
+          for (const variantDto of variants) {
+            const savedVariant = await this.variantRepository.saveNewVariant(
+              variantDto,
+              product.id,
+              tenantId,
+              ctx.userId,
+              manager,
+            )
 
           // If this variant is default, ensure others are not (though handled in update usually)
           if (variantDto.isDefault) {
@@ -426,61 +427,62 @@ export class ProductService {
       await this.productRepository.updateAndSave(product, productData, manager)
 
       // 5. Update FAQs
-      if (faqs) {
-        await this.faqRepository.deleteByProductId(product.id, tenantId, manager)
-        if (faqs.length > 0) {
-          await this.faqRepository.saveMultiple(faqs, product.id, tenantId, manager)
-        }
-      }
-
-      // 6. Update Attributes
-      if (attributes) {
-        await this.attributeRepository.deleteByProductId(product.id, tenantId, manager)
-        if (attributes.length > 0) {
-          await this.attributeRepository.saveMultiple(attributes, product.id, tenantId, manager)
-        }
-      }
-
-      // 7. Update Variants & Handle POs
-      const poItems = []
-
-      if (variants) {
-        const existingVariants = await this.variantRepository.findByProductId(product.id, tenantId)
-        const existingVariantIds = existingVariants.map((v) => v.id)
-
-        console.log("variants", variants);
-
-        const incomingVariantsWithId = variants.filter((v: any) => v.id)
-        const incomingVariantIds = incomingVariantsWithId.map((v: any) => v.id)
-        const newVariants = variants.filter((v: any) => !v.id)
-
-        // 7a. Validate All Incoming SKUs (Unique within request)
-        const skusInRequest = variants.filter((v: any) => v.sku).map((v: any) => v.sku)
-        const uniqueSkusInRequest = new Set(skusInRequest)
-        if (uniqueSkusInRequest.size !== skusInRequest.length) {
-          throw new ConflictException('Duplicate SKUs found in the request')
-        }
-
-        // 7b. Delete Variants not present in the update (DO THIS FIRST to free up SKUs)
-        const toDeleteIds = existingVariantIds.filter((dbId) => !incomingVariantIds.includes(dbId))
-        if (toDeleteIds.length > 0) {
-          await this.variantRepository.deleteByIds(toDeleteIds, manager)
-        }
-
-        // 7c. Handle Existing Variants
-        for (const variantDto of incomingVariantsWithId) {
-          if (variantDto.sku) {
-            const duplicate = await this.variantRepository.findBySku(variantDto.sku, tenantId, manager, true)
-            if (duplicate && duplicate.productId !== product.id) {
-              throw new ConflictException(`SKU ${variantDto.sku} is already used by another product`)
-            }
+        if (faqs) {
+          await this.faqRepository.deleteByProductId(product.id, tenantId, manager)
+          if (faqs.length > 0) {
+            await this.faqRepository.saveMultiple(faqs, product.id, tenantId, ctx.userId, manager)
           }
-          await this.variantRepository.saveExistingVariant(
-            variantDto,
-            product.id,
-            tenantId,
-            manager,
-          )
+        }
+  
+        // 6. Update Attributes
+        if (attributes) {
+          await this.attributeRepository.deleteByProductId(product.id, tenantId, manager)
+          if (attributes.length > 0) {
+            await this.attributeRepository.saveMultiple(attributes, product.id, tenantId, ctx.userId, manager)
+          }
+        }
+  
+        // 7. Update Variants & Handle POs
+        const poItems = []
+  
+        if (variants) {
+          const existingVariants = await this.variantRepository.findByProductId(product.id, tenantId)
+          const existingVariantIds = existingVariants.map((v) => v.id)
+  
+          console.log("variants", variants);
+  
+          const incomingVariantsWithId = variants.filter((v: any) => v.id)
+          const incomingVariantIds = incomingVariantsWithId.map((v: any) => v.id)
+          const newVariants = variants.filter((v: any) => !v.id)
+  
+          // 7a. Validate All Incoming SKUs (Unique within request)
+          const skusInRequest = variants.filter((v: any) => v.sku).map((v: any) => v.sku)
+          const uniqueSkusInRequest = new Set(skusInRequest)
+          if (uniqueSkusInRequest.size !== skusInRequest.length) {
+            throw new ConflictException('Duplicate SKUs found in the request')
+          }
+  
+          // 7b. Delete Variants not present in the update (DO THIS FIRST to free up SKUs)
+          const toDeleteIds = existingVariantIds.filter((dbId) => !incomingVariantIds.includes(dbId))
+          if (toDeleteIds.length > 0) {
+            await this.variantRepository.deleteByIds(toDeleteIds, manager)
+          }
+  
+          // 7c. Handle Existing Variants
+          for (const variantDto of incomingVariantsWithId) {
+            if (variantDto.sku) {
+              const duplicate = await this.variantRepository.findBySku(variantDto.sku, tenantId, manager, true)
+              if (duplicate && duplicate.productId !== product.id) {
+                throw new ConflictException(`SKU ${variantDto.sku} is already used by another product`)
+              }
+            }
+            await this.variantRepository.saveExistingVariant(
+              variantDto,
+              product.id,
+              tenantId,
+              ctx.userId,
+              manager,
+            )
 
           if (variantDto.isDefault) {
             await manager.update(ProductVariantEntity, { productId: product.id, tenantId, id: Not(variantDto.id) }, { isDefault: false })
@@ -510,6 +512,7 @@ export class ProductService {
             variantDto,
             product.id,
             tenantId,
+            ctx.userId,
             manager,
           )
 

@@ -16,10 +16,11 @@ export class SupplierPaymentRepository {
 
   async createAndSave(
     data: Partial<SupplierPaymentEntity>,
+    userId?: string,
     manager?: EntityManager,
   ): Promise<SupplierPaymentEntity> {
     const repo = this.getRepo(manager)
-    const payment = repo.create(data as SupplierPaymentEntity)
+    const payment = repo.create({ ...data, userId } as SupplierPaymentEntity)
     return repo.save(payment)
   }
 

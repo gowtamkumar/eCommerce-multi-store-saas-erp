@@ -41,9 +41,6 @@ export class SubscriptionPlanEntity extends BaseEntity {
   @OneToMany(() => TenantEntity, (tenant) => tenant.subscriptionPlan)
   tenants: TenantEntity[]
 
-  @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string
-
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity

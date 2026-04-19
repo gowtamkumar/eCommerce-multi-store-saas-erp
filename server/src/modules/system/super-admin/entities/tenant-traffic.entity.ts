@@ -17,9 +17,6 @@ export class TenantTrafficEntity extends BaseEntity {
   @Column({ type: 'timestamptz', name: 'last_updated', default: () => 'CURRENT_TIMESTAMP' })
   lastUpdated: Date
 
-  @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string
-
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity

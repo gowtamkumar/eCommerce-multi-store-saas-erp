@@ -25,7 +25,7 @@ export class FaqService {
   async createFaq(createFaqDto: CreateFaqDto, ctx: RequestContextDto): Promise<FaqEntity> {
     this.logger.log(`${this.createFaq.name} Service Called`)
     const tenantId = ctx.tenantId
-    const result = await this.faqRepository.createAndSave(createFaqDto, tenantId)
+    const result = await this.faqRepository.createAndSave(createFaqDto, tenantId, ctx.userId)
     await this.invalidateCache(tenantId)
     return result
   }

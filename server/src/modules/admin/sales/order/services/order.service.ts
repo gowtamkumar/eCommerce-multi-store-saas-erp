@@ -122,7 +122,7 @@ export class OrderService {
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
         orderNotes: createOrderDto.orderNotes,
-        userId: user?.id,
+        userId: ctx.userId || user?.id,
         tenantId,
         deliveryZone: createOrderDto.shippingZone,
       })

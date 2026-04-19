@@ -46,8 +46,8 @@ export class BrandRepository {
       .getRawMany()
   }
 
-  async createAndSave(data: Partial<BrandEntity>): Promise<BrandEntity> {
-    const brand = this.repo.create(data as BrandEntity)
+  async createAndSave(data: Partial<BrandEntity>, userId?: string): Promise<BrandEntity> {
+    const brand = this.repo.create({ ...data, userId } as BrandEntity)
     return this.repo.save(brand)
   }
 

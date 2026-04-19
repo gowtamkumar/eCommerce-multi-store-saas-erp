@@ -60,8 +60,8 @@ export class InvoiceService {
         issueDate: createInvoiceDto.issueDate ? new Date(createInvoiceDto.issueDate) : new Date(),
         dueDate: createInvoiceDto.dueDate ? new Date(createInvoiceDto.dueDate) : undefined,
         status: createInvoiceDto.status || InvoiceStatus.PENDING,
-        userId: order.userId,
       } as any,
+      ctx.userId || order.userId
     )
 
     await this.cacheService.delCache(`invoices:list`, tenantId)

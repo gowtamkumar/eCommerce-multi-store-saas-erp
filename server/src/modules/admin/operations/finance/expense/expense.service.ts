@@ -27,7 +27,7 @@ export class ExpenseService {
   async createExpense(createExpenseDto: CreateExpenseDto, ctx: RequestContextDto): Promise<ExpenseEntity> {
     this.logger.log(`${this.createExpense.name} Service Called`)
     const tenantId = ctx.tenantId
-    const result = await this.expenseRepository.createAndSave(createExpenseDto, tenantId)
+    const result = await this.expenseRepository.createAndSave(createExpenseDto, tenantId, ctx.userId)
     // Invalidate list cache on creation
     await this.cacheService.delCache('expenses:list', tenantId)
     return result

@@ -16,9 +16,6 @@ export class OrderReturnEntity extends BaseEntity {
   @JoinColumn({ name: 'order_id' })
   order: OrderEntity
 
-  @Column({ type: 'uuid', name: 'user_id' })
-  userId: string
-
   @ManyToOne(() => UserEntity, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity

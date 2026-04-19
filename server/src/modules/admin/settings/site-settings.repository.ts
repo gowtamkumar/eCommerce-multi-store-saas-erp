@@ -14,8 +14,8 @@ export class SiteSettingsRepository {
     return await this.repo.findOne({ where: { tenantId } })
   }
 
-  async createAndSave(dto: any, tenantId: string): Promise<SiteSettingsEntity> {
-    const settings = this.repo.create({ ...dto, tenantId } as any) as unknown as SiteSettingsEntity
+  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<SiteSettingsEntity> {
+    const settings = this.repo.create({ ...dto, tenantId, userId } as any) as unknown as SiteSettingsEntity
     return this.repo.save(settings)
   }
 

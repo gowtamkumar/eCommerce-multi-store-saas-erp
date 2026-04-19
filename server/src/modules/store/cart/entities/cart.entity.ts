@@ -8,8 +8,6 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm
 @Index(['userId', 'tenantId'])
 @Entity('carts')
 export class CartEntity extends BaseEntity {
-  @Column({ type: 'uuid', name: 'user_id' })
-  userId: string
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity

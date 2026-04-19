@@ -59,7 +59,8 @@ export class PageRepository {
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<PageEntity> {
     const tenantId = ctx.tenantId
-    const page = this.repo.create({ ...dto, tenantId } as PageEntity)
+    const userId = ctx.userId
+    const page = this.repo.create({ ...dto, tenantId, userId } as PageEntity)
     return this.repo.save(page)
   }
 

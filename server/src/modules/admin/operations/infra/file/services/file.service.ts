@@ -44,9 +44,9 @@ export class FilesService {
     return file
   }
 
-  async createFile(createFile: CreateFileDto, tenantId: string): Promise<FileEntity> {
+  async createFile(createFile: CreateFileDto, tenantId: string, userId?: string): Promise<FileEntity> {
     this.logger.log(`${this.createFile.name} Service Called`)
-    return this.fileRepository.createAndSave(createFile, tenantId)
+    return this.fileRepository.createAndSave(createFile, tenantId, userId)
   }
 
   async createPdf(createFile: CreateFileDto): Promise<FileEntity> {

@@ -19,11 +19,12 @@ export class AuditLogService {
     dto: CreateAuditLogDto,
     ipAddress?: string,
     userAgent?: string,
+    userId?: string,
   ): Promise<void> {
     this.logger.log(`${this.log.name} Service Called`)
     try {
       await this.auditLogRepository.createAndSave(tenantId, {
-        userId: dto.userId,
+        userId: dto.userId ?? userId,
         action: dto.action,
         entity: dto.entity,
         entityId: dto.entityId,

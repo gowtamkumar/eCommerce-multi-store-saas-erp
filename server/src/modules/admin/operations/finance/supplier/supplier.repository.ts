@@ -10,10 +10,11 @@ export class SupplierRepository {
     private readonly repo: Repository<SupplierEntity>,
   ) { }
 
-  async createAndSave(dto: any, tenantId: string): Promise<SupplierEntity> {
+  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<SupplierEntity> {
     const supplier = this.repo.create({
       ...dto,
       tenantId,
+      userId,
     } as SupplierEntity)
     return await this.repo.save(supplier)
   }

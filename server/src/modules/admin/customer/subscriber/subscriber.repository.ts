@@ -14,8 +14,8 @@ export class SubscriberRepository {
     return this.repo.findOne({ where: { email, tenantId } })
   }
 
-  async createAndSave(dto: any): Promise<SubscriberEntity> {
-    const subscriber = this.repo.create(dto as SubscriberEntity)
+  async createAndSave(dto: any, userId?: string): Promise<SubscriberEntity> {
+    const subscriber = this.repo.create({ ...dto, userId } as SubscriberEntity)
     return this.repo.save(subscriber)
   }
 

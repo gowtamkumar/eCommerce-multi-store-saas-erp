@@ -57,10 +57,11 @@ export class InventoryTransactionRepository {
   async createAndSave(
     dto: any,
     tenantId: string,
+    userId?: string,
     manager?: any,
   ): Promise<InventoryTransactionEntity> {
     const repo = manager ? manager.getRepository(InventoryTransactionEntity) : this.repo
-    const transaction = repo.create({ ...dto, tenantId })
+    const transaction = repo.create({ ...dto, tenantId, userId })
     return await repo.save(transaction)
   }
 }

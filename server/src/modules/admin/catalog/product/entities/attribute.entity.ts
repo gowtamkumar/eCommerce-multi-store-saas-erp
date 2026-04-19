@@ -21,9 +21,6 @@ export class ProductAttributeEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
 
-  @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string
-
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity

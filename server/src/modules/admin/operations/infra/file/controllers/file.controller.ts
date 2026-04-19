@@ -80,7 +80,7 @@ export class AdminMediaController {
     file: Express.Multer.File,
   ): Promise<BaseApiSuccessResponse<FileResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called uploadFile.`)
-    const newFile = await this.filesService.createFile(file, ctx.tenantId)
+    const newFile = await this.filesService.createFile(file, ctx.tenantId, ctx.userId)
     return {
       success: true,
       statusCode: 201,

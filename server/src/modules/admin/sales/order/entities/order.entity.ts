@@ -73,9 +73,6 @@ export class OrderEntity extends BaseEntity {
   @Column({ type: 'text', name: 'order_notes', nullable: true })
   orderNotes: string
 
-  @Column({ type: 'uuid', name: 'user_id' })
-  userId: string
-
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
 

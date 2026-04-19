@@ -75,7 +75,7 @@ export class SubscriptionBillingController {
     @Body('frontendUrl') frontendUrl?: string,
   ): Promise<BaseApiSuccessResponse<{ gatewayUrl: string }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called initiatePayment.`)
-    const data = await this.billingService.initiateSubscriptionPayment(ctx.tenantId, planId, billingCycle, frontendUrl)
+    const data = await this.billingService.initiateSubscriptionPayment(ctx.tenantId, planId, billingCycle, frontendUrl, ctx.userId)
     return {
       success: true,
       statusCode: 200,

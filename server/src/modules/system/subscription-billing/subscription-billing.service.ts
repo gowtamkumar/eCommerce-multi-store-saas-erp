@@ -67,6 +67,7 @@ export class SubscriptionBillingService {
     planId: string,
     billingCycle: SubscriptionBillingCycle = SubscriptionBillingCycle.MONTHLY,
     frontendUrl?: string,
+    userId?: string,
   ): Promise<{ gatewayUrl: string }> {
     this.logger.log(`Initiating subscription payment for tenant ${tenantId} and plan ${planId}`)
     const plan = await this.planRepository.findById(planId)
@@ -110,7 +111,7 @@ export class SubscriptionBillingService {
       status: PaymentStatus.PENDING,
       transactionId,
       billingDate: new Date(),
-    })
+    }, userId)
 
     // Actual SSLCommerz Integration
     const strategy = new SslCommerzPaymentStrategy()

@@ -40,7 +40,7 @@ export class PurchaseOrderService {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
     const tenantId = ctx.tenantId
     const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-    const result = await this.repository.createAndSave({ ...dto, totalAmount, tenantId } as any)
+    const result = await this.repository.createAndSave({ ...dto, totalAmount, tenantId } as any, ctx.userId)
     await this.cacheService.delCache(`po:list`, tenantId)
     return result
   }
@@ -211,6 +211,7 @@ export class PurchaseOrderService {
           tenantId,
           paymentDate: dto.paymentDate ? new Date(dto.paymentDate) : new Date(),
         },
+        ctx.userId,
         queryRunner.manager,
       )
 

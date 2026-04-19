@@ -68,9 +68,6 @@ export class TenantEntity extends BaseEntity {
   @Column({ name: 'subscription_ends_at', type: 'timestamptz', nullable: true })
   subscriptionEndsAt: Date
 
-  @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  userId: string
-
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity

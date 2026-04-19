@@ -18,10 +18,11 @@ export class PurchaseOrderRepository {
 
   async createAndSave(
     data: Partial<PurchaseOrderEntity>,
+    userId?: string,
     manager?: EntityManager,
   ): Promise<PurchaseOrderEntity> {
     const repo = this.getRepo(manager)
-    const purchaseOrder = repo.create(data as PurchaseOrderEntity)
+    const purchaseOrder = repo.create({ ...data, userId } as PurchaseOrderEntity)
     return repo.save(purchaseOrder)
   }
 

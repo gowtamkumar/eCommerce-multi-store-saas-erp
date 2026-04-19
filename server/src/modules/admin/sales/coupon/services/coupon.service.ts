@@ -22,7 +22,7 @@ export class CouponService {
     const existing = await this.couponRepository.findByCode(createCouponDto.code, tenantId)
     if (existing) throw new BadRequestException('Coupon code already exists')
 
-    const result = await this.couponRepository.createAndSave(createCouponDto, tenantId)
+    const result = await this.couponRepository.createAndSave(createCouponDto, tenantId, ctx.userId)
     await this.cacheService.delCache('coupons:list', tenantId)
     return result
   }

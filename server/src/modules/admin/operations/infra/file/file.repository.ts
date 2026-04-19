@@ -35,8 +35,8 @@ export class FileRepository {
     return await this.repo.findOne({ where: { id, tenantId } })
   }
 
-  async createAndSave(dto: any, tenantId?: string): Promise<FileEntity> {
-    const file = this.repo.create({ ...dto, tenantId } as any) as unknown as FileEntity
+  async createAndSave(dto: any, tenantId?: string, userId?: string): Promise<FileEntity> {
+    const file = this.repo.create({ ...dto, tenantId, userId } as any) as unknown as FileEntity
     return await (this.repo.save(file) as Promise<FileEntity>)
   }
 

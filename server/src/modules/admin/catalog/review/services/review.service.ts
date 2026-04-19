@@ -16,7 +16,7 @@ export class ReviewService {
 
   async createReview(dto: CreateReviewDto, ctx: RequestContextDto): Promise<ReviewEntity> {
     this.logger.log(`${this.createReview.name} Service Called`)
-    const result = await this.reviewRepository.createAndSave({ ...dto, userId: ctx.userId }, ctx.tenantId)
+    const result = await this.reviewRepository.createAndSave(dto, ctx.tenantId, ctx.userId)
     await this.cacheService.delCache(`reviews:product:${dto.productId}`, ctx.tenantId)
     await this.cacheService.delCache('reviews:public', ctx.tenantId)
     return result

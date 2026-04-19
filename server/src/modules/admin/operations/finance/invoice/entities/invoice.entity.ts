@@ -40,10 +40,6 @@ export class InvoiceEntity extends BaseEntity {
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 
-  @Column({ type: 'uuid', name: 'user_id', nullable: true })
-  @Index()
-  userId: string
-
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity

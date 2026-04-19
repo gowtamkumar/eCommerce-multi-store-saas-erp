@@ -10,8 +10,8 @@ export class SubscriptionPlanRepository {
     private readonly repo: Repository<SubscriptionPlanEntity>,
   ) { }
 
-  async createAndSave(data: any): Promise<SubscriptionPlanEntity> {
-    const plan = this.repo.create(data) as any
+  async createAndSave(data: any, userId?: string): Promise<SubscriptionPlanEntity> {
+    const plan = this.repo.create({ ...data, userId }) as any
     return await this.repo.save(plan)
   }
 

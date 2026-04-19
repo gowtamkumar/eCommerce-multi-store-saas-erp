@@ -10,10 +10,11 @@ export class AuditLogRepository {
     private readonly repo: Repository<AuditLogEntity>,
   ) { }
 
-  async createAndSave(tenantId: string, data: any): Promise<void> {
+  async createAndSave(tenantId: string, data: any, userId?: string): Promise<void> {
     const entry = this.repo.create({
       ...data,
       tenantId,
+      userId,
     })
     await this.repo.save(entry)
   }

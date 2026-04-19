@@ -27,10 +27,10 @@ export class CategoryService {
       throw new ConflictException('Category with this slug already exists')
     }
 
-    const result = await this.categoryRepo.createAndSave({
-      ...createCategoryDto,
-      tenantId,
-    })
+    const result = await this.categoryRepo.createAndSave(
+      { ...createCategoryDto, tenantId },
+      ctx.userId
+    )
     await this.cache.delCache(`categories:list`, tenantId)
     await this.cache.delCache(`categories:stats`, tenantId)
     return result

@@ -37,9 +37,6 @@ export class ReviewEntity extends BaseEntity {
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 
-  @Column({ type: 'uuid', name: 'user_id' })
-  userId: string
-
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
