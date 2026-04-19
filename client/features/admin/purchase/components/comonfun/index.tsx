@@ -14,8 +14,7 @@ export const getStatusBadge = (status: string) => {
 
 
 export const getPaymentStatusBadge = (status: string) => {
-    const s = status?.toUpperCase();
-    switch (s) {
+    switch (status) {
         case PurchaseOrderPaymentStatus.PAID: return <span className="px-2 py-1 rounded-md text-[10px] font-black tracking-widest bg-emerald-100 text-emerald-600 uppercase border border-emerald-200 shadow-sm">Paid</span>;
         case PurchaseOrderPaymentStatus.PARTIAL: return <span className="px-2 py-1 rounded-md text-[10px] font-black tracking-widest bg-orange-100 text-orange-600 uppercase border border-orange-200 shadow-sm">Partial</span>;
         case PurchaseOrderPaymentStatus.PENDING:
