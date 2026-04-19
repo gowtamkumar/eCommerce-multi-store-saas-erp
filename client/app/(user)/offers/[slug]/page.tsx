@@ -24,8 +24,6 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 async function getData(slug: string) {
-    console.log("slug", slug);
-
     try {
         const res = await getPromotionBySlug(slug);
         return res.data;

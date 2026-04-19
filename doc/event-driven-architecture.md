@@ -204,8 +204,6 @@ export class OrderService {
 export class PaymentListener {
   @OnEvent('order.created')
   async handleOrderCreated(event: OrderCreatedEvent) {
-    console.log('Processing payment for:', event.orderId);
-
     const success = true; // simulate payment
 
     if (success) {

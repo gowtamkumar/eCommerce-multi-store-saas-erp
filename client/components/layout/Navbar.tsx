@@ -555,12 +555,10 @@ const Navbar = () => {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => {
-                        console.log("Mobile search query updated:", e.target.value);
                         setSearchQuery(e.target.value);
                         setIsSearchFocused(true);
                       }}
                       onFocus={() => {
-                        console.log("Mobile search focused");
                         setIsSearchFocused(true);
                       }}
                       placeholder="Search products..."
@@ -594,7 +592,6 @@ const Navbar = () => {
                             key={product.id}
                             href={`/products/${product.slug}`}
                             onClick={() => {
-                              console.log("Mobile search result clicked:", product.name);
                               handleSearchResultClick();
                               closeMobileMenu();
                             }}

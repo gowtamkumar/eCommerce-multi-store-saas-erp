@@ -46,7 +46,6 @@ export default function Customer() {
                 search: search
             });
             const res = await fetchAPI(`/users?${params.toString()}`);
-            console.log("res", res);
 
             if (res.success && res.data) {
                 setUsers(res.data || []);

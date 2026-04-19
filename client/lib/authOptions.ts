@@ -82,8 +82,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          console.log("before login");
-
           const data = await fetchAPI("/admin/login", {
             method: "POST",
             headers,
@@ -95,7 +93,6 @@ export const authOptions: NextAuthOptions = {
 
           if (data.success && data.data && data.data.user) {
             const user = data.data.user;
-            console.log("BACKEND /admin/login RAW USER PAYLOAD:", user);
             user.accessToken = data.data.accessToken;
             user.refreshToken = data.data.refreshToken;
             // Set expiry to 15 minutes from now (in seconds)
@@ -105,8 +102,6 @@ export const authOptions: NextAuthOptions = {
 
           throw new Error(data.message || "Authentication failed");
         } catch (error: unknown) {
-          console.log("error", error);
-
           const errorMessage =
             error instanceof Error
               ? error.message
@@ -124,7 +119,6 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, trigger, session }: any) {
       if (user) {
-        console.log("NEXTAUTH JWT INITIAL PAYLOAD USER:", user);
         return {
           ...token,
           id: user.id,

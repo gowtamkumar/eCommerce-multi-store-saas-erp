@@ -18,6 +18,33 @@ export class CartRepository {
     })
   }
 
+  async findAllAdminPaginated(
+    tenantId: string,
+    page: number,
+    limit: number,
+    search?: string,
+  ): Promise<{ carts: CartEntity[]; total: number }> {
+    const queryWithItems = this.repo
+      .createQueryBuilder('cart')
+      .leftJoinAndSelect('cart.user', 'user')
+      .innerJoinAndSelect('cart.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .where('cart.tenant_id = :tenantId', { tenantId })
+
+    if (search) {
+      queryWithItems.andWhere(
+        '(user.name ILIKE :search OR user.email ILIKE :search OR user.phone ILIKE :search)',
+        { search: `%${search}%` },
+      )
+    }
+
+    queryWithItems.orderBy('cart.updated_at', 'DESC')
+    queryWithItems.skip((page - 1) * limit).take(limit)
+
+    const [carts, total] = await queryWithItems.getManyAndCount()
+    return { carts, total }
+  }
+
   async createAndSave(ctx: RequestContextDto): Promise<CartEntity> {
     const cart = this.repo.create({
       userId: ctx.userId,

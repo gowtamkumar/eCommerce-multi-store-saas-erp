@@ -5,8 +5,6 @@ import { ArrowRight, CheckCircle2, Play } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MarketingHero({ data }: any) {
-  console.log("data", data);
-
   const content = data || {
     badge: 'Next-Gen eCommerce Platform',
     title: 'Launch Your Store in Seconds, Not Days',

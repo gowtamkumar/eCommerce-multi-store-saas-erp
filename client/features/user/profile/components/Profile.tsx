@@ -46,8 +46,6 @@ export default function Profile() {
 
                 if (session?.user?.id) {
                     const ordersData = await fetchAPI(`/orders/user/${session.user.id}`);
-                    console.log("ordersData", ordersData);
-
                     const user = session.user as any;
                     setStats({
                         totalOrders: ordersData.data?.length || 0,

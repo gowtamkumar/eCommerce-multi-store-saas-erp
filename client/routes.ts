@@ -25,6 +25,7 @@ export const navGroups = [
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.SUPER_ADMIN],
         items: [
             { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
+            { icon: ShoppingBag, label: 'Active Carts', href: '/admin/carts' },
             { icon: RotateCcw, label: 'Returns', href: '/admin/returns' },
             { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
             { icon: FileText, label: 'Invoices', href: '/admin/invoices' },

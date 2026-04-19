@@ -29,9 +29,6 @@ export function calculatePricing(price: number, discountAmount: number, discount
 
   const taxAmount = (discountedPrice * taxRate) / 100;
   const finalPrice = discountedPrice + taxAmount;
-
-  console.log("finalPrice", finalPrice);
-
   return {
     price: +price + Number(taxRate || 0),
     discountAmount,
@@ -71,7 +68,6 @@ export const handleCreatePathaoOrder = async (order: Order, setCreatingPathaoOrd
     });
 
     toast.success('Pathao order created successfully!');
-    console.log('Pathao order response:', response);
   } catch (error: any) {
     console.error('Failed to create Pathao order:', error);
     toast.error(error?.message || 'Failed to create Pathao order. Please check your courier settings.');

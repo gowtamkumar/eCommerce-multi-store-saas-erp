@@ -38,7 +38,6 @@ export default function PromotionDashboard() {
         setLoading(true);
         try {
             const res = await getPromotions(page, pagination.limit, search);
-            console.log("promotion", res);
             // Handle standard API response structure   
             if (res.success && res.data) {
                 const data = res.data.promotions || [];

@@ -11,7 +11,7 @@ export class PurchaseOrderRepository {
   constructor(
     @InjectRepository(PurchaseOrderEntity)
     private readonly repo: Repository<PurchaseOrderEntity>,
-  ) {}
+  ) { }
 
   private getRepo(manager?: EntityManager): Repository<PurchaseOrderEntity> {
     return manager ? manager.getRepository(PurchaseOrderEntity) : this.repo
@@ -43,8 +43,6 @@ export class PurchaseOrderRepository {
     status?: PurchaseOrderStatus,
     paymentStatus?: PurchaseOrderPaymentStatus,
   ): Promise<[PurchaseOrderEntity[], number]> {
-    console.log('status', status)
-
     const qb = this.repo
       .createQueryBuilder('po')
       .leftJoinAndSelect('po.supplier', 'supplier')

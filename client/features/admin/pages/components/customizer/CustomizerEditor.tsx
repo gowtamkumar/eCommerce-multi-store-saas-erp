@@ -64,8 +64,6 @@ export default function CustomizerEditor({ pageId, initialData }: CustomizerEdit
         typography: data.typography,
       };
 
-      console.log("payload", payload);
-
 
       if (isNewPage) {
         // Create new page with POST /pages

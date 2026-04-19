@@ -30,7 +30,7 @@ export class AuthService {
     private readonly tenantService: TenantService,
     private readonly configService: ConfigService,
     private readonly staffInvitationService: StaffInvitationService,
-  ) {}
+  ) { }
 
   async register(
     registerCredentialDto: RegisterCredentialDto,
@@ -61,8 +61,6 @@ export class AuthService {
     }
 
     // await this.mailService.sendVerificationEmail(user.email, verificationToken, tenantId)
-
-    // console.log('Verification email sent to', user.email);
 
     const tokens = await this.getTokens(user)
 

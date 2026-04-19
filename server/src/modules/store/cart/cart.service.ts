@@ -25,7 +25,7 @@ export class CartService {
     private readonly couponService: CouponService,
     private readonly promotionService: PromotionService,
     private readonly pricingEngine: PricingEngineService,
-  ) {}
+  ) { }
 
   async createOrGetCart(ctx: RequestContextDto): Promise<CartResponseDto> {
     this.logger.log(`${this.createOrGetCart.name} Service Called`)
@@ -44,6 +44,54 @@ export class CartService {
     }
 
     return cart
+  }
+
+  async findAllAdminCarts(
+    ctx: RequestContextDto,
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+  ): Promise<{ carts: any[]; total: number }> {
+    this.logger.log(`${this.findAllAdminCarts.name} Service Called`)
+    const tenantId = ctx.tenantId
+
+    const { carts, total } = await this.cartRepository.findAllAdminPaginated(
+      tenantId,
+      page,
+      limit,
+      search,
+    )
+
+    // We do a lightweight transform here to avoid triggering heavy promotions engine N times
+    // We'll just return the cart with summarized item count and rough total
+    const summarizedCarts = carts.map((cart) => {
+      let totalAmount = 0
+      let itemCount = 0
+
+      cart.items?.forEach((item) => {
+        itemCount += Number(item.quantity)
+        if (item.product) {
+          totalAmount += Number(item.product.price) * Number(item.quantity)
+        }
+      })
+
+      return {
+        id: cart.id,
+        customerName: cart.user?.name || 'Guest',
+        customerEmail: cart.user?.email || '',
+        customerPhone: cart.user?.phone || '',
+        itemCount,
+        totalAmount,
+        updatedAt: cart.updatedAt,
+        items: cart.items?.map((i) => ({
+          productName: i.product?.name,
+          quantity: i.quantity,
+          basePrice: i.product?.price,
+        })),
+      }
+    })
+
+    return { carts: summarizedCarts, total }
   }
 
   private async transformCart(cart: CartEntity, ctx: RequestContextDto): Promise<CartResponseDto> {

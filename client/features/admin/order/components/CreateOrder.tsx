@@ -221,8 +221,6 @@ export default function CreateOrder() {
         // Phone validation
         const phoneRegex = /^01\d{9}$/;
         const phone = manualCustomer.phone;
-        console.log("phoneNumber", phone);
-
         if (!phoneRegex.test(phone)) {
             toast.error('Customer phone must be a valid 11-digit Bangladeshi number starting with 01');
             return;
@@ -248,9 +246,6 @@ export default function CreateOrder() {
                     quantity: item.quantity
                 }))
             };
-
-            console.log("orderData", orderData);
-
 
             const res = await fetchAPI('/orders', {
                 method: 'POST',

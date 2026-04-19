@@ -24,7 +24,6 @@ export default function SaaSLanding() {
         ]);
 
         setSettings(settingsRes.data);
-        console.log('Platform Settings Data:', settingsRes);
 
         setPlans(plansRes.data || plansRes || []);
       } catch (error) {
@@ -119,8 +118,8 @@ export default function SaaSLanding() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.length > 0 ? (
               plans.map((plan: any, idx: number) => {
-                const price = billingCycle === 'yearly' 
-                  ? (plan.yearlyPrice || parseFloat(plan.price) * 0.8) 
+                const price = billingCycle === 'yearly'
+                  ? (plan.yearlyPrice || parseFloat(plan.price) * 0.8)
                   : (plan.monthlyPrice || parseFloat(plan.price));
                 const isPopular = plan.isPopular || idx === 1;
 
@@ -128,8 +127,8 @@ export default function SaaSLanding() {
                   <div
                     key={plan.id}
                     className={`group p-8 rounded-[2.5rem] border transition-all duration-500 flex flex-col relative ${isPopular
-                        ? 'bg-white dark:bg-slate-900 border-brand-200 dark:border-brand-800 shadow-[0_32px_64px_-16px_rgba(79,70,229,0.15)] scale-105 z-10'
-                        : 'bg-white/50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900 backdrop-blur-sm'
+                      ? 'bg-white dark:bg-slate-900 border-brand-200 dark:border-brand-800 shadow-[0_32px_64px_-16px_rgba(79,70,229,0.15)] scale-105 z-10'
+                      : 'bg-white/50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900 backdrop-blur-sm'
                       }`}
                   >
                     {isPopular && (
@@ -169,8 +168,8 @@ export default function SaaSLanding() {
                     <Link
                       href={`/create-store?planId=${plan.id}&cycle=${billingCycle}`}
                       className={`block w-full py-5 rounded-2xl font-black text-[13px] uppercase tracking-widest transition-all shadow-xl text-center active:scale-[0.98] ${isPopular
-                          ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white hover:from-brand-700 hover:to-indigo-700 shadow-brand-500/30 hover:shadow-brand-500/50'
-                          : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100'
+                        ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white hover:from-brand-700 hover:to-indigo-700 shadow-brand-500/30 hover:shadow-brand-500/50'
+                        : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100'
                         }`}
                     >
                       Step into success

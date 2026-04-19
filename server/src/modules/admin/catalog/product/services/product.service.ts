@@ -39,7 +39,7 @@ export class ProductService {
     private readonly promotionService: PromotionService,
     private readonly dataSource: DataSource,
     @InjectQueue('product') private readonly productQueue: Queue,
-  ) {}
+  ) { }
 
   private async attachPromotions(product: any, ctx: RequestContextDto): Promise<AugmentedProduct> {
     this.logger.log(`${this.attachPromotions.name} Service Called`)
@@ -462,8 +462,6 @@ export class ProductService {
       if (variants) {
         const existingVariants = await this.variantRepository.findByProductId(product.id, tenantId)
         const existingVariantIds = existingVariants.map((v) => v.id)
-
-        console.log('variants', variants)
 
         const incomingVariantsWithId = variants.filter((v: any) => v.id)
         const incomingVariantIds = incomingVariantsWithId.map((v: any) => v.id)

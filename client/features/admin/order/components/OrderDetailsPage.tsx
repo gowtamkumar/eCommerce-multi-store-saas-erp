@@ -607,7 +607,6 @@ export default function OrderDetailsPage({
                                             </p> */}
                                             {(() => {
                                                 const returnStatus = getItemReturnStatus(item.product?.id || "", item.variant?.id);
-                                                console.log("returnStatus", returnStatus);
                                                 if (returnStatus) {
                                                     return (
                                                         <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase ${returnStatus === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
