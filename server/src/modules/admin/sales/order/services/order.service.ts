@@ -27,7 +27,6 @@ import { PaymentRepository } from '../../payment/repositoris/payment.repository'
 import { OrderRepository } from '../repositoris/order.repository'
 import { OrderProcessHelper } from './order-process.helper'
 
-
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(OrderService.name)
@@ -44,9 +43,12 @@ export class OrderService {
     private readonly cacheService: CacheService,
     private readonly orderProcessHelper: OrderProcessHelper,
     @InjectQueue('order') private readonly orderQueue: Queue,
-  ) { }
+  ) {}
 
-  async createOrder(createOrderDto: CreateOrderDto, ctx: RequestContextDto): Promise<{ message: string; success: boolean; order: OrderEntity }> {
+  async createOrder(
+    createOrderDto: CreateOrderDto,
+    ctx: RequestContextDto,
+  ): Promise<{ message: string; success: boolean; order: OrderEntity }> {
     this.logger.log(`${this.createOrder.name} Service Called`)
     const tenantId = ctx.tenantId
 
@@ -83,7 +85,7 @@ export class OrderService {
         if (!cart.items || cart.items.length === 0) {
           throw new BadRequestException('Order must contain at least one item')
         }
-        rawItems = cart.items.map(item => ({
+        rawItems = cart.items.map((item) => ({
           productId: item.product.id,
           variantId: item.variant?.id,
           quantity: item.quantity,
@@ -92,7 +94,9 @@ export class OrderService {
         preCouponTotal = cart.summary.subtotal - cart.summary.offer_discount
         cartId = (cart as any).id
       } else {
-        throw new BadRequestException('Invalid order source: no items provided and no user cart found.')
+        throw new BadRequestException(
+          'Invalid order source: no items provided and no user cart found.',
+        )
       }
 
       // 4. Transform & Deduct Stock
@@ -172,22 +176,34 @@ export class OrderService {
         relations: ['items', 'items.product', 'items.variant'],
       })
 
-      return { message: 'Order created successfully', success: true, order: finalOrder || savedOrder }
+      return {
+        message: 'Order created successfully',
+        success: true,
+        order: finalOrder || savedOrder,
+      }
     })
 
     // 10. Queue background jobs after successful transaction commit
     try {
-      await this.orderQueue.add('create-invoice', {
-        orderId: result.order.id,
-        tenantId,
-        paymentStatus: result.order.paymentStatus
-      }, { removeOnComplete: true })
+      await this.orderQueue.add(
+        'create-invoice',
+        {
+          orderId: result.order.id,
+          tenantId,
+          paymentStatus: result.order.paymentStatus,
+        },
+        { removeOnComplete: true },
+      )
 
       if (result.order.paymentMethod === PaymentMethod.COD) {
-        await this.orderQueue.add('send-order-notification', {
-          orderId: result.order.id,
-          tenantId
-        }, { removeOnComplete: true })
+        await this.orderQueue.add(
+          'send-order-notification',
+          {
+            orderId: result.order.id,
+            tenantId,
+          },
+          { removeOnComplete: true },
+        )
       }
     } catch (jobError) {
       this.logger.error('Failed to enqueue order background jobs', jobError)
@@ -231,8 +247,8 @@ export class OrderService {
     ctx: RequestContextDto,
     page: number = 1,
     limit: number = 10,
-    search?: string
-  ): Promise<{ orders: OrderEntity[], total: number }> {
+    search?: string,
+  ): Promise<{ orders: OrderEntity[]; total: number }> {
     this.logger.log(`${this.findByUserId.name} Service Called`)
     const tenantId = ctx.tenantId
     return await this.orderRepository.findByUserIdPaginated(userId, tenantId, page, limit, search)
@@ -244,7 +260,11 @@ export class OrderService {
     return await this.orderRepository.countByUserId(userId, tenantId)
   }
 
-  async updateOrder(id: string, updateOrderDto: UpdateOrderDto, ctx: RequestContextDto): Promise<OrderEntity> {
+  async updateOrder(
+    id: string,
+    updateOrderDto: UpdateOrderDto,
+    ctx: RequestContextDto,
+  ): Promise<OrderEntity> {
     this.logger.log(`${this.updateOrder.name} Service Called`)
     const tenantId = ctx.tenantId
     const order = await this.findOneOrder(id, ctx)
@@ -271,15 +291,18 @@ export class OrderService {
         })
 
         if (!existingPayment) {
-          const payment = await this.paymentRepository.createAndSave({
-            orderId: order.id,
-            transactionId,
-            amount: order.totalAmount,
-            currency: order.currency,
-            method: order.paymentMethod || PaymentMethod.COD,
-            status: PaymentStatus.COMPLETED,
-            gatewayResponse: { note: 'Manual update from admin dashboard' },
-          }, ctx)
+          const payment = await this.paymentRepository.createAndSave(
+            {
+              orderId: order.id,
+              transactionId,
+              amount: order.totalAmount,
+              currency: order.currency,
+              method: order.paymentMethod || PaymentMethod.COD,
+              status: PaymentStatus.COMPLETED,
+              gatewayResponse: { note: 'Manual update from admin dashboard' },
+            },
+            ctx,
+          )
         }
       }
 
@@ -312,17 +335,9 @@ export class OrderService {
 
       // Sync Invoice Status
       if (updateOrderDto.paymentStatus === PaymentStatus.PAID) {
-        await this.invoiceService.updateInvoiceStatusByOrderId(
-          id,
-          InvoiceStatus.PAID,
-          ctx,
-        )
+        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.PAID, ctx)
       } else if (updateOrderDto.status === OrderStatus.CANCELLED) {
-        await this.invoiceService.updateInvoiceStatusByOrderId(
-          id,
-          InvoiceStatus.CANCELLED,
-          ctx,
-        )
+        await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.CANCELLED, ctx)
       }
 
       await queryRunner.commitTransaction()
@@ -336,21 +351,25 @@ export class OrderService {
     }
   }
 
-
   async countByTenant(ctx: RequestContextDto): Promise<number> {
     this.logger.log(`${this.countByTenant.name} Service Called`)
     const tenantId = ctx.tenantId
     return await this.orderRepository.countByTenant(tenantId)
   }
 
-  async orderOverview(ctx?: RequestContextDto): Promise<{ totalOrders: number; pendingOrders: number; completedOrders: number; cancelledOrders: number }> {
+  async orderOverview(ctx?: RequestContextDto): Promise<{
+    totalOrders: number
+    pendingOrders: number
+    completedOrders: number
+    cancelledOrders: number
+  }> {
     const tenantId = ctx?.tenantId
     const cacheKey = tenantId ? `orders:overview:${tenantId}` : 'orders:overview:global'
     return this.cacheService.rememberCache(
       cacheKey,
       () => this.orderRepository.orderOverview(tenantId),
       300,
-      tenantId
+      tenantId,
     )
   }
 }

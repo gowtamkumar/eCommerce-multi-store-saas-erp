@@ -43,10 +43,12 @@ export class SuperAdminController {
     private readonly pageService: PageService,
     private readonly planService: SubscriptionPlanService,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   @Post('/setup')
-  async setup(@Body() body: any): Promise<BaseApiSuccessResponse<{ user: { name: string, username: string } }>> {
+  async setup(
+    @Body() body: any,
+  ): Promise<BaseApiSuccessResponse<{ user: { name: string; username: string } }>> {
     const { name, email, password, username, setupKey } = body
 
     // Security check
@@ -55,40 +57,60 @@ export class SuperAdminController {
       throw new UnauthorizedException('Invalid setup key')
     }
 
-    const superAdmin = await this.userService.createUser({
-      name,
-      email,
-      password,
-      username,
-      emailVerificationToken: null,
-      role: UserRole.SUPER_ADMIN,
-      isAdmin: true,
-    } as any, { tenantId: 'system', userId: 'system' } as RequestContextDto)
+    const superAdmin = await this.userService.createUser(
+      {
+        name,
+        email,
+        password,
+        username,
+        emailVerificationToken: null,
+        role: UserRole.SUPER_ADMIN,
+        isAdmin: true,
+      } as any,
+      { tenantId: 'system', userId: 'system' } as RequestContextDto,
+    )
 
     // Create Initial Subscription Plans if none exist
     const existingPlans = await this.planService.findAllSubscriptionPlans()
     if (existingPlans.length === 0) {
-      await this.planService.createSubscriptionPlan({
-        name: 'Pro Seller',
-        description: 'The essentials to get your store up and running with professional features.',
-        price: 29,
-        monthlyPrice: 29,
-        yearlyPrice: 290,
-        features: ['Unlimited Products', 'Custom Domains', 'Advanced Analytics', 'Priority Support'],
-        isActive: true,
-        isPopular: true,
-      }, { tenantId: 'system', userId: 'system' } as RequestContextDto)
+      await this.planService.createSubscriptionPlan(
+        {
+          name: 'Pro Seller',
+          description:
+            'The essentials to get your store up and running with professional features.',
+          price: 29,
+          monthlyPrice: 29,
+          yearlyPrice: 290,
+          features: [
+            'Unlimited Products',
+            'Custom Domains',
+            'Advanced Analytics',
+            'Priority Support',
+          ],
+          isActive: true,
+          isPopular: true,
+        },
+        { tenantId: 'system', userId: 'system' } as RequestContextDto,
+      )
 
-      await this.planService.createSubscriptionPlan({
-        name: 'Enterprise',
-        description: 'Scale your business with dedicated support and advanced infrastructure.',
-        price: 99,
-        monthlyPrice: 99,
-        yearlyPrice: 990,
-        features: ['Priority 24/7 Support', 'Dedicated Account Manager', 'Custom API Access', 'SLA Guarantee'],
-        isActive: true,
-        isPopular: false,
-      }, { tenantId: 'system', userId: 'system' } as RequestContextDto)
+      await this.planService.createSubscriptionPlan(
+        {
+          name: 'Enterprise',
+          description: 'Scale your business with dedicated support and advanced infrastructure.',
+          price: 99,
+          monthlyPrice: 99,
+          yearlyPrice: 990,
+          features: [
+            'Priority 24/7 Support',
+            'Dedicated Account Manager',
+            'Custom API Access',
+            'SLA Guarantee',
+          ],
+          isActive: true,
+          isPopular: false,
+        },
+        { tenantId: 'system', userId: 'system' } as RequestContextDto,
+      )
     }
 
     return {
@@ -250,9 +272,7 @@ export class SuperAdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/tenants/:id/analytics')
-  async getDetailedTenantAnalytics(
-    @Param('id') id: string,
-  ): Promise<BaseApiSuccessResponse<any>> {
+  async getDetailedTenantAnalytics(@Param('id') id: string): Promise<BaseApiSuccessResponse<any>> {
     try {
       const data = await this.tenantService.getDetailedAnalytics(id)
       return {
@@ -270,9 +290,7 @@ export class SuperAdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Get('/users')
-  async getAllUsers(
-    @Query() filterDto: FilterUserDto,
-  ): Promise<BaseApiSuccessResponse<any>> {
+  async getAllUsers(@Query() filterDto: FilterUserDto): Promise<BaseApiSuccessResponse<any>> {
     const [users, total] = await this.userService.findAllUsersCrossTenant(filterDto)
     const page = Number(filterDto.page) || 1
     const limit = Number(filterDto.limit) || 10
@@ -372,10 +390,10 @@ export class SuperAdminController {
   @Roles(UserRole.SUPER_ADMIN)
   @Post('/cache/clear-all')
   @HttpCode(200)
-  async clearCacheAll(
-    @Query('tenantId') tenantId?: string,
-  ): Promise<BaseApiSuccessResponse<null>> {
-    this.logger.verbose(`Super Admin called clearCacheAll${tenantId ? ` for tenant ${tenantId}` : ''}.`)
+  async clearCacheAll(@Query('tenantId') tenantId?: string): Promise<BaseApiSuccessResponse<null>> {
+    this.logger.verbose(
+      `Super Admin called clearCacheAll${tenantId ? ` for tenant ${tenantId}` : ''}.`,
+    )
     if (tenantId) {
       await this.cacheService.clearTenantCache(tenantId)
     } else {
@@ -384,7 +402,9 @@ export class SuperAdminController {
     return {
       success: true,
       statusCode: 200,
-      message: tenantId ? `Cache for tenant ${tenantId} cleared successfully` : 'Global system cache cleared successfully',
+      message: tenantId
+        ? `Cache for tenant ${tenantId} cleared successfully`
+        : 'Global system cache cleared successfully',
       data: null,
     }
   }

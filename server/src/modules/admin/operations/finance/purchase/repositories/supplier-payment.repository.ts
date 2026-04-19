@@ -9,7 +9,7 @@ export class SupplierPaymentRepository {
   constructor(
     @InjectRepository(SupplierPaymentEntity)
     private readonly repo: Repository<SupplierPaymentEntity>,
-  ) { }
+  ) {}
 
   private getRepo(manager?: EntityManager): Repository<SupplierPaymentEntity> {
     return manager ? manager.getRepository(SupplierPaymentEntity) : this.repo
@@ -21,7 +21,11 @@ export class SupplierPaymentRepository {
     manager?: EntityManager,
   ): Promise<SupplierPaymentEntity> {
     const repo = this.getRepo(manager)
-    const payment = repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId } as SupplierPaymentEntity)
+    const payment = repo.create({
+      ...data,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as SupplierPaymentEntity)
     return repo.save(payment)
   }
 

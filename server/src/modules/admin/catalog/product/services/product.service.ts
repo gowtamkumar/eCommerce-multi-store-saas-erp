@@ -39,7 +39,7 @@ export class ProductService {
     private readonly promotionService: PromotionService,
     private readonly dataSource: DataSource,
     @InjectQueue('product') private readonly productQueue: Queue,
-  ) { }
+  ) {}
 
   private async attachPromotions(product: any, ctx: RequestContextDto): Promise<AugmentedProduct> {
     this.logger.log(`${this.attachPromotions.name} Service Called`)
@@ -191,9 +191,17 @@ export class ProductService {
   }
 
   private generateSku(productSlug: string, combination: Record<string, string>): string {
-    const values = Object.values(combination).map(v => String(v).toLowerCase().replace(/[^a-z0-9]/g, '')).join('-')
+    const values = Object.values(combination)
+      .map((v) =>
+        String(v)
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, ''),
+      )
+      .join('-')
     const suffix = Math.random().toString(36).substring(2, 6).toUpperCase()
-    const base = values ? `${productSlug.toUpperCase()}-${values.toUpperCase()}` : productSlug.toUpperCase()
+    const base = values
+      ? `${productSlug.toUpperCase()}-${values.toUpperCase()}`
+      : productSlug.toUpperCase()
     return `${base}-${suffix}`
   }
 
@@ -279,7 +287,10 @@ export class ProductService {
     return await this.attachPromotions(product, ctx)
   }
 
-  async findLatestProducts(ctx: RequestContextDto, limit: number = 10): Promise<AugmentedProduct[]> {
+  async findLatestProducts(
+    ctx: RequestContextDto,
+    limit: number = 10,
+  ): Promise<AugmentedProduct[]> {
     this.logger.log(`${this.findLatestProducts.name} Service Called`)
     const tenantId = ctx.tenantId
     const cacheKey = `products:latest:${limit}`
@@ -342,26 +353,30 @@ export class ProductService {
         })
       }
 
-        if (faqs && faqs.length > 0) {
-          await this.faqRepository.saveMultiple(faqs, product.id, ctx, manager)
-        }
-  
-        if (attributes && attributes.length > 0) {
-          await this.attributeRepository.saveMultiple(attributes, product.id, ctx, manager)
-        }
-  
-        if (variants && variants.length > 0) {
-          for (const variantDto of variants) {
-            const savedVariant = await this.variantRepository.saveNewVariant(
-              variantDto,
-              product.id,
-              ctx,
-              manager,
-            )
+      if (faqs && faqs.length > 0) {
+        await this.faqRepository.saveMultiple(faqs, product.id, ctx, manager)
+      }
+
+      if (attributes && attributes.length > 0) {
+        await this.attributeRepository.saveMultiple(attributes, product.id, ctx, manager)
+      }
+
+      if (variants && variants.length > 0) {
+        for (const variantDto of variants) {
+          const savedVariant = await this.variantRepository.saveNewVariant(
+            variantDto,
+            product.id,
+            ctx,
+            manager,
+          )
 
           // If this variant is default, ensure others are not (though handled in update usually)
           if (variantDto.isDefault) {
-            await manager.update(ProductVariantEntity, { productId: product.id, id: Not(savedVariant.id) }, { isDefault: false })
+            await manager.update(
+              ProductVariantEntity,
+              { productId: product.id, id: Not(savedVariant.id) },
+              { isDefault: false },
+            )
           }
 
           if (variantDto.stock > 0) {
@@ -426,64 +441,70 @@ export class ProductService {
       await this.productRepository.updateAndSave(product, productData, manager)
 
       // 5. Update FAQs
-        if (faqs) {
-          await this.faqRepository.deleteByProductId(product.id, tenantId, manager)
-          if (faqs.length > 0) {
-            await this.faqRepository.saveMultiple(faqs, product.id, ctx, manager)
-          }
+      if (faqs) {
+        await this.faqRepository.deleteByProductId(product.id, tenantId, manager)
+        if (faqs.length > 0) {
+          await this.faqRepository.saveMultiple(faqs, product.id, ctx, manager)
         }
-  
-        // 6. Update Attributes
-        if (attributes) {
-          await this.attributeRepository.deleteByProductId(product.id, tenantId, manager)
-          if (attributes.length > 0) {
-            await this.attributeRepository.saveMultiple(attributes, product.id, ctx, manager)
-          }
+      }
+
+      // 6. Update Attributes
+      if (attributes) {
+        await this.attributeRepository.deleteByProductId(product.id, tenantId, manager)
+        if (attributes.length > 0) {
+          await this.attributeRepository.saveMultiple(attributes, product.id, ctx, manager)
         }
-  
-        // 7. Update Variants & Handle POs
-        const poItems = []
-  
-        if (variants) {
-          const existingVariants = await this.variantRepository.findByProductId(product.id, tenantId)
-          const existingVariantIds = existingVariants.map((v) => v.id)
-  
-          console.log("variants", variants);
-  
-          const incomingVariantsWithId = variants.filter((v: any) => v.id)
-          const incomingVariantIds = incomingVariantsWithId.map((v: any) => v.id)
-          const newVariants = variants.filter((v: any) => !v.id)
-  
-          // 7a. Validate All Incoming SKUs (Unique within request)
-          const skusInRequest = variants.filter((v: any) => v.sku).map((v: any) => v.sku)
-          const uniqueSkusInRequest = new Set(skusInRequest)
-          if (uniqueSkusInRequest.size !== skusInRequest.length) {
-            throw new ConflictException('Duplicate SKUs found in the request')
-          }
-  
-          // 7b. Delete Variants not present in the update (DO THIS FIRST to free up SKUs)
-          const toDeleteIds = existingVariantIds.filter((dbId) => !incomingVariantIds.includes(dbId))
-          if (toDeleteIds.length > 0) {
-            await this.variantRepository.deleteByIds(toDeleteIds, manager)
-          }
-  
-          // 7c. Handle Existing Variants
-          for (const variantDto of incomingVariantsWithId) {
-            if (variantDto.sku) {
-              const duplicate = await this.variantRepository.findBySku(variantDto.sku, tenantId, manager, true)
-              if (duplicate && duplicate.productId !== product.id) {
-                throw new ConflictException(`SKU ${variantDto.sku} is already used by another product`)
-              }
-            }
-            await this.variantRepository.saveExistingVariant(
-              variantDto,
-              product.id,
-              ctx,
+      }
+
+      // 7. Update Variants & Handle POs
+      const poItems = []
+
+      if (variants) {
+        const existingVariants = await this.variantRepository.findByProductId(product.id, tenantId)
+        const existingVariantIds = existingVariants.map((v) => v.id)
+
+        console.log('variants', variants)
+
+        const incomingVariantsWithId = variants.filter((v: any) => v.id)
+        const incomingVariantIds = incomingVariantsWithId.map((v: any) => v.id)
+        const newVariants = variants.filter((v: any) => !v.id)
+
+        // 7a. Validate All Incoming SKUs (Unique within request)
+        const skusInRequest = variants.filter((v: any) => v.sku).map((v: any) => v.sku)
+        const uniqueSkusInRequest = new Set(skusInRequest)
+        if (uniqueSkusInRequest.size !== skusInRequest.length) {
+          throw new ConflictException('Duplicate SKUs found in the request')
+        }
+
+        // 7b. Delete Variants not present in the update (DO THIS FIRST to free up SKUs)
+        const toDeleteIds = existingVariantIds.filter((dbId) => !incomingVariantIds.includes(dbId))
+        if (toDeleteIds.length > 0) {
+          await this.variantRepository.deleteByIds(toDeleteIds, manager)
+        }
+
+        // 7c. Handle Existing Variants
+        for (const variantDto of incomingVariantsWithId) {
+          if (variantDto.sku) {
+            const duplicate = await this.variantRepository.findBySku(
+              variantDto.sku,
+              tenantId,
               manager,
+              true,
             )
+            if (duplicate && duplicate.productId !== product.id) {
+              throw new ConflictException(
+                `SKU ${variantDto.sku} is already used by another product`,
+              )
+            }
+          }
+          await this.variantRepository.saveExistingVariant(variantDto, product.id, ctx, manager)
 
           if (variantDto.isDefault) {
-            await manager.update(ProductVariantEntity, { productId: product.id, tenantId, id: Not(variantDto.id) }, { isDefault: false })
+            await manager.update(
+              ProductVariantEntity,
+              { productId: product.id, tenantId, id: Not(variantDto.id) },
+              { isDefault: false },
+            )
           }
         }
 
@@ -495,14 +516,23 @@ export class ProductService {
           }
 
           // Check for conflicts (including soft-deleted)
-          const duplicate = await this.variantRepository.findBySku(variantDto.sku, tenantId, manager, true)
+          const duplicate = await this.variantRepository.findBySku(
+            variantDto.sku,
+            tenantId,
+            manager,
+            true,
+          )
           if (duplicate) {
             if (duplicate.productId !== product.id) {
-              throw new ConflictException(`Variant with SKU ${variantDto.sku} already exists in another product`)
+              throw new ConflictException(
+                `Variant with SKU ${variantDto.sku} already exists in another product`,
+              )
             } else {
               // If it belongs to same product but was soft-deleted, we might have a problem with the unique index
               // unless we use the existing ID. But here we assume it's a conflict.
-              throw new ConflictException(`SKU ${variantDto.sku} conflict with a deleted variant. Please use a different SKU.`)
+              throw new ConflictException(
+                `SKU ${variantDto.sku} conflict with a deleted variant. Please use a different SKU.`,
+              )
             }
           }
 
@@ -514,7 +544,11 @@ export class ProductService {
           )
 
           if (variantDto.isDefault) {
-            await manager.update(ProductVariantEntity, { productId: product.id, tenantId, id: Not(savedVariant.id) }, { isDefault: false })
+            await manager.update(
+              ProductVariantEntity,
+              { productId: product.id, tenantId, id: Not(savedVariant.id) },
+              { isDefault: false },
+            )
           }
 
           if (variantDto.stock > 0) {

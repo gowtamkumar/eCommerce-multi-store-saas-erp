@@ -11,18 +11,9 @@ import { StaffInvitationService } from './services/staff-invitation.service'
 import { UserService } from './services/user.service'
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([UserEntity, StaffInvitationEntity]),
-    MailModule,
-    CacheModule
-  ],
+  imports: [TypeOrmModule.forFeature([UserEntity, StaffInvitationEntity]), MailModule, CacheModule],
   controllers: [UserController],
-  providers: [
-    UserService,
-    StaffInvitationService,
-    UserRepository,
-    StaffInvitationRepository
-  ],
+  providers: [UserService, StaffInvitationService, UserRepository, StaffInvitationRepository],
   exports: [UserService, StaffInvitationService],
 })
 export class UserModule {}

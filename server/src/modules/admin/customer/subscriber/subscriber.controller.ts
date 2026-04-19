@@ -48,11 +48,8 @@ export class SubscriberController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SubscriberResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllSubscribers.`)
-    const { subscribers, total } = await this.subscriberService.findAllSubscribers(
-      filterDto, 
-      ctx
-    )
-    
+    const { subscribers, total } = await this.subscriberService.findAllSubscribers(filterDto, ctx)
+
     return {
       success: true,
       statusCode: 200,

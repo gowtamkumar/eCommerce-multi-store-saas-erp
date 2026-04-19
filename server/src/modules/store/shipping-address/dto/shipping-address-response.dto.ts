@@ -1,40 +1,40 @@
-import { Expose } from 'class-transformer';
-import { ShippingZoneType } from '@/common/enums/shipping-zone-type.enum';
+import { Expose } from 'class-transformer'
+import { ShippingZoneType } from '@/common/enums/shipping-zone-type.enum'
 
 export class ShippingAddressResponseDto {
   @Expose()
-  id: string;
+  id: string
 
   @Expose()
-  userId?: string | null;
+  userId?: string | null
 
   @Expose()
-  tenantId: string;
+  tenantId: string
 
   @Expose()
-  label: string;
+  label: string
 
   @Expose()
-  recipientName: string;
+  recipientName: string
 
   @Expose()
-  phone: string;
+  phone: string
 
   @Expose()
-  address: string;
+  address: string
 
   @Expose()
-  city: string;
+  city: string
 
   @Expose()
-  zone: ShippingZoneType;
+  zone: ShippingZoneType
 
   @Expose()
-  isDefault: boolean;
+  isDefault: boolean
 
   @Expose()
-  createdAt: Date;
+  createdAt: Date
 
   @Expose()
-  updatedAt: Date;
+  updatedAt: Date
 }

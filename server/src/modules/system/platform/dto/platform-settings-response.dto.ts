@@ -1,52 +1,52 @@
-import { Expose } from 'class-transformer';
+import { Expose } from 'class-transformer'
 
 export class PlatformSettingsResponseDto {
   @Expose()
-  id: string;
+  id: string
 
   @Expose()
-  brandName: string;
+  brandName: string
 
   @Expose()
-  brandLogo: string;
+  brandLogo: string
 
   @Expose()
-  supportEmail: string;
+  supportEmail: string
 
   @Expose()
   hero: {
-    badge: string;
-    title: string;
-    description: string;
-    primaryBtnText: string;
-    primaryBtnLink: string;
-    secondaryBtnText: string;
-    secondaryBtnLink: string;
-    image: string;
-  };
+    badge: string
+    title: string
+    description: string
+    primaryBtnText: string
+    primaryBtnLink: string
+    secondaryBtnText: string
+    secondaryBtnLink: string
+    image: string
+  }
 
   @Expose()
   features: Array<{
-    icon: string;
-    title: string;
-    description: string;
-  }>;
+    icon: string
+    title: string
+    description: string
+  }>
 
   @Expose()
   footer: {
-    description: string;
-    copyright: string;
+    description: string
+    copyright: string
     socials: {
-      facebook: string;
-      twitter: string;
-      instagram: string;
-      linkedin: string;
-    };
-  };
+      facebook: string
+      twitter: string
+      instagram: string
+      linkedin: string
+    }
+  }
 
   @Expose()
-  createdAt: Date;
+  createdAt: Date
 
   @Expose()
-  updatedAt: Date;
+  updatedAt: Date
 }

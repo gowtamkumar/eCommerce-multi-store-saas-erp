@@ -13,7 +13,7 @@ export class OrderRepository {
   constructor(
     @InjectRepository(OrderEntity)
     private readonly repo: Repository<OrderEntity>,
-  ) { }
+  ) {}
 
   async createAndSave(data: any, ctx: RequestContextDto, manager?: any): Promise<OrderEntity> {
     const repo = manager ? manager.getRepository(OrderEntity) : this.repo
@@ -48,7 +48,10 @@ export class OrderRepository {
   async saveOrder(order: OrderEntity): Promise<OrderEntity> {
     return await this.repo.save(order)
   }
-  async findAllOrders(filterDto: any, tenantId: string): Promise<{ orders: OrderEntity[]; total: number }> {
+  async findAllOrders(
+    filterDto: any,
+    tenantId: string,
+  ): Promise<{ orders: OrderEntity[]; total: number }> {
     // this.logger.log(`${this.findAllOrders.name} Service Called`)
     const { page, limit, search, status } = filterDto
 
@@ -88,9 +91,9 @@ export class OrderRepository {
     tenantId: string,
     page: number = 1,
     limit: number = 10,
-    search?: string
-  ): Promise<{ orders: OrderEntity[], total: number }> {
-    const skip = (page - 1) * limit;
+    search?: string,
+  ): Promise<{ orders: OrderEntity[]; total: number }> {
+    const skip = (page - 1) * limit
 
     const queryBuilder = this.repo
       .createQueryBuilder('order')
@@ -118,15 +121,20 @@ export class OrderRepository {
       .orderBy('order.createdAt', 'DESC')
       .skip(skip)
       .take(limit)
-      .getManyAndCount();
+      .getManyAndCount()
 
-    return { orders, total };
+    return { orders, total }
   }
 
   async countByUserId(userId: string, tenantId: string): Promise<number> {
-    return this.repo.count({ where: { userId, tenantId } });
+    return this.repo.count({ where: { userId, tenantId } })
   }
-  async orderOverview(tenantId?: string): Promise<{ totalOrders: number; pendingOrders: number; completedOrders: number; cancelledOrders: number }> {
+  async orderOverview(tenantId?: string): Promise<{
+    totalOrders: number
+    pendingOrders: number
+    completedOrders: number
+    cancelledOrders: number
+  }> {
     // this.logger.log(`${this.orderOverview.name} Service Called`)
     const where = tenantId ? { tenantId } : {}
     const totalOrders = await this.repo.count({ where })
@@ -146,5 +154,4 @@ export class OrderRepository {
       cancelledOrders,
     }
   }
-
 }

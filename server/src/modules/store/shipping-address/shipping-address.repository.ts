@@ -9,7 +9,7 @@ export class ShippingAddressRepository {
   constructor(
     @InjectRepository(ShippingAddressEntity)
     private readonly repo: Repository<ShippingAddressEntity>,
-  ) { }
+  ) {}
 
   async findAllByUserId(userId: string, tenantId: string): Promise<ShippingAddressEntity[]> {
     return await this.repo.find({

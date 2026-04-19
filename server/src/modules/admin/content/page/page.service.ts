@@ -17,7 +17,7 @@ export class PageService {
     private readonly pageRepository: PageRepository,
     private readonly faqService: FaqService,
     private readonly cache: CacheService,
-  ) { }
+  ) {}
 
   async createPage(dto: CreatePageDto, ctx: RequestContextDto): Promise<PageEntity> {
     this.logger.log(`${this.createPage.name} Service Called`)
@@ -75,7 +75,7 @@ export class PageService {
     if (!page) return null
 
     // Enrich with FAQ data before caching (Critical Fix)
-    const enriched = await this.enrichPageWithFaqs(page,ctx)
+    const enriched = await this.enrichPageWithFaqs(page, ctx)
     const result = JSON.parse(JSON.stringify(enriched))
 
     await this.cache.setCache(cacheKey, result, this.HOME_CACHE_TTL, tenantId)
@@ -127,7 +127,7 @@ export class PageService {
     this.logger.log(`${this.enrichPageWithFaqs.name} Service Called`)
     if (!page.sections || page.sections.length === 0) return page
 
-    const faqSections = page.sections.filter(s => s.type === 'faq-section' as any)
+    const faqSections = page.sections.filter((s) => s.type === ('faq-section' as any))
     if (faqSections.length === 0) return page
 
     // Collect all specific IDs and handle "global" vs "page" logic separately
@@ -135,7 +135,7 @@ export class PageService {
     let needsGlobal = false
     let needsPageFaqs = false
 
-    faqSections.forEach(section => {
+    faqSections.forEach((section) => {
       const source = section.settings?.source || 'page'
       if (source === 'page') needsPageFaqs = true
       else if (source === 'global') needsGlobal = true
@@ -148,17 +148,19 @@ export class PageService {
     const [pageFaqs, globalFaqs, specificFaqs] = await Promise.all([
       needsPageFaqs ? this.faqService.findByPageFaq(page.id, ctx) : Promise.resolve([]),
       needsGlobal ? this.faqService.findGlobalFaqs(ctx) : Promise.resolve([]),
-      specificFaqIds.size > 0 ? this.faqService.findByIdsFaq(Array.from(specificFaqIds), ctx) : Promise.resolve([])
+      specificFaqIds.size > 0
+        ? this.faqService.findByIdsFaq(Array.from(specificFaqIds), ctx)
+        : Promise.resolve([]),
     ])
 
     const enrichedSections = page.sections.map((section) => {
-      if (section.type === 'faq-section' as any) {
+      if (section.type === ('faq-section' as any)) {
         const source = section.settings?.source || 'page'
         let faqs = []
         if (source === 'page') faqs = pageFaqs
         else if (source === 'global') faqs = globalFaqs
         else if (source === 'specific' && section.settings?.faqIds) {
-          faqs = specificFaqs.filter(f => section.settings.faqIds.includes(f.id))
+          faqs = specificFaqs.filter((f) => section.settings.faqIds.includes(f.id))
         }
         return { ...section, data: { faqs } }
       }

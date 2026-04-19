@@ -5,7 +5,7 @@ import { Cache } from 'cache-manager'
 @Injectable()
 export class CacheRepository {
   private readonly logger = new Logger(CacheRepository.name)
-  
+
   constructor(@Inject(CACHE_MANAGER) private cache: Cache) {}
 
   async get<T>(key: string): Promise<T | null> {
@@ -35,8 +35,9 @@ export class CacheRepository {
       // For cache-manager v7+, it uses keyv. The store is usually a Keyv instance.
       // We need to drill down to the underlying redis client.
       const underlyingStore = store.store || store._cache || store
-      const client = underlyingStore.client || underlyingStore.redisClient || underlyingStore._client
-      
+      const client =
+        underlyingStore.client || underlyingStore.redisClient || underlyingStore._client
+
       // If we found a client, attempt 'keys' or 'scan'
       if (client && typeof client.keys === 'function') {
         const keys = await client.keys(pattern)
@@ -44,7 +45,7 @@ export class CacheRepository {
           await (client.del || client.delete).call(client, ...keys)
         }
         cleared = true
-      } 
+      }
       // Fallback: check if store itself has keys (for older versions or different stores)
       else if (typeof underlyingStore.keys === 'function') {
         const keys = await underlyingStore.keys(pattern)
@@ -57,7 +58,7 @@ export class CacheRepository {
 
     if (!cleared) {
       this.logger.warn(`Pattern deletion not supported or no keys found for pattern: ${pattern}`)
-      // Don't throw if no keys found, just log a warning. 
+      // Don't throw if no keys found, just log a warning.
       // If you really want it to throw only when not supported:
       // throw new Error('Redis client not accessible for pattern deletion')
     }

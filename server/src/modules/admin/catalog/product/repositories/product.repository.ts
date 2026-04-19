@@ -13,14 +13,15 @@ export class ProductRepository {
   constructor(
     @InjectRepository(ProductEntity)
     private readonly repo: Repository<ProductEntity>,
-  ) { }
+  ) {}
 
   async findAllWithFilters(filterDto: any, tenantId: string): Promise<[ProductEntity[], number]> {
     const page = Math.max(1, parseInt(filterDto.page) || 1)
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { q, status, categoryId, brandId } = filterDto
 
-    const query = this.repo.createQueryBuilder('product')
+    const query = this.repo
+      .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.variants', 'variants')
       .where('product.tenantId = :tenantId', { tenantId })
@@ -87,7 +88,8 @@ export class ProductRepository {
       ELSE product.price * (1 + COALESCE(product.tax_rate, 0) / 100)
     END`
 
-    const query = this.repo.createQueryBuilder('product')
+    const query = this.repo
+      .createQueryBuilder('product')
       .where('product.tenantId = :tenantId', { tenantId })
       .select(`MIN(${finalPriceExpr})`, 'min')
       .addSelect(`MAX(${finalPriceExpr})`, 'max')
@@ -134,7 +136,7 @@ export class ProductRepository {
   async updateAndSave(product: ProductEntity, data: any, manager?: any): Promise<ProductEntity> {
     const repo = manager ? manager.getRepository(ProductEntity) : this.repo
 
-    // When updating raw IDs (categoryId, brandId, supplierId), we must 
+    // When updating raw IDs (categoryId, brandId, supplierId), we must
     // remove the corresponding relation objects if they are already loaded.
     // Setting to null would explicitly unset the relation in the DB,
     // while 'delete' tells TypeORM to ignore the relation and use the ID scalar instead.
@@ -217,7 +219,8 @@ export class ProductRepository {
     limit?: number
   }): Promise<ProductEntity[]> {
     const { tenantId, targetType, targetId, limit = 20 } = params
-    const query = this.repo.createQueryBuilder('product')
+    const query = this.repo
+      .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.brand', 'brand')
       .where('product.tenantId = :tenantId', { tenantId })
@@ -270,5 +273,4 @@ export class ProductRepository {
         return { 'product.createdAt': 'DESC' }
     }
   }
-
 }

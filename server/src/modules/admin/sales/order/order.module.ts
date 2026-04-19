@@ -31,4 +31,4 @@ import { OrderProcessHelper } from './services/order-process.helper'
   providers: [OrderService, ReturnService, OrderProcessor, OrderProcessHelper], // Registered
   exports: [OrderService, ReturnService],
 })
-export class OrderModule { }
+export class OrderModule {}

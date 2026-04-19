@@ -1,111 +1,111 @@
-import { Expose, Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer'
 
 export class CartItemProductResponseDto {
   @Expose()
-  id: string;
+  id: string
 
   @Expose()
-  name: string;
+  name: string
 
   @Expose()
-  image: string | null;
+  image: string | null
 }
 
 export class CartItemVariantAttributeResponseDto {
   @Expose()
-  name: string;
+  name: string
 
   @Expose()
-  value: string;
+  value: string
 }
 
 export class CartItemVariantResponseDto {
   @Expose()
-  id: string;
+  id: string
 
   @Expose()
-  sku: string;
+  sku: string
 
   @Expose()
   @Type(() => CartItemVariantAttributeResponseDto)
-  attributes: CartItemVariantAttributeResponseDto[];
+  attributes: CartItemVariantAttributeResponseDto[]
 }
 
 export class CartItemPricingResponseDto {
   @Expose()
-  base_price: number;
+  base_price: number
 
   @Expose()
-  discount: number;
+  discount: number
 
   @Expose()
-  tax: number;
+  tax: number
 
   @Expose()
-  final_price: number;
+  final_price: number
 }
 
 export class CartItemResponseDto {
   @Expose()
-  cart_item_id: string;
+  cart_item_id: string
 
   @Expose()
   @Type(() => CartItemProductResponseDto)
-  product: CartItemProductResponseDto;
+  product: CartItemProductResponseDto
 
   @Expose()
   @Type(() => CartItemVariantResponseDto)
-  variant: CartItemVariantResponseDto | null;
+  variant: CartItemVariantResponseDto | null
 
   @Expose()
   @Type(() => CartItemPricingResponseDto)
-  pricing: CartItemPricingResponseDto;
+  pricing: CartItemPricingResponseDto
 
   @Expose()
-  quantity: number;
+  quantity: number
 
   @Expose()
-  line_total: number;
+  line_total: number
 
   @Expose()
-  stock_status: string;
+  stock_status: string
 }
 
 export class CartSummaryResponseDto {
   @Expose()
-  subtotal: number;
+  subtotal: number
 
   @Expose()
-  offer_discount: number;
+  offer_discount: number
 
   @Expose()
-  coupon_discount: number;
+  coupon_discount: number
 
   @Expose()
-  tax: number;
+  tax: number
 
   @Expose()
-  payable: number;
+  payable: number
 
   @Expose()
-  is_free_shipping: boolean;
+  is_free_shipping: boolean
 }
 
 export class CartResponseDto {
   @Expose()
-  cart_id: string;
+  cart_id: string
 
   @Expose()
-  currency: string;
+  currency: string
 
   @Expose()
   @Type(() => CartItemResponseDto)
-  items: CartItemResponseDto[];
+  items: CartItemResponseDto[]
 
   @Expose()
   @Type(() => CartSummaryResponseDto)
-  summary: CartSummaryResponseDto;
+  summary: CartSummaryResponseDto
 
   @Expose()
-  appliedCouponCode: string | null;
+  appliedCouponCode: string | null
 }

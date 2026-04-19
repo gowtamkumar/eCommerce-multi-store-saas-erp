@@ -41,7 +41,7 @@ export class TenantService {
     private readonly subscriptionPlanService: SubscriptionPlanService,
     private readonly dataSource: DataSource,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   /**
    * Creates a new tenant with associated admin user and initial settings.
@@ -50,7 +50,16 @@ export class TenantService {
   async createTenant(createTenantDto: CreateTenantDto): Promise<CreateTenantResponseDto> {
     this.logger.log(`Creating tenant: ${createTenantDto.storeName}`)
 
-    const { storeName, subdomain, planId, name, username, email, password, subscriptionBillingCycle } = createTenantDto
+    const {
+      storeName,
+      subdomain,
+      planId,
+      name,
+      username,
+      email,
+      password,
+      subscriptionBillingCycle,
+    } = createTenantDto
 
     // 1. Check if subdomain already exists
     const existingTenant = await this.tenantRepository.findBySubdomain(subdomain)
@@ -120,11 +129,11 @@ export class TenantService {
           contactEmail: email,
         }),
         // Send verification email (fire and forget or handle errors gracefully)
-        this.mailService.sendVerificationEmail(
-          email,
-          verificationToken,
-          savedTenant.id,
-        ).catch(err => this.logger.error(`Failed to send verification email for ${email}:`, err)),
+        this.mailService
+          .sendVerificationEmail(email, verificationToken, savedTenant.id)
+          .catch((err) =>
+            this.logger.error(`Failed to send verification email for ${email}:`, err),
+          ),
       ])
 
       return {
@@ -323,6 +332,6 @@ export class TenantService {
     if (subdomain) keys.push(`${this.CACHE_PREFIX}subdomain:${subdomain}`)
     if (customDomain) keys.push(`${this.CACHE_PREFIX}customdomain:${customDomain}`)
 
-    await Promise.all(keys.map(key => this.cacheService.delCache(key)))
+    await Promise.all(keys.map((key) => this.cacheService.delCache(key)))
   }
 }

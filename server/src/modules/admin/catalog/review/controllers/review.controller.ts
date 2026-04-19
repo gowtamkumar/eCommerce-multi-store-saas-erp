@@ -26,7 +26,7 @@ import { ReviewService } from '../services/review.service'
 export class ReviewController {
   private readonly logger = new Logger(ReviewController.name)
 
-  constructor(private readonly reviewService: ReviewService) { }
+  constructor(private readonly reviewService: ReviewService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)

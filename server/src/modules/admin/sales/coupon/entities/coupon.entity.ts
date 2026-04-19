@@ -8,7 +8,6 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 @Index(['tenantId', 'code'], { unique: true })
 /** Optimizes the active-coupons dashboard filter */
 @Index(['tenantId', 'isActive', 'expiryDate'])
-
 @Entity('coupons')
 export class CouponEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 50 })

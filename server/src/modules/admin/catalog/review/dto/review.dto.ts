@@ -7,8 +7,6 @@ export class CreateReviewDto {
   @IsString()
   productId: string
 
-
-
   @ApiProperty()
   @IsNumber()
   rating: number

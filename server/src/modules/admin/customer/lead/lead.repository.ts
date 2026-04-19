@@ -9,14 +9,16 @@ export class LeadRepository {
   constructor(
     @InjectRepository(LeadEntity)
     private readonly repo: Repository<LeadEntity>,
-  ) { }
+  ) {}
 
   async findAllWithFilters(
     filterDto: any,
     tenantId: string,
   ): Promise<{ leads: LeadEntity[]; total: number }> {
     const { page = 1, limit = 10, q, status } = filterDto
-    const query = this.repo.createQueryBuilder('lead').where('lead.tenantId = :tenantId', { tenantId })
+    const query = this.repo
+      .createQueryBuilder('lead')
+      .where('lead.tenantId = :tenantId', { tenantId })
 
     if (status) {
       query.andWhere('lead.status = :status', { status })
@@ -40,7 +42,11 @@ export class LeadRepository {
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<LeadEntity> {
-    const lead = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as LeadEntity)
+    const lead = this.repo.create({
+      ...dto,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as LeadEntity)
     return this.repo.save(lead)
   }
 

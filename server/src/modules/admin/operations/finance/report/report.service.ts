@@ -1,7 +1,6 @@
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 
-
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ProductService } from '@/modules/admin/catalog/product/services/product.service'
 import { PageService } from '@/modules/admin/content/page/page.service'
@@ -28,7 +27,7 @@ export class ReportService {
     private readonly expenseService: ExpenseService,
     private readonly reportRepo: ReportRepository,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   async getAnalytics(ctx: RequestContextDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getAnalytics.`)
@@ -54,7 +53,7 @@ export class ReportService {
   }
 
   async getDashboardReport(ctx: RequestContextDto, period: string = 'month') {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getDashboardReport.`)  
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getDashboardReport.`)
     const tenantId = ctx.tenantId
     const cacheKey = `dashboard:${period}`
     return this.cacheService.rememberCache(
@@ -77,7 +76,14 @@ export class ReportService {
         }
 
         // Fetch optimized stats from SQL (parallelized)
-        const [stats, chartData, monthlySales, lowStockProductsRaw, products, recentPurchaseOrders] = await Promise.all([
+        const [
+          stats,
+          chartData,
+          monthlySales,
+          lowStockProductsRaw,
+          products,
+          recentPurchaseOrders,
+        ] = await Promise.all([
           this.reportRepo.getDashboardStats(tenantId, startDate),
           this.reportRepo.getSalesChartData(tenantId, 7),
           this.reportRepo.getMonthlyGrowth(tenantId),
@@ -134,7 +140,7 @@ export class ReportService {
             totalAmountDue: parseFloat(stats.totalAmountDue),
             recentPurchaseOrders: recentPurchaseOrders.map((po: any) => ({
               ...po,
-              supplier: { name: po.supplierName } // For frontend compatibility
+              supplier: { name: po.supplierName }, // For frontend compatibility
             })),
           },
           counts: {
@@ -154,7 +160,7 @@ export class ReportService {
   }
 
   async getProfitLossReport(ctx: RequestContextDto, startDateStr?: string, endDateStr?: string) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getProfitLossReport.`)  
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getProfitLossReport.`)
     const tenantId = ctx.tenantId
     const cacheKey = `pnl:${startDateStr || 'none'}:${endDateStr || 'none'}`
     return this.cacheService.rememberCache(
@@ -205,11 +211,14 @@ export class ReportService {
         const grossProfit = revenue - cogs
 
         // Calculate Operating Expenses
-        const categorizedExpenses = filteredExpenses.reduce((acc: Record<string, number>, exp: any) => {
-          const cat = exp.category
-          acc[cat] = (acc[cat] || 0) + Number(exp.amount || 0)
-          return acc
-        }, {})
+        const categorizedExpenses = filteredExpenses.reduce(
+          (acc: Record<string, number>, exp: any) => {
+            const cat = exp.category
+            acc[cat] = (acc[cat] || 0) + Number(exp.amount || 0)
+            return acc
+          },
+          {},
+        )
 
         const totalOperatingExpenses = filteredExpenses.reduce(
           (sum: number, exp: any) => sum + (+exp.amount || 0),
@@ -252,7 +261,7 @@ export class ReportService {
   }
 
   async getSupplierLedger(ctx: RequestContextDto, supplierId: string) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getSupplierLedger.`)  
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getSupplierLedger.`)
     const tenantId = ctx.tenantId
     const cacheKey = `ledger:supplier:${supplierId}`
     return this.cacheService.rememberCache(
@@ -320,7 +329,7 @@ export class ReportService {
   }
 
   async getCustomerLedger(ctx: RequestContextDto, customerId: string) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCustomerLedger.`)  
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCustomerLedger.`)
     const tenantId = ctx.tenantId
     const cacheKey = `ledger:customer:${customerId}`
     return this.cacheService.rememberCache(
@@ -392,7 +401,7 @@ export class ReportService {
   }
 
   async getCashFlow(ctx: RequestContextDto, period: string = 'last30days') {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCashFlow.`)  
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCashFlow.`)
     const tenantId = ctx.tenantId
     const cacheKey = `cashflow:${period}`
     return this.cacheService.rememberCache(
@@ -461,7 +470,10 @@ export class ReportService {
           const agg = dailyAggregates.get(date) || { inflow: 0, outflow: 0 }
           return {
             date,
-            displayDate: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            displayDate: new Date(date).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            }),
             inflow: agg.inflow,
             outflow: agg.outflow,
             net: agg.inflow - agg.outflow,
@@ -496,7 +508,7 @@ export class ReportService {
     supplierId?: string,
     customerId?: string,
   ) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called exportReport.`)  
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called exportReport.`)
     const tenantId = ctx.tenantId
     const startDate = startDateStr ? new Date(startDateStr) : new Date(0)
     const endDate = endDateStr ? new Date(endDateStr) : new Date()
@@ -559,7 +571,7 @@ export class ReportService {
   }
 
   async getFinanceSummary(ctx: RequestContextDto) {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFinanceSummary.`)  
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFinanceSummary.`)
     const tenantId = ctx.tenantId
     const cacheKey = `finance:summary`
     return this.cacheService.rememberCache(
@@ -575,7 +587,10 @@ export class ReportService {
         const inflow = customerPayments.filter((p: any) => p.status === 'completed')
         const totalRevenue = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0)
         const totalOpExpenses = expenses.reduce((sum, e) => sum + (+e.amount || 0), 0)
-        const totalSupplierPayments = supplierPayments.reduce((sum, sp) => sum + (+sp.amount || 0), 0)
+        const totalSupplierPayments = supplierPayments.reduce(
+          (sum, sp) => sum + (+sp.amount || 0),
+          0,
+        )
         const totalExpenses = totalOpExpenses + totalSupplierPayments
         const totalAmountDue = purchaseOrders.reduce(
           (sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)),

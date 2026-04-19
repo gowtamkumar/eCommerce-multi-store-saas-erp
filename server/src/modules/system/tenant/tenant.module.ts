@@ -22,4 +22,4 @@ import { UserModule } from '@/modules/admin/core/user/user.module'
   providers: [TenantService, TenantRepository],
   exports: [TenantService, TenantRepository],
 })
-export class TenantModule { }
+export class TenantModule {}

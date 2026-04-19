@@ -9,7 +9,7 @@ export class CouponRepository {
   constructor(
     @InjectRepository(CouponEntity)
     private readonly repo: Repository<CouponEntity>,
-  ) { }
+  ) {}
 
   async findByCode(code: string, tenantId: string): Promise<CouponEntity | null> {
     return await this.repo.findOne({
@@ -68,5 +68,4 @@ export class CouponRepository {
   async removeCoupon(coupon: CouponEntity): Promise<void> {
     await this.repo.softRemove(coupon)
   }
-
 }

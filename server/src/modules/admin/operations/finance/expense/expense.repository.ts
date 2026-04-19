@@ -21,7 +21,11 @@ export class ExpenseRepository {
   ) {}
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<ExpenseEntity> {
-    const expense = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as ExpenseEntity)
+    const expense = this.repo.create({
+      ...dto,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as ExpenseEntity)
     return this.repo.save(expense)
   }
 
@@ -56,10 +60,9 @@ export class ExpenseRepository {
     }
 
     if (q) {
-      qb.andWhere(
-        '(LOWER(expense.title) LIKE :q OR LOWER(expense.referenceNumber) LIKE :q)',
-        { q: `%${q.toLowerCase()}%` },
-      )
+      qb.andWhere('(LOWER(expense.title) LIKE :q OR LOWER(expense.referenceNumber) LIKE :q)', {
+        q: `%${q.toLowerCase()}%`,
+      })
     }
 
     return qb.getManyAndCount()

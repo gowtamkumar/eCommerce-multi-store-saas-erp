@@ -6,7 +6,17 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
-import { Body, Controller, Delete, Get, Logger, Param, Post, Patch, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  Param,
+  Post,
+  Patch,
+  UseGuards,
+} from '@nestjs/common'
 import { BrandService } from './brand.service'
 import { BrandResponseDto } from './dto/brand-response.dto'
 import { CreateBrandDto } from './dto/create-brand.dto'
@@ -37,7 +47,9 @@ export class BrandController {
   }
 
   @Get()
-  async findAllBrands(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<BrandResponseDto[]>> {
+  async findAllBrands(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<BrandResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllBrands.`)
     const result = await this.brandService.findAllBrands(ctx)
     return {

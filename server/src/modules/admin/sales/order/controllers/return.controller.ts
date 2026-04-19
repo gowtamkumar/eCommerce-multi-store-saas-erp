@@ -18,7 +18,7 @@ import { OrderReturnResponseDto } from '../dto/order-return-response.dto'
 export class ReturnController {
   private readonly logger = new Logger(ReturnController.name)
 
-  constructor(private readonly returnService: ReturnService) { }
+  constructor(private readonly returnService: ReturnService) {}
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
@@ -82,7 +82,6 @@ export class ReturnController {
     }
   }
 
-
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findReturnById(
@@ -108,12 +107,7 @@ export class ReturnController {
     @Body('comment') comment?: string,
   ): Promise<BaseApiSuccessResponse<OrderReturnResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateStatus.`)
-    const result = await this.returnService.updateReturnRequestStatus(
-      id,
-      ctx,
-      status,
-      comment,
-    )
+    const result = await this.returnService.updateReturnRequestStatus(id, ctx, status, comment)
     return {
       success: true,
       statusCode: 200,

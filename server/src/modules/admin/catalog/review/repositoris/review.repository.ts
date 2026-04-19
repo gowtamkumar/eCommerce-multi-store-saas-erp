@@ -10,14 +10,15 @@ export class ReviewRepository {
   constructor(
     @InjectRepository(ReviewEntity)
     private readonly repo: Repository<ReviewEntity>,
-  ) { }
+  ) {}
 
   async findAllWithFilters(
     filterDto: any,
     tenantId: string,
   ): Promise<{ reviews: ReviewEntity[]; total: number }> {
     const { page, limit, q, status } = filterDto
-    const query = this.repo.createQueryBuilder('review')
+    const query = this.repo
+      .createQueryBuilder('review')
       .leftJoinAndSelect('review.product', 'product')
       .leftJoinAndSelect('review.user', 'user')
       .where('review.tenantId = :tenantId', { tenantId })
@@ -27,7 +28,9 @@ export class ReviewRepository {
     }
 
     if (q) {
-      query.andWhere('(user.name ILIKE :q OR review.comment ILIKE :q OR product.name ILIKE :q)', { q: `%${q}%` })
+      query.andWhere('(user.name ILIKE :q OR review.comment ILIKE :q OR product.name ILIKE :q)', {
+        q: `%${q}%`,
+      })
     }
 
     const [reviews, total] = await query
@@ -60,7 +63,11 @@ export class ReviewRepository {
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<ReviewEntity> {
-    const review = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as ReviewEntity)
+    const review = this.repo.create({
+      ...dto,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as ReviewEntity)
     return this.repo.save(review)
   }
 
@@ -72,5 +79,4 @@ export class ReviewRepository {
   async removeReview(review: ReviewEntity): Promise<void> {
     await this.repo.softRemove(review)
   }
-
 }

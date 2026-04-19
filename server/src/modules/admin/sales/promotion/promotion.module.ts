@@ -8,9 +8,13 @@ import { PromotionRepository } from './repositories/promotion.repository'
 import { PromotionService } from './services/promotion.service'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PromotionEntity]), CacheModule, forwardRef(() => ProductModule)],
+  imports: [
+    TypeOrmModule.forFeature([PromotionEntity]),
+    CacheModule,
+    forwardRef(() => ProductModule),
+  ],
   controllers: [PromotionController],
   providers: [PromotionService, PromotionRepository],
   exports: [PromotionService],
 })
-export class PromotionModule { }
+export class PromotionModule {}

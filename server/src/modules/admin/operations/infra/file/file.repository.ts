@@ -9,7 +9,7 @@ export class FileRepository {
   constructor(
     @InjectRepository(FileEntity)
     private readonly repo: Repository<FileEntity>,
-  ) { }
+  ) {}
 
   async findAllByTenant(where: any): Promise<FileEntity[]> {
     return await this.repo.find({ where, order: { createdAt: 'DESC' } })
@@ -18,7 +18,7 @@ export class FileRepository {
   async findPaginatedByTenant(
     where: any,
     page: number,
-    limit: number
+    limit: number,
   ): Promise<[FileEntity[], number]> {
     return await this.repo.findAndCount({
       where,
@@ -37,7 +37,11 @@ export class FileRepository {
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<FileEntity> {
-    const file = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as any) as unknown as FileEntity
+    const file = this.repo.create({
+      ...dto,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as any) as unknown as FileEntity
     return await (this.repo.save(file) as Promise<FileEntity>)
   }
 

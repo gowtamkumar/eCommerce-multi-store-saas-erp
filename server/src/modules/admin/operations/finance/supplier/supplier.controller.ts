@@ -11,7 +11,18 @@ import {
   UpdateSupplierDto,
 } from '@/modules/admin/operations/finance/supplier/dto/supplier.dto'
 import { SupplierService } from '@/modules/admin/operations/finance/supplier/supplier.service'
-import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
 import { SupplierResponseDto } from './dto/supplier-response.dto'
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -49,7 +60,7 @@ export class SupplierController {
       success: true,
       statusCode: 200,
       message: 'List of suppliers retrieved',
-      data: result
+      data: result,
     }
   }
 

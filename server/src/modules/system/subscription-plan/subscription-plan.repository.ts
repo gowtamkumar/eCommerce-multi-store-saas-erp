@@ -9,7 +9,7 @@ export class SubscriptionPlanRepository {
   constructor(
     @InjectRepository(SubscriptionPlanEntity)
     private readonly repo: Repository<SubscriptionPlanEntity>,
-  ) { }
+  ) {}
 
   async createAndSave(data: any, ctx: RequestContextDto): Promise<SubscriptionPlanEntity> {
     const plan = this.repo.create({ ...data, userId: ctx.userId }) as any

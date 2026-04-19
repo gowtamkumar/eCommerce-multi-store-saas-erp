@@ -11,12 +11,7 @@ import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException
-} from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InitPaymentDto } from '../dto/payment.dto'
 import { PaymentEntity } from '../entities/payment.entity'
 import { PaymentRepository } from '../repositoris/payment.repository'
@@ -32,7 +27,7 @@ export class PaymentService {
     private invoiceService: InvoiceService,
     private mailService: MailService,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   async initPayment(dto: InitPaymentDto, ctx: RequestContextDto): Promise<{ gatewayUrl: string }> {
     this.logger.log(`${this.initPayment.name} Service Called`)
@@ -64,7 +59,9 @@ export class PaymentService {
     }
   }
 
-  async getStrategyByTransactionId(tran_id: string): Promise<{ strategy: any; order: OrderEntity }> {
+  async getStrategyByTransactionId(
+    tran_id: string,
+  ): Promise<{ strategy: any; order: OrderEntity }> {
     const order = await this.orderRepository.findOrderByTransactionId(tran_id)
     if (!order) throw new NotFoundException('Order not found')
     return {
@@ -88,15 +85,18 @@ export class PaymentService {
     await this.orderRepository.saveOrder(order)
 
     // Record payment
-    const payment = await this.paymentRepository.createAndSave({
-      orderId: order.id,
-      transactionId: tran_id,
-      amount: order.totalAmount,
-      currency: order.currency,
-      method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
-      status: PaymentStatus.COMPLETED,
-      gatewayResponse: validation.gatewayResponse,
-    }, { tenantId: order.tenantId, userId: order.userId } as RequestContextDto)
+    const payment = await this.paymentRepository.createAndSave(
+      {
+        orderId: order.id,
+        transactionId: tran_id,
+        amount: order.totalAmount,
+        currency: order.currency,
+        method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
+        status: PaymentStatus.COMPLETED,
+        gatewayResponse: validation.gatewayResponse,
+      },
+      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+    )
 
     // Sync Invoice Status
     await this.invoiceService.updateInvoiceStatusByOrderId(
@@ -124,21 +124,27 @@ export class PaymentService {
     await this.orderRepository.saveOrder(order)
 
     // Record payment failure
-    const payment = await this.paymentRepository.createAndSave({
-      orderId: order.id,
-      transactionId: tran_id,
-      amount: order.totalAmount,
-      currency: order.currency,
-      method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
-      status: PaymentStatus.FAILED,
-      gatewayResponse: validation.gatewayResponse,
-    }, { tenantId: order.tenantId, userId: order.userId } as RequestContextDto)
+    const payment = await this.paymentRepository.createAndSave(
+      {
+        orderId: order.id,
+        transactionId: tran_id,
+        amount: order.totalAmount,
+        currency: order.currency,
+        method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
+        status: PaymentStatus.FAILED,
+        gatewayResponse: validation.gatewayResponse,
+      },
+      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+    )
 
     await this.cacheService.delCache(`payments:list`, order.tenantId)
     return { success: false }
   }
 
-  async handleCancelPayment(tran_id: string, gatewayResponse: any): Promise<{ cancelled: boolean }> {
+  async handleCancelPayment(
+    tran_id: string,
+    gatewayResponse: any,
+  ): Promise<{ cancelled: boolean }> {
     this.logger.log(`${this.handleCancelPayment.name} Service Called`)
     const { strategy, order } = await this.getStrategyByTransactionId(tran_id)
     const validation = await strategy.validateCallback(gatewayResponse)
@@ -147,21 +153,28 @@ export class PaymentService {
     await this.orderRepository.saveOrder(order)
 
     // Record payment cancellation
-    const payment = await this.paymentRepository.createAndSave({
-      orderId: order.id,
-      transactionId: tran_id,
-      amount: order.totalAmount,
-      currency: order.currency,
-      method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
-      status: PaymentStatus.PENDING,
-      gatewayResponse: validation.gatewayResponse,
-    }, { tenantId: order.tenantId, userId: order.userId } as RequestContextDto)
+    const payment = await this.paymentRepository.createAndSave(
+      {
+        orderId: order.id,
+        transactionId: tran_id,
+        amount: order.totalAmount,
+        currency: order.currency,
+        method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
+        status: PaymentStatus.PENDING,
+        gatewayResponse: validation.gatewayResponse,
+      },
+      { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
+    )
 
     await this.cacheService.delCache(`payments:list`, order.tenantId)
     return { cancelled: true }
   }
 
-  async getRedirectUrl(tran_id: string, gatewayResponse: any, defaultAppUrl: string): Promise<string> {
+  async getRedirectUrl(
+    tran_id: string,
+    gatewayResponse: any,
+    defaultAppUrl: string,
+  ): Promise<string> {
     const { strategy } = await this.getStrategyByTransactionId(tran_id)
     return strategy.getRedirectUrl(gatewayResponse, defaultAppUrl)
   }
@@ -169,7 +182,13 @@ export class PaymentService {
   async findAllPayments(
     ctx: RequestContextDto,
     filterDto: PaginationDto & { startDate?: Date; endDate?: Date },
-  ): Promise<{ items: PaymentEntity[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<{
+    items: PaymentEntity[]
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }> {
     this.logger.log(`${this.findAllPayments.name} Service Called`)
     const tenantId = ctx.tenantId
     const { page = 1, limit = 20, q: search, startDate, endDate } = filterDto
@@ -179,7 +198,12 @@ export class PaymentService {
       cacheKey,
       async () => {
         const [items, total] = await this.paymentRepository.findPaymentsByTenant(
-          tenantId, page, limit, search, startDate, endDate
+          tenantId,
+          page,
+          limit,
+          search,
+          startDate,
+          endDate,
         )
         return { items, total, page, limit, totalPages: Math.ceil(total / limit) }
       },
@@ -192,10 +216,21 @@ export class PaymentService {
    * Raw unpaginated payment fetch — intended for internal report/aggregation use only.
    * The public admin endpoint uses `findAllPayments` with pagination and caching.
    */
-  async findAllPaymentsRaw(ctx: RequestContextDto, startDate?: Date, endDate?: Date): Promise<PaymentEntity[]> {
+  async findAllPaymentsRaw(
+    ctx: RequestContextDto,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<PaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsRaw.name} Service Called`)
     const tenantId = ctx.tenantId
-    const [items] = await this.paymentRepository.findPaymentsByTenant(tenantId, 1, 100000, undefined, startDate, endDate)
+    const [items] = await this.paymentRepository.findPaymentsByTenant(
+      tenantId,
+      1,
+      100000,
+      undefined,
+      startDate,
+      endDate,
+    )
     return items
   }
 

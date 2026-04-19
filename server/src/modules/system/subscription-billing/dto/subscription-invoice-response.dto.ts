@@ -1,40 +1,40 @@
-import { Expose } from 'class-transformer';
-import { PaymentStatus } from '@/common/enums/payment-status.enum';
+import { Expose } from 'class-transformer'
+import { PaymentStatus } from '@/common/enums/payment-status.enum'
 
 export class SubscriptionInvoiceResponseDto {
   @Expose()
-  id: string;
+  id: string
 
   @Expose()
-  invoiceNumber: string;
+  invoiceNumber: string
 
   @Expose()
-  tenantId: string;
+  tenantId: string
 
   @Expose()
-  subscriptionPlanId: string;
+  subscriptionPlanId: string
 
   @Expose()
-  amount: number;
+  amount: number
 
   @Expose()
-  currency: string;
+  currency: string
 
   @Expose()
-  status: PaymentStatus;
+  status: PaymentStatus
 
   @Expose()
-  transactionId: string;
+  transactionId: string
 
   @Expose()
-  billingDate: Date;
+  billingDate: Date
 
   @Expose()
-  paymentUrl: string | null;
+  paymentUrl: string | null
 
   @Expose()
-  createdAt: Date;
+  createdAt: Date
 
   @Expose()
-  updatedAt: Date;
+  updatedAt: Date
 }

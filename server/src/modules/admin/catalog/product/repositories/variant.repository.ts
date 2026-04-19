@@ -9,10 +9,11 @@ export class ProductVariantRepository {
   constructor(
     @InjectRepository(ProductVariantEntity)
     private readonly repo: Repository<ProductVariantEntity>,
-  ) { }
+  ) {}
 
   async findCombinationsForProducts(tenantId: string, categoryId?: string) {
-    const variantQuery = this.repo.createQueryBuilder('variant')
+    const variantQuery = this.repo
+      .createQueryBuilder('variant')
       .innerJoin('variant.product', 'product')
       .where('variant.tenantId = :tenantId', { tenantId })
       .select('variant.combination', 'combination')
@@ -60,7 +61,12 @@ export class ProductVariantRepository {
     return repo.save(variant)
   }
 
-  async findBySku(sku: string, tenantId: string, manager?: any, withDeleted: boolean = false): Promise<ProductVariantEntity | null> {
+  async findBySku(
+    sku: string,
+    tenantId: string,
+    manager?: any,
+    withDeleted: boolean = false,
+  ): Promise<ProductVariantEntity | null> {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
     return repo.findOne({ where: { sku, tenantId }, withDeleted })
   }
@@ -91,5 +97,4 @@ export class ProductVariantRepository {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
     await repo.decrement({ id, tenantId }, 'stock', quantity)
   }
-
 }

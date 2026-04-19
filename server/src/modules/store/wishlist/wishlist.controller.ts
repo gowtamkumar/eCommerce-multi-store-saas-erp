@@ -2,16 +2,7 @@ import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Logger,
-  Param,
-  Post,
-  UseGuards,
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Logger, Param, Post, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { WishlistResponseDto } from './dto/wishlist-response.dto'
 import { AddToWishlistDto } from './dto/wishlist.dto'
@@ -75,7 +66,9 @@ export class WishlistController {
 
   @Delete()
   @ApiOperation({ summary: 'Clear the entire wishlist for the current user' })
-  async clearWishlist(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<null>> {
+  async clearWishlist(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.userId}" calling clearWishlist`)
     await this.wishlistService.clearWishlist(ctx)
     return {

@@ -47,7 +47,7 @@ export class ReportController {
   @Get('/profit-loss')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async getProfitLossReport(
-   @RequestContext() ctx: RequestContextDto,
+    @RequestContext() ctx: RequestContextDto,
     @Query('startDate') startDateStr?: string,
     @Query('endDate') endDateStr?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -67,7 +67,7 @@ export class ReportController {
     @RequestContext() ctx: RequestContextDto,
     @Param('supplierId') supplierId: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getSupplierLedger.`)  
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getSupplierLedger.`)
     const result = await this.reportService.getSupplierLedger(ctx, supplierId)
     return {
       success: true,
@@ -99,7 +99,7 @@ export class ReportController {
     @RequestContext() ctx: RequestContextDto,
     @Query('period') period: string = 'last30days',
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCashFlow.`)  
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCashFlow.`)
     const result = await this.reportService.getCashFlow(ctx, period)
     return {
       success: true,
@@ -119,7 +119,7 @@ export class ReportController {
     @Query('supplierId') supplierId?: string,
     @Query('customerId') customerId?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called exportReport.`)  
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called exportReport.`)
     const result = await this.reportService.exportReport(
       ctx,
       type,
@@ -141,7 +141,7 @@ export class ReportController {
   async getFinanceSummary(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFinanceSummary.`)  
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFinanceSummary.`)
     const result = await this.reportService.getFinanceSummary(ctx)
     return {
       success: true,

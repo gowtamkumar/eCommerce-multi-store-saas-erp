@@ -26,7 +26,13 @@ export class SupplierService {
   async findAllSuppliers(
     ctx: RequestContextDto,
     paginationDto: PaginationDto,
-  ): Promise<{ items: SupplierEntity[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<{
+    items: SupplierEntity[]
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }> {
     this.logger.log(`${this.findAllSuppliers.name} Service Called`)
     const tenantId = ctx.tenantId
     const { page = 1, limit = 20, q: search } = paginationDto
@@ -35,12 +41,7 @@ export class SupplierService {
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items, total] = await this.repository.findAllByTenant(
-          tenantId,
-          page,
-          limit,
-          search,
-        )
+        const [items, total] = await this.repository.findAllByTenant(tenantId, page, limit, search)
         return {
           items,
           total,
@@ -87,7 +88,11 @@ export class SupplierService {
     return supplier
   }
 
-  async updateSupplier(id: string, dto: UpdateSupplierDto, ctx: RequestContextDto): Promise<SupplierEntity> {
+  async updateSupplier(
+    id: string,
+    dto: UpdateSupplierDto,
+    ctx: RequestContextDto,
+  ): Promise<SupplierEntity> {
     this.logger.log(`${this.updateSupplier.name} Service Called`)
     const tenantId = ctx.tenantId
     const supplier = await this.findOneSupplier(id, ctx)

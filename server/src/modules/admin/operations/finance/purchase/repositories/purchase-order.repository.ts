@@ -23,7 +23,11 @@ export class PurchaseOrderRepository {
     manager?: EntityManager,
   ): Promise<PurchaseOrderEntity> {
     const repo = this.getRepo(manager)
-    const purchaseOrder = repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId } as PurchaseOrderEntity)
+    const purchaseOrder = repo.create({
+      ...data,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as PurchaseOrderEntity)
     return repo.save(purchaseOrder)
   }
 

@@ -13,7 +13,7 @@ export class BrandService {
   constructor(
     private readonly brandRepo: BrandRepository,
     private readonly cache: CacheService,
-  ) { }
+  ) {}
 
   async createBrand(createBrandDto: CreateBrandDto, ctx: RequestContextDto): Promise<BrandEntity> {
     this.logger.log(`${this.createBrand.name} Service Called`)
@@ -40,7 +40,7 @@ export class BrandService {
       cacheKey,
       () => this.brandRepo.findAllByTenant(tenantId),
       600, // 10 minutes
-      tenantId
+      tenantId,
     )
   }
 
@@ -53,13 +53,13 @@ export class BrandService {
       cacheKey,
       async () => {
         const results = await this.brandRepo.findAllWithProductCounts(tenantId)
-        return results.map(r => ({
+        return results.map((r) => ({
           ...r,
-          productCount: Number(r.productCount || 0)
+          productCount: Number(r.productCount || 0),
         }))
       },
       600, // 10 minutes
-      tenantId
+      tenantId,
     )
   }
 
@@ -98,7 +98,10 @@ export class BrandService {
     return result
   }
 
-  async removeBrand(id: string, ctx: RequestContextDto): Promise<{ success: boolean; message: string }> {
+  async removeBrand(
+    id: string,
+    ctx: RequestContextDto,
+  ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeBrand.name} Service Called`)
     const tenantId = ctx.tenantId
     const brand = await this.findOneBrand(id, ctx)

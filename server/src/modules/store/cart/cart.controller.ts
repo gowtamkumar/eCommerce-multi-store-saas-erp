@@ -26,7 +26,9 @@ export class CartController {
   constructor(private readonly cartService: CartService) {}
 
   @Get()
-  async getCart(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<CartResponseDto>> {
+  async getCart(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCart.`)
     const cart = await this.cartService.createOrGetCart(ctx)
     return {
@@ -126,7 +128,9 @@ export class CartController {
   }
 
   @Post('coupon/remove')
-  async removeCoupon(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<CartResponseDto>> {
+  async removeCoupon(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCoupon.`)
     const cart = await this.cartService.removeCoupon(ctx)
     return {

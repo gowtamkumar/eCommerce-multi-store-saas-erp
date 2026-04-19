@@ -25,7 +25,7 @@ export class CartService {
     private readonly couponService: CouponService,
     private readonly promotionService: PromotionService,
     private readonly pricingEngine: PricingEngineService,
-  ) { }
+  ) {}
 
   async createOrGetCart(ctx: RequestContextDto): Promise<CartResponseDto> {
     this.logger.log(`${this.createOrGetCart.name} Service Called`)
@@ -141,12 +141,15 @@ export class CartService {
         Number(cartItem.quantity) + Number(quantity),
       )
     } else {
-      await this.cartItemRepository.createAndSave({
-        cartId: cart.id,
-        productId,
-        variantId: variantId || null,
-        quantity: Number(quantity),
-      }, ctx)
+      await this.cartItemRepository.createAndSave(
+        {
+          cartId: cart.id,
+          productId,
+          variantId: variantId || null,
+          quantity: Number(quantity),
+        },
+        ctx,
+      )
     }
 
     // Return transformed cart
@@ -225,19 +228,22 @@ export class CartService {
         }
 
         return { productId, variantId: variantId || null, quantity: Number(quantity) }
-      })
+      }),
     )
 
     // Phase 2: Persist all resolved items in PARALLEL
     await Promise.all(
       resolvedItems.map((item) =>
-        this.cartItemRepository.createAndSave({
-          cartId: cart.id,
-          productId: item.productId,
-          variantId: item.variantId,
-          quantity: item.quantity,
-        }, ctx)
-      )
+        this.cartItemRepository.createAndSave(
+          {
+            cartId: cart.id,
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity,
+          },
+          ctx,
+        ),
+      ),
     )
 
     return this.createOrGetCart(ctx)

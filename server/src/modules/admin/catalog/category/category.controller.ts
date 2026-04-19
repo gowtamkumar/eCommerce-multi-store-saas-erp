@@ -8,7 +8,17 @@ import { RolesGuard } from '@/common/guards/roles.guard'
 import { CategoryService } from '@/modules/admin/catalog/category/category.service'
 import { CreateCategoryDto } from '@/modules/admin/catalog/category/dto/create-category.dto'
 import { UpdateCategoryDto } from '@/modules/admin/catalog/category/dto/update-category.dto'
-import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common'
 import { CategoryResponseDto } from './dto/category-response.dto'
 
 @Controller('categories')
@@ -54,7 +64,9 @@ export class CategoryController {
   async findAllCategoriesWithStats(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllCategoriesWithStats.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called findAllCategoriesWithStats.`,
+    )
     const result = await this.categoryService.findAllCategoriesWithStats(ctx)
     return {
       success: true,

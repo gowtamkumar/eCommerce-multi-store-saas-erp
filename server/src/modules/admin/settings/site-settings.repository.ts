@@ -9,14 +9,18 @@ export class SiteSettingsRepository {
   constructor(
     @InjectRepository(SiteSettingsEntity)
     private readonly repo: Repository<SiteSettingsEntity>,
-  ) { }
+  ) {}
 
   async findByTenantId(tenantId: string): Promise<SiteSettingsEntity | null> {
     return await this.repo.findOne({ where: { tenantId } })
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<SiteSettingsEntity> {
-    const settings = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as any) as unknown as SiteSettingsEntity
+    const settings = this.repo.create({
+      ...dto,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as any) as unknown as SiteSettingsEntity
     return this.repo.save(settings)
   }
 
@@ -24,5 +28,4 @@ export class SiteSettingsRepository {
     Object.assign(settings, dto)
     return await this.repo.save(settings)
   }
-
 }

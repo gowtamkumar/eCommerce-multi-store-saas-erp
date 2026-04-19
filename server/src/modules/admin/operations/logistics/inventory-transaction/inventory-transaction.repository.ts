@@ -10,11 +10,11 @@ export class InventoryTransactionRepository {
   constructor(
     @InjectRepository(InventoryTransactionEntity)
     private readonly repo: Repository<InventoryTransactionEntity>,
-  ) { }
+  ) {}
 
   /**
    * Fetches paginated inventory transactions for the admin list view.
-   * Fixed broken relations (was using 'variants' which didn't exist) 
+   * Fixed broken relations (was using 'variants' which didn't exist)
    * and added server-side filtering.
    */
   async findByTenant(
@@ -24,7 +24,8 @@ export class InventoryTransactionRepository {
     search?: string,
     type?: InventoryTransactionType,
   ): Promise<[InventoryTransactionEntity[], number]> {
-    const qb = this.repo.createQueryBuilder('it')
+    const qb = this.repo
+      .createQueryBuilder('it')
       .leftJoinAndSelect('it.product', 'product')
       .leftJoinAndSelect('it.variant', 'variant')
       .leftJoinAndSelect('it.user', 'user')
@@ -34,10 +35,9 @@ export class InventoryTransactionRepository {
       .take(limit)
 
     if (search) {
-      qb.andWhere(
-        '(product.name ILIKE :search OR it.referenceId ILIKE :search)',
-        { search: `%${search}%` }
-      )
+      qb.andWhere('(product.name ILIKE :search OR it.referenceId ILIKE :search)', {
+        search: `%${search}%`,
+      })
     }
 
     if (type) {
@@ -51,7 +51,7 @@ export class InventoryTransactionRepository {
     return await this.repo.find({
       where: { productId, tenantId },
       order: { createdAt: 'DESC' },
-      relations: ['product', 'variant', 'user']
+      relations: ['product', 'variant', 'user'],
     })
   }
 

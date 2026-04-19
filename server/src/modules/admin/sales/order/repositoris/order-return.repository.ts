@@ -12,12 +12,9 @@ export class OrderReturnRepository {
   constructor(
     @InjectRepository(OrderReturnEntity)
     private readonly repo: Repository<OrderReturnEntity>,
-  ) { }
+  ) {}
 
-  async createAndSaveReturn(
-    dto: any,
-    ctx: RequestContextDto,
-  ): Promise<OrderReturnEntity> {
+  async createAndSaveReturn(dto: any, ctx: RequestContextDto): Promise<OrderReturnEntity> {
     const returnRequest = this.repo.create({
       ...dto,
       userId: ctx.userId,
@@ -76,7 +73,6 @@ export class OrderReturnRepository {
     return { data, total }
   }
 
-
   async findByUserWithRelations(userId: string, tenantId: string): Promise<OrderReturnEntity[]> {
     return await this.repo.find({
       where: { userId, tenantId },
@@ -109,5 +105,4 @@ export class OrderReturnRepository {
     }
     return await this.repo.save(returnRequest)
   }
-
 }

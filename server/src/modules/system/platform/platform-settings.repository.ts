@@ -8,7 +8,7 @@ export class PlatformSettingsRepository {
   constructor(
     @InjectRepository(PlatformSettingsEntity)
     private readonly repo: Repository<PlatformSettingsEntity>,
-  ) { }
+  ) {}
 
   async findSettings(): Promise<PlatformSettingsEntity | null> {
     return await this.repo.findOne({ where: {} })
@@ -84,5 +84,4 @@ export class PlatformSettingsRepository {
     Object.assign(settings, data)
     return await this.repo.save(settings)
   }
-
 }

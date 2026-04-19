@@ -26,7 +26,7 @@ export class SubscriptionBillingService {
     private readonly planRepository: SubscriptionPlanRepository,
     private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   async getCurrentSubscription(tenantId: string): Promise<CurrentSubscriptionResponseDto> {
     this.logger.log(`${this.getCurrentSubscription.name} Called for tenant: ${tenantId}`)
@@ -47,7 +47,7 @@ export class SubscriptionBillingService {
         }
       },
       3600, // 1 hour
-      tenantId
+      tenantId,
     )
   }
 
@@ -55,7 +55,7 @@ export class SubscriptionBillingService {
     return this.cacheService.rememberCache(
       'subscription:plans:active',
       () => this.planRepository.findActiveSortedByPrice(),
-      86400 // 24 hours
+      86400, // 24 hours
     )
   }
 
@@ -79,40 +79,46 @@ export class SubscriptionBillingService {
     if (!tenant) throw new NotFoundException('Tenant not found')
 
     // RENEWAL RESTRICTION: Block if not expired and same plan
-    const isSamePlan = tenant.subscriptionPlanId === planId;
-    const isCurrentlyActive = tenant.subscriptionStatus !== SubscriptionStatus.TRIAL && !tenant.isExpired;
+    const isSamePlan = tenant.subscriptionPlanId === planId
+    const isCurrentlyActive =
+      tenant.subscriptionStatus !== SubscriptionStatus.TRIAL && !tenant.isExpired
 
     if (isSamePlan && isCurrentlyActive) {
-      throw new BadRequestException('Your current subscription is still active. You can only renew after it expires.');
+      throw new BadRequestException(
+        'Your current subscription is still active. You can only renew after it expires.',
+      )
     }
 
     const transactionId = `SUB-${Date.now()}`
     // Normalize cycle for robust comparison
-    const isYearly = String(billingCycle).toLowerCase() === 'yearly';
-    const cycle = isYearly ? SubscriptionBillingCycle.YEARLY : SubscriptionBillingCycle.MONTHLY;
+    const isYearly = String(billingCycle).toLowerCase() === 'yearly'
+    const cycle = isYearly ? SubscriptionBillingCycle.YEARLY : SubscriptionBillingCycle.MONTHLY
 
     // Calculate base amount
-    let amount = isYearly ? Number(plan.yearlyPrice || 0) : Number(plan.monthlyPrice || 0);
+    let amount = isYearly ? Number(plan.yearlyPrice || 0) : Number(plan.monthlyPrice || 0)
 
     // Fallback: if yearly is zero, use 12x monthly
     if (isYearly && amount > 0) {
-      amount = Number(plan.yearlyPrice || 0) * 12;
+      amount = Number(plan.yearlyPrice || 0) * 12
     }
 
-    this.logger.log(`Subscription initiation: ${cycle} calculation Result: ${amount}`);
+    this.logger.log(`Subscription initiation: ${cycle} calculation Result: ${amount}`)
 
     const invoiceNumber = `INV-${Date.now()}`
-    const record = await this.planRecordRepository.createAndSave({
-      invoiceNumber,
-      tenantId,
-      subscriptionPlanId: planId,
-      amount,
-      billingCycle: cycle,
-      currency: 'BDT',
-      status: PaymentStatus.PENDING,
-      transactionId,
-      billingDate: new Date(),
-    }, ctx)
+    const record = await this.planRecordRepository.createAndSave(
+      {
+        invoiceNumber,
+        tenantId,
+        subscriptionPlanId: planId,
+        amount,
+        billingCycle: cycle,
+        currency: 'BDT',
+        status: PaymentStatus.PENDING,
+        transactionId,
+        billingDate: new Date(),
+      },
+      ctx,
+    )
 
     // Actual SSLCommerz Integration
     const strategy = new SslCommerzPaymentStrategy()
@@ -212,7 +218,9 @@ export class SubscriptionBillingService {
       // Invalidate current subscription cache
       await this.cacheService.delCache(`subscription:${tenant.id}:current`, tenant.id)
 
-      this.logger.log(`Tenant ${tenant.id} subscription updated: Plan ${plan.name}, startsAt: ${currentDate}, endsAt: ${newEndsAt}`)
+      this.logger.log(
+        `Tenant ${tenant.id} subscription updated: Plan ${plan.name}, startsAt: ${currentDate}, endsAt: ${newEndsAt}`,
+      )
     }
 
     return record
@@ -249,7 +257,7 @@ export class SubscriptionBillingService {
   }
 
   async getRedirectUrl(transactionId: string, gatewayResponse: any, defaultAppUrl: string) {
-    const baseUrl = gatewayResponse?.value_a || defaultAppUrl;
+    const baseUrl = gatewayResponse?.value_a || defaultAppUrl
     let status = 'success'
     if (gatewayResponse.status === 'FAILED') status = 'fail'
     if (gatewayResponse.status === 'CANCELLED') status = 'cancel'

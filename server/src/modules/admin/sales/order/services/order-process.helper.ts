@@ -23,7 +23,7 @@ export class OrderProcessHelper {
   constructor(
     private readonly inventoryService: InventoryTransactionService,
     private readonly couponService: CouponService,
-  ) { }
+  ) {}
 
   /**
    * Processes a single item: validates product/variant, checks stock, and deducts inventory.
@@ -132,11 +132,7 @@ export class OrderProcessHelper {
 
     if (couponCode) {
       try {
-        const validation = await this.couponService.validateCoupon(
-          couponCode,
-          preCouponTotal,
-          ctx,
-        )
+        const validation = await this.couponService.validateCoupon(couponCode, preCouponTotal, ctx)
         if (validation.valid) {
           couponDiscountAmount = validation.discountAmount
           order.appliedCoupon = couponCode

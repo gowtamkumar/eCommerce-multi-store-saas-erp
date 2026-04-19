@@ -12,7 +12,7 @@ export class ReviewService {
   constructor(
     private readonly reviewRepository: ReviewRepository,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   async createReview(dto: CreateReviewDto, ctx: RequestContextDto): Promise<ReviewEntity> {
     this.logger.log(`${this.createReview.name} Service Called`)
@@ -39,7 +39,7 @@ export class ReviewService {
       cacheKey,
       () => this.reviewRepository.findPublicReviews(tenantId),
       300,
-      tenantId
+      tenantId,
     )
   }
 
@@ -51,11 +51,15 @@ export class ReviewService {
       cacheKey,
       () => this.reviewRepository.findByProductReviews(productId, tenantId),
       300,
-      tenantId
+      tenantId,
     )
   }
 
-  async updateReview(id: string, dto: UpdateReviewDto, ctx: RequestContextDto): Promise<ReviewEntity> {
+  async updateReview(
+    id: string,
+    dto: UpdateReviewDto,
+    ctx: RequestContextDto,
+  ): Promise<ReviewEntity> {
     this.logger.log(`${this.updateReview.name} Service Called`)
     const tenantId = ctx.tenantId
     const review = await this.reviewRepository.findById(id, tenantId)

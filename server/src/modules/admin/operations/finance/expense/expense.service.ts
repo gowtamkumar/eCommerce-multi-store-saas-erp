@@ -24,7 +24,10 @@ export class ExpenseService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async createExpense(createExpenseDto: CreateExpenseDto, ctx: RequestContextDto): Promise<ExpenseEntity> {
+  async createExpense(
+    createExpenseDto: CreateExpenseDto,
+    ctx: RequestContextDto,
+  ): Promise<ExpenseEntity> {
     this.logger.log(`${this.createExpense.name} Service Called`)
     const tenantId = ctx.tenantId
     const result = await this.expenseRepository.createAndSave(createExpenseDto, ctx)
@@ -40,7 +43,13 @@ export class ExpenseService {
   async findAllExpenses(
     ctx: RequestContextDto,
     options: FindAllOptions = {},
-  ): Promise<{ items: ExpenseEntity[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<{
+    items: ExpenseEntity[]
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }> {
     this.logger.log(`${this.findAllExpenses.name} Service Called`)
     const tenantId = ctx.tenantId
     const { page = 1, limit = 20, category, q, startDate, endDate } = options
@@ -67,7 +76,11 @@ export class ExpenseService {
    * Raw (unpaginated) fetch for internal use by `ReportService`.
    * Bypasses API-layer pagination.
    */
-  async findAllExpensesRaw(ctx: RequestContextDto, startDate?: Date, endDate?: Date): Promise<ExpenseEntity[]> {
+  async findAllExpensesRaw(
+    ctx: RequestContextDto,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<ExpenseEntity[]> {
     this.logger.log(`${this.findAllExpensesRaw.name} Service Called`)
     const tenantId = ctx.tenantId
     const cacheKey = `expenses:raw:${startDate?.getTime()}:${endDate?.getTime()}`
@@ -96,7 +109,11 @@ export class ExpenseService {
     return expense
   }
 
-  async updateExpense(id: string, updateExpenseDto: UpdateExpenseDto, ctx: RequestContextDto): Promise<ExpenseEntity> {
+  async updateExpense(
+    id: string,
+    updateExpenseDto: UpdateExpenseDto,
+    ctx: RequestContextDto,
+  ): Promise<ExpenseEntity> {
     this.logger.log(`${this.updateExpense.name} Service Called`)
     const tenantId = ctx.tenantId
     const expense = await this.expenseRepository.findByIdAndTenant(id, tenantId)

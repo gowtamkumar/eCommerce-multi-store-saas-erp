@@ -19,7 +19,7 @@ export class PathaoService {
     private settingsService: SettingsService,
     private orderService: OrderService,
     private cacheService: CacheService,
-  ) { }
+  ) {}
 
   /**
    * Internal helper to get authenticated credentials for Pathao API calls.
@@ -36,7 +36,13 @@ export class PathaoService {
         const settings = await this.settingsService.findByTenantSettings(ctx)
         const courier = settings?.pathaoCourier
 
-        if (!courier?.pathaoClientId || !courier?.pathaoClientSecret || !courier?.pathaoUsername || !courier?.pathaoPassword || !courier?.pathaoStoreId) {
+        if (
+          !courier?.pathaoClientId ||
+          !courier?.pathaoClientSecret ||
+          !courier?.pathaoUsername ||
+          !courier?.pathaoPassword ||
+          !courier?.pathaoStoreId
+        ) {
           throw new Error('Pathao configuration is incomplete.')
         }
 
@@ -48,11 +54,11 @@ export class PathaoService {
           clientSecret: courier.pathaoClientSecret,
           username: courier.pathaoUsername,
           password: courier.pathaoPassword,
-          pathaoStoreId: Number(courier.pathaoStoreId)
+          pathaoStoreId: Number(courier.pathaoStoreId),
         }
       },
       600,
-      tenantId
+      tenantId,
     )
 
     // 2. Fetch & Cache Access Token
@@ -85,7 +91,7 @@ export class PathaoService {
         }
       },
       3600,
-      tenantId
+      tenantId,
     )
 
     return { baseURL: creds.baseURL, accessToken, storeId: creds.pathaoStoreId }
@@ -118,7 +124,8 @@ export class PathaoService {
       recipient_area: Number((order as any).areaId) || 1,
       delivery_type: 48,
       item_type: 2,
-      item_quantity: order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 1,
+      item_quantity:
+        order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 1,
       item_weight: 0.5,
       item_description:
         order.items
@@ -168,15 +175,12 @@ export class PathaoService {
       async () => {
         try {
           const response = await firstValueFrom(
-            this.httpService.get(
-              `${client.baseURL}/aladdin/api/v1/countries/1/city-list`,
-              {
-                headers: {
-                  Authorization: `Bearer ${client.accessToken}`,
-                  Accept: 'application/json',
-                },
+            this.httpService.get(`${client.baseURL}/aladdin/api/v1/countries/1/city-list`, {
+              headers: {
+                Authorization: `Bearer ${client.accessToken}`,
+                Accept: 'application/json',
               },
-            ),
+            }),
           )
           return response.data
         } catch (error) {
@@ -185,7 +189,7 @@ export class PathaoService {
         }
       },
       86400, // 24 hours
-      tenantId
+      tenantId,
     )
   }
 
@@ -200,24 +204,24 @@ export class PathaoService {
       async () => {
         try {
           const response = await firstValueFrom(
-            this.httpService.get(
-              `${client.baseURL}/aladdin/api/v1/cities/${cityId}/zone-list`,
-              {
-                headers: {
-                  Authorization: `Bearer ${client.accessToken}`,
-                  Accept: 'application/json',
-                },
+            this.httpService.get(`${client.baseURL}/aladdin/api/v1/cities/${cityId}/zone-list`, {
+              headers: {
+                Authorization: `Bearer ${client.accessToken}`,
+                Accept: 'application/json',
               },
-            ),
+            }),
           )
           return response.data
         } catch (error) {
-          this.logger.error(`Failed to fetch Pathao zones for city ${cityId}`, error.response?.data || error.message)
+          this.logger.error(
+            `Failed to fetch Pathao zones for city ${cityId}`,
+            error.response?.data || error.message,
+          )
           throw error
         }
       },
       86400,
-      tenantId
+      tenantId,
     )
   }
 
@@ -232,24 +236,24 @@ export class PathaoService {
       async () => {
         try {
           const response = await firstValueFrom(
-            this.httpService.get(
-              `${client.baseURL}/aladdin/api/v1/zones/${zoneId}/area-list`,
-              {
-                headers: {
-                  Authorization: `Bearer ${client.accessToken}`,
-                  Accept: 'application/json',
-                },
+            this.httpService.get(`${client.baseURL}/aladdin/api/v1/zones/${zoneId}/area-list`, {
+              headers: {
+                Authorization: `Bearer ${client.accessToken}`,
+                Accept: 'application/json',
               },
-            ),
+            }),
           )
           return response.data
         } catch (error) {
-          this.logger.error(`Failed to fetch Pathao areas for zone ${zoneId}`, error.response?.data || error.message)
+          this.logger.error(
+            `Failed to fetch Pathao areas for zone ${zoneId}`,
+            error.response?.data || error.message,
+          )
           throw error
         }
       },
       86400,
-      tenantId
+      tenantId,
     )
   }
 }

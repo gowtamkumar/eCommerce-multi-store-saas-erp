@@ -9,7 +9,7 @@ export class PageRepository {
   constructor(
     @InjectRepository(PageEntity)
     private readonly repo: Repository<PageEntity>,
-  ) { }
+  ) {}
 
   async findBySlug(slug: string, ctx: RequestContextDto): Promise<PageEntity | null> {
     return this.repo.findOne({ where: { slug, tenantId: ctx.tenantId } })
@@ -72,5 +72,4 @@ export class PageRepository {
   async removePage(page: PageEntity): Promise<void> {
     await this.repo.softRemove(page)
   }
-
 }

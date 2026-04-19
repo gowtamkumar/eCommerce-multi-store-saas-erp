@@ -22,9 +22,12 @@ export class ReturnService {
     private orderRepository: OrderRepository,
     private inventoryService: InventoryTransactionService,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
-  async createReturnRequest(ctx: RequestContextDto, dto: CreateReturnDto): Promise<OrderReturnEntity> {
+  async createReturnRequest(
+    ctx: RequestContextDto,
+    dto: CreateReturnDto,
+  ): Promise<OrderReturnEntity> {
     this.logger.log(`${this.createReturnRequest.name} Service Called`)
     const tenantId = ctx.tenantId
     const userId = ctx.userId
@@ -51,10 +54,7 @@ export class ReturnService {
       }
     }
 
-    const result = await this.returnRepository.createAndSaveReturn(
-      { orderId, reason, items },
-      ctx,
-    )
+    const result = await this.returnRepository.createAndSaveReturn({ orderId, reason, items }, ctx)
     // Invalidate the admin list cache so the new return appears immediately
     await this.cacheService.delCache('returns:all', tenantId)
     return result
@@ -77,7 +77,6 @@ export class ReturnService {
       tenantId,
     )
   }
-
 
   async findByUser(ctx: RequestContextDto): Promise<OrderReturnEntity[]> {
     this.logger.log(`${this.findByUser.name} Service Called`)
@@ -148,4 +147,3 @@ export class ReturnService {
     }
   }
 }
-

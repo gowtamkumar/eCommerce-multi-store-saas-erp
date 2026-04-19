@@ -9,7 +9,7 @@ export class CartItemRepository {
   constructor(
     @InjectRepository(CartItemEntity)
     private readonly repo: Repository<CartItemEntity>,
-  ) { }
+  ) {}
 
   async findByIdWithCart(id: string, tenantId: string): Promise<CartItemEntity | null> {
     return await this.repo.findOne({
@@ -30,7 +30,10 @@ export class CartItemRepository {
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<CartItemEntity> {
-    const cartItem = this.repo.create({ ...dto, tenantId: ctx.tenantId } as any) as unknown as CartItemEntity
+    const cartItem = this.repo.create({
+      ...dto,
+      tenantId: ctx.tenantId,
+    } as any) as unknown as CartItemEntity
     return await (this.repo.save(cartItem) as Promise<CartItemEntity>)
   }
 
@@ -46,5 +49,4 @@ export class CartItemRepository {
       await this.repo.remove(items)
     }
   }
-
 }

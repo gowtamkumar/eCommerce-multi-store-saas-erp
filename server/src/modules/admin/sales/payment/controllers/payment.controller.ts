@@ -14,7 +14,7 @@ import { PaymentService } from '../services/payment.service'
 export class PaymentController {
   private readonly logger = new Logger(PaymentController.name)
 
-  constructor(private readonly paymentService: PaymentService) { }
+  constructor(private readonly paymentService: PaymentService) {}
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.MARKETING)

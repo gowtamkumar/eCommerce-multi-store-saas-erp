@@ -1,5 +1,13 @@
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
-import { IsDefined, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator'
+import {
+  IsDefined,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator'
 
 export class CreateTenantDto {
   @IsDefined()

@@ -9,10 +9,11 @@ export class PromotionRepository {
   constructor(
     @InjectRepository(PromotionEntity)
     private readonly repo: Repository<PromotionEntity>,
-  ) { }
+  ) {}
 
   async findActivePromotions(tenantId: string, now: Date): Promise<PromotionEntity[]> {
-    return await this.repo.createQueryBuilder('promotion')
+    return await this.repo
+      .createQueryBuilder('promotion')
       .where('promotion.tenantId = :tenantId', { tenantId })
       .andWhere('promotion.isActive = true')
       .andWhere('(promotion.startDate IS NULL OR promotion.startDate <= :now)', { now })
@@ -26,9 +27,11 @@ export class PromotionRepository {
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
     const { search, isActive } = filterDto
 
-    const query = this.repo.createQueryBuilder('promotion').where('promotion.tenantId = :tenantId', {
-      tenantId,
-    })
+    const query = this.repo
+      .createQueryBuilder('promotion')
+      .where('promotion.tenantId = :tenantId', {
+        tenantId,
+      })
 
     if (isActive !== undefined) {
       query.andWhere('promotion.isActive = :isActive', { isActive: isActive === 'true' })
@@ -74,5 +77,4 @@ export class PromotionRepository {
   async removePromotion(promotion: PromotionEntity): Promise<void> {
     await this.repo.softRemove(promotion)
   }
-
 }

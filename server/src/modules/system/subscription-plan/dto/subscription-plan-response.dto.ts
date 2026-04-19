@@ -1,40 +1,40 @@
-import { Expose } from 'class-transformer';
-import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum';
+import { Expose } from 'class-transformer'
+import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 
 export class SubscriptionPlanResponseDto {
   @Expose()
-  id: string;
+  id: string
 
   @Expose()
-  name: string;
+  name: string
 
   @Expose()
-  description: string | null;
+  description: string | null
 
   @Expose()
-  price: number;
-  
-  @Expose()
-  monthlyPrice: number;
+  price: number
 
   @Expose()
-  yearlyPrice: number;
+  monthlyPrice: number
 
   @Expose()
-  billingCycle: SubscriptionBillingCycle;
+  yearlyPrice: number
 
   @Expose()
-  features: string[];
+  billingCycle: SubscriptionBillingCycle
 
   @Expose()
-  isActive: boolean;
+  features: string[]
 
   @Expose()
-  isPopular: boolean;
+  isActive: boolean
 
   @Expose()
-  createdAt: Date;
+  isPopular: boolean
 
   @Expose()
-  updatedAt: Date;
+  createdAt: Date
+
+  @Expose()
+  updatedAt: Date
 }

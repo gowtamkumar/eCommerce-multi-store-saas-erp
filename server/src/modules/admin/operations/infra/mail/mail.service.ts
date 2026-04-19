@@ -37,7 +37,9 @@ export class MailService {
         from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),
       }
 
-    const settings = await this.settingsService.findByTenantSettings({ tenantId } as RequestContextDto)
+    const settings = await this.settingsService.findByTenantSettings({
+      tenantId,
+    } as RequestContextDto)
     if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
       const port = Number(settings.smtp.port) || 587
 
@@ -175,13 +177,15 @@ export class MailService {
         }
       },
       3600, // 1 hour
-      tenantId
+      tenantId,
     )
   }
 
   async sendNewOrderNotification(order: OrderEntity, tenantId: string) {
     this.logger.log(`${this.sendNewOrderNotification.name} Service Called for order: ${order.id}`)
-    const settings = await this.settingsService.findByTenantSettings({ tenantId } as RequestContextDto)
+    const settings = await this.settingsService.findByTenantSettings({
+      tenantId,
+    } as RequestContextDto)
     if (!settings || !settings.contactEmail) {
       this.logger.warn(`No contact email configured for tenant ${tenantId}. Skipping notification.`)
       return
@@ -265,6 +269,26 @@ export class MailService {
       this.logger.log(`New order notification sent for order #${order.id}`)
     } catch (error) {
       this.logger.error(`Failed to send order notification for order #${order.id}`, error)
+    }
+  }
+
+  async sendGenericEmail(options: { to: string; subject: string; html: string; tenantId: string }) {
+    this.logger.log(`${this.sendGenericEmail.name} Service Called for ${options.to}`)
+    const { transporter, from } = await this.getTransporter(options.tenantId)
+
+    const mailOptions = {
+      from: from,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+    }
+
+    try {
+      await transporter.sendMail(mailOptions)
+      this.logger.log(`Generic email sent to ${options.to}`)
+    } catch (error) {
+      this.logger.error(`Failed to send generic email to ${options.to}`, error)
+      throw error
     }
   }
 }

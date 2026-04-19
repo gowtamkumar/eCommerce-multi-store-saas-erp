@@ -9,7 +9,7 @@ export class AuditLogRepository {
   constructor(
     @InjectRepository(AuditLogEntity)
     private readonly repo: Repository<AuditLogEntity>,
-  ) { }
+  ) {}
 
   async createAndSave(ctx: RequestContextDto, data: any): Promise<void> {
     const entry = this.repo.create({
@@ -58,12 +58,12 @@ export class AuditLogRepository {
   }
 
   async deleteOlderThan(tenantId: string, cutoff: Date): Promise<void> {
-    await this.repo.createQueryBuilder()
+    await this.repo
+      .createQueryBuilder()
       .delete()
       .from(AuditLogEntity)
       .where('tenant_id = :tenantId', { tenantId })
       .andWhere('created_at < :cutoff', { cutoff })
       .execute()
   }
-
 }

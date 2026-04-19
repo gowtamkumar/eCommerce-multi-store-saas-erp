@@ -21,7 +21,7 @@ export class SubscriptionBillingController {
   constructor(
     private readonly billingService: SubscriptionBillingService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   @Get('current')
   @PublicDuringExpiration()
@@ -75,7 +75,12 @@ export class SubscriptionBillingController {
     @Body('frontendUrl') frontendUrl?: string,
   ): Promise<BaseApiSuccessResponse<{ gatewayUrl: string }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called initiatePayment.`)
-    const data = await this.billingService.initiateSubscriptionPayment(ctx, planId, billingCycle, frontendUrl)
+    const data = await this.billingService.initiateSubscriptionPayment(
+      ctx,
+      planId,
+      billingCycle,
+      frontendUrl,
+    )
     return {
       success: true,
       statusCode: 200,
@@ -134,7 +139,12 @@ export class SubscriptionBillingController {
       }
     } catch (error) {
       this.logger.error(`Error in completePaymentFail: ${error.message}`)
-      return { success: false, statusCode: 500, message: 'Internal error during failure processing', data: { transactionId: tran_id } }
+      return {
+        success: false,
+        statusCode: 500,
+        message: 'Internal error during failure processing',
+        data: { transactionId: tran_id },
+      }
     }
   }
 
@@ -160,7 +170,12 @@ export class SubscriptionBillingController {
       }
     } catch (error) {
       this.logger.error(`Error in completePaymentCancel: ${error.message}`)
-      return { success: false, statusCode: 500, message: 'Internal error during cancel processing', data: { transactionId: tran_id } }
+      return {
+        success: false,
+        statusCode: 500,
+        message: 'Internal error during cancel processing',
+        data: { transactionId: tran_id },
+      }
     }
   }
 
@@ -178,9 +193,7 @@ export class SubscriptionBillingController {
   @Get('complete')
   async completePaymentGet(@Query('tran_id') transactionId: string, @Res() res: Response) {
     if (!transactionId) {
-      return res.redirect(
-        `${this.configService.get('FRONTEND_URL')}/billing?error=invalid_txn`,
-      )
+      return res.redirect(`${this.configService.get('FRONTEND_URL')}/billing?error=invalid_txn`)
     }
     const defaultAppUrl = this.configService.get('FRONTEND_URL')
     return res.redirect(`${defaultAppUrl}/billing/success?tran_id=${transactionId}`)

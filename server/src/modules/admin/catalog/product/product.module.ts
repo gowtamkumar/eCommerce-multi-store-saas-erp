@@ -12,14 +12,14 @@ import { ProductProcessor } from './queue/product.processor'
 @Module({
   imports: [
     BullModule.registerQueue({ name: 'product' }), // 👈 register queue
-    ReviewModule, CacheModule, InventoryTransactionModule, PurchaseModule, PromotionModule],
+    ReviewModule,
+    CacheModule,
+    InventoryTransactionModule,
+    PurchaseModule,
+    PromotionModule,
+  ],
   controllers: [ProductController],
-  providers: [
-    ProductService,
-    ProductProcessor,
-  ],
-  exports: [
-    ProductService,
-  ],
+  providers: [ProductService, ProductProcessor],
+  exports: [ProductService],
 })
-export class ProductModule { }
+export class ProductModule {}

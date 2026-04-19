@@ -40,7 +40,10 @@ export class PurchaseOrderService {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
     const tenantId = ctx.tenantId
     const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-    const result = await this.repository.createAndSave({ ...dto, totalAmount, tenantId } as any, ctx)
+    const result = await this.repository.createAndSave(
+      { ...dto, totalAmount, tenantId } as any,
+      ctx,
+    )
     await this.cacheService.delCache(`po:list`, tenantId)
     return result
   }
@@ -257,7 +260,10 @@ export class PurchaseOrderService {
     )
   }
 
-  async findAllBySupplier(supplierId: string, ctx: RequestContextDto): Promise<PurchaseOrderEntity[]> {
+  async findAllBySupplier(
+    supplierId: string,
+    ctx: RequestContextDto,
+  ): Promise<PurchaseOrderEntity[]> {
     this.logger.log(`${this.findAllBySupplier.name} Service Called`)
     const tenantId = ctx.tenantId
     return await this.repository.findAllBySupplier(supplierId, tenantId)
@@ -272,7 +278,7 @@ export class PurchaseOrderService {
     return await this.paymentRepository.findAllBySupplier(supplierId, tenantId)
   }
 
-  async findAllPaymentsByPurchaseOrder(ctx:RequestContextDto): Promise<SupplierPaymentEntity[]> {
+  async findAllPaymentsByPurchaseOrder(ctx: RequestContextDto): Promise<SupplierPaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsByPurchaseOrder.name} Service Called`)
     const tenantId = ctx.tenantId
     return await this.paymentRepository.findAllPayments(tenantId)

@@ -14,12 +14,9 @@ export class WishlistService {
     private readonly productRepository: ProductRepository,
     private readonly pricingEngine: PricingEngineService,
     private readonly promotionService: PromotionService,
-  ) { }
+  ) {}
 
-  async toggleWishlist(
-    ctx: RequestContextDto,
-    productId: string,
-  ): Promise<{ added: boolean }> {
+  async toggleWishlist(ctx: RequestContextDto, productId: string): Promise<{ added: boolean }> {
     const { userId, tenantId } = ctx
     this.logger.log(`${this.toggleWishlist.name} Service Called for user ${userId}`)
 

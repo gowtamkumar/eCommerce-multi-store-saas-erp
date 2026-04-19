@@ -8,4 +8,4 @@ import { PaymentModule } from './payment/payment.module'
   imports: [OrderModule, CouponModule, PromotionModule, PaymentModule],
   exports: [OrderModule, CouponModule, PromotionModule, PaymentModule],
 })
-export class SalesModule { }
+export class SalesModule {}

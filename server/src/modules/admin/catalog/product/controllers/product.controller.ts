@@ -32,7 +32,7 @@ export class ProductController {
   constructor(
     private readonly productService: ProductService,
     private readonly reviewService: ReviewService,
-  ) { }
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)

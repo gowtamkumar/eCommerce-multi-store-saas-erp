@@ -19,6 +19,7 @@ import { CartModule } from '@/modules/store/cart/cart.module'
 import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping-address.module'
 import { WishlistModule } from '@/modules/store/wishlist/wishlist.module'
 import { SystemModule } from '@/modules/system/system.module'
+import { MarketingModule } from '@/modules/admin/marketing/marketing.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
@@ -58,6 +59,7 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     SalesModule,
     CustomerModule,
     ContentModule,
+    MarketingModule,
     OperationsModule,
 
     // Other Features

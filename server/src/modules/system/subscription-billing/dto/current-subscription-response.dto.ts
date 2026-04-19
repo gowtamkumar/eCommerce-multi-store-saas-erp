@@ -1,23 +1,23 @@
-import { Expose } from 'class-transformer';
-import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum';
-import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum';
+import { Expose } from 'class-transformer'
+import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
+import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 
 export class CurrentSubscriptionResponseDto {
   @Expose()
-  planName: string;
+  planName: string
 
   @Expose()
-  status: SubscriptionStatus;
+  status: SubscriptionStatus
 
   @Expose()
-  startsAt: Date | null;
+  startsAt: Date | null
 
   @Expose()
-  endsAt: Date | null;
+  endsAt: Date | null
 
   @Expose()
-  billingCycle: SubscriptionBillingCycle | null;
+  billingCycle: SubscriptionBillingCycle | null
 
   @Expose()
-  isExpired: boolean;
+  isExpired: boolean
 }

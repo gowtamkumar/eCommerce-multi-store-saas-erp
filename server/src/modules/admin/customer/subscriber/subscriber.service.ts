@@ -14,27 +14,36 @@ export class SubscriberService {
     private readonly cache: CacheService,
   ) {}
 
-  async createSubscriber(createSubscriberDto: CreateSubscriberDto, ctx: RequestContextDto): Promise<SubscriberEntity> {
+  async createSubscriber(
+    createSubscriberDto: CreateSubscriberDto,
+    ctx: RequestContextDto,
+  ): Promise<SubscriberEntity> {
     this.logger.log(`${this.createSubscriber.name} Service Called`)
     const tenantId = ctx.tenantId
     const existingSubscriber = await this.subscriberRepository.findByEmail(
       createSubscriberDto.email,
-      tenantId
+      tenantId,
     )
 
     if (existingSubscriber) {
       throw new ConflictException('Email is already subscribed to this store')
     }
 
-    const subscriber = await this.subscriberRepository.createAndSave({
-      ...createSubscriberDto,
-    }, ctx)
-    
+    const subscriber = await this.subscriberRepository.createAndSave(
+      {
+        ...createSubscriberDto,
+      },
+      ctx,
+    )
+
     await this.cache.delCache('subscribers:list', tenantId)
     return subscriber
   }
 
-  async findAllSubscribers(filterDto: any, ctx: RequestContextDto): Promise<{ subscribers: SubscriberEntity[]; total: number }> {
+  async findAllSubscribers(
+    filterDto: any,
+    ctx: RequestContextDto,
+  ): Promise<{ subscribers: SubscriberEntity[]; total: number }> {
     this.logger.log(`${this.findAllSubscribers.name} Service Called`)
     const tenantId = ctx.tenantId
     const { page = 1, limit = 10, search = '' } = filterDto || {}

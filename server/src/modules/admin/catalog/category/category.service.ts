@@ -13,7 +13,7 @@ export class CategoryService {
   constructor(
     private readonly categoryRepo: CategoryRepository,
     private readonly cache: CacheService,
-  ) { }
+  ) {}
 
   async createCategory(
     createCategoryDto: CreateCategoryDto,
@@ -42,7 +42,7 @@ export class CategoryService {
       cacheKey,
       () => this.categoryRepo.findAllByTenant(tenantId),
       600, // 10 minutes
-      tenantId
+      tenantId,
     )
   }
 
@@ -55,13 +55,13 @@ export class CategoryService {
       cacheKey,
       async () => {
         const results = await this.categoryRepo.findAllWithProductCounts(tenantId)
-        return results.map(r => ({
+        return results.map((r) => ({
           ...r,
-          productCount: Number(r.productCount || 0)
+          productCount: Number(r.productCount || 0),
         }))
       },
       600, // 10 minutes
-      tenantId
+      tenantId,
     )
   }
 

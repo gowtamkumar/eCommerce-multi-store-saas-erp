@@ -1,12 +1,7 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  UnauthorizedException
-} from '@nestjs/common'
+import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import * as bcrypt from 'bcrypt'
 import { CreateUserDto, FilterUserDto, UpdatePasswordDto, UpdateUserDto } from '../dtos'
 import { StaffInvitationEntity } from '../entities/staff-invitation.entity'
@@ -57,7 +52,7 @@ export class UserService {
   async findUserById(id: string): Promise<UserEntity | null> {
     this.logger.log(`${this.findUserById.name} Service Called for ID: ${id}`)
     const cacheKey = `user:profile:${id}`
-    
+
     // Attempt to fetch from cache with logging
     const cachedUser = await this.cacheService.getCache<UserEntity>(cacheKey)
     if (cachedUser) {
@@ -67,11 +62,11 @@ export class UserService {
 
     this.logger.verbose(`Cache MISS for ${cacheKey}. Fetching from DB...`)
     const user = await this.userRepo.findById(id)
-    
+
     if (user) {
       await this.cacheService.setCache(cacheKey, user, 3600)
     }
-    
+
     return user
   }
 
@@ -88,10 +83,13 @@ export class UserService {
   async createUser(createUserDto: CreateUserDto, ctx: RequestContextDto): Promise<UserEntity> {
     this.logger.log(`${this.createUser.name} Service Called`)
     const hashPassword = await bcrypt.hash(createUserDto.password, 10)
-    const user = await this.userRepo.createAndSave({
-      ...createUserDto,
-      password: hashPassword,
-    } as any, ctx)
+    const user = await this.userRepo.createAndSave(
+      {
+        ...createUserDto,
+        password: hashPassword,
+      } as any,
+      ctx,
+    )
     return user
   }
 
@@ -99,11 +97,11 @@ export class UserService {
     this.logger.log(`${this.updateUser.name} Service Called for ID: ${id}`)
     const user = await this.getUser(id)
     const result = await this.userRepo.updateAndSave(user, updateUserDto)
-    
+
     const cacheKey = `user:profile:${id}`
     await this.cacheService.delCache(cacheKey)
     this.logger.verbose(`Cache INVALIDATED for ${cacheKey} due to profile update`)
-    
+
     return result
   }
 
@@ -196,7 +194,10 @@ export class UserService {
     await this.userRepo.updateRefreshToken(userId, currentRefreshToken)
   }
 
-  async getUserIfRefreshTokenMatches(refreshToken: string, userId: string): Promise<UserEntity | null> {
+  async getUserIfRefreshTokenMatches(
+    refreshToken: string,
+    userId: string,
+  ): Promise<UserEntity | null> {
     this.logger.log(`${this.getUserIfRefreshTokenMatches.name} Service Called`)
     const user = await this.userRepo.findUserWithRefreshToken(userId)
 
@@ -240,7 +241,11 @@ export class UserService {
     )
   }
 
-  async updateTeamMemberRole(memberId: string, role: UserRole, ctx: RequestContextDto): Promise<UserEntity> {
+  async updateTeamMemberRole(
+    memberId: string,
+    role: UserRole,
+    ctx: RequestContextDto,
+  ): Promise<UserEntity> {
     this.logger.log(`${this.updateTeamMemberRole.name} Service Called`)
     const tenantId = ctx.tenantId
     const user = await this.userRepo.findByIdAndTenant(memberId, tenantId)

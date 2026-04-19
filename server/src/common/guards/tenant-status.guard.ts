@@ -11,13 +11,13 @@ export class TenantStatusGuard implements CanActivate {
   constructor(
     private readonly tenantService: TenantService,
     private readonly reflector: Reflector,
-  ) { }
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
     const tenantId = request.tenantId
     const user = request.user
-    console.log("user", user);
+    console.log('user', user)
 
     // 1. Allow Super Admin to bypass all tenant status checks
     if (user?.role === UserRole.SUPER_ADMIN) {

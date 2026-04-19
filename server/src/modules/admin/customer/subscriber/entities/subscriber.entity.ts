@@ -3,7 +3,7 @@ import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm'
 
-/** 
+/**
  * Database Index: Optimizes chronological and tenant-based lookups
  * Unique Constraint: Ensures an email is only subscribed once per tenant
  */

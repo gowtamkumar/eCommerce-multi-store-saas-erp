@@ -11,7 +11,6 @@ import { CacheService } from '@/modules/admin/operations/infra/cache/cache.servi
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
-
 @Injectable()
 export class InvoiceService {
   private readonly logger = new Logger(InvoiceService.name)
@@ -20,7 +19,7 @@ export class InvoiceService {
     private readonly invoiceRepository: InvoiceRepository,
     private readonly orderRepo: OrderRepository,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   async createInvoice(
     createInvoiceDto: CreateInvoiceDto,
@@ -43,10 +42,7 @@ export class InvoiceService {
       const random = Math.floor(1000 + Math.random() * 9000)
       invoiceNumber = `INV-${year}${month}-${random}`
 
-      const exists = await this.invoiceRepository.checkInvoiceNumberExists(
-        invoiceNumber,
-        tenantId,
-      )
+      const exists = await this.invoiceRepository.checkInvoiceNumberExists(invoiceNumber, tenantId)
       if (exists) {
         invoiceNumber = `INV-${year}${month}-${random + 1}`
       }
@@ -61,7 +57,7 @@ export class InvoiceService {
         dueDate: createInvoiceDto.dueDate ? new Date(createInvoiceDto.dueDate) : undefined,
         status: createInvoiceDto.status || InvoiceStatus.PENDING,
       } as any,
-      ctx
+      ctx,
     )
 
     await this.cacheService.delCache(`invoices:list`, tenantId)
@@ -72,7 +68,13 @@ export class InvoiceService {
     ctx: RequestContextDto,
     paginationDto: PaginationDto,
     status?: InvoiceStatus,
-  ): Promise<{ items: InvoiceEntity[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<{
+    items: InvoiceEntity[]
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }> {
     this.logger.log(`${this.findAllInvoices.name} Service Called`)
     const tenantId = ctx.tenantId
     const { page = 1, limit = 20, q: search } = paginationDto
@@ -120,7 +122,11 @@ export class InvoiceService {
     return invoice
   }
 
-  async updateInvoice(id: string, updateInvoiceDto: UpdateInvoiceDto, ctx: RequestContextDto): Promise<InvoiceEntity> {
+  async updateInvoice(
+    id: string,
+    updateInvoiceDto: UpdateInvoiceDto,
+    ctx: RequestContextDto,
+  ): Promise<InvoiceEntity> {
     this.logger.log(`${this.updateInvoice.name} Service Called`)
     const tenantId = ctx.tenantId
     const invoice = await this.findOneInvoice(id, ctx)

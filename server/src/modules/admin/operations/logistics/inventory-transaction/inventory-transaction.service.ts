@@ -19,7 +19,7 @@ export class InventoryTransactionService {
     private readonly productRepository: ProductRepository,
     private readonly variantRepository: ProductVariantRepository,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   /**
    * Records a stock movement and updates the product/variant static stock cache atomically.
@@ -70,7 +70,13 @@ export class InventoryTransactionService {
     ctx: RequestContextDto,
     paginationDto: PaginationDto,
     type?: ITType,
-  ): Promise<{ items: InventoryTransactionEntity[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<{
+    items: InventoryTransactionEntity[]
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }> {
     this.logger.log(`${this.findAllInventoryTransactions.name} Service Called`)
     const tenantId = ctx.tenantId
     const { page = 1, limit = 20, q: search } = paginationDto
@@ -99,7 +105,10 @@ export class InventoryTransactionService {
     )
   }
 
-  async findByProductInventoryTransactions(productId: string, ctx: RequestContextDto): Promise<InventoryTransactionEntity[]> {
+  async findByProductInventoryTransactions(
+    productId: string,
+    ctx: RequestContextDto,
+  ): Promise<InventoryTransactionEntity[]> {
     this.logger.log(`${this.findByProductInventoryTransactions.name} Service Called`)
     const tenantId = ctx.tenantId
     return await this.repository.findByProduct(productId, tenantId)
@@ -118,7 +127,10 @@ export class InventoryTransactionService {
       async () => {
         // Fetch all products with variants for the summary
         // We use a high limit here because the dashboard expects the full picture
-        const [products] = await this.productRepository.findAllWithFilters({ limit: 1000 }, tenantId)
+        const [products] = await this.productRepository.findAllWithFilters(
+          { limit: 1000 },
+          tenantId,
+        )
 
         return products.map((product) => {
           const hasVariants = product.variants && product.variants.length > 0
@@ -127,15 +139,15 @@ export class InventoryTransactionService {
             : product.stock
           const totalValue = hasVariants
             ? product.variants.reduce(
-              (sum, v) => sum + (v.stock || 0) * Number(v.price || product.price),
-              0,
-            )
+                (sum, v) => sum + (v.stock || 0) * Number(v.price || product.price),
+                0,
+              )
             : product.stock * Number(product.price)
 
           const isLowStock = hasVariants
             ? product.variants.some(
-              (v) => v.stock <= (v.lowStockThreshold ?? product.lowStockThreshold ?? 5),
-            )
+                (v) => v.stock <= (v.lowStockThreshold ?? product.lowStockThreshold ?? 5),
+              )
             : product.stock <= (product.lowStockThreshold ?? 5)
 
           const isOutOfStock = hasVariants
@@ -156,13 +168,13 @@ export class InventoryTransactionService {
             stockValue: totalValue,
             variants: hasVariants
               ? product.variants.map((v: any) => ({
-                id: v.id,
-                sku: v.sku,
-                combination: v.combination,
-                price: v.price || product.price,
-                stock: v.stock,
-                lowStockThreshold: v.lowStockThreshold || product.lowStockThreshold || 5,
-              }))
+                  id: v.id,
+                  sku: v.sku,
+                  combination: v.combination,
+                  price: v.price || product.price,
+                  stock: v.stock,
+                  lowStockThreshold: v.lowStockThreshold || product.lowStockThreshold || 5,
+                }))
               : [],
             lowStock: isLowStock,
             outOfStock: isOutOfStock,

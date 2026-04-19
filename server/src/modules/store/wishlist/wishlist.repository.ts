@@ -9,7 +9,7 @@ export class WishlistRepository {
   constructor(
     @InjectRepository(WishlistEntity)
     private readonly repo: Repository<WishlistEntity>,
-  ) { }
+  ) {}
 
   async findByUserAndProduct(
     userId: string,
@@ -38,7 +38,6 @@ export class WishlistRepository {
     await this.repo.delete({ userId, productId, tenantId })
   }
 
-
   async toggleWishlist(productId: string, ctx: RequestContextDto): Promise<boolean> {
     const userId = ctx.userId
     const tenantId = ctx.tenantId
@@ -52,5 +51,4 @@ export class WishlistRepository {
       return true // Added
     }
   }
-
 }

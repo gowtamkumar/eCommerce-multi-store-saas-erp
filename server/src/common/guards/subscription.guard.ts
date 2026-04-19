@@ -41,7 +41,7 @@ export class SubscriptionGuard implements CanActivate {
 
       // 3. Verify if plan has the feature
       const features = tenant.subscriptionPlan?.features || []
-      
+
       if (!features.includes(requiredFeature)) {
         throw new ForbiddenException({
           success: false,

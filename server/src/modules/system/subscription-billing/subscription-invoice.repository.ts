@@ -9,7 +9,7 @@ export class SubscriptionInvoiceRepository {
   constructor(
     @InjectRepository(SubscriptionInvoiceEntity)
     private readonly repo: Repository<SubscriptionInvoiceEntity>,
-  ) { }
+  ) {}
 
   async createAndSave(data: any, ctx: RequestContextDto): Promise<SubscriptionInvoiceEntity> {
     const invoice = this.repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId }) as any
@@ -38,5 +38,4 @@ export class SubscriptionInvoiceRepository {
     Object.assign(invoice, data)
     return await this.repo.save(invoice)
   }
-
 }

@@ -12,7 +12,7 @@ import { Request, Response } from 'express'
 export class AdminAuthController {
   private readonly logger = new Logger(AdminAuthController.name)
 
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/login')

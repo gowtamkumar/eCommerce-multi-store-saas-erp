@@ -10,7 +10,7 @@ export class BrandRepository {
   constructor(
     @InjectRepository(BrandEntity)
     private readonly repo: Repository<BrandEntity>,
-  ) { }
+  ) {}
 
   async findBySlug(slug: string, tenantId: string): Promise<BrandEntity | null> {
     return this.repo.findOne({ where: { slug, tenantId } })
@@ -48,7 +48,11 @@ export class BrandRepository {
   }
 
   async createAndSave(data: Partial<BrandEntity>, ctx: RequestContextDto): Promise<BrandEntity> {
-    const brand = this.repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId } as BrandEntity)
+    const brand = this.repo.create({
+      ...data,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as BrandEntity)
     return this.repo.save(brand)
   }
 
@@ -62,7 +66,8 @@ export class BrandRepository {
   }
 
   async findBrandsForProducts(tenantId: string, categoryId?: string) {
-    const brandQuery = this.repo.createQueryBuilder('brand')
+    const brandQuery = this.repo
+      .createQueryBuilder('brand')
       .innerJoin(ProductEntity, 'product', 'product.brandId = brand.id')
       .where('brand.tenantId = :tenantId', { tenantId })
       .select('brand.id', 'id')
@@ -75,5 +80,4 @@ export class BrandRepository {
     }
     return brandQuery.getRawMany()
   }
-
 }

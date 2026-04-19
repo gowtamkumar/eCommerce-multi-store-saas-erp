@@ -17,9 +17,12 @@ export class PromotionService {
     private promotionRepository: PromotionRepository,
     private productRepository: ProductRepository,
     private cache: CacheService,
-  ) { }
+  ) {}
 
-  async createPromotion(createPromotionDto: CreatePromotionDto, ctx: RequestContextDto): Promise<PromotionEntity> {
+  async createPromotion(
+    createPromotionDto: CreatePromotionDto,
+    ctx: RequestContextDto,
+  ): Promise<PromotionEntity> {
     this.logger.log(`${this.createPromotion.name} Service Called`)
     const tenantId = ctx.tenantId
     const slug = createPromotionDto.slug || this.generateSlug(createPromotionDto.name)
@@ -66,7 +69,10 @@ export class PromotionService {
     return this.cache.rememberCache(
       cacheKey,
       async () => {
-        const [promotions, total] = await this.promotionRepository.findAllWithFilters(filterDto, tenantId)
+        const [promotions, total] = await this.promotionRepository.findAllWithFilters(
+          filterDto,
+          tenantId,
+        )
         return { promotions, total }
       },
       300, // 5 min TTL
@@ -83,7 +89,7 @@ export class PromotionService {
       cacheKey,
       () => this.promotionRepository.findActivePromotions(tenantId, new Date()),
       600, // 10 minutes
-      tenantId
+      tenantId,
     )
   }
 
@@ -213,11 +219,11 @@ export class PromotionService {
               targetId: promo.targetId,
               limit:
                 promo.targetType === PromotionTargetType.ENTIRE_ORDER ||
-                  promo.targetType === PromotionTargetType.MINIMUM_CART_VALUE
+                promo.targetType === PromotionTargetType.MINIMUM_CART_VALUE
                   ? 12
                   : 20,
-            })
-          )
+            }),
+          ),
         )
 
         // Build enriched offer groups — filter out empty groups
@@ -240,7 +246,10 @@ export class PromotionService {
     )
   }
 
-  async getOfferProductsBySlug(slug: string, ctx: RequestContextDto): Promise<{ promotion: PromotionEntity; products: any[] }> {
+  async getOfferProductsBySlug(
+    slug: string,
+    ctx: RequestContextDto,
+  ): Promise<{ promotion: PromotionEntity; products: any[] }> {
     this.logger.log(`${this.getOfferProductsBySlug.name} Service Called`)
     const tenantId = ctx.tenantId
     const promotion = await this.findOneBySlug(slug, ctx)
@@ -270,8 +279,8 @@ export class PromotionService {
       targetId: promotion.targetId,
       limit:
         promotion.targetType === PromotionTargetType.SPECIFIC_PRODUCT ||
-          promotion.targetType === PromotionTargetType.SPECIFIC_CATEGORY ||
-          promotion.targetType === PromotionTargetType.SPECIFIC_BRAND
+        promotion.targetType === PromotionTargetType.SPECIFIC_CATEGORY ||
+        promotion.targetType === PromotionTargetType.SPECIFIC_BRAND
           ? 50
           : 24,
     })

@@ -12,4 +12,4 @@ import { CouponService } from './services/coupon.service'
   providers: [CouponService, CouponRepository],
   exports: [CouponService],
 })
-export class CouponModule { }
+export class CouponModule {}

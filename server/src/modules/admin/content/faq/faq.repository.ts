@@ -10,14 +10,16 @@ export class FaqRepository {
   constructor(
     @InjectRepository(FaqEntity)
     private readonly repo: Repository<FaqEntity>,
-  ) { }
+  ) {}
 
   async findAllWithFilters(
     filterDto: any,
     tenantId: string,
   ): Promise<{ faqs: FaqEntity[]; total: number }> {
     const { page, limit, q, status } = filterDto
-    const query = this.repo.createQueryBuilder('faq').where('faq.tenantId = :tenantId', { tenantId })
+    const query = this.repo
+      .createQueryBuilder('faq')
+      .where('faq.tenantId = :tenantId', { tenantId })
 
     if (status) {
       query.andWhere('faq.status = :status', { status })
@@ -73,7 +75,11 @@ export class FaqRepository {
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<FaqEntity> {
-    const faq = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as FaqEntity)
+    const faq = this.repo.create({
+      ...dto,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as FaqEntity)
     return this.repo.save(faq)
   }
 
@@ -86,10 +92,17 @@ export class FaqRepository {
     await this.repo.softRemove(faq)
   }
 
-  async saveMultiple(faqs: any[], productId: string, ctx: RequestContextDto, manager?: any): Promise<FaqEntity[]> {
+  async saveMultiple(
+    faqs: any[],
+    productId: string,
+    ctx: RequestContextDto,
+    manager?: any,
+  ): Promise<FaqEntity[]> {
     if (!faqs || faqs.length === 0) return []
     const repo = manager ? manager.getRepository(FaqEntity) : this.repo
-    const entities = faqs.map((faq) => repo.create({ ...faq, productId, tenantId: ctx.tenantId, userId: ctx.userId } as FaqEntity))
+    const entities = faqs.map((faq) =>
+      repo.create({ ...faq, productId, tenantId: ctx.tenantId, userId: ctx.userId } as FaqEntity),
+    )
     return repo.save(entities)
   }
 
@@ -97,5 +110,4 @@ export class FaqRepository {
     const repo = manager ? manager.getRepository(FaqEntity) : this.repo
     await repo.softDelete({ productId, tenantId })
   }
-
 }

@@ -9,7 +9,7 @@ export class StaffInvitationRepository {
   constructor(
     @InjectRepository(StaffInvitationEntity)
     private readonly repo: Repository<StaffInvitationEntity>,
-  ) { }
+  ) {}
 
   async expireOldInvitations(email: string, tenantId: string): Promise<void> {
     await this.repo.update(
@@ -18,8 +18,14 @@ export class StaffInvitationRepository {
     )
   }
 
-  async createAndSave(data: Partial<StaffInvitationEntity>, ctx: RequestContextDto): Promise<StaffInvitationEntity> {
-    const invitation = this.repo.create({ ...data, tenantId: data.tenantId || ctx.tenantId } as StaffInvitationEntity)
+  async createAndSave(
+    data: Partial<StaffInvitationEntity>,
+    ctx: RequestContextDto,
+  ): Promise<StaffInvitationEntity> {
+    const invitation = this.repo.create({
+      ...data,
+      tenantId: data.tenantId || ctx.tenantId,
+    } as StaffInvitationEntity)
     return this.repo.save(invitation)
   }
 

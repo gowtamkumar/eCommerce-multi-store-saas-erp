@@ -16,7 +16,6 @@ export class ReviewEntity extends BaseEntity {
   @JoinColumn({ name: 'product_id' })
   product: ProductEntity
 
-
   @Column({ type: 'int', default: 5 })
   rating: number
 

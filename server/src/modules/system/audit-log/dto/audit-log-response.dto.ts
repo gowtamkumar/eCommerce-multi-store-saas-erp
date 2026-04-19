@@ -1,39 +1,39 @@
-import { Expose } from 'class-transformer';
+import { Expose } from 'class-transformer'
 
 export class AuditLogResponseDto {
   @Expose()
-  id: string;
+  id: string
 
   @Expose()
-  tenantId: string;
+  tenantId: string
 
   @Expose()
-  userId?: string | null;
+  userId?: string | null
 
   @Expose()
-  action: string;
+  action: string
 
   @Expose()
-  entity: string;
+  entity: string
 
   @Expose()
-  entityId: string | null;
+  entityId: string | null
 
   @Expose()
-  oldValue: Record<string, any> | null;
+  oldValue: Record<string, any> | null
 
   @Expose()
-  newValue: Record<string, any> | null;
+  newValue: Record<string, any> | null
 
   @Expose()
-  ipAddress: string | null;
+  ipAddress: string | null
 
   @Expose()
-  userAgent: string | null;
+  userAgent: string | null
 
   @Expose()
-  createdAt: Date;
+  createdAt: Date
 
   @Expose()
-  updatedAt: Date;
+  updatedAt: Date
 }

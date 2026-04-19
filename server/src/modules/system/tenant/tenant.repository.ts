@@ -9,7 +9,7 @@ export class TenantRepository {
   constructor(
     @InjectRepository(TenantEntity)
     private readonly repo: Repository<TenantEntity>,
-  ) { }
+  ) {}
 
   /**
    * Find a tenant by ID
@@ -94,10 +94,7 @@ export class TenantRepository {
     return await this.repo.save(tenant)
   }
 
-  async updateAndSave(
-    tenant: TenantEntity,
-    dto: Partial<TenantEntity>,
-  ): Promise<TenantEntity> {
+  async updateAndSave(tenant: TenantEntity, dto: Partial<TenantEntity>): Promise<TenantEntity> {
     Object.assign(tenant, dto)
     return await this.repo.save(tenant)
   }

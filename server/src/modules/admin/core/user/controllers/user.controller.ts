@@ -99,10 +99,8 @@ export class UserController {
     @Body() dto: InviteStaffDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.inviteStaff.name} Controller Called`)
-    const data = await this.invitationService.inviteStaff(
-      dto,
-      ctx,
-      (email, tId) => this.userService.findUserByEmail(email, tId)
+    const data = await this.invitationService.inviteStaff(dto, ctx, (email, tId) =>
+      this.userService.findUserByEmail(email, tId),
     )
     return { success: true, statusCode: 201, message: data.message, data: data.invitation }
   }

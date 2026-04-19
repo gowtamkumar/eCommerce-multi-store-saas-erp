@@ -9,7 +9,7 @@ export class PaymentRepository {
   constructor(
     @InjectRepository(PaymentEntity)
     private readonly repo: Repository<PaymentEntity>,
-  ) { }
+  ) {}
 
   async findByTransactionId(
     transactionId: string,
@@ -19,7 +19,11 @@ export class PaymentRepository {
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<PaymentEntity> {
-    const payment = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as any) as unknown as PaymentEntity
+    const payment = this.repo.create({
+      ...dto,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as any) as unknown as PaymentEntity
     return await (this.repo.save(payment) as Promise<PaymentEntity>)
   }
 

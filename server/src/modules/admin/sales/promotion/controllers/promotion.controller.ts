@@ -27,7 +27,7 @@ import { PromotionService } from '../services/promotion.service'
 export class PromotionController {
   private readonly logger = new Logger(PromotionController.name)
 
-  constructor(private readonly promotionService: PromotionService) { }
+  constructor(private readonly promotionService: PromotionService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -112,7 +112,9 @@ export class PromotionController {
     @Param('slug') slug: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`[Public] getPromotionBySlug called for slug: ${slug}, tenant: ${ctx.tenantId}`)
+    this.logger.verbose(
+      `[Public] getPromotionBySlug called for slug: ${slug}, tenant: ${ctx.tenantId}`,
+    )
     const result = await this.promotionService.getOfferProductsBySlug(slug, ctx)
     return {
       success: true,

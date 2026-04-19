@@ -3,7 +3,17 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
-import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common'
 import { CreateSubscriptionPlanDto } from './dto/create-subscription-plan.dto'
 import { SubscriptionPlanResponseDto } from './dto/subscription-plan-response.dto'
 import { UpdateSubscriptionPlanDto } from './dto/update-subscription-plan.dto'
@@ -17,7 +27,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 export class SubscriptionPlanController {
   private readonly logger = new Logger(SubscriptionPlanController.name)
 
-  constructor(private readonly planService: SubscriptionPlanService) { }
+  constructor(private readonly planService: SubscriptionPlanService) {}
 
   @Post()
   async createSubscriptionPlan(

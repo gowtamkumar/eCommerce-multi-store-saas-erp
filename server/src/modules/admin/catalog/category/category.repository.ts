@@ -10,7 +10,7 @@ export class CategoryRepository {
   constructor(
     @InjectRepository(CategoryEntity)
     private readonly repo: Repository<CategoryEntity>,
-  ) { }
+  ) {}
 
   async findBySlug(slug: string, tenantId: string): Promise<CategoryEntity | null> {
     return this.repo.findOne({ where: { slug, tenantId } })
@@ -51,8 +51,15 @@ export class CategoryRepository {
       .getRawMany()
   }
 
-  async createAndSave(data: Partial<CategoryEntity>, ctx: RequestContextDto): Promise<CategoryEntity> {
-    const category = this.repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId } as CategoryEntity)
+  async createAndSave(
+    data: Partial<CategoryEntity>,
+    ctx: RequestContextDto,
+  ): Promise<CategoryEntity> {
+    const category = this.repo.create({
+      ...data,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as CategoryEntity)
     return this.repo.save(category)
   }
 
@@ -67,5 +74,4 @@ export class CategoryRepository {
   async removeCategory(category: CategoryEntity): Promise<void> {
     await this.repo.softRemove(category)
   }
-
 }

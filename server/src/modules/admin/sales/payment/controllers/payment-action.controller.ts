@@ -15,7 +15,7 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 export class PaymentActionController {
   private readonly logger = new Logger(PaymentActionController.name)
 
-  constructor(private readonly paymentService: PaymentService) { }
+  constructor(private readonly paymentService: PaymentService) {}
 
   // @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Post('init')

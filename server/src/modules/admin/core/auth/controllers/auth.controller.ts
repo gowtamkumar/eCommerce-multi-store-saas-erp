@@ -13,7 +13,7 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 export class AuthController {
   private readonly logger = new Logger(AuthController.name)
 
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   // @Throttle({ sensitive: { limit: 5, ttl: 60000 } })
   @Post('/register')
@@ -127,9 +127,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('/me')
   @PublicDuringExpiration()
-  async getMe(
-    @RequestContext() ctx: RequestContextDto,
-  ): Promise<BaseApiSuccessResponse<any>> {
+  async getMe(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getMe.`)
     const result = await this.authService.getMe(ctx.user)
     return {

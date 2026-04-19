@@ -11,7 +11,10 @@ export class SubscriptionPlanService {
 
   constructor(private readonly planRepository: SubscriptionPlanRepository) {}
 
-  async createSubscriptionPlan(createDto: CreateSubscriptionPlanDto, ctx: RequestContextDto): Promise<SubscriptionPlanEntity> {
+  async createSubscriptionPlan(
+    createDto: CreateSubscriptionPlanDto,
+    ctx: RequestContextDto,
+  ): Promise<SubscriptionPlanEntity> {
     this.logger.log(`${this.createSubscriptionPlan.name} Service Called`)
     return await this.planRepository.createAndSave(createDto, ctx)
   }

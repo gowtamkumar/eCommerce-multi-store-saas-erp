@@ -20,7 +20,7 @@ export class SettingsController {
   constructor(
     private readonly settingsService: SettingsService,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   @Get()
   @PublicDuringExpiration()

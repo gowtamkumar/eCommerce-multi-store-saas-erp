@@ -9,14 +9,18 @@ export class SubscriberRepository {
   constructor(
     @InjectRepository(SubscriberEntity)
     private readonly repo: Repository<SubscriberEntity>,
-  ) { }
+  ) {}
 
   async findByEmail(email: string, tenantId: string): Promise<SubscriberEntity | null> {
     return this.repo.findOne({ where: { email, tenantId } })
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<SubscriberEntity> {
-    const subscriber = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as SubscriberEntity)
+    const subscriber = this.repo.create({
+      ...dto,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as SubscriberEntity)
     return this.repo.save(subscriber)
   }
 

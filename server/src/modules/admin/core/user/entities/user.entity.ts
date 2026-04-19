@@ -1,7 +1,17 @@
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm'
 
 @Entity('users')
 @Index(['username', 'tenantId'], { unique: true })
@@ -10,7 +20,7 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, JoinColumn, 
 export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string
-  
+
   @Column()
   name: string
 
@@ -31,6 +41,12 @@ export class UserEntity {
 
   @Column({ nullable: true })
   image: string
+
+  @Column({ nullable: true, name: 'push_token' })
+  pushToken: string
+
+  @Column({ nullable: true, name: 'fcm_token' })
+  fcmToken: string
 
   // system super admin
   @Column({ default: false, name: 'is_admin' })
@@ -70,10 +86,10 @@ export class UserEntity {
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date
-  
+
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date
-  
+
   @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
   deletedAt?: Date
 }

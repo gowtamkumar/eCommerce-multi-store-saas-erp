@@ -65,10 +65,7 @@ export class InventoryTransactionController {
     this.logger.verbose(
       `User "${ctx.user?.username || 'System'}" called findByProductInventoryTransactions.`,
     )
-    const transactions = await this.service.findByProductInventoryTransactions(
-      productId,
-      ctx,
-    )
+    const transactions = await this.service.findByProductInventoryTransactions(productId, ctx)
     return {
       success: true,
       statusCode: 200,

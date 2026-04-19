@@ -11,4 +11,4 @@ import { ConfigModule } from '@nestjs/config'
   providers: [SubscriptionBillingService],
   exports: [SubscriptionBillingService],
 })
-export class SubscriptionBillingModule { }
+export class SubscriptionBillingModule {}

@@ -28,7 +28,7 @@ import { CouponResponseDto } from '../dto/coupon-response.dto'
 export class CouponController {
   private readonly logger = new Logger(CouponController.name)
 
-  constructor(private readonly couponService: CouponService) { }
+  constructor(private readonly couponService: CouponService) {}
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
@@ -74,7 +74,9 @@ export class CouponController {
     @RequestContext() ctx: RequestContextDto,
     @Body('code') code: string,
     @Body('orderTotal') orderTotal: number,
-  ): Promise<BaseApiSuccessResponse<{ valid: boolean; coupon: CouponResponseDto; discountAmount: number }>> {
+  ): Promise<
+    BaseApiSuccessResponse<{ valid: boolean; coupon: CouponResponseDto; discountAmount: number }>
+  > {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called validateCoupon.`)
     const result = await this.couponService.validateCoupon(code, orderTotal, ctx)
     return {

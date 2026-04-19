@@ -9,7 +9,6 @@ import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 @Index(['tenantId', 'isActive', 'startDate', 'endDate'])
 /** Optimizes slug-based public page lookups */
 @Index(['tenantId', 'slug'])
-
 @Entity('promotions')
 export class PromotionEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })

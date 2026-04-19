@@ -48,7 +48,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message: (message as any).message || (typeof message === 'string' ? message : 'Internal server error'),
+      message:
+        (message as any).message ||
+        (typeof message === 'string' ? message : 'Internal server error'),
       error: (message as any).error || (exception instanceof Error ? exception.name : 'Error'),
     })
   }

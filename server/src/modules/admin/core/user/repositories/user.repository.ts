@@ -11,14 +11,16 @@ export class UserRepository {
   constructor(
     @InjectRepository(UserEntity)
     private readonly repo: Repository<UserEntity>,
-  ) { }
+  ) {}
 
   async findAllWithFilters(
     filterUserDto: FilterUserDto,
     tenantId: string,
   ): Promise<[UserEntity[], number]> {
     const { name, username, status, page, limit, q } = filterUserDto
-    const query = this.repo.createQueryBuilder('user').where('user.tenantId = :tenantId', { tenantId })
+    const query = this.repo
+      .createQueryBuilder('user')
+      .where('user.tenantId = :tenantId', { tenantId })
 
     if (name) {
       query.andWhere('user.name ILIKE :name', { name: `%${name}%` })
@@ -42,11 +44,12 @@ export class UserRepository {
 
   async findAllCrossTenant(filterDto: FilterUserDto): Promise<[UserEntity[], number]> {
     const { page = 1, limit = 10, q, role, status } = filterDto
-    const query = this.repo.createQueryBuilder('user')
-      .leftJoinAndSelect('user.tenant', 'tenant')
+    const query = this.repo.createQueryBuilder('user').leftJoinAndSelect('user.tenant', 'tenant')
 
     if (q) {
-      query.andWhere('(user.name ILIKE :q OR user.email ILIKE :q OR user.username ILIKE :q)', { q: `%${q}%` })
+      query.andWhere('(user.name ILIKE :q OR user.email ILIKE :q OR user.username ILIKE :q)', {
+        q: `%${q}%`,
+      })
     }
 
     if (role) {
@@ -65,16 +68,42 @@ export class UserRepository {
   }
 
   async findById(id: string): Promise<UserEntity | null> {
-    return this.repo.findOne({ 
+    return this.repo.findOne({
       where: { id },
-      select: ['id', 'name', 'username', 'email', 'phone', 'address', 'image', 'role', 'status', 'createdAt', 'tenantId', 'isEmailVerified']
+      select: [
+        'id',
+        'name',
+        'username',
+        'email',
+        'phone',
+        'address',
+        'image',
+        'role',
+        'status',
+        'createdAt',
+        'tenantId',
+        'isEmailVerified',
+      ],
     })
   }
 
   async findByIdAndTenant(id: string, tenantId: string): Promise<UserEntity | null> {
-    return this.repo.findOne({ 
+    return this.repo.findOne({
       where: { id, tenantId },
-      select: ['id', 'name', 'username', 'email', 'phone', 'address', 'image', 'role', 'status', 'createdAt', 'tenantId', 'isEmailVerified']
+      select: [
+        'id',
+        'name',
+        'username',
+        'email',
+        'phone',
+        'address',
+        'image',
+        'role',
+        'status',
+        'createdAt',
+        'tenantId',
+        'isEmailVerified',
+      ],
     })
   }
 
@@ -99,7 +128,10 @@ export class UserRepository {
   }
 
   async createAndSave(data: Partial<UserEntity>, ctx: RequestContextDto): Promise<UserEntity> {
-    const user = this.repo.create({ ...data, tenantId: data.tenantId || ctx.tenantId } as UserEntity)
+    const user = this.repo.create({
+      ...data,
+      tenantId: data.tenantId || ctx.tenantId,
+    } as UserEntity)
     return this.repo.save(user)
   }
 
@@ -121,7 +153,8 @@ export class UserRepository {
   }
 
   async findUserWithRefreshToken(userId: string): Promise<UserEntity | null> {
-    return this.repo.createQueryBuilder('user')
+    return this.repo
+      .createQueryBuilder('user')
       .addSelect('user.refreshToken')
       .where('user.id = :userId', { userId })
       .getOne()
@@ -154,5 +187,4 @@ export class UserRepository {
       select: ['id', 'name', 'username', 'email', 'role', 'status', 'image', 'createdAt'],
     })
   }
-
 }

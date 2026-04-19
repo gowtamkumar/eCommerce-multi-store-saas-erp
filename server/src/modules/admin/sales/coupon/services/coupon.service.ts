@@ -14,9 +14,12 @@ export class CouponService {
   constructor(
     private readonly couponRepository: CouponRepository,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
-  async createCoupon(createCouponDto: CreateCouponDto, ctx: RequestContextDto): Promise<CouponEntity> {
+  async createCoupon(
+    createCouponDto: CreateCouponDto,
+    ctx: RequestContextDto,
+  ): Promise<CouponEntity> {
     this.logger.log(`${this.createCoupon.name} Service Called`)
     const tenantId = ctx.tenantId
     const existing = await this.couponRepository.findByCode(createCouponDto.code, tenantId)
@@ -105,7 +108,10 @@ export class CouponService {
     return result
   }
 
-  async removeCoupon(id: string, ctx: RequestContextDto): Promise<{ success: boolean; message: string }> {
+  async removeCoupon(
+    id: string,
+    ctx: RequestContextDto,
+  ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeCoupon.name} Service Called`)
     const tenantId = ctx.tenantId
     const coupon = await this.couponRepository.findById(id, tenantId)
@@ -131,15 +137,23 @@ export class CouponService {
       const coupon = await this.findByCodeCoupon(code, ctx)
 
       if (!coupon.isActive) throw new BadRequestException('Coupon is inactive')
-      if (coupon.startDate && new Date() < coupon.startDate) throw new BadRequestException('Coupon is not yet valid')
-      if (coupon.expiryDate && new Date() > coupon.expiryDate) throw new BadRequestException('Coupon has expired')
-      if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) throw new BadRequestException('Coupon usage limit reached')
+      if (coupon.startDate && new Date() < coupon.startDate)
+        throw new BadRequestException('Coupon is not yet valid')
+      if (coupon.expiryDate && new Date() > coupon.expiryDate)
+        throw new BadRequestException('Coupon has expired')
+      if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit)
+        throw new BadRequestException('Coupon usage limit reached')
       if (coupon.minPurchaseAmount && orderTotal < coupon.minPurchaseAmount) {
-        throw new BadRequestException(`Minimum purchase amount of ${coupon.minPurchaseAmount} required`)
+        throw new BadRequestException(
+          `Minimum purchase amount of ${coupon.minPurchaseAmount} required`,
+        )
       }
 
       const strategy = DiscountStrategyFactory.create(coupon.discountType as string)
-      const discountAmount = Math.min(strategy.calculate(orderTotal, Number(coupon.amount)), orderTotal)
+      const discountAmount = Math.min(
+        strategy.calculate(orderTotal, Number(coupon.amount)),
+        orderTotal,
+      )
 
       return { valid: true, coupon, discountAmount }
     } catch (error) {

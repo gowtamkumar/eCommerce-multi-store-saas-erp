@@ -18,7 +18,7 @@ export class FaqService {
   private async invalidateCache(tenantId: string) {
     // Invalidate main lookups for this tenant
     await this.cache.delCache('faqs:global', tenantId)
-    // Note: In a large system, we would use Redis patterns to delete faqs:page:* 
+    // Note: In a large system, we would use Redis patterns to delete faqs:page:*
     // but for now we'll target the main ones or let them expire.
   }
 
@@ -48,7 +48,11 @@ export class FaqService {
     return faq
   }
 
-  async updateFaq(id: string, updateFaqDto: UpdateFaqDto, ctx: RequestContextDto): Promise<FaqEntity> {
+  async updateFaq(
+    id: string,
+    updateFaqDto: UpdateFaqDto,
+    ctx: RequestContextDto,
+  ): Promise<FaqEntity> {
     this.logger.log(`${this.updateFaq.name} Service Called`)
     const tenantId = ctx.tenantId
     const faq = await this.findOneFaq(id, ctx)
@@ -78,7 +82,7 @@ export class FaqService {
       cacheKey,
       () => this.faqRepository.findByPageId(pageId, tenantId),
       this.CACHE_TTL,
-      tenantId
+      tenantId,
     )
   }
 
@@ -91,7 +95,7 @@ export class FaqService {
       cacheKey,
       () => this.faqRepository.findGlobal(tenantId),
       this.CACHE_TTL,
-      tenantId
+      tenantId,
     )
   }
 
@@ -102,12 +106,12 @@ export class FaqService {
     if (!ids || ids.length === 0) return []
     const sortedIds = [...ids].sort().join(',')
     const cacheKey = `faqs:ids:${sortedIds}`
-    
+
     return await this.cache.rememberCache(
       cacheKey,
       () => this.faqRepository.findByIdsList(ids, tenantId),
       this.CACHE_TTL,
-      tenantId
+      tenantId,
     )
   }
 }

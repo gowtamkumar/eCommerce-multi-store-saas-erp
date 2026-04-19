@@ -46,4 +46,4 @@ import { CustomThrottlerGuard } from './throttler.guard'
     },
   ],
 })
-export class AppThrottlerModule { }
+export class AppThrottlerModule {}

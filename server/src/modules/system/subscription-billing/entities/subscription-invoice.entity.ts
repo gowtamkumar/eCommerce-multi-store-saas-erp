@@ -53,7 +53,7 @@ export class SubscriptionInvoiceEntity extends BaseEntity {
     type: 'enum',
     enum: SubscriptionBillingCycle,
     default: SubscriptionBillingCycle.MONTHLY,
-    name: 'billing_cycle'
+    name: 'billing_cycle',
   })
   billingCycle: SubscriptionBillingCycle
 }

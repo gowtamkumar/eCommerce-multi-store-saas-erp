@@ -15,9 +15,11 @@ export class SettingsService {
     private settingsRepository: SiteSettingsRepository,
     private tenantRepository: TenantRepository,
     private cacheService: CacheService,
-  ) { }
+  ) {}
 
-  async findByTenantSettings(ctx: RequestContextDto): Promise<SiteSettingsEntity & { status: string }> {
+  async findByTenantSettings(
+    ctx: RequestContextDto,
+  ): Promise<SiteSettingsEntity & { status: string }> {
     this.logger.log(`${this.findByTenantSettings.name} Service Called for tenant: ${ctx.tenantId}`)
     const tenantId = ctx.tenantId
     const cacheKey = `settings:${tenantId}:site`
@@ -45,24 +47,30 @@ export class SettingsService {
         }
       },
       86400, // 24 hours
-      tenantId
+      tenantId,
     )
   }
 
-  async updateSettings(ctx: RequestContextDto, dto: UpdateSiteSettingsDto): Promise<SiteSettingsEntity> {
+  async updateSettings(
+    ctx: RequestContextDto,
+    dto: UpdateSiteSettingsDto,
+  ): Promise<SiteSettingsEntity> {
     this.logger.log(`${this.updateSettings.name} Service Called for tenant: ${ctx.tenantId}`)
     const tenantId = ctx.tenantId
     const settings = await this.settingsRepository.findByTenantId(tenantId)
     if (!settings) throw new NotFoundException('Settings not found')
-    
+
     const updated = await this.settingsRepository.updateAndSave(settings, dto)
-    
+
     // Invalidate cache
     await this.cacheService.delCache(`settings:${tenantId}:site`, tenantId)
-    
+
     return updated
   }
-  async createSetting(ctx: RequestContextDto, dto: UpdateSiteSettingsDto): Promise<SiteSettingsEntity> {
+  async createSetting(
+    ctx: RequestContextDto,
+    dto: UpdateSiteSettingsDto,
+  ): Promise<SiteSettingsEntity> {
     this.logger.log(`${this.createSetting.name} Service Called`)
     const tenantId = ctx.tenantId
     return await this.settingsRepository.createAndSave(dto, ctx)

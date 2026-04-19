@@ -8,7 +8,7 @@ export class TrafficRepository {
   constructor(
     @InjectRepository(TenantTrafficEntity)
     private readonly repo: Repository<TenantTrafficEntity>,
-  ) { }
+  ) {}
 
   async upsertTraffic(tenantId: string, date: Date): Promise<void> {
     await this.repo.query(
@@ -30,7 +30,8 @@ export class TrafficRepository {
   }
 
   async findGlobalStatsSince(sinceDate: Date): Promise<{ date: Date; requestCount: number }[]> {
-    const stats = await this.repo.createQueryBuilder('traffic')
+    const stats = await this.repo
+      .createQueryBuilder('traffic')
       .select('traffic.date', 'date')
       .addSelect('SUM(traffic.request_count)', 'requestCount')
       .where('traffic.date >= :sinceDate', { sinceDate })

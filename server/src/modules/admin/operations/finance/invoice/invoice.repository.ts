@@ -10,12 +10,9 @@ export class InvoiceRepository {
   constructor(
     @InjectRepository(InvoiceEntity)
     private readonly repo: Repository<InvoiceEntity>,
-  ) { }
+  ) {}
 
-  async checkInvoiceNumberExists(
-    invoiceNumber: string,
-    tenantId: string,
-  ): Promise<boolean> {
+  async checkInvoiceNumberExists(invoiceNumber: string, tenantId: string): Promise<boolean> {
     const exists = await this.repo.findOne({ where: { invoiceNumber, tenantId } })
     return !!exists
   }
@@ -24,7 +21,11 @@ export class InvoiceRepository {
     data: Partial<InvoiceEntity>,
     ctx: RequestContextDto,
   ): Promise<InvoiceEntity> {
-    const invoice = this.repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId } as InvoiceEntity)
+    const invoice = this.repo.create({
+      ...data,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    } as InvoiceEntity)
     return this.repo.save(invoice)
   }
 
@@ -39,7 +40,8 @@ export class InvoiceRepository {
     search?: string,
     status?: InvoiceStatus,
   ): Promise<[InvoiceEntity[], number]> {
-    const qb = this.repo.createQueryBuilder('invoice')
+    const qb = this.repo
+      .createQueryBuilder('invoice')
       .leftJoinAndSelect('invoice.order', 'order')
       .leftJoinAndSelect('invoice.user', 'user')
       .where('invoice.tenantId = :tenantId', { tenantId })
@@ -68,10 +70,7 @@ export class InvoiceRepository {
     })
   }
 
-  async findByOrderId(
-    orderId: string,
-    tenantId: string,
-  ): Promise<InvoiceEntity | null> {
+  async findByOrderId(orderId: string, tenantId: string): Promise<InvoiceEntity | null> {
     return this.repo.findOne({ where: { orderId, tenantId } })
   }
 

@@ -18,22 +18,25 @@ export class CustomerController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
-  async findAll(@RequestContext() ctx: RequestContextDto, @Query() query: FilterUserDto): Promise<BaseApiSuccessResponse<any>> {
+  async findAll(
+    @RequestContext() ctx: RequestContextDto,
+    @Query() query: FilterUserDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" fetching customer list.`)
-    
+
     // Force role to USER to only fetch customers
     const { users, total } = await this.userService.getUsers(
-      { ...query, role: UserRole.USER } as any, 
-      ctx
+      { ...query, role: UserRole.USER } as any,
+      ctx,
     )
 
     // Map name to firstName/lastName for frontend compatibility
-    const mappedCustomers = users.map(user => {
+    const mappedCustomers = users.map((user) => {
       const parts = (user.name || '').split(' ')
       return {
         ...user,
         firstName: parts[0] || '',
-        lastName: parts.slice(1).join(' ') || ''
+        lastName: parts.slice(1).join(' ') || '',
       }
     })
 

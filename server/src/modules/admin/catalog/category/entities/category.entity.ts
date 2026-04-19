@@ -11,7 +11,7 @@ export class CategoryEntity extends BaseEntity {
   name: string
 
   @Column({ type: 'varchar', length: 255 })
-  slug: string  
+  slug: string
 
   @Column({ type: 'text', nullable: true })
   description: string

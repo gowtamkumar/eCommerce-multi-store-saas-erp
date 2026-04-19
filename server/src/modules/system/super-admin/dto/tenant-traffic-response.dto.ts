@@ -1,24 +1,24 @@
-import { Expose } from 'class-transformer';
+import { Expose } from 'class-transformer'
 
 export class TenantTrafficResponseDto {
   @Expose()
-  id: string;
+  id: string
 
   @Expose()
-  tenantId: string;
+  tenantId: string
 
   @Expose()
-  date: Date;
+  date: Date
 
   @Expose()
-  requestCount: number;
+  requestCount: number
 
   @Expose()
-  lastUpdated: Date;
+  lastUpdated: Date
 
   @Expose()
-  createdAt: Date;
+  createdAt: Date
 
   @Expose()
-  updatedAt: Date;
+  updatedAt: Date
 }

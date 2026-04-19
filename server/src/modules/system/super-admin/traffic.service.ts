@@ -31,9 +31,7 @@ export class TrafficService {
     return await this.trafficRepository.findAllSince(sinceDate)
   }
 
-  async getGlobalTrafficStats(
-    days: number = 7,
-  ): Promise<{ date: Date; requestCount: number }[]> {
+  async getGlobalTrafficStats(days: number = 7): Promise<{ date: Date; requestCount: number }[]> {
     this.logger.log(`${this.getGlobalTrafficStats.name} Service Called`)
     const sinceDate = new Date()
     sinceDate.setHours(0, 0, 0, 0)

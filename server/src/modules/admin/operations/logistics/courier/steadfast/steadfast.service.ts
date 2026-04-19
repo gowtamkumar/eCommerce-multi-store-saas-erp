@@ -19,7 +19,7 @@ export class SteadfastService {
     private readonly settingsService: SettingsService,
     private readonly orderService: OrderService,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   private async getCredentials(ctx: RequestContextDto) {
     this.logger.log(`${this.getCredentials.name} Service Called`)

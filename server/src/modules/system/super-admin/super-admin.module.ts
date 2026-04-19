@@ -11,7 +11,14 @@ import { SuperAdminController } from './super-admin.controller'
 import { TrafficService } from './traffic.service'
 
 @Module({
-  imports: [UserModule, TenantModule, OrderModule, ProductModule, PageModule, SubscriptionPlanModule],
+  imports: [
+    UserModule,
+    TenantModule,
+    OrderModule,
+    ProductModule,
+    PageModule,
+    SubscriptionPlanModule,
+  ],
   controllers: [SuperAdminController],
   providers: [
     TrafficService,

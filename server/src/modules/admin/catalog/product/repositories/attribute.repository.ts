@@ -9,7 +9,7 @@ export class ProductAttributeRepository {
   constructor(
     @InjectRepository(ProductAttributeEntity)
     private readonly repo: Repository<ProductAttributeEntity>,
-  ) { }
+  ) {}
 
   async saveMultiple(
     attributes: any[],
@@ -20,7 +20,12 @@ export class ProductAttributeRepository {
     if (!attributes || attributes.length === 0) return []
     const repo = manager ? manager.getRepository(ProductAttributeEntity) : this.repo
     const entities = attributes.map((attr) =>
-      repo.create({ ...attr, productId, tenantId: ctx.tenantId, userId: ctx.userId } as ProductAttributeEntity),
+      repo.create({
+        ...attr,
+        productId,
+        tenantId: ctx.tenantId,
+        userId: ctx.userId,
+      } as ProductAttributeEntity),
     )
     return repo.save(entities)
   }
@@ -29,5 +34,4 @@ export class ProductAttributeRepository {
     const repo = manager ? manager.getRepository(ProductAttributeEntity) : this.repo
     await repo.softDelete({ productId, tenantId })
   }
-
 }

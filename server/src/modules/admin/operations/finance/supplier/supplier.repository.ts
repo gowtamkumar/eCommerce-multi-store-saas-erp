@@ -9,7 +9,7 @@ export class SupplierRepository {
   constructor(
     @InjectRepository(SupplierEntity)
     private readonly repo: Repository<SupplierEntity>,
-  ) { }
+  ) {}
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<SupplierEntity> {
     const supplier = this.repo.create({
@@ -30,7 +30,8 @@ export class SupplierRepository {
     limit: number = 20,
     search?: string,
   ): Promise<[SupplierEntity[], number]> {
-    const qb = this.repo.createQueryBuilder('supplier')
+    const qb = this.repo
+      .createQueryBuilder('supplier')
       .where('supplier.tenantId = :tenantId', { tenantId })
       .orderBy('supplier.name', 'ASC')
       .skip((page - 1) * limit)

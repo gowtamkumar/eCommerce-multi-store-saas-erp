@@ -1,72 +1,72 @@
-import { Expose } from 'class-transformer';
-import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum';
-import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status';
-import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum';
-import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum';
+import { Expose } from 'class-transformer'
+import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
+import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
+import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
+import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 
 export class TenantResponseDto {
   @Expose()
-  id: string;
+  id: string
 
   @Expose()
-  storeName: string;
+  storeName: string
 
   @Expose()
-  subdomain: string;
+  subdomain: string
 
   @Expose()
-  customDomain: string | null;
+  customDomain: string | null
 
   @Expose()
-  customDomainStatus: CustomDomainStatus;
+  customDomainStatus: CustomDomainStatus
 
   @Expose()
-  customDomainVerifiedAt: Date | null;
+  customDomainVerifiedAt: Date | null
 
   @Expose()
-  status: TenantStatus;
+  status: TenantStatus
 
   @Expose()
-  sslEnabled: boolean;
+  sslEnabled: boolean
 
   @Expose()
-  subscriptionPlanId: string | null;
+  subscriptionPlanId: string | null
 
   @Expose()
-  subscriptionBillingCycle: SubscriptionBillingCycle;
+  subscriptionBillingCycle: SubscriptionBillingCycle
 
   @Expose()
-  subscriptionStatus: SubscriptionStatus;
+  subscriptionStatus: SubscriptionStatus
 
   @Expose()
-  subscriptionStartsAt: Date | null;
+  subscriptionStartsAt: Date | null
 
   @Expose()
-  subscriptionEndsAt: Date | null;
+  subscriptionEndsAt: Date | null
 
   @Expose()
-  userId?: string | null;
+  userId?: string | null
 
   @Expose()
-  isExpired: boolean;
+  isExpired: boolean
 
   @Expose()
-  createdAt: Date;
+  createdAt: Date
 
   @Expose()
-  updatedAt: Date;
+  updatedAt: Date
 }
 
 export class TenantOverviewResponseDto {
   @Expose()
-  totalTenants: number;
+  totalTenants: number
 
   @Expose()
-  activeTenants: number;
+  activeTenants: number
 
   @Expose()
-  suspendedTenants: number;
+  suspendedTenants: number
 
   @Expose()
-  archivedTenants: number;
+  archivedTenants: number
 }
