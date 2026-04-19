@@ -26,6 +26,8 @@ import {
 import si from 'systeminformation'
 import { SubscriptionPlanService } from '../subscription-plan/subscription-plan.service'
 import { TrafficService } from './traffic.service'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { HttpCode } from '@nestjs/common'
 
 @Controller('super-admin')
 export class SuperAdminController {
@@ -39,6 +41,7 @@ export class SuperAdminController {
     private readonly productService: ProductService,
     private readonly pageService: PageService,
     private readonly planService: SubscriptionPlanService,
+    private readonly cacheService: CacheService,
   ) { }
 
   @Post('/setup')
@@ -360,6 +363,27 @@ export class SuperAdminController {
       success: true,
       statusCode: 200,
       message: 'Plan update logic to be implemented with dynamic plans',
+      data: null,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Post('/cache/clear-all')
+  @HttpCode(200)
+  async clearCacheAll(
+    @Query('tenantId') tenantId?: string,
+  ): Promise<BaseApiSuccessResponse<null>> {
+    this.logger.verbose(`Super Admin called clearCacheAll${tenantId ? ` for tenant ${tenantId}` : ''}.`)
+    if (tenantId) {
+      await this.cacheService.clearTenantCache(tenantId)
+    } else {
+      await this.cacheService.clearFullCache()
+    }
+    return {
+      success: true,
+      statusCode: 200,
+      message: tenantId ? `Cache for tenant ${tenantId} cleared successfully` : 'Global system cache cleared successfully',
       data: null,
     }
   }

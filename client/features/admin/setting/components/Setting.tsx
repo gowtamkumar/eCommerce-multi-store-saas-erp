@@ -12,7 +12,7 @@ import SocialSetting from "@/features/admin/setting/components/SocialSetting";
 import TrustDelivery from "@/features/admin/setting/components/Trust&Delivery";
 import { fetchAPI } from "@/services/api";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, Save, Settings } from "lucide-react";
+import { Loader2, Save, Settings, Zap } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -21,6 +21,7 @@ import LabelSetting from "./LabelSetting";
 import OffersPageSetting from "./OffersPageSetting";
 import ProductsPageSetting from "./ProductsPageSetting";
 import SingleProductPageSetting from "./SingleProductPageSetting";
+import { SystemSetting } from "./SystemSetting";
 
 export const dynamic = "force-dynamic";
 
@@ -493,6 +494,9 @@ function SettingsContent() {
                                 )}
                                 {activeTab === "label" && (
                                     <LabelSetting formData={formData} setFormData={setFormData} />
+                                )}
+                                {activeTab === "system" && (
+                                    <SystemSetting />
                                 )}
                             </AnimatePresence>
                         </form>

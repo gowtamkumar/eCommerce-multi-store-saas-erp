@@ -1,4 +1,4 @@
-import { BarChart3, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Menu, MessageSquare, Package, Receipt, RotateCcw, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Megaphone, Wallet } from 'lucide-react';
+import { BarChart3, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap } from 'lucide-react';
 import { UserRole } from './lib/enums/user-role.enum';
 
 export const navGroups = [
@@ -93,6 +93,7 @@ export const navGroups = [
             { icon: ShieldCheck, label: 'Trust & Safety', href: '/admin/settings?tab=trust' },
             { icon: TrendingUp, label: 'SEO Settings', href: '/admin/settings?tab=marketing' },
             { icon: Tag, label: 'Label Configuration', href: '/admin/settings?tab=label' },
+            { icon: Zap, label: 'Cache & Performance', href: '/admin/settings?tab=system' },
         ]
     },
     {

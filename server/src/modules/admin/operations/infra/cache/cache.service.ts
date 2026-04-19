@@ -54,6 +54,30 @@ export class CacheService {
     }
   }
 
+  async clearTenantCache(tenantId: string) {
+    this.logger.log(`${this.clearTenantCache.name} Service Called for tenant: ${tenantId}`)
+    try {
+      // Construction: prefix:tenant:tenantId:*
+      // We need to fetch the prefix securely if possible, otherwise use constant
+      const pattern = `${CACHE_PREFIX}:tenant:${tenantId}:*`
+      await this.cacheRepository.delByPattern(pattern)
+      this.logger.log(`[CACHE] Successfully cleared cache for tenant: ${tenantId}`)
+    } catch (error) {
+      this.logger.error(`[CACHE] CLEAR_TENANT error for tenant ${tenantId}:`, error.message)
+      throw error
+    }
+  }
+
+  async clearFullCache() {
+    this.logger.log(`${this.clearFullCache.name} Service Called`)
+    try {
+      await this.cacheRepository.clear()
+    } catch (error) {
+      this.logger.error('[CACHE] CLEAR_FULL error:', error.message)
+      throw error
+    }
+  }
+
   // Smart "remember" helper
   async rememberCache<T>(
     key: string,

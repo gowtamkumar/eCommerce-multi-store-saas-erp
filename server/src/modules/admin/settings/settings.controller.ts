@@ -10,12 +10,17 @@ import { Body, Controller, Get, Logger, Put, UseGuards } from '@nestjs/common'
 import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SiteSettingsResponseDto } from './dto/site-settings-response.dto'
 import { SettingsService } from './settings.service'
+import { CacheService } from '../operations/infra/cache/cache.service'
+import { Post, HttpCode } from '@nestjs/common'
 
 @Controller('settings')
 export class SettingsController {
   private readonly logger = new Logger(SettingsController.name)
 
-  constructor(private readonly settingsService: SettingsService) { }
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly cacheService: CacheService,
+  ) { }
 
   @Get()
   @PublicDuringExpiration()
@@ -46,6 +51,23 @@ export class SettingsController {
       statusCode: 200,
       message: 'Settings updated successfully',
       data: settings as any,
+    }
+  }
+
+  @Post('cache/clear')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  async clearCache(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<null>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called clearCache.`)
+    await this.cacheService.clearTenantCache(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Store cache cleared successfully',
+      data: null,
     }
   }
 }
