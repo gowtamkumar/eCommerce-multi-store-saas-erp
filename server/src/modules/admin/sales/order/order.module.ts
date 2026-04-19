@@ -1,5 +1,6 @@
 import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoice.module'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
+import { SmsModule } from '@/modules/admin/operations/infra/sms/sms.module'
 import { InventoryTransactionModule } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.module'
 import { CouponModule } from '@/modules/admin/sales/coupon/coupon.module'
 import { OrderController } from '@/modules/admin/sales/order/controllers/order.controller'
@@ -26,6 +27,7 @@ import { OrderProcessHelper } from './services/order-process.helper'
     InvoiceModule,
     ShippingAddressModule,
     MailModule,
+    SmsModule,
   ],
   controllers: [OrderController, ReturnController], // Registered
   providers: [OrderService, ReturnService, OrderProcessor, OrderProcessHelper], // Registered

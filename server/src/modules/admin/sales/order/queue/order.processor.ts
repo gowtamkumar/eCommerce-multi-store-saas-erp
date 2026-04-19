@@ -3,6 +3,7 @@ import { Job } from 'bullmq'
 import { Logger } from '@nestjs/common'
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
+import { SmsService } from '@/modules/admin/operations/infra/sms/sms.service'
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderService } from '../services/order.service'
 
@@ -13,6 +14,7 @@ export class OrderProcessor extends WorkerHost {
   constructor(
     private readonly invoiceService: InvoiceService,
     private readonly mailService: MailService,
+    private readonly smsService: SmsService,
     private readonly orderService: OrderService,
   ) {
     super()
@@ -55,11 +57,26 @@ export class OrderProcessor extends WorkerHost {
     const { orderId, tenantId } = data
     this.logger.log(`Sending order notification for order ${orderId} (tenant: ${tenantId})`)
 
-    const orderWithRelations = await this.orderService.findOneOrder(orderId, tenantId)
+    const orderWithRelations = await this.orderService.findOneOrder(orderId, { tenantId } as any)
 
     if (orderWithRelations) {
+      // 1. Send Email Notification
       await this.mailService.sendNewOrderNotification(orderWithRelations, tenantId)
-      this.logger.log(`Order notification sent successfully for order ${orderId}`)
+      this.logger.log(`Email notification sent successfully for order ${orderId}`)
+
+      // 2. Send SMS Notification (if phone available)
+      if (orderWithRelations.customerPhone) {
+        const brandName = orderWithRelations.tenant?.storeName || 'our store'
+        const message = `Thank you for your order #${orderWithRelations.id} at ${brandName}. Total: ${orderWithRelations.currency} ${Number(orderWithRelations.totalAmount).toFixed(2)}. We will process it shortly.`
+
+        try {
+          await this.smsService.sendSms(orderWithRelations.customerPhone, message, tenantId)
+          this.logger.log(`SMS notification sent successfully to ${orderWithRelations.customerPhone}`)
+        } catch (smsError) {
+          this.logger.error(`Failed to send SMS notification for order ${orderId}`, smsError.stack)
+          // Don't throw - we don't want to fail the whole job if only SMS fails
+        }
+      }
     } else {
       this.logger.warn(`Order ${orderId} not found for notification`)
     }
