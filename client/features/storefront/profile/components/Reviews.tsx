@@ -54,10 +54,10 @@ const Reviews = ({ reviews }: { reviews: DisplayItem[] }) => {
                   ? item.avatar
                   : 'bg-gradient-to-br from-brand-500 to-indigo-600'
                   }`}>
-                  {item.customerName[0].toUpperCase()}
+                  {item.customerName?.[0]?.toUpperCase() || 'A'}
                 </div>
                 <div>
-                  <h4 className="font-bold text-lg text-slate-900 dark:text-white leading-tight">{item.customerName}</h4>
+                  <h4 className="font-bold text-lg text-slate-900 dark:text-white leading-tight">{item.customerName || 'Anonymous Customer'}</h4>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-green-500"></span>

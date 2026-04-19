@@ -9,7 +9,7 @@ export class CartRepository {
   constructor(
     @InjectRepository(CartEntity)
     private readonly repo: Repository<CartEntity>,
-  ) {}
+  ) { }
 
   async findByUserId(userId: string, tenantId: string): Promise<CartEntity | null> {
     return await this.repo.findOne({
@@ -29,7 +29,7 @@ export class CartRepository {
       .leftJoinAndSelect('cart.user', 'user')
       .innerJoinAndSelect('cart.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
-      .where('cart.tenant_id = :tenantId', { tenantId })
+      .where('cart.tenantId = :tenantId', { tenantId })
 
     if (search) {
       queryWithItems.andWhere(
@@ -38,7 +38,7 @@ export class CartRepository {
       )
     }
 
-    queryWithItems.orderBy('cart.updated_at', 'DESC')
+    queryWithItems.orderBy('cart.updatedAt', 'DESC')
     queryWithItems.skip((page - 1) * limit).take(limit)
 
     const [carts, total] = await queryWithItems.getManyAndCount()
