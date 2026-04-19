@@ -2,6 +2,7 @@ import { CacheService } from '@/modules/admin/operations/infra/cache/cache.servi
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 
 
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ProductService } from '@/modules/admin/catalog/product/services/product.service'
 import { PageService } from '@/modules/admin/content/page/page.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
@@ -29,7 +30,9 @@ export class ReportService {
     private readonly cacheService: CacheService,
   ) { }
 
-  async getAnalytics(tenantId: string) {
+  async getAnalytics(ctx: RequestContextDto) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getAnalytics.`)
+    const tenantId = ctx.tenantId
     const cacheKey = `analytics` // CacheService handled tenantId prefixing
     return this.cacheService.rememberCache(
       cacheKey,
@@ -50,7 +53,9 @@ export class ReportService {
     )
   }
 
-  async getDashboardReport(tenantId: string, period: string = 'month') {
+  async getDashboardReport(ctx: RequestContextDto, period: string = 'month') {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getDashboardReport.`)  
+    const tenantId = ctx.tenantId
     const cacheKey = `dashboard:${period}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -148,7 +153,9 @@ export class ReportService {
     )
   }
 
-  async getProfitLossReport(tenantId: string, startDateStr?: string, endDateStr?: string) {
+  async getProfitLossReport(ctx: RequestContextDto, startDateStr?: string, endDateStr?: string) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getProfitLossReport.`)  
+    const tenantId = ctx.tenantId
     const cacheKey = `pnl:${startDateStr || 'none'}:${endDateStr || 'none'}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -244,7 +251,9 @@ export class ReportService {
     )
   }
 
-  async getSupplierLedger(tenantId: string, supplierId: string) {
+  async getSupplierLedger(ctx: RequestContextDto, supplierId: string) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getSupplierLedger.`)  
+    const tenantId = ctx.tenantId
     const cacheKey = `ledger:supplier:${supplierId}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -310,7 +319,9 @@ export class ReportService {
     )
   }
 
-  async getCustomerLedger(tenantId: string, customerId: string) {
+  async getCustomerLedger(ctx: RequestContextDto, customerId: string) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCustomerLedger.`)  
+    const tenantId = ctx.tenantId
     const cacheKey = `ledger:customer:${customerId}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -380,7 +391,9 @@ export class ReportService {
     )
   }
 
-  async getCashFlow(tenantId: string, period: string = 'last30days') {
+  async getCashFlow(ctx: RequestContextDto, period: string = 'last30days') {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCashFlow.`)  
+    const tenantId = ctx.tenantId
     const cacheKey = `cashflow:${period}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -476,13 +489,15 @@ export class ReportService {
   }
 
   async exportReport(
-    tenantId: string,
+    ctx: RequestContextDto,
     type: string,
     startDateStr?: string,
     endDateStr?: string,
     supplierId?: string,
     customerId?: string,
   ) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called exportReport.`)  
+    const tenantId = ctx.tenantId
     const startDate = startDateStr ? new Date(startDateStr) : new Date(0)
     const endDate = endDateStr ? new Date(endDateStr) : new Date()
     endDate.setHours(23, 59, 59, 999)
@@ -509,7 +524,7 @@ export class ReportService {
       }
       case 'supplier-ledger': {
         if (!supplierId) throw new BadRequestException('Supplier ID required')
-        const data = await this.getSupplierLedger(tenantId, supplierId)
+        const data = await this.getSupplierLedger(ctx, supplierId)
         csvContent = `Supplier: ${data.supplier.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`
         data.ledger.forEach((tx: any) => {
           csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`
@@ -518,7 +533,7 @@ export class ReportService {
       }
       case 'customer-ledger': {
         if (!customerId) throw new BadRequestException('Customer ID required')
-        const data = await this.getCustomerLedger(tenantId, customerId)
+        const data = await this.getCustomerLedger(ctx, customerId)
         csvContent = `Customer: ${data.customer.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`
         data.ledger.forEach((tx: any) => {
           csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`
@@ -526,7 +541,7 @@ export class ReportService {
         break
       }
       case 'cash-flow': {
-        const data = await this.getCashFlow(tenantId)
+        const data = await this.getCashFlow(ctx)
         csvContent = 'Date,Type,Category,Reference,Amount\n'
         data.recentMovements.forEach((m: any) => {
           csvContent += `${m.date},${m.type},${m.category},"${m.reference || ''}",${m.amount}\n`
@@ -543,7 +558,9 @@ export class ReportService {
     }
   }
 
-  async getFinanceSummary(tenantId: string) {
+  async getFinanceSummary(ctx: RequestContextDto) {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFinanceSummary.`)  
+    const tenantId = ctx.tenantId
     const cacheKey = `finance:summary`
     return this.cacheService.rememberCache(
       cacheKey,
