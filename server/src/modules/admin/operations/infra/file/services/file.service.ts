@@ -4,6 +4,7 @@ import PDFDocument from 'pdfkit'
 import { FileEntity } from '../entities/file.entity'
 import { CreateFileDto, FilterFileDto, UpdateFileDto } from '../dtos'
 import { FileRepository } from '../file.repository'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class FilesService {
@@ -44,9 +45,9 @@ export class FilesService {
     return file
   }
 
-  async createFile(createFile: CreateFileDto, tenantId: string, userId?: string): Promise<FileEntity> {
+  async createFile(createFile: CreateFileDto, ctx: RequestContextDto): Promise<FileEntity> {
     this.logger.log(`${this.createFile.name} Service Called`)
-    return this.fileRepository.createAndSave(createFile, tenantId, userId)
+    return this.fileRepository.createAndSave(createFile, ctx)
   }
 
   async createPdf(createFile: CreateFileDto): Promise<FileEntity> {
@@ -66,7 +67,7 @@ export class FilesService {
         pdfFile: filename,
         fieldname: filename,
       } as any,
-      'system',
+      { tenantId: 'system' } as RequestContextDto,
     )
   }
 

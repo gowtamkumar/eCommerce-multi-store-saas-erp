@@ -1,11 +1,11 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreateCouponDto } from '../dto/create-coupon.dto'
 import { UpdateCouponDto } from '../dto/update-coupon.dto'
-import { CouponRepository } from '../repositoris/coupon.repository'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
 import { CouponEntity } from '../entities/coupon.entity'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { CouponRepository } from '../repositoris/coupon.repository'
 
 @Injectable()
 export class CouponService {
@@ -22,7 +22,7 @@ export class CouponService {
     const existing = await this.couponRepository.findByCode(createCouponDto.code, tenantId)
     if (existing) throw new BadRequestException('Coupon code already exists')
 
-    const result = await this.couponRepository.createAndSave(createCouponDto, tenantId, ctx.userId)
+    const result = await this.couponRepository.createAndSave(createCouponDto, ctx)
     await this.cacheService.delCache('coupons:list', tenantId)
     return result
   }

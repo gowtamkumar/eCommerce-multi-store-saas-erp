@@ -14,14 +14,13 @@ export class ProductAttributeRepository {
   async saveMultiple(
     attributes: any[],
     productId: string,
-    tenantId: string,
-    userId?: string,
+    ctx: RequestContextDto,
     manager?: any,
   ): Promise<ProductAttributeEntity[]> {
     if (!attributes || attributes.length === 0) return []
     const repo = manager ? manager.getRepository(ProductAttributeEntity) : this.repo
     const entities = attributes.map((attr) =>
-      repo.create({ ...attr, productId, tenantId, userId } as ProductAttributeEntity),
+      repo.create({ ...attr, productId, tenantId: ctx.tenantId, userId: ctx.userId } as ProductAttributeEntity),
     )
     return repo.save(entities)
   }

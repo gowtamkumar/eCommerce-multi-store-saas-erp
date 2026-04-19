@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CartItemEntity } from './entities/cart-item.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class CartItemRepository {
@@ -28,8 +29,8 @@ export class CartItemRepository {
     })
   }
 
-  async createAndSave(dto: any): Promise<CartItemEntity> {
-    const cartItem = this.repo.create(dto as any) as unknown as CartItemEntity
+  async createAndSave(dto: any, ctx: RequestContextDto): Promise<CartItemEntity> {
+    const cartItem = this.repo.create({ ...dto, tenantId: ctx.tenantId } as any) as unknown as CartItemEntity
     return await (this.repo.save(cartItem) as Promise<CartItemEntity>)
   }
 

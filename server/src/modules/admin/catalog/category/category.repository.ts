@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CategoryEntity } from './entities/category.entity'
 import { ProductEntity } from '../product/entities/product.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class CategoryRepository {
@@ -50,8 +51,8 @@ export class CategoryRepository {
       .getRawMany()
   }
 
-  async createAndSave(data: Partial<CategoryEntity>, userId?: string): Promise<CategoryEntity> {
-    const category = this.repo.create({ ...data, userId } as CategoryEntity)
+  async createAndSave(data: Partial<CategoryEntity>, ctx: RequestContextDto): Promise<CategoryEntity> {
+    const category = this.repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId } as CategoryEntity)
     return this.repo.save(category)
   }
 

@@ -96,8 +96,7 @@ export class PaymentService {
       method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
       status: PaymentStatus.COMPLETED,
       gatewayResponse: validation.gatewayResponse,
-      tenantId: order.tenantId,
-    })
+    }, { tenantId: order.tenantId, userId: order.userId } as RequestContextDto)
 
     // Sync Invoice Status
     await this.invoiceService.updateInvoiceStatusByOrderId(
@@ -133,8 +132,7 @@ export class PaymentService {
       method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
       status: PaymentStatus.FAILED,
       gatewayResponse: validation.gatewayResponse,
-      tenantId: order.tenantId,
-    })
+    }, { tenantId: order.tenantId, userId: order.userId } as RequestContextDto)
 
     await this.cacheService.delCache(`payments:list`, order.tenantId)
     return { success: false }
@@ -157,8 +155,7 @@ export class PaymentService {
       method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
       status: PaymentStatus.PENDING,
       gatewayResponse: validation.gatewayResponse,
-      tenantId: order.tenantId,
-    })
+    }, { tenantId: order.tenantId, userId: order.userId } as RequestContextDto)
 
     await this.cacheService.delCache(`payments:list`, order.tenantId)
     return { cancelled: true }

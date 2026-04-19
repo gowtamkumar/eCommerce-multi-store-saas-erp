@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ExpenseEntity } from './entities/expense.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 interface FindAllOptions {
   page?: number
@@ -19,8 +20,8 @@ export class ExpenseRepository {
     private readonly repo: Repository<ExpenseEntity>,
   ) {}
 
-  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<ExpenseEntity> {
-    const expense = this.repo.create({ ...dto, tenantId, userId } as ExpenseEntity)
+  async createAndSave(dto: any, ctx: RequestContextDto): Promise<ExpenseEntity> {
+    const expense = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as ExpenseEntity)
     return this.repo.save(expense)
   }
 

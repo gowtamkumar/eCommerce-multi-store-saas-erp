@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ProductVariantEntity } from '../entities/variant.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class ProductVariantRepository {
@@ -29,16 +30,15 @@ export class ProductVariantRepository {
   async saveNewVariant(
     variantDto: any,
     productId: string,
-    tenantId: string,
-    userId?: string,
+    ctx: RequestContextDto,
     manager?: any,
   ): Promise<ProductVariantEntity> {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
     const variant = repo.create({
       ...variantDto,
       productId,
-      tenantId,
-      userId,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
       stock: 0,
     } as ProductVariantEntity)
     return repo.save(variant)
@@ -47,16 +47,15 @@ export class ProductVariantRepository {
   async saveExistingVariant(
     variantDto: any,
     productId: string,
-    tenantId: string,
-    userId?: string,
+    ctx: RequestContextDto,
     manager?: any,
   ): Promise<ProductVariantEntity> {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
     const variant = repo.create({
       ...variantDto,
       productId,
-      tenantId,
-      userId,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
     } as ProductVariantEntity)
     return repo.save(variant)
   }

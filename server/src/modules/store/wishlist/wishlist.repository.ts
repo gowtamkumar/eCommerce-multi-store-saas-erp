@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { WishlistEntity } from './entities/wishlist.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class WishlistRepository {
@@ -38,7 +39,9 @@ export class WishlistRepository {
   }
 
 
-  async toggleWishlist(userId: string, productId: string, tenantId: string): Promise<boolean> {
+  async toggleWishlist(productId: string, ctx: RequestContextDto): Promise<boolean> {
+    const userId = ctx.userId
+    const tenantId = ctx.tenantId
     const existing = await this.findByUserAndProduct(userId, productId, tenantId)
     if (existing) {
       await this.repo.remove(existing)

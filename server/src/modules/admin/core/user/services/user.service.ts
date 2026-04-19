@@ -85,14 +85,13 @@ export class UserService {
     return this.userRepo.findByEmail(email, tenantId)
   }
 
-  async createUser(createUserDto: CreateUserDto, tenantId?: string): Promise<UserEntity> {
+  async createUser(createUserDto: CreateUserDto, ctx: RequestContextDto): Promise<UserEntity> {
     this.logger.log(`${this.createUser.name} Service Called`)
     const hashPassword = await bcrypt.hash(createUserDto.password, 10)
     const user = await this.userRepo.createAndSave({
       ...createUserDto,
       password: hashPassword,
-      tenantId,
-    } as any)
+    } as any, ctx)
     return user
   }
 

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { Repository } from 'typeorm'
 import { TenantEntity } from './entities/tenant.entity'
 import { InjectRepository } from '@nestjs/typeorm'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class TenantRepository {
@@ -82,12 +83,12 @@ export class TenantRepository {
 
   async createAndSave(
     dto: Partial<TenantEntity>,
-    userId?: string,
+    ctx: RequestContextDto,
     subscriptionPlan?: any,
   ): Promise<TenantEntity> {
     const tenant = this.repo.create({
       ...dto,
-      userId,
+      userId: ctx.userId,
       subscriptionPlan,
     })
     return await this.repo.save(tenant)

@@ -53,8 +53,7 @@ export class ReturnService {
 
     const result = await this.returnRepository.createAndSaveReturn(
       { orderId, reason, items },
-      userId,
-      tenantId,
+      ctx,
     )
     // Invalidate the admin list cache so the new return appears immediately
     await this.cacheService.delCache('returns:all', tenantId)

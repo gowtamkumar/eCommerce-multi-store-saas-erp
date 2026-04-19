@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { InventoryTransactionEntity } from './entities/inventory-transaction.entity'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class InventoryTransactionRepository {
@@ -56,12 +57,11 @@ export class InventoryTransactionRepository {
 
   async createAndSave(
     dto: any,
-    tenantId: string,
-    userId?: string,
+    ctx: RequestContextDto,
     manager?: any,
   ): Promise<InventoryTransactionEntity> {
     const repo = manager ? manager.getRepository(InventoryTransactionEntity) : this.repo
-    const transaction = repo.create({ ...dto, tenantId, userId })
+    const transaction = repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId })
     return await repo.save(transaction)
   }
 }

@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Brackets, Repository } from 'typeorm'
 import { OrderEntity } from '../entities/order.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class OrderRepository {
@@ -14,9 +15,9 @@ export class OrderRepository {
     private readonly repo: Repository<OrderEntity>,
   ) { }
 
-  async createAndSave(data: any, tenantId: string, userId?: string, manager?: any): Promise<OrderEntity> {
+  async createAndSave(data: any, ctx: RequestContextDto, manager?: any): Promise<OrderEntity> {
     const repo = manager ? manager.getRepository(OrderEntity) : this.repo
-    const order = repo.create({ ...data, tenantId, userId })
+    const order = repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId })
     return repo.save(order)
   }
 

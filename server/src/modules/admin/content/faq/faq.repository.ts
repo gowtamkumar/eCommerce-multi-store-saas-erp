@@ -72,8 +72,8 @@ export class FaqRepository {
     })
   }
 
-  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<FaqEntity> {
-    const faq = this.repo.create({ ...dto, tenantId, userId } as FaqEntity)
+  async createAndSave(dto: any, ctx: RequestContextDto): Promise<FaqEntity> {
+    const faq = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as FaqEntity)
     return this.repo.save(faq)
   }
 
@@ -86,10 +86,10 @@ export class FaqRepository {
     await this.repo.softRemove(faq)
   }
 
-  async saveMultiple(faqs: any[], productId: string, tenantId: string, userId?: string, manager?: any): Promise<FaqEntity[]> {
+  async saveMultiple(faqs: any[], productId: string, ctx: RequestContextDto, manager?: any): Promise<FaqEntity[]> {
     if (!faqs || faqs.length === 0) return []
     const repo = manager ? manager.getRepository(FaqEntity) : this.repo
-    const entities = faqs.map((faq) => repo.create({ ...faq, productId, tenantId, userId } as FaqEntity))
+    const entities = faqs.map((faq) => repo.create({ ...faq, productId, tenantId: ctx.tenantId, userId: ctx.userId } as FaqEntity))
     return repo.save(entities)
   }
 

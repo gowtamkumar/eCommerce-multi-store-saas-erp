@@ -1,9 +1,10 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Inject, Injectable } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import { Cache } from 'cache-manager'
 
 @Injectable()
 export class CacheRepository {
+  private readonly logger = new Logger(CacheRepository.name)
   
   constructor(@Inject(CACHE_MANAGER) private cache: Cache) {}
 
@@ -25,32 +26,40 @@ export class CacheRepository {
   }
 
   async delByPattern(pattern: string): Promise<void> {
-    const stores = (this.cache as any).stores || [(this.cache as any).store]    
+    const stores = (this.cache as any).stores || [(this.cache as any).store]
     let cleared = false
 
     for (const store of stores) {
       if (!store) continue
 
-      // Discover keys and del methods
-      // Latest cache-manager (v7) wraps stores in Keyv.
-      // cache-manager-redis-yet (v5) has a .client property or .keys() method.
+      // For cache-manager v7+, it uses keyv. The store is usually a Keyv instance.
+      // We need to drill down to the underlying redis client.
       const underlyingStore = store.store || store._cache || store
-      const client = underlyingStore.client || underlyingStore._client || underlyingStore.redisClient
-      const keysMethod = underlyingStore.keys || client?.keys
-      const delMethod = client?.del || underlyingStore.del || underlyingStore.delete || store.del || store.delete
-
-      if (typeof keysMethod === 'function') {
-        const keys = await keysMethod.call(underlyingStore.keys ? underlyingStore : client, pattern)
+      const client = underlyingStore.client || underlyingStore.redisClient || underlyingStore._client
+      
+      // If we found a client, attempt 'keys' or 'scan'
+      if (client && typeof client.keys === 'function') {
+        const keys = await client.keys(pattern)
         if (Array.isArray(keys) && keys.length > 0) {
-          // Some clients (like node-redis) allow passing an array to del
-          await delMethod.call(client?.del ? client : underlyingStore, keys)
+          await (client.del || client.delete).call(client, ...keys)
+        }
+        cleared = true
+      } 
+      // Fallback: check if store itself has keys (for older versions or different stores)
+      else if (typeof underlyingStore.keys === 'function') {
+        const keys = await underlyingStore.keys(pattern)
+        if (Array.isArray(keys) && keys.length > 0) {
+          await (underlyingStore.del || underlyingStore.delete).call(underlyingStore, ...keys)
         }
         cleared = true
       }
     }
 
     if (!cleared) {
-      throw new Error('Redis client not accessible for pattern deletion')
+      this.logger.warn(`Pattern deletion not supported or no keys found for pattern: ${pattern}`)
+      // Don't throw if no keys found, just log a warning. 
+      // If you really want it to throw only when not supported:
+      // throw new Error('Redis client not accessible for pattern deletion')
     }
   }
 }

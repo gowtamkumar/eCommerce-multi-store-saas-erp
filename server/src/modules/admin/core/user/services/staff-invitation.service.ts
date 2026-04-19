@@ -1,15 +1,15 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import * as crypto from 'crypto';
-import { MailService } from '@/modules/admin/operations/infra/mail/mail.service';
+import { RequestContextDto } from '@/common/dto/request-context.dto';
+import { UserStatus } from '@/common/enums/user/user-status.enum';
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service';
-import { StaffInvitationRepository } from '../repositories/staff-invitation.repository';
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { InviteStaffDto } from '../dtos/invite-staff.dto';
 import { InvitationStatus, StaffInvitationEntity } from '../entities/staff-invitation.entity';
-import { UserRepository } from '../repositories/user.repository';
-import * as bcrypt from 'bcrypt';
 import { UserEntity } from '../entities/user.entity';
-import { UserStatus } from '@/common/enums/user/user-status.enum';
-import { RequestContextDto } from '@/common/dto/request-context.dto';
+import { StaffInvitationRepository } from '../repositories/staff-invitation.repository';
+import { UserRepository } from '../repositories/user.repository';
 
 @Injectable()
 export class StaffInvitationService {
@@ -44,12 +44,11 @@ export class StaffInvitationService {
     const invitation = await this.invitationRepo.createAndSave({
       email: dto.email,
       role: dto.role,
-      tenantId,
       token,
       expiresAt,
       invitedBy,
       status: InvitationStatus.Pending,
-    });
+    }, ctx);
 
     this.mailService.sendStaffInvitationEmail(dto.email, token, dto.role, tenantId);
     await this.cacheService.delCache('team:members', tenantId);
@@ -106,10 +105,9 @@ export class StaffInvitationService {
       name,
       username,
       role: invitation.role,
-      tenantId: invitation.tenantId,
       status: UserStatus.ACTIVE,
       isEmailVerified: true,
-    });
+    }, { tenantId: invitation.tenantId, userId: 'system' } as RequestContextDto);
 
     await this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Accepted });
     await this.cacheService.delCache('team:members', invitation.tenantId);

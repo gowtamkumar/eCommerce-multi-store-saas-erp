@@ -1,9 +1,9 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreateReviewDto, UpdateReviewDto } from '../dto/review.dto'
-import { ReviewRepository } from '../repositoris/review.repository'
 import { ReviewEntity } from '../entities/review.entity'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { ReviewRepository } from '../repositoris/review.repository'
 
 @Injectable()
 export class ReviewService {
@@ -16,7 +16,7 @@ export class ReviewService {
 
   async createReview(dto: CreateReviewDto, ctx: RequestContextDto): Promise<ReviewEntity> {
     this.logger.log(`${this.createReview.name} Service Called`)
-    const result = await this.reviewRepository.createAndSave(dto, ctx.tenantId, ctx.userId)
+    const result = await this.reviewRepository.createAndSave(dto, ctx)
     await this.cacheService.delCache(`reviews:product:${dto.productId}`, ctx.tenantId)
     await this.cacheService.delCache('reviews:public', ctx.tenantId)
     return result

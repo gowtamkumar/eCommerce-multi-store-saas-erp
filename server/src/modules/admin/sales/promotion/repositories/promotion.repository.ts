@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { PromotionEntity } from '../entities/promotion.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class PromotionRepository {
@@ -56,11 +57,11 @@ export class PromotionRepository {
     })
   }
 
-  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<PromotionEntity> {
+  async createAndSave(dto: any, ctx: RequestContextDto): Promise<PromotionEntity> {
     const promotion = this.repo.create({
       ...dto,
-      tenantId,
-      userId,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
     } as PromotionEntity)
     return await this.repo.save(promotion)
   }

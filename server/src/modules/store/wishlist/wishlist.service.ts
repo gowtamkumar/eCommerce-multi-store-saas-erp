@@ -17,10 +17,10 @@ export class WishlistService {
   ) { }
 
   async toggleWishlist(
-    userId: string,
+    ctx: RequestContextDto,
     productId: string,
-    tenantId: string,
   ): Promise<{ added: boolean }> {
+    const { userId, tenantId } = ctx
     this.logger.log(`${this.toggleWishlist.name} Service Called for user ${userId}`)
 
     // Check if product exists
@@ -29,15 +29,16 @@ export class WishlistService {
       throw new NotFoundException('Product not found')
     }
 
-    const added = await this.wishlistRepository.toggleWishlist(userId, productId, tenantId)
+    const added = await this.wishlistRepository.toggleWishlist(productId, ctx)
     return { added }
   }
 
-  async getWishlist(userId: string, tenantId: string): Promise<any[]> {
+  async getWishlist(ctx: RequestContextDto): Promise<any[]> {
+    const { userId, tenantId } = ctx
     this.logger.log(`${this.getWishlist.name} Service Called for user ${userId}`)
     const items = await this.wishlistRepository.findByUserId(userId, tenantId)
 
-    const activePromotions = await this.promotionService.findActivePromotions({ tenantId } as RequestContextDto)
+    const activePromotions = await this.promotionService.findActivePromotions(ctx)
 
     return items.map((item) => {
       const pricingData = this.pricingEngine.calculateItemPricing(
@@ -57,12 +58,14 @@ export class WishlistService {
     })
   }
 
-  async clearWishlist(userId: string, tenantId: string): Promise<void> {
+  async clearWishlist(ctx: RequestContextDto): Promise<void> {
+    const { userId, tenantId } = ctx
     this.logger.log(`${this.clearWishlist.name} Service Called for user ${userId}`)
     await this.wishlistRepository.clearWishlist(userId, tenantId)
   }
 
-  async removeFromWishlist(userId: string, productId: string, tenantId: string): Promise<void> {
+  async removeFromWishlist(ctx: RequestContextDto, productId: string): Promise<void> {
+    const { userId, tenantId } = ctx
     this.logger.log(`${this.removeFromWishlist.name} Service Called for user ${userId}`)
     await this.wishlistRepository.deleteWishlistItem(userId, productId, tenantId)
   }

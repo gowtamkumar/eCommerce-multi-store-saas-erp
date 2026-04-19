@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ProductEntity } from '../entities/product.entity'
 import { PromotionTargetType } from '@/modules/admin/sales/promotion/enums/promotion-target-type.enum'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class ProductRepository {
@@ -120,11 +121,11 @@ export class ProductRepository {
     return this.repo.findOne({ where: { slug, tenantId } })
   }
 
-  async createAndSave(data: any, tenantId: string, userId?: string): Promise<ProductEntity> {
+  async createAndSave(data: any, ctx: RequestContextDto): Promise<ProductEntity> {
     const product = this.repo.create({
       ...data,
-      tenantId,
-      userId,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
       stock: 0,
     } as ProductEntity)
     return this.repo.save(product)

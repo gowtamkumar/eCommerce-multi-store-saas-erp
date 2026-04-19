@@ -40,7 +40,7 @@ export class CartService {
     let cart = await this.cartRepository.findByUserId(userId, tenantId)
 
     if (!cart) {
-      cart = await this.cartRepository.createAndSave(userId, tenantId)
+      cart = await this.cartRepository.createAndSave(ctx)
     }
 
     return cart
@@ -146,8 +146,7 @@ export class CartService {
         productId,
         variantId: variantId || null,
         quantity: Number(quantity),
-        tenantId,
-      })
+      }, ctx)
     }
 
     // Return transformed cart
@@ -237,8 +236,7 @@ export class CartService {
           productId: item.productId,
           variantId: item.variantId,
           quantity: item.quantity,
-          tenantId,
-        })
+        }, ctx)
       )
     )
 

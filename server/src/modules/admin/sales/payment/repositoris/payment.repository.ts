@@ -1,3 +1,4 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -17,8 +18,8 @@ export class PaymentRepository {
     return await this.repo.findOne({ where: { transactionId, tenantId } })
   }
 
-  async createAndSave(dto: any, userId?: string): Promise<PaymentEntity> {
-    const payment = this.repo.create({ ...dto, userId } as any) as unknown as PaymentEntity
+  async createAndSave(dto: any, ctx: RequestContextDto): Promise<PaymentEntity> {
+    const payment = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as any) as unknown as PaymentEntity
     return await (this.repo.save(payment) as Promise<PaymentEntity>)
   }
 

@@ -2,6 +2,7 @@ import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class LeadRepository {
@@ -38,8 +39,8 @@ export class LeadRepository {
     return this.repo.findOne({ where: { id, tenantId } })
   }
 
-  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<LeadEntity> {
-    const lead = this.repo.create({ ...dto, tenantId, userId } as LeadEntity)
+  async createAndSave(dto: any, ctx: RequestContextDto): Promise<LeadEntity> {
+    const lead = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as LeadEntity)
     return this.repo.save(lead)
   }
 

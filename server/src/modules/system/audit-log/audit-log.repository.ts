@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Between, FindOptionsWhere, Repository } from 'typeorm'
 import { AuditLogEntity } from './entities/audit-log.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class AuditLogRepository {
@@ -10,11 +11,11 @@ export class AuditLogRepository {
     private readonly repo: Repository<AuditLogEntity>,
   ) { }
 
-  async createAndSave(tenantId: string, data: any, userId?: string): Promise<void> {
+  async createAndSave(ctx: RequestContextDto, data: any): Promise<void> {
     const entry = this.repo.create({
       ...data,
-      tenantId,
-      userId,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
     })
     await this.repo.save(entry)
   }

@@ -329,7 +329,7 @@ export class ProductService {
       if (existing) throw new ConflictException('Product with this slug already exists')
 
       const { faqs, attributes, variants, ...productData } = createProductDto
-      const product = await this.productRepository.createAndSave(productData, tenantId, ctx.userId)
+      const product = await this.productRepository.createAndSave(productData, ctx)
 
       const poItems = []
 
@@ -343,11 +343,11 @@ export class ProductService {
       }
 
         if (faqs && faqs.length > 0) {
-          await this.faqRepository.saveMultiple(faqs, product.id, tenantId, ctx.userId, manager)
+          await this.faqRepository.saveMultiple(faqs, product.id, ctx, manager)
         }
   
         if (attributes && attributes.length > 0) {
-          await this.attributeRepository.saveMultiple(attributes, product.id, tenantId, ctx.userId, manager)
+          await this.attributeRepository.saveMultiple(attributes, product.id, ctx, manager)
         }
   
         if (variants && variants.length > 0) {
@@ -355,8 +355,7 @@ export class ProductService {
             const savedVariant = await this.variantRepository.saveNewVariant(
               variantDto,
               product.id,
-              tenantId,
-              ctx.userId,
+              ctx,
               manager,
             )
 
@@ -430,7 +429,7 @@ export class ProductService {
         if (faqs) {
           await this.faqRepository.deleteByProductId(product.id, tenantId, manager)
           if (faqs.length > 0) {
-            await this.faqRepository.saveMultiple(faqs, product.id, tenantId, ctx.userId, manager)
+            await this.faqRepository.saveMultiple(faqs, product.id, ctx, manager)
           }
         }
   
@@ -438,7 +437,7 @@ export class ProductService {
         if (attributes) {
           await this.attributeRepository.deleteByProductId(product.id, tenantId, manager)
           if (attributes.length > 0) {
-            await this.attributeRepository.saveMultiple(attributes, product.id, tenantId, ctx.userId, manager)
+            await this.attributeRepository.saveMultiple(attributes, product.id, ctx, manager)
           }
         }
   
@@ -479,8 +478,7 @@ export class ProductService {
             await this.variantRepository.saveExistingVariant(
               variantDto,
               product.id,
-              tenantId,
-              ctx.userId,
+              ctx,
               manager,
             )
 
@@ -511,8 +509,7 @@ export class ProductService {
           const savedVariant = await this.variantRepository.saveNewVariant(
             variantDto,
             product.id,
-            tenantId,
-            ctx.userId,
+            ctx,
             manager,
           )
 

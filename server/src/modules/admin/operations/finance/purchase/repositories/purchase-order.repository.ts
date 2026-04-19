@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
 import { PurchaseOrderEntity } from '../entities/purchase-order.entity'
 import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-status.enum'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class PurchaseOrderRepository {
@@ -18,11 +19,11 @@ export class PurchaseOrderRepository {
 
   async createAndSave(
     data: Partial<PurchaseOrderEntity>,
-    userId?: string,
+    ctx: RequestContextDto,
     manager?: EntityManager,
   ): Promise<PurchaseOrderEntity> {
     const repo = this.getRepo(manager)
-    const purchaseOrder = repo.create({ ...data, userId } as PurchaseOrderEntity)
+    const purchaseOrder = repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId } as PurchaseOrderEntity)
     return repo.save(purchaseOrder)
   }
 

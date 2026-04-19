@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ReviewEntity } from '../entities/review.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class ReviewRepository {
@@ -58,8 +59,8 @@ export class ReviewRepository {
     return this.repo.findOne({ where: { id, tenantId } })
   }
 
-  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<ReviewEntity> {
-    const review = this.repo.create({ ...dto, tenantId, userId } as ReviewEntity)
+  async createAndSave(dto: any, ctx: RequestContextDto): Promise<ReviewEntity> {
+    const review = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as ReviewEntity)
     return this.repo.save(review)
   }
 

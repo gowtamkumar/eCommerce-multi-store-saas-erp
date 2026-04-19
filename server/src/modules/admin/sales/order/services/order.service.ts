@@ -279,8 +279,7 @@ export class OrderService {
             method: order.paymentMethod || PaymentMethod.COD,
             status: PaymentStatus.COMPLETED,
             gatewayResponse: { note: 'Manual update from admin dashboard' },
-            tenantId,
-          })
+          }, ctx)
         }
       }
 

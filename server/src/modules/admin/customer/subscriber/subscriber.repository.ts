@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { SubscriberEntity } from './entities/subscriber.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class SubscriberRepository {
@@ -14,8 +15,8 @@ export class SubscriberRepository {
     return this.repo.findOne({ where: { email, tenantId } })
   }
 
-  async createAndSave(dto: any, userId?: string): Promise<SubscriberEntity> {
-    const subscriber = this.repo.create({ ...dto, userId } as SubscriberEntity)
+  async createAndSave(dto: any, ctx: RequestContextDto): Promise<SubscriberEntity> {
+    const subscriber = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as SubscriberEntity)
     return this.repo.save(subscriber)
   }
 

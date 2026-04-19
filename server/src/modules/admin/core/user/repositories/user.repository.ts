@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { FilterUserDto } from '../dtos'
 import { UserEntity } from '../entities/user.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class UserRepository {
@@ -97,8 +98,8 @@ export class UserRepository {
     return this.repo.findOne({ where: { resetPasswordToken: token } })
   }
 
-  async createAndSave(data: Partial<UserEntity>): Promise<UserEntity> {
-    const user = this.repo.create(data as UserEntity)
+  async createAndSave(data: Partial<UserEntity>, ctx: RequestContextDto): Promise<UserEntity> {
+    const user = this.repo.create({ ...data, tenantId: data.tenantId || ctx.tenantId } as UserEntity)
     return this.repo.save(user)
   }
 

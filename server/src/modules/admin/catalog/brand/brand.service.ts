@@ -25,10 +25,7 @@ export class BrandService {
       throw new ConflictException('Brand with this slug already exists')
     }
 
-    const result = await this.brandRepo.createAndSave(
-      { ...createBrandDto, tenantId },
-      ctx.userId
-    )
+    const result = await this.brandRepo.createAndSave(createBrandDto, ctx)
     await this.cache.delCache(`brands:list`, tenantId)
     await this.cache.delCache(`brands:stats`, tenantId)
     return result

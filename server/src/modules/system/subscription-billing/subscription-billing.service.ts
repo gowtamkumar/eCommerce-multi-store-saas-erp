@@ -14,6 +14,7 @@ import { SubscriptionInvoiceRepository } from './subscription-invoice.repository
 import { CurrentSubscriptionResponseDto } from './dto/current-subscription-response.dto'
 import { SubscriptionInvoiceEntity } from './entities/subscription-invoice.entity'
 import { SubscriptionPlanEntity } from '../subscription-plan/entities/subscription-plan.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class SubscriptionBillingService {
@@ -63,12 +64,12 @@ export class SubscriptionBillingService {
   }
 
   async initiateSubscriptionPayment(
-    tenantId: string,
     planId: string,
+    ctx: RequestContextDto,
     billingCycle: SubscriptionBillingCycle = SubscriptionBillingCycle.MONTHLY,
     frontendUrl?: string,
-    userId?: string,
   ): Promise<{ gatewayUrl: string }> {
+    const { tenantId, userId } = ctx
     this.logger.log(`Initiating subscription payment for tenant ${tenantId} and plan ${planId}`)
     const plan = await this.planRepository.findById(planId)
     if (!plan) throw new NotFoundException('Plan not found')
@@ -111,7 +112,7 @@ export class SubscriptionBillingService {
       status: PaymentStatus.PENDING,
       transactionId,
       billingDate: new Date(),
-    }, userId)
+    }, ctx)
 
     // Actual SSLCommerz Integration
     const strategy = new SslCommerzPaymentStrategy()

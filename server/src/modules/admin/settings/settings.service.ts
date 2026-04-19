@@ -28,7 +28,7 @@ export class SettingsService {
         let settings = await this.settingsRepository.findByTenantId(tenantId)
         // Create default settings if not exists
         if (!settings) {
-          settings = await this.settingsRepository.createAndSave({}, tenantId, ctx.userId)
+          settings = await this.settingsRepository.createAndSave({}, ctx)
         }
 
         const tenant = await this.tenantRepository.findById(tenantId)
@@ -65,6 +65,6 @@ export class SettingsService {
   async createSetting(ctx: RequestContextDto, dto: UpdateSiteSettingsDto): Promise<SiteSettingsEntity> {
     this.logger.log(`${this.createSetting.name} Service Called`)
     const tenantId = ctx.tenantId
-    return await this.settingsRepository.createAndSave(dto, tenantId, ctx.userId)
+    return await this.settingsRepository.createAndSave(dto, ctx)
   }
 }

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { InvoiceEntity } from './entities/invoice.entity'
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class InvoiceRepository {
@@ -21,9 +22,9 @@ export class InvoiceRepository {
 
   async createAndSave(
     data: Partial<InvoiceEntity>,
-    userId?: string,
+    ctx: RequestContextDto,
   ): Promise<InvoiceEntity> {
-    const invoice = this.repo.create({ ...data, userId } as InvoiceEntity)
+    const invoice = this.repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId } as InvoiceEntity)
     return this.repo.save(invoice)
   }
 

@@ -37,7 +37,7 @@ export class ShippingAddressService {
     if (dto.isDefault) {
       await this.repo.unsetDefaults(userId, tenantId)
     }
-    return await this.repo.createAndSave(userId, tenantId, dto)
+    return await this.repo.createAndSave(dto, ctx)
   }
 
   async updateShippingAddress(

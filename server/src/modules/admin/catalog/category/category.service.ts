@@ -1,10 +1,10 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { CreateCategoryDto } from '@/modules/admin/catalog/category/dto/create-category.dto'
 import { UpdateCategoryDto } from '@/modules/admin/catalog/category/dto/update-category.dto'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CategoryRepository } from './category.repository'
 import { CategoryEntity } from './entities/category.entity'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class CategoryService {
@@ -27,10 +27,7 @@ export class CategoryService {
       throw new ConflictException('Category with this slug already exists')
     }
 
-    const result = await this.categoryRepo.createAndSave(
-      { ...createCategoryDto, tenantId },
-      ctx.userId
-    )
+    const result = await this.categoryRepo.createAndSave(createCategoryDto, ctx)
     await this.cache.delCache(`categories:list`, tenantId)
     await this.cache.delCache(`categories:stats`, tenantId)
     return result

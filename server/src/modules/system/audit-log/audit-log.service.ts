@@ -3,6 +3,7 @@ import { AuditLogRepository } from './audit-log.repository'
 import { CreateAuditLogDto } from './dto/create-audit-log.dto'
 import { QueryAuditLogDto } from './dto/query-audit-log.dto'
 import { AuditLogEntity } from './entities/audit-log.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class AuditLogService {
@@ -15,16 +16,15 @@ export class AuditLogService {
    * Errors are swallowed so audit logging never breaks business logic.
    */
   async log(
-    tenantId: string,
+    ctx: RequestContextDto,
     dto: CreateAuditLogDto,
     ipAddress?: string,
     userAgent?: string,
-    userId?: string,
   ): Promise<void> {
     this.logger.log(`${this.log.name} Service Called`)
     try {
-      await this.auditLogRepository.createAndSave(tenantId, {
-        userId: dto.userId ?? userId,
+      await this.auditLogRepository.createAndSave(ctx, {
+        userId: dto.userId ?? ctx.userId,
         action: dto.action,
         entity: dto.entity,
         entityId: dto.entityId,
@@ -43,10 +43,11 @@ export class AuditLogService {
    * Paginated list with optional filters — tenant-scoped always.
    */
   async findAllAuditLogs(
-    tenantId: string,
+    ctx: RequestContextDto,
     query: QueryAuditLogDto,
   ): Promise<{ data: AuditLogEntity[]; meta: any }> {
     this.logger.log(`${this.findAllAuditLogs.name} Service Called`)
+    const { tenantId } = ctx
     const { page = 1, limit = 20, userId, action, entity, entityId, from, to } = query
     const [data, total] = await this.auditLogRepository.findAllWithFilters(tenantId, {
       page,
@@ -73,19 +74,20 @@ export class AuditLogService {
   /**
    * Single audit log entry — tenant-scoped.
    */
-  async findOneAuditLog(id: string, tenantId: string): Promise<AuditLogEntity | null> {
+  async findOneAuditLog(id: string, ctx: RequestContextDto): Promise<AuditLogEntity | null> {
     this.logger.log(`${this.findOneAuditLog.name} Service Called`)
-    return await this.auditLogRepository.findById(id, tenantId)
+    return await this.auditLogRepository.findById(id, ctx.tenantId)
   }
 
   /**
    * Delete all logs older than N days for a tenant (data-retention helper).
    */
   async deleteOlderThanAuditLogs(
-    tenantId: string,
+    ctx: RequestContextDto,
     days: number,
   ): Promise<{ message: string }> {
     this.logger.log(`${this.deleteOlderThanAuditLogs.name} Service Called`)
+    const { tenantId } = ctx
     const cutoff = new Date()
     cutoff.setDate(cutoff.getDate() - days)
 

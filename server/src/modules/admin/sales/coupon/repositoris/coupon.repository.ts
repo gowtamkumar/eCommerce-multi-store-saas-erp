@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { ILike, Repository } from 'typeorm'
 import { CouponEntity } from '../entities/coupon.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class CouponRepository {
@@ -46,12 +47,12 @@ export class CouponRepository {
       .getManyAndCount()
   }
 
-  async createAndSave(dto: any, tenantId: string, userId?: string): Promise<CouponEntity> {
+  async createAndSave(dto: any, ctx: RequestContextDto): Promise<CouponEntity> {
     const coupon = this.repo.create({
       ...dto,
       code: dto.code.toUpperCase(),
-      tenantId,
-      userId,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
     } as any) as unknown as CouponEntity
     return await (this.repo.save(coupon) as Promise<CouponEntity>)
   }

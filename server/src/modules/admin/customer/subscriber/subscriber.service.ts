@@ -28,8 +28,7 @@ export class SubscriberService {
 
     const subscriber = await this.subscriberRepository.createAndSave({
       ...createSubscriberDto,
-      tenantId
-    }, ctx.userId)
+    }, ctx)
     
     await this.cache.delCache('subscribers:list', tenantId)
     return subscriber

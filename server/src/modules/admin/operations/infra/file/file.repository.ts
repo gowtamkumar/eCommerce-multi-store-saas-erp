@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { FileEntity } from './entities/file.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class FileRepository {
@@ -35,8 +36,8 @@ export class FileRepository {
     return await this.repo.findOne({ where: { id, tenantId } })
   }
 
-  async createAndSave(dto: any, tenantId?: string, userId?: string): Promise<FileEntity> {
-    const file = this.repo.create({ ...dto, tenantId, userId } as any) as unknown as FileEntity
+  async createAndSave(dto: any, ctx: RequestContextDto): Promise<FileEntity> {
+    const file = this.repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId } as any) as unknown as FileEntity
     return await (this.repo.save(file) as Promise<FileEntity>)
   }
 

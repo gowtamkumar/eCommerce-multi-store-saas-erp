@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Brackets, Repository } from 'typeorm'
 import { FilterReturnDto } from '../dto/filter-return.dto'
 
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { OrderReturnEntity } from '../entities/order-return.entity'
 
 @Injectable()
@@ -15,13 +16,12 @@ export class OrderReturnRepository {
 
   async createAndSaveReturn(
     dto: any,
-    userId: string,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<OrderReturnEntity> {
     const returnRequest = this.repo.create({
       ...dto,
-      userId,
-      tenantId,
+      userId: ctx.userId,
+      tenantId: ctx.tenantId,
       status: ReturnStatus.PENDING,
     } as any) as unknown as OrderReturnEntity
     return await (this.repo.save(returnRequest) as Promise<OrderReturnEntity>)

@@ -3,6 +3,7 @@ import { SubscriptionPlanRepository } from './subscription-plan.repository'
 import { CreateSubscriptionPlanDto } from './dto/create-subscription-plan.dto'
 import { UpdateSubscriptionPlanDto } from './dto/update-subscription-plan.dto'
 import { SubscriptionPlanEntity } from './entities/subscription-plan.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class SubscriptionPlanService {
@@ -10,9 +11,9 @@ export class SubscriptionPlanService {
 
   constructor(private readonly planRepository: SubscriptionPlanRepository) {}
 
-  async createSubscriptionPlan(createDto: CreateSubscriptionPlanDto): Promise<SubscriptionPlanEntity> {
+  async createSubscriptionPlan(createDto: CreateSubscriptionPlanDto, ctx: RequestContextDto): Promise<SubscriptionPlanEntity> {
     this.logger.log(`${this.createSubscriptionPlan.name} Service Called`)
-    return await this.planRepository.createAndSave(createDto)
+    return await this.planRepository.createAndSave(createDto, ctx)
   }
 
   async findAllSubscriptionPlans(): Promise<SubscriptionPlanEntity[]> {

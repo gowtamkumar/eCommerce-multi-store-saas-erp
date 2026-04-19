@@ -1,3 +1,4 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
@@ -16,11 +17,11 @@ export class SupplierPaymentRepository {
 
   async createAndSave(
     data: Partial<SupplierPaymentEntity>,
-    userId?: string,
+    ctx: RequestContextDto,
     manager?: EntityManager,
   ): Promise<SupplierPaymentEntity> {
     const repo = this.getRepo(manager)
-    const payment = repo.create({ ...data, userId } as SupplierPaymentEntity)
+    const payment = repo.create({ ...data, tenantId: ctx.tenantId, userId: ctx.userId } as SupplierPaymentEntity)
     return repo.save(payment)
   }
 
