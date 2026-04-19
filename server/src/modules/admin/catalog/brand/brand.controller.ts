@@ -27,7 +27,7 @@ export class BrandController {
     @Body() createBrandDto: CreateBrandDto,
   ): Promise<BaseApiSuccessResponse<BrandResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createBrand.`)
-    const result = await this.brandService.createBrand(createBrandDto, ctx.user.tenantId)
+    const result = await this.brandService.createBrand(createBrandDto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -39,7 +39,7 @@ export class BrandController {
   @Get()
   async findAllBrands(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<BrandResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllBrands.`)
-    const result = await this.brandService.findAllBrands(ctx.tenantId)
+    const result = await this.brandService.findAllBrands(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -55,7 +55,7 @@ export class BrandController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllBrandsWithStats.`)
-    const result = await this.brandService.findAllBrandsWithStats(ctx.tenantId)
+    const result = await this.brandService.findAllBrandsWithStats(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -70,7 +70,7 @@ export class BrandController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<BrandResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneBrand.`)
-    const result = await this.brandService.findOneBrand(id, ctx.tenantId)
+    const result = await this.brandService.findOneBrand(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -89,7 +89,7 @@ export class BrandController {
     @Body() updateBrandDto: UpdateBrandDto,
   ): Promise<BaseApiSuccessResponse<BrandResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateBrand.`)
-    const result = await this.brandService.updateBrand(id, updateBrandDto, ctx.user.tenantId)
+    const result = await this.brandService.updateBrand(id, updateBrandDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -104,7 +104,7 @@ export class BrandController {
   @Audit({ entity: 'Brand', action: 'DELETE' })
   async removeBrand(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeBrand.`)
-    const result = await this.brandService.removeBrand(id, ctx.user.tenantId)
+    const result = await this.brandService.removeBrand(id, ctx)
     return {
       success: true,
       statusCode: 200,

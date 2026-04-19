@@ -57,7 +57,7 @@ export class ProductController {
     @Query() filterDto: FilterProductDto,
   ): Promise<BaseApiSuccessResponse<ProductResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllProducts.`)
-    const { products, total } = await this.productService.findAllProducts(filterDto, ctx.tenantId)
+    const { products, total } = await this.productService.findAllProducts(filterDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -78,7 +78,7 @@ export class ProductController {
     @Query('categoryId') categoryId?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFilterOptions.`)
-    const filters = await this.productService.getFilterOptions(ctx.tenantId, categoryId)
+    const filters = await this.productService.getFilterOptions(ctx, categoryId)
     return {
       success: true,
       statusCode: 200,
@@ -93,7 +93,7 @@ export class ProductController {
     @Query('limit') limit?: number,
   ): Promise<BaseApiSuccessResponse<ProductResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findLatestProducts.`)
-    const result = await this.productService.findLatestProducts(ctx.tenantId, limit)
+    const result = await this.productService.findLatestProducts(ctx, limit)
     return {
       success: true,
       statusCode: 200,
@@ -108,7 +108,7 @@ export class ProductController {
     @Param('slug') slug: string,
   ): Promise<BaseApiSuccessResponse<ProductResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findBySlugProduct.`)
-    const result = await this.productService.findBySlugProduct(slug, ctx.tenantId)
+    const result = await this.productService.findBySlugProduct(slug, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -123,7 +123,7 @@ export class ProductController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<ProductResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneProduct.`)
-    const result = await this.productService.findOneProduct(id, ctx.tenantId)
+    const result = await this.productService.findOneProduct(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -141,7 +141,7 @@ export class ProductController {
     @Body() updateProductDto: UpdateProductDto,
   ): Promise<BaseApiSuccessResponse<ProductResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateProduct.`)
-    const result = await this.productService.updateProduct(id, updateProductDto, ctx.tenantId)
+    const result = await this.productService.updateProduct(id, updateProductDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -155,7 +155,7 @@ export class ProductController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeProduct.`)
-    const result = await this.productService.removeProduct(id, ctx.tenantId)
+    const result = await this.productService.removeProduct(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -170,7 +170,7 @@ export class ProductController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getReviewsProduct.`)
-    const result = await this.reviewService.findByProductReviews(id, ctx.tenantId)
+    const result = await this.reviewService.findByProductReviews(id, ctx)
     return {
       success: true,
       statusCode: 200,

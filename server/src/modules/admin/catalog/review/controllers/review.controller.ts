@@ -65,7 +65,7 @@ export class ReviewController {
     @Query() filterDto: FilterReviewDto,
   ): Promise<BaseApiSuccessResponse<ReviewResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllReviews.`)
-    const { reviews, total } = await this.reviewService.findAllReviews(filterDto, ctx.tenantId)
+    const { reviews, total } = await this.reviewService.findAllReviews(filterDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -85,7 +85,7 @@ export class ReviewController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<ReviewResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findPublicReviews.`)
-    const result = await this.reviewService.findPublicReviews(ctx.tenantId)
+    const result = await this.reviewService.findPublicReviews(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -100,7 +100,7 @@ export class ReviewController {
     @Param('productId') productId: string,
   ): Promise<BaseApiSuccessResponse<ReviewResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByProductReviews.`)
-    const result = await this.reviewService.findByProductReviews(productId, ctx.tenantId)
+    const result = await this.reviewService.findByProductReviews(productId, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -118,7 +118,7 @@ export class ReviewController {
     @Body() dto: UpdateReviewDto,
   ): Promise<BaseApiSuccessResponse<ReviewResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateReview.`)
-    const result = await this.reviewService.updateReview(id, dto, ctx.tenantId)
+    const result = await this.reviewService.updateReview(id, dto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -132,7 +132,7 @@ export class ReviewController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeReview(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeReview.`)
-    const result = await this.reviewService.removeReview(id, ctx.tenantId)
+    const result = await this.reviewService.removeReview(id, ctx)
     return {
       success: true,
       statusCode: 200,

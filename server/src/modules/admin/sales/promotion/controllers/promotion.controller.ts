@@ -37,7 +37,7 @@ export class PromotionController {
     @Body() createPromotionDto: CreatePromotionDto,
   ): Promise<BaseApiSuccessResponse<PromotionResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPromotion.`)
-    const result = await this.promotionService.createPromotion(createPromotionDto, ctx.tenantId)
+    const result = await this.promotionService.createPromotion(createPromotionDto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -60,7 +60,7 @@ export class PromotionController {
     @Query() filterDto: any,
   ): Promise<BaseApiSuccessResponse<{ promotions: PromotionResponseDto[]; total: number }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPromotions.`)
-    const result = await this.promotionService.findAllPromotions(filterDto, ctx.tenantId)
+    const result = await this.promotionService.findAllPromotions(filterDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -80,10 +80,10 @@ export class PromotionController {
     UserRole.USER,
   )
   async findActivePromotions(
-    @TenantId() tenantId: string,
+    @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PromotionResponseDto[]>> {
-    this.logger.verbose(`[Active Promotions] called for tenant: ${tenantId}`)
-    const result = await this.promotionService.findActivePromotions(tenantId)
+    this.logger.verbose(`[Active Promotions] called for tenant: ${ctx.tenantId}`)
+    const result = await this.promotionService.findActivePromotions(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -95,10 +95,10 @@ export class PromotionController {
   // ─── Public endpoint (no auth) — used by storefront /offers page ───
   @Get('offers')
   async getOfferProducts(
-    @TenantId() tenantId: string,
+    @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`[Public] getOfferProducts called for tenant: ${tenantId}`)
-    const result = await this.promotionService.getOfferProducts(tenantId)
+    this.logger.verbose(`[Public] getOfferProducts called for tenant: ${ctx.tenantId}`)
+    const result = await this.promotionService.getOfferProducts(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -110,10 +110,10 @@ export class PromotionController {
   @Get('slug/:slug')
   async getPromotionBySlug(
     @Param('slug') slug: string,
-    @TenantId() tenantId: string,
+    @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`[Public] getPromotionBySlug called for slug: ${slug}, tenant: ${tenantId}`)
-    const result = await this.promotionService.getOfferProductsBySlug(slug, tenantId)
+    this.logger.verbose(`[Public] getPromotionBySlug called for slug: ${slug}, tenant: ${ctx.tenantId}`)
+    const result = await this.promotionService.getOfferProductsBySlug(slug, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -136,7 +136,7 @@ export class PromotionController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<PromotionResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOnePromotion.`)
-    const result = await this.promotionService.findOne(id, ctx.tenantId)
+    const result = await this.promotionService.findOne(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -154,7 +154,7 @@ export class PromotionController {
     @Body() updatePromotionDto: UpdatePromotionDto,
   ): Promise<BaseApiSuccessResponse<PromotionResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePromotion.`)
-    const result = await this.promotionService.updatePromotion(id, updatePromotionDto, ctx.tenantId)
+    const result = await this.promotionService.updatePromotion(id, updatePromotionDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -171,7 +171,7 @@ export class PromotionController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePromotion.`)
-    await this.promotionService.removePromotion(id, ctx.tenantId)
+    await this.promotionService.removePromotion(id, ctx)
     return {
       success: true,
       statusCode: 200,

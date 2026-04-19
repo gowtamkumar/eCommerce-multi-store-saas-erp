@@ -41,11 +41,12 @@ export class ProductService {
     @InjectQueue('product') private readonly productQueue: Queue,
   ) { }
 
-  private async attachPromotions(product: any, tenantId: string): Promise<AugmentedProduct> {
+  private async attachPromotions(product: any, ctx: RequestContextDto): Promise<AugmentedProduct> {
     this.logger.log(`${this.attachPromotions.name} Service Called`)
     if (!product) return product
+    const tenantId = ctx.tenantId
     try {
-      const activePromos = await this.promotionService.findActivePromotions(tenantId)
+      const activePromos = await this.promotionService.findActivePromotions(ctx)
       if (!activePromos || activePromos.length === 0) return product
 
       const applicablePromotions = activePromos.filter((promo) => {
@@ -113,13 +114,13 @@ export class ProductService {
 
   private async attachPromotionsMany(
     products: any[],
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<AugmentedProduct[]> {
     this.logger.log(`${this.attachPromotionsMany.name} Service Called`)
     if (!products || products.length === 0) return products
 
     try {
-      const activePromos = await this.promotionService.findActivePromotions(tenantId)
+      const activePromos = await this.promotionService.findActivePromotions(ctx)
       if (!activePromos || activePromos.length === 0) return products
 
       // Cache strategies to avoid repeated instantiation
@@ -198,9 +199,10 @@ export class ProductService {
 
   async findAllProducts(
     filterDto: FilterProductDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<{ products: AugmentedProduct[]; total: number }> {
     this.logger.log(`${this.findAllProducts.name} Service Called`)
+    const tenantId = ctx.tenantId
 
     // Build a deterministic cache key from the filter parameters to absorb
     // repeated identical requests (e.g. multiple users on the same category page).
@@ -214,7 +216,7 @@ export class ProductService {
           filterDto,
           tenantId,
         )
-        const productsWithPromotions = await this.attachPromotionsMany(products, tenantId)
+        const productsWithPromotions = await this.attachPromotionsMany(products, ctx)
         return { products: productsWithPromotions, total }
       },
       60, // 60-second TTL — short enough to reflect stock/price updates
@@ -222,8 +224,9 @@ export class ProductService {
     )
   }
 
-  async getFilterOptions(tenantId: string, categoryId?: string): Promise<any> {
+  async getFilterOptions(ctx: RequestContextDto, categoryId?: string): Promise<any> {
     this.logger.log(`${this.getFilterOptions.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `products:filter-options:${categoryId || 'all'}`
 
     return this.cache.rememberCache(
@@ -264,34 +267,37 @@ export class ProductService {
     )
   }
 
-  async findBySlugProduct(slug: string, tenantId: string): Promise<ProductEntity> {
+  async findBySlugProduct(slug: string, ctx: RequestContextDto): Promise<ProductEntity> {
     this.logger.log(`${this.findBySlugProduct.name} Service Called`)
+    const tenantId = ctx.tenantId
     const product = await this.productRepository.findBySlugWithRelations(slug, tenantId)
 
     if (!product) {
       throw new NotFoundException('Product not found')
     }
 
-    return await this.attachPromotions(product, tenantId)
+    return await this.attachPromotions(product, ctx)
   }
 
-  async findLatestProducts(tenantId: string, limit: number = 10): Promise<AugmentedProduct[]> {
+  async findLatestProducts(ctx: RequestContextDto, limit: number = 10): Promise<AugmentedProduct[]> {
     this.logger.log(`${this.findLatestProducts.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `products:latest:${limit}`
 
     return this.cache.rememberCache(
       cacheKey,
       async () => {
         const products = await this.productRepository.findLatestProducts(tenantId, limit)
-        return await this.attachPromotionsMany(products, tenantId)
+        return await this.attachPromotionsMany(products, ctx)
       },
       300, // 5 minutes
       tenantId,
     )
   }
 
-  async findOneProduct(id: string, tenantId: string): Promise<AugmentedProduct> {
+  async findOneProduct(id: string, ctx: RequestContextDto): Promise<AugmentedProduct> {
     this.logger.log(`${this.findOneProduct.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `product:${id}`
 
     // Use rememberCache for consistent error handling and atomic get/set
@@ -306,7 +312,7 @@ export class ProductService {
       tenantId,
     )
 
-    return await this.attachPromotions(product, tenantId)
+    return await this.attachPromotions(product, ctx)
   }
 
   async createProduct(
@@ -384,15 +390,16 @@ export class ProductService {
       await this.productQueue.add('create-po', { ...poData, tenantId })
     }
 
-    return await this.findOneProduct(savedProduct.id, tenantId)
+    return await this.findOneProduct(savedProduct.id, ctx)
   }
 
   async updateProduct(
     id: string,
     updateProductDto: UpdateProductDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<AugmentedProduct> {
     this.logger.log(`${this.updateProduct.name} Service Called`)
+    const tenantId = ctx.tenantId
 
     let poData: any = null
 
@@ -556,15 +563,16 @@ export class ProductService {
       await this.productQueue.add('create-purchase-order', { ...poData, tenantId })
     }
 
-    return await this.findOneProduct(id, tenantId)
+    return await this.findOneProduct(id, ctx)
   }
 
   async removeProduct(
     id: string,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeProduct.name} Service Called`)
-    const product = await this.findOneProduct(id, tenantId)
+    const tenantId = ctx.tenantId
+    const product = await this.findOneProduct(id, ctx)
     await this.productRepository.removeProduct(product as any as ProductEntity)
 
     await this.cache.delCache(`product:${id}`, tenantId)
@@ -575,10 +583,11 @@ export class ProductService {
   async decrementStock(
     productId: string,
     quantity: number,
-    tenantId: string,
+    ctx: RequestContextDto,
     variantId?: string,
   ): Promise<any> {
     this.logger.log(`${this.decrementStock.name} Service Called`)
+    const tenantId = ctx.tenantId
     return await this.inventoryService.createInventoryTransaction(
       {
         productId,
@@ -587,7 +596,7 @@ export class ProductService {
         type: InventoryTransactionType.OUT,
         referenceType: InventoryTransactionReferenceType.ADJUSTMENT,
       },
-      tenantId,
+      ctx,
     )
   }
 
@@ -596,8 +605,9 @@ export class ProductService {
     return await this.productRepository.findAllCrossTenant()
   }
 
-  async countByTenant(tenantId: string): Promise<number> {
+  async countByTenant(ctx: RequestContextDto): Promise<number> {
     this.logger.log(`${this.countByTenant.name} Service Called`)
+    const tenantId = ctx.tenantId
     return await this.productRepository.countProducts(tenantId)
   }
 

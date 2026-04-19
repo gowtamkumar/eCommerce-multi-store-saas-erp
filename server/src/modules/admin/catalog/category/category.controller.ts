@@ -25,7 +25,7 @@ export class CategoryController {
     @Body() createCategoryDto: CreateCategoryDto,
   ): Promise<BaseApiSuccessResponse<CategoryResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createCategory.`)
-    const result = await this.categoryService.createCategory(createCategoryDto, ctx.tenantId)
+    const result = await this.categoryService.createCategory(createCategoryDto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -39,7 +39,7 @@ export class CategoryController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<CategoryResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllCategories.`)
-    const result = await this.categoryService.findAllCategories(ctx.tenantId)
+    const result = await this.categoryService.findAllCategories(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -55,7 +55,7 @@ export class CategoryController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllCategoriesWithStats.`)
-    const result = await this.categoryService.findAllCategoriesWithStats(ctx.tenantId)
+    const result = await this.categoryService.findAllCategoriesWithStats(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -70,7 +70,7 @@ export class CategoryController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<CategoryResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneCategory.`)
-    const result = await this.categoryService.findOneCategory(id, ctx.tenantId)
+    const result = await this.categoryService.findOneCategory(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -88,7 +88,7 @@ export class CategoryController {
     @Body() updateCategoryDto: UpdateCategoryDto,
   ): Promise<BaseApiSuccessResponse<CategoryResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateCategory.`)
-    const result = await this.categoryService.updateCategory(id, updateCategoryDto, ctx.tenantId)
+    const result = await this.categoryService.updateCategory(id, updateCategoryDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -102,7 +102,7 @@ export class CategoryController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeCategory(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCategory.`)
-    const result = await this.categoryService.removeCategory(id, ctx.tenantId)
+    const result = await this.categoryService.removeCategory(id, ctx)
     return {
       success: true,
       statusCode: 200,

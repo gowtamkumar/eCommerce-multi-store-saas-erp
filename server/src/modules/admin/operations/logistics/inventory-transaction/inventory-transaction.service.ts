@@ -8,6 +8,7 @@ import { InventoryTransactionEntity } from './entities/inventory-transaction.ent
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { InventoryTransactionType as ITType } from '@/common/enums/inventory-transaction-type.enum'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class InventoryTransactionService {
@@ -25,10 +26,11 @@ export class InventoryTransactionService {
    */
   async createInventoryTransaction(
     dto: CreateInventoryTransactionDto,
-    tenantId: string,
+    ctx: RequestContextDto,
     manager?: any,
   ): Promise<InventoryTransactionEntity> {
     this.logger.log(`${this.createInventoryTransaction.name} Service Called`)
+    const tenantId = ctx.tenantId
 
     const product = await this.productRepository.findByIdWithRelations(dto.productId, tenantId)
     if (!product) {
@@ -65,11 +67,12 @@ export class InventoryTransactionService {
    * Returns paginated inventory transaction logs.
    */
   async findAllInventoryTransactions(
-    tenantId: string,
+    ctx: RequestContextDto,
     paginationDto: PaginationDto,
     type?: ITType,
   ): Promise<{ items: InventoryTransactionEntity[]; total: number; page: number; limit: number; totalPages: number }> {
     this.logger.log(`${this.findAllInventoryTransactions.name} Service Called`)
+    const tenantId = ctx.tenantId
     const { page = 1, limit = 20, q: search } = paginationDto
     const cacheKey = `inventory:list:p${page}:l${limit}:q${search || ''}:t${type || ''}`
 
@@ -96,8 +99,9 @@ export class InventoryTransactionService {
     )
   }
 
-  async findByProductInventoryTransactions(productId: string, tenantId: string): Promise<InventoryTransactionEntity[]> {
+  async findByProductInventoryTransactions(productId: string, ctx: RequestContextDto): Promise<InventoryTransactionEntity[]> {
     this.logger.log(`${this.findByProductInventoryTransactions.name} Service Called`)
+    const tenantId = ctx.tenantId
     return await this.repository.findByProduct(productId, tenantId)
   }
 
@@ -105,8 +109,9 @@ export class InventoryTransactionService {
    * Corrected service method: Pulls real products with their current stock and variants.
    * Fixes the critical bug where it was previously pulling transaction logs as products.
    */
-  async getStockSummaryInventoryTransactions(tenantId: string): Promise<any[]> {
+  async getStockSummaryInventoryTransactions(ctx: RequestContextDto): Promise<any[]> {
     this.logger.log(`${this.getStockSummaryInventoryTransactions.name} Service Called`)
+    const tenantId = ctx.tenantId
 
     return this.cacheService.rememberCache(
       `inventory:summary`,

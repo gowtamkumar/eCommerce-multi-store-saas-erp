@@ -4,6 +4,7 @@ import { ConflictException, Injectable, Logger, NotFoundException } from '@nestj
 import { CategoryRepository } from './category.repository'
 import { CategoryEntity } from './entities/category.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class CategoryService {
@@ -16,9 +17,10 @@ export class CategoryService {
 
   async createCategory(
     createCategoryDto: CreateCategoryDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<CategoryEntity> {
     this.logger.log(`${this.createCategory.name} Service Called`)
+    const tenantId = ctx.tenantId
     const existing = await this.categoryRepo.findBySlug(createCategoryDto.slug, tenantId)
 
     if (existing) {
@@ -34,8 +36,9 @@ export class CategoryService {
     return result
   }
 
-  async findAllCategories(tenantId: string): Promise<CategoryEntity[]> {
+  async findAllCategories(ctx: RequestContextDto): Promise<CategoryEntity[]> {
     this.logger.log(`${this.findAllCategories.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `categories:list`
 
     return this.cache.rememberCache(
@@ -46,8 +49,9 @@ export class CategoryService {
     )
   }
 
-  async findAllCategoriesWithStats(tenantId: string) {
+  async findAllCategoriesWithStats(ctx: RequestContextDto) {
     this.logger.log(`${this.findAllCategoriesWithStats.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `categories:stats`
 
     return this.cache.rememberCache(
@@ -64,8 +68,9 @@ export class CategoryService {
     )
   }
 
-  async findOneCategory(id: string, tenantId: string): Promise<CategoryEntity> {
+  async findOneCategory(id: string, ctx: RequestContextDto): Promise<CategoryEntity> {
     this.logger.log(`${this.findOneCategory.name} Service Called`)
+    const tenantId = ctx.tenantId
     const category = await this.categoryRepo.findById(id, tenantId)
 
     if (!category) {
@@ -78,10 +83,11 @@ export class CategoryService {
   async updateCategory(
     id: string,
     updateCategoryDto: UpdateCategoryDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<CategoryEntity> {
     this.logger.log(`${this.updateCategory.name} Service Called`)
-    const category = await this.findOneCategory(id, tenantId)
+    const tenantId = ctx.tenantId
+    const category = await this.findOneCategory(id, ctx)
 
     if (updateCategoryDto.slug && updateCategoryDto.slug !== category.slug) {
       const existing = await this.categoryRepo.findBySlug(updateCategoryDto.slug, tenantId)
@@ -99,10 +105,11 @@ export class CategoryService {
 
   async removeCategory(
     id: string,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeCategory.name} Service Called`)
-    const category = await this.findOneCategory(id, tenantId)
+    const tenantId = ctx.tenantId
+    const category = await this.findOneCategory(id, ctx)
     await this.categoryRepo.removeCategory(category)
     await this.cache.delCache(`categories:list`, tenantId)
     await this.cache.delCache(`categories:stats`, tenantId)

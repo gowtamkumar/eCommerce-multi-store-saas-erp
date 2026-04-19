@@ -4,6 +4,7 @@ import { CreateBrandDto } from './dto/create-brand.dto'
 import { UpdateBrandDto } from './dto/update-brand.dto'
 import { BrandEntity } from './entities/brand.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class BrandService {
@@ -14,8 +15,9 @@ export class BrandService {
     private readonly cache: CacheService,
   ) { }
 
-  async createBrand(createBrandDto: CreateBrandDto, tenantId: string): Promise<BrandEntity> {
+  async createBrand(createBrandDto: CreateBrandDto, ctx: RequestContextDto): Promise<BrandEntity> {
     this.logger.log(`${this.createBrand.name} Service Called`)
+    const tenantId = ctx.tenantId
 
     const existing = await this.brandRepo.findBySlug(createBrandDto.slug, tenantId)
 
@@ -32,8 +34,9 @@ export class BrandService {
     return result
   }
 
-  async findAllBrands(tenantId: string): Promise<BrandEntity[]> {
+  async findAllBrands(ctx: RequestContextDto): Promise<BrandEntity[]> {
     this.logger.log(`${this.findAllBrands.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `brands:list`
 
     return this.cache.rememberCache(
@@ -44,8 +47,9 @@ export class BrandService {
     )
   }
 
-  async findAllBrandsWithStats(tenantId: string) {
+  async findAllBrandsWithStats(ctx: RequestContextDto) {
     this.logger.log(`${this.findAllBrandsWithStats.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `brands:stats`
 
     return this.cache.rememberCache(
@@ -62,8 +66,9 @@ export class BrandService {
     )
   }
 
-  async findOneBrand(id: string, tenantId: string): Promise<BrandEntity> {
+  async findOneBrand(id: string, ctx: RequestContextDto): Promise<BrandEntity> {
     this.logger.log(`${this.findOneBrand.name} Service Called`)
+    const tenantId = ctx.tenantId
     const brand = await this.brandRepo.findById(id, tenantId)
 
     if (!brand) {
@@ -76,10 +81,11 @@ export class BrandService {
   async updateBrand(
     id: string,
     updateBrandDto: UpdateBrandDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<BrandEntity> {
     this.logger.log(`${this.updateBrand.name} Service Called`)
-    const brand = await this.findOneBrand(id, tenantId)
+    const tenantId = ctx.tenantId
+    const brand = await this.findOneBrand(id, ctx)
 
     if (updateBrandDto.slug && updateBrandDto.slug !== brand.slug) {
       const existing = await this.brandRepo.findBySlug(updateBrandDto.slug, tenantId)
@@ -95,9 +101,10 @@ export class BrandService {
     return result
   }
 
-  async removeBrand(id: string, tenantId: string): Promise<{ success: boolean; message: string }> {
+  async removeBrand(id: string, ctx: RequestContextDto): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeBrand.name} Service Called`)
-    const brand = await this.findOneBrand(id, tenantId)
+    const tenantId = ctx.tenantId
+    const brand = await this.findOneBrand(id, ctx)
     await this.brandRepo.removeBrand(brand)
     await this.cache.delCache(`brands:list`, tenantId)
     await this.cache.delCache(`brands:stats`, tenantId)

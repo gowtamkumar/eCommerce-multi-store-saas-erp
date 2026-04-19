@@ -24,14 +24,16 @@ export class ReviewService {
 
   async findAllReviews(
     filterDto: any,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<{ reviews: ReviewEntity[]; total: number }> {
     this.logger.log(`${this.findAllReviews.name} Service Called`)
+    const tenantId = ctx.tenantId
     return await this.reviewRepository.findAllWithFilters(filterDto, tenantId)
   }
 
-  async findPublicReviews(tenantId: string): Promise<ReviewEntity[]> {
+  async findPublicReviews(ctx: RequestContextDto): Promise<ReviewEntity[]> {
     this.logger.log(`${this.findPublicReviews.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = 'reviews:public'
     return this.cacheService.rememberCache(
       cacheKey,
@@ -41,8 +43,9 @@ export class ReviewService {
     )
   }
 
-  async findByProductReviews(productId: string, tenantId: string): Promise<ReviewEntity[]> {
+  async findByProductReviews(productId: string, ctx: RequestContextDto): Promise<ReviewEntity[]> {
     this.logger.log(`${this.findByProductReviews.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `reviews:product:${productId}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -52,8 +55,9 @@ export class ReviewService {
     )
   }
 
-  async updateReview(id: string, dto: UpdateReviewDto, tenantId: string): Promise<ReviewEntity> {
+  async updateReview(id: string, dto: UpdateReviewDto, ctx: RequestContextDto): Promise<ReviewEntity> {
     this.logger.log(`${this.updateReview.name} Service Called`)
+    const tenantId = ctx.tenantId
     const review = await this.reviewRepository.findById(id, tenantId)
     if (!review) throw new NotFoundException('Review not found')
 
@@ -65,9 +69,10 @@ export class ReviewService {
 
   async removeReview(
     id: string,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<{ success: boolean; message?: string }> {
     this.logger.log(`${this.removeReview.name} Service Called`)
+    const tenantId = ctx.tenantId
     const review = await this.reviewRepository.findById(id, tenantId)
     if (!review) throw new NotFoundException('Review not found')
 
