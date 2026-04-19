@@ -40,6 +40,7 @@ export class MailService {
     const settings = await this.settingsService.findByTenantSettings({
       tenantId,
     } as RequestContextDto)
+
     if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
       const port = Number(settings.smtp.port) || 587
 

@@ -1,5 +1,5 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq'
-import { Job } from 'bullmq'
+import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
+import { Job, Queue } from 'bullmq'
 import { Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -29,6 +29,7 @@ export class CampaignProcessor extends WorkerHost {
     private mailService: MailService,
     private smsService: SmsService,
     private pushService: PushService,
+    @InjectQueue('campaign') private readonly campaignQueue: Queue,
   ) {
     super()
   }
@@ -61,7 +62,7 @@ export class CampaignProcessor extends WorkerHost {
     await this.campaignRepository.save(campaign)
 
     for (const user of audience) {
-      await job.queue.add('send-message', {
+      await this.campaignQueue.add('send-message', {
         campaignId,
         userId: user.id,
         tenantId,

@@ -15,6 +15,7 @@ import {
   SteadfastCourierDto,
   TrustBadgeDto,
   ShippingConfigDto,
+  SmsDto,
 } from '../dto/index'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
@@ -59,6 +60,9 @@ export class SiteSettingsEntity extends BaseEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   smtp?: SmtpDto
+
+  @Column({ type: 'jsonb', nullable: true })
+  sms?: SmsDto
 
   @Column({ type: 'jsonb', nullable: true })
   payment?: PaymentDto

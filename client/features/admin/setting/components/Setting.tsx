@@ -1,5 +1,6 @@
 "use client";
 import CourierSetting from "@/features/admin/setting/components/CourierSetting";
+import SmsSetting from "@/features/admin/setting/components/SmsSetting";
 import CurrenciesSetting from "@/features/admin/setting/components/CurrenciesSetting";
 import { DomainSetting } from "@/features/admin/setting/components/DomainSetting";
 import { EmailSetting } from "@/features/admin/setting/components/EmailSetting";
@@ -99,6 +100,10 @@ function SettingsContent() {
         steadfastCourier: {
             apiKey: "",
             secretKey: "",
+        },
+        sms: {
+            apiKey: "",
+            senderId: "",
         },
         shippingConfig: {
             insideCityFee: 60,
@@ -271,6 +276,10 @@ function SettingsContent() {
                         steadfastCourier: {
                             apiKey: data.steadfastCourier?.apiKey || "",
                             secretKey: data.steadfastCourier?.secretKey || "",
+                        },
+                        sms: {
+                            apiKey: data.sms?.apiKey || "",
+                            senderId: data.sms?.senderId || "",
                         },
                         shippingConfig: {
                             insideCityFee: data.shippingConfig?.insideCityFee || 60,
@@ -479,6 +488,9 @@ function SettingsContent() {
 
                                 {activeTab === "courier" && (
                                     <CourierSetting formData={formData} setFormData={setFormData} />
+                                )}
+                                {activeTab === "sms" && (
+                                    <SmsSetting formData={formData} setFormData={setFormData} />
                                 )}
                                 {activeTab === "trust" && (
                                     <TrustDelivery formData={formData} setFormData={setFormData} />

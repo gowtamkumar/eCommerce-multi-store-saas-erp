@@ -23,6 +23,7 @@ import { TrustBadgeDto } from './trust-badge.dto'
 import { ProductsPageSettingsDto } from './products-page.dto'
 import { SingleProductPageSettingsDto } from './single-product-page.dto'
 import { OffersPageSettingsDto } from './offers-page.dto'
+import { SmsDto } from './sms.dto'
 
 export class UpdateSiteSettingsDto {
   @IsString()
@@ -93,6 +94,11 @@ export class UpdateSiteSettingsDto {
   @IsObject()
   @IsOptional()
   smtp?: SmtpDto
+
+  @ApiProperty({ required: false })
+  @IsObject()
+  @IsOptional()
+  sms?: SmsDto
 
   @ApiProperty({ required: false })
   @IsObject()

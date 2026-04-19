@@ -50,6 +50,7 @@ export const navGroups = [
             { icon: Megaphone, label: 'Promotions', href: '/admin/promotions' },
             { icon: MessageSquare, label: 'Newsletter', href: '/admin/leads' },
             { icon: Mail, label: 'Subscribers', href: '/admin/subscribers' },
+            { icon: Megaphone, label: 'Messaging Campaigns', href: '/admin/campaigns' },
         ]
     },
     {
@@ -87,6 +88,7 @@ export const navGroups = [
             { icon: Globe, label: 'General Info', href: '/admin/settings?tab=general' },
             { icon: Globe, label: 'Custom Domain', href: '/admin/settings?tab=domain' },
             { icon: Mail, label: 'Email Config', href: '/admin/settings?tab=email' },
+            { icon: MessageSquare, label: 'SMS Configuration', href: '/admin/settings?tab=sms' },
             { icon: CreditCard, label: 'Payment Methods', href: '/admin/settings?tab=payment' },
             { icon: Truck, label: 'Courier Rules', href: '/admin/settings?tab=courier' },
             { icon: Share2, label: 'Social Links', href: '/admin/settings?tab=social' },
