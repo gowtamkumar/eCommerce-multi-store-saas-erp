@@ -1,3 +1,4 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { CreateSteadfastOrderDto } from '@/modules/admin/operations/logistics/courier/steadfast/dto/create-order.dto'
@@ -20,8 +21,9 @@ export class SteadfastService {
     private readonly cacheService: CacheService,
   ) { }
 
-  private async getCredentials(tenantId: string) {
+  private async getCredentials(ctx: RequestContextDto) {
     this.logger.log(`${this.getCredentials.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `steadfast:creds`
 
     return this.cacheService.rememberCache(
@@ -32,7 +34,7 @@ export class SteadfastService {
         let secretKey = this.configService.get<string>('STEADFAST_SECRET_KEY')
 
         try {
-          const settings = await this.settingsService.findByTenantSettings(tenantId)
+          const settings = await this.settingsService.findByTenantSettings(ctx)
           if (settings?.steadfastCourier) {
             apiKey = settings.steadfastCourier.apiKey
             secretKey = settings.steadfastCourier.secretKey
@@ -50,10 +52,11 @@ export class SteadfastService {
 
   async createSteadfastOrder(
     createOrderDto: CreateSteadfastOrderDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<any> {
     this.logger.log(`${this.createSteadfastOrder.name} Service Called`)
-    const creds = await this.getCredentials(tenantId)
+    const creds = await this.getCredentials(ctx)
+    const tenantId = ctx.tenantId
     const { orderId } = createOrderDto
 
     if (!creds.apiKey || !creds.secretKey) {
@@ -61,7 +64,7 @@ export class SteadfastService {
       throw new Error('Steadfast courier is not configured.')
     }
 
-    const order = await this.orderService.findOneForCourier(orderId, tenantId)
+    const order = await this.orderService.findOneForCourier(orderId, ctx)
 
     if (!order) {
       throw new Error('Order not found')
@@ -109,7 +112,7 @@ export class SteadfastService {
           courierStatus: 'Steadfast',
           trackingId: trackingId?.toString(),
         },
-        tenantId,
+        ctx,
       )
 
       return response.data

@@ -1,3 +1,4 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -10,19 +11,20 @@ export class PageRepository {
     private readonly repo: Repository<PageEntity>,
   ) { }
 
-  async findBySlug(slug: string, tenantId: string): Promise<PageEntity | null> {
-    return this.repo.findOne({ where: { slug, tenantId } })
+  async findBySlug(slug: string, ctx: RequestContextDto): Promise<PageEntity | null> {
+    return this.repo.findOne({ where: { slug, tenantId: ctx.tenantId } })
   }
 
-  async findById(id: string, tenantId: string): Promise<PageEntity | null> {
-    return this.repo.findOne({ where: { id, tenantId } })
+  async findById(id: string, ctx: RequestContextDto): Promise<PageEntity | null> {
+    return this.repo.findOne({ where: { id, tenantId: ctx.tenantId } })
   }
 
-  async findHomePage(tenantId: string): Promise<PageEntity | null> {
-    return this.repo.findOne({ where: { isHomePage: true, tenantId } })
+  async findHomePage(ctx: RequestContextDto): Promise<PageEntity | null> {
+    return this.repo.findOne({ where: { isHomePage: true, tenantId: ctx.tenantId } })
   }
 
-  async findAllWithStatus(tenantId: string, status?: string): Promise<PageEntity[]> {
+  async findAllWithStatus(ctx: RequestContextDto, status?: string): Promise<PageEntity[]> {
+    const tenantId = ctx.tenantId
     const where: any = { tenantId }
     if (status) {
       where.status = status
@@ -47,15 +49,16 @@ export class PageRepository {
     return this.repo.find()
   }
 
-  async countByTenant(tenantId: string): Promise<number> {
-    return this.repo.count({ where: { tenantId } })
+  async countByTenant(ctx: RequestContextDto): Promise<number> {
+    return this.repo.count({ where: { tenantId: ctx.tenantId } })
   }
 
-  async unsetHomePage(tenantId: string): Promise<void> {
-    await this.repo.update({ tenantId, isHomePage: true }, { isHomePage: false })
+  async unsetHomePage(ctx: RequestContextDto): Promise<void> {
+    await this.repo.update({ tenantId: ctx.tenantId, isHomePage: true }, { isHomePage: false })
   }
 
-  async createAndSave(dto: any, tenantId: string): Promise<PageEntity> {
+  async createAndSave(dto: any, ctx: RequestContextDto): Promise<PageEntity> {
+    const tenantId = ctx.tenantId
     const page = this.repo.create({ ...dto, tenantId } as PageEntity)
     return this.repo.save(page)
   }

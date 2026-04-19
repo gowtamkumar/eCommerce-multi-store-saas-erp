@@ -27,7 +27,7 @@ export class ReturnController {
     @Body() dto: CreateReturnDto,
   ): Promise<BaseApiSuccessResponse<OrderReturnResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createReturnRequest.`)
-    const result = await this.returnService.createReturnRequest(ctx.userId, ctx.tenantId, dto)
+    const result = await this.returnService.createReturnRequest(ctx, dto)
     return {
       success: true,
       statusCode: 201,
@@ -49,7 +49,7 @@ export class ReturnController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<OrderReturnResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findMyReturns.`)
-    const result = await this.returnService.findByUser(ctx.userId, ctx.tenantId)
+    const result = await this.returnService.findByUser(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -65,7 +65,7 @@ export class ReturnController {
     @Query() filterDto: FilterReturnDto,
   ): Promise<BaseApiSuccessResponse<{ data: OrderReturnResponseDto[]; pagination: any }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllReturns.`)
-    const { data, total } = await this.returnService.findAllReturns(ctx.tenantId, filterDto)
+    const { data, total } = await this.returnService.findAllReturns(ctx, filterDto)
     return {
       success: true,
       statusCode: 200,
@@ -90,7 +90,7 @@ export class ReturnController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<OrderReturnResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findReturnById.`)
-    const result = await this.returnService.findOneReturn(id, ctx.tenantId)
+    const result = await this.returnService.findOneReturn(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -110,7 +110,7 @@ export class ReturnController {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateStatus.`)
     const result = await this.returnService.updateReturnRequestStatus(
       id,
-      ctx.tenantId,
+      ctx,
       status,
       comment,
     )

@@ -36,7 +36,7 @@ export class FaqController {
     @Body() dto: CreateFaqDto,
   ): Promise<BaseApiSuccessResponse<FaqResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createFaq.`)
-    const data = await this.faqService.createFaq(dto, ctx.tenantId)
+    const data = await this.faqService.createFaq(dto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -51,7 +51,7 @@ export class FaqController {
     @Query() filterDto: FilterFaqDto,
   ): Promise<BaseApiSuccessResponse<FaqResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllFaqs.`)
-    const { faqs, total } = await this.faqService.findAllFaqs(filterDto, ctx.tenantId)
+    const { faqs, total } = await this.faqService.findAllFaqs(filterDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -75,7 +75,7 @@ export class FaqController {
     @Body() dto: UpdateFaqDto,
   ): Promise<BaseApiSuccessResponse<FaqResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateFaq.`)
-    const data = await this.faqService.updateFaq(id, dto, ctx.tenantId)
+    const data = await this.faqService.updateFaq(id, dto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -89,7 +89,7 @@ export class FaqController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeFaq(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFaq.`)
-    const result = await this.faqService.removeFaq(id, ctx.tenantId)
+    const result = await this.faqService.removeFaq(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -104,7 +104,7 @@ export class FaqController {
     @Body() body: { ids: string[] },
   ): Promise<BaseApiSuccessResponse<FaqResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findMultipleFaqs.`)
-    const faqs = await this.faqService.findByIdsFaq(body.ids, ctx.tenantId)
+    const faqs = await this.faqService.findByIdsFaq(body.ids, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -119,7 +119,7 @@ export class FaqController {
     @Body() body: { pageId: string },
   ): Promise<BaseApiSuccessResponse<FaqResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByPageFaq.`)
-    const faqs = await this.faqService.findByPageFaq(body.pageId, ctx.tenantId)
+    const faqs = await this.faqService.findByPageFaq(body.pageId, ctx)
     return {
       success: true,
       statusCode: 200,

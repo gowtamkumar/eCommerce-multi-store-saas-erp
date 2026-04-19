@@ -1,5 +1,6 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -22,10 +23,9 @@ import { FilterUserDto } from '../dtos/filter-user.dto'
 import { InviteStaffDto } from '../dtos/invite-staff.dto'
 import { UpdatePasswordDto } from '../dtos/update-password.dto'
 import { UpdateUserDto } from '../dtos/update-user.dto'
-import { UserService } from '../services/user.service'
-import { StaffInvitationService } from '../services/staff-invitation.service'
-import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { UserResponseDto } from '../dtos/user-response.dto'
+import { StaffInvitationService } from '../services/staff-invitation.service'
+import { UserService } from '../services/user.service'
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -47,7 +47,7 @@ export class UserController {
     this.logger.log(`${this.getUsers.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username}" retieving users.`)
 
-    const { users, total } = await this.userService.getUsers(filterUserDto, ctx.tenantId)
+    const { users, total } = await this.userService.getUsers(filterUserDto, ctx)
 
     return {
       success: true,
@@ -87,7 +87,7 @@ export class UserController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.getTeamMembers.name} Controller Called`)
-    const data = await this.userService.getTeamMembers(ctx.tenantId)
+    const data = await this.userService.getTeamMembers(ctx)
     return { success: true, statusCode: 200, message: 'Team members', data }
   }
 
@@ -101,8 +101,7 @@ export class UserController {
     this.logger.log(`${this.inviteStaff.name} Controller Called`)
     const data = await this.invitationService.inviteStaff(
       dto,
-      ctx.tenantId,
-      ctx.userId,
+      ctx,
       (email, tId) => this.userService.findUserByEmail(email, tId)
     )
     return { success: true, statusCode: 201, message: data.message, data: data.invitation }
@@ -115,7 +114,7 @@ export class UserController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.getInvitations.name} Controller Called`)
-    const data = await this.invitationService.getInvitations(ctx.tenantId)
+    const data = await this.invitationService.getInvitations(ctx)
     return { success: true, statusCode: 200, message: 'Invitations', data }
   }
 
@@ -127,7 +126,7 @@ export class UserController {
     @Param('invitationId', ParseUUIDPipe) invitationId: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.revokeInvitation.name} Controller Called`)
-    const data = await this.invitationService.revokeInvitation(invitationId, ctx.tenantId)
+    const data = await this.invitationService.revokeInvitation(invitationId, ctx)
     return { success: true, statusCode: 200, message: 'Invitation revoked', data }
   }
 
@@ -140,7 +139,7 @@ export class UserController {
     @Body('role') role: UserRole,
   ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.updateMemberRole.name} Controller Called`)
-    const data = await this.userService.updateTeamMemberRole(memberId, role, ctx.tenantId)
+    const data = await this.userService.updateTeamMemberRole(memberId, role, ctx)
     return {
       success: true,
       statusCode: 200,

@@ -28,7 +28,7 @@ export class SupplierController {
     @Body() dto: CreateSupplierDto,
   ): Promise<BaseApiSuccessResponse<SupplierResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createSupplier.`)
-    const result = await this.service.createSupplier(dto, ctx.tenantId)
+    const result = await this.service.createSupplier(dto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -44,7 +44,7 @@ export class SupplierController {
     @Query() paginationDto: PaginationDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllSuppliers.`)
-    const result = await this.service.findAllSuppliers(ctx.tenantId, paginationDto)
+    const result = await this.service.findAllSuppliers(ctx, paginationDto)
     return {
       success: true,
       statusCode: 200,
@@ -60,7 +60,7 @@ export class SupplierController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<SupplierResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneSupplier.`)
-    const result = await this.service.findOneSupplier(id, ctx.tenantId)
+    const result = await this.service.findOneSupplier(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -77,7 +77,7 @@ export class SupplierController {
     @Body() dto: UpdateSupplierDto,
   ): Promise<BaseApiSuccessResponse<SupplierResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateSupplier.`)
-    const result = await this.service.updateSupplier(id, dto, ctx.tenantId)
+    const result = await this.service.updateSupplier(id, dto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -93,7 +93,7 @@ export class SupplierController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeSupplier.`)
-    await this.service.removeSupplier(id, ctx.tenantId)
+    await this.service.removeSupplier(id, ctx)
     return {
       success: true,
       statusCode: 200,

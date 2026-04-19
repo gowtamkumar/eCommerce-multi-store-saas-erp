@@ -57,7 +57,7 @@ export class ProductController {
     @Query() filterDto: FilterProductDto,
   ): Promise<BaseApiSuccessResponse<ProductResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllProducts.`)
-    const { products, total } = await this.productService.findAllProducts(filterDto, ctx)
+    const { products, total } = await this.productService.findAllProducts(ctx, filterDto)
     return {
       success: true,
       statusCode: 200,

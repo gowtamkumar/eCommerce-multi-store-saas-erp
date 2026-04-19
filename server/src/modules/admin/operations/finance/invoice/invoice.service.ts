@@ -9,6 +9,7 @@ import { InvoiceRepository } from './invoice.repository'
 import { InvoiceEntity } from './entities/invoice.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { PaginationDto } from '@/common/dto/pagination.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 
 @Injectable()
@@ -23,9 +24,10 @@ export class InvoiceService {
 
   async createInvoice(
     createInvoiceDto: CreateInvoiceDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<InvoiceEntity> {
     this.logger.log(`${this.createInvoice.name} Service Called`)
+    const tenantId = ctx.tenantId
 
     const order = await this.orderRepo.findOrderById(createInvoiceDto.orderId, tenantId)
 
@@ -67,11 +69,12 @@ export class InvoiceService {
   }
 
   async findAllInvoices(
-    tenantId: string,
+    ctx: RequestContextDto,
     paginationDto: PaginationDto,
     status?: InvoiceStatus,
   ): Promise<{ items: InvoiceEntity[]; total: number; page: number; limit: number; totalPages: number }> {
     this.logger.log(`${this.findAllInvoices.name} Service Called`)
+    const tenantId = ctx.tenantId
     const { page = 1, limit = 20, q: search } = paginationDto
     const cacheKey = `invoices:list:p${page}:l${limit}:q${search || ''}:s${status || ''}`
 
@@ -98,8 +101,9 @@ export class InvoiceService {
     )
   }
 
-  async findOneInvoice(id: string, tenantId: string): Promise<InvoiceEntity> {
+  async findOneInvoice(id: string, ctx: RequestContextDto): Promise<InvoiceEntity> {
     this.logger.log(`${this.findOneInvoice.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `invoices:id:${id}`
 
     const invoice = await this.cacheService.rememberCache(
@@ -116,9 +120,10 @@ export class InvoiceService {
     return invoice
   }
 
-  async updateInvoice(id: string, updateInvoiceDto: UpdateInvoiceDto, tenantId: string): Promise<InvoiceEntity> {
+  async updateInvoice(id: string, updateInvoiceDto: UpdateInvoiceDto, ctx: RequestContextDto): Promise<InvoiceEntity> {
     this.logger.log(`${this.updateInvoice.name} Service Called`)
-    const invoice = await this.findOneInvoice(id, tenantId)
+    const tenantId = ctx.tenantId
+    const invoice = await this.findOneInvoice(id, ctx)
 
     const updateData: any = { ...updateInvoiceDto }
     if (updateData.issueDate) {
@@ -134,9 +139,10 @@ export class InvoiceService {
     return updatedInvoice
   }
 
-  async removeInvoice(id: string, tenantId: string): Promise<InvoiceEntity> {
+  async removeInvoice(id: string, ctx: RequestContextDto): Promise<InvoiceEntity> {
     this.logger.log(`${this.removeInvoice.name} Service Called`)
-    const invoice = await this.findOneInvoice(id, tenantId)
+    const tenantId = ctx.tenantId
+    const invoice = await this.findOneInvoice(id, ctx)
     const removedInvoice = await this.invoiceRepository.removeInvoice(invoice)
     await this.cacheService.delCache(`invoices:list`, tenantId)
     await this.cacheService.delCache(`invoices:id:${id}`, tenantId)
@@ -146,9 +152,10 @@ export class InvoiceService {
   async updateInvoiceStatusByOrderId(
     orderId: string,
     status: InvoiceStatus,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<void> {
     this.logger.log(`${this.updateInvoiceStatusByOrderId.name} Service Called`)
+    const tenantId = ctx.tenantId
     const invoice = await this.invoiceRepository.findByOrderId(orderId, tenantId)
     if (invoice) {
       await this.invoiceRepository.updateAndSave(invoice, { status })

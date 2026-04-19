@@ -24,7 +24,7 @@ export class CustomerController {
     // Force role to USER to only fetch customers
     const { users, total } = await this.userService.getUsers(
       { ...query, role: UserRole.USER } as any, 
-      ctx.tenantId
+      ctx
     )
 
     // Map name to firstName/lastName for frontend compatibility

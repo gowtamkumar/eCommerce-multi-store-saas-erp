@@ -1,3 +1,4 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import {
@@ -25,9 +26,10 @@ export class UserService {
 
   async getUsers(
     filterUserDto: FilterUserDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<{ users: UserEntity[]; total: number }> {
     this.logger.log(`${this.getUsers.name} Service Called`)
+    const tenantId = ctx.tenantId
     const [users, total] = await this.userRepo.findAllWithFilters(filterUserDto, tenantId)
     return { users, total }
   }
@@ -44,8 +46,9 @@ export class UserService {
     return user
   }
 
-  async findOneUser(id: string, tenantId: string): Promise<UserEntity> {
+  async findOneUser(id: string, ctx: RequestContextDto): Promise<UserEntity> {
     this.logger.log(`${this.findOneUser.name} Service Called`)
+    const tenantId = ctx.tenantId
     const user = await this.userRepo.findByIdAndTenant(id, tenantId)
     if (!user) throw new NotFoundException(`User with id ${id} not found in this tenant.`)
     return user
@@ -89,7 +92,7 @@ export class UserService {
       ...createUserDto,
       password: hashPassword,
       tenantId,
-    })
+    } as any)
     return user
   }
 
@@ -182,8 +185,9 @@ export class UserService {
     } as any)
   }
 
-  async countByTenant(tenantId: string): Promise<number> {
+  async countByTenant(ctx: RequestContextDto): Promise<number> {
     this.logger.log(`${this.countByTenant.name} Service Called`)
+    const tenantId = ctx.tenantId
     return await this.userRepo.countByTenant(tenantId)
   }
 
@@ -217,9 +221,10 @@ export class UserService {
   // Staff invitation methods are now handled by StaffInvitationService
 
   async getTeamMembers(
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<{ members: UserEntity[]; pendingInvitations: StaffInvitationEntity[] }> {
     this.logger.log(`${this.getTeamMembers.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = 'team:members'
 
     return this.cacheService.rememberCache(
@@ -227,7 +232,7 @@ export class UserService {
       async () => {
         const [members, pendingInvitations] = await Promise.all([
           this.userRepo.findTeamMembers(tenantId),
-          this.invitationService.findPendingByTenant(tenantId),
+          this.invitationService.findPendingByTenant(ctx),
         ])
         return { members, pendingInvitations }
       },
@@ -236,8 +241,9 @@ export class UserService {
     )
   }
 
-  async updateTeamMemberRole(memberId: string, role: UserRole, tenantId: string): Promise<UserEntity> {
+  async updateTeamMemberRole(memberId: string, role: UserRole, ctx: RequestContextDto): Promise<UserEntity> {
     this.logger.log(`${this.updateTeamMemberRole.name} Service Called`)
+    const tenantId = ctx.tenantId
     const user = await this.userRepo.findByIdAndTenant(memberId, tenantId)
     if (!user) throw new NotFoundException('Team member not found.')
     const result = await this.userRepo.updateAndSave(user, { role })

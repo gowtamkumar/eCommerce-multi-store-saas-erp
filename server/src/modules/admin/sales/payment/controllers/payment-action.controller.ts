@@ -26,7 +26,7 @@ export class PaymentActionController {
     @Body() dto: InitPaymentDto,
   ): Promise<BaseApiSuccessResponse<{ gatewayUrl: string }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called init.`)
-    const result = await this.paymentService.initPayment(dto, ctx.tenantId)
+    const result = await this.paymentService.initPayment(dto, ctx)
     return {
       success: true,
       statusCode: 200,

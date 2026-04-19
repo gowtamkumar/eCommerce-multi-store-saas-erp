@@ -30,7 +30,7 @@ export class ShippingAddressController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<ShippingAddressResponseDto[]>> {
     this.logger.log(`${this.findShippingAddresses.name} Controller Called`)
-    const addresses = await this.service.findShippingAddresses(ctx.userId, ctx.tenantId)
+    const addresses = await this.service.findShippingAddresses(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -44,7 +44,7 @@ export class ShippingAddressController {
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<ShippingAddressResponseDto>> {
-    const address = await this.service.findShippingAddress(id, ctx.userId, ctx.tenantId)
+    const address = await this.service.findShippingAddress(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -59,7 +59,7 @@ export class ShippingAddressController {
     @Body() dto: CreateShippingAddressDto,
   ): Promise<BaseApiSuccessResponse<ShippingAddressResponseDto>> {
     this.logger.log(`${this.createShippingAddress.name} Controller Called`)
-    const address = await this.service.createShippingAddress(ctx.userId, ctx.tenantId, dto)
+    const address = await this.service.createShippingAddress(ctx, dto)
     return {
       success: true,
       statusCode: 201,
@@ -74,7 +74,7 @@ export class ShippingAddressController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: UpdateShippingAddressDto,
   ): Promise<BaseApiSuccessResponse<ShippingAddressResponseDto>> {
-    const address = await this.service.updateShippingAddress(id, ctx.userId, ctx.tenantId, dto)
+    const address = await this.service.updateShippingAddress(id, ctx, dto)
     return {
       success: true,
       statusCode: 200,
@@ -88,7 +88,7 @@ export class ShippingAddressController {
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<ShippingAddressResponseDto>> {
-    const address = await this.service.setDefaultShippingAddress(id, ctx.userId, ctx.tenantId)
+    const address = await this.service.setDefaultShippingAddress(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -102,7 +102,7 @@ export class ShippingAddressController {
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<null>> {
-    await this.service.removeShippingAddress(id, ctx.userId, ctx.tenantId)
+    await this.service.removeShippingAddress(id, ctx)
     return {
       success: true,
       statusCode: 200,

@@ -35,7 +35,7 @@ export class PageController {
     @Body() dto: CreatePageDto,
   ): Promise<BaseApiSuccessResponse<PageResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPage.`)
-    const page = await this.pageService.createPage(dto, ctx.tenantId)
+    const page = await this.pageService.createPage(dto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -50,7 +50,7 @@ export class PageController {
     @Query('status') status?: string,
   ): Promise<BaseApiSuccessResponse<PageResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPages.`)
-    const result = await this.pageService.findAllPages(ctx.tenantId, status)
+    const result = await this.pageService.findAllPages(ctx, status)
     return {
       success: true,
       statusCode: 200,
@@ -64,7 +64,7 @@ export class PageController {
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PageResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findHomePage.`)
-    const data = await this.pageService.findHomePage(ctx.tenantId)
+    const data = await this.pageService.findHomePage(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -79,7 +79,7 @@ export class PageController {
     @Param('slug') slug: string,
   ): Promise<BaseApiSuccessResponse<PageResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findBySlugPage.`)
-    const result = await this.pageService.findBySlugPage(slug, ctx.tenantId)
+    const result = await this.pageService.findBySlugPage(slug, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -102,7 +102,7 @@ export class PageController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<PageResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOnePage.`)
-    const result = await this.pageService.findOnePage(id, ctx.tenantId)
+    const result = await this.pageService.findOnePage(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -120,7 +120,7 @@ export class PageController {
     @Body() dto: UpdatePageDto,
   ): Promise<BaseApiSuccessResponse<PageResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePage.`)
-    const result = await this.pageService.updatePage(id, dto, ctx.tenantId)
+    const result = await this.pageService.updatePage(id, dto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -134,7 +134,7 @@ export class PageController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePage.`)
-    const result = await this.pageService.removePage(id, ctx.tenantId)
+    const result = await this.pageService.removePage(id, ctx)
     return {
       success: true,
       statusCode: 200,

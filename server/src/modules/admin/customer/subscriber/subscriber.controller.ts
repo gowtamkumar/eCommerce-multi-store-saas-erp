@@ -9,6 +9,8 @@ import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common'
 import { SubscriberResponseDto } from './dto/subscriber-response.dto'
 import { CreateSubscriberDto } from './dto/subscriber.dto'
 import { SubscriberService } from './subscriber.service'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Controller('subscribers')
 export class SubscriberController {
@@ -17,9 +19,9 @@ export class SubscriberController {
   @Post()
   async createSubscriber(
     @Body() createSubscriberDto: CreateSubscriberDto,
-    @TenantId() tenantId: string,
+    @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SubscriberResponseDto>> {
-    const result = await this.subscriberService.createSubscriber(createSubscriberDto, tenantId)
+    const result = await this.subscriberService.createSubscriber(createSubscriberDto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -40,15 +42,11 @@ export class SubscriberController {
   @Get()
   async findAllSubscribers(
     @Query() filterDto: any,
-    @CurrentUser() user: any,
-    @TenantId() tenantId: string,
+    @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SubscriberResponseDto[]>> {
-    const isSuperAdmin = user.role === UserRole.SUPER_ADMIN
-    const targetTenantId = isSuperAdmin ? undefined : tenantId
-
     const { subscribers, total } = await this.subscriberService.findAllSubscribers(
       filterDto, 
-      targetTenantId
+      ctx
     )
     
     return {

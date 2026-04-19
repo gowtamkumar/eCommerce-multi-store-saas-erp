@@ -24,8 +24,9 @@ export class ExpenseService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async createExpense(createExpenseDto: CreateExpenseDto, tenantId: string): Promise<ExpenseEntity> {
+  async createExpense(createExpenseDto: CreateExpenseDto, ctx: RequestContextDto): Promise<ExpenseEntity> {
     this.logger.log(`${this.createExpense.name} Service Called`)
+    const tenantId = ctx.tenantId
     const result = await this.expenseRepository.createAndSave(createExpenseDto, tenantId)
     // Invalidate list cache on creation
     await this.cacheService.delCache('expenses:list', tenantId)
@@ -37,10 +38,11 @@ export class ExpenseService {
    * Cached per page/filter combination to minimize DB hits.
    */
   async findAllExpenses(
-    tenantId: string,
+    ctx: RequestContextDto,
     options: FindAllOptions = {},
   ): Promise<{ items: ExpenseEntity[]; total: number; page: number; limit: number; totalPages: number }> {
     this.logger.log(`${this.findAllExpenses.name} Service Called`)
+    const tenantId = ctx.tenantId
     const { page = 1, limit = 20, category, q, startDate, endDate } = options
     const cacheKey = `expenses:list:p${page}:l${limit}:cat${category || 'all'}:q${q || ''}:s${startDate?.getTime()}:e${endDate?.getTime()}`
 
@@ -94,8 +96,9 @@ export class ExpenseService {
     return expense
   }
 
-  async updateExpense(id: string, updateExpenseDto: UpdateExpenseDto, tenantId: string): Promise<ExpenseEntity> {
+  async updateExpense(id: string, updateExpenseDto: UpdateExpenseDto, ctx: RequestContextDto): Promise<ExpenseEntity> {
     this.logger.log(`${this.updateExpense.name} Service Called`)
+    const tenantId = ctx.tenantId
     const expense = await this.expenseRepository.findByIdAndTenant(id, tenantId)
     if (!expense) throw new NotFoundException('Expense not found')
 
@@ -108,8 +111,9 @@ export class ExpenseService {
     return result
   }
 
-  async removeExpense(id: string, tenantId: string): Promise<ExpenseEntity> {
+  async removeExpense(id: string, ctx: RequestContextDto): Promise<ExpenseEntity> {
     this.logger.log(`${this.removeExpense.name} Service Called`)
+    const tenantId = ctx.tenantId
     const expense = await this.expenseRepository.findByIdAndTenant(id, tenantId)
     if (!expense) throw new NotFoundException('Expense not found')
 

@@ -8,8 +8,7 @@ import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto
 import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
 import { OrderService } from '@/modules/admin/sales/order/services/order.service'
-import { Body, Controller, Get, Logger, Param, Post, Patch, Query, UseGuards } from '@nestjs/common'
-import { Throttle } from '@nestjs/throttler'
+import { Body, Controller, Get, Logger, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { RequestContextDto } from 'src/common/dto/request-context.dto'
 import { OrderResponseDto } from '../dto/order-response.dto'
 
@@ -28,7 +27,7 @@ export class OrderController {
     @Body() createOrderDto: CreateOrderDto,
   ): Promise<BaseApiSuccessResponse<{ message: string; order: OrderResponseDto }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createOrder.`)
-    const result = await this.orderService.createOrder(createOrderDto, ctx.tenantId)
+    const result = await this.orderService.createOrder(createOrderDto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -50,7 +49,7 @@ export class OrderController {
     @Query() filterDto: FilterOrderDto,
   ): Promise<BaseApiSuccessResponse<{ orders: OrderResponseDto[]; pagination: any }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllOrders.`)
-    const { orders, total } = await this.orderService.findAllOrders(filterDto, ctx.tenantId)
+    const { orders, total } = await this.orderService.findAllOrders(ctx)
 
     return {
       success: true,
@@ -81,7 +80,7 @@ export class OrderController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<OrderResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneOrder.`)
-    const order = await this.orderService.findOneOrder(id, ctx.tenantId)
+    const order = await this.orderService.findOneOrder(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -104,7 +103,7 @@ export class OrderController {
     @Param('userId') userId: string,
   ): Promise<BaseApiSuccessResponse<number>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getUserOrderCount.`)
-    const count = await this.orderService.countByUserId(userId, ctx.tenantId)
+    const count = await this.orderService.countByUserId(userId, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -130,7 +129,7 @@ export class OrderController {
     @Query('search') search: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getUserOrders.`)
-    const { orders, total } = await this.orderService.findByUserId(userId, ctx.tenantId, page, limit, search)
+    const { orders, total } = await this.orderService.findByUserId(userId, ctx, page, limit, search)
     return {
       success: true,
       statusCode: 200,
@@ -155,7 +154,7 @@ export class OrderController {
     @Body() updateOrderDto: UpdateOrderDto,
   ): Promise<BaseApiSuccessResponse<OrderResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateOrder.`)
-    const order = await this.orderService.updateOrder(id, updateOrderDto, ctx.tenantId)
+    const order = await this.orderService.updateOrder(id, updateOrderDto, ctx)
     return {
       success: true,
       statusCode: 200,

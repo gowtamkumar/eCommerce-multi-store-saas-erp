@@ -35,9 +35,10 @@ export class PurchaseOrderService {
 
   async createPurchaseOrder(
     dto: CreatePurchaseOrderDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
+    const tenantId = ctx.tenantId
     const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
     const result = await this.repository.createAndSave({ ...dto, totalAmount, tenantId } as any)
     await this.cacheService.delCache(`po:list`, tenantId)
@@ -48,7 +49,7 @@ export class PurchaseOrderService {
    * Returns paginated purchase orders with caching.
    */
   async findAllPurchaseOrders(
-    tenantId: string,
+    ctx: RequestContextDto,
     paginationDto: PaginationDto,
     status?: PurchaseOrderStatus,
     paymentStatus?: PurchaseOrderPaymentStatus,
@@ -60,6 +61,7 @@ export class PurchaseOrderService {
     totalPages: number
   }> {
     this.logger.log(`${this.findAllPurchaseOrders.name} Service Called`)
+    const tenantId = ctx.tenantId
     const { page = 1, limit = 20, q: search } = paginationDto
     const cacheKey = `po:list:p${page}:l${limit}:q${search || ''}:s${status || ''}:ps${paymentStatus || ''}`
 
@@ -90,8 +92,9 @@ export class PurchaseOrderService {
   /**
    * Returns a single purchase order with detailed relations.
    */
-  async findOnePurchaseOrder(id: string, tenantId: string): Promise<PurchaseOrderEntity> {
+  async findOnePurchaseOrder(id: string, ctx: RequestContextDto): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.findOnePurchaseOrder.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `po:id:${id}`
 
     const order = await this.cacheService.rememberCache(
@@ -113,10 +116,11 @@ export class PurchaseOrderService {
   async updatePurchaseOrderStatus(
     id: string,
     dto: UpdatePurchaseOrderStatusDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.updatePurchaseOrderStatus.name} Service Called`)
-    const order = await this.findOnePurchaseOrder(id, tenantId)
+    const tenantId = ctx.tenantId
+    const order = await this.findOnePurchaseOrder(id, ctx)
 
     if (
       order.status === PurchaseOrderStatus.RECEIVED ||
@@ -127,7 +131,7 @@ export class PurchaseOrderService {
 
     let result: PurchaseOrderEntity
     if (dto.status === PurchaseOrderStatus.RECEIVED) {
-      result = await this.receivePurchaseOrder(order, tenantId)
+      result = await this.receivePurchaseOrder(order, ctx)
     } else {
       order.status = dto.status
       result = await this.repository.savePurchaseOrder(order)
@@ -140,9 +144,10 @@ export class PurchaseOrderService {
 
   private async receivePurchaseOrder(
     order: PurchaseOrderEntity,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.receivePurchaseOrder.name} Service Called`)
+    const tenantId = ctx.tenantId
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
@@ -186,9 +191,10 @@ export class PurchaseOrderService {
   async recordSupplierPayment(
     id: string,
     dto: RecordSupplierPaymentDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.recordSupplierPayment.name} Service Called`)
+    const tenantId = ctx.tenantId
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
@@ -250,16 +256,18 @@ export class PurchaseOrderService {
     )
   }
 
-  async findAllBySupplier(supplierId: string, tenantId: string): Promise<PurchaseOrderEntity[]> {
+  async findAllBySupplier(supplierId: string, ctx: RequestContextDto): Promise<PurchaseOrderEntity[]> {
     this.logger.log(`${this.findAllBySupplier.name} Service Called`)
+    const tenantId = ctx.tenantId
     return await this.repository.findAllBySupplier(supplierId, tenantId)
   }
 
   async findAllPaymentsBySupplier(
     supplierId: string,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<SupplierPaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsBySupplier.name} Service Called`)
+    const tenantId = ctx.tenantId
     return await this.paymentRepository.findAllBySupplier(supplierId, tenantId)
   }
 

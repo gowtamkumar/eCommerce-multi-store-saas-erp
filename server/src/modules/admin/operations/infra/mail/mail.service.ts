@@ -5,6 +5,7 @@ import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as nodemailer from 'nodemailer'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class MailService {
@@ -36,7 +37,7 @@ export class MailService {
         from: this.configService.get<string>('SMTP_FROM', 'noreply@example.com'),
       }
 
-    const settings = await this.settingsService.findByTenantSettings(tenantId)
+    const settings = await this.settingsService.findByTenantSettings({ tenantId } as RequestContextDto)
     if (settings && settings.smtp && settings.smtp.host && settings.smtp.user) {
       const port = Number(settings.smtp.port) || 587
 
@@ -180,7 +181,7 @@ export class MailService {
 
   async sendNewOrderNotification(order: OrderEntity, tenantId: string) {
     this.logger.log(`${this.sendNewOrderNotification.name} Service Called for order: ${order.id}`)
-    const settings = await this.settingsService.findByTenantSettings(tenantId)
+    const settings = await this.settingsService.findByTenantSettings({ tenantId } as RequestContextDto)
     if (!settings || !settings.contactEmail) {
       this.logger.warn(`No contact email configured for tenant ${tenantId}. Skipping notification.`)
       return

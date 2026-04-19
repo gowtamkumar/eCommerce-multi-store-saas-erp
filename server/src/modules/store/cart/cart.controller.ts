@@ -1,22 +1,22 @@
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import {
   Body,
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   Patch,
   Post,
   UseGuards,
-  Logger,
 } from '@nestjs/common'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RequestContextDto } from 'src/common/dto/request-context.dto'
 import { CartService } from './cart.service'
+import { CartResponseDto } from './dto/cart-response.dto'
 import { CreateCartItemDto } from './dto/create-cart-item.dto'
 import { UpdateCartItemDto } from './dto/update-cart-item.dto'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from 'src/common/dto/request-context.dto'
-import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
-import { CartResponseDto } from './dto/cart-response.dto'
 
 @UseGuards(JwtAuthGuard)
 @Controller('cart')
@@ -28,7 +28,7 @@ export class CartController {
   @Get()
   async getCart(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getCart.`)
-    const cart = await this.cartService.createOrGetCart(ctx.userId, ctx.tenantId)
+    const cart = await this.cartService.createOrGetCart(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -43,7 +43,7 @@ export class CartController {
     @Body() createCartItemDto: CreateCartItemDto,
   ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called addToCart.`)
-    const cart = await this.cartService.addToCart(ctx.userId, ctx.tenantId, createCartItemDto)
+    const cart = await this.cartService.addToCart(ctx, createCartItemDto)
     return {
       success: true,
       statusCode: 200,
@@ -58,7 +58,7 @@ export class CartController {
     @Body() items: CreateCartItemDto[],
   ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called syncCart.`)
-    const cart = await this.cartService.syncCart(ctx.userId, ctx.tenantId, items)
+    const cart = await this.cartService.syncCart(ctx, items)
     return {
       success: true,
       statusCode: 200,
@@ -74,7 +74,7 @@ export class CartController {
     @Body() updateCartItemDto: UpdateCartItemDto,
   ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateCartItem.`)
-    const cart = await this.cartService.updateCartItem(ctx.userId, ctx.tenantId, id, updateCartItemDto)
+    const cart = await this.cartService.updateCartItem(ctx, id, updateCartItemDto)
     return {
       success: true,
       statusCode: 200,
@@ -89,7 +89,7 @@ export class CartController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFromCart.`)
-    const cart = await this.cartService.removeFromCart(ctx.userId, ctx.tenantId, id)
+    const cart = await this.cartService.removeFromCart(ctx, id)
     return {
       success: true,
       statusCode: 200,
@@ -101,7 +101,7 @@ export class CartController {
   @Delete()
   async clearCart(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called clearCart.`)
-    await this.cartService.clearCart(ctx.userId, ctx.tenantId)
+    await this.cartService.clearCart(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -116,7 +116,7 @@ export class CartController {
     @Body('code') code: string,
   ): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called applyCoupon.`)
-    const cart = await this.cartService.applyCoupon(ctx.userId, ctx.tenantId, code)
+    const cart = await this.cartService.applyCoupon(ctx, code)
     return {
       success: true,
       statusCode: 200,
@@ -128,7 +128,7 @@ export class CartController {
   @Post('coupon/remove')
   async removeCoupon(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<CartResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCoupon.`)
-    const cart = await this.cartService.removeCoupon(ctx.userId, ctx.tenantId)
+    const cart = await this.cartService.removeCoupon(ctx)
     return {
       success: true,
       statusCode: 200,

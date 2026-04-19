@@ -5,6 +5,7 @@ import { CouponRepository } from '../repositoris/coupon.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
 import { CouponEntity } from '../entities/coupon.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class CouponService {
@@ -15,8 +16,9 @@ export class CouponService {
     private readonly cacheService: CacheService,
   ) { }
 
-  async createCoupon(createCouponDto: CreateCouponDto, tenantId: string): Promise<CouponEntity> {
+  async createCoupon(createCouponDto: CreateCouponDto, ctx: RequestContextDto): Promise<CouponEntity> {
     this.logger.log(`${this.createCoupon.name} Service Called`)
+    const tenantId = ctx.tenantId
     const existing = await this.couponRepository.findByCode(createCouponDto.code, tenantId)
     if (existing) throw new BadRequestException('Coupon code already exists')
 
@@ -27,9 +29,10 @@ export class CouponService {
 
   async findAllCoupons(
     filterDto: any,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<{ coupons: CouponEntity[]; total: number }> {
     this.logger.log(`${this.findAllCoupons.name} Service Called`)
+    const tenantId = ctx.tenantId
     const { page = 1, limit = 10, search = '', isActive } = filterDto
     const cacheKey = `coupons:list:p${page}:l${limit}:q${search}:a${isActive ?? 'all'}`
 
@@ -44,8 +47,9 @@ export class CouponService {
     )
   }
 
-  async findOneCoupon(id: string, tenantId: string): Promise<CouponEntity> {
+  async findOneCoupon(id: string, ctx: RequestContextDto): Promise<CouponEntity> {
     this.logger.log(`${this.findOneCoupon.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `coupons:id:${id}`
 
     const coupon = await this.cacheService.rememberCache(
@@ -59,8 +63,9 @@ export class CouponService {
     return coupon
   }
 
-  async findByCodeCoupon(code: string, tenantId: string): Promise<CouponEntity> {
+  async findByCodeCoupon(code: string, ctx: RequestContextDto): Promise<CouponEntity> {
     this.logger.log(`${this.findByCodeCoupon.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `coupons:code:${code.toUpperCase()}`
 
     // Validate endpoint is hot-path — code lookups must be cached
@@ -78,9 +83,10 @@ export class CouponService {
   async updateCoupon(
     id: string,
     updateCouponDto: UpdateCouponDto,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<CouponEntity> {
     this.logger.log(`${this.updateCoupon.name} Service Called`)
+    const tenantId = ctx.tenantId
     const coupon = await this.couponRepository.findById(id, tenantId)
     if (!coupon) throw new NotFoundException('Coupon not found')
 
@@ -99,8 +105,9 @@ export class CouponService {
     return result
   }
 
-  async removeCoupon(id: string, tenantId: string): Promise<{ success: boolean; message: string }> {
+  async removeCoupon(id: string, ctx: RequestContextDto): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeCoupon.name} Service Called`)
+    const tenantId = ctx.tenantId
     const coupon = await this.couponRepository.findById(id, tenantId)
     if (!coupon) throw new NotFoundException('Coupon not found')
 
@@ -116,11 +123,12 @@ export class CouponService {
   async validateCoupon(
     code: string,
     orderTotal: number,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<{ valid: boolean; coupon: CouponEntity; discountAmount: number }> {
     this.logger.log(`${this.validateCoupon.name} Service Called`)
+    const tenantId = ctx.tenantId
     try {
-      const coupon = await this.findByCodeCoupon(code, tenantId)
+      const coupon = await this.findByCodeCoupon(code, ctx)
 
       if (!coupon.isActive) throw new BadRequestException('Coupon is inactive')
       if (coupon.startDate && new Date() < coupon.startDate) throw new BadRequestException('Coupon is not yet valid')
@@ -140,8 +148,9 @@ export class CouponService {
     }
   }
 
-  async incrementUsage(id: string, tenantId: string): Promise<void> {
+  async incrementUsage(id: string, ctx: RequestContextDto): Promise<void> {
     this.logger.log(`${this.incrementUsage.name} Service Called`)
+    const tenantId = ctx.tenantId
     const coupon = await this.couponRepository.findById(id, tenantId)
     if (!coupon) throw new NotFoundException('Coupon not found')
     coupon.usedCount += 1

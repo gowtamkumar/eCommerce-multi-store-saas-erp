@@ -34,8 +34,9 @@ export class PaymentService {
     private readonly cacheService: CacheService,
   ) { }
 
-  async initPayment(dto: InitPaymentDto, tenantId: string): Promise<{ gatewayUrl: string }> {
+  async initPayment(dto: InitPaymentDto, ctx: RequestContextDto): Promise<{ gatewayUrl: string }> {
     this.logger.log(`${this.initPayment.name} Service Called`)
+    const tenantId = ctx.tenantId
     const { orderId, callbackUrl } = dto
 
     const order = await this.orderRepository.findOrderById(orderId, tenantId)
@@ -44,7 +45,7 @@ export class PaymentService {
       throw new NotFoundException('Order not found')
     }
 
-    const settings = await this.settingsService.findByTenantSettings(tenantId)
+    const settings = await this.settingsService.findByTenantSettings(ctx)
     const strategy = PaymentStrategyFactory.create(order.paymentMethod)
 
     const result = await strategy.initiate(order, settings, {
@@ -102,7 +103,7 @@ export class PaymentService {
     await this.invoiceService.updateInvoiceStatusByOrderId(
       order.id,
       InvoiceStatus.PAID,
-      order.tenantId,
+      { tenantId: order.tenantId } as RequestContextDto, // Mocking ctx since we don't have it inside webhook handlers
     )
 
     // Notify Admin
@@ -169,10 +170,11 @@ export class PaymentService {
   }
 
   async findAllPayments(
-    tenantId: string,
+    ctx: RequestContextDto,
     filterDto: PaginationDto & { startDate?: Date; endDate?: Date },
   ): Promise<{ items: PaymentEntity[]; total: number; page: number; limit: number; totalPages: number }> {
     this.logger.log(`${this.findAllPayments.name} Service Called`)
+    const tenantId = ctx.tenantId
     const { page = 1, limit = 20, q: search, startDate, endDate } = filterDto
     const cacheKey = `payments:list:p${page}:l${limit}:${startDate?.getTime()}:${endDate?.getTime()}`
 
@@ -200,8 +202,10 @@ export class PaymentService {
     return items
   }
 
-  async findAllPaymentsByCustomer(userId: string, tenantId: string): Promise<PaymentEntity[]> {
+  async findAllPaymentsByCustomer(ctx: RequestContextDto): Promise<PaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsByCustomer.name} Service Called`)
+    const tenantId = ctx.tenantId
+    const userId = ctx.userId
     return await this.paymentRepository.findPaymentsByUser(userId, tenantId)
   }
 }

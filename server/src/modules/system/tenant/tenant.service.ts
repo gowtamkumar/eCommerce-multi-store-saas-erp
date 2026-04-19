@@ -14,6 +14,7 @@ import * as crypto from 'crypto'
 import { DataSource } from 'typeorm'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantOverviewResponseDto } from './dto/tenant-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { TenantEntity } from './entities/tenant.entity'
 import { TenantRepository } from './tenant.repository'
 
@@ -112,7 +113,7 @@ export class TenantService {
       // 4. Parallelize non-critical initialization tasks
       await Promise.all([
         // Initialize Site Settings
-        this.settingsService.createSetting(savedTenant.id, {
+        this.settingsService.createSetting({ tenantId: savedTenant.id } as RequestContextDto, {
           userId: savedUser.id,
           brandName: storeName,
           siteDescription: `Welcome to ${storeName}! Premium products and excellent service.`,

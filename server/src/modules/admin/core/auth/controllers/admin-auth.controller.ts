@@ -6,7 +6,6 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { LoginCredentialDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
 import { Body, Controller, Delete, Logger, Post, Req, Res, UseGuards } from '@nestjs/common'
-import { Throttle } from '@nestjs/throttler'
 import { Request, Response } from 'express'
 
 @Controller('admin')

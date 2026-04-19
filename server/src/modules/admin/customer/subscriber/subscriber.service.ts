@@ -3,6 +3,7 @@ import { CreateSubscriberDto } from './dto/subscriber.dto'
 import { SubscriberRepository } from './subscriber.repository'
 import { SubscriberEntity } from './entities/subscriber.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class SubscriberService {
@@ -13,8 +14,9 @@ export class SubscriberService {
     private readonly cache: CacheService,
   ) {}
 
-  async createSubscriber(createSubscriberDto: CreateSubscriberDto, tenantId: string): Promise<SubscriberEntity> {
-    this.logger.log(`${this.createSubscriber.name} Service Called for tenant: ${tenantId}`)
+  async createSubscriber(createSubscriberDto: CreateSubscriberDto, ctx: RequestContextDto): Promise<SubscriberEntity> {
+    this.logger.log(`${this.createSubscriber.name} Service Called`)
+    const tenantId = ctx.tenantId
     const existingSubscriber = await this.subscriberRepository.findByEmail(
       createSubscriberDto.email,
       tenantId
@@ -33,8 +35,9 @@ export class SubscriberService {
     return subscriber
   }
 
-  async findAllSubscribers(filterDto: any, tenantId?: string): Promise<{ subscribers: SubscriberEntity[]; total: number }> {
+  async findAllSubscribers(filterDto: any, ctx: RequestContextDto): Promise<{ subscribers: SubscriberEntity[]; total: number }> {
     this.logger.log(`${this.findAllSubscribers.name} Service Called`)
+    const tenantId = ctx.tenantId
     const { page = 1, limit = 10, search = '' } = filterDto || {}
     const cacheKey = `subscribers:list:p${page}:l${limit}:q${search}`
 

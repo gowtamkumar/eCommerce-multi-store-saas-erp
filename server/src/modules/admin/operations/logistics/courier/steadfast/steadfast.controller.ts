@@ -26,7 +26,7 @@ export class SteadfastController {
     @Body() createOrderDto: CreateSteadfastOrderDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createSteadfastOrder.`)
-    const result = await this.steadfastService.createSteadfastOrder(createOrderDto, ctx.tenantId)
+    const result = await this.steadfastService.createSteadfastOrder(createOrderDto, ctx)
     return {
       success: true,
       statusCode: 201,

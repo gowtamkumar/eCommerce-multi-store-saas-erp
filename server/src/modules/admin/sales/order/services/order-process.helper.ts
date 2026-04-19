@@ -14,6 +14,7 @@ import { InventoryTransactionService } from '@/modules/admin/operations/logistic
 import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.service'
 import { EntityManager } from 'typeorm'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class OrderProcessHelper {
@@ -29,10 +30,11 @@ export class OrderProcessHelper {
    */
   async processItem(
     itemDto: any,
-    tenantId: string,
+    ctx: RequestContextDto,
     manager: EntityManager,
   ): Promise<OrderItemEntity> {
     const { productId, variantId, quantity, pricing: itemPricingDto } = itemDto
+    const tenantId = ctx.tenantId
 
     const product = await manager.findOne(ProductEntity, {
       where: { id: productId, tenantId },
@@ -72,7 +74,7 @@ export class OrderProcessHelper {
         type: InventoryTransactionType.OUT,
         referenceType: InventoryTransactionReferenceType.ORDER,
       },
-      tenantId,
+      ctx,
       manager,
     )
 
@@ -122,17 +124,18 @@ export class OrderProcessHelper {
     order: OrderEntity,
     preCouponTotal: number,
     couponCode: string | undefined,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<{ couponDiscountAmount: number; isFreeShipping: boolean }> {
     let couponDiscountAmount = 0
     let isFreeShipping = false
+    const tenantId = ctx.tenantId
 
     if (couponCode) {
       try {
         const validation = await this.couponService.validateCoupon(
           couponCode,
           preCouponTotal,
-          tenantId,
+          ctx,
         )
         if (validation.valid) {
           couponDiscountAmount = validation.discountAmount
@@ -143,7 +146,7 @@ export class OrderProcessHelper {
             isFreeShipping = true
           }
 
-          await this.couponService.incrementUsage(validation.coupon.id, tenantId)
+          await this.couponService.incrementUsage(validation.coupon.id, ctx)
         }
       } catch (error) {
         this.logger.warn(`Coupon validation failed for code: ${couponCode}`, error.message)
@@ -161,8 +164,9 @@ export class OrderProcessHelper {
     isFreeShipping: boolean,
     dto: CreateOrderDto,
     settings: SiteSettingsEntity | null,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<number> {
+    const tenantId = ctx.tenantId
     const shippingZone = (dto.shippingZone as any) || 'standard'
     const strategy = ShippingStrategyFactory.create(shippingZone)
     let shippingFee = strategy.calculate(settings?.shippingConfig, totalAfterCoupon)

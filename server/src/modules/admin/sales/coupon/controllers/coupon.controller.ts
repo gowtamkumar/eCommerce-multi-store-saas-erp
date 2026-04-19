@@ -37,7 +37,7 @@ export class CouponController {
     @Body() createCouponDto: CreateCouponDto,
   ): Promise<BaseApiSuccessResponse<CouponResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createCoupon.`)
-    const result = await this.couponService.createCoupon(createCouponDto, ctx.tenantId)
+    const result = await this.couponService.createCoupon(createCouponDto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -59,7 +59,7 @@ export class CouponController {
     @Query() filterDto: any,
   ): Promise<BaseApiSuccessResponse<{ coupons: CouponResponseDto[]; total: number }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllCoupons.`)
-    const result = await this.couponService.findAllCoupons(filterDto, ctx.tenantId)
+    const result = await this.couponService.findAllCoupons(filterDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -76,7 +76,7 @@ export class CouponController {
     @Body('orderTotal') orderTotal: number,
   ): Promise<BaseApiSuccessResponse<{ valid: boolean; coupon: CouponResponseDto; discountAmount: number }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called validateCoupon.`)
-    const result = await this.couponService.validateCoupon(code, orderTotal, ctx.tenantId)
+    const result = await this.couponService.validateCoupon(code, orderTotal, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -98,7 +98,7 @@ export class CouponController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<CouponResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOneCoupon.`)
-    const result = await this.couponService.findOneCoupon(id, ctx.tenantId)
+    const result = await this.couponService.findOneCoupon(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -115,7 +115,7 @@ export class CouponController {
     @Body() updateCouponDto: UpdateCouponDto,
   ): Promise<BaseApiSuccessResponse<CouponResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateCoupon.`)
-    const result = await this.couponService.updateCoupon(id, updateCouponDto, ctx.tenantId)
+    const result = await this.couponService.updateCoupon(id, updateCouponDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -131,7 +131,7 @@ export class CouponController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCoupon.`)
-    await this.couponService.removeCoupon(id, ctx.tenantId)
+    await this.couponService.removeCoupon(id, ctx)
     return {
       success: true,
       statusCode: 200,

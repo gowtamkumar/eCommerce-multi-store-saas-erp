@@ -1,33 +1,31 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderStatus } from '@/common/enums/order-status.enum'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
-import { OrderProcessHelper } from './order-process.helper'
-import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
-import { InvoiceEntity } from '@/modules/admin/operations/finance/invoice/entities/invoice.entity'
-import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.service'
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { CartService } from '@/modules/store/cart/cart.service'
 import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { DataSource } from 'typeorm'
 import { InjectQueue } from '@nestjs/bullmq'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Queue } from 'bullmq'
+import { DataSource } from 'typeorm'
 import { PaymentEntity } from '../../payment/entities/payment.entity'
 import { PaymentRepository } from '../../payment/repositoris/payment.repository'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { OrderRepository } from '../repositoris/order.repository'
+import { OrderProcessHelper } from './order-process.helper'
 
 
 @Injectable()
@@ -48,8 +46,9 @@ export class OrderService {
     @InjectQueue('order') private readonly orderQueue: Queue,
   ) { }
 
-  async createOrder(createOrderDto: CreateOrderDto, tenantId: string): Promise<{ message: string; success: boolean; order: OrderEntity }> {
+  async createOrder(createOrderDto: CreateOrderDto, ctx: RequestContextDto): Promise<{ message: string; success: boolean; order: OrderEntity }> {
     this.logger.log(`${this.createOrder.name} Service Called`)
+    const tenantId = ctx.tenantId
 
     const result = await this.dataSource.transaction(async (manager) => {
       // 1. Initial Data Fetching
@@ -64,8 +63,7 @@ export class OrderService {
         try {
           const savedAddress = await this.shippingAddressService.findShippingAddress(
             createOrderDto.shippingAddressId,
-            createOrderDto.userId,
-            tenantId,
+            ctx,
           )
           resolvedAddress = `${savedAddress.recipientName}, ${savedAddress.address}${savedAddress.city ? ', ' + savedAddress.city : ''}`
         } catch (err) {
@@ -81,7 +79,7 @@ export class OrderService {
       if (createOrderDto.items && createOrderDto.items.length > 0) {
         rawItems = createOrderDto.items
       } else if (user?.id) {
-        const cart = await this.cartService.createOrGetCart(user.id, tenantId)
+        const cart = await this.cartService.createOrGetCart(ctx)
         if (!cart.items || cart.items.length === 0) {
           throw new BadRequestException('Order must contain at least one item')
         }
@@ -100,7 +98,7 @@ export class OrderService {
       // 4. Transform & Deduct Stock
       const processedItems: OrderItemEntity[] = []
       for (const item of rawItems) {
-        const orderItem = await this.orderProcessHelper.processItem(item, tenantId, manager)
+        const orderItem = await this.orderProcessHelper.processItem(item, ctx, manager)
         processedItems.push(orderItem)
       }
 
@@ -134,7 +132,7 @@ export class OrderService {
         order,
         preCouponTotal,
         createOrderDto.appliedCouponCode,
-        tenantId,
+        ctx,
       )
 
       const shippingFee = await this.orderProcessHelper.calculateShipping(
@@ -142,7 +140,7 @@ export class OrderService {
         isFreeShipping,
         createOrderDto,
         settings,
-        tenantId,
+        ctx,
       )
 
       order.shippingFee = shippingFee
@@ -164,7 +162,7 @@ export class OrderService {
 
       // 9. Cleanup
       if (cartId && user?.id) {
-        await this.cartService.clearCart(user.id, tenantId)
+        await this.cartService.clearCart(ctx)
       }
 
       await this.cacheService.delCache('orders:overview', tenantId)
@@ -198,13 +196,15 @@ export class OrderService {
     return result
   }
 
-  async findAllOrders(filterDto: any, tenantId: string): Promise<{ orders: OrderEntity[]; total: number }> {
+  async findAllOrders(ctx: RequestContextDto): Promise<{ orders: OrderEntity[]; total: number }> {
     this.logger.log(`${this.findAllOrders.name} Service Called`)
-    return await this.orderRepository.findAllOrders(filterDto, tenantId)
+    const tenantId = ctx.tenantId
+    return await this.orderRepository.findAllOrders({ page: 1, limit: 1000 }, tenantId)
   }
 
-  async findOneOrder(id: string, tenantId: string): Promise<OrderEntity> {
+  async findOneOrder(id: string, ctx: RequestContextDto): Promise<OrderEntity> {
     this.logger.log(`${this.findOneOrder.name} Service Called`)
+    const tenantId = ctx.tenantId
     const order = await this.orderRepository.findOrderById(id, tenantId)
 
     if (!order) {
@@ -214,8 +214,9 @@ export class OrderService {
     return order
   }
 
-  async findOneForCourier(id: string, tenantId: string): Promise<OrderEntity> {
+  async findOneForCourier(id: string, ctx: RequestContextDto): Promise<OrderEntity> {
     this.logger.log(`${this.findOneForCourier.name} Service Called`)
+    const tenantId = ctx.tenantId
     const order = await this.orderRepository.findOneForCourier(id, tenantId)
 
     if (!order) {
@@ -227,23 +228,26 @@ export class OrderService {
 
   async findByUserId(
     userId: string,
-    tenantId: string,
+    ctx: RequestContextDto,
     page: number = 1,
     limit: number = 10,
     search?: string
   ): Promise<{ orders: OrderEntity[], total: number }> {
     this.logger.log(`${this.findByUserId.name} Service Called`)
+    const tenantId = ctx.tenantId
     return await this.orderRepository.findByUserIdPaginated(userId, tenantId, page, limit, search)
   }
 
-  async countByUserId(userId: string, tenantId: string): Promise<number> {
+  async countByUserId(userId: string, ctx: RequestContextDto): Promise<number> {
     this.logger.log(`${this.countByUserId.name} Service Called`)
+    const tenantId = ctx.tenantId
     return await this.orderRepository.countByUserId(userId, tenantId)
   }
 
-  async updateOrder(id: string, updateOrderDto: UpdateOrderDto, tenantId: string): Promise<OrderEntity> {
+  async updateOrder(id: string, updateOrderDto: UpdateOrderDto, ctx: RequestContextDto): Promise<OrderEntity> {
     this.logger.log(`${this.updateOrder.name} Service Called`)
-    const order = await this.findOneOrder(id, tenantId)
+    const tenantId = ctx.tenantId
+    const order = await this.findOneOrder(id, ctx)
 
     // Using query runner for business transaction
     const queryRunner = this.dataSource.createQueryRunner()
@@ -296,7 +300,7 @@ export class OrderService {
               referenceType: InventoryTransactionReferenceType.ORDER,
               referenceId: order.id,
             },
-            tenantId,
+            ctx,
             queryRunner.manager,
           )
         }
@@ -312,13 +316,13 @@ export class OrderService {
         await this.invoiceService.updateInvoiceStatusByOrderId(
           id,
           InvoiceStatus.PAID,
-          tenantId,
+          ctx,
         )
       } else if (updateOrderDto.status === OrderStatus.CANCELLED) {
         await this.invoiceService.updateInvoiceStatusByOrderId(
           id,
           InvoiceStatus.CANCELLED,
-          tenantId,
+          ctx,
         )
       }
 
@@ -334,14 +338,15 @@ export class OrderService {
   }
 
 
-  async countByTenant(tenantId: string): Promise<number> {
+  async countByTenant(ctx: RequestContextDto): Promise<number> {
     this.logger.log(`${this.countByTenant.name} Service Called`)
+    const tenantId = ctx.tenantId
     return await this.orderRepository.countByTenant(tenantId)
   }
 
-  async orderOverview(tenantId?: string): Promise<{ totalOrders: number; pendingOrders: number; completedOrders: number; cancelledOrders: number }> {
-    this.logger.log(`${this.orderOverview.name} Service Called`)
-    const cacheKey = 'orders:overview'
+  async orderOverview(ctx?: RequestContextDto): Promise<{ totalOrders: number; pendingOrders: number; completedOrders: number; cancelledOrders: number }> {
+    const tenantId = ctx?.tenantId
+    const cacheKey = tenantId ? `orders:overview:${tenantId}` : 'orders:overview:global'
     return this.cacheService.rememberCache(
       cacheKey,
       () => this.orderRepository.orderOverview(tenantId),

@@ -25,7 +25,7 @@ export class PathaoController {
     @Body() createOrderDto: CreatePathaoOrderDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPathaoOrder.`)
-    const result = await this.pathaoService.createPathaoOrder(createOrderDto, ctx.tenantId)
+    const result = await this.pathaoService.createPathaoOrder(createOrderDto, ctx)
     return {
       success: true,
       statusCode: 201,

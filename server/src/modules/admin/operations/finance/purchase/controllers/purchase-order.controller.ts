@@ -30,7 +30,7 @@ export class PurchaseOrderController {
     @Body() dto: CreatePurchaseOrderDto,
   ): Promise<BaseApiSuccessResponse<PurchaseOrderResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createPurchaseOrder.`)
-    const result = await this.service.createPurchaseOrder(dto, ctx.tenantId)
+    const result = await this.service.createPurchaseOrder(dto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -49,7 +49,7 @@ export class PurchaseOrderController {
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPurchaseOrder.`)
     const result = await this.service.findAllPurchaseOrders(
-      ctx.tenantId,
+      ctx,
       paginationDto,
       status,
       paymentStatus,
@@ -69,7 +69,7 @@ export class PurchaseOrderController {
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<PurchaseOrderResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findOnePurchaseOrder.`)
-    const result = await this.service.findOnePurchaseOrder(id, ctx.tenantId)
+    const result = await this.service.findOnePurchaseOrder(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -88,7 +88,7 @@ export class PurchaseOrderController {
     this.logger.verbose(
       `User "${ctx.user?.username || 'System'}" called updatePurchaseOrderStatus.`,
     )
-    const result = await this.service.updatePurchaseOrderStatus(id, dto, ctx.tenantId)
+    const result = await this.service.updatePurchaseOrderStatus(id, dto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -105,7 +105,7 @@ export class PurchaseOrderController {
     @Body() dto: RecordSupplierPaymentDto,
   ): Promise<BaseApiSuccessResponse<PurchaseOrderResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called recordSupplierPayment.`)
-    const result = await this.service.recordSupplierPayment(id, dto, ctx.tenantId)
+    const result = await this.service.recordSupplierPayment(id, dto, ctx)
     return {
       success: true,
       statusCode: 201,

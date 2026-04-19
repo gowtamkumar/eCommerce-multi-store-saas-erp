@@ -82,7 +82,7 @@ export class ReportService {
           this.reportRepo.getSalesChartData(tenantId, 7),
           this.reportRepo.getMonthlyGrowth(tenantId),
           this.reportRepo.getLowStockProducts(tenantId, 10),
-          this.productService.findAllProducts({ page: 1, limit: 5 }, tenantId),
+          this.productService.findAllProducts(ctx),
           this.reportRepo.getRecentPurchaseOrders(tenantId, 5),
         ])
 
@@ -161,7 +161,7 @@ export class ReportService {
       cacheKey,
       async () => {
         const [orders, payments, expenses, purchaseOrders] = (await Promise.all([
-          this.orderService.findAllOrders({ page: 1, limit: 1000 }, tenantId),
+          this.orderService.findAllOrders(ctx),
           this.paymentService.findAllPaymentsRaw(ctx),
           this.expenseService.findAllExpensesRaw(ctx),
           this.purchaseOrderService.findAllPurchaseOrdersRaw(ctx),
@@ -259,9 +259,9 @@ export class ReportService {
       cacheKey,
       async () => {
         const [supplier, pos, payments] = await Promise.all([
-          this.supplierService.findOneSupplier(supplierId, tenantId),
-          this.purchaseOrderService.findAllBySupplier(supplierId, tenantId),
-          this.purchaseOrderService.findAllPaymentsBySupplier(supplierId, tenantId),
+          this.supplierService.findOneSupplier(supplierId, ctx),
+          this.purchaseOrderService.findAllBySupplier(supplierId, ctx),
+          this.purchaseOrderService.findAllPaymentsBySupplier(supplierId, ctx),
         ])
 
         // Combine and sort chronologically
@@ -327,9 +327,9 @@ export class ReportService {
       cacheKey,
       async () => {
         const [customer, ordersResult, payments] = await Promise.all([
-          this.userService.findOneUser(customerId, tenantId),
-          this.orderService.findByUserId(customerId, tenantId),
-          this.paymentService.findAllPaymentsByCustomer(customerId, tenantId),
+          this.userService.findOneUser(customerId, ctx),
+          this.orderService.findByUserId(customerId, ctx),
+          this.paymentService.findAllPaymentsByCustomer(ctx),
         ])
 
         const orders = ordersResult?.orders || []
@@ -628,7 +628,7 @@ export class ReportService {
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value),
           supplierStats: {
-            totalSuppliers: (await this.supplierService.findAllSuppliersRaw(tenantId)).length,
+            totalSuppliers: (await this.supplierService.findAllSuppliersRaw(ctx)).length,
             totalPurchaseOrders: purchaseOrders.length,
             recentPurchaseOrders: purchaseOrders.slice(0, 5),
           },

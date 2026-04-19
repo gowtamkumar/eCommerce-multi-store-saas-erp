@@ -22,9 +22,8 @@ export class SettingsController {
   async findByTenantSettings(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SiteSettingsResponseDto>> {
-    console.log('ctx', ctx)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findByTenantSettings.`)
-    const settings = await this.settingsService.findByTenantSettings(ctx.tenantId)
+    const settings = await this.settingsService.findByTenantSettings(ctx)
     return {
       success: true,
       statusCode: 200,
@@ -41,7 +40,7 @@ export class SettingsController {
     @Body() dto: UpdateSiteSettingsDto,
   ): Promise<BaseApiSuccessResponse<SiteSettingsResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateSettings.`)
-    const settings = await this.settingsService.updateSettings(ctx.tenantId, dto)
+    const settings = await this.settingsService.updateSettings(ctx, dto)
     return {
       success: true,
       statusCode: 200,

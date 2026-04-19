@@ -23,7 +23,7 @@ export class PaymentController {
     @Query() filterDto: PaginationDto,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPayments.`)
-    const result = await this.paymentService.findAllPayments(ctx.tenantId, filterDto)
+    const result = await this.paymentService.findAllPayments(ctx, filterDto)
     return {
       success: true,
       statusCode: 200,

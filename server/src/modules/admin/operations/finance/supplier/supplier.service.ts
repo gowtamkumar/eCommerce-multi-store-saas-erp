@@ -4,6 +4,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreateSupplierDto, UpdateSupplierDto } from './dto/supplier.dto'
 import { SupplierEntity } from './entities/supplier.entity'
 import { SupplierRepository } from './supplier.repository'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class SupplierService {
@@ -14,18 +15,20 @@ export class SupplierService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async createSupplier(dto: CreateSupplierDto, tenantId: string): Promise<SupplierEntity> {
+  async createSupplier(dto: CreateSupplierDto, ctx: RequestContextDto): Promise<SupplierEntity> {
     this.logger.log(`${this.createSupplier.name} Service Called`)
+    const tenantId = ctx.tenantId
     const result = await this.repository.createAndSave(dto, tenantId)
     await this.cacheService.delCache(`suppliers:list`, tenantId)
     return result
   }
 
   async findAllSuppliers(
-    tenantId: string,
+    ctx: RequestContextDto,
     paginationDto: PaginationDto,
   ): Promise<{ items: SupplierEntity[]; total: number; page: number; limit: number; totalPages: number }> {
     this.logger.log(`${this.findAllSuppliers.name} Service Called`)
+    const tenantId = ctx.tenantId
     const { page = 1, limit = 20, q: search } = paginationDto
     const cacheKey = `suppliers:list:p${page}:l${limit}:q${search || ''}`
 
@@ -51,8 +54,9 @@ export class SupplierService {
     )
   }
 
-  async findAllSuppliersRaw(tenantId: string): Promise<SupplierEntity[]> {
+  async findAllSuppliersRaw(ctx: RequestContextDto): Promise<SupplierEntity[]> {
     this.logger.log(`${this.findAllSuppliersRaw.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `suppliers:list:raw`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -65,8 +69,9 @@ export class SupplierService {
     )
   }
 
-  async findOneSupplier(id: string, tenantId: string): Promise<SupplierEntity> {
+  async findOneSupplier(id: string, ctx: RequestContextDto): Promise<SupplierEntity> {
     this.logger.log(`${this.findOneSupplier.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `suppliers:id:${id}`
 
     const supplier = await this.cacheService.rememberCache(
@@ -82,18 +87,20 @@ export class SupplierService {
     return supplier
   }
 
-  async updateSupplier(id: string, dto: UpdateSupplierDto, tenantId: string): Promise<SupplierEntity> {
+  async updateSupplier(id: string, dto: UpdateSupplierDto, ctx: RequestContextDto): Promise<SupplierEntity> {
     this.logger.log(`${this.updateSupplier.name} Service Called`)
-    const supplier = await this.findOneSupplier(id, tenantId)
+    const tenantId = ctx.tenantId
+    const supplier = await this.findOneSupplier(id, ctx)
     const result = await this.repository.updateAndSave(supplier, dto)
     await this.cacheService.delCache(`suppliers:list`, tenantId)
     await this.cacheService.delCache(`suppliers:id:${id}`, tenantId)
     return result
   }
 
-  async removeSupplier(id: string, tenantId: string): Promise<SupplierEntity> {
+  async removeSupplier(id: string, ctx: RequestContextDto): Promise<SupplierEntity> {
     this.logger.log(`${this.removeSupplier.name} Service Called`)
-    const supplier = await this.findOneSupplier(id, tenantId)
+    const tenantId = ctx.tenantId
+    const supplier = await this.findOneSupplier(id, ctx)
     const result = await this.repository.removeSupplier(supplier)
     await this.cacheService.delCache(`suppliers:list`, tenantId)
     await this.cacheService.delCache(`suppliers:id:${id}`, tenantId)

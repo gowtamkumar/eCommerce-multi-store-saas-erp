@@ -1,3 +1,4 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { DiscountType } from '@/common/enums/discount-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
@@ -16,11 +17,10 @@ import { CreateProductDto } from '../dto/create-product.dto'
 import { FilterProductDto } from '../dto/filter-product.dto'
 import { UpdateProductDto } from '../dto/update-product.dto'
 import { ProductEntity } from '../entities/product.entity'
+import { ProductVariantEntity } from '../entities/variant.entity'
 import { ProductAttributeRepository } from '../repositories/attribute.repository'
 import { ProductRepository } from '../repositories/product.repository'
 import { ProductVariantRepository } from '../repositories/variant.repository'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { ProductVariantEntity } from '../entities/variant.entity'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 
@@ -198,8 +198,8 @@ export class ProductService {
   }
 
   async findAllProducts(
-    filterDto: FilterProductDto,
     ctx: RequestContextDto,
+    filterDto: FilterProductDto = { page: 1, limit: 5 },
   ): Promise<{ products: AugmentedProduct[]; total: number }> {
     this.logger.log(`${this.findAllProducts.name} Service Called`)
     const tenantId = ctx.tenantId

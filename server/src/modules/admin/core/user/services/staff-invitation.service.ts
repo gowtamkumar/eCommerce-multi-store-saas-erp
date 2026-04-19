@@ -9,6 +9,7 @@ import { UserRepository } from '../repositories/user.repository';
 import * as bcrypt from 'bcrypt';
 import { UserEntity } from '../entities/user.entity';
 import { UserStatus } from '@/common/enums/user/user-status.enum';
+import { RequestContextDto } from '@/common/dto/request-context.dto';
 
 @Injectable()
 export class StaffInvitationService {
@@ -23,11 +24,12 @@ export class StaffInvitationService {
 
   async inviteStaff(
     dto: InviteStaffDto,
-    tenantId: string,
-    invitedBy: string,
+    ctx: RequestContextDto,
     checkExistingUser: (email: string, tenantId: string) => Promise<any>
   ): Promise<{ message: string; invitation: StaffInvitationEntity }> {
     this.logger.log(`${this.inviteStaff.name} Service Called`);
+    const tenantId = ctx.tenantId;
+    const invitedBy = ctx.userId;
 
     const existingUser = await checkExistingUser(dto.email, tenantId);
     if (existingUser) {
@@ -55,13 +57,15 @@ export class StaffInvitationService {
     return { message: `Invitation sent to ${dto.email}`, invitation };
   }
 
-  async getInvitations(tenantId: string): Promise<StaffInvitationEntity[]> {
+  async getInvitations(ctx: RequestContextDto): Promise<StaffInvitationEntity[]> {
     this.logger.log(`${this.getInvitations.name} Service Called`);
+    const tenantId = ctx.tenantId;
     return this.invitationRepo.findAllByTenant(tenantId);
   }
 
-  async revokeInvitation(invitationId: string, tenantId: string): Promise<StaffInvitationEntity> {
+  async revokeInvitation(invitationId: string, ctx: RequestContextDto): Promise<StaffInvitationEntity> {
     this.logger.log(`${this.revokeInvitation.name} Service Called`);
+    const tenantId = ctx.tenantId;
     const invitation = await this.invitationRepo.findByIdAndTenant(invitationId, tenantId);
     if (!invitation) throw new NotFoundException('Invitation not found.');
     if (invitation.status !== InvitationStatus.Pending)
@@ -72,7 +76,8 @@ export class StaffInvitationService {
     return result;
   }
 
-  async findPendingByTenant(tenantId: string): Promise<StaffInvitationEntity[]> {
+  async findPendingByTenant(ctx: RequestContextDto): Promise<StaffInvitationEntity[]> {
+    const tenantId = ctx.tenantId;
     return this.invitationRepo.findPendingByTenant(tenantId);
   }
 

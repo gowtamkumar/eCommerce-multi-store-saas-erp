@@ -19,6 +19,8 @@ import { CreateExpenseDto } from './dto/create-expense.dto'
 import { ExpenseResponseDto } from './dto/expense-response.dto'
 import { UpdateExpenseDto } from './dto/update-expense.dto'
 import { ExpenseService } from './expense.service'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Controller('expenses')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -29,9 +31,9 @@ export class ExpenseController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async createExpense(
     @Body() createExpenseDto: CreateExpenseDto,
-    @Request() req: any,
+    @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<ExpenseResponseDto>> {
-    const result = await this.expenseService.createExpense(createExpenseDto, req.user.tenantId)
+    const result = await this.expenseService.createExpense(createExpenseDto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -43,13 +45,13 @@ export class ExpenseController {
   @Get()
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR)
   async findAllExpenses(
-    @Request() req: any,
+    @RequestContext() ctx: RequestContextDto,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('category') category?: string,
     @Query('q') q?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const result = await this.expenseService.findAllExpenses(req.user.tenantId, {
+    const result = await this.expenseService.findAllExpenses(ctx, {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
       category,
@@ -67,9 +69,9 @@ export class ExpenseController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR)
   async findOneExpense(
     @Param('id') id: string,
-    @Request() req: any,
+    @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<ExpenseResponseDto>> {
-    const result = await this.expenseService.findOneExpense(id, req.user.tenantId)
+    const result = await this.expenseService.findOneExpense(id, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -83,9 +85,9 @@ export class ExpenseController {
   async updateExpense(
     @Param('id') id: string,
     @Body() updateExpenseDto: UpdateExpenseDto,
-    @Request() req: any,
+    @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<ExpenseResponseDto>> {
-    const result = await this.expenseService.updateExpense(id, updateExpenseDto, req.user.tenantId)
+    const result = await this.expenseService.updateExpense(id, updateExpenseDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -98,9 +100,9 @@ export class ExpenseController {
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeExpense(
     @Param('id') id: string,
-    @Request() req: any,
+    @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<null>> {
-    await this.expenseService.removeExpense(id, req.user.tenantId)
+    await this.expenseService.removeExpense(id, ctx)
     return {
       success: true,
       statusCode: 200,

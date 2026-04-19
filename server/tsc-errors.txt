@@ -1,0 +1,46 @@
+error TS5033: Could not write file '/media/gowtam/ec12c572-6d78-4d1a-87a8-f5267d2ec86611/gp/eCommerce-multi-tenant-saas/server/dist/tsconfig.tsbuildinfo': EACCES: permission denied, open '/media/gowtam/ec12c572-6d78-4d1a-87a8-f5267d2ec86611/gp/eCommerce-multi-tenant-saas/server/dist/tsconfig.tsbuildinfo'.
+src/modules/admin/content/page/page.service.ts(93,38): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/content/page/page.service.ts(97,47): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/content/page/page.service.ts(98,38): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/content/page/page.service.ts(102,36): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/content/page/page.service.ts(103,60): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/content/page/page.service.ts(115,36): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/content/page/page.service.ts(116,57): error TS2304: Cannot find name 'tenantId'.
+src/modules/admin/content/page/page.service.ts(150,62): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/content/page/page.service.ts(151,52): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/content/page/page.service.ts(152,90): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/finance/report/report.service.ts(85,70): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/finance/report/report.service.ts(164,69): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/finance/report/report.service.ts(262,60): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/finance/report/report.service.ts(263,67): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/finance/report/report.service.ts(264,75): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/finance/report/report.service.ts(330,52): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/finance/report/report.service.ts(331,54): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/finance/report/report.service.ts(332,69): error TS2554: Expected 1 arguments, but got 2.
+src/modules/admin/operations/finance/report/report.service.ts(631,77): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/infra/mail/mail.service.ts(39,70): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/infra/mail/mail.service.ts(183,70): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/logistics/courier/pathao/pathao.service.ts(27,45): error TS2304: Cannot find name 'RequestContextDto'.
+src/modules/admin/operations/logistics/courier/pathao/pathao.service.ts(95,10): error TS2304: Cannot find name 'RequestContextDto'.
+src/modules/admin/operations/logistics/courier/pathao/pathao.service.ts(159,24): error TS2304: Cannot find name 'RequestContextDto'.
+src/modules/admin/operations/logistics/courier/pathao/pathao.service.ts(191,39): error TS2304: Cannot find name 'RequestContextDto'.
+src/modules/admin/operations/logistics/courier/pathao/pathao.service.ts(223,39): error TS2304: Cannot find name 'RequestContextDto'.
+src/modules/admin/operations/logistics/courier/steadfast/steadfast.service.ts(23,37): error TS2304: Cannot find name 'RequestContextDto'.
+src/modules/admin/operations/logistics/courier/steadfast/steadfast.service.ts(54,10): error TS2304: Cannot find name 'RequestContextDto'.
+src/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.controller.ts(31,76): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.controller.ts(50,68): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.controller.ts(70,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.controller.ts(88,74): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/sales/order/services/return.service.ts(138,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/sales/payment/controllers/payment-action.controller.ts(29,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/admin/sales/payment/services/payment.service.ts(48,70): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/store/shipping-address/shipping-address.controller.ts(33,76): error TS2554: Expected 1 arguments, but got 2.
+src/modules/store/shipping-address/shipping-address.controller.ts(47,76): error TS2554: Expected 2 arguments, but got 3.
+src/modules/store/shipping-address/shipping-address.controller.ts(62,88): error TS2554: Expected 2 arguments, but got 3.
+src/modules/store/shipping-address/shipping-address.controller.ts(77,92): error TS2554: Expected 3 arguments, but got 4.
+src/modules/store/shipping-address/shipping-address.controller.ts(91,82): error TS2554: Expected 2 arguments, but got 3.
+src/modules/store/shipping-address/shipping-address.controller.ts(105,62): error TS2554: Expected 2 arguments, but got 3.
+src/modules/store/wishlist/wishlist.service.ts(39,79): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.
+src/modules/system/super-admin/super-admin.controller.ts(54,47): error TS2554: Expected 2 arguments, but got 1.
+src/modules/system/super-admin/super-admin.controller.ts(181,27): error TS2554: Expected 1 arguments, but got 0.
+src/modules/system/tenant/tenant.service.ts(115,44): error TS2345: Argument of type 'string' is not assignable to parameter of type 'RequestContextDto'.

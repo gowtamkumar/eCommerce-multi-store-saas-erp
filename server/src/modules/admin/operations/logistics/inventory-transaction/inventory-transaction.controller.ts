@@ -28,7 +28,7 @@ export class InventoryTransactionController {
     this.logger.verbose(
       `User "${ctx.user?.username || 'System'}" called createInventoryTransaction.`,
     )
-    const transaction = await this.service.createInventoryTransaction(dto, ctx.tenantId)
+    const transaction = await this.service.createInventoryTransaction(dto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -47,7 +47,7 @@ export class InventoryTransactionController {
     this.logger.verbose(
       `User "${ctx.user?.username || 'System'}" called findAllInventoryTransactions.`,
     )
-    const result = await this.service.findAllInventoryTransactions(ctx.tenantId, pagination, type)
+    const result = await this.service.findAllInventoryTransactions(ctx, pagination, type)
     return {
       success: true,
       statusCode: 200,
@@ -67,7 +67,7 @@ export class InventoryTransactionController {
     )
     const transactions = await this.service.findByProductInventoryTransactions(
       productId,
-      ctx.tenantId,
+      ctx,
     )
     return {
       success: true,
@@ -85,7 +85,7 @@ export class InventoryTransactionController {
     this.logger.verbose(
       `User "${ctx.user?.username || 'System'}" called getStockSummaryInventoryTransactions.`,
     )
-    const data = await this.service.getStockSummaryInventoryTransactions(ctx.tenantId)
+    const data = await this.service.getStockSummaryInventoryTransactions(ctx)
     return {
       success: true,
       statusCode: 200,

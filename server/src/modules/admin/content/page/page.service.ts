@@ -1,4 +1,4 @@
-import { ProductService } from '@/modules/admin/catalog/product/services/product.service'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { FaqService } from '@/modules/admin/content/faq/faq.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
@@ -15,103 +15,104 @@ export class PageService {
 
   constructor(
     private readonly pageRepository: PageRepository,
-    private readonly productService: ProductService,
     private readonly faqService: FaqService,
     private readonly cache: CacheService,
   ) { }
 
-  async createPage(dto: CreatePageDto, tenantId: string): Promise<PageEntity> {
+  async createPage(dto: CreatePageDto, ctx: RequestContextDto): Promise<PageEntity> {
     this.logger.log(`${this.createPage.name} Service Called`)
-    const existing = await this.pageRepository.findBySlug(dto.slug, tenantId)
+    const existing = await this.pageRepository.findBySlug(dto.slug, ctx)
     if (existing) throw new ConflictException('Slug already exists for this tenant')
 
     if (dto.isHomePage) {
-      await this.pageRepository.unsetHomePage(tenantId)
-      await this.invalidatePageCache(tenantId, 'home')
+      await this.pageRepository.unsetHomePage(ctx)
+      await this.invalidatePageCache(ctx, 'home')
     }
 
-    return await this.pageRepository.createAndSave(dto, tenantId)
+    return await this.pageRepository.createAndSave(dto, ctx)
   }
 
-  async findAllPages(tenantId: string, status?: string): Promise<PageEntity[]> {
+  async findAllPages(ctx: RequestContextDto, status?: string): Promise<PageEntity[]> {
     this.logger.log(`${this.findAllPages.name} Service Called`)
-    return await this.pageRepository.findAllWithStatus(tenantId, status)
+    return await this.pageRepository.findAllWithStatus(ctx, status)
   }
 
-  async findOnePage(id: string, tenantId: string): Promise<PageEntity> {
+  async findOnePage(id: string, ctx: RequestContextDto): Promise<PageEntity> {
     this.logger.log(`${this.findOnePage.name} Service Called`)
-    const page = await this.pageRepository.findById(id, tenantId)
+    const page = await this.pageRepository.findById(id, ctx)
     if (!page) throw new NotFoundException('Page not found')
     return page
   }
 
-  async findBySlugPage(slug: string, tenantId: string): Promise<PageEntity> {
+  async findBySlugPage(slug: string, ctx: RequestContextDto): Promise<PageEntity> {
     this.logger.log(`${this.findBySlugPage.name} Service Called`)
     const cacheKey = `slug:${slug}`
+    const tenantId = ctx.tenantId
 
     const cached = await this.cache.getCache<PageEntity>(cacheKey, tenantId)
     if (cached) return cached
 
-    const page = await this.pageRepository.findBySlug(slug, tenantId)
+    const page = await this.pageRepository.findBySlug(slug, ctx)
     if (!page) throw new NotFoundException('Page not found')
 
     // Enrich with FAQ data before caching (Critical Fix)
-    const enriched = await this.enrichPageWithFaqs(page)
+    const enriched = await this.enrichPageWithFaqs(page, ctx)
     const result = JSON.parse(JSON.stringify(enriched))
 
     await this.cache.setCache(cacheKey, result, this.CACHE_TTL, tenantId)
     return result
   }
 
-  async findHomePage(tenantId: string): Promise<PageEntity | null> {
+  async findHomePage(ctx: RequestContextDto): Promise<PageEntity | null> {
     this.logger.log(`${this.findHomePage.name} Service Called`)
     const cacheKey = `home`
+    const tenantId = ctx.tenantId
 
     const cached = await this.cache.getCache<PageEntity>(cacheKey, tenantId)
     if (cached) return cached
 
-    const page = await this.pageRepository.findHomePage(tenantId)
+    const page = await this.pageRepository.findHomePage(ctx)
     if (!page) return null
 
     // Enrich with FAQ data before caching (Critical Fix)
-    const enriched = await this.enrichPageWithFaqs(page)
+    const enriched = await this.enrichPageWithFaqs(page,ctx)
     const result = JSON.parse(JSON.stringify(enriched))
 
     await this.cache.setCache(cacheKey, result, this.HOME_CACHE_TTL, tenantId)
     return result
   }
 
-  async updatePage(id: string, dto: UpdatePageDto, tenantId: string): Promise<PageEntity> {
+  async updatePage(id: string, dto: UpdatePageDto, ctx: RequestContextDto): Promise<PageEntity> {
     this.logger.log(`${this.updatePage.name} Service Called`)
-    const page = await this.findOnePage(id, tenantId)
+    const page = await this.findOnePage(id, ctx)
 
     if (dto.slug && dto.slug !== page.slug) {
-      const existing = await this.pageRepository.findBySlug(dto.slug, tenantId)
+      const existing = await this.pageRepository.findBySlug(dto.slug, ctx)
       if (existing) throw new ConflictException('Slug already exists for this tenant')
-      await this.invalidatePageCache(tenantId, page.slug)
+      await this.invalidatePageCache(ctx, page.slug)
     }
 
     if (dto.isHomePage && !page.isHomePage) {
-      await this.pageRepository.unsetHomePage(tenantId)
-      await this.invalidatePageCache(tenantId, 'home')
+      await this.pageRepository.unsetHomePage(ctx)
+      await this.invalidatePageCache(ctx, 'home')
     }
 
     const updated = await this.pageRepository.updateAndSave(page, dto)
-    await this.invalidatePageCache(tenantId, updated.slug)
-    if (updated.isHomePage) await this.invalidatePageCache(tenantId, 'home')
+    await this.invalidatePageCache(ctx, updated.slug)
+    if (updated.isHomePage) await this.invalidatePageCache(ctx, 'home')
 
     return updated
   }
 
   async removePage(
     id: string,
-    tenantId: string,
+    ctx: RequestContextDto,
   ): Promise<{ success: boolean; message?: string }> {
     this.logger.log(`${this.removePage.name} Service Called`)
-    const page = await this.findOnePage(id, tenantId)
+    const page = await this.findOnePage(id, ctx)
     await this.pageRepository.removePage(page)
-    await this.invalidatePageCache(tenantId, page.slug)
-    if (page.isHomePage) await this.invalidatePageCache(tenantId, 'home')
+    await this.invalidatePageCache(ctx, page.slug)
+    if (page.isHomePage) await this.invalidatePageCache(ctx, 'home')
 
     return { success: true, message: 'Page deleted successfully' }
   }
@@ -122,7 +123,7 @@ export class PageService {
   }
 
   // Optimized: Load FAQs as a single batch operation instead of per-section redundant calls
-  async enrichPageWithFaqs(page: PageEntity): Promise<PageEntity> {
+  async enrichPageWithFaqs(page: PageEntity, ctx: RequestContextDto): Promise<PageEntity> {
     this.logger.log(`${this.enrichPageWithFaqs.name} Service Called`)
     if (!page.sections || page.sections.length === 0) return page
 
@@ -145,9 +146,9 @@ export class PageService {
 
     // Batch fetch needed data
     const [pageFaqs, globalFaqs, specificFaqs] = await Promise.all([
-      needsPageFaqs ? this.faqService.findByPageFaq(page.id, page.tenantId) : Promise.resolve([]),
-      needsGlobal ? this.faqService.findGlobalFaqs(page.tenantId) : Promise.resolve([]),
-      specificFaqIds.size > 0 ? this.faqService.findByIdsFaq(Array.from(specificFaqIds), page.tenantId) : Promise.resolve([])
+      needsPageFaqs ? this.faqService.findByPageFaq(page.id, ctx) : Promise.resolve([]),
+      needsGlobal ? this.faqService.findGlobalFaqs(ctx) : Promise.resolve([]),
+      specificFaqIds.size > 0 ? this.faqService.findByIdsFaq(Array.from(specificFaqIds), ctx) : Promise.resolve([])
     ])
 
     const enrichedSections = page.sections.map((section) => {
@@ -167,12 +168,13 @@ export class PageService {
     return { ...page, sections: enrichedSections } as PageEntity
   }
 
-  async countByTenant(tenantId: string): Promise<number> {
+  async countByTenant(ctx: RequestContextDto): Promise<number> {
     this.logger.log(`${this.countByTenant.name} Service Called`)
-    return await this.pageRepository.countByTenant(tenantId)
+    return await this.pageRepository.countByTenant(ctx)
   }
 
-  private async invalidatePageCache(tenantId: string, slug?: string) {
+  private async invalidatePageCache(ctx: RequestContextDto, slug?: string) {
+    const tenantId = ctx.tenantId
     if (slug === 'home') {
       await this.cache.delCache('home', tenantId)
     } else if (slug) {

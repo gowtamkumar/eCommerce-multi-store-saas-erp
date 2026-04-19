@@ -11,6 +11,8 @@ import { InventoryTransactionService } from '@/modules/admin/operations/logistic
 import { OrderReturnEntity } from '../entities/order-return.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+
 @Injectable()
 export class ReturnService {
   private readonly logger = new Logger(ReturnService.name)
@@ -22,8 +24,10 @@ export class ReturnService {
     private readonly cacheService: CacheService,
   ) { }
 
-  async createReturnRequest(userId: string, tenantId: string, dto: CreateReturnDto): Promise<OrderReturnEntity> {
+  async createReturnRequest(ctx: RequestContextDto, dto: CreateReturnDto): Promise<OrderReturnEntity> {
     this.logger.log(`${this.createReturnRequest.name} Service Called`)
+    const tenantId = ctx.tenantId
+    const userId = ctx.userId
     const { orderId, items, reason } = dto
 
     const order = await this.orderRepository.findOrderById(orderId, tenantId)
@@ -58,10 +62,11 @@ export class ReturnService {
   }
 
   async findAllReturns(
-    tenantId: string,
+    ctx: RequestContextDto,
     filterDto: FilterReturnDto,
   ): Promise<{ data: OrderReturnEntity[]; total: number }> {
     this.logger.log(`${this.findAllReturns.name} Service Called`)
+    const tenantId = ctx.tenantId
 
     // Create a unique cache key based on the filter parameters
     const cacheKey = `returns:all:${JSON.stringify(filterDto)}`
@@ -75,13 +80,16 @@ export class ReturnService {
   }
 
 
-  async findByUser(userId: string, tenantId: string): Promise<OrderReturnEntity[]> {
+  async findByUser(ctx: RequestContextDto): Promise<OrderReturnEntity[]> {
     this.logger.log(`${this.findByUser.name} Service Called`)
+    const tenantId = ctx.tenantId
+    const userId = ctx.userId
     return await this.returnRepository.findByUserWithRelations(userId, tenantId)
   }
 
-  async findOneReturn(id: string, tenantId: string): Promise<OrderReturnEntity> {
+  async findOneReturn(id: string, ctx: RequestContextDto): Promise<OrderReturnEntity> {
     this.logger.log(`${this.findOneReturn.name} Service Called`)
+    const tenantId = ctx.tenantId
     const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
 
     if (!returnRequest) {
@@ -93,11 +101,12 @@ export class ReturnService {
 
   async updateReturnRequestStatus(
     id: string,
-    tenantId: string,
+    ctx: RequestContextDto,
     status: ReturnStatus,
     adminComment?: string,
   ): Promise<OrderReturnEntity> {
     this.logger.log(`${this.updateReturnRequestStatus.name} Service Called`)
+    const tenantId = ctx.tenantId
     const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
 
     if (!returnRequest) {
@@ -114,7 +123,7 @@ export class ReturnService {
 
     // Logic for APPROVAL
     if (status === ReturnStatus.APPROVED && returnRequest.status !== ReturnStatus.APPROVED) {
-      await this.restockItems(returnRequest, tenantId)
+      await this.restockItems(returnRequest, ctx)
     }
 
     const updated = await this.returnRepository.updateStatus(returnRequest, status, adminComment)
@@ -123,7 +132,7 @@ export class ReturnService {
     return updated
   }
 
-  private async restockItems(returnRequest: OrderReturnEntity, tenantId: string) {
+  private async restockItems(returnRequest: OrderReturnEntity, ctx: RequestContextDto) {
     this.logger.log(`${this.restockItems.name} Service Called`)
     for (const item of returnRequest.items) {
       await this.inventoryService.createInventoryTransaction(
@@ -135,7 +144,7 @@ export class ReturnService {
           referenceType: InventoryTransactionReferenceType.RETURN,
           referenceId: returnRequest.id,
         },
-        tenantId,
+        ctx,
       )
     }
   }

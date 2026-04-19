@@ -1,15 +1,15 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { Roles } from '@/common/decorators/roles.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { Body, Controller, Get, Logger, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { FilterLeadDto } from './dto/filter-lead.dto'
+import { LeadResponseDto } from './dto/lead-response.dto'
 import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto'
 import { LeadService } from './lead.service'
-import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
-import { LeadResponseDto } from './dto/lead-response.dto'
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('leads')
@@ -25,7 +25,7 @@ export class LeadController {
     @Body() dto: CreateLeadDto,
   ): Promise<BaseApiSuccessResponse<LeadResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createLead.`)
-    const result = await this.leadService.createLead(dto, ctx.tenantId)
+    const result = await this.leadService.createLead(dto, ctx)
     return {
       success: true,
       statusCode: 201,
@@ -47,7 +47,7 @@ export class LeadController {
     @Query() filterDto: FilterLeadDto,
   ): Promise<BaseApiSuccessResponse<LeadResponseDto[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllLeads.`)
-    const { leads, total } = await this.leadService.findAllLeads(filterDto, ctx.tenantId)
+    const { leads, total } = await this.leadService.findAllLeads(filterDto, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -70,7 +70,7 @@ export class LeadController {
     @Body() dto: UpdateLeadDto,
   ): Promise<BaseApiSuccessResponse<LeadResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateLead.`)
-    const result = await this.leadService.updateLead(id, dto, ctx.tenantId)
+    const result = await this.leadService.updateLead(id, dto, ctx)
     return {
       success: true,
       statusCode: 200,

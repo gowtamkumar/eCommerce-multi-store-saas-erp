@@ -3,6 +3,7 @@ import { WishlistRepository } from './wishlist.repository'
 import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
 import { PricingEngineService } from '@/common/services/pricing-engine.service'
 import { PromotionService } from '@/modules/admin/sales/promotion/services/promotion.service'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class WishlistService {
@@ -36,7 +37,7 @@ export class WishlistService {
     this.logger.log(`${this.getWishlist.name} Service Called for user ${userId}`)
     const items = await this.wishlistRepository.findByUserId(userId, tenantId)
 
-    const activePromotions = await this.promotionService.findActivePromotions(tenantId)
+    const activePromotions = await this.promotionService.findActivePromotions({ tenantId } as RequestContextDto)
 
     return items.map((item) => {
       const pricingData = this.pricingEngine.calculateItemPricing(
