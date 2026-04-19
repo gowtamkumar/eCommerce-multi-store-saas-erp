@@ -162,9 +162,9 @@ export class ReportService {
       async () => {
         const [orders, payments, expenses, purchaseOrders] = (await Promise.all([
           this.orderService.findAllOrders({ page: 1, limit: 1000 }, tenantId),
-          this.paymentService.findAllPaymentsRaw(tenantId),
-          this.expenseService.findAllExpensesRaw(tenantId),
-          this.purchaseOrderService.findAllPurchaseOrdersRaw(tenantId),
+          this.paymentService.findAllPaymentsRaw(ctx),
+          this.expenseService.findAllExpensesRaw(ctx),
+          this.purchaseOrderService.findAllPurchaseOrdersRaw(ctx),
         ])) as [any, any, any, any]
 
         const ordersData = orders.orders || []
@@ -399,9 +399,9 @@ export class ReportService {
       cacheKey,
       async () => {
         const [customerPayments, expenses, supplierPayments] = await Promise.all([
-          this.paymentService.findAllPaymentsRaw(tenantId),
-          this.expenseService.findAllExpensesRaw(tenantId),
-          this.purchaseOrderService.findAllPaymentsByPurchaseOrder(tenantId),
+          this.paymentService.findAllPaymentsRaw(ctx),
+          this.expenseService.findAllExpensesRaw(ctx),
+          this.purchaseOrderService.findAllPaymentsByPurchaseOrder(ctx),
         ])
 
         const inflow = customerPayments.filter((p: any) => p.status === 'completed')
@@ -507,7 +507,7 @@ export class ReportService {
 
     switch (type) {
       case 'sales': {
-        const filtered = await this.paymentService.findAllPaymentsRaw(tenantId, startDate, endDate)
+        const filtered = await this.paymentService.findAllPaymentsRaw(ctx, startDate, endDate)
         csvContent = 'Date,Transaction ID,Order ID,Amount,Currency,Method\n'
         filtered.forEach((p: any) => {
           csvContent += `${p.createdAt},${p.transactionId},${p.orderId},${p.amount},${p.currency},${p.method}\n`
@@ -515,7 +515,7 @@ export class ReportService {
         break
       }
       case 'expenses': {
-        const filtered = await this.expenseService.findAllExpensesRaw(tenantId, startDate, endDate)
+        const filtered = await this.expenseService.findAllExpensesRaw(ctx, startDate, endDate)
         csvContent = 'Date,Category,Description,Amount,Tenant ID\n'
         filtered.forEach((e: any) => {
           csvContent += `${e.expenseDate},${e.category},"${e.description || ''}",${e.amount},${e.tenantId}\n`
@@ -566,10 +566,10 @@ export class ReportService {
       cacheKey,
       async () => {
         const [customerPayments, expenses, supplierPayments, purchaseOrders] = (await Promise.all([
-          this.paymentService.findAllPaymentsRaw(tenantId),
-          this.expenseService.findAllExpensesRaw(tenantId),
-          this.purchaseOrderService.findAllPaymentsByPurchaseOrder(tenantId),
-          this.purchaseOrderService.findAllPurchaseOrdersRaw(tenantId),
+          this.paymentService.findAllPaymentsRaw(ctx),
+          this.expenseService.findAllExpensesRaw(ctx),
+          this.purchaseOrderService.findAllPaymentsByPurchaseOrder(ctx),
+          this.purchaseOrderService.findAllPurchaseOrdersRaw(ctx),
         ])) as [any, any, any, any]
 
         const inflow = customerPayments.filter((p: any) => p.status === 'completed')

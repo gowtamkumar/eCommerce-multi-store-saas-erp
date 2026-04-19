@@ -1,25 +1,25 @@
+import { PaginationDto } from '@/common/dto/pagination.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
+import { OrderStatus } from '@/common/enums/order-status.enum'
+import { PaymentMethod } from '@/common/enums/payment-method.enum'
+import { PaymentStatus } from '@/common/enums/payment-status.enum'
+import { PaymentStrategyFactory } from '@/common/strategies/payment/payment-strategy.factory'
+import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
+import { SettingsService } from '@/modules/admin/settings/settings.service'
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   Logger,
-  NotFoundException,
+  NotFoundException
 } from '@nestjs/common'
 import { InitPaymentDto } from '../dto/payment.dto'
 import { PaymentEntity } from '../entities/payment.entity'
-import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
 import { PaymentRepository } from '../repositoris/payment.repository'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { SettingsService } from '@/modules/admin/settings/settings.service'
-import { PaymentStatus } from '@/common/enums/payment-status.enum'
-import { OrderStatus } from '@/common/enums/order-status.enum'
-import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
-import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
-import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
-import { PaymentStrategyFactory } from '@/common/strategies/payment/payment-strategy.factory'
-import { PaymentMethod } from '@/common/enums/payment-method.enum'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { PaginationDto } from '@/common/dto/pagination.dto'
 
 @Injectable()
 export class PaymentService {
@@ -193,8 +193,9 @@ export class PaymentService {
    * Raw unpaginated payment fetch — intended for internal report/aggregation use only.
    * The public admin endpoint uses `findAllPayments` with pagination and caching.
    */
-  async findAllPaymentsRaw(tenantId: string, startDate?: Date, endDate?: Date): Promise<PaymentEntity[]> {
+  async findAllPaymentsRaw(ctx: RequestContextDto, startDate?: Date, endDate?: Date): Promise<PaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsRaw.name} Service Called`)
+    const tenantId = ctx.tenantId
     const [items] = await this.paymentRepository.findPaymentsByTenant(tenantId, 1, 100000, undefined, startDate, endDate)
     return items
   }

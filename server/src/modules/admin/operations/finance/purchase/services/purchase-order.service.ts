@@ -1,4 +1,5 @@
 import { PaginationDto } from '@/common/dto/pagination.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
@@ -193,7 +194,7 @@ export class PurchaseOrderService {
     await queryRunner.startTransaction()
 
     try {
-      const order = await this.repository.findByIdWithRelations(id, tenantId, queryRunner.manager)
+      const order = await this.repository.findById(id, tenantId, queryRunner.manager)
       if (!order) throw new NotFoundException('Purchase order not found')
 
       await this.paymentRepository.createAndSave(
@@ -234,8 +235,9 @@ export class PurchaseOrderService {
     }
   }
 
-  async findAllPurchaseOrdersRaw(tenantId: string): Promise<PurchaseOrderEntity[]> {
+  async findAllPurchaseOrdersRaw(ctx: RequestContextDto): Promise<PurchaseOrderEntity[]> {
     this.logger.log(`${this.findAllPurchaseOrdersRaw.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `po:list:raw`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -261,8 +263,9 @@ export class PurchaseOrderService {
     return await this.paymentRepository.findAllBySupplier(supplierId, tenantId)
   }
 
-  async findAllPaymentsByPurchaseOrder(tenantId: string): Promise<SupplierPaymentEntity[]> {
+  async findAllPaymentsByPurchaseOrder(ctx:RequestContextDto): Promise<SupplierPaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsByPurchaseOrder.name} Service Called`)
+    const tenantId = ctx.tenantId
     return await this.paymentRepository.findAllPayments(tenantId)
   }
 }

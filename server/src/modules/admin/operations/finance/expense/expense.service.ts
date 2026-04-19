@@ -1,9 +1,10 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreateExpenseDto } from './dto/create-expense.dto'
 import { UpdateExpenseDto } from './dto/update-expense.dto'
-import { ExpenseRepository } from './expense.repository'
 import { ExpenseEntity } from './entities/expense.entity'
+import { ExpenseRepository } from './expense.repository'
 
 interface FindAllOptions {
   page?: number
@@ -64,8 +65,9 @@ export class ExpenseService {
    * Raw (unpaginated) fetch for internal use by `ReportService`.
    * Bypasses API-layer pagination.
    */
-  async findAllExpensesRaw(tenantId: string, startDate?: Date, endDate?: Date): Promise<ExpenseEntity[]> {
+  async findAllExpensesRaw(ctx: RequestContextDto, startDate?: Date, endDate?: Date): Promise<ExpenseEntity[]> {
     this.logger.log(`${this.findAllExpensesRaw.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `expenses:raw:${startDate?.getTime()}:${endDate?.getTime()}`
     return this.cacheService.rememberCache(
       cacheKey,
@@ -75,8 +77,9 @@ export class ExpenseService {
     )
   }
 
-  async findOneExpense(id: string, tenantId: string): Promise<ExpenseEntity> {
+  async findOneExpense(id: string, ctx: RequestContextDto): Promise<ExpenseEntity> {
     this.logger.log(`${this.findOneExpense.name} Service Called`)
+    const tenantId = ctx.tenantId
     const cacheKey = `expenses:id:${id}`
     const expense = await this.cacheService.rememberCache(
       cacheKey,

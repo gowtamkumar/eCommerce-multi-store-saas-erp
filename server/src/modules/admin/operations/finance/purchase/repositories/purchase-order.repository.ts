@@ -75,6 +75,17 @@ export class PurchaseOrderRepository {
     })
   }
 
+  async findById(
+    id: string,
+    tenantId: string,
+    manager?: EntityManager,
+  ): Promise<PurchaseOrderEntity | null> {
+    const repo = this.getRepo(manager)
+    return await repo.findOne({
+      where: { id, tenantId },
+    })
+  }
+
   async savePurchaseOrder(
     order: PurchaseOrderEntity,
     manager?: EntityManager,
