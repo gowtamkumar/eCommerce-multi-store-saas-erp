@@ -1,19 +1,22 @@
-import { Module } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { CampaignLogEntity } from './entities/campaign-log.entity'
-import { BullModule } from '@nestjs/bullmq'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
+import { SubscriberEntity } from '@/modules/admin/customer/subscriber/entities/subscriber.entity'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { SmsModule } from '@/modules/admin/operations/infra/sms/sms.module'
-import { SubscriberEntity } from '@/modules/admin/customer/subscriber/entities/subscriber.entity'
-import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
+import { BullModule } from '@nestjs/bullmq'
+import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { PushModule } from '../../operations/infra/push/push.module'
+import { CampaignController } from './controllers/campaign.controller'
+import { CampaignLogEntity } from './entities/campaign-log.entity'
+import { CampaignMessageEntity } from './entities/campaign-message.entity'
+import { CampaignEntity } from './entities/campaign.entity'
+import { CampaignProcessor } from './queue/campaign.processor'
+import { CampaignLogRepository } from './repositories/campaign-log.repository'
+import { CampaignMessageRepository } from './repositories/campaign-message.repository'
+import { CampaignRepository } from './repositories/campaign.repository'
 import { AudienceService } from './services/audience.service'
 import { CampaignService } from './services/campaign.service'
-import { CampaignProcessor } from './queue/campaign.processor'
-import { CampaignController } from './controllers/campaign.controller'
-import { CampaignEntity } from './entities/campaign.entity'
-import { CampaignMessageEntity } from './entities/campaign-message.entity'
-import { PushModule } from '../../operations/infra/push/push.module'
 
 @Module({
   imports: [
@@ -30,8 +33,22 @@ import { PushModule } from '../../operations/infra/push/push.module'
     SmsModule,
     PushModule,
   ],
-  providers: [AudienceService, CampaignService, CampaignProcessor],
+  providers: [
+    AudienceService, 
+    CampaignService, 
+    CampaignProcessor,
+    CampaignRepository,
+    CampaignMessageRepository,
+    CampaignLogRepository,
+  ],
   controllers: [CampaignController],
-  exports: [TypeOrmModule, AudienceService, CampaignService],
+  exports: [
+    TypeOrmModule, 
+    AudienceService, 
+    CampaignService,
+    CampaignRepository,
+    CampaignMessageRepository,
+    CampaignLogRepository,
+  ],
 })
 export class CampaignModule { }

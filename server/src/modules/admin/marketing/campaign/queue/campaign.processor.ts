@@ -3,15 +3,13 @@ import { PushService } from '@/modules/admin/operations/infra/push/push.service'
 import { SmsService } from '@/modules/admin/operations/infra/sms/sms.service'
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
 import { Logger } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import { Job, Queue } from 'bullmq'
-import { Repository } from 'typeorm'
-import { CampaignLogEntity } from '../entities/campaign-log.entity'
-import { CampaignMessageEntity } from '../entities/campaign-message.entity'
-import { CampaignEntity } from '../entities/campaign.entity'
 import { CampaignLogStatus } from '../enums/campaign-log-status.enum'
 import { CampaignStatus } from '../enums/campaign-status.enum'
 import { CampaignType } from '../enums/campaign-type.enum'
+import { CampaignLogRepository } from '../repositories/campaign-log.repository'
+import { CampaignMessageRepository } from '../repositories/campaign-message.repository'
+import { CampaignRepository } from '../repositories/campaign.repository'
 import { AudienceService } from '../services/audience.service'
 
 @Processor('campaign')
@@ -19,12 +17,9 @@ export class CampaignProcessor extends WorkerHost {
   private readonly logger = new Logger(CampaignProcessor.name)
 
   constructor(
-    @InjectRepository(CampaignEntity)
-    private campaignRepository: Repository<CampaignEntity>,
-    @InjectRepository(CampaignMessageEntity)
-    private messageRepository: Repository<CampaignMessageEntity>,
-    @InjectRepository(CampaignLogEntity)
-    private logRepository: Repository<CampaignLogEntity>,
+    private campaignRepository: CampaignRepository,
+    private messageRepository: CampaignMessageRepository,
+    private logRepository: CampaignLogRepository,
     private audienceService: AudienceService,
     private mailService: MailService,
     private smsService: SmsService,
@@ -49,7 +44,7 @@ export class CampaignProcessor extends WorkerHost {
 
   private async handleStartCampaign(data: { campaignId: string; tenantId: string }) {
     const { campaignId, tenantId } = data
-    const campaign = await this.campaignRepository.findOne({ where: { id: campaignId } })
+    const campaign = await this.campaignRepository.findByIdRaw(campaignId)
     if (!campaign) return
 
     this.logger.log(`Starting campaign: ${campaign.name} (${campaignId})`)
@@ -92,8 +87,8 @@ export class CampaignProcessor extends WorkerHost {
     const { campaignId, userId, tenantId, recipient } = data
 
     // Fetch campaign and its message
-    const campaign = await this.campaignRepository.findOne({ where: { id: campaignId } })
-    const message = await this.messageRepository.findOne({ where: { campaignId } })
+    const campaign = await this.campaignRepository.findByIdRaw(campaignId)
+    const message = await this.messageRepository.findByCampaignId(campaignId)
 
     if (!campaign || !message) return
 
@@ -141,11 +136,11 @@ export class CampaignProcessor extends WorkerHost {
       if (success) {
         log.status = CampaignLogStatus.SENT
         log.sentAt = new Date()
-        await this.campaignRepository.increment({ id: campaignId }, 'sentCount', 1)
+        await this.campaignRepository.incrementSentCount(campaignId, 1)
       } else {
         log.status = CampaignLogStatus.FAILED
         log.error = 'Channel delivery failed or missing recipient info'
-        await this.campaignRepository.increment({ id: campaignId }, 'failedCount', 1)
+        await this.campaignRepository.incrementFailedCount(campaignId, 1)
       }
     } catch (error) {
       this.logger.error(
@@ -154,13 +149,13 @@ export class CampaignProcessor extends WorkerHost {
       )
       log.status = CampaignLogStatus.FAILED
       log.error = error.message
-      await this.campaignRepository.increment({ id: campaignId }, 'failedCount', 1)
+      await this.campaignRepository.incrementFailedCount(campaignId, 1)
     }
 
     await this.logRepository.save(log)
 
     // Fetch fresh campaign data for completion check
-    const currentCampaign = await this.campaignRepository.findOne({ where: { id: campaignId } })
+    const currentCampaign = await this.campaignRepository.findByIdRaw(campaignId)
     if (currentCampaign) {
       if (currentCampaign.sentCount + currentCampaign.failedCount >= currentCampaign.totalAudience) {
         currentCampaign.status = CampaignStatus.COMPLETED

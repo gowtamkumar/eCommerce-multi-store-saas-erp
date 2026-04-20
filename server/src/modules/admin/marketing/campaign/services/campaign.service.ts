@@ -1,33 +1,31 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { InjectQueue } from '@nestjs/bullmq'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 import { Queue } from 'bullmq'
-import { Repository } from 'typeorm'
 import { CreateCampaignDto } from '../dto/create-campaign.dto'
 import { ScheduleCampaignDto } from '../dto/schedule-campaign.dto'
 import { CampaignLogEntity } from '../entities/campaign-log.entity'
-import { CampaignMessageEntity } from '../entities/campaign-message.entity'
 import { CampaignEntity } from '../entities/campaign.entity'
 import { CampaignStatus } from '../enums/campaign-status.enum'
+import { CampaignLogRepository } from '../repositories/campaign-log.repository'
+import { CampaignMessageRepository } from '../repositories/campaign-message.repository'
+import { CampaignRepository } from '../repositories/campaign.repository'
 
 @Injectable()
 export class CampaignService {
   private readonly logger = new Logger(CampaignService.name)
 
   constructor(
-    @InjectRepository(CampaignEntity)
-    private campaignRepository: Repository<CampaignEntity>,
-    @InjectRepository(CampaignMessageEntity)
-    private messageRepository: Repository<CampaignMessageEntity>,
-    @InjectRepository(CampaignLogEntity)
-    private logRepository: Repository<CampaignLogEntity>,
+    private campaignRepository: CampaignRepository,
+    private messageRepository: CampaignMessageRepository,
+    private logRepository: CampaignLogRepository,
     @InjectQueue('campaign')
     private campaignQueue: Queue,
   ) {}
 
   async createCampaign(dto: CreateCampaignDto, ctx: RequestContextDto): Promise<CampaignEntity> {
     const tenantId = ctx.tenantId
+    const userId = ctx.userId
     this.logger.log(`Creating campaign for tenant: ${tenantId}`)
 
     const campaign = this.campaignRepository.create({
@@ -36,7 +34,7 @@ export class CampaignService {
       tenantId,
       status: CampaignStatus.DRAFT,
       scheduleTime: dto.scheduleTime ? new Date(dto.scheduleTime) : null,
-      user: { id: ctx.user?.id } as any,
+      user: { id: userId } as any,
       targetUsers: dto.targetUsers ?? true,
       targetSubscribers: dto.targetSubscribers ?? false,
       targetLeads: dto.targetLeads ?? false,
@@ -61,18 +59,11 @@ export class CampaignService {
   }
 
   async findAll(ctx: RequestContextDto): Promise<CampaignEntity[]> {
-    return this.campaignRepository.find({
-      where: { tenantId: ctx.tenantId },
-      relations: ['messages'],
-      order: { createdAt: 'DESC' },
-    })
+    return this.campaignRepository.findAllByTenant(ctx.tenantId)
   }
 
   async findOne(id: string, ctx: RequestContextDto): Promise<CampaignEntity> {
-    const campaign = await this.campaignRepository.findOne({
-      where: { id, tenantId: ctx.tenantId },
-      relations: ['messages'],
-    })
+    const campaign = await this.campaignRepository.findById(id, ctx.tenantId)
 
     if (!campaign) throw new NotFoundException('Campaign not found')
     return campaign
@@ -88,6 +79,7 @@ export class CampaignService {
     if (campaign.status !== CampaignStatus.DRAFT) {
       throw new BadRequestException('Only draft campaigns can be scheduled')
     }
+console.log("dto", dto);
 
     const scheduleTime = new Date(dto.scheduleTime)
     const delay = scheduleTime.getTime() - Date.now()
@@ -150,7 +142,7 @@ export class CampaignService {
     const savedCampaign = await this.campaignRepository.save(campaign)
 
     // Update Campaign Message
-    const message = await this.messageRepository.findOne({ where: { campaignId: id } })
+    const message = await this.messageRepository.findByCampaignId(id)
     if (message) {
       if (dto.subject) message.subject = dto.subject
       if (dto.htmlContent) message.htmlContent = dto.htmlContent
@@ -208,13 +200,7 @@ export class CampaignService {
 
     const skip = (page - 1) * limit
 
-    const [data, total] = await this.logRepository.findAndCount({
-      where: { campaignId: id },
-      relations: ['recipient'],
-      order: { createdAt: 'DESC' },
-      take: limit,
-      skip,
-    })
+    const [data, total] = await this.logRepository.findLogsByCampaign(id, skip, limit)
 
     return { data, total, page, limit }
   }
