@@ -41,6 +41,9 @@ export interface Campaign {
   totalAudience: number;
   sentCount: number;
   failedCount: number;
+  targetUsers: boolean;
+  targetSubscribers: boolean;
+  targetLeads: boolean;
   createdAt: string;
   updatedAt: string;
   messages?: CampaignMessage[];

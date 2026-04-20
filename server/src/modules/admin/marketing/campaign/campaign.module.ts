@@ -5,6 +5,8 @@ import { BullModule } from '@nestjs/bullmq'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { SmsModule } from '@/modules/admin/operations/infra/sms/sms.module'
+import { SubscriberEntity } from '@/modules/admin/customer/subscriber/entities/subscriber.entity'
+import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
 import { AudienceService } from './services/audience.service'
 import { CampaignService } from './services/campaign.service'
 import { CampaignProcessor } from './queue/campaign.processor'
@@ -20,6 +22,8 @@ import { PushModule } from '../../operations/infra/push/push.module'
       CampaignMessageEntity,
       CampaignLogEntity,
       UserEntity,
+      SubscriberEntity,
+      LeadEntity,
     ]),
     BullModule.registerQueue({ name: 'campaign' }),
     MailModule,

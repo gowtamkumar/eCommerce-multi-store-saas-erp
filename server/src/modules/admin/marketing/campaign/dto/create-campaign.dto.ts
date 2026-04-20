@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, IsDateString } from 'class-validator'
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsDateString, IsBoolean } from 'class-validator'
 import { CampaignType } from '../enums/campaign-type.enum'
 
 export class CreateCampaignDto {
@@ -37,4 +37,16 @@ export class CreateCampaignDto {
   @IsOptional()
   @IsString()
   imageUrl?: string
+
+  @IsOptional()
+  @IsBoolean()
+  targetUsers?: boolean
+
+  @IsOptional()
+  @IsBoolean()
+  targetSubscribers?: boolean
+
+  @IsOptional()
+  @IsBoolean()
+  targetLeads?: boolean
 }

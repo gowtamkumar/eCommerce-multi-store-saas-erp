@@ -1,5 +1,5 @@
+import { CampaignType } from '@/features/marketing/types/index';
 import { fetchAPI } from './api';
-import { Campaign, CampaignType } from '@/features/marketing/types/index';
 
 export const fetchCampaigns = async () => {
     return fetchAPI('/campaigns');
@@ -19,6 +19,9 @@ export const createCampaign = async (data: {
     body?: string;
     imageUrl?: string;
     scheduleTime?: string;
+    targetUsers?: boolean;
+    targetSubscribers?: boolean;
+    targetLeads?: boolean;
 }) => {
     return fetchAPI('/campaigns', {
         method: 'POST',

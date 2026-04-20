@@ -1,14 +1,14 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { InjectQueue } from '@nestjs/bullmq'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { Queue } from 'bullmq'
 import { Repository } from 'typeorm'
-import { CampaignEntity } from '../entities/campaign.entity'
-import { CampaignMessageEntity } from '../entities/campaign-message.entity'
-import { CampaignStatus } from '../enums/campaign-status.enum'
 import { CreateCampaignDto } from '../dto/create-campaign.dto'
 import { ScheduleCampaignDto } from '../dto/schedule-campaign.dto'
-import { InjectQueue } from '@nestjs/bullmq'
-import { Queue } from 'bullmq'
+import { CampaignMessageEntity } from '../entities/campaign-message.entity'
+import { CampaignEntity } from '../entities/campaign.entity'
+import { CampaignStatus } from '../enums/campaign-status.enum'
 
 @Injectable()
 export class CampaignService {
@@ -34,6 +34,9 @@ export class CampaignService {
       status: CampaignStatus.DRAFT,
       scheduleTime: dto.scheduleTime ? new Date(dto.scheduleTime) : null,
       user: { id: ctx.user?.id } as any,
+      targetUsers: dto.targetUsers ?? true,
+      targetSubscribers: dto.targetSubscribers ?? false,
+      targetLeads: dto.targetLeads ?? false,
     })
 
     const savedCampaign = await this.campaignRepository.save(campaign)

@@ -1,6 +1,6 @@
 'use client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, MessageSquare, Send, Calendar, Save, Percent, Image } from 'lucide-react';
+import { X, Mail, MessageSquare, Send, Calendar, Save, Percent, Image, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Campaign, CampaignType } from '../types';
 import { createCampaign } from '@/services/campaign';
@@ -28,6 +28,9 @@ export default function CampaignForm({ campaign, onClose, onSuccess }: CampaignF
         body: campaign?.messages?.[0]?.body || '',
         imageUrl: campaign?.messages?.[0]?.imageUrl || '',
         scheduleTime: campaign?.scheduleTime ? new Date(campaign.scheduleTime).toISOString().slice(0, 16) : '',
+        targetUsers: campaign?.targetUsers ?? true,
+        targetSubscribers: campaign?.targetSubscribers ?? false,
+        targetLeads: campaign?.targetLeads ?? false,
     });
 
     const isEdit = !!campaign;
@@ -139,6 +142,42 @@ export default function CampaignForm({ campaign, onClose, onSuccess }: CampaignF
                                         />
                                     </div>
                                     <p className="text-[10px] text-slate-400 ml-1">Leave empty to send as soon as you hit &quot;Start Campaign&quot; in the list.</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Target Audience</label>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {[
+                                            { id: 'targetUsers', label: 'Registered Users', count: 'All Active' },
+                                            { id: 'targetSubscribers', label: 'Newsletter Subscribers', count: 'Subscribers' },
+                                            { id: 'targetLeads', label: 'Marketing Leads', count: 'Contact Form' },
+                                        ].map((audience) => (
+                                            <label 
+                                                key={audience.id}
+                                                className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                                    (formData as any)[audience.id]
+                                                    ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-900/10 text-brand-600'
+                                                    : 'border-slate-100 dark:border-slate-800 text-slate-400 hover:border-slate-200'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <input 
+                                                        type="checkbox"
+                                                        className="hidden"
+                                                        checked={(formData as any)[audience.id]}
+                                                        onChange={(e) => setFormData({ ...formData, [audience.id]: e.target.checked })}
+                                                    />
+                                                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                                                        (formData as any)[audience.id] ? 'bg-brand-500 border-brand-500' : 'border-slate-300 dark:border-slate-700'
+                                                    }`}>
+                                                        {(formData as any)[audience.id] && <div className="w-2 h-2 bg-white rounded-full" />}
+                                                    </div>
+                                                    <span className="text-sm font-bold">{audience.label}</span>
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase opacity-50">{audience.count}</span>
+                                            </label>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 

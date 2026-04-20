@@ -56,4 +56,13 @@ export class CampaignEntity extends BaseEntity {
 
   @Column({ type: 'int', default: 0, name: 'failed_count' })
   failedCount: number
+
+  @Column({ type: 'boolean', name: 'target_users', default: true })
+  targetUsers: boolean
+
+  @Column({ type: 'boolean', name: 'target_subscribers', default: false })
+  targetSubscribers: boolean
+
+  @Column({ type: 'boolean', name: 'target_leads', default: false })
+  targetLeads: boolean
 }

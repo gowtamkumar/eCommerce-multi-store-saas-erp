@@ -57,21 +57,25 @@ export class CampaignProcessor extends WorkerHost {
     campaign.status = CampaignStatus.RUNNING
     await this.campaignRepository.save(campaign)
 
-    const audience = await this.audienceService.getAudience(tenantId)
+    const audience = await this.audienceService.getAudience(tenantId, {
+      targetUsers: campaign.targetUsers,
+      targetSubscribers: campaign.targetSubscribers,
+      targetLeads: campaign.targetLeads,
+    })
     campaign.totalAudience = audience.length
     await this.campaignRepository.save(campaign)
 
-    for (const user of audience) {
+    for (const member of audience) {
       await this.campaignQueue.add('send-message', {
         campaignId,
-        userId: user.id,
+        userId: member.source === 'user' ? member.id : null,
         tenantId,
         recipient: {
-          email: user.email,
-          phone: user.phone,
-          pushToken: user.pushToken,
-          fcmToken: user.fcmToken,
-          name: user.name,
+          email: member.email,
+          phone: member.phone,
+          pushToken: member.pushToken,
+          fcmToken: member.fcmToken,
+          name: member.name,
         },
       })
     }
