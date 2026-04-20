@@ -26,41 +26,57 @@ export class CacheRepository {
   }
 
   async delByPattern(pattern: string): Promise<void> {
+    this.logger.log(`Deleting keys by pattern: ${pattern}`)
     const stores = (this.cache as any).stores || [(this.cache as any).store]
     let cleared = false
 
     for (const store of stores) {
       if (!store) continue
 
-      // For cache-manager v7+, it uses keyv. The store is usually a Keyv instance.
-      // We need to drill down to the underlying redis client.
-      const underlyingStore = store.store || store._cache || store
-      const client =
-        underlyingStore.client || underlyingStore.redisClient || underlyingStore._client
+      try {
+        // Step 1: Try to find the underlying redis client
+        // This handles cache-manager-redis-yet, keyv-redis, and older cache-manager-redis-store
+        const underlyingStore = store.store || store._cache || store
+        const client = underlyingStore.client || underlyingStore.redisClient || underlyingStore._client || underlyingStore.instance
 
-      // If we found a client, attempt 'keys' or 'scan'
-      if (client && typeof client.keys === 'function') {
-        const keys = await client.keys(pattern)
-        if (Array.isArray(keys) && keys.length > 0) {
-          await (client.del || client.delete).call(client, ...keys)
+        if (client && (typeof client.keys === 'function' || typeof client.scan === 'function')) {
+          this.logger.debug(`Found Redis client in store. Using native keys/scan.`)
+          const keys = typeof client.keys === 'function' 
+            ? await client.keys(pattern)
+            : await this.scanRecursive(client, pattern)
+
+          if (Array.isArray(keys) && keys.length > 0) {
+            await (client.del || client.delete).call(client, ...keys)
+            this.logger.log(`[CACHE] Deleted ${keys.length} keys for pattern: ${pattern}`)
+          }
+          cleared = true
+        } 
+        // Step 2: Fallback if the store itself has a keys method
+        else if (typeof store.keys === 'function') {
+          const keys = await store.keys(pattern)
+          if (Array.isArray(keys) && keys.length > 0) {
+            await store.del(keys)
+          }
+          cleared = true
         }
-        cleared = true
-      }
-      // Fallback: check if store itself has keys (for older versions or different stores)
-      else if (typeof underlyingStore.keys === 'function') {
-        const keys = await underlyingStore.keys(pattern)
-        if (Array.isArray(keys) && keys.length > 0) {
-          await (underlyingStore.del || underlyingStore.delete).call(underlyingStore, ...keys)
-        }
-        cleared = true
+      } catch (err) {
+        this.logger.error(`Error deleting by pattern in store: ${err.message}`)
       }
     }
 
     if (!cleared) {
-      this.logger.warn(`Pattern deletion not supported or no keys found for pattern: ${pattern}`)
-      // Don't throw if no keys found, just log a warning.
-      // If you really want it to throw only when not supported:
-      // throw new Error('Redis client not accessible for pattern deletion')
+      this.logger.warn(`Pattern deletion not supported or no keys found for: ${pattern}`)
     }
+  }
+
+  private async scanRecursive(client: any, pattern: string): Promise<string[]> {
+    const keys: string[] = []
+    let cursor = '0'
+    do {
+      const [nextCursor, chunk] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 100)
+      cursor = nextCursor
+      keys.push(...chunk)
+    } while (cursor !== '0')
+    return keys
   }
 }

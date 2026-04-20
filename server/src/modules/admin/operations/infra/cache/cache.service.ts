@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { CACHE_PREFIX } from '@/common/constants/cache.'
+import { CACHE_PREFIX } from '@/common/constants/cache'
 import { CacheRepository } from './cache.repository'
 
 @Injectable()
