@@ -60,6 +60,7 @@ export class CampaignService {
   async findAll(ctx: RequestContextDto): Promise<CampaignEntity[]> {
     return this.campaignRepository.find({
       where: { tenantId: ctx.tenantId },
+      relations: ['messages'],
       order: { createdAt: 'DESC' },
     })
   }
@@ -122,5 +123,74 @@ export class CampaignService {
 
     campaign.status = CampaignStatus.DRAFT
     return this.campaignRepository.save(campaign)
+  }
+
+  async updateCampaign(
+    id: string,
+    dto: any, // Using any here to support the partial fields from UpdateCampaignDto
+    ctx: RequestContextDto,
+  ): Promise<CampaignEntity> {
+    const campaign = await this.findOne(id, ctx)
+
+    if (campaign.status !== CampaignStatus.DRAFT && campaign.status !== CampaignStatus.SCHEDULED) {
+      throw new BadRequestException('Only draft or scheduled campaigns can be updated')
+    }
+
+    // Update Campaign metadata
+    if (dto.name) campaign.name = dto.name
+    if (dto.type) campaign.type = dto.type
+    if (dto.scheduleTime) campaign.scheduleTime = new Date(dto.scheduleTime)
+    if (dto.targetUsers !== undefined) campaign.targetUsers = dto.targetUsers
+    if (dto.targetSubscribers !== undefined) campaign.targetSubscribers = dto.targetSubscribers
+    if (dto.targetLeads !== undefined) campaign.targetLeads = dto.targetLeads
+
+    const savedCampaign = await this.campaignRepository.save(campaign)
+
+    // Update Campaign Message
+    const message = await this.messageRepository.findOne({ where: { campaignId: id } })
+    if (message) {
+      if (dto.subject) message.subject = dto.subject
+      if (dto.htmlContent) message.htmlContent = dto.htmlContent
+      if (dto.text) message.text = dto.text
+      if (dto.title) message.title = dto.title
+      if (dto.body) message.body = dto.body
+      if (dto.imageUrl) message.imageUrl = dto.imageUrl
+      await this.messageRepository.save(message)
+    }
+
+    // If it was scheduled, we might need to re-schedule or just keep it.
+    if (campaign.status === CampaignStatus.SCHEDULED && dto.scheduleTime) {
+      // Remove old job first
+      const oldJob = await this.campaignQueue.getJob(`start-${campaign.id}`)
+      if (oldJob) await oldJob.remove()
+
+      // Re-add to queue with new delay
+      const delay = new Date(dto.scheduleTime).getTime() - Date.now()
+      if (delay > 0) {
+        await this.campaignQueue.add(
+          'start-campaign',
+          { campaignId: campaign.id, tenantId: ctx.tenantId },
+          { delay, jobId: `start-${campaign.id}` },
+        )
+      }
+    }
+
+    return savedCampaign
+  }
+
+  async deleteCampaign(id: string, ctx: RequestContextDto): Promise<void> {
+    const campaign = await this.findOne(id, ctx)
+
+    if (campaign.status === CampaignStatus.RUNNING) {
+      throw new BadRequestException('Cannot delete a running campaign')
+    }
+
+    // Cancel job if scheduled
+    if (campaign.status === CampaignStatus.SCHEDULED) {
+      const job = await this.campaignQueue.getJob(`start-${campaign.id}`)
+      if (job) await job.remove()
+    }
+
+    await this.campaignRepository.remove(campaign)
   }
 }

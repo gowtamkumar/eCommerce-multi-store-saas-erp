@@ -1,11 +1,11 @@
 'use client';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, MessageSquare, Send, Calendar, Save, Percent, Image, Users } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { Campaign, CampaignType } from '../types';
-import { createCampaign } from '@/services/campaign';
-import toast from 'react-hot-toast';
+import { createCampaign, updateCampaign } from '@/services/campaign';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Calendar, Image, Mail, MessageSquare, Save, Send, X } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
+import { Campaign, CampaignType } from '../types';
 
 // Dynamically import RichEditor as it's quite heavy
 const RichEditor = dynamic(() => import('@/components/shared/RichEditor'), { ssr: false });
@@ -42,10 +42,14 @@ export default function CampaignForm({ campaign, onClose, onSuccess }: CampaignF
         try {
             const payload = {
                 ...formData,
+                scheduleTime: formData.scheduleTime ? new Date(formData.scheduleTime).toISOString() : null,
                 type: activeTab,
             };
 
-            const res = await createCampaign(payload);
+            const res = isEdit
+                ? await updateCampaign(campaign.id, payload)
+                : await createCampaign(payload);
+
             if (res.success) {
                 toast.success(isEdit ? 'Campaign updated' : 'Campaign created successfully');
                 onSuccess();
@@ -102,11 +106,10 @@ export default function CampaignForm({ campaign, onClose, onSuccess }: CampaignF
                                         key={item.type}
                                         type="button"
                                         onClick={() => setActiveTab(item.type)}
-                                        className={`flex flex-col items-center gap-3 p-6 rounded-3xl border-2 transition-all ${
-                                            activeTab === item.type 
-                                            ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/10 text-brand-600' 
+                                        className={`flex flex-col items-center gap-3 p-6 rounded-3xl border-2 transition-all ${activeTab === item.type
+                                            ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/10 text-brand-600'
                                             : 'border-slate-100 dark:border-slate-800 text-slate-400 hover:border-slate-200 dark:hover:border-slate-700'
-                                        }`}
+                                            }`}
                                     >
                                         <item.icon className={`w-8 h-8 ${activeTab === item.type ? 'text-brand-500' : ''}`} />
                                         <span className="text-sm font-bold uppercase tracking-widest">{item.label}</span>
@@ -152,24 +155,22 @@ export default function CampaignForm({ campaign, onClose, onSuccess }: CampaignF
                                             { id: 'targetSubscribers', label: 'Newsletter Subscribers', count: 'Subscribers' },
                                             { id: 'targetLeads', label: 'Marketing Leads', count: 'Contact Form' },
                                         ].map((audience) => (
-                                            <label 
+                                            <label
                                                 key={audience.id}
-                                                className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                                                    (formData as any)[audience.id]
+                                                className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all ${(formData as any)[audience.id]
                                                     ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-900/10 text-brand-600'
                                                     : 'border-slate-100 dark:border-slate-800 text-slate-400 hover:border-slate-200'
-                                                }`}
+                                                    }`}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <input 
+                                                    <input
                                                         type="checkbox"
                                                         className="hidden"
                                                         checked={(formData as any)[audience.id]}
                                                         onChange={(e) => setFormData({ ...formData, [audience.id]: e.target.checked })}
                                                     />
-                                                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                                                        (formData as any)[audience.id] ? 'bg-brand-500 border-brand-500' : 'border-slate-300 dark:border-slate-700'
-                                                    }`}>
+                                                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${(formData as any)[audience.id] ? 'bg-brand-500 border-brand-500' : 'border-slate-300 dark:border-slate-700'
+                                                        }`}>
                                                         {(formData as any)[audience.id] && <div className="w-2 h-2 bg-white rounded-full" />}
                                                     </div>
                                                     <span className="text-sm font-bold">{audience.label}</span>
@@ -185,7 +186,7 @@ export default function CampaignForm({ campaign, onClose, onSuccess }: CampaignF
                             <div className="space-y-6">
                                 <AnimatePresence mode="wait">
                                     {activeTab === CampaignType.EMAIL && (
-                                        <motion.div 
+                                        <motion.div
                                             key="email"
                                             initial={{ opacity: 0, x: 20 }}
                                             animate={{ opacity: 1, x: 0 }}
@@ -207,7 +208,7 @@ export default function CampaignForm({ campaign, onClose, onSuccess }: CampaignF
                                     )}
 
                                     {activeTab === CampaignType.SMS && (
-                                        <motion.div 
+                                        <motion.div
                                             key="sms"
                                             initial={{ opacity: 0, x: 20 }}
                                             animate={{ opacity: 1, x: 0 }}
@@ -230,7 +231,7 @@ export default function CampaignForm({ campaign, onClose, onSuccess }: CampaignF
                                     )}
 
                                     {activeTab === CampaignType.PUSH && (
-                                        <motion.div 
+                                        <motion.div
                                             key="push"
                                             initial={{ opacity: 0, x: 20 }}
                                             animate={{ opacity: 1, x: 0 }}

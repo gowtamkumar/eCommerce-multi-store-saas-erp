@@ -5,11 +5,12 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common'
-import { CampaignService } from '../services/campaign.service'
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { CreateCampaignDto } from '../dto/create-campaign.dto'
 import { ScheduleCampaignDto } from '../dto/schedule-campaign.dto'
+import { UpdateCampaignDto } from '../dto/update-campaign.dto'
 import { CampaignEntity } from '../entities/campaign.entity'
+import { CampaignService } from '../services/campaign.service'
 
 @Controller('campaigns')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -84,6 +85,35 @@ export class CampaignController {
       statusCode: 200,
       message: 'Campaign schedule canceled',
       data: result,
+    }
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateCampaignDto,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<CampaignEntity>> {
+    const result = await this.campaignService.updateCampaign(id, dto, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Campaign updated successfully',
+      data: result,
+    }
+  }
+
+  @Delete(':id')
+  async delete(
+    @Param('id') id: string,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<void>> {
+    await this.campaignService.deleteCampaign(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Campaign deleted successfully',
+      data: null,
     }
   }
 }

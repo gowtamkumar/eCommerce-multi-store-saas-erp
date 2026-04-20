@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Megaphone, Plus, Search, Filter, RefreshCcw } from 'lucide-react';
 import { Campaign } from '../types';
-import { fetchCampaigns, scheduleCampaign, cancelCampaignSchedule } from '@/services/campaign';
+import { fetchCampaigns, scheduleCampaign, cancelCampaignSchedule, deleteCampaign } from '@/services/campaign';
 import CampaignList from './CampaignList';
 import CampaignForm from './CampaignForm';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -68,6 +68,18 @@ export default function CampaignDashboard() {
             }
         } catch (error: any) {
             toast.error(error.message || 'Failed to cancel');
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+            const res = await deleteCampaign(id);
+            if (res.success) {
+                toast.success('Campaign deleted');
+                loadCampaigns();
+            }
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to delete');
         }
     };
 
@@ -149,6 +161,7 @@ export default function CampaignDashboard() {
                         onEdit={handleEdit}
                         onSchedule={handleSchedule}
                         onCancel={handleCancel}
+                        onDelete={handleDelete}
                     />
                 ) : (
                     <div className="bg-white dark:bg-slate-800/50 rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-100 dark:border-slate-800">

@@ -18,7 +18,7 @@ export const createCampaign = async (data: {
     title?: string;
     body?: string;
     imageUrl?: string;
-    scheduleTime?: string;
+    scheduleTime?: string | Date | null;
     targetUsers?: boolean;
     targetSubscribers?: boolean;
     targetLeads?: boolean;
@@ -39,5 +39,18 @@ export const scheduleCampaign = async (id: string, scheduleTime: string) => {
 export const cancelCampaignSchedule = async (id: string) => {
     return fetchAPI(`/campaigns/${id}/cancel`, {
         method: 'POST',
+    });
+};
+
+export const updateCampaign = async (id: string, data: Partial<Parameters<typeof createCampaign>[0]>) => {
+    return fetchAPI(`/campaigns/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+    });
+};
+
+export const deleteCampaign = async (id: string) => {
+    return fetchAPI(`/campaigns/${id}`, {
+        method: 'DELETE',
     });
 };

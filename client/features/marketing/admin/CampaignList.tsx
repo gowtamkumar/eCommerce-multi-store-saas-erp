@@ -1,16 +1,17 @@
 'use client';
-import { Calendar, Mail, MessageSquare, MoreVertical, Send, XCircle, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Campaign, CampaignStatus, CampaignType } from '../types';
 import dayjs from 'dayjs';
+import { AlertCircle, Calendar, CheckCircle2, Clock, Mail, MessageSquare, Pencil, Send, Trash2, XCircle } from 'lucide-react';
+import { Campaign, CampaignStatus, CampaignType } from '../types';
 
 interface CampaignListProps {
     campaigns: Campaign[];
     onEdit: (campaign: Campaign) => void;
     onSchedule: (campaign: Campaign) => void;
     onCancel: (campaign: Campaign) => void;
+    onDelete: (id: string) => void;
 }
 
-export default function CampaignList({ campaigns, onEdit, onSchedule, onCancel }: CampaignListProps) {
+export default function CampaignList({ campaigns, onEdit, onSchedule, onCancel, onDelete }: CampaignListProps) {
     const getStatusStyles = (status: CampaignStatus) => {
         switch (status) {
             case CampaignStatus.DRAFT:
@@ -62,8 +63,8 @@ export default function CampaignList({ campaigns, onEdit, onSchedule, onCancel }
                 </thead>
                 <tbody className="space-y-4">
                     {campaigns.map((campaign) => (
-                        <tr 
-                            key={campaign.id} 
+                        <tr
+                            key={campaign.id}
                             className="bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-2xl group border border-slate-200 dark:border-slate-800"
                         >
                             <td className="px-6 py-4 rounded-l-2xl">
@@ -93,27 +94,30 @@ export default function CampaignList({ campaigns, onEdit, onSchedule, onCancel }
                                         <span className="text-rose-500">{campaign.failedCount} failed</span>
                                     </div>
                                     <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-brand-500 transition-all duration-500" 
+                                        <div
+                                            className="h-full bg-brand-500 transition-all duration-500"
                                             style={{ width: `${campaign.totalAudience > 0 ? (campaign.sentCount / campaign.totalAudience) * 100 : 0}%` }}
                                         />
                                     </div>
                                 </div>
                             </td>
-                            <td className="px-6 py-4 text-xs text-slate-500">
-                                {campaign.scheduleTime ? (
-                                    <div className="flex flex-col">
-                                        <span className="font-semibold text-slate-700 dark:text-slate-300">{dayjs(campaign.scheduleTime).format('MMM D, YYYY')}</span>
-                                        <span>{dayjs(campaign.scheduleTime).format('h:mm A')}</span>
-                                    </div>
-                                ) : (
-                                    <span className="text-slate-400 italic">Manual</span>
-                                )}
+                            <td className="px-6 py-4 text-xs">
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Created</span>
+                                    <span style={{ whiteSpace: 'nowrap' }} className="font-bold text-slate-600 dark:text-slate-400">{dayjs(campaign.createdAt).format('MMM D, hh:mm A')}</span>
+
+                                    {campaign.scheduleTime && (
+                                        <>
+                                            <span className="text-[10px] uppercase font-black text-brand-500 tracking-widest mt-1">Scheduled</span>
+                                            <span style={{ whiteSpace: 'nowrap' }} className="font-black text-brand-600">{dayjs(campaign.scheduleTime).format('MMM D, hh:mm A')}</span>
+                                        </>
+                                    )}
+                                </div>
                             </td>
                             <td className="px-6 py-4 rounded-r-2xl text-right">
                                 <div className="flex items-center justify-end gap-2">
                                     {campaign.status === CampaignStatus.DRAFT && (
-                                        <button 
+                                        <button
                                             onClick={() => onSchedule(campaign)}
                                             className="p-2 text-brand-600 hover:bg-brand-100 dark:hover:bg-brand-900/20 rounded-lg transition-colors"
                                             title="Schedule"
@@ -122,7 +126,7 @@ export default function CampaignList({ campaigns, onEdit, onSchedule, onCancel }
                                         </button>
                                     )}
                                     {campaign.status === CampaignStatus.SCHEDULED && (
-                                        <button 
+                                        <button
                                             onClick={() => onCancel(campaign)}
                                             className="p-2 text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
                                             title="Cancel Schedule"
@@ -130,11 +134,23 @@ export default function CampaignList({ campaigns, onEdit, onSchedule, onCancel }
                                             <XCircle className="w-4 h-4" />
                                         </button>
                                     )}
-                                    <button 
+                                    <button
                                         onClick={() => onEdit(campaign)}
                                         className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                        title="Edit Campaign"
                                     >
-                                        <MoreVertical className="w-4 h-4" />
+                                        <Pencil className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (confirm('Are you sure you want to delete this campaign?')) {
+                                                onDelete(campaign.id);
+                                            }
+                                        }}
+                                        className="p-2 text-rose-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                                        title="Delete Campaign"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
                                     </button>
                                 </div>
                             </td>
