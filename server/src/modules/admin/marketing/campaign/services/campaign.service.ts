@@ -6,6 +6,7 @@ import { Queue } from 'bullmq'
 import { Repository } from 'typeorm'
 import { CreateCampaignDto } from '../dto/create-campaign.dto'
 import { ScheduleCampaignDto } from '../dto/schedule-campaign.dto'
+import { CampaignLogEntity } from '../entities/campaign-log.entity'
 import { CampaignMessageEntity } from '../entities/campaign-message.entity'
 import { CampaignEntity } from '../entities/campaign.entity'
 import { CampaignStatus } from '../enums/campaign-status.enum'
@@ -19,6 +20,8 @@ export class CampaignService {
     private campaignRepository: Repository<CampaignEntity>,
     @InjectRepository(CampaignMessageEntity)
     private messageRepository: Repository<CampaignMessageEntity>,
+    @InjectRepository(CampaignLogEntity)
+    private logRepository: Repository<CampaignLogEntity>,
     @InjectQueue('campaign')
     private campaignQueue: Queue,
   ) {}
@@ -192,5 +195,27 @@ export class CampaignService {
     }
 
     await this.campaignRepository.remove(campaign)
+  }
+
+  async getLogs(
+    id: string,
+    page: number,
+    limit: number,
+    ctx: RequestContextDto,
+  ): Promise<{ data: CampaignLogEntity[]; total: number; page: number; limit: number }> {
+    // Verify campaign belongs to tenant
+    await this.findOne(id, ctx)
+
+    const skip = (page - 1) * limit
+
+    const [data, total] = await this.logRepository.findAndCount({
+      where: { campaignId: id },
+      relations: ['recipient'],
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip,
+    })
+
+    return { data, total, page, limit }
   }
 }

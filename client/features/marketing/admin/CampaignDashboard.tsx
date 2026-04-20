@@ -5,6 +5,7 @@ import { Campaign } from '../types';
 import { fetchCampaigns, scheduleCampaign, cancelCampaignSchedule, deleteCampaign } from '@/services/campaign';
 import CampaignList from './CampaignList';
 import CampaignForm from './CampaignForm';
+import CampaignDetails from './CampaignDetails';
 import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -14,6 +15,7 @@ export default function CampaignDashboard() {
     const [searchQuery, setSearchQuery] = useState('');
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+    const [viewingCampaign, setViewingCampaign] = useState<Campaign | null>(null);
 
     const loadCampaigns = async () => {
         setLoading(true);
@@ -41,6 +43,10 @@ export default function CampaignDashboard() {
     const handleEdit = (campaign: Campaign) => {
         setEditingCampaign(campaign);
         setIsFormOpen(true);
+    };
+
+    const handleView = (campaign: Campaign) => {
+        setViewingCampaign(campaign);
     };
 
     const handleSchedule = async (campaign: Campaign) => {
@@ -162,6 +168,7 @@ export default function CampaignDashboard() {
                         onSchedule={handleSchedule}
                         onCancel={handleCancel}
                         onDelete={handleDelete}
+                        onView={handleView}
                     />
                 ) : (
                     <div className="bg-white dark:bg-slate-800/50 rounded-[3rem] p-20 text-center border-2 border-dashed border-slate-100 dark:border-slate-800">
@@ -189,6 +196,15 @@ export default function CampaignDashboard() {
                             setIsFormOpen(false);
                             loadCampaigns();
                         }}
+                    />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {viewingCampaign && (
+                    <CampaignDetails 
+                        campaign={viewingCampaign}
+                        onClose={() => setViewingCampaign(null)}
                     />
                 )}
             </AnimatePresence>

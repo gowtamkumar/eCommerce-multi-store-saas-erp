@@ -5,7 +5,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { CreateCampaignDto } from '../dto/create-campaign.dto'
 import { ScheduleCampaignDto } from '../dto/schedule-campaign.dto'
 import { UpdateCampaignDto } from '../dto/update-campaign.dto'
@@ -114,6 +114,22 @@ export class CampaignController {
       statusCode: 200,
       message: 'Campaign deleted successfully',
       data: null,
+    }
+  }
+
+  @Get(':id/logs')
+  async getLogs(
+    @Param('id') id: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<{ data: any[]; total: number; page: number; limit: number }>> {
+    const result = await this.campaignService.getLogs(id, Number(page), Number(limit), ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Campaign logs retrieved successfully',
+      data: result,
     }
   }
 }

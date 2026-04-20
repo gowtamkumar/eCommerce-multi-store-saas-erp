@@ -54,3 +54,7 @@ export const deleteCampaign = async (id: string) => {
         method: 'DELETE',
     });
 };
+
+export const fetchCampaignLogs = async (id: string, page: number = 1, limit: number = 10) => {
+    return fetchAPI(`/campaigns/${id}/logs?page=${page}&limit=${limit}`);
+};

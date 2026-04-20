@@ -1,6 +1,6 @@
 'use client';
 import dayjs from 'dayjs';
-import { AlertCircle, Calendar, CheckCircle2, Clock, Mail, MessageSquare, Pencil, Send, Trash2, XCircle } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle2, Clock, Eye, Mail, MessageSquare, Pencil, Send, Trash2, XCircle } from 'lucide-react';
 import { Campaign, CampaignStatus, CampaignType } from '../types';
 
 interface CampaignListProps {
@@ -9,9 +9,10 @@ interface CampaignListProps {
     onSchedule: (campaign: Campaign) => void;
     onCancel: (campaign: Campaign) => void;
     onDelete: (id: string) => void;
+    onView: (campaign: Campaign) => void;
 }
 
-export default function CampaignList({ campaigns, onEdit, onSchedule, onCancel, onDelete }: CampaignListProps) {
+export default function CampaignList({ campaigns, onEdit, onSchedule, onCancel, onDelete, onView }: CampaignListProps) {
     const getStatusStyles = (status: CampaignStatus) => {
         switch (status) {
             case CampaignStatus.DRAFT:
@@ -134,6 +135,13 @@ export default function CampaignList({ campaigns, onEdit, onSchedule, onCancel, 
                                             <XCircle className="w-4 h-4" />
                                         </button>
                                     )}
+                                    <button 
+                                        onClick={() => onView(campaign)}
+                                        className="p-2 text-brand-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-colors"
+                                        title="View Details"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                    </button>
                                     <button
                                         onClick={() => onEdit(campaign)}
                                         className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
