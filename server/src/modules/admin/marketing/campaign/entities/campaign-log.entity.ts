@@ -1,8 +1,8 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
-import { CampaignEntity } from './campaign.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 import { CampaignLogStatus } from '../enums/campaign-log-status.enum'
+import { CampaignEntity } from './campaign.entity'
 
 @Entity('campaign_logs')
 @Index(['campaignId', 'status'])
@@ -15,7 +15,7 @@ export class CampaignLogEntity extends BaseEntity {
   @JoinColumn({ name: 'campaign_id' })
   campaign: CampaignEntity
 
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'user_id' })
   recipient: UserEntity
 

@@ -1,18 +1,18 @@
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
+import { PushService } from '@/modules/admin/operations/infra/push/push.service'
+import { SmsService } from '@/modules/admin/operations/infra/sms/sms.service'
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq'
-import { Job, Queue } from 'bullmq'
 import { Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { Job, Queue } from 'bullmq'
 import { Repository } from 'typeorm'
-import { CampaignEntity } from '../entities/campaign.entity'
 import { CampaignLogEntity } from '../entities/campaign-log.entity'
 import { CampaignMessageEntity } from '../entities/campaign-message.entity'
+import { CampaignEntity } from '../entities/campaign.entity'
+import { CampaignLogStatus } from '../enums/campaign-log-status.enum'
 import { CampaignStatus } from '../enums/campaign-status.enum'
 import { CampaignType } from '../enums/campaign-type.enum'
-import { CampaignLogStatus } from '../enums/campaign-log-status.enum'
 import { AudienceService } from '../services/audience.service'
-import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
-import { SmsService } from '@/modules/admin/operations/infra/sms/sms.service'
-import { PushService } from '@/modules/admin/operations/infra/push/push.service'
 
 @Processor('campaign')
 export class CampaignProcessor extends WorkerHost {
@@ -102,6 +102,11 @@ export class CampaignProcessor extends WorkerHost {
       campaignId,
       userId,
       status: CampaignLogStatus.PENDING,
+      metadata: {
+        name: recipient.name,
+        email: recipient.email,
+        phone: recipient.phone,
+      },
     })
     await this.logRepository.save(log)
 
@@ -136,11 +141,11 @@ export class CampaignProcessor extends WorkerHost {
       if (success) {
         log.status = CampaignLogStatus.SENT
         log.sentAt = new Date()
-        campaign.sentCount++
+        await this.campaignRepository.increment({ id: campaignId }, 'sentCount', 1)
       } else {
         log.status = CampaignLogStatus.FAILED
         log.error = 'Channel delivery failed or missing recipient info'
-        campaign.failedCount++
+        await this.campaignRepository.increment({ id: campaignId }, 'failedCount', 1)
       }
     } catch (error) {
       this.logger.error(
@@ -149,16 +154,18 @@ export class CampaignProcessor extends WorkerHost {
       )
       log.status = CampaignLogStatus.FAILED
       log.error = error.message
-      campaign.failedCount++
+      await this.campaignRepository.increment({ id: campaignId }, 'failedCount', 1)
     }
 
     await this.logRepository.save(log)
-    await this.campaignRepository.save(campaign)
 
-    // Check if campaign is completed
-    if (campaign.sentCount + campaign.failedCount >= campaign.totalAudience) {
-      campaign.status = CampaignStatus.COMPLETED
-      await this.campaignRepository.save(campaign)
+    // Fetch fresh campaign data for completion check
+    const currentCampaign = await this.campaignRepository.findOne({ where: { id: campaignId } })
+    if (currentCampaign) {
+      if (currentCampaign.sentCount + currentCampaign.failedCount >= currentCampaign.totalAudience) {
+        currentCampaign.status = CampaignStatus.COMPLETED
+        await this.campaignRepository.save(currentCampaign)
+      }
     }
   }
 }
