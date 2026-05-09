@@ -1,8 +1,9 @@
 'use client';
 
 import { fetchAPI } from '@/services/api';
+import { GROUPED_FEATURES } from '@/lib/subscription-features';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, Layers, Loader2, Plus, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Layers, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
@@ -15,7 +16,7 @@ interface PlanFormProps {
 export default function PlanForm({ initialData, isEditing = false }: PlanFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [features, setFeatures] = useState<string[]>(initialData?.features || ['']);
+    const [features, setFeatures] = useState<string[]>(initialData?.features || []);
 
     const [formData, setFormData] = useState({
         name: initialData?.name || '',
@@ -28,12 +29,12 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
         isPopular: initialData?.isPopular ?? false,
     });
 
-    const handleAddFeature = () => setFeatures([...features, '']);
-    const handleRemoveFeature = (index: number) => setFeatures(features.filter((_, i) => i !== index));
-    const handleFeatureChange = (index: number, value: string) => {
-        const newFeatures = [...features];
-        newFeatures[index] = value;
-        setFeatures(newFeatures);
+    const toggleFeature = (key: string) => {
+        setFeatures(prev => 
+            prev.includes(key) 
+                ? prev.filter(f => f !== key)
+                : [...prev, key]
+        );
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -153,42 +154,33 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                             <div className="flex justify-between items-center pb-4 border-b border-slate-50 dark:border-slate-800">
                                 <div className="space-y-0.5">
                                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Core Entitlements</label>
-                                    <p className="text-xs text-slate-400 font-medium ml-1">Add features that define this subscription tier.</p>
+                                    <p className="text-xs text-slate-400 font-medium ml-1">Select the features that define this subscription tier.</p>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={handleAddFeature}
-                                    className="px-4 py-2 bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-100 dark:hover:bg-brand-900/40 transition-all flex items-center gap-2"
-                                >
-                                    <Plus className="w-3.5 h-3.5" strokeWidth={3} /> Add Item
-                                </button>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {features.map((feature, idx) => (
-                                    <motion.div 
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        key={idx} 
-                                        className="flex gap-2 group"
-                                    >
-                                        <div className="relative flex-1">
-                                            <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
-                                            <input
-                                                type="text"
-                                                value={feature}
-                                                onChange={(e) => handleFeatureChange(idx, e.target.value)}
-                                                placeholder="e.g. 100GB Cloud Storage"
-                                                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 outline-none focus:ring-2 focus:ring-brand-500/10 focus:border-brand-500 transition-all text-sm font-bold text-slate-700 dark:text-slate-200"
-                                            />
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {Object.entries(GROUPED_FEATURES).map(([group, groupFeatures]) => (
+                                    <div key={group} className="space-y-3">
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{group}</h4>
+                                        <div className="space-y-2">
+                                            {groupFeatures.map(feature => (
+                                                <label key={feature.key} className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 cursor-pointer hover:border-brand-500/50 transition-colors group">
+                                                    <div className="relative flex items-center justify-center mt-0.5">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={features.includes(feature.key)}
+                                                            onChange={() => toggleFeature(feature.key)}
+                                                            className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-700 appearance-none checked:bg-brand-500 checked:border-brand-500 transition-colors peer"
+                                                        />
+                                                        <CheckCircle2 className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={3} />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-brand-600 transition-colors">
+                                                        {feature.label}
+                                                    </span>
+                                                </label>
+                                            ))}
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveFeature(idx)}
-                                            className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </motion.div>
+                                    </div>
                                 ))}
                             </div>
                         </div>
