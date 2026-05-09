@@ -53,7 +53,7 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: assureops-minio
+    container_name: multi_tenant_minio_dev
     restart: unless-stopped
     ports:
       - "9000:9000"
@@ -63,20 +63,22 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
     volumes:
-      - minio-data:/data
+      - minio_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: assureops-mailhog
+    container_name: multi_tenant_mailhog_dev
     restart: unless-stopped
     ports:
       - "1025:1025"
       - "8025:8025"
+    networks:
+      - multi_tenant_main_network
 
   server:
     build:
@@ -113,9 +115,9 @@ services:
     networks:
       - multi_tenant_main_network
 
-  minio:
+  minio1:
     image: minio/minio:latest
-    container_name: minio
+    container_name: minio1
     ports:
       - "9000:9000" # API Port
       - "9001:9001" # Web Console Port

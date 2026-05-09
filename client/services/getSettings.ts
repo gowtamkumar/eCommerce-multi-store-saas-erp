@@ -113,6 +113,7 @@ export async function getSiteSettings() {
         brandName: "LuxeSaaS",
         siteDescription: "The premium multi-tenant eCommerce platform.",
         contactEmail: "support@luxesaas.com",
+        isSaaS: true,
       };
     }
 

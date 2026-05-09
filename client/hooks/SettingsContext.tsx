@@ -145,6 +145,7 @@ interface SiteSettings {
   };
   robotsTxt?: string;
   status?: string;
+  isSaaS?: boolean;
 }
 
 interface SettingsContextType {

@@ -63,7 +63,7 @@ export default function StorefrontLayout({
     "/accept-invitation",
   ];
 
-  const shouldHideCart = hideCartPaths.some((path) => pathname?.startsWith(path));
+  const shouldHideCart = hideCartPaths.some((path) => pathname?.startsWith(path)) || settings?.isSaaS;
 
   return (
     <>
