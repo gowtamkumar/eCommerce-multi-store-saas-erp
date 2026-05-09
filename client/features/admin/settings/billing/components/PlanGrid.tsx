@@ -3,6 +3,7 @@
 import { Check, Loader2 } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { Plan, PlanCardProps, SubscriptionInfo } from '../../type';
+import { getFeatureDisplay } from '@/routes';
 
 
 const PlanCard: React.FC<PlanCardProps> = ({
@@ -55,14 +56,18 @@ const PlanCard: React.FC<PlanCardProps> = ({
                 <div className="h-px bg-slate-100 dark:bg-slate-700/50 w-full" />
 
                 <ul className="space-y-4">
-                    {plan.features?.map((feature, i) => (
-                        <li key={i} className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300 font-medium font-display">
-                            <div className="p-1 bg-brand-50 dark:bg-brand-900/20 rounded-lg shrink-0">
-                                <Check className="w-3 h-3 text-brand-600" />
-                            </div>
-                            {feature}
-                        </li>
-                    ))}
+                    {plan.features?.map((featurePath: string, i: number) => {
+                        const featureDisplay = getFeatureDisplay(featurePath);
+                        const FeatureIcon = featureDisplay.icon;
+                        return (
+                            <li key={i} className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300 font-medium font-display">
+                                <div className="p-1.5 bg-brand-50 dark:bg-brand-900/20 rounded-lg shrink-0">
+                                    <FeatureIcon className="w-3.5 h-3.5 text-brand-600" />
+                                </div>
+                                {featureDisplay.label}
+                            </li>
+                        );
+                    })}
                 </ul>
 
                 <button

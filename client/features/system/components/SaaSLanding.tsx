@@ -1,6 +1,7 @@
 'use client'
 import { fetchAPI } from '@/services/api';
 import { publicSaasApi } from '@/services/publicSaasApi ';
+import { getFeatureDisplay } from '@/routes';
 import * as Icons from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -155,14 +156,18 @@ export default function SaaSLanding() {
                     <div className="w-full h-px bg-slate-100 dark:bg-slate-800 mb-8" />
 
                     <ul className="text-left space-y-4 mb-10 flex-1">
-                      {(plan.features || []).map((item: string) => (
-                        <li key={item} className="flex items-center gap-3 text-slate-600 dark:text-slate-300 group/item">
-                          <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${isPopular ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
-                            <Icons.Check className="w-3 h-3" strokeWidth={3} />
-                          </div>
-                          <span className="text-sm font-bold group-hover/item:text-slate-900 dark:group-hover/item:text-white transition-colors">{item}</span>
-                        </li>
-                      ))}
+                      {(plan.features || []).map((item: string) => {
+                        const featureDisplay = getFeatureDisplay(item);
+                        const FeatureIcon = featureDisplay.icon;
+                        return (
+                          <li key={item} className="flex items-center gap-3 text-slate-600 dark:text-slate-300 group/item">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${isPopular ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                              <FeatureIcon className="w-3.5 h-3.5" strokeWidth={2.5} />
+                            </div>
+                            <span className="text-sm font-bold group-hover/item:text-slate-900 dark:group-hover/item:text-white transition-colors">{featureDisplay.label}</span>
+                          </li>
+                        );
+                      })}
                     </ul>
 
                     <Link

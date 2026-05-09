@@ -1,4 +1,4 @@
-import { BarChart3, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap } from 'lucide-react';
+import { BarChart3, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap, CheckCircle2 } from 'lucide-react';
 import { UserRole } from './lib/enums/user-role.enum';
 
 export const navGroups = [
@@ -115,3 +115,19 @@ export const navGroups = [
 ];
 
 export const settingsItems: any[] = [];
+
+export function getFeatureDisplay(href: string) {
+    for (const group of navGroups) {
+        const found = group.items.find(item => item.href === href);
+        if (found) {
+            return {
+                label: found.label,
+                icon: found.icon
+            };
+        }
+    }
+    return {
+        label: href,
+        icon: CheckCircle2 // default fallback icon
+    };
+}

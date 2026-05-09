@@ -1,7 +1,7 @@
 'use client';
 
 import { fetchAPI } from '@/services/api';
-import { GROUPED_FEATURES } from '@/lib/subscription-features';
+import { navGroups } from '@/routes';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, Layers, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -30,8 +30,8 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
     });
 
     const toggleFeature = (key: string) => {
-        setFeatures(prev => 
-            prev.includes(key) 
+        setFeatures(prev =>
+            prev.includes(key)
                 ? prev.filter(f => f !== key)
                 : [...prev, key]
         );
@@ -157,31 +157,41 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                                     <p className="text-xs text-slate-400 font-medium ml-1">Select the features that define this subscription tier.</p>
                                 </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {Object.entries(GROUPED_FEATURES).map(([group, groupFeatures]) => (
-                                    <div key={group} className="space-y-3">
-                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{group}</h4>
-                                        <div className="space-y-2">
-                                            {groupFeatures.map(feature => (
-                                                <label key={feature.key} className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 cursor-pointer hover:border-brand-500/50 transition-colors group">
-                                                    <div className="relative flex items-center justify-center mt-0.5">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={features.includes(feature.key)}
-                                                            onChange={() => toggleFeature(feature.key)}
-                                                            className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-700 appearance-none checked:bg-brand-500 checked:border-brand-500 transition-colors peer"
-                                                        />
-                                                        <CheckCircle2 className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={3} />
-                                                    </div>
-                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-brand-600 transition-colors">
-                                                        {feature.label}
-                                                    </span>
-                                                </label>
-                                            ))}
+                                {navGroups.map((group) => {
+                                    const filteredItems = group.items.filter(item => item.href !== '/admin/profile' && item.href !== '/admin/settings/billing');
+                                    if (filteredItems.length === 0) return null;
+
+                                    return (
+                                        <div key={group.title} className="space-y-3">
+                                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{group.title}</h4>
+                                            <div className="space-y-2">
+                                                {filteredItems.map(item => (
+                                                    <label key={item.href} className={`flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer group ${features.includes(item.href) ? 'bg-brand-50/50 dark:bg-brand-500/10 border-brand-500 shadow-sm' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-brand-500/30'}`}>
+                                                        <div className="relative flex items-center justify-center flex-shrink-0">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={features.includes(item.href)}
+                                                                onChange={() => toggleFeature(item.href)}
+                                                                className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-700 appearance-none checked:bg-brand-500 checked:border-brand-500 transition-colors peer cursor-pointer"
+                                                            />
+                                                            <CheckCircle2 className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={3} />
+                                                        </div>
+                                                        <div className="flex items-center gap-3 flex-1">
+                                                            <div className={`p-2 rounded-xl transition-colors ${features.includes(item.href) ? 'bg-brand-100 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-brand-500'}`}>
+                                                                <item.icon className="w-4 h-4" />
+                                                            </div>
+                                                            <span className={`text-sm font-bold transition-colors ${features.includes(item.href) ? 'text-brand-700 dark:text-brand-300' : 'text-slate-700 dark:text-slate-200 group-hover:text-brand-600'}`}>
+                                                                {item.label}
+                                                            </span>
+                                                        </div>
+                                                    </label>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
@@ -195,7 +205,7 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                                 <Layers className="w-4 h-4 text-brand-500" />
                                 Tier Intelligence
                             </h3>
-                            
+
                             <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
@@ -241,7 +251,7 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                             </button>
                         </div>
                     </div>
-                    
+
                     {/* Summary Preview Card */}
                     <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-brand-600 to-indigo-700 text-white shadow-xl shadow-brand-500/30 overflow-hidden relative group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
