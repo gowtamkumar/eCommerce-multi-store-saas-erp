@@ -7,14 +7,17 @@ import { PromotionEntity } from './entities/promotion.entity'
 import { PromotionRepository } from './repositories/promotion.repository'
 import { PromotionService } from './services/promotion.service'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([PromotionEntity]),
     CacheModule,
     forwardRef(() => ProductModule),
+    TenantModule,
   ],
   controllers: [PromotionController],
   providers: [PromotionService, PromotionRepository],
   exports: [PromotionService],
 })
-export class PromotionModule {}
+export class PromotionModule { }

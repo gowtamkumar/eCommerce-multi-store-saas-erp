@@ -11,10 +11,9 @@ import {
   Logger,
 } from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { CouponService } from '../services/coupon.service'
 import { CreateCouponDto } from '../dto/create-coupon.dto'
 import { UpdateCouponDto } from '../dto/update-coupon.dto'
@@ -23,7 +22,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { CouponResponseDto } from '../dto/coupon-response.dto'
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/coupons')
 @Controller('coupons')
 export class CouponController {
   private readonly logger = new Logger(CouponController.name)
@@ -31,7 +31,6 @@ export class CouponController {
   constructor(private readonly couponService: CouponService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async createCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Body() createCouponDto: CreateCouponDto,
@@ -47,13 +46,6 @@ export class CouponController {
   }
 
   @Get()
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.MARKETING,
-    UserRole.SUPPORT,
-    UserRole.OPERATOR,
-  )
   async findAllCoupons(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: any,
@@ -88,13 +80,6 @@ export class CouponController {
   }
 
   @Get(':id')
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.MARKETING,
-    UserRole.SUPPORT,
-    UserRole.OPERATOR,
-  )
   async findOneCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -110,7 +95,6 @@ export class CouponController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async updateCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -127,7 +111,6 @@ export class CouponController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

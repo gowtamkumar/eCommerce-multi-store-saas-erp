@@ -1,27 +1,25 @@
 import { FilterReturnDto } from '@/modules/admin/sales/order/dto/filter-return.dto'
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, Logger } from '@nestjs/common'
-
 import { ReturnStatus } from '@/common/enums/return-status.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
 import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.dto'
 import { ReturnService } from '@/modules/admin/sales/order/services/return.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { OrderReturnResponseDto } from '../dto/order-return-response.dto'
 
 @Controller('returns')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/returns')
 export class ReturnController {
   private readonly logger = new Logger(ReturnController.name)
 
   constructor(private readonly returnService: ReturnService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
   async createReturnRequest(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateReturnDto,
@@ -37,14 +35,6 @@ export class ReturnController {
   }
 
   @Get('my-returns')
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.SUPPORT,
-    UserRole.MARKETING,
-    UserRole.OPERATOR,
-    UserRole.USER,
-  )
   async findMyReturns(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<OrderReturnResponseDto[]>> {
@@ -59,7 +49,6 @@ export class ReturnController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findAllReturns(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterReturnDto,
@@ -83,7 +72,6 @@ export class ReturnController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findReturnById(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -99,7 +87,6 @@ export class ReturnController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
   async updateStatus(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

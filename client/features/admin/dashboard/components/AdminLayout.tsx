@@ -40,29 +40,41 @@ export default function AdminLayout({
         }
     }, [status, session, router]);
 
-    // Filter nav groups based on user role
+    // Filter nav groups based on user role and plan features
     const filteredNavGroups = useMemo(() => {
         const rawRole = session?.user?.role || '';
         const userRole = typeof rawRole === 'string' ? rawRole.toLowerCase() : '';
+        const features = session?.user?.features || [];
+        const isSuperAdmin = userRole === UserRole.SUPER_ADMIN || features.includes('*');
+
         return navGroups
             .filter(group => {
                 if ((group as any).roles) {
-                    return (group as any).roles.map((r: string) => r.toLowerCase()).includes(userRole) || userRole === UserRole.SUPER_ADMIN;
+                    return (group as any).roles.map((r: string) => r.toLowerCase()).includes(userRole) || isSuperAdmin;
                 }
                 return true;
             })
             .map(group => ({
                 ...group,
                 items: group.items.filter((item: any) => {
-                    if (item.roles) {
-                        return item.roles.map((r: string) => r.toLowerCase()).includes(userRole) || userRole === UserRole.SUPER_ADMIN;
+                    // 1. Role Check
+                    const hasRole = item.roles 
+                        ? item.roles.map((r: string) => r.toLowerCase()).includes(userRole) || isSuperAdmin
+                        : true;
+                    
+                    if (!hasRole) return false;
+
+                    // 2. Feature Check (Plan Based)
+                    if (isSuperAdmin) return true;
+                    if (item.feature) {
+                        return features.includes(item.feature);
                     }
+                    
                     return true;
                 })
             }))
-            // Optional: Hide groups that have no items left after filtering
             .filter(group => group.items.length > 0);
-    }, [session?.user?.role]);
+    }, [session?.user?.role, session?.user?.features]);
 
     useEffect(() => {
         // Find which group contains the current pathname

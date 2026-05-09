@@ -1,11 +1,9 @@
-import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { Body, Controller, Get, Logger, Put, UseGuards } from '@nestjs/common'
 import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SiteSettingsResponseDto } from './dto/site-settings-response.dto'
@@ -13,6 +11,8 @@ import { SettingsService } from './settings.service'
 import { CacheService } from '../operations/infra/cache/cache.service'
 import { Post, HttpCode } from '@nestjs/common'
 
+@UseGuards(SubscriptionGuard)
+@RequireFeature('/admin/settings')
 @Controller('settings')
 export class SettingsController {
   private readonly logger = new Logger(SettingsController.name)
@@ -23,7 +23,7 @@ export class SettingsController {
   ) {}
 
   @Get()
-  @PublicDuringExpiration()
+  @RequireFeature('/admin')
   async findByTenantSettings(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SiteSettingsResponseDto>> {
@@ -38,8 +38,7 @@ export class SettingsController {
   }
 
   @Put()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @UseGuards(JwtAuthGuard)
   async updateSettings(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: UpdateSiteSettingsDto,
@@ -56,8 +55,7 @@ export class SettingsController {
 
   @Post('cache/clear')
   @HttpCode(200)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @UseGuards(JwtAuthGuard)
   async clearCache(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<null>> {

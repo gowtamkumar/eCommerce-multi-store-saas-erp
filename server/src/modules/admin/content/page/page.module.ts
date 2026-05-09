@@ -5,8 +5,10 @@ import { PageController } from './page.controller'
 import { PageRepository } from './page.repository'
 import { PageService } from './page.service'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [ProductModule, FaqModule],
+  imports: [ProductModule, FaqModule, TenantModule],
   controllers: [PageController],
   providers: [PageService],
   exports: [PageService],

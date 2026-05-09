@@ -1,10 +1,7 @@
-import { CurrentUser } from '@/common/decorators/current-user.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { TenantId } from '@/common/decorators/tenant-id.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { Body, Controller, Get, Logger, Post, Query, UseGuards } from '@nestjs/common'
 import { SubscriberResponseDto } from './dto/subscriber-response.dto'
 import { CreateSubscriberDto } from './dto/subscriber.dto'
@@ -12,6 +9,8 @@ import { SubscriberService } from './subscriber.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
+@UseGuards(SubscriptionGuard)
+@RequireFeature('/admin/subscribers')
 @Controller('subscribers')
 export class SubscriberController {
   private readonly logger = new Logger(SubscriberController.name)
@@ -33,15 +32,7 @@ export class SubscriberController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(
-    UserRole.SUPER_ADMIN,
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.MARKETING,
-    UserRole.SUPPORT,
-    UserRole.OPERATOR,
-  )
+  @UseGuards(JwtAuthGuard)
   @Get()
   async findAllSubscribers(
     @Query() filterDto: any,

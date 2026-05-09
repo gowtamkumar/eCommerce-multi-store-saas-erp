@@ -1,17 +1,17 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { Body, Controller, Get, Logger, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { FilterLeadDto } from './dto/filter-lead.dto'
 import { LeadResponseDto } from './dto/lead-response.dto'
 import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto'
 import { LeadService } from './lead.service'
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/leads')
 @Controller('leads')
 export class LeadController {
   private readonly logger = new Logger(LeadController.name)
@@ -19,7 +19,6 @@ export class LeadController {
   constructor(private readonly leadService: LeadService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
   async createLead(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateLeadDto,
@@ -35,13 +34,6 @@ export class LeadController {
   }
 
   @Get()
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.MARKETING,
-    UserRole.SUPPORT,
-    UserRole.OPERATOR,
-  )
   async findAllLeads(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterLeadDto,
@@ -63,7 +55,6 @@ export class LeadController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
   async updateLead(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

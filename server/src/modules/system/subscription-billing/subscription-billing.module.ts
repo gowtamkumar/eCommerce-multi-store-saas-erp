@@ -5,10 +5,12 @@ import { SubscriptionBillingController } from './subscription-billing.controller
 import { SubscriptionBillingService } from './subscription-billing.service'
 import { ConfigModule } from '@nestjs/config'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [PaymentModule, ConfigModule, CacheModule],
+  imports: [PaymentModule, ConfigModule, CacheModule, TenantModule],
   controllers: [SubscriptionBillingController],
   providers: [SubscriptionBillingService],
   exports: [SubscriptionBillingService],
 })
-export class SubscriptionBillingModule {}
+export class SubscriptionBillingModule { }

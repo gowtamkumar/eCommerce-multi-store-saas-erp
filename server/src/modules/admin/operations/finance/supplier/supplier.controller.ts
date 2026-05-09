@@ -1,11 +1,10 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
   CreateSupplierDto,
   UpdateSupplierDto,
@@ -25,7 +24,8 @@ import {
 } from '@nestjs/common'
 import { SupplierResponseDto } from './dto/supplier-response.dto'
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/suppliers')
 @Controller('suppliers')
 export class SupplierController {
   private readonly logger = new Logger(SupplierController.name)
@@ -33,7 +33,6 @@ export class SupplierController {
   constructor(private readonly service: SupplierService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async createSupplier(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateSupplierDto,
@@ -49,7 +48,6 @@ export class SupplierController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findAllSuppliers(
     @RequestContext() ctx: RequestContextDto,
     @Query() paginationDto: PaginationDto,
@@ -65,7 +63,6 @@ export class SupplierController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findOneSupplier(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -81,7 +78,6 @@ export class SupplierController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async updateSupplier(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -98,7 +94,6 @@ export class SupplierController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeSupplier(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

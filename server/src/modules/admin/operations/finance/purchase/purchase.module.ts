@@ -4,8 +4,14 @@ import { InventoryTransactionModule } from '../../logistics/inventory-transactio
 import { PurchaseOrderController } from './controllers/purchase-order.controller'
 import { PurchaseOrderService } from './services/purchase-order.service'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [BullModule.registerQueue({ name: 'product' }), InventoryTransactionModule],
+  imports: [
+    BullModule.registerQueue({ name: 'product' }),
+    InventoryTransactionModule,
+    TenantModule,
+  ],
   controllers: [PurchaseOrderController],
   providers: [PurchaseOrderService],
   exports: [PurchaseOrderService],

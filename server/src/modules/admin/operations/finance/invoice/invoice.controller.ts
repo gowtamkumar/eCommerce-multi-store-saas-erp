@@ -1,10 +1,9 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
   Body,
   Controller,
@@ -25,14 +24,14 @@ import { UpdateInvoiceDto } from './dto/update-invoice.dto'
 import { InvoiceService } from './invoice.service'
 
 @Controller('invoices')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/invoices')
 export class InvoiceController {
   private readonly logger = new Logger(InvoiceController.name)
 
   constructor(private readonly invoiceService: InvoiceService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async createInvoice(
     @Body() createInvoiceDto: CreateInvoiceDto,
     @RequestContext() ctx: RequestContextDto,
@@ -48,7 +47,6 @@ export class InvoiceController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findAllInvoices(
     @RequestContext() ctx: RequestContextDto,
     @Query() paginationDto: PaginationDto,
@@ -65,7 +63,6 @@ export class InvoiceController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findOneInvoice(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -81,7 +78,6 @@ export class InvoiceController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async updateInvoice(
     @Param('id') id: string,
     @Body() updateInvoiceDto: UpdateInvoiceDto,
@@ -98,7 +94,6 @@ export class InvoiceController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeInvoice(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,

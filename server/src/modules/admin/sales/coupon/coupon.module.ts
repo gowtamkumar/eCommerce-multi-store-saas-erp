@@ -6,10 +6,12 @@ import { CouponEntity } from './entities/coupon.entity'
 import { CouponRepository } from './repositoris/coupon.repository'
 import { CouponService } from './services/coupon.service'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [TypeOrmModule.forFeature([CouponEntity]), CacheModule],
+  imports: [TypeOrmModule.forFeature([CouponEntity]), CacheModule, TenantModule],
   controllers: [CouponController],
   providers: [CouponService, CouponRepository],
   exports: [CouponService],
 })
-export class CouponModule {}
+export class CouponModule { }

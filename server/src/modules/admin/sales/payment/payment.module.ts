@@ -6,10 +6,12 @@ import { PaymentActionController } from './controllers/payment-action.controller
 import { PaymentController } from './controllers/payment.controller'
 import { PaymentService } from './services/payment.service'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [SettingsModule, InvoiceModule, MailModule],
+  imports: [SettingsModule, InvoiceModule, MailModule, TenantModule],
   controllers: [PaymentController, PaymentActionController],
   providers: [PaymentService],
   exports: [PaymentService],
 })
-export class PaymentModule {}
+export class PaymentModule { }

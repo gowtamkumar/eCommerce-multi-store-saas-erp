@@ -6,8 +6,10 @@ import { SubscriberRepository } from './subscriber.repository'
 import { SubscriberService } from './subscriber.service'
 import { SubscriberEntity } from './entities/subscriber.entity'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [TypeOrmModule.forFeature([SubscriberEntity]), CacheModule],
+  imports: [TypeOrmModule.forFeature([SubscriberEntity]), CacheModule, TenantModule],
   controllers: [SubscriberController],
   providers: [SubscriberService, SubscriberRepository],
   exports: [SubscriberService],

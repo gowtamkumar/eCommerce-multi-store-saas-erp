@@ -6,8 +6,10 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { LeadEntity } from './entities/lead.entity'
 import { LeadRepository } from './lead.repository'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [TypeOrmModule.forFeature([LeadEntity]), CacheModule],
+  imports: [TypeOrmModule.forFeature([LeadEntity]), CacheModule, TenantModule],
   controllers: [LeadController],
   providers: [LeadService, LeadRepository],
   exports: [LeadService],

@@ -1,9 +1,8 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
 import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
@@ -12,7 +11,8 @@ import { Body, Controller, Get, Logger, Param, Patch, Post, Query, UseGuards } f
 import { RequestContextDto } from 'src/common/dto/request-context.dto'
 import { OrderResponseDto } from '../dto/order-response.dto'
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/orders')
 @Controller('orders')
 export class OrderController {
   private readonly logger = new Logger(OrderController.name)
@@ -21,7 +21,6 @@ export class OrderController {
 
   // @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
   async createOrder(
     @RequestContext() ctx: RequestContextDto,
     @Body() createOrderDto: CreateOrderDto,
@@ -37,13 +36,6 @@ export class OrderController {
   }
 
   @Get()
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.SUPPORT,
-    UserRole.MARKETING,
-    UserRole.OPERATOR,
-  )
   async findAllOrders(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterOrderDto,
@@ -68,13 +60,6 @@ export class OrderController {
   }
 
   @Get(':id')
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.SUPPORT,
-    UserRole.MARKETING,
-    UserRole.OPERATOR,
-  )
   async findOneOrder(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -90,14 +75,6 @@ export class OrderController {
   }
 
   @Get('user/:userId/count')
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.SUPPORT,
-    UserRole.MARKETING,
-    UserRole.OPERATOR,
-    UserRole.USER,
-  )
   async getUserOrderCount(
     @RequestContext() ctx: RequestContextDto,
     @Param('userId') userId: string,
@@ -113,14 +90,6 @@ export class OrderController {
   }
 
   @Get('user/:userId')
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.SUPPORT,
-    UserRole.MARKETING,
-    UserRole.OPERATOR,
-    UserRole.USER,
-  )
   async getUserOrders(
     @RequestContext() ctx: RequestContextDto,
     @Param('userId') userId: string,
@@ -147,7 +116,6 @@ export class OrderController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
   async updateOrder(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

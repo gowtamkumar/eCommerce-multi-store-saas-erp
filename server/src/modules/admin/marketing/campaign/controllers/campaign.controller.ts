@@ -1,10 +1,9 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { CreateCampaignDto } from '../dto/create-campaign.dto'
 import { ScheduleCampaignDto } from '../dto/schedule-campaign.dto'
@@ -13,8 +12,8 @@ import { CampaignEntity } from '../entities/campaign.entity'
 import { CampaignService } from '../services/campaign.service'
 
 @Controller('campaigns')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.MARKETING)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/campaigns')
 export class CampaignController {
   constructor(private readonly campaignService: CampaignService) {}
 

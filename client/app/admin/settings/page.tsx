@@ -1,5 +1,5 @@
-import SettingsPage from "@/features/admin/setting/components/Setting";
+import { redirect } from "next/navigation";
 
-export default function page() {
-    return <SettingsPage />
+export default function SettingsRedirect() {
+    redirect("/admin/settings/general");
 }

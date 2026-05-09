@@ -16,6 +16,7 @@ declare module "next-auth" {
     accessToken?: string;
     refreshToken?: string;
     accessTokenExpires?: number;
+    features: string[];
   }
 
   interface Session {
@@ -33,6 +34,7 @@ declare module "next-auth" {
       refreshToken?: string;
       accessTokenExpires?: number;
       error?: string;
+      features: string[];
     };
   }
 }
@@ -49,5 +51,6 @@ declare module "next-auth/jwt" {
     refreshToken?: string;
     accessTokenExpires?: number;
     error?: string;
+    features: string[];
   }
 }

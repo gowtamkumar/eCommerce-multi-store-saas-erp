@@ -1,10 +1,9 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
   Body,
   Controller,
@@ -22,6 +21,8 @@ import { CreateFaqDto, UpdateFaqDto } from './dto/faq.dto'
 import { FilterFaqDto } from './dto/filter-faq.dto'
 import { FaqService } from './faq.service'
 
+@UseGuards(SubscriptionGuard)
+@RequireFeature('/admin/faqs')
 @Controller('faqs')
 export class FaqController {
   private readonly logger = new Logger(FaqController.name)
@@ -29,8 +30,7 @@ export class FaqController {
   constructor(private readonly faqService: FaqService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   async createFaq(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateFaqDto,
@@ -67,8 +67,7 @@ export class FaqController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   async updateFaq(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -85,8 +84,7 @@ export class FaqController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @UseGuards(JwtAuthGuard)
   async removeFaq(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFaq.`)
     const result = await this.faqService.removeFaq(id, ctx)

@@ -5,8 +5,10 @@ import { SupplierService } from './supplier.service'
 import { SupplierController } from './supplier.controller'
 import { SupplierRepository } from './supplier.repository'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [],
+  imports: [TenantModule],
   controllers: [SupplierController],
   providers: [SupplierService],
   exports: [SupplierService],

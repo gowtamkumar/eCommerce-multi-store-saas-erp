@@ -3,8 +3,10 @@ import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { Body, Controller, Get, Logger, Post, Query, Res, UseGuards } from '@nestjs/common'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { ConfigService } from '@nestjs/config'
 import { Response } from 'express'
 import { Public } from '../../../common/decorators/public.decorator'
@@ -13,8 +15,9 @@ import { CurrentSubscriptionResponseDto } from './dto/current-subscription-respo
 import { SubscriptionInvoiceResponseDto } from './dto/subscription-invoice-response.dto'
 import { SubscriptionBillingService } from './subscription-billing.service'
 
+@UseGuards(SubscriptionGuard)
+@RequireFeature('/admin')
 @Controller('billing')
-@UseGuards(JwtAuthGuard)
 export class SubscriptionBillingController {
   private readonly logger = new Logger(SubscriptionBillingController.name)
 
@@ -23,6 +26,7 @@ export class SubscriptionBillingController {
     private readonly configService: ConfigService,
   ) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get('current')
   @PublicDuringExpiration()
   async getCurrentSubscription(
@@ -38,6 +42,7 @@ export class SubscriptionBillingController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('plans')
   @PublicDuringExpiration()
   async getAvailablePlans(): Promise<BaseApiSuccessResponse<SubscriptionPlanEntity[]>> {
@@ -51,6 +56,7 @@ export class SubscriptionBillingController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('history')
   @PublicDuringExpiration()
   async getBillingHistory(
@@ -66,6 +72,7 @@ export class SubscriptionBillingController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('initiate')
   @PublicDuringExpiration()
   async initiatePayment(

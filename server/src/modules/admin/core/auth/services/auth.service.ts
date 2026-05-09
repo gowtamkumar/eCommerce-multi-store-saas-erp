@@ -99,10 +99,18 @@ export class AuthService {
       throw new UnauthorizedException('Invalid Login Credentials')
     }
 
-    const tokens = await this.getTokens(user)
+    let features: string[] = []
+    if (user.role === UserRole.SUPER_ADMIN) {
+      features = ['*'] // Super admin has access to everything
+    } else if (tenantId) {
+      const tenant = await this.tenantService.findOneTenants(tenantId)
+      features = tenant?.subscriptionPlan?.features || []
+    }
+
+    const tokens = await this.getTokens(user, features)
 
     return {
-      user,
+      user: { ...user, features } as any,
       ...tokens,
     }
   }
@@ -142,13 +150,17 @@ export class AuthService {
     return this.staffInvitationService.acceptInvitation(dto)
   }
 
-  async getTokens(user: any): Promise<{ accessToken: string; refreshToken: string }> {
+  async getTokens(
+    user: any,
+    features: string[] = [],
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     this.logger.log(`${this.getTokens.name} Service Called`)
     const payload = {
       username: user.username,
       tenantId: user.tenantId,
       role: user.role,
       sub: user.id,
+      features,
     }
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -178,7 +190,15 @@ export class AuthService {
     const user = await this.userService.getUserIfRefreshTokenMatches(refreshToken, userId)
     if (!user) throw new UnauthorizedException('Access Denied')
 
-    const tokens = await this.getTokens(user)
+    let features: string[] = []
+    if (user.role === UserRole.SUPER_ADMIN) {
+      features = ['*']
+    } else if (user.tenantId) {
+      const tenant = await this.tenantService.findOneTenants(user.tenantId)
+      features = tenant?.subscriptionPlan?.features || []
+    }
+
+    const tokens = await this.getTokens(user, features)
     return tokens
   }
 

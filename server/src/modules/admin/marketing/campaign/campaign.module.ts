@@ -18,6 +18,8 @@ import { CampaignRepository } from './repositories/campaign.repository'
 import { AudienceService } from './services/audience.service'
 import { CampaignService } from './services/campaign.service'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -32,6 +34,7 @@ import { CampaignService } from './services/campaign.service'
     MailModule,
     SmsModule,
     PushModule,
+    TenantModule,
   ],
   providers: [
     AudienceService, 

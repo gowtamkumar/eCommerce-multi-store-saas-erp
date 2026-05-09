@@ -1,20 +1,21 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { Controller, Get, Logger, Param, Query, UseGuards } from '@nestjs/common'
 import { ReportService } from './report.service'
 
 @Controller('report')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/reports')
 export class ReportController {
   private readonly logger = new Logger(ReportController.name)
   constructor(private readonly reportService: ReportService) {}
 
   @Get('/analytics')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @RequireFeature('/admin')
   async getAnalytics(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -29,7 +30,7 @@ export class ReportController {
   }
 
   @Get('/dashboard')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @RequireFeature('/admin')
   async getDashboardReport(
     @RequestContext() ctx: RequestContextDto,
     @Query('period') period: string = 'month',
@@ -45,7 +46,6 @@ export class ReportController {
   }
 
   @Get('/profit-loss')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async getProfitLossReport(
     @RequestContext() ctx: RequestContextDto,
     @Query('startDate') startDateStr?: string,
@@ -62,7 +62,6 @@ export class ReportController {
   }
 
   @Get('/supplier-ledger/:supplierId')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
   async getSupplierLedger(
     @RequestContext() ctx: RequestContextDto,
     @Param('supplierId') supplierId: string,
@@ -78,7 +77,6 @@ export class ReportController {
   }
 
   @Get('/customer-ledger/:customerId')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
   async getCustomerLedger(
     @RequestContext() ctx: RequestContextDto,
     @Param('customerId') customerId: string,
@@ -94,7 +92,6 @@ export class ReportController {
   }
 
   @Get('/cash-flow')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async getCashFlow(
     @RequestContext() ctx: RequestContextDto,
     @Query('period') period: string = 'last30days',
@@ -110,7 +107,6 @@ export class ReportController {
   }
 
   @Get('/export/:type')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async exportReport(
     @RequestContext() ctx: RequestContextDto,
     @Param('type') type: string,
@@ -137,7 +133,6 @@ export class ReportController {
   }
 
   @Get('/finance-summary')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async getFinanceSummary(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {

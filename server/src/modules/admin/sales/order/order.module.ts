@@ -16,8 +16,11 @@ import { BullModule } from '@nestjs/bullmq'
 import { OrderProcessor } from './queue/order.processor'
 import { OrderProcessHelper } from './services/order-process.helper'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
   imports: [
+    TenantModule,
     BullModule.registerQueue({
       name: 'order',
     }),
@@ -35,4 +38,4 @@ import { OrderProcessHelper } from './services/order-process.helper'
   providers: [OrderService, ReturnService, OrderProcessor, OrderProcessHelper], // Registered
   exports: [OrderService, ReturnService],
 })
-export class OrderModule {}
+export class OrderModule { }

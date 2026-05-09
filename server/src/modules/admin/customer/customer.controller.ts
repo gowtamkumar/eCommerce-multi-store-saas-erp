@@ -1,23 +1,23 @@
 import { Controller, Get, Logger, Query, UseGuards } from '@nestjs/common'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { FilterUserDto } from '@/modules/admin/core/user/dtos/filter-user.dto'
+import { UserRole } from '@/common/enums/user/user-role.enum'
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/customers')
 @Controller('customer')
 export class CustomerController {
   private readonly logger = new Logger(CustomerController.name)
 
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
   async findAll(
     @RequestContext() ctx: RequestContextDto,
     @Query() query: FilterUserDto,

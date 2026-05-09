@@ -1,120 +1,133 @@
 import { BarChart3, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap, CheckCircle2 } from 'lucide-react';
 import { UserRole } from './lib/enums/user-role.enum';
 
+export const storeSettings = [
+    { type: 'header', label: 'Store Configuration', feature: '/admin/settings/general' },
+    { icon: Globe, label: 'General Info', href: '/admin/settings/general', feature: '/admin/settings/general' },
+    { icon: Globe, label: 'Custom Domain', href: '/admin/settings/domain', feature: '/admin/settings/domain' },
+    { icon: Wallet, label: 'Currencies', href: '/admin/settings/currencies', feature: '/admin/settings/currencies' },
+    { icon: Share2, label: 'Social Links', href: '/admin/settings/social', feature: '/admin/settings/social' },
+    { icon: ShieldCheck, label: 'Trust & Safety', href: '/admin/settings/trust', feature: '/admin/settings/trust' },
+    { icon: TrendingUp, label: 'SEO Settings', href: '/admin/settings/marketing', feature: '/admin/settings/marketing' },
+    { icon: Tag, label: 'Label Configuration', href: '/admin/settings/label', feature: '/admin/settings/label' },
+
+    { type: 'header', label: 'Integrations & Tools', feature: '/admin/settings/email' },
+    { icon: Mail, label: 'Email Config', href: '/admin/settings/email', feature: '/admin/settings/email' },
+    { icon: MessageSquare, label: 'SMS Configuration', href: '/admin/settings/sms', feature: '/admin/settings/sms' },
+    { icon: CreditCard, label: 'Payment Methods', href: '/admin/settings/payment', feature: '/admin/settings/payment' },
+    { icon: Truck, label: 'Courier Rules', href: '/admin/settings/courier', feature: '/admin/settings/courier' },
+    { icon: Zap, label: 'System & Performance', href: '/admin/settings/system', feature: '/admin/settings/system' },
+];
+
+export const uiSettings = [
+    { type: 'header', label: 'Storefront UI', feature: '/admin/settings/navbar' },
+    { icon: Menu, label: 'Navbar Menu', href: '/admin/settings/navbar', feature: '/admin/settings/navbar' },
+    { icon: Layout, label: 'Footer Menu', href: '/admin/settings/footer', feature: '/admin/settings/footer' },
+    { icon: Layout, label: 'Product List UI', href: '/admin/settings/productsPage', feature: '/admin/settings/productsPage' },
+    { icon: Layout, label: 'Product Detail UI', href: '/admin/settings/singleProductPage', feature: '/admin/settings/singleProductPage' },
+    { icon: Tag, label: 'Offers Page UI', href: '/admin/settings/offersPage', feature: '/admin/settings/offersPage' },
+];
+
 export const navGroups = [
     {
         title: 'Insights',
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPER_ADMIN],
         items: [
-            { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
+            { icon: LayoutDashboard, label: 'Dashboard', href: '/admin', feature: '/admin' },
         ]
     },
     {
         title: 'Catalog',
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.MARKETING, UserRole.SUPER_ADMIN],
         items: [
-            { icon: Package, label: 'Products', href: '/admin/products' },
-            { icon: Tag, label: 'Categories', href: '/admin/categories' },
-            { icon: Globe, label: 'Brands', href: '/admin/brands' },
-            { icon: User, label: 'Media', href: '/admin/media' },
-            { icon: Star, label: 'Reviews', href: '/admin/reviews' },
+            { icon: Package, label: 'Products', href: '/admin/products', feature: '/admin/products' },
+            { icon: Tag, label: 'Categories', href: '/admin/categories', feature: '/admin/categories' },
+            { icon: Globe, label: 'Brands', href: '/admin/brands', feature: '/admin/brands' },
+            { icon: User, label: 'Media', href: '/admin/media', feature: '/admin/media' },
+            { icon: Star, label: 'Reviews', href: '/admin/reviews', feature: '/admin/reviews' },
         ]
     },
     {
         title: 'Sales & CRM',
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.SUPER_ADMIN],
         items: [
-            { icon: ShoppingBag, label: 'Orders', href: '/admin/orders' },
-            { icon: ShoppingBag, label: 'Active Carts', href: '/admin/carts' },
-            { icon: RotateCcw, label: 'Returns', href: '/admin/returns' },
-            { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
-            { icon: FileText, label: 'Invoices', href: '/admin/invoices' },
-            { icon: Users, label: 'Customers', href: '/admin/customers' },
+            { icon: ShoppingBag, label: 'Orders', href: '/admin/orders', feature: '/admin/orders' },
+            { icon: ShoppingBag, label: 'Active Carts', href: '/admin/carts', feature: '/admin/carts' },
+            { icon: RotateCcw, label: 'Returns', href: '/admin/returns', feature: '/admin/returns' },
+            { icon: CreditCard, label: 'Payments', href: '/admin/payments', feature: '/admin/payments' },
+            { icon: FileText, label: 'Invoices', href: '/admin/invoices', feature: '/admin/invoices' },
+            { icon: Users, label: 'Customers', href: '/admin/customers', feature: '/admin/customers' },
         ]
     },
     {
         title: 'Operations',
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPER_ADMIN],
         items: [
-            { icon: Package, label: 'Inventory', href: '/admin/inventory' },
-            { icon: Users, label: 'Suppliers', href: '/admin/suppliers', roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN] },
-            { icon: Truck, label: 'Purchase Orders', href: '/admin/purchases', roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN] },
-            { icon: Truck, label: 'Couriers', href: '/admin/couriers' },
-            { icon: Receipt, label: 'Expenses', href: '/admin/expenses', roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN] },
+            { icon: Package, label: 'Inventory', href: '/admin/inventory', feature: '/admin/inventory' },
+            { icon: Users, label: 'Suppliers', href: '/admin/suppliers', feature: '/admin/suppliers' },
+            { icon: Truck, label: 'Purchase Orders', href: '/admin/purchases', feature: '/admin/purchases' },
+            { icon: Truck, label: 'Couriers', href: '/admin/couriers', feature: '/admin/couriers' },
+            { icon: Receipt, label: 'Expenses', href: '/admin/expenses', feature: '/admin/expenses' },
         ]
     },
     {
         title: 'Marketing',
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPER_ADMIN],
         items: [
-            { icon: Tag, label: 'Coupons', href: '/admin/coupons' },
-            { icon: Megaphone, label: 'Promotions', href: '/admin/promotions' },
-            { icon: MessageSquare, label: 'Newsletter', href: '/admin/leads' },
-            { icon: Mail, label: 'Subscribers', href: '/admin/subscribers' },
-            { icon: Megaphone, label: 'Messaging Campaigns', href: '/admin/campaigns' },
+            { icon: Tag, label: 'Coupons', href: '/admin/coupons', feature: '/admin/coupons' },
+            { icon: Megaphone, label: 'Promotions', href: '/admin/promotions', feature: '/admin/promotions' },
+            { icon: MessageSquare, label: 'Newsletter', href: '/admin/leads', feature: '/admin/leads' },
+            { icon: Mail, label: 'Subscribers', href: '/admin/subscribers', feature: '/admin/subscribers' },
+            { icon: Megaphone, label: 'Messaging Campaigns', href: '/admin/campaigns', feature: '/admin/campaigns' },
         ]
     },
     {
         title: 'Reports',
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN],
         items: [
-            { icon: BarChart3, label: 'Sales Analysis', href: '/admin/reports/sales' },
-            { icon: TrendingUp, label: 'Finance Summary', href: '/admin/reports/finance' },
-            { icon: FileText, label: 'Profit & Loss', href: '/admin/reports/profit-loss' },
-            { icon: Users, label: 'Supplier Ledger', href: '/admin/reports/supplier-ledger' },
-            { icon: Users, label: 'Customer Ledger', href: '/admin/reports/customer-ledger' },
-            { icon: Wallet, label: 'Cash Flow', href: '/admin/reports/cash-flow' },
-            { icon: Download, label: 'Export Center', href: '/admin/reports/export' },
+            { icon: BarChart3, label: 'Sales Analysis', href: '/admin/reports/sales', feature: '/admin/reports/sales' },
+            { icon: TrendingUp, label: 'Finance Summary', href: '/admin/reports/finance', feature: '/admin/reports/finance' },
+            { icon: FileText, label: 'Profit & Loss', href: '/admin/reports/profit-loss', feature: '/admin/reports/profit-loss' },
+            { icon: Users, label: 'Supplier Ledger', href: '/admin/reports/supplier-ledger', feature: '/admin/reports/supplier-ledger' },
+            { icon: Users, label: 'Customer Ledger', href: '/admin/reports/customer-ledger', feature: '/admin/reports/customer-ledger' },
+            { icon: Wallet, label: 'Cash Flow', href: '/admin/reports/cash-flow', feature: '/admin/reports/cash-flow' },
+            { icon: Download, label: 'Export Center', href: '/admin/reports/export', feature: '/admin/reports/export' },
         ]
     },
     {
         title: 'Access Control',
         roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN],
         items: [
-            { icon: ShieldCheck, label: 'Staff Accounts', href: '/admin/team' },
+            { icon: ShieldCheck, label: 'Staff Accounts', href: '/admin/team', feature: '/admin/team' },
         ]
     },
     {
         title: 'User Account',
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING, UserRole.SUPER_ADMIN],
         items: [
-            { icon: User, label: 'My Profile', href: '/admin/profile' },
+            { icon: User, label: 'My Profile', href: '/admin/profile', feature: '/admin/profile' },
         ]
     },
     {
         title: 'System Settings',
         roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN],
         items: [
-            { icon: CreditCard, label: 'Subscription & Billing', href: '/admin/settings/billing' },
-            { icon: Globe, label: 'General Info', href: '/admin/settings?tab=general' },
-            { icon: Globe, label: 'Custom Domain', href: '/admin/settings?tab=domain' },
-            { icon: Mail, label: 'Email Config', href: '/admin/settings?tab=email' },
-            { icon: MessageSquare, label: 'SMS Configuration', href: '/admin/settings?tab=sms' },
-            { icon: CreditCard, label: 'Payment Methods', href: '/admin/settings?tab=payment' },
-            { icon: Truck, label: 'Courier Rules', href: '/admin/settings?tab=courier' },
-            { icon: Share2, label: 'Social Links', href: '/admin/settings?tab=social' },
-            { icon: ShieldCheck, label: 'Trust & Safety', href: '/admin/settings?tab=trust' },
-            { icon: TrendingUp, label: 'SEO Settings', href: '/admin/settings?tab=marketing' },
-            { icon: Tag, label: 'Label Configuration', href: '/admin/settings?tab=label' },
-            { icon: Zap, label: 'Cache & Performance', href: '/admin/settings?tab=system' },
+            { icon: CreditCard, label: 'Subscription & Billing', href: '/admin/settings/billing', feature: '/admin/settings' },
+            ...storeSettings
         ]
     },
     {
         title: 'Storefront & UI',
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPER_ADMIN],
         items: [
-            { icon: Layout, label: 'Pages Builder', href: '/admin/pages' },
-            { icon: Menu, label: 'Navbar Menu', href: '/admin/settings?tab=navbar' },
-            { icon: Layout, label: 'Footer Menu', href: '/admin/settings?tab=footer' },
-            { icon: Layout, label: 'Product List UI', href: '/admin/settings?tab=productsPage' },
-            { icon: Layout, label: 'Product Detail UI', href: '/admin/settings?tab=singleProductPage' },
-            { icon: Tag, label: 'Offers Page UI', href: '/admin/settings?tab=offersPage' },
-            { icon: HelpCircle, label: 'FAQs', href: '/admin/faqs' },
+            { icon: Layout, label: 'Pages Builder', href: '/admin/pages', feature: '/admin/pages' },
+            { icon: HelpCircle, label: 'FAQs', href: '/admin/faqs', feature: '/admin/faqs' },
+            ...uiSettings
         ]
     },
 ];
 
-export const settingsItems: any[] = [];
+
 
 export function getFeatureDisplay(href: string) {
     for (const group of navGroups) {

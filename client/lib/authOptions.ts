@@ -130,6 +130,7 @@ export const authOptions: NextAuthOptions = {
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
           accessTokenExpires: user.accessTokenExpires,
+          features: user.features || [],
         };
       }
 
@@ -157,6 +158,7 @@ export const authOptions: NextAuthOptions = {
         session.user.tenantId = token.tenantId;
         session.user.accessToken = token.accessToken;
         session.user.error = token.error;
+        session.user.features = token.features || [];
       }
       return session;
     },

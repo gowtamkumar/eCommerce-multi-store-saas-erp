@@ -14,6 +14,8 @@ import { PurchaseModule } from '../purchase/purchase.module'
 import { SupplierModule } from '../supplier/supplier.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
   imports: [
     SuperAdminModule,
@@ -27,6 +29,7 @@ import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module
     ExpenseModule,
     InvoiceModule,
     CacheModule,
+    TenantModule,
   ],
   controllers: [ReportController],
   providers: [ReportService, ReportRepository],

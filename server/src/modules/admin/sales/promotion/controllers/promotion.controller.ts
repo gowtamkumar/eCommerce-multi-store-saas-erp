@@ -1,11 +1,9 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { TenantId } from '@/common/decorators/tenant-id.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
   Body,
   Controller,
@@ -23,6 +21,8 @@ import { PromotionResponseDto } from '../dto/promotion-response.dto'
 import { UpdatePromotionDto } from '../dto/update-promotion.dto'
 import { PromotionService } from '../services/promotion.service'
 
+@UseGuards(SubscriptionGuard)
+@RequireFeature('/admin/promotions')
 @Controller('promotions')
 export class PromotionController {
   private readonly logger = new Logger(PromotionController.name)
@@ -30,8 +30,7 @@ export class PromotionController {
   constructor(private readonly promotionService: PromotionService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   async createPromotion(
     @RequestContext() ctx: RequestContextDto,
     @Body() createPromotionDto: CreatePromotionDto,
@@ -47,14 +46,7 @@ export class PromotionController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.MARKETING,
-    UserRole.SUPPORT,
-    UserRole.OPERATOR,
-  )
+  @UseGuards(JwtAuthGuard)
   async findAllPromotions(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: any,
@@ -70,15 +62,7 @@ export class PromotionController {
   }
 
   @Get('active')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.MARKETING,
-    UserRole.SUPPORT,
-    UserRole.OPERATOR,
-    UserRole.USER,
-  )
+  @UseGuards(JwtAuthGuard)
   async findActivePromotions(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PromotionResponseDto[]>> {
@@ -125,14 +109,7 @@ export class PromotionController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.MARKETING,
-    UserRole.SUPPORT,
-    UserRole.OPERATOR,
-  )
+  @UseGuards(JwtAuthGuard)
   async findOnePromotion(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -148,8 +125,7 @@ export class PromotionController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   async updatePromotion(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -166,8 +142,7 @@ export class PromotionController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @UseGuards(JwtAuthGuard)
   async removePromotion(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

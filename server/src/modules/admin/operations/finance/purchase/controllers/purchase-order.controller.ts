@@ -1,12 +1,11 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { Body, Controller, Get, Logger, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import { PurchaseOrderResponseDto } from '../dto/purchase-order-response.dto'
@@ -16,7 +15,8 @@ import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-stat
 import { PurchaseOrderService } from '../services/purchase-order.service'
 
 @ApiTags('Purchase Orders')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/purchases')
 @Controller('purchase-orders')
 export class PurchaseOrderController {
   private readonly logger = new Logger(PurchaseOrderController.name)
@@ -24,7 +24,6 @@ export class PurchaseOrderController {
   constructor(private readonly service: PurchaseOrderService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async createPurchaseOrder(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePurchaseOrderDto,
@@ -40,7 +39,6 @@ export class PurchaseOrderController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findAllPurchaseOrder(
     @RequestContext() ctx: RequestContextDto,
     @Query() paginationDto: PaginationDto,
@@ -63,7 +61,6 @@ export class PurchaseOrderController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findOnePurchaseOrder(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -79,7 +76,6 @@ export class PurchaseOrderController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async updatePurchaseOrderStatus(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -98,7 +94,6 @@ export class PurchaseOrderController {
   }
 
   @Post(':id/payments')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async recordSupplierPayment(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

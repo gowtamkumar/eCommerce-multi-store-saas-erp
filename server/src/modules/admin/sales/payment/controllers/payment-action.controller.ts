@@ -6,10 +6,9 @@ import { PaymentService } from '../services/payment.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 
 @Controller('payment')
 export class PaymentActionController {
@@ -19,8 +18,8 @@ export class PaymentActionController {
 
   // @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Post('init')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR, UserRole.USER)
+  @UseGuards(JwtAuthGuard, SubscriptionGuard)
+  @RequireFeature('/admin/payments')
   async init(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: InitPaymentDto,

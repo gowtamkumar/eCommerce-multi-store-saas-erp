@@ -159,30 +159,35 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {navGroups.map((group) => {
-                                    const filteredItems = group.items.filter(item => item.href !== '/admin/profile' && item.href !== '/admin/settings/billing');
+                                {navGroups.map((group: any) => {
+                                    const filteredItems: any[] = group.items.filter((item: any) =>
+                                        item.feature &&
+                                        item.type !== 'header' &&
+                                        item.href !== '/admin/profile' &&
+                                        item.href !== '/admin/settings/billing'
+                                    );
                                     if (filteredItems.length === 0) return null;
 
                                     return (
                                         <div key={group.title} className="space-y-3">
                                             <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{group.title}</h4>
                                             <div className="space-y-2">
-                                                {filteredItems.map(item => (
-                                                    <label key={item.href} className={`flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer group ${features.includes(item.href) ? 'bg-brand-50/50 dark:bg-brand-500/10 border-brand-500 shadow-sm' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-brand-500/30'}`}>
+                                                {filteredItems.map((item: any) => (
+                                                    <label key={item.feature} className={`flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer group ${features.includes(item.feature) ? 'bg-brand-50/50 dark:bg-brand-500/10 border-brand-500 shadow-sm' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-brand-500/30'}`}>
                                                         <div className="relative flex items-center justify-center flex-shrink-0">
                                                             <input
                                                                 type="checkbox"
-                                                                checked={features.includes(item.href)}
-                                                                onChange={() => toggleFeature(item.href)}
+                                                                checked={features.includes(item.feature)}
+                                                                onChange={() => toggleFeature(item.feature)}
                                                                 className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-700 appearance-none checked:bg-brand-500 checked:border-brand-500 transition-colors peer cursor-pointer"
                                                             />
                                                             <CheckCircle2 className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={3} />
                                                         </div>
                                                         <div className="flex items-center gap-3 flex-1">
-                                                            <div className={`p-2 rounded-xl transition-colors ${features.includes(item.href) ? 'bg-brand-100 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-brand-500'}`}>
+                                                            <div className={`p-2 rounded-xl transition-colors ${features.includes(item.feature) ? 'bg-brand-100 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-brand-500'}`}>
                                                                 <item.icon className="w-4 h-4" />
                                                             </div>
-                                                            <span className={`text-sm font-bold transition-colors ${features.includes(item.href) ? 'text-brand-700 dark:text-brand-300' : 'text-slate-700 dark:text-slate-200 group-hover:text-brand-600'}`}>
+                                                            <span className={`text-sm font-bold transition-colors ${features.includes(item.feature) ? 'text-brand-700 dark:text-brand-300' : 'text-slate-700 dark:text-slate-200 group-hover:text-brand-600'}`}>
                                                                 {item.label}
                                                             </span>
                                                         </div>

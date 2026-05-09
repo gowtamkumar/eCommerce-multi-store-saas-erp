@@ -1,8 +1,7 @@
 import { Body, Controller, Get, Param, Post, UseGuards, Logger, Query } from '@nestjs/common'
-import { Roles } from '@/common/decorators/roles.decorator'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-import { RolesGuard } from '@/common/guards/roles.guard'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logistics/inventory-transaction/dto/create-inventory-transaction.dto'
 import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
@@ -12,7 +11,8 @@ import { InventoryTransactionResponseDto } from './dto/inventory-transaction-res
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/inventory')
 @Controller('inventory-transactions')
 export class InventoryTransactionController {
   private readonly logger = new Logger(InventoryTransactionController.name)
@@ -20,7 +20,6 @@ export class InventoryTransactionController {
   constructor(private readonly service: InventoryTransactionService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR)
   async createInventoryTransaction(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateInventoryTransactionDto,
@@ -38,7 +37,6 @@ export class InventoryTransactionController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findAllInventoryTransactions(
     @RequestContext() ctx: RequestContextDto,
     @Query() pagination: PaginationDto,
@@ -57,7 +55,6 @@ export class InventoryTransactionController {
   }
 
   @Get('product/:productId')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async findByProductInventoryTransactions(
     @RequestContext() ctx: RequestContextDto,
     @Param('productId') productId: string,
@@ -75,7 +72,6 @@ export class InventoryTransactionController {
   }
 
   @Get('stock-summary')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT, UserRole.OPERATOR)
   async getStockSummaryInventoryTransactions(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any[]>> {

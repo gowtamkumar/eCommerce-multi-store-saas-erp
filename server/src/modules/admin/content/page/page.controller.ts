@@ -1,10 +1,9 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
   Body,
   Controller,
@@ -21,6 +20,8 @@ import { PageResponseDto } from './dto/page-response.dto'
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto'
 import { PageService } from './page.service'
 
+@UseGuards(SubscriptionGuard)
+@RequireFeature('/admin/pages')
 @Controller('pages')
 export class PageController {
   private readonly logger = new Logger(PageController.name)
@@ -28,8 +29,7 @@ export class PageController {
   constructor(private readonly pageService: PageService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   async createPage(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePageDto,
@@ -89,14 +89,7 @@ export class PageController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.MARKETING,
-    UserRole.SUPPORT,
-    UserRole.OPERATOR,
-  )
+  @UseGuards(JwtAuthGuard)
   async findOnePage(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -112,8 +105,7 @@ export class PageController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   async updatePage(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -130,8 +122,7 @@ export class PageController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @UseGuards(JwtAuthGuard)
   async removePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePage.`)
     const result = await this.pageService.removePage(id, ctx)

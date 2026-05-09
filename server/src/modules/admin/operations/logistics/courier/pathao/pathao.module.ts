@@ -6,8 +6,10 @@ import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module
 import { PathaoController } from '@/modules/admin/operations/logistics/courier/pathao/pathao.controller'
 import { PathaoService } from '@/modules/admin/operations/logistics/courier/pathao/pathao.service'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [HttpModule, SettingsModule, OrderModule, CacheModule],
+  imports: [HttpModule, SettingsModule, OrderModule, CacheModule, TenantModule],
   controllers: [PathaoController],
   providers: [PathaoService],
   exports: [PathaoService],

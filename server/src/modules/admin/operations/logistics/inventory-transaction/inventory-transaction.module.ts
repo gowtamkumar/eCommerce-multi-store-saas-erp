@@ -9,8 +9,10 @@ import { CategoryEntity } from '@/modules/admin/catalog/category/entities/catego
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 import { InventoryTransactionRepository } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.repository'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [],
+  imports: [TenantModule],
   controllers: [InventoryTransactionController],
   providers: [InventoryTransactionService, InventoryTransactionRepository],
   exports: [InventoryTransactionService, InventoryTransactionRepository],
