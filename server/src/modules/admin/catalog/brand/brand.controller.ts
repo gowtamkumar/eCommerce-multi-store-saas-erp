@@ -1,11 +1,10 @@
 import { Audit } from '@/common/decorators/audit.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
   Body,
   Controller,
@@ -22,6 +21,8 @@ import { BrandResponseDto } from './dto/brand-response.dto'
 import { CreateBrandDto } from './dto/create-brand.dto'
 import { UpdateBrandDto } from './dto/update-brand.dto'
 
+@UseGuards(SubscriptionGuard)
+@RequireFeature('/admin/brands')
 @Controller('brands')
 export class BrandController {
   private readonly logger = new Logger(BrandController.name)
@@ -29,8 +30,7 @@ export class BrandController {
   constructor(private readonly brandService: BrandService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   @Audit({ entity: 'Brand', action: 'CREATE' })
   async createBrand(
     @RequestContext() ctx: RequestContextDto,
@@ -61,8 +61,7 @@ export class BrandController {
   }
 
   @Get('stats')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @UseGuards(JwtAuthGuard)
   async findAllBrandsWithStats(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -92,8 +91,7 @@ export class BrandController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   @Audit({ entity: 'Brand', action: 'UPDATE' })
   async updateBrand(
     @RequestContext() ctx: RequestContextDto,
@@ -111,8 +109,7 @@ export class BrandController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @UseGuards(JwtAuthGuard)
   @Audit({ entity: 'Brand', action: 'DELETE' })
   async removeBrand(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeBrand.`)

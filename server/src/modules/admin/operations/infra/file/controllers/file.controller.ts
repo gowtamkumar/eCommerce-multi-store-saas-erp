@@ -1,9 +1,9 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
   Controller,
   Delete,
@@ -27,14 +27,14 @@ import { FileResponseDto } from '../dtos/file-response.dto'
 import { FilesService } from '../services/file.service'
 
 @Controller('admin/media')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/media')
 export class AdminMediaController {
   private readonly logger = new Logger(AdminMediaController.name)
 
   constructor(private readonly filesService: FilesService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING, UserRole.SUPPORT)
   async findAllFiles(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterFileDto,
@@ -50,7 +50,6 @@ export class AdminMediaController {
   }
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -90,7 +89,6 @@ export class AdminMediaController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
   async removeFile(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,

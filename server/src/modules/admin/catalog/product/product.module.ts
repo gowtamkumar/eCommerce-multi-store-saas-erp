@@ -1,4 +1,5 @@
 import { PurchaseModule } from '@/modules/admin/operations/finance/purchase/purchase.module'
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
 import { InventoryTransactionModule } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.module'
 import { PromotionModule } from '@/modules/admin/sales/promotion/promotion.module'
@@ -17,6 +18,7 @@ import { ProductProcessor } from './queue/product.processor'
     InventoryTransactionModule,
     PurchaseModule,
     PromotionModule,
+    TenantModule,
   ],
   controllers: [ProductController],
   providers: [ProductService, ProductProcessor],

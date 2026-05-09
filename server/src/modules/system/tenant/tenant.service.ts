@@ -41,7 +41,7 @@ export class TenantService {
     private readonly subscriptionPlanService: SubscriptionPlanService,
     private readonly dataSource: DataSource,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   /**
    * Creates a new tenant with associated admin user and initial settings.
@@ -163,7 +163,7 @@ export class TenantService {
     const cached = await this.cacheService.getCache<TenantEntity>(cacheKey)
     if (cached) return cached
 
-    const tenant = await this.tenantRepository.findById(id)
+    const tenant = await this.tenantRepository.findByIdWithRelations(id)
     if (!tenant) {
       throw new NotFoundException(`Tenant with ID "${id}" not found`)
     }

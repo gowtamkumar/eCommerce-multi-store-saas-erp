@@ -1,10 +1,9 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
   Body,
   Controller,
@@ -22,6 +21,8 @@ import { ReviewResponseDto } from '../dto/review-response.dto'
 import { CreateReviewDto, UpdateReviewDto } from '../dto/review.dto'
 import { ReviewService } from '../services/review.service'
 
+@UseGuards(SubscriptionGuard)
+@RequireFeature('/admin/reviews')
 @Controller('reviews')
 export class ReviewController {
   private readonly logger = new Logger(ReviewController.name)
@@ -29,14 +30,7 @@ export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.SUPPORT,
-    UserRole.MARKETING,
-    UserRole.USER,
-  )
+  @UseGuards(JwtAuthGuard)
   async createReview(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateReviewDto,
@@ -52,14 +46,7 @@ export class ReviewController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.STORE_MANAGER,
-    UserRole.SUPPORT,
-    UserRole.MARKETING,
-    UserRole.OPERATOR,
-  )
+  @UseGuards(JwtAuthGuard)
   async findAllReviews(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterReviewDto,
@@ -110,8 +97,7 @@ export class ReviewController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPPORT)
+  @UseGuards(JwtAuthGuard)
   async updateReview(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -128,8 +114,7 @@ export class ReviewController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @UseGuards(JwtAuthGuard)
   async removeReview(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeReview.`)
     const result = await this.reviewService.removeReview(id, ctx)

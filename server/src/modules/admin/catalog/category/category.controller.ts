@@ -1,10 +1,9 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { CategoryService } from '@/modules/admin/catalog/category/category.service'
 import { CreateCategoryDto } from '@/modules/admin/catalog/category/dto/create-category.dto'
 import { UpdateCategoryDto } from '@/modules/admin/catalog/category/dto/update-category.dto'
@@ -21,6 +20,8 @@ import {
 } from '@nestjs/common'
 import { CategoryResponseDto } from './dto/category-response.dto'
 
+@UseGuards(SubscriptionGuard)
+@RequireFeature('/admin/categories')
 @Controller('categories')
 export class CategoryController {
   private readonly logger = new Logger(CategoryController.name)
@@ -28,8 +29,7 @@ export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   async createCategory(
     @RequestContext() ctx: RequestContextDto,
     @Body() createCategoryDto: CreateCategoryDto,
@@ -59,8 +59,7 @@ export class CategoryController {
   }
 
   @Get('stats')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @UseGuards(JwtAuthGuard)
   async findAllCategoriesWithStats(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -92,8 +91,7 @@ export class CategoryController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   async updateCategory(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -110,8 +108,7 @@ export class CategoryController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @UseGuards(JwtAuthGuard)
   async removeCategory(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCategory.`)
     const result = await this.categoryService.removeCategory(id, ctx)

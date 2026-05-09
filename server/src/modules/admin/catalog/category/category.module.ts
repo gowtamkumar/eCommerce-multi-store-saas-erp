@@ -3,10 +3,12 @@ import { CategoryService } from '@/modules/admin/catalog/category/category.servi
 import { Module } from '@nestjs/common'
 import { CategoryRepository } from './category.repository'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [],
+  imports: [TenantModule],
   controllers: [CategoryController],
   providers: [CategoryService],
   exports: [CategoryService],
 })
-export class CategoryModule {}
+export class CategoryModule { }

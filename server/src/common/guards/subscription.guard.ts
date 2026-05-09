@@ -9,12 +9,13 @@ export class SubscriptionGuard implements CanActivate {
   constructor(
     private readonly tenantService: TenantService,
     private readonly reflector: Reflector,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
     const tenantId = request.tenantId
     const user = request.user
+    console.log("user?.role", user?.role);
 
     // 1. Allow Super Admin to bypass all feature checks
     if (user?.role === UserRole.SUPER_ADMIN) {
@@ -26,7 +27,10 @@ export class SubscriptionGuard implements CanActivate {
     }
 
     // 2. Identify required feature for this route
-    const requiredFeature = this.reflector.get<string>(REQUIRED_FEATURE_KEY, context.getHandler())
+    const requiredFeature = this.reflector.getAllAndOverride<string>(REQUIRED_FEATURE_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ])
 
     if (!requiredFeature) {
       return true // No specific feature required

@@ -1,8 +1,7 @@
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
   Body,
   Controller,
@@ -24,14 +23,14 @@ import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Controller('expenses')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('/admin/expenses')
 export class ExpenseController {
   private readonly logger = new Logger(ExpenseController.name)
 
-  constructor(private readonly expenseService: ExpenseService) {}
+  constructor(private readonly expenseService: ExpenseService) { }
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async createExpense(
     @Body() createExpenseDto: CreateExpenseDto,
     @RequestContext() ctx: RequestContextDto,
@@ -47,7 +46,6 @@ export class ExpenseController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR)
   async findAllExpenses(
     @RequestContext() ctx: RequestContextDto,
     @Query('page') page?: string,
@@ -71,7 +69,6 @@ export class ExpenseController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR)
   async findOneExpense(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -87,7 +84,6 @@ export class ExpenseController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async updateExpense(
     @Param('id') id: string,
     @Body() updateExpenseDto: UpdateExpenseDto,
@@ -104,7 +100,6 @@ export class ExpenseController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   async removeExpense(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,

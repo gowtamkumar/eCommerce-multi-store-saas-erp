@@ -1,10 +1,9 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
   Body,
   Controller,
@@ -25,6 +24,8 @@ import { ProductResponseDto } from '../dto/product-response.dto'
 import { UpdateProductDto } from '../dto/update-product.dto'
 import { ProductService } from '../services/product.service'
 
+@UseGuards(SubscriptionGuard)
+@RequireFeature('/admin/products')
 @Controller('products')
 export class ProductController {
   private readonly logger = new Logger(ProductController.name)
@@ -35,8 +36,7 @@ export class ProductController {
   ) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() createProductDto: CreateProductDto,
@@ -133,8 +133,7 @@ export class ProductController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.MARKETING)
+  @UseGuards(JwtAuthGuard)
   async updateProduct(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -151,8 +150,7 @@ export class ProductController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @UseGuards(JwtAuthGuard)
   async removeProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeProduct.`)
     const result = await this.productService.removeProduct(id, ctx)

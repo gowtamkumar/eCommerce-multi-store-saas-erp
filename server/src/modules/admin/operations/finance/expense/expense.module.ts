@@ -6,8 +6,10 @@ import { ExpenseEntity } from './entities/expense.entity'
 import { ExpenseRepository } from './expense.repository'
 import { ExpenseService } from './expense.service'
 
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
+
 @Module({
-  imports: [TypeOrmModule.forFeature([ExpenseEntity]), CacheModule],
+  imports: [TypeOrmModule.forFeature([ExpenseEntity]), CacheModule, TenantModule],
   controllers: [ExpenseController],
   providers: [ExpenseService, ExpenseRepository],
   exports: [ExpenseService],
