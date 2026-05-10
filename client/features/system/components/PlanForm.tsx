@@ -37,6 +37,15 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
         );
     };
 
+    const toggleGroup = (groupFeatures: string[]) => {
+        const allSelected = groupFeatures.every(f => features.includes(f));
+        if (allSelected) {
+            setFeatures(prev => prev.filter(f => !groupFeatures.includes(f)));
+        } else {
+            setFeatures(prev => [...new Set([...prev, ...groupFeatures])]);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -150,15 +159,32 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                             />
                         </div>
 
-                        <div className="space-y-6">
-                            <div className="flex justify-between items-center pb-4 border-b border-slate-50 dark:border-slate-800">
-                                <div className="space-y-0.5">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Core Entitlements</label>
-                                    <p className="text-xs text-slate-400 font-medium ml-1">Select the features that define this subscription tier.</p>
+                        <div className="space-y-8">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+                                <div className="space-y-1">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Core Entitlements</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Select the features that define this subscription tier.</p>
+                                </div>
+                                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFeatures(navGroups.flatMap(g => g.items.map((i: any) => i.feature)).filter(Boolean))}
+                                        className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 hover:text-brand-600 transition-colors"
+                                    >
+                                        Select All
+                                    </button>
+                                    <div className="w-px h-4 bg-slate-200 dark:bg-slate-700" />
+                                    <button
+                                        type="button"
+                                        onClick={() => setFeatures([])}
+                                        className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 hover:text-rose-600 transition-colors"
+                                    >
+                                        Clear All
+                                    </button>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="columns-1 md:columns-2 gap-8 space-y-8">
                                 {navGroups.map((group: any) => {
                                     const filteredItems: any[] = group.items.filter((item: any) =>
                                         item.feature &&
@@ -168,26 +194,38 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                                     );
                                     if (filteredItems.length === 0) return null;
 
+                                    const groupFeatureKeys = filteredItems.map(i => i.feature);
+                                    const isGroupAllSelected = groupFeatureKeys.every(f => features.includes(f));
+
                                     return (
-                                        <div key={group.title} className="space-y-3">
-                                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">{group.title}</h4>
-                                            <div className="space-y-2">
+                                        <div key={group.title} className="break-inside-avoid space-y-4 bg-slate-50/30 dark:bg-slate-800/10 p-6 rounded-3xl border border-slate-100/50 dark:border-slate-800/30">
+                                            <div className="flex justify-between items-center px-1">
+                                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{group.title}</h4>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleGroup(groupFeatureKeys)}
+                                                    className={`text-[9px] font-black uppercase tracking-widest transition-colors ${isGroupAllSelected ? 'text-rose-500 hover:text-rose-600' : 'text-brand-500 hover:text-brand-600'}`}
+                                                >
+                                                    {isGroupAllSelected ? 'Deselect Group' : 'Select Group'}
+                                                </button>
+                                            </div>
+                                            <div className="space-y-2.5">
                                                 {filteredItems.map((item: any) => (
-                                                    <label key={item.feature} className={`flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer group ${features.includes(item.feature) ? 'bg-brand-50/50 dark:bg-brand-500/10 border-brand-500 shadow-sm' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-brand-500/30'}`}>
+                                                    <label key={item.feature} className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer group ${features.includes(item.feature) ? 'bg-white dark:bg-slate-900 border-brand-500 shadow-md shadow-brand-500/5 ring-1 ring-brand-500/50' : 'bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 hover:border-brand-500/30 hover:bg-white dark:hover:bg-slate-900'}`}>
                                                         <div className="relative flex items-center justify-center flex-shrink-0">
                                                             <input
                                                                 type="checkbox"
                                                                 checked={features.includes(item.feature)}
                                                                 onChange={() => toggleFeature(item.feature)}
-                                                                className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-700 appearance-none checked:bg-brand-500 checked:border-brand-500 transition-colors peer cursor-pointer"
+                                                                className="w-5 h-5 rounded-md border-2 border-slate-300 dark:border-slate-700 appearance-none checked:bg-brand-500 checked:border-brand-500 transition-all peer cursor-pointer"
                                                             />
-                                                            <CheckCircle2 className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={3} />
+                                                            <CheckCircle2 className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={4} />
                                                         </div>
                                                         <div className="flex items-center gap-3 flex-1">
-                                                            <div className={`p-2 rounded-xl transition-colors ${features.includes(item.feature) ? 'bg-brand-100 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-brand-500'}`}>
-                                                                <item.icon className="w-4 h-4" />
+                                                            <div className={`p-2 rounded-xl transition-colors ${features.includes(item.feature) ? 'bg-brand-100 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400' : 'bg-slate-100/50 dark:bg-slate-800/50 text-slate-400 group-hover:text-brand-500'}`}>
+                                                                <item.icon className="w-3.5 h-3.5" />
                                                             </div>
-                                                            <span className={`text-sm font-bold transition-colors ${features.includes(item.feature) ? 'text-brand-700 dark:text-brand-300' : 'text-slate-700 dark:text-slate-200 group-hover:text-brand-600'}`}>
+                                                            <span className={`text-[13px] font-bold transition-colors ${features.includes(item.feature) ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
                                                                 {item.label}
                                                             </span>
                                                         </div>
