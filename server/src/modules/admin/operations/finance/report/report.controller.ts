@@ -1,9 +1,9 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { Controller, Get, Logger, Param, Query, UseGuards } from '@nestjs/common'
 import { ReportService } from './report.service'
 
@@ -15,7 +15,7 @@ export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
   @Get('/analytics')
-  @RequireFeature('/admin')
+  @RequireFeature('/admin/reports/sales')
   async getAnalytics(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -30,7 +30,7 @@ export class ReportController {
   }
 
   @Get('/dashboard')
-  @RequireFeature('/admin')
+  @RequireFeature('/admin/reports/sales')
   async getDashboardReport(
     @RequestContext() ctx: RequestContextDto,
     @Query('period') period: string = 'month',
@@ -46,6 +46,7 @@ export class ReportController {
   }
 
   @Get('/profit-loss')
+  @RequireFeature('/admin/reports/profit-loss')
   async getProfitLossReport(
     @RequestContext() ctx: RequestContextDto,
     @Query('startDate') startDateStr?: string,
@@ -62,6 +63,7 @@ export class ReportController {
   }
 
   @Get('/supplier-ledger/:supplierId')
+  @RequireFeature('/admin/reports/supplier-ledger')
   async getSupplierLedger(
     @RequestContext() ctx: RequestContextDto,
     @Param('supplierId') supplierId: string,
@@ -77,6 +79,7 @@ export class ReportController {
   }
 
   @Get('/customer-ledger/:customerId')
+  @RequireFeature('/admin/reports/customer-ledger')
   async getCustomerLedger(
     @RequestContext() ctx: RequestContextDto,
     @Param('customerId') customerId: string,
@@ -92,6 +95,7 @@ export class ReportController {
   }
 
   @Get('/cash-flow')
+  @RequireFeature('/admin/reports/cash-flow')
   async getCashFlow(
     @RequestContext() ctx: RequestContextDto,
     @Query('period') period: string = 'last30days',
@@ -107,6 +111,7 @@ export class ReportController {
   }
 
   @Get('/export/:type')
+  @RequireFeature('/admin/reports/export')
   async exportReport(
     @RequestContext() ctx: RequestContextDto,
     @Param('type') type: string,
@@ -133,6 +138,7 @@ export class ReportController {
   }
 
   @Get('/finance-summary')
+  @RequireFeature('/admin/reports/finance')
   async getFinanceSummary(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
