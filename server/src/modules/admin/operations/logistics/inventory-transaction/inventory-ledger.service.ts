@@ -1,21 +1,20 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logistics/inventory-transaction/dto/create-inventory-transaction.dto'
-import { InventoryTransactionRepository } from './inventory-transaction.repository'
-import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
-import { ProductVariantRepository } from '@/modules/admin/catalog/product/repositories/variant.repository'
-import { InventoryTransactionEntity } from './entities/inventory-transaction.entity'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { PaginationDto } from '@/common/dto/pagination.dto'
-import { InventoryTransactionType as ITType } from '@/common/enums/inventory-transaction-type.enum'
+import { InventoryLedgerRepository } from './inventory-ledger.repository'
+import { InventoryLedgerEntity } from './entities/inventory-ledger.entity'
+import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
+import { ProductVariantRepository } from '@/modules/admin/catalog/product/variant.repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { CacheService } from '@/common/cache/cache.service'
+import { PaginationDto } from '@/common/dto/pagination.dto'
 
 @Injectable()
-export class InventoryTransactionService {
-  private readonly logger = new Logger(InventoryTransactionService.name)
+export class InventoryLedgerService {
+  private readonly logger = new Logger(InventoryLedgerService.name)
 
   constructor(
-    private readonly repository: InventoryTransactionRepository,
+    private readonly repository: InventoryLedgerRepository,
     private readonly productRepository: ProductRepository,
     private readonly variantRepository: ProductVariantRepository,
     private readonly cacheService: CacheService,
@@ -23,13 +22,14 @@ export class InventoryTransactionService {
 
   /**
    * Records a stock movement and updates the product/variant static stock cache atomically.
+   * This implements the "Dual-Write" strategy for Phase 2.
    */
-  async createInventoryTransaction(
+  async createLedgerEntry(
     dto: CreateInventoryTransactionDto,
     ctx: RequestContextDto,
     manager?: any,
-  ): Promise<InventoryTransactionEntity> {
-    this.logger.log(`${this.createInventoryTransaction.name} Service Called`)
+  ): Promise<InventoryLedgerEntity> {
+    this.logger.log(`${this.createLedgerEntry.name} Service Called`)
     const tenantId = ctx.tenantId
 
     const product = await this.productRepository.findByIdWithRelations(dto.productId, tenantId)
@@ -37,24 +37,63 @@ export class InventoryTransactionService {
       throw new NotFoundException('Product not found')
     }
 
-    const isIncrement = dto.type !== InventoryTransactionType.OUT
+    // Determine absolute quantity and direction
     const absQty = Math.abs(dto.quantity)
+    const isIncrement = [
+      InventoryTransactionType.PURCHASE,
+      InventoryTransactionType.RETURN,
+      InventoryTransactionType.INITIAL_BALANCE,
+      InventoryTransactionType.TRANSFER_IN,
+    ].includes(dto.type) || (dto.type === InventoryTransactionType.ADJUSTMENT && dto.quantity > 0)
 
-    if (dto.variantId) {
-      if (isIncrement) {
-        await this.variantRepository.incrementStock(dto.variantId, tenantId, absQty, manager)
+    // Calculate signed quantity for ledger balance
+    const signedQty = isIncrement ? absQty : -absQty
+
+    // Use transaction manager if provided
+    const internalExecute = async (em: any) => {
+      // 1. Get current balance from ledger for performance/snapshotting
+      // Note: In Phase 2, we still use product.stock for global view, 
+      // but we start tracking per-warehouse balance in the ledger.
+      const currentBalance = await this.repository.getLatestBalanceAfter(
+        dto.productId,
+        dto.variantId || null,
+        dto.warehouseId || '', // Handle global vs warehouse specific
+        tenantId,
+        em,
+      )
+
+      const balanceAfter = Number(currentBalance) + signedQty
+
+      // 2. Dual-Write: Update legacy stock column (Source of truth for Phase 2)
+      if (dto.variantId) {
+        if (isIncrement) {
+          await this.variantRepository.incrementStock(dto.variantId, tenantId, absQty, em)
+        } else {
+          await this.variantRepository.decrementStock(dto.variantId, tenantId, absQty, em)
+        }
       } else {
-        await this.variantRepository.decrementStock(dto.variantId, tenantId, absQty, manager)
+        if (isIncrement) {
+          await this.productRepository.incrementStock(product.id, tenantId, absQty, em)
+        } else {
+          await this.productRepository.decrementStock(product.id, tenantId, absQty, em)
+        }
       }
-    } else {
-      if (isIncrement) {
-        await this.productRepository.incrementStock(product.id, tenantId, absQty, manager)
-      } else {
-        await this.productRepository.decrementStock(product.id, tenantId, absQty, manager)
-      }
+
+      // 3. Write to Ledger
+      const ledgerEntry = await this.repository.createAndSave(
+        {
+          ...dto,
+          quantity: signedQty,
+          balanceAfter,
+        },
+        ctx,
+        em,
+      )
+
+      return ledgerEntry
     }
 
-    const transaction = await this.repository.createAndSave(dto, ctx, manager)
+    const transaction = manager ? await internalExecute(manager) : await internalExecute(null)
 
     // Invalidate inventory caches
     await this.cacheService.delCache(`inventory:list`, tenantId)
@@ -63,24 +102,21 @@ export class InventoryTransactionService {
     return transaction
   }
 
-  /**
-   * Returns paginated inventory transaction logs.
-   */
-  async findAllInventoryTransactions(
+  async findAllLedgerEntries(
     ctx: RequestContextDto,
     paginationDto: PaginationDto,
-    type?: ITType,
+    type?: InventoryTransactionType,
   ): Promise<{
-    items: InventoryTransactionEntity[]
+    items: InventoryLedgerEntity[]
     total: number
     page: number
     limit: number
     totalPages: number
   }> {
-    this.logger.log(`${this.findAllInventoryTransactions.name} Service Called`)
+    this.logger.log(`${this.findAllLedgerEntries.name} Service Called`)
     const tenantId = ctx.tenantId
     const { page = 1, limit = 20, q: search } = paginationDto
-    const cacheKey = `inventory:list:p${page}:l${limit}:q${search || ''}:t${type || ''}`
+    const cacheKey = `inventory:ledger:p${page}:l${limit}:q${search || ''}:t${type || ''}`
 
     return this.cacheService.rememberCache(
       cacheKey,
@@ -105,28 +141,26 @@ export class InventoryTransactionService {
     )
   }
 
-  async findByProductInventoryTransactions(
+  async findByProductLedgerEntries(
     productId: string,
     ctx: RequestContextDto,
-  ): Promise<InventoryTransactionEntity[]> {
-    this.logger.log(`${this.findByProductInventoryTransactions.name} Service Called`)
+  ): Promise<InventoryLedgerEntity[]> {
+    this.logger.log(`${this.findByProductLedgerEntries.name} Service Called`)
     const tenantId = ctx.tenantId
     return await this.repository.findByProduct(productId, tenantId)
   }
 
   /**
-   * Corrected service method: Pulls real products with their current stock and variants.
-   * Fixes the critical bug where it was previously pulling transaction logs as products.
+   * Returns stock summary across all products.
+   * Still uses product.stock as source of truth for Phase 2.
    */
-  async getStockSummaryInventoryTransactions(ctx: RequestContextDto): Promise<any[]> {
-    this.logger.log(`${this.getStockSummaryInventoryTransactions.name} Service Called`)
+  async getStockSummary(ctx: RequestContextDto): Promise<any[]> {
+    this.logger.log(`${this.getStockSummary.name} Service Called`)
     const tenantId = ctx.tenantId
 
     return this.cacheService.rememberCache(
       `inventory:summary`,
       async () => {
-        // Fetch all products with variants for the summary
-        // We use a high limit here because the dashboard expects the full picture
         const [products] = await this.productRepository.findAllWithFilters(
           { limit: 1000 },
           tenantId,
@@ -181,7 +215,7 @@ export class InventoryTransactionService {
           }
         })
       },
-      600, // 10 min cache for stock summary
+      600,
       tenantId,
     )
   }

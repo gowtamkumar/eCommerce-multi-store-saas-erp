@@ -2,7 +2,7 @@ import { Expose } from 'class-transformer'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 
-export class InventoryTransactionResponseDto {
+export class InventoryLedgerResponseDto {
   @Expose()
   id: string
 
@@ -13,6 +13,15 @@ export class InventoryTransactionResponseDto {
   variantId: string
 
   @Expose()
+  branchId: string
+
+  @Expose()
+  warehouseId: string
+
+  @Expose()
+  binId: string
+
+  @Expose()
   supplierId: string
 
   @Expose()
@@ -20,6 +29,9 @@ export class InventoryTransactionResponseDto {
 
   @Expose()
   quantity: number
+
+  @Expose()
+  balanceAfter: number
 
   @Expose()
   referenceType: InventoryTransactionReferenceType

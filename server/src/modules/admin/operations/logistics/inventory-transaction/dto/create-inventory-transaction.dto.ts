@@ -26,4 +26,20 @@ export class CreateInventoryTransactionDto {
   @IsUUID()
   @IsOptional()
   supplierId?: string
+
+  @IsUUID()
+  @IsOptional()
+  branchId?: string
+
+  @IsUUID()
+  @IsOptional()
+  warehouseId?: string
+
+  @IsUUID()
+  @IsOptional()
+  binId?: string
+
+  @IsString()
+  @IsOptional()
+  remarks?: string
 }

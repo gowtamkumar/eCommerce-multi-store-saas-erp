@@ -11,6 +11,7 @@ import { BrandEntity } from '../../brand/entities/brand.entity'
 import { CategoryEntity } from '../../category/entities/category.entity'
 import { ProductAttributeEntity } from './attribute.entity'
 import { ProductVariantEntity } from './variant.entity'
+import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
 
 @Entity('products')
 @Index(['status'])
@@ -55,6 +56,10 @@ export class ProductEntity extends BaseEntity {
   @Column({ type: 'simple-array' })
   images: string[]
 
+  /**
+   * @deprecated Use InventoryLedger for accurate stock tracking.
+   * This column is maintained as a cached aggregate for Phase 2 compatibility.
+   */
   @Column({ type: 'int', default: 0 })
   stock: number
 
@@ -110,6 +115,9 @@ export class ProductEntity extends BaseEntity {
 
   @OneToMany(() => ReviewEntity, (reviews) => reviews.product)
   reviews: ReviewEntity[]
+  
+  @OneToMany(() => InventoryLedgerEntity, (ledger) => ledger.product)
+  inventoryLedger: InventoryLedgerEntity[]
 
   @Column({ type: 'uuid', name: 'supplier_id', nullable: true })
   supplierId: string

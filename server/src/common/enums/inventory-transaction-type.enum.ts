@@ -1,4 +1,10 @@
 export enum InventoryTransactionType {
-  IN = 'in',
-  OUT = 'out',
+  PURCHASE = 'PURCHASE',
+  SALE = 'SALE',
+  TRANSFER_IN = 'TRANSFER_IN',
+  TRANSFER_OUT = 'TRANSFER_OUT',
+  ADJUSTMENT = 'ADJUSTMENT',
+  RETURN = 'RETURN',
+  DAMAGE = 'DAMAGE',
+  INITIAL_BALANCE = 'INITIAL_BALANCE',
 }

@@ -8,9 +8,14 @@ import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/v
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 
-@Entity('inventory_transactions')
+import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
+import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
+import { WarehouseBinEntity } from '@/modules/system/organization/entities/warehouse-bin.entity'
+
+@Entity('inventory_ledger')
 @Index(['tenantId', 'createdAt'])
-export class InventoryTransactionEntity extends BaseEntity {
+@Index(['productId', 'warehouseId', 'createdAt'])
+export class InventoryLedgerEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'product_id' })
   @Index()
   productId: string
@@ -27,6 +32,29 @@ export class InventoryTransactionEntity extends BaseEntity {
   @JoinColumn({ name: 'variant_id' })
   variant: ProductVariantEntity
 
+  @Column({ type: 'uuid', name: 'branch_id', nullable: true })
+  @Index()
+  branchId: string
+
+  @ManyToOne(() => BranchEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'branch_id' })
+  branch: BranchEntity
+
+  @Column({ type: 'uuid', name: 'warehouse_id', nullable: true })
+  @Index()
+  warehouseId: string
+
+  @ManyToOne(() => WarehouseEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'warehouse_id' })
+  warehouse: WarehouseEntity
+
+  @Column({ type: 'uuid', name: 'bin_id', nullable: true })
+  binId: string
+
+  @ManyToOne(() => WarehouseBinEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'bin_id' })
+  bin: WarehouseBinEntity
+
   @Column({ type: 'uuid', name: 'supplier_id', nullable: true })
   supplierId: string
 
@@ -41,8 +69,11 @@ export class InventoryTransactionEntity extends BaseEntity {
   @Index()
   type: InventoryTransactionType
 
-  @Column({ type: 'int' })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   quantity: number
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, name: 'balance_after' })
+  balanceAfter: number
 
   @Column({
     type: 'enum',
@@ -61,7 +92,13 @@ export class InventoryTransactionEntity extends BaseEntity {
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 
+  @Column({ type: 'uuid', name: 'user_id', nullable: true })
+  userId: string
+
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
+
+  @Column({ type: 'text', nullable: true })
+  remarks: string
 }

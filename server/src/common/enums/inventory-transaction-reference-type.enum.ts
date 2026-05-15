@@ -1,7 +1,10 @@
 export enum InventoryTransactionReferenceType {
-  ORDER = 'order',
-  PURCHASE = 'purchase',
-  ADJUSTMENT = 'adjustment',
-  INITIAL = 'initial',
-  RETURN = 'return',
+  ORDER = 'ORDER',
+  PURCHASE_ORDER = 'PURCHASE_ORDER',
+  STOCK_ADJUSTMENT = 'STOCK_ADJUSTMENT',
+  STOCK_TRANSFER = 'STOCK_TRANSFER',
+  INITIAL_IMPORT = 'INITIAL_IMPORT',
+  SALES_RETURN = 'SALES_RETURN',
+  PURCHASE_RETURN = 'PURCHASE_RETURN',
+  MANUAL = 'MANUAL',
 }
