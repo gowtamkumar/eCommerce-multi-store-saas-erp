@@ -67,11 +67,10 @@ Tenant
 │    └── Audit Logs
 │
 ├── Organization Domain
-│    ├── Companies
 │    ├── Branches
+│    ├── Warehouses
 │    ├── Departments
-│    ├── Cost Centers
-│    └── Business Units
+│    └── Cost Centers
 │
 ├── Catalog Domain
 │    ├── Products
@@ -168,23 +167,19 @@ Instead:
 
 ```txt id="n9ppgl"
 Tenant
- ├── Companies
+ ├── Branches (Operations)
+ │     ├── Departments
+ │     ├── Staff
+ │     ├── POS
+ │     ├── Customers
+ │     ├── Expenses
+ │     └── Reports
  │
- │    ├── Branches
- │    │     ├── Departments
- │    │     ├── Staff
- │    │     ├── POS
- │    │     ├── Customers
- │    │     ├── Expenses
- │    │     └── Reports
- │    │
- │    └── Warehouses
- │          ├── Inventory
- │          ├── Bins
- │          ├── Transfers
- │          └── Fulfillment
- │
- └── Shared Services
+ └── Warehouses (Inventory)
+       ├── Bins
+       ├── Inventory
+       ├── Transfers
+       └── Fulfillment
 ```
 
 ---
@@ -198,7 +193,6 @@ Because:
 | Branch     | Business operation |
 | Warehouse  | Inventory storage  |
 | Department | Human structure    |
-| Company    | Legal/accounting   |
 | Tenant     | SaaS isolation     |
 
 ---
