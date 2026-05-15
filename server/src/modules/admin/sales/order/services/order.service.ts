@@ -8,8 +8,8 @@ import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity'
-import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
+import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
+import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.service'
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
@@ -35,7 +35,7 @@ export class OrderService {
     private orderRepository: OrderRepository,
     private paymentRepository: PaymentRepository,
     private cartService: CartService,
-    private readonly inventoryService: InventoryTransactionService,
+    private readonly inventoryService: InventoryLedgerService,
     private readonly dataSource: DataSource,
     private readonly couponService: CouponService,
     private readonly invoiceService: InvoiceService,
@@ -159,7 +159,7 @@ export class OrderService {
 
       // 8. Link Inventory Transactions
       await manager.update(
-        InventoryTransactionEntity,
+        InventoryLedgerEntity,
         { referenceType: InventoryTransactionReferenceType.ORDER, referenceId: null, tenantId },
         { referenceId: savedOrder.id },
       )
@@ -313,12 +313,12 @@ export class OrderService {
         oldStatus !== OrderStatus.COMPLETED // Don't restore if already completed? Usually, returns handle that.
       ) {
         for (const item of order.items) {
-          await this.inventoryService.createInventoryTransaction(
+          await this.inventoryService.createLedgerEntry(
             {
               productId: item.productId,
               variantId: item.variantId,
               quantity: item.quantity,
-              type: InventoryTransactionType.IN,
+              type: InventoryTransactionType.RETURN,
               referenceType: InventoryTransactionReferenceType.ORDER,
               referenceId: order.id,
             },

@@ -25,12 +25,12 @@ export class WarehouseRepository {
       tenantId: ctx.tenantId,
       userId: ctx.userId,
     })
-    return this.repo.save(warehouse)
+    return this.repo.save(warehouse) as unknown as Promise<WarehouseEntity>
   }
 
   async update(warehouse: WarehouseEntity, data: any): Promise<WarehouseEntity> {
     Object.assign(warehouse, data)
-    return this.repo.save(warehouse)
+    return this.repo.save(warehouse) as unknown as Promise<WarehouseEntity>
   }
 
   async remove(warehouse: WarehouseEntity): Promise<void> {

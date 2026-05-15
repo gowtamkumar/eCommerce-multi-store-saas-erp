@@ -25,12 +25,12 @@ export class BranchRepository {
       tenantId: ctx.tenantId,
       userId: ctx.userId,
     })
-    return this.repo.save(branch)
+    return this.repo.save(branch) as unknown as Promise<BranchEntity>
   }
 
   async update(branch: BranchEntity, data: any): Promise<BranchEntity> {
     Object.assign(branch, data)
-    return this.repo.save(branch)
+    return this.repo.save(branch) as unknown as Promise<BranchEntity>
   }
 
   async remove(branch: BranchEntity): Promise<void> {

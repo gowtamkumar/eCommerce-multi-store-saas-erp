@@ -14,14 +14,17 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
     const [products, setProducts] = useState<Product[]>([]);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(initialProduct || null);
     const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
-    const [type, setType] = useState<'IN' | 'OUT'>('IN');
+    const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
+    const [type, setType] = useState('ADJUSTMENT');
+    const [direction, setDirection] = useState<'IN' | 'OUT'>('IN');
     const [quantity, setQuantity] = useState(1);
-    const [reason, setReason] = useState('ADJUSTMENT');
     const [referenceId, setReferenceId] = useState('');
 
     useEffect(() => {
-        if (isOpen && !initialProduct) {
+        if (isOpen) {
             fetchProducts();
+            fetchWarehouses();
         }
         if (isOpen && initialProduct) {
             setSelectedProduct(initialProduct);
@@ -30,6 +33,18 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
             setSelectedVariant(initialVariant);
         }
     }, [isOpen, initialProduct, initialVariant]);
+
+    const fetchWarehouses = async () => {
+        try {
+            const res = await fetchAPI('/system/warehouses');
+            if (res.success) {
+                setWarehouses(res.data || []);
+                if (res.data.length > 0) setSelectedWarehouseId(res.data[0].id);
+            }
+        } catch (error) {
+            console.error('Failed to fetch warehouses', error);
+        }
+    };
 
     const fetchProducts = async () => {
         try {
@@ -60,20 +75,21 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
 
         setLoading(true);
         try {
-            const res = await fetchAPI('/inventory-transactions', {
+            const res = await fetchAPI('/inventory-ledger', {
                 method: 'POST',
                 body: JSON.stringify({
                     productId: selectedProduct.id,
                     variantId: selectedVariant?.id || null,
-                    type,
-                    quantity: Number(quantity),
-                    referenceType: reason,
+                    warehouseId: selectedWarehouseId,
+                    type: type,
+                    quantity: direction === 'IN' ? Number(quantity) : -Number(quantity),
+                    referenceType: type === 'ADJUSTMENT' ? 'STOCK_ADJUSTMENT' : type,
                     referenceId
                 })
             });
 
             if (res.success) {
-                toast.success('Stock adjusted successfully');
+                toast.success('Stock ledger updated successfully');
                 onSuccess();
                 onClose();
                 resetForm();
@@ -89,9 +105,9 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
         if (!initialProduct) setSelectedProduct(null);
         setSelectedVariant(null);
         setQuantity(1);
-        setType('IN');
+        setDirection('IN');
+        setType('ADJUSTMENT');
         setSearchQuery('');
-        setReason('ADJUSTMENT');
         setReferenceId('');
     };
 
@@ -215,28 +231,58 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
                                         </div>
                                     )}
 
-                                    {/* Adjustment Details */}
+                                    {/* Warehouse & Type Selection */}
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-3">
-                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Adjustment Type</label>
+                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Warehouse / Location</label>
+                                            <select
+                                                value={selectedWarehouseId}
+                                                onChange={(e) => setSelectedWarehouseId(e.target.value)}
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all font-medium text-sm"
+                                            >
+                                                {warehouses.map(w => (
+                                                    <option key={w.id} value={w.id}>{w.name} ({w.code})</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Transaction Direction</label>
                                             <div className="flex p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setType('IN')}
-                                                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-bold text-sm transition-all ${type === 'IN' ? 'bg-white dark:bg-slate-800 text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                                                    onClick={() => setDirection('IN')}
+                                                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-bold text-sm transition-all ${direction === 'IN' ? 'bg-white dark:bg-slate-800 text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
                                                         }`}
                                                 >
                                                     <ArrowUpCircle className="w-4 h-4" /> Stock In
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={() => setType('OUT')}
-                                                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-bold text-sm transition-all ${type === 'OUT' ? 'bg-white dark:bg-slate-800 text-red-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                                                    onClick={() => setDirection('OUT')}
+                                                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-bold text-sm transition-all ${direction === 'OUT' ? 'bg-white dark:bg-slate-800 text-red-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
                                                         }`}
                                                 >
                                                     <ArrowDownCircle className="w-4 h-4" /> Stock Out
                                                 </button>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-3">
+                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Transaction Type</label>
+                                            <select
+                                                value={type}
+                                                onChange={(e) => setType(e.target.value)}
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all font-medium text-sm"
+                                            >
+                                                <option value="ADJUSTMENT">Stock Adjustment</option>
+                                                <option value="RETURN">Customer Return</option>
+                                                <option value="DAMAGE">Damage / Scrap</option>
+                                                <option value="INITIAL_BALANCE">Opening Stock</option>
+                                                <option value="PURCHASE">Purchase Receipt</option>
+                                            </select>
                                         </div>
 
                                         <div className="space-y-3">
@@ -266,22 +312,6 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div className="space-y-3">
-                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Reason / Reference Type</label>
-                                            <select
-                                                value={reason}
-                                                onChange={(e) => setReason(e.target.value)}
-                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all font-medium text-sm"
-                                            >
-                                                <option value="ADJUSTMENT">Stock Adjustment</option>
-                                                <option value="RETURN">Customer Return</option>
-                                                <option value="DAMAGE">Damaged / Expired</option>
-                                                <option value="PURCHASE">Purchase Received</option>
-                                                <option value="INITIAL">Opening Stock</option>
-                                            </select>
-                                        </div>
 
                                         <div className="space-y-3">
                                             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Reference # (Optional)</label>

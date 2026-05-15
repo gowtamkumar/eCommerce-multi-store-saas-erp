@@ -35,8 +35,8 @@ import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/enti
 import { SupplierRepository } from '@/modules/admin/operations/finance/supplier/supplier.repository'
 import { FileEntity } from '@/modules/admin/operations/infra/file/entities/file.entity'
 import { FileRepository } from '@/modules/admin/operations/infra/file/file.repository'
-import { InventoryTransactionEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-transaction.entity'
-import { InventoryTransactionRepository } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.repository'
+import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
+import { InventoryLedgerRepository } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.repository'
 import { CouponRepository } from '@/modules/admin/sales/coupon/repositoris/coupon.repository'
 import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entity'
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
@@ -85,7 +85,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
       ProductEntity,
       ProductVariantEntity,
       ProductAttributeEntity,
-      InventoryTransactionEntity,
+      InventoryLedgerEntity,
       CouponEntity,
       OrderItemEntity,
       PromotionEntity,
@@ -138,7 +138,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     ProductRepository,
     ProductVariantRepository,
     ProductAttributeRepository,
-    InventoryTransactionRepository,
+    InventoryLedgerRepository,
     CouponRepository,
     OrderReturnRepository,
     PromotionRepository,
@@ -175,7 +175,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     ProductRepository,
     ProductVariantRepository,
     ProductAttributeRepository,
-    InventoryTransactionRepository,
+    InventoryLedgerRepository,
     CouponRepository,
     OrderReturnRepository,
     PromotionRepository,

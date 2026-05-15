@@ -3,13 +3,23 @@ import { getBranches, createBranch, updateBranch, deleteBranch, getWarehouses, c
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, Warehouse, Plus, Trash2, Edit2, Check, X, Loader2, MapPin, Phone, Mail, Package } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 
-export function OrganizationSetting() {
+export function OrganizationSetting({ defaultTab }: { defaultTab?: "branches" | "warehouses" }) {
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get("tab") as "branches" | "warehouses";
+    
     const [branches, setBranches] = useState<any[]>([]);
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<"branches" | "warehouses">("branches");
+    const [activeTab, setActiveTab] = useState<"branches" | "warehouses">(tabParam || defaultTab || "branches");
+
+    useEffect(() => {
+        if (tabParam && (tabParam === "branches" || tabParam === "warehouses")) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
 
     // Modal/Form states
     const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);

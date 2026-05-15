@@ -1,4 +1,4 @@
-import { BarChart3, Building2, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap, CheckCircle2 } from 'lucide-react';
+import { BarChart3, Building2, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap, CheckCircle2, Warehouse } from 'lucide-react';
 import { UserRole } from './lib/enums/user-role.enum';
 
 export const storeSettings = [
@@ -35,6 +35,14 @@ export const navGroups = [
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPER_ADMIN],
         items: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/admin', feature: '/admin' },
+        ]
+    },
+    {
+        title: 'Organization',
+        roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN],
+        items: [
+            { icon: Building2, label: 'Branches', href: '/admin/branches', feature: '/admin/branches' },
+            { icon: Warehouse, label: 'Warehouses', href: '/admin/warehouses', feature: '/admin/warehouses' },
         ]
     },
     {

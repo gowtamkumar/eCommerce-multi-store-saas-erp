@@ -5,7 +5,7 @@ import { InventoryTransactionType } from '@/common/enums/inventory-transaction-t
 import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
 import { FaqRepository } from '@/modules/admin/content/faq/faq.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
-import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
+import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { PromotionService } from '@/modules/admin/sales/promotion/services/promotion.service'
 import { InjectQueue } from '@nestjs/bullmq'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
@@ -35,7 +35,7 @@ export class ProductService {
     private variantRepository: ProductVariantRepository,
     private brandRepository: BrandRepository,
     private cache: CacheService,
-    private readonly inventoryService: InventoryTransactionService,
+    private readonly inventoryService: InventoryLedgerService,
     private readonly promotionService: PromotionService,
     private readonly dataSource: DataSource,
     @InjectQueue('product') private readonly productQueue: Queue,
@@ -620,13 +620,13 @@ export class ProductService {
   ): Promise<any> {
     this.logger.log(`${this.decrementStock.name} Service Called`)
     const tenantId = ctx.tenantId
-    return await this.inventoryService.createInventoryTransaction(
+    return await this.inventoryService.createLedgerEntry(
       {
         productId,
         variantId,
         quantity,
-        type: InventoryTransactionType.OUT,
-        referenceType: InventoryTransactionReferenceType.ADJUSTMENT,
+        type: InventoryTransactionType.SALE,
+        referenceType: InventoryTransactionReferenceType.STOCK_ADJUSTMENT,
       },
       ctx,
     )

@@ -7,7 +7,7 @@ import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inv
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
-import { InventoryTransactionResponseDto as InventoryLedgerResponseDto } from './dto/inventory-transaction-response.dto'
+import { InventoryLedgerResponseDto } from './dto/inventory-transaction-response.dto'
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 

@@ -10,7 +10,7 @@ import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pri
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { ShippingStrategyFactory } from '@/common/strategies/shipping/shipping-strategy.factory'
-import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
+import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.service'
 import { EntityManager } from 'typeorm'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
@@ -21,7 +21,7 @@ export class OrderProcessHelper {
   private readonly logger = new Logger(OrderProcessHelper.name)
 
   constructor(
-    private readonly inventoryService: InventoryTransactionService,
+    private readonly inventoryService: InventoryLedgerService,
     private readonly couponService: CouponService,
   ) {}
 
@@ -66,12 +66,12 @@ export class OrderProcessHelper {
     }
 
     // Deduct stock immediately (Synchronous within transaction)
-    await this.inventoryService.createInventoryTransaction(
+    await this.inventoryService.createLedgerEntry(
       {
         productId: product.id,
         variantId: variant?.id,
         quantity: quantity,
-        type: InventoryTransactionType.OUT,
+        type: InventoryTransactionType.SALE,
         referenceType: InventoryTransactionReferenceType.ORDER,
       },
       ctx,

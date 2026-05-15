@@ -3,11 +3,11 @@ import { InventoryTransactionType } from '@/common/enums/inventory-transaction-t
 import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logistics/inventory-transaction/dto/create-inventory-transaction.dto'
 import { InventoryLedgerRepository } from './inventory-ledger.repository'
 import { InventoryLedgerEntity } from './entities/inventory-ledger.entity'
-import { ProductRepository } from '@/modules/admin/catalog/product/product.repository'
-import { ProductVariantRepository } from '@/modules/admin/catalog/product/variant.repository'
+import { ProductRepository } from '@/modules/admin/catalog/product/repositories/product.repository'
+import { ProductVariantRepository } from '@/modules/admin/catalog/product/repositories/variant.repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { CacheService } from '@/common/cache/cache.service'
 import { PaginationDto } from '@/common/dto/pagination.dto'
+import { CacheService } from '../../infra/cache/cache.service'
 
 @Injectable()
 export class InventoryLedgerService {
@@ -18,7 +18,7 @@ export class InventoryLedgerService {
     private readonly productRepository: ProductRepository,
     private readonly variantRepository: ProductVariantRepository,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   /**
    * Records a stock movement and updates the product/variant static stock cache atomically.
@@ -173,15 +173,15 @@ export class InventoryLedgerService {
             : product.stock
           const totalValue = hasVariants
             ? product.variants.reduce(
-                (sum, v) => sum + (v.stock || 0) * Number(v.price || product.price),
-                0,
-              )
+              (sum, v) => sum + (v.stock || 0) * Number(v.price || product.price),
+              0,
+            )
             : product.stock * Number(product.price)
 
           const isLowStock = hasVariants
             ? product.variants.some(
-                (v) => v.stock <= (v.lowStockThreshold ?? product.lowStockThreshold ?? 5),
-              )
+              (v) => v.stock <= (v.lowStockThreshold ?? product.lowStockThreshold ?? 5),
+            )
             : product.stock <= (product.lowStockThreshold ?? 5)
 
           const isOutOfStock = hasVariants
@@ -202,13 +202,13 @@ export class InventoryLedgerService {
             stockValue: totalValue,
             variants: hasVariants
               ? product.variants.map((v: any) => ({
-                  id: v.id,
-                  sku: v.sku,
-                  combination: v.combination,
-                  price: v.price || product.price,
-                  stock: v.stock,
-                  lowStockThreshold: v.lowStockThreshold || product.lowStockThreshold || 5,
-                }))
+                id: v.id,
+                sku: v.sku,
+                combination: v.combination,
+                price: v.price || product.price,
+                stock: v.stock,
+                lowStockThreshold: v.lowStockThreshold || product.lowStockThreshold || 5,
+              }))
               : [],
             lowStock: isLowStock,
             outOfStock: isOutOfStock,

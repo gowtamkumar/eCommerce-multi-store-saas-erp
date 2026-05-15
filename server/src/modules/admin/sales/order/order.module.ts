@@ -2,7 +2,7 @@ import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoic
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { SmsModule } from '@/modules/admin/operations/infra/sms/sms.module'
 import { PushModule } from '@/modules/admin/operations/infra/push/push.module'
-import { InventoryTransactionModule } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.module'
+import { InventoryLedgerModule } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.module'
 import { CouponModule } from '@/modules/admin/sales/coupon/coupon.module'
 import { OrderController } from '@/modules/admin/sales/order/controllers/order.controller'
 import { OrderService } from '@/modules/admin/sales/order/services/order.service'
@@ -27,7 +27,7 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
     CouponModule,
     PaymentModule,
     CartModule,
-    InventoryTransactionModule,
+    InventoryLedgerModule,
     InvoiceModule,
     ShippingAddressModule,
     MailModule,

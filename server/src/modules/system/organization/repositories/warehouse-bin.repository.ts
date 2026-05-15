@@ -24,12 +24,12 @@ export class WarehouseBinRepository {
       ...data,
       userId: ctx.userId,
     })
-    return this.repo.save(bin)
+    return this.repo.save(bin) as unknown as Promise<WarehouseBinEntity>
   }
 
   async update(bin: WarehouseBinEntity, data: any): Promise<WarehouseBinEntity> {
     Object.assign(bin, data)
-    return this.repo.save(bin)
+    return this.repo.save(bin) as unknown as Promise<WarehouseBinEntity>
   }
 
   async remove(bin: WarehouseBinEntity): Promise<void> {

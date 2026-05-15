@@ -158,7 +158,7 @@ export class ProductRepository {
     quantity: number,
     manager?: any,
   ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this
+    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
     await repo.increment({ id, tenantId }, 'stock', quantity)
   }
 
@@ -168,7 +168,7 @@ export class ProductRepository {
     quantity: number,
     manager?: any,
   ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this
+    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
     await repo.decrement({ id, tenantId }, 'stock', quantity)
   }
 

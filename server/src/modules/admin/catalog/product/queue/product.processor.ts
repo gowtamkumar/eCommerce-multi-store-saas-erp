@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Job } from 'bullmq'
 import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchase/services/purchase-order.service'
-import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
+import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { Logger } from '@nestjs/common'
@@ -12,7 +12,7 @@ export class ProductProcessor extends WorkerHost {
 
   constructor(
     private readonly purchaseOrderService: PurchaseOrderService,
-    private readonly inventoryService: InventoryTransactionService,
+    private readonly inventoryService: InventoryLedgerService,
   ) {
     super()
   }
@@ -64,7 +64,7 @@ export class ProductProcessor extends WorkerHost {
       `Updating stock for product ${productId} (variant: ${variantId || 'none'}) for tenant ${tenantId}`,
     )
 
-    await this.inventoryService.createInventoryTransaction(
+    await this.inventoryService.createLedgerEntry(
       {
         productId,
         variantId,
@@ -74,7 +74,7 @@ export class ProductProcessor extends WorkerHost {
         referenceId,
         supplierId,
       },
-      tenantId,
+      { tenantId } as any,
     )
 
     this.logger.log(`Stock Updated Successfully for product ${productId}`)

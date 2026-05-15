@@ -79,6 +79,6 @@ export class InventoryLedgerRepository {
   ): Promise<InventoryLedgerEntity> {
     const repo = manager ? manager.getRepository(InventoryLedgerEntity) : this.repo
     const transaction = repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId })
-    return await repo.save(transaction)
+    return await (repo.save(transaction) as unknown as Promise<InventoryLedgerEntity>)
   }
 }

@@ -33,7 +33,7 @@ export default function InventoryDashboard() {
     const fetchStock = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetchAPI('/inventory-transactions/stock-summary');
+            const res = await fetchAPI('/inventory-ledger/stock-summary');
             if (res.success) {
                 setProducts(res.data);
             }

@@ -14,6 +14,21 @@ import { useDebounce } from '@/hooks/useDebounce';
 
 // Memoized Transaction Row component to prevent full table re-renders
 const TransactionRow = memo(({ transaction }: { transaction: any }) => {
+    const isPositive = [
+        'PURCHASE', 'RETURN', 'INITIAL_BALANCE', 'TRANSFER_IN'
+    ].includes(transaction.type) || (transaction.type === 'ADJUSTMENT' && transaction.quantity > 0);
+
+    const typeLabels: Record<string, string> = {
+        PURCHASE: 'Purchase',
+        SALE: 'Sale',
+        TRANSFER_IN: 'Transfer In',
+        TRANSFER_OUT: 'Transfer Out',
+        ADJUSTMENT: 'Adjustment',
+        RETURN: 'Return',
+        DAMAGE: 'Damage',
+        INITIAL_BALANCE: 'Initial'
+    };
+
     return (
         <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
             <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
@@ -37,23 +52,33 @@ const TransactionRow = memo(({ transaction }: { transaction: any }) => {
                 </div>
             </td>
             <td className="px-6 py-4">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    {transaction.warehouse?.name || 'Global'}
+                </span>
+            </td>
+            <td className="px-6 py-4">
                 <div className={`flex items-center gap-1.5 font-medium ${
-                    transaction.type === 'IN' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                    isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                 }`}>
-                    {transaction.type === 'IN' ? <ArrowUpCircle className="w-4 h-4" /> : <ArrowDownCircle className="w-4 h-4" />}
-                    {transaction.type}
+                    {isPositive ? <ArrowUpCircle className="w-4 h-4" /> : <ArrowDownCircle className="w-4 h-4" />}
+                    {typeLabels[transaction.type] || transaction.type}
                 </div>
             </td>
             <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">
-                {transaction.type === 'IN' ? '+' : '-'}{transaction.quantity}
+                {transaction.quantity > 0 ? '+' : ''}{transaction.quantity}
             </td>
             <td className="px-6 py-4">
-                <span className="px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                <div className="text-sm font-black text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 px-2 py-1 rounded-lg w-fit">
+                    {transaction.balanceAfter}
+                </div>
+            </td>
+            <td className="px-6 py-4">
+                <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                     {transaction.referenceType}
                 </span>
             </td>
             <td className="px-6 py-4">
-                <code className="text-xs bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded text-slate-600 dark:text-slate-400">
+                <code className="text-[10px] bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded text-slate-600 dark:text-slate-400 font-mono">
                     {transaction.referenceId || 'N/A'}
                 </code>
             </td>
@@ -68,6 +93,8 @@ export default function InventoryList() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
+    const [warehouseFilter, setWarehouseFilter] = useState('');
+    const [warehouses, setWarehouses] = useState<any[]>([]);
     const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
     const [pagination, setPagination] = useState({
         page: 1,
@@ -78,17 +105,27 @@ export default function InventoryList() {
 
     const debouncedSearch = useDebounce(searchQuery, 500);
 
-    const fetchTransactions = useCallback(async (page: number, search: string, type: string) => {
+    const fetchWarehouses = useCallback(async () => {
+        try {
+            const res = await fetchAPI('/system/warehouses');
+            if (res.success) setWarehouses(res.data || []);
+        } catch (error) {
+            console.error('Failed to fetch warehouses', error);
+        }
+    }, []);
+
+    const fetchTransactions = useCallback(async (page: number, search: string, type: string, warehouseId: string) => {
         setLoading(true);
         try {
             const params = new URLSearchParams({
                 page: page.toString(),
                 limit: '10',
                 ...(search && { q: search }),
-                ...(type && { type })
+                ...(type && { type }),
+                ...(warehouseId && { warehouseId })
             });
 
-            const res = await fetchAPI(`/inventory-transactions?${params}`);
+            const res = await fetchAPI(`/inventory-ledger?${params}`);
             if (res.success) {
                 setTransactions(res.data.items);
                 setPagination({
@@ -107,12 +144,16 @@ export default function InventoryList() {
     }, []);
 
     useEffect(() => {
-        fetchTransactions(1, debouncedSearch, typeFilter);
-    }, [debouncedSearch, typeFilter, fetchTransactions]);
+        fetchWarehouses();
+    }, [fetchWarehouses]);
+
+    useEffect(() => {
+        fetchTransactions(1, debouncedSearch, typeFilter, warehouseFilter);
+    }, [debouncedSearch, typeFilter, warehouseFilter, fetchTransactions]);
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
-            fetchTransactions(newPage, debouncedSearch, typeFilter);
+            fetchTransactions(newPage, debouncedSearch, typeFilter, warehouseFilter);
         }
     };
 
@@ -158,8 +199,24 @@ export default function InventoryList() {
                         className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all appearance-none cursor-pointer"
                     >
                         <option value="">All Types</option>
-                        <option value="IN">Stock In</option>
-                        <option value="OUT">Stock Out</option>
+                        <option value="PURCHASE">Purchase</option>
+                        <option value="SALE">Sale</option>
+                        <option value="TRANSFER_IN">Transfer In</option>
+                        <option value="TRANSFER_OUT">Transfer Out</option>
+                        <option value="DAMAGE">Damage</option>
+                    </select>
+                </div>
+                <div className="relative w-full md:w-48">
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <select
+                        value={warehouseFilter}
+                        onChange={(e) => setWarehouseFilter(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all appearance-none cursor-pointer"
+                    >
+                        <option value="">All Warehouses</option>
+                        {warehouses.map(w => (
+                            <option key={w.id} value={w.id}>{w.name}</option>
+                        ))}
                     </select>
                 </div>
             </div>
@@ -169,18 +226,20 @@ export default function InventoryList() {
                     <table className="w-full text-left">
                         <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
                             <tr>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Date</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Product</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Type</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Quantity</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Reference</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400">Ref ID</th>
+                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Date</th>
+                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Product</th>
+                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Warehouse</th>
+                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Type</th>
+                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Qty</th>
+                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Balance</th>
+                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ref Type</th>
+                                <th className="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ref ID</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                                    <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                                         <div className="flex flex-col items-center gap-2">
                                             <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
                                             <span>Loading history...</span>
@@ -189,7 +248,7 @@ export default function InventoryList() {
                                 </tr>
                             ) : transactions.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-slate-500 font-medium">
+                                    <td colSpan={8} className="px-6 py-8 text-center text-slate-500 font-medium">
                                         {searchQuery || typeFilter ? 'No records match your criteria.' : 'No inventory records found.'}
                                     </td>
                                 </tr>

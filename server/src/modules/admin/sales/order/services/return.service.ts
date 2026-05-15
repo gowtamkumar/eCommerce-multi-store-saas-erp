@@ -7,7 +7,7 @@ import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.d
 import { FilterReturnDto } from '../dto/filter-return.dto'
 import { OrderReturnRepository } from '@/modules/admin/sales/order/repositoris/order-return.repository'
 import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
-import { InventoryTransactionService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.service'
+import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { OrderReturnEntity } from '../entities/order-return.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
@@ -20,7 +20,7 @@ export class ReturnService {
   constructor(
     private returnRepository: OrderReturnRepository,
     private orderRepository: OrderRepository,
-    private inventoryService: InventoryTransactionService,
+    private inventoryService: InventoryLedgerService,
     private readonly cacheService: CacheService,
   ) {}
 
@@ -133,13 +133,13 @@ export class ReturnService {
   private async restockItems(returnRequest: OrderReturnEntity, ctx: RequestContextDto) {
     this.logger.log(`${this.restockItems.name} Service Called`)
     for (const item of returnRequest.items) {
-      await this.inventoryService.createInventoryTransaction(
+      await this.inventoryService.createLedgerEntry(
         {
           productId: item.productId,
           variantId: item.variantId,
           quantity: item.quantity,
-          type: InventoryTransactionType.IN,
-          referenceType: InventoryTransactionReferenceType.RETURN,
+          type: InventoryTransactionType.RETURN,
+          referenceType: InventoryTransactionReferenceType.SALES_RETURN,
           referenceId: returnRequest.id,
         },
         ctx,
