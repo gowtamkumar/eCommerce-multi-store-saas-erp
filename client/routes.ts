@@ -1,4 +1,4 @@
-import { BarChart3, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap, CheckCircle2 } from 'lucide-react';
+import { BarChart3, Building2, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap, CheckCircle2 } from 'lucide-react';
 import { UserRole } from './lib/enums/user-role.enum';
 
 export const storeSettings = [
@@ -10,6 +10,7 @@ export const storeSettings = [
     { icon: ShieldCheck, label: 'Trust & Safety', href: '/admin/settings/trust', feature: '/admin/settings/trust' },
     { icon: TrendingUp, label: 'SEO Settings', href: '/admin/settings/marketing', feature: '/admin/settings/marketing' },
     { icon: Tag, label: 'Label Configuration', href: '/admin/settings/label', feature: '/admin/settings/label' },
+    { icon: Building2, label: 'Organization', href: '/admin/settings/organization', feature: '/admin/settings/organization' },
 
     { type: 'header', label: 'Integrations & Tools', feature: '/admin/settings/email' },
     { icon: Mail, label: 'Email Config', href: '/admin/settings/email', feature: '/admin/settings/email' },

@@ -31,6 +31,7 @@ export function SettingsLayout({ children }: { children: React.ReactNode }) {
         sms: { title: "SMS Configuration", description: "Connect your SMS gateway for notifications", showSave: true },
         billing: { title: "Subscription & Billing", description: "Manage your plan, billing cycle and invoices", showSave: false },
         system: { title: "System & Performance", description: "Monitor store health and manage cache", showSave: false },
+        organization: { title: "Organization & Identity", description: "Manage your branches, warehouses and storage locations", showSave: false },
     };
 
     const currentConfig = tabConfigs[currentTab] || tabConfigs.general;

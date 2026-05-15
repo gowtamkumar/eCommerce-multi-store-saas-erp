@@ -1,6 +1,7 @@
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import {
   Column,
   CreateDateColumn,
@@ -83,6 +84,14 @@ export class UserEntity {
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
+
+  @Column({ type: 'uuid', name: 'branch_id', nullable: true })
+  @Index()
+  branchId: string
+
+  @ManyToOne(() => BranchEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'branch_id' })
+  branch: BranchEntity
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date

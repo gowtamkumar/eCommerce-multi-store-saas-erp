@@ -17,7 +17,8 @@ export type TabType =
     | "label"
     | "sms"
     | "billing"
-    | "system";
+    | "system"
+    | "organization";
 
 
 export enum TabTypeEnum {
@@ -39,6 +40,7 @@ export enum TabTypeEnum {
     SMS = "sms",
     BILLING = "billing",
     SYSTEM = "system",
+    ORGANIZATION = "organization",
 }
 
 
