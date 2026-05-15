@@ -4,6 +4,7 @@ import { PlatformModule } from './platform/platform.module'
 import { SubscriptionBillingModule } from './subscription-billing/subscription-billing.module'
 import { SubscriptionPlanModule } from './subscription-plan/subscription-plan.module'
 import { SuperAdminModule } from './super-admin/super-admin.module'
+import { OrganizationModule } from './organization/organization.module'
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { SuperAdminModule } from './super-admin/super-admin.module'
     SuperAdminModule,
     SubscriptionPlanModule,
     SubscriptionBillingModule,
+    OrganizationModule,
   ],
   exports: [
     AuditLogModule,
@@ -19,6 +21,7 @@ import { SuperAdminModule } from './super-admin/super-admin.module'
     SuperAdminModule,
     SubscriptionPlanModule,
     SubscriptionBillingModule,
+    OrganizationModule,
   ],
 })
 export class SystemModule {}

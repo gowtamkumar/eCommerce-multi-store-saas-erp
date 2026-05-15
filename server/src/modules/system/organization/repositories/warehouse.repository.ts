@@ -1,0 +1,43 @@
+import { Injectable } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { WarehouseEntity } from '../entities/warehouse.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+
+@Injectable()
+export class WarehouseRepository {
+  constructor(
+    @InjectRepository(WarehouseEntity)
+    private readonly repo: Repository<WarehouseEntity>,
+  ) { }
+
+  async findAll(tenantId: string): Promise<WarehouseEntity[]> {
+    return this.repo.find({ where: { tenantId }, relations: ['branch'] })
+  }
+
+  async findOne(id: string, tenantId: string): Promise<WarehouseEntity | null> {
+    return this.repo.findOne({ where: { id, tenantId }, relations: ['branch', 'bins'] })
+  }
+
+  async create(data: any, ctx: RequestContextDto): Promise<WarehouseEntity> {
+    const warehouse = this.repo.create({
+      ...data,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    })
+    return this.repo.save(warehouse)
+  }
+
+  async update(warehouse: WarehouseEntity, data: any): Promise<WarehouseEntity> {
+    Object.assign(warehouse, data)
+    return this.repo.save(warehouse)
+  }
+
+  async remove(warehouse: WarehouseEntity): Promise<void> {
+    await this.repo.softRemove(warehouse)
+  }
+
+  async findByCode(code: string, tenantId: string): Promise<WarehouseEntity | null> {
+    return this.repo.findOne({ where: { code, tenantId } })
+  }
+}
