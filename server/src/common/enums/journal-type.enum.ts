@@ -1,0 +1,13 @@
+export enum JournalType {
+  SALES = 'SALES',
+  PURCHASE = 'PURCHASE',
+  CASH_RECEIPT = 'CASH_RECEIPT',
+  CASH_PAYMENT = 'CASH_PAYMENT',
+  GENERAL = 'GENERAL',
+  INVENTORY_ADJUSTMENT = 'INVENTORY_ADJUSTMENT',
+}
+
+export enum LedgerEntrySide {
+  DEBIT = 'DEBIT',
+  CREDIT = 'CREDIT',
+}

@@ -1,4 +1,4 @@
-import { BarChart3, Building2, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap, CheckCircle2, Warehouse } from 'lucide-react';
+import { BarChart3, BookOpen, Building2, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Scale, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap, CheckCircle2, Warehouse } from 'lucide-react';
 import { UserRole } from './lib/enums/user-role.enum';
 
 export const storeSettings = [
@@ -77,6 +77,16 @@ export const navGroups = [
             { icon: Truck, label: 'Purchase Orders', href: '/admin/purchases', feature: '/admin/purchases' },
             { icon: Truck, label: 'Couriers', href: '/admin/couriers', feature: '/admin/couriers' },
             { icon: Receipt, label: 'Expenses', href: '/admin/expenses', feature: '/admin/expenses' },
+        ]
+    },
+    {
+        title: 'Finance',
+        roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN],
+        items: [
+            { icon: BarChart3, label: 'Financial Dashboard', href: '/admin/finance', feature: '/admin/finance' },
+            { icon: TrendingUp, label: 'Profit & Loss', href: '/admin/finance/profit-loss', feature: '/admin/finance/profit-loss' },
+            { icon: Scale, label: 'Balance Sheet', href: '/admin/finance/balance-sheet', feature: '/admin/finance/balance-sheet' },
+            { icon: BookOpen, label: 'General Ledger', href: '/admin/finance/ledger', feature: '/admin/finance/ledger' },
         ]
     },
     {

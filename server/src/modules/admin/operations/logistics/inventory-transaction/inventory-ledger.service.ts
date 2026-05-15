@@ -8,6 +8,8 @@ import { ProductVariantRepository } from '@/modules/admin/catalog/product/reposi
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { CacheService } from '../../infra/cache/cache.service'
+import { CogsService } from '@/modules/admin/operations/finance/accounting/services/cogs.service'
+import { AccountingIntegrationService } from '@/modules/admin/operations/finance/accounting/services/accounting-integration.service'
 
 @Injectable()
 export class InventoryLedgerService {
@@ -18,6 +20,8 @@ export class InventoryLedgerService {
     private readonly productRepository: ProductRepository,
     private readonly variantRepository: ProductVariantRepository,
     private readonly cacheService: CacheService,
+    private readonly cogsService: CogsService,
+    private readonly accountingIntegration: AccountingIntegrationService,
   ) { }
 
   /**
@@ -79,16 +83,34 @@ export class InventoryLedgerService {
         }
       }
 
-      // 3. Write to Ledger
+      // 3. Calculate COGS for Sales
+      let cogsAmount = 0
+      if (dto.type === InventoryTransactionType.SALE) {
+        cogsAmount = await this.cogsService.calculateAndConsumeCogs(
+          dto.productId,
+          dto.variantId || null,
+          dto.warehouseId || '',
+          absQty,
+          ctx,
+          em,
+        )
+      }
+
+      // 4. Write to Ledger
       const ledgerEntry = await this.repository.createAndSave(
         {
           ...dto,
           quantity: signedQty,
           balanceAfter,
+          remainingQuantity: isIncrement ? absQty : 0,
+          cogsAmount,
         },
         ctx,
         em,
       )
+
+      // 5. Post to Finance
+      await this.accountingIntegration.postInventoryMovement(ledgerEntry, ctx, em)
 
       return ledgerEntry
     }

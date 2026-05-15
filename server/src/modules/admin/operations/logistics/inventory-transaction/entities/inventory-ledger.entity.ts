@@ -75,6 +75,15 @@ export class InventoryLedgerEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, name: 'balance_after' })
   balanceAfter: number
 
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, name: 'remaining_quantity' })
+  remainingQuantity: number
+
+  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, name: 'unit_cost' })
+  unitCost: number // For Purchases
+
+  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, name: 'cogs_amount' })
+  cogsAmount: number // For Sales (calculated)
+
   @Column({
     type: 'enum',
     enum: InventoryTransactionReferenceType,

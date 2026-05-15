@@ -12,6 +12,10 @@ export class CreateInventoryTransactionDto {
   @IsNumber()
   quantity: number
 
+  @IsNumber()
+  @IsOptional()
+  unitCost?: number
+
   @IsEnum(InventoryTransactionReferenceType)
   referenceType: InventoryTransactionReferenceType
 
