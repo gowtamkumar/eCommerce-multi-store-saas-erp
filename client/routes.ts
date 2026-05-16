@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Building2, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Scale, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap, CheckCircle2, Warehouse } from 'lucide-react';
+import { BarChart3, BookOpen, Building2, CreditCard, Download, FileText, Globe, HelpCircle, Layout, LayoutDashboard, Mail, Megaphone, Menu, MessageSquare, Package, Receipt, RotateCcw, Scale, Share2, ShieldCheck, ShoppingBag, Star, Tag, TrendingUp, Truck, User, Users, Wallet, Zap, CheckCircle2, Warehouse, Clock, Briefcase } from 'lucide-react';
 import { UserRole } from './lib/enums/user-role.enum';
 
 export const storeSettings = [
@@ -72,9 +72,22 @@ export const navGroups = [
         title: 'Procurement',
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPER_ADMIN],
         items: [
-            { icon: Users, label: 'Suppliers', href: '/admin/suppliers', feature: '/admin/suppliers' },
-            { icon: Truck, label: 'Purchase Orders', href: '/admin/purchases', feature: '/admin/purchases' },
-            { icon: CheckCircle2, label: 'Goods Received (GRN)', href: '/admin/grn', feature: '/admin/grn' },
+            { icon: LayoutDashboard, label: 'SCM Dashboard', href: '/admin/procurement/dashboard', feature: '/admin/purchases' },
+            { icon: Users, label: 'Suppliers (SRM)', href: '/admin/procurement/suppliers', feature: '/admin/suppliers' },
+            { icon: FileText, label: 'Requisitions', href: '/admin/procurement/requisitions', feature: '/admin/purchases' },
+            { icon: Truck, label: 'Purchase Orders', href: '/admin/procurement/purchases', feature: '/admin/purchases' },
+            { icon: CheckCircle2, label: 'Goods Received', href: '/admin/procurement/grn', feature: '/admin/grn' },
+        ]
+    },
+    {
+        title: 'Human Resources',
+        roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN],
+        items: [
+            { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/hrm/dashboard', feature: '/admin/hrm' },
+            { icon: Users, label: 'Employees', href: '/admin/hrm/employees', feature: '/admin/hrm' },
+            { icon: Clock, label: 'Attendance', href: '/admin/hrm/attendance', feature: '/admin/hrm' },
+            { icon: Wallet, label: 'Payroll', href: '/admin/hrm/payroll', feature: '/admin/hrm' },
+            { icon: Briefcase, label: 'Recruitment', href: '/admin/hrm/recruitment', feature: '/admin/hrm' },
         ]
     },
     {

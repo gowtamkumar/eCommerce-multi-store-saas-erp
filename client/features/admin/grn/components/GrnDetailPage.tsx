@@ -43,7 +43,7 @@ export default function GrnDetailPage({ grn, onVerify, onReject, isProcessing }:
                             {getGrnStatusBadge(grn.status)}
                         </div>
                         <p className="text-slate-500 dark:text-slate-400 mt-1 font-semibold flex items-center gap-2">
-                            Generated from <Link href={`/admin/purchases/${grn.poId}`} className="text-brand-600 hover:underline">PO: {grn.purchaseOrder?.referenceNumber}</Link>
+                            Generated from <Link href={`/admin/procurement/purchases/${grn.poId}`} className="text-brand-600 hover:underline">PO: {grn.purchaseOrder?.referenceNumber}</Link>
                         </p>
                     </div>
                 </div>

@@ -84,7 +84,7 @@ export default function PurchaseOrderDetails() {
         return (
             <div className="text-center py-20">
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Order not found</h2>
-                <Link href="/admin/purchases" className="text-brand-600 hover:underline mt-4 inline-block">Back to purchases</Link>
+                <Link href="/admin/procurement/purchases" className="text-brand-600 hover:underline mt-4 inline-block">Back to purchases</Link>
             </div>
         );
     }
@@ -95,7 +95,7 @@ export default function PurchaseOrderDetails() {
         <div className="max-w-6xl mx-auto space-y-8 pb-32 px-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700">
                 <div className="flex items-center gap-6">
-                    <Link href="/admin/purchases" className="p-3 bg-slate-50 dark:bg-slate-900 hover:bg-brand-50 dark:hover:bg-brand-900/20 text-slate-400 hover:text-brand-600 rounded-2xl transition-all duration-300">
+                    <Link href="/admin/procurement/purchases" className="p-3 bg-slate-50 dark:bg-slate-900 hover:bg-brand-50 dark:hover:bg-brand-900/20 text-slate-400 hover:text-brand-600 rounded-2xl transition-all duration-300">
                         <ArrowLeft className="w-6 h-6" />
                     </Link>
                     <div>

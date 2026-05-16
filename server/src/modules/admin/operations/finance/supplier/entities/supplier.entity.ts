@@ -1,7 +1,9 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, Index, OneToMany } from 'typeorm'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { SupplierCategory } from '../enums/supplier-category.enum'
+import { SupplierDocumentEntity } from './supplier-document.entity'
 
 @Entity('suppliers')
 @Index(['tenantId', 'name'])
@@ -22,6 +24,18 @@ export class SupplierEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   address: string
 
+  @Column({ type: 'enum', enum: SupplierCategory, default: SupplierCategory.OTHER })
+  category: SupplierCategory
+
+  @Column({ type: 'decimal', precision: 3, scale: 2, default: 0.00 })
+  rating: number
+
+  @Column({ type: 'int', name: 'lead_time_days', default: 0 })
+  leadTimeDays: number
+
+  @Column({ type: 'boolean', name: 'is_active', default: true })
+  isActive: boolean
+
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
 
@@ -35,4 +49,7 @@ export class SupplierEntity extends BaseEntity {
 
   // Virtual property populated from SupplierAPLedger
   outstandingBalance?: number
+
+  @OneToMany(() => SupplierDocumentEntity, document => document.supplier)
+  documents: SupplierDocumentEntity[]
 }

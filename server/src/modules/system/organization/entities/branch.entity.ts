@@ -24,6 +24,9 @@ export class BranchEntity extends BaseEntity {
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive: boolean
 
+  @Column({ type: 'text', name: 'ip_whitelist', nullable: true })
+  ipWhitelist: string
+
   @Column({ type: 'uuid', name: 'tenant_id' })
   @Index()
   tenantId: string

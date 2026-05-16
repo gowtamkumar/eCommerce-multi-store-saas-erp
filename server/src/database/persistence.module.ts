@@ -31,6 +31,12 @@ import { PurchaseOrderEntity } from '@/modules/admin/operations/finance/purchase
 import { SupplierPaymentEntity } from '@/modules/admin/operations/finance/purchase/entities/supplier-payment.entity'
 import { PurchaseOrderRepository } from '@/modules/admin/operations/finance/purchase/repositories/purchase-order.repository'
 import { SupplierPaymentRepository } from '@/modules/admin/operations/finance/purchase/repositories/supplier-payment.repository'
+import { SupplierDocumentEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier-document.entity'
+import { PurchaseRequisitionEntity } from '@/modules/admin/operations/finance/purchase/entities/purchase-requisition.entity'
+import { PurchaseRequisitionItemEntity } from '@/modules/admin/operations/finance/purchase/entities/purchase-requisition-item.entity'
+import { RfqEntity } from '@/modules/admin/operations/finance/purchase/entities/rfq.entity'
+import { QuotationEntity } from '@/modules/admin/operations/finance/purchase/entities/quotation.entity'
+import { DebitNoteEntity } from '@/modules/admin/operations/finance/purchase/entities/debit-note.entity'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 import { SupplierRepository } from '@/modules/admin/operations/finance/supplier/supplier.repository'
 import { FileEntity } from '@/modules/admin/operations/infra/file/entities/file.entity'
@@ -119,6 +125,12 @@ import { TypeOrmModule } from '@nestjs/typeorm'
       OrderReturnEntity,
       FulfillmentTaskEntity,
       FulfillmentItemEntity,
+      SupplierDocumentEntity,
+      PurchaseRequisitionEntity,
+      PurchaseRequisitionItemEntity,
+      RfqEntity,
+      QuotationEntity,
+      DebitNoteEntity,
     ]),
   ],
   providers: [

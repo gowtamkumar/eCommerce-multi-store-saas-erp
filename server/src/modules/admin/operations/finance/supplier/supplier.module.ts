@@ -8,10 +8,11 @@ import { SupplierRepository } from './supplier.repository'
 import { SupplierAPLedgerRepository } from './supplier-ap-ledger.repository'
 
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { SupplierDocumentEntity } from './entities/supplier-document.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SupplierEntity, SupplierAPLedgerEntity]),
+    TypeOrmModule.forFeature([SupplierEntity, SupplierAPLedgerEntity, SupplierDocumentEntity]),
     TenantModule,
   ],
   controllers: [SupplierController],

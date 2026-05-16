@@ -283,7 +283,7 @@ export default function AdminDashboard() {
                                 <Plus className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform mx-auto" />
                                 <p className="text-[9px] font-black uppercase tracking-widest text-white/80">New Item</p>
                             </Link>
-                            <Link href="/admin/purchases/new" className="p-4 bg-white/10 hover:bg-white/20 rounded-3xl transition-all text-center group">
+                            <Link href="/admin/procurement/purchases/new" className="p-4 bg-white/10 hover:bg-white/20 rounded-3xl transition-all text-center group">
                                 <Truck className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform mx-auto" />
                                 <p className="text-[9px] font-black uppercase tracking-widest text-white/80">Purchase</p>
                             </Link>
@@ -305,7 +305,7 @@ export default function AdminDashboard() {
                             <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-3 uppercase tracking-tighter italic">
                                 <HistoryIcon className="w-6 h-6 text-brand-500" /> Recent Activity
                             </h3>
-                            <Link href="/admin/purchases" className="text-xs font-black text-brand-600 uppercase tracking-widest hover:underline">View Ledger</Link>
+                            <Link href="/admin/procurement/purchases" className="text-xs font-black text-brand-600 uppercase tracking-widest hover:underline">View Ledger</Link>
                         </div>
                         <div className="space-y-4">
                             {loading ? (
@@ -314,7 +314,7 @@ export default function AdminDashboard() {
                                 ))
                             ) : stats?.supplierStats?.recentPurchaseOrders?.length ? (
                                 stats.supplierStats.recentPurchaseOrders.map((po: any) => (
-                                    <Link key={po.id} href={`/admin/purchases/${po.id}`} className="flex items-center justify-between p-4 rounded-3xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 hover:border-brand-500/30 transition-all group">
+                                    <Link key={po.id} href={`/admin/procurement/purchases/${po.id}`} className="flex items-center justify-between p-4 rounded-3xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 hover:border-brand-500/30 transition-all group">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:rotate-12 transition-transform">
                                                 <Package className="w-6 h-6 text-slate-400" />

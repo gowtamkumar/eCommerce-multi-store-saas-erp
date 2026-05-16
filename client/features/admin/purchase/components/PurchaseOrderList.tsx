@@ -54,7 +54,7 @@ const PurchaseOrderRow = memo(({ order, onReceive, formatPrice }: {
             <td className="px-6 py-4 text-right">
                 <div className="flex items-center justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <Link
-                        href={`/admin/purchases/${order.id}`}
+                        href={`/admin/procurement/purchases/${order.id}`}
                         className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                         title="View Details"
                     >
@@ -102,7 +102,7 @@ export default function PurchaseOrderList({
                     </p>
                 </div>
                 <Link
-                    href="/admin/purchases/new"
+                    href="/admin/procurement/purchases/new"
                     className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-brand-500/25 flex items-center gap-2"
                 >
                     <Plus className="w-5 h-5" />

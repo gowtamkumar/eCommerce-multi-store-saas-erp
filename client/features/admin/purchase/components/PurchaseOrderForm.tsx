@@ -170,7 +170,7 @@ export default function PurchaseOrderForm() {
             });
 
             toast.success('Purchase order created successfully');
-            router.push('/admin/purchases');
+            router.push('/admin/procurement/purchases');
         } catch (error) {
             console.error('Error saving purchase order:', error);
             toast.error('Failed to create purchase order');
@@ -190,7 +190,7 @@ export default function PurchaseOrderForm() {
         <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-10 pb-32 pt-4 px-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
-                    <Link href="/admin/purchases" className="p-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-all shadow-sm border border-slate-100 dark:border-slate-700 group">
+                    <Link href="/admin/procurement/purchases" className="p-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl transition-all shadow-sm border border-slate-100 dark:border-slate-700 group">
                         <ChevronLeft className="w-6 h-6 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
                     </Link>
                     <div>

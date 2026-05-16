@@ -65,4 +65,10 @@ export class PurchaseOrderEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
+
+  @Column({ type: 'uuid', name: 'pr_id', nullable: true })
+  purchaseRequisitionId: string
+
+  @Column({ type: 'date', name: 'delivery_date', nullable: true })
+  deliveryDate: Date
 }

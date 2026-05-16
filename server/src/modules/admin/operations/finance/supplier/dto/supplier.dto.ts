@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsEnum, IsNumber, IsInt, IsBoolean } from 'class-validator'
+import { SupplierCategory } from '../enums/supplier-category.enum'
 
 export class CreateSupplierDto {
   @IsString()
@@ -20,6 +21,22 @@ export class CreateSupplierDto {
   @IsString()
   @IsOptional()
   address?: string
+
+  @IsEnum(SupplierCategory)
+  @IsOptional()
+  category?: SupplierCategory
+
+  @IsNumber()
+  @IsOptional()
+  rating?: number
+
+  @IsInt()
+  @IsOptional()
+  leadTimeDays?: number
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean
 }
 
 export class UpdateSupplierDto {
@@ -42,4 +59,20 @@ export class UpdateSupplierDto {
   @IsString()
   @IsOptional()
   address?: string
+
+  @IsEnum(SupplierCategory)
+  @IsOptional()
+  category?: SupplierCategory
+
+  @IsNumber()
+  @IsOptional()
+  rating?: number
+
+  @IsInt()
+  @IsOptional()
+  leadTimeDays?: number
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean
 }
