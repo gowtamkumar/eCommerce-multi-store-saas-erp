@@ -35,6 +35,19 @@ export class HrmController {
 
   constructor(private readonly hrmService: HrmService) { }
 
+  @Get('dashboard/stats')
+  async getDashboardStats(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const res = await this.hrmService.getDashboardStats(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Dashboard stats fetched',
+      data: res,
+    }
+  }
+
   @Post('departments')
   async createDepartment(
     @RequestContext() ctx: RequestContextDto,

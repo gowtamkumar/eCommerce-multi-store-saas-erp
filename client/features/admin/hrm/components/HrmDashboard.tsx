@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Link from 'next/link';
+import { getHrmDashboardStats } from '@/services/hrm';
 
 // Mock data for initial UI implementation
 const MOCK_STATS = [
@@ -80,11 +81,28 @@ const QuickAction = ({ label, icon: Icon, href, color }: any) => (
 
 export default function HrmDashboard() {
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => setLoading(false), 800);
+    const fetchData = async () => {
+      try {
+        const data = await getHrmDashboardStats();
+        setStats(data);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
+
+  const statCards = [
+    { label: 'Total Employees', value: stats?.employeeCount || '0', subValue: '+4 this month', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { label: 'Present Today', value: stats?.attendanceCount || '0', subValue: `${Math.round(stats?.attendanceRate || 0)}% attendance`, icon: UserCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { label: 'Pending Leaves', value: '12', subValue: 'Requires approval', icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { label: 'Active Jobs', value: stats?.jobCount || '0', subValue: `${stats?.applicantCount || 0} applications`, icon: Briefcase, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+  ];
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8">
@@ -108,7 +126,7 @@ export default function HrmDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {MOCK_STATS.map((stat, i) => (
+        {statCards.map((stat, i) => (
           <StatCard key={i} stat={stat} />
         ))}
       </div>

@@ -315,4 +315,28 @@ export class HrmRepository {
       relations: ['reviewer'],
     })
   }
+  async getStats(tenantId: string) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const [employeeCount, jobCount, applicantCount, attendanceCount] = await Promise.all([
+      this.employeeRepo.count({ where: { tenantId } }),
+      this.jobPostingRepo.count({ where: { tenantId, status: 'PUBLISHED' as any } }),
+      this.applicantRepo.count({ where: { tenantId } }),
+      this.attendanceSessionRepo.count({
+        where: { 
+          tenantId,
+          clockIn: Between(today, new Date())
+        }
+      })
+    ])
+
+    return {
+      employeeCount,
+      jobCount,
+      applicantCount,
+      attendanceCount,
+      attendanceRate: employeeCount > 0 ? (attendanceCount / employeeCount) * 100 : 0
+    }
+  }
 }

@@ -1,5 +1,10 @@
 import { fetchAPI } from "./api";
 
+export async function getHrmDashboardStats() {
+  const res = await fetchAPI("/operations/hrm/dashboard/stats");
+  return res.data;
+}
+
 // ─────────────────────────────────────────────────
 // Employee
 // ─────────────────────────────────────────────────

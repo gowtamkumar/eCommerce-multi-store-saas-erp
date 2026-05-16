@@ -28,6 +28,10 @@ export class HrmService {
     private readonly userService: UserService,
   ) { }
 
+  async getDashboardStats(ctx: RequestContextDto) {
+    return this.hrmRepo.getStats(ctx.tenantId)
+  }
+
   // --- Department CRUD ---
   async createDepartment(data: CreateDepartmentDto, ctx: RequestContextDto) {
     this.logger.log(`Creating department "${data.name}" for tenant ${ctx.tenantId}`)
