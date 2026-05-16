@@ -7,4 +7,5 @@ export enum InventoryTransactionReferenceType {
   SALES_RETURN = 'SALES_RETURN',
   PURCHASE_RETURN = 'PURCHASE_RETURN',
   MANUAL = 'MANUAL',
+  GOODS_RECEIVED_NOTE = 'GOODS_RECEIVED_NOTE',
 }

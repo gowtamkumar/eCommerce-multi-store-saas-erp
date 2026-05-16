@@ -43,4 +43,12 @@ export class CreatePurchaseOrderDto {
 export class UpdatePurchaseOrderStatusDto {
   @IsEnum(PurchaseOrderStatus)
   status: PurchaseOrderStatus
+
+  @IsUUID()
+  @IsOptional()
+  warehouseId?: string
+
+  @IsUUID()
+  @IsOptional()
+  branchId?: string
 }

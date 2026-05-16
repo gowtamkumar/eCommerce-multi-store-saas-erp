@@ -1,7 +1,8 @@
 'use client';
 
-import { Mail, Phone, MapPin, User, Search, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Mail, Phone, MapPin, User, Search, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2, History } from 'lucide-react';
 import { memo } from 'react';
+import Link from 'next/link';
 import { Supplier, SupplierListProps } from '../types';
 
 // Memoized Supplier Row component to prevent full table re-renders
@@ -45,8 +46,23 @@ const SupplierRow = memo(({ supplier, onEdit, onDelete }: { supplier: Supplier, 
                     </div>
                 ) : '-'}
             </td>
+            <td className="px-6 py-4">
+                <div className="flex flex-col">
+                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Outstanding</span>
+                    <span className={`text-sm font-black ${(supplier as any).outstandingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format((supplier as any).outstandingBalance || 0)}
+                    </span>
+                </div>
+            </td>
             <td className="px-6 py-4 text-right">
                 <div className="flex items-center justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 translate-x-1 group-hover:translate-x-0">
+                    <Link
+                        href={`/admin/suppliers/${supplier.id}/ledger`}
+                        className="p-2.5 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-xl transition-all hover:shadow-sm"
+                        title="View Ledger"
+                    >
+                        <History className="w-4 h-4" />
+                    </Link>
                     <button
                         onClick={() => onEdit(supplier)}
                         className="p-2.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-all hover:shadow-sm"
@@ -120,6 +136,7 @@ const SupplierList = ({
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Representative</th>
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Contact Details</th>
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Fulfillment Center</th>
+                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Accounting</th>
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Operations</th>
                             </tr>
                         </thead>

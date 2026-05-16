@@ -30,7 +30,7 @@ import { SupplierResponseDto } from './dto/supplier-response.dto'
 export class SupplierController {
   private readonly logger = new Logger(SupplierController.name)
 
-  constructor(private readonly service: SupplierService) {}
+  constructor(private readonly service: SupplierService) { }
 
   @Post()
   async createSupplier(
@@ -105,6 +105,20 @@ export class SupplierController {
       statusCode: 200,
       message: 'Supplier deleted successfully',
       data: null,
+    }
+  }
+  @Get(':id/ledger')
+  async getLedger(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Query() paginationDto: PaginationDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const result = await this.service.getLedger(id, ctx, paginationDto)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Supplier ledger retrieved',
+      data: result,
     }
   }
 }

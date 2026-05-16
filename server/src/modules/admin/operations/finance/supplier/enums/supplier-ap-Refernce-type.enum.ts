@@ -1,0 +1,7 @@
+export enum SupplierAPReferenceType {
+    PURCHASE_ORDER = 'PURCHASE_ORDER',
+    GRN = 'GRN',
+    PAYMENT = 'PAYMENT',
+    ADJUSTMENT = 'ADJUSTMENT',
+    OPENING_BALANCE = 'OPENING_BALANCE',
+}

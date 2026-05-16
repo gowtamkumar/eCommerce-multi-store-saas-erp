@@ -69,12 +69,19 @@ export const navGroups = [
         ]
     },
     {
+        title: 'Procurement',
+        roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPER_ADMIN],
+        items: [
+            { icon: Users, label: 'Suppliers', href: '/admin/suppliers', feature: '/admin/suppliers' },
+            { icon: Truck, label: 'Purchase Orders', href: '/admin/purchases', feature: '/admin/purchases' },
+            { icon: CheckCircle2, label: 'Goods Received (GRN)', href: '/admin/grn', feature: '/admin/grn' },
+        ]
+    },
+    {
         title: 'Operations',
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPER_ADMIN],
         items: [
             { icon: Package, label: 'Inventory', href: '/admin/inventory', feature: '/admin/inventory' },
-            { icon: Users, label: 'Suppliers', href: '/admin/suppliers', feature: '/admin/suppliers' },
-            { icon: Truck, label: 'Purchase Orders', href: '/admin/purchases', feature: '/admin/purchases' },
             { icon: Truck, label: 'Couriers', href: '/admin/couriers', feature: '/admin/couriers' },
             { icon: Receipt, label: 'Expenses', href: '/admin/expenses', feature: '/admin/expenses' },
         ]

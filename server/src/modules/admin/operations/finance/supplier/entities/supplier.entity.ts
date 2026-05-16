@@ -32,4 +32,7 @@ export class SupplierEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
+
+  // Virtual property populated from SupplierAPLedger
+  outstandingBalance?: number
 }

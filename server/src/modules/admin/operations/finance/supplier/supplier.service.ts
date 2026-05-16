@@ -6,6 +6,11 @@ import { SupplierEntity } from './entities/supplier.entity'
 import { SupplierRepository } from './supplier.repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
+import { SupplierAPLedgerRepository } from './supplier-ap-ledger.repository'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { SupplierAPLedgerEntity } from './entities/supplier-ap-ledger.entity'
+
 @Injectable()
 export class SupplierService {
   private readonly logger = new Logger(SupplierService.name)
@@ -13,6 +18,9 @@ export class SupplierService {
   constructor(
     private readonly repository: SupplierRepository,
     private readonly cacheService: CacheService,
+    private readonly apLedgerRepository: SupplierAPLedgerRepository,
+    @InjectRepository(SupplierAPLedgerEntity)
+    private readonly apLedgerBaseRepo: Repository<SupplierAPLedgerEntity>,
   ) {}
 
   async createSupplier(dto: CreateSupplierDto, ctx: RequestContextDto): Promise<SupplierEntity> {
@@ -42,6 +50,12 @@ export class SupplierService {
       cacheKey,
       async () => {
         const [items, total] = await this.repository.findAllByTenant(tenantId, page, limit, search)
+        
+        // Populate outstanding balances for list if needed (optional optimization)
+        for (const item of items) {
+            item.outstandingBalance = await this.apLedgerRepository.getBalance(item.id, tenantId)
+        }
+
         return {
           items,
           total,
@@ -85,6 +99,8 @@ export class SupplierService {
     if (!supplier) {
       throw new NotFoundException('Supplier not found')
     }
+
+    supplier.outstandingBalance = await this.apLedgerRepository.getBalance(id, tenantId)
     return supplier
   }
 
@@ -110,5 +126,23 @@ export class SupplierService {
     await this.cacheService.delCache(`suppliers:list`, tenantId)
     await this.cacheService.delCache(`suppliers:id:${id}`, tenantId)
     return result
+  }
+
+  async getLedger(supplierId: string, ctx: RequestContextDto, paginationDto: PaginationDto) {
+    const { page = 1, limit = 20 } = paginationDto
+    const [items, total] = await this.apLedgerBaseRepo.findAndCount({
+      where: { supplierId, tenantId: ctx.tenantId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    })
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    }
   }
 }

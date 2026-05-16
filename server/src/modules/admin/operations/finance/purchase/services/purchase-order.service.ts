@@ -15,6 +15,7 @@ import { SupplierPaymentEntity } from '../entities/supplier-payment.entity'
 import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-status.enum'
 import { PurchaseOrderRepository } from '../repositories/purchase-order.repository'
 import { SupplierPaymentRepository } from '../repositories/supplier-payment.repository'
+import { GrnRepository } from '@/modules/admin/operations/logistics/grn/grn.repository'
 
 @Injectable()
 export class PurchaseOrderService {
@@ -26,6 +27,7 @@ export class PurchaseOrderService {
     private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
     @InjectQueue('product') private readonly productQueue: Queue,
+    private readonly grnRepository?: GrnRepository,
   ) {}
 
   /**
@@ -134,7 +136,7 @@ export class PurchaseOrderService {
 
     let result: PurchaseOrderEntity
     if (dto.status === PurchaseOrderStatus.RECEIVED) {
-      result = await this.receivePurchaseOrder(order, ctx)
+      result = await this.receivePurchaseOrder(order, dto, ctx)
     } else {
       order.status = dto.status
       result = await this.repository.savePurchaseOrder(order)
@@ -147,6 +149,7 @@ export class PurchaseOrderService {
 
   private async receivePurchaseOrder(
     order: PurchaseOrderEntity,
+    dto: UpdatePurchaseOrderStatusDto,
     ctx: RequestContextDto,
   ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.receivePurchaseOrder.name} Service Called`)
@@ -159,21 +162,31 @@ export class PurchaseOrderService {
       order.status = PurchaseOrderStatus.RECEIVED
       const savedOrder = await this.repository.savePurchaseOrder(order, queryRunner.manager)
 
-      for (const item of order.items) {
-        const productId = item.productId || (item.product as any)?.id
-        const variantId = item.variantId || (item.variant as any)?.id
+      // Create a DRAFT GRN instead of updating stock directly
+      if (this.grnRepository) {
+        const grnNumber = await this.grnRepository.generateGrnNumber(tenantId)
+        
+        // If warehouseId/branchId are missing from the DTO, the UI must provide them or they must be fetched
+        // For robustness, we enforce their presence or use dummy if testing (but we should require them)
+        if (!dto.warehouseId || !dto.branchId) {
+            throw new BadRequestException('warehouseId and branchId are required to receive goods')
+        }
 
-        // Dispatch background job for each item's stock update
-        await this.productQueue.add('update-stock', {
-          productId,
-          variantId: variantId || null,
-          quantity: item.quantity,
-          type: InventoryTransactionType.PURCHASE,
-          referenceType: InventoryTransactionReferenceType.PURCHASE_ORDER,
-          referenceId: order.id,
+        await this.grnRepository.createAndSave({
+          poId: order.id,
           supplierId: order.supplierId,
-          tenantId,
-        })
+          warehouseId: dto.warehouseId,
+          branchId: dto.branchId,
+          notes: `Auto-generated GRN from PO ${order.referenceNumber}`,
+          items: order.items.map(item => ({
+            productId: item.productId || (item.product as any)?.id,
+            variantId: item.variantId || (item.variant as any)?.id,
+            orderedQty: item.quantity,
+            receivedQty: item.quantity, // Default to ordered quantity
+            unitCost: item.unitPrice,
+            condition: 'NEW',
+          }))
+        }, grnNumber, ctx, queryRunner.manager)
       }
 
       await queryRunner.commitTransaction()
