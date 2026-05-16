@@ -41,13 +41,6 @@ export class EmployeeEntity extends BaseEntity {
   @JoinColumn({ name: 'branch_id' })
   branch: BranchEntity
 
-  @Column({ type: 'uuid', name: 'warehouse_id', nullable: true })
-  warehouseId: string
-
-  @ManyToOne(() => WarehouseEntity, { nullable: true })
-  @JoinColumn({ name: 'warehouse_id' })
-  warehouse: WarehouseEntity
-
   @Column({ type: 'uuid', name: 'department_id' })
   departmentId: string
 

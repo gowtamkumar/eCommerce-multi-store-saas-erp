@@ -13,8 +13,8 @@ export class JobPostingEntity extends BaseEntity {
   @Column({ type: 'text' })
   description: string
 
-  @Column({ type: 'text', nullable: true })
-  requirements: string
+  @Column({ type: 'json', nullable: true })
+  requirements: string[]
 
   @Column({ type: 'uuid', name: 'department_id' })
   departmentId: string
@@ -48,8 +48,12 @@ export class JobPostingEntity extends BaseEntity {
 
 @Entity('applicants')
 export class ApplicantEntity extends BaseEntity {
-  @Column()
-  name: string
+
+  @Column({ name: 'first_name', nullable: true })
+  firstName: string
+
+  @Column({ name: 'last_name', nullable: true })
+  lastName: string
 
   @Column()
   email: string

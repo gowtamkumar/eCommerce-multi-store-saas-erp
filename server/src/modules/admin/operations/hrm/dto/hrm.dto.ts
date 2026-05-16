@@ -8,12 +8,24 @@ export class CreateDepartmentDto {
 
   @IsString()
   @IsOptional()
+  code?: string
+
+  @IsString()
+  @IsOptional()
   description?: string
 }
 
 export class CreateDesignationDto {
   @IsString()
   name: string
+
+  @IsString()
+  @IsOptional()
+  grade?: string
+
+  @IsString()
+  @IsOptional()
+  salaryBand?: string
 
   @IsString()
   @IsOptional()
@@ -120,10 +132,6 @@ export class UpdateEmployeeDto {
 
   @IsUUID()
   @IsOptional()
-  warehouseId?: string
-
-  @IsUUID()
-  @IsOptional()
   departmentId?: string
 
   @IsUUID()
@@ -156,3 +164,34 @@ export class UpdateEmployeeDto {
   @Type(() => CreateEmployeePersonalDetailsDto)
   personalDetails?: CreateEmployeePersonalDetailsDto
 }
+
+export class CreateShiftDto {
+  @IsString()
+  name: string
+
+  @IsString()
+  startTime: string // HH:mm:ss
+
+  @IsString()
+  endTime: string // HH:mm:ss
+
+  @IsNumber()
+  @IsOptional()
+  graceMinutes?: number
+
+  @IsOptional()
+  isNightShift?: boolean
+}
+
+export class AssignShiftDto {
+  @IsUUID()
+  shiftId: string
+
+  @IsDateString()
+  effectiveFrom: string
+
+  @IsDateString()
+  @IsOptional()
+  effectiveTo?: string
+}
+

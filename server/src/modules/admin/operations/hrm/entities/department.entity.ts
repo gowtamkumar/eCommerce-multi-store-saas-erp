@@ -1,11 +1,14 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 
 @Entity('departments')
 export class DepartmentEntity extends BaseEntity {
   @Column()
   name: string
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  code: string
 
   @Column({ type: 'text', nullable: true })
   description: string

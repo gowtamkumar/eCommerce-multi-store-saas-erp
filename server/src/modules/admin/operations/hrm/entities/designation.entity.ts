@@ -5,13 +5,19 @@ import { DepartmentEntity } from './department.entity'
 
 @Entity('designations')
 export class DesignationEntity extends BaseEntity {
-  @Column()
+  @Column({ nullable: true })
   name: string
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  grade: string
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  salaryBand: string
 
   @Column({ type: 'text', nullable: true })
   description: string
 
-  @Column({ type: 'uuid', name: 'department_id' })
+  @Column({ type: 'uuid', name: 'department_id', nullable: true })
   departmentId: string
 
   @ManyToOne(() => DepartmentEntity)

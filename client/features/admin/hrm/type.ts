@@ -44,6 +44,14 @@ export interface Employee {
     id: string
     name: string
   }
+  branch?: {
+    id: string
+    name: string
+  }
+  warehouse?: {
+    id: string
+    name: string
+  }
   personalDetails?: EmployeePersonalDetails
   documents?: EmployeeDocument[]
 }

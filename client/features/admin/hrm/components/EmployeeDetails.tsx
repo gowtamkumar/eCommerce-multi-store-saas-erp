@@ -98,7 +98,7 @@ export default function EmployeeDetails({
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Primary Hub</p>
                   <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 italic">
-                    <MapPin className="w-4 h-4 text-rose-500" /> Main HQ, Dhaka
+                    <MapPin className="w-4 h-4 text-rose-500" /> {employee.branch?.name || employee.warehouse?.name || 'Remote'}
                   </p>
                 </div>
                 <div className="space-y-1">

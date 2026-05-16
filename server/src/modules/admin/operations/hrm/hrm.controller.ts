@@ -1,13 +1,31 @@
-import { Body, Controller, Get, Logger, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
-import { HrmService } from './hrm.service'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { ApplicantStatus } from '@/common/enums/hrm/hrm-enums'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
-import { CreateDepartmentDto, CreateDesignationDto, CreateEmployeeDto, UpdateEmployeeDto } from './dto/hrm.dto'
-import { RequireFeature } from '@/common/decorators/require-feature.decorator'
-import { ApplicantStatus } from '@/common/enums/hrm/hrm-enums'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
+import {
+  CreateDepartmentDto,
+  CreateDesignationDto,
+  CreateEmployeeDto,
+  UpdateEmployeeDto,
+  CreateShiftDto,
+  AssignShiftDto,
+} from './dto/hrm.dto'
+import { HrmService } from './hrm.service'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
 @RequireFeature('/admin/hrm')
@@ -46,6 +64,37 @@ export class HrmController {
     }
   }
 
+  @Patch('departments/:id')
+  async updateDepartment(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body() data: any,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateDepartment.`)
+    const res = await this.hrmService.updateDepartment(id, data, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Department updated successfully',
+      data: res,
+    }
+  }
+
+  @Delete('departments/:id')
+  async deleteDepartment(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called deleteDepartment.`)
+    const res = await this.hrmService.deleteDepartment(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Department deleted successfully',
+      data: res,
+    }
+  }
+
   @Post('designations')
   async createDesignation(
     @RequestContext() ctx: RequestContextDto,
@@ -71,6 +120,37 @@ export class HrmController {
       success: true,
       statusCode: 200,
       message: 'Designations retrieved successfully',
+      data: res,
+    }
+  }
+
+  @Patch('designations/:id')
+  async updateDesignation(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body() data: any,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateDesignation.`)
+    const res = await this.hrmService.updateDesignation(id, data, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Designation updated successfully',
+      data: res,
+    }
+  }
+
+  @Delete('designations/:id')
+  async deleteDesignation(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called deleteDesignation.`)
+    const res = await this.hrmService.deleteDesignation(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Designation deleted successfully',
       data: res,
     }
   }
@@ -166,17 +246,208 @@ export class HrmController {
     }
   }
 
+  @Get('attendance')
+  async findAllAttendanceSessions(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllAttendanceSessions.`)
+    const res = await this.hrmService.findAllAttendanceSessions(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Attendance sessions retrieved successfully',
+      data: res,
+    }
+  }
+
   @Post('payroll/process')
   async processPayroll(
     @RequestContext() ctx: RequestContextDto,
     @Body() data: { period: string; name: string },
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called processPayroll for ${data.period}.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called processPayroll for ${data.period}.`,
+    )
     const res = await this.hrmService.processPayroll(data.period, data.name, ctx)
     return {
       success: true,
       statusCode: 200,
       message: 'Payroll processed successfully',
+      data: res,
+    }
+  }
+
+  @Get('payroll/batches')
+  async findAllPayrollBatches(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllPayrollBatches.`)
+    const res = await this.hrmService.findAllPayrollBatches(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Payroll batches retrieved successfully',
+      data: res,
+    }
+  }
+
+  @Get('payroll/batches/:id/slips')
+  async findPayrollSlipsByBatch(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findPayrollSlipsByBatch for ${id}.`)
+    const res = await this.hrmService.findPayrollSlipsByBatch(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Payroll slips retrieved successfully',
+      data: res,
+    }
+  }
+
+  // --- Shift Management ---
+  @Post('shifts')
+  async createShift(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() data: CreateShiftDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createShift.`)
+    const res = await this.hrmService.createShift(data, ctx)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Shift created successfully',
+      data: res,
+    }
+  }
+
+  @Get('shifts')
+  async findAllShifts(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllShifts.`)
+    const res = await this.hrmService.findAllShifts(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Shifts retrieved successfully',
+      data: res,
+    }
+  }
+
+  @Patch('shifts/:id')
+  async updateShift(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body() data: any,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateShift.`)
+    const res = await this.hrmService.updateShift(id, data, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Shift updated successfully',
+      data: res,
+    }
+  }
+
+  @Delete('shifts/:id')
+  async deleteShift(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called deleteShift.`)
+    const res = await this.hrmService.deleteShift(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Shift deleted successfully',
+      data: res,
+    }
+  }
+
+  @Post('employees/:id/assign-shift')
+  async assignShift(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body() data: AssignShiftDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called assignShift for employee ${id}.`,
+    )
+    const res = await this.hrmService.assignShift(id, data, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Shift assigned successfully',
+      data: res,
+    }
+  }
+
+  @Get('employees/:id/shifts')
+  async getEmployeeShifts(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getEmployeeShifts for ${id}.`)
+    const res = await this.hrmService.findEmployeeShiftAssignments(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Employee shifts retrieved successfully',
+      data: res,
+    }
+  }
+
+  // --- Leave Management ---
+  @Post('employees/:id/leaves')
+  async requestLeave(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body() data: any,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called requestLeave for employee ${id}.`,
+    )
+    const res = await this.hrmService.requestLeave(id, data, ctx)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Leave request submitted',
+      data: res,
+    }
+  }
+
+  @Get('leaves')
+  async findAllLeaveRequests(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllLeaveRequests.`)
+    const res = await this.hrmService.findAllLeaveRequests(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Leave requests retrieved successfully',
+      data: res,
+    }
+  }
+
+  @Post('leaves/:id/approve')
+  async approveLeave(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body('approvedById') approvedById: string,
+    @Body('managerNote') managerNote: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called approveLeave for request ${id}.`,
+    )
+    const res = await this.hrmService.approveLeave(id, approvedById, managerNote, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Leave request approved',
       data: res,
     }
   }
@@ -196,6 +467,19 @@ export class HrmController {
     }
   }
 
+  @Get('jobs')
+  async findAllJobPostings(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const res = await this.hrmService.findAllJobPostings(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Job postings retrieved successfully',
+      data: res,
+    }
+  }
+
   @Post('applicants')
   async applyForJob(
     @RequestContext() ctx: RequestContextDto,
@@ -210,6 +494,19 @@ export class HrmController {
     }
   }
 
+  @Get('applicants')
+  async findAllApplicants(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const res = await this.hrmService.findAllApplicants(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Applicants retrieved successfully',
+      data: res,
+    }
+  }
+
   @Post('interviews')
   async scheduleInterview(
     @RequestContext() ctx: RequestContextDto,
@@ -220,6 +517,20 @@ export class HrmController {
       success: true,
       statusCode: 201,
       message: 'Interview scheduled',
+      data: res,
+    }
+  }
+
+  @Get('applicants/:id/interviews')
+  async findInterviewsByApplicant(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const res = await this.hrmService.findInterviewsByApplicant(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Interviews retrieved successfully',
       data: res,
     }
   }
@@ -265,6 +576,19 @@ export class HrmController {
       success: true,
       statusCode: 200,
       message: 'Performance score calculated',
+      data: res,
+    }
+  }
+
+  @Post('seed')
+  async seedDemoData(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const res = await this.hrmService.seedDemoData(ctx)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Demo data seeded successfully',
       data: res,
     }
   }

@@ -1,11 +1,18 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { HrmRepository } from './hrm.repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { CreateDepartmentDto, CreateDesignationDto, CreateEmployeeDto, UpdateEmployeeDto } from './dto/hrm.dto'
-import { LeaveStatus, ApplicantStatus } from '@/common/enums/hrm/hrm-enums'
-import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
+import { ApplicantStatus, LeaveStatus } from '@/common/enums/hrm/hrm-enums'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
+import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+  AssignShiftDto,
+  CreateDepartmentDto,
+  CreateDesignationDto,
+  CreateEmployeeDto,
+  CreateShiftDto,
+  UpdateEmployeeDto,
+} from './dto/hrm.dto'
+import { HrmRepository } from './hrm.repository'
 
 @Injectable()
 export class HrmService {
@@ -21,7 +28,12 @@ export class HrmService {
   async createDepartment(data: CreateDepartmentDto, ctx: RequestContextDto) {
     this.logger.log(`Creating department "${data.name}" for tenant ${ctx.tenantId}`)
     const res = await this.hrmRepo.createDepartment({ ...data, tenantId: ctx.tenantId })
-    await this.auditLogService.log(ctx, { action: 'CREATE', entity: 'Department', entityId: res.id, newValue: res })
+    await this.auditLogService.log(ctx, {
+      action: 'CREATE',
+      entity: 'Department',
+      entityId: res.id,
+      newValue: res,
+    })
     return res
   }
 
@@ -29,16 +41,81 @@ export class HrmService {
     return this.hrmRepo.findAllDepartments(ctx.tenantId)
   }
 
+  async updateDepartment(id: string, data: any, ctx: RequestContextDto) {
+    this.logger.log(`Updating department ${id} for tenant ${ctx.tenantId}`)
+    const old = await this.hrmRepo.findDepartmentById(id, ctx.tenantId)
+    if (!old) throw new NotFoundException('Department not found')
+    await this.hrmRepo.updateDepartment(id, data)
+    const updated = await this.hrmRepo.findDepartmentById(id, ctx.tenantId)
+    await this.auditLogService.log(ctx, {
+      action: 'UPDATE',
+      entity: 'Department',
+      entityId: id,
+      oldValue: old,
+      newValue: updated,
+    })
+    return updated
+  }
+
+  async deleteDepartment(id: string, ctx: RequestContextDto) {
+    this.logger.log(`Deleting department ${id} for tenant ${ctx.tenantId}`)
+    const dept = await this.hrmRepo.findDepartmentById(id, ctx.tenantId)
+    if (!dept) throw new NotFoundException('Department not found')
+    await this.hrmRepo.deleteDepartment(id)
+    await this.auditLogService.log(ctx, {
+      action: 'DELETE',
+      entity: 'Department',
+      entityId: id,
+      oldValue: dept,
+    })
+    return { id }
+  }
+
   // --- Designation CRUD ---
   async createDesignation(data: CreateDesignationDto, ctx: RequestContextDto) {
     this.logger.log(`Creating designation "${data.name}" for tenant ${ctx.tenantId}`)
     const res = await this.hrmRepo.createDesignation({ ...data, tenantId: ctx.tenantId })
-    await this.auditLogService.log(ctx, { action: 'CREATE', entity: 'Designation', entityId: res.id, newValue: res })
+    await this.auditLogService.log(ctx, {
+      action: 'CREATE',
+      entity: 'Designation',
+      entityId: res.id,
+      newValue: res,
+    })
     return res
   }
 
   async findAllDesignations(ctx: RequestContextDto) {
     return this.hrmRepo.findAllDesignations(ctx.tenantId)
+  }
+
+  async updateDesignation(id: string, data: any, ctx: RequestContextDto) {
+    this.logger.log(`Updating designation ${id} for tenant ${ctx.tenantId}`)
+    const old = await this.hrmRepo.findDesignationById(id, ctx.tenantId)
+    if (!old) throw new NotFoundException('Designation not found')
+    await this.hrmRepo.updateDesignation(id, data)
+    const updated = await this.hrmRepo.findDesignationById(id, ctx.tenantId)
+    await this.auditLogService.log(ctx, {
+      action: 'UPDATE',
+      entity: 'Designation',
+      entityId: id,
+      oldValue: old,
+      newValue: updated,
+    })
+    return updated
+  }
+
+  async deleteDesignation(id: string, ctx: RequestContextDto) {
+    this.logger.log(`Deleting designation ${id} for tenant ${ctx.tenantId}`)
+    const des = await this.hrmRepo.findDesignationById(id, ctx.tenantId)
+    if (!des) throw new NotFoundException('Designation not found')
+    await this.hrmRepo.deleteDesignation(id)
+    await this.auditLogService.log(ctx, {
+      action: 'DELETE',
+      entity: 'Designation',
+      entityId: id,
+      oldValue: des,
+    })
+    return { id }
   }
 
   // --- Employee CRUD ---
@@ -53,7 +130,7 @@ export class HrmService {
     })
 
     if (personalDetails) {
-      await (this.hrmRepo as any).personalDetailsRepo.save({
+      await this.hrmRepo.personalDetailsRepo.save({
         ...personalDetails,
         employeeId: employee.id,
         tenantId: ctx.tenantId,
@@ -61,7 +138,12 @@ export class HrmService {
       })
     }
 
-    await this.auditLogService.log(ctx, { action: 'CREATE', entity: 'Employee', entityId: employee.id, newValue: employee })
+    await this.auditLogService.log(ctx, {
+      action: 'CREATE',
+      entity: 'Employee',
+      entityId: employee.id,
+      newValue: employee,
+    })
     return this.findOneEmployee(employee.id, ctx)
   }
 
@@ -86,16 +168,18 @@ export class HrmService {
     await this.hrmRepo.updateEmployee(id, formattedUpdate)
 
     if (personalDetails) {
-      const pd = await (this.hrmRepo as any).personalDetailsRepo.findOne({ where: { employeeId: id } })
+      const pd = await this.hrmRepo.personalDetailsRepo.findOne({
+        where: { employeeId: id },
+      })
       const pdData = {
         ...personalDetails,
         dob: personalDetails.dob ? new Date(personalDetails.dob) : undefined,
       }
 
       if (pd) {
-        await (this.hrmRepo as any).personalDetailsRepo.update(pd.id, pdData)
+        await this.hrmRepo.personalDetailsRepo.update(pd.id, pdData)
       } else {
-        await (this.hrmRepo as any).personalDetailsRepo.save({
+        await this.hrmRepo.personalDetailsRepo.save({
           ...pdData,
           employeeId: id,
           tenantId: ctx.tenantId,
@@ -109,24 +193,78 @@ export class HrmService {
       entity: 'Employee',
       entityId: id,
       oldValue: oldEmployee,
-      newValue: newEmployee
+      newValue: newEmployee,
     })
     return newEmployee
   }
 
   // --- Shift Management ---
-  async createShift(data: any, ctx: RequestContextDto) {
-    return this.hrmRepo.createShift({ ...data, tenantId: ctx.tenantId })
+  async createShift(data: CreateShiftDto, ctx: RequestContextDto) {
+    this.logger.log(`Creating shift "${data.name}" for tenant ${ctx.tenantId}`)
+    const res = await this.hrmRepo.createShift({ ...data, tenantId: ctx.tenantId })
+    await this.auditLogService.log(ctx, {
+      action: 'CREATE',
+      entity: 'Shift',
+      entityId: res.id,
+      newValue: res,
+    })
+    return res
   }
 
-  async assignShift(employeeId: string, data: any, ctx: RequestContextDto) {
-    return this.hrmRepo.assignShift({
+  async findAllShifts(ctx: RequestContextDto) {
+    return this.hrmRepo.findAllShifts(ctx.tenantId)
+  }
+
+  async updateShift(id: string, data: any, ctx: RequestContextDto) {
+    this.logger.log(`Updating shift ${id} for tenant ${ctx.tenantId}`)
+    const old = await this.hrmRepo.findShiftById(id, ctx.tenantId)
+    if (!old) throw new NotFoundException('Shift not found')
+    await this.hrmRepo.updateShift(id, data)
+    const updated = await this.hrmRepo.findShiftById(id, ctx.tenantId)
+    await this.auditLogService.log(ctx, {
+      action: 'UPDATE',
+      entity: 'Shift',
+      entityId: id,
+      oldValue: old,
+      newValue: updated,
+    })
+    return updated
+  }
+
+  async deleteShift(id: string, ctx: RequestContextDto) {
+    this.logger.log(`Deleting shift ${id} for tenant ${ctx.tenantId}`)
+    const shift = await this.hrmRepo.findShiftById(id, ctx.tenantId)
+    if (!shift) throw new NotFoundException('Shift not found')
+    await this.hrmRepo.deleteShift(id)
+    await this.auditLogService.log(ctx, {
+      action: 'DELETE',
+      entity: 'Shift',
+      entityId: id,
+      oldValue: shift,
+    })
+    return { id }
+  }
+
+  async assignShift(employeeId: string, data: AssignShiftDto, ctx: RequestContextDto) {
+    this.logger.log(`Assigning shift ${data.shiftId} to employee ${employeeId}`)
+    const res = await this.hrmRepo.assignShift({
       ...data,
       employeeId,
       tenantId: ctx.tenantId,
       effectiveFrom: new Date(data.effectiveFrom),
       effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null,
     })
+    await this.auditLogService.log(ctx, {
+      action: 'ASSIGN',
+      entity: 'EmployeeShift',
+      entityId: res.id,
+      newValue: res,
+    })
+    return res
+  }
+
+  async findEmployeeShiftAssignments(employeeId: string, ctx: RequestContextDto) {
+    return this.hrmRepo.findEmployeeShiftAssignments(employeeId, ctx.tenantId)
   }
 
   // --- Attendance Logic (Production Refined) ---
@@ -134,11 +272,13 @@ export class HrmService {
     const employee = await this.findOneEmployee(employeeId, ctx)
 
     // IP Verification (Geofencing)
-    const location = employee.branch || employee.warehouse
+    const location = employee.branch
     if (location?.ipWhitelist) {
-      const allowedIps = location.ipWhitelist.split(',').map(ip => ip.trim())
+      const allowedIps = location.ipWhitelist.split(',').map((ip) => ip.trim())
       if (!allowedIps.includes(ipAddress)) {
-        this.logger.warn(`Unauthorized clock-in attempt from IP ${ipAddress} for employee ${employeeId}`)
+        this.logger.warn(
+          `Unauthorized clock-in attempt from IP ${ipAddress} for employee ${employeeId}`,
+        )
         throw new Error('Unauthorized location. Please connect to the company network.')
       }
     }
@@ -179,7 +319,6 @@ export class HrmService {
       employeeId,
       tenantId: ctx.tenantId,
       branchId: employee.branchId,
-      warehouseId: employee.warehouseId,
       clockIn: new Date(),
       lateMinutes,
     })
@@ -216,12 +355,20 @@ export class HrmService {
     return this.findOneEmployee(employeeId, ctx)
   }
 
+  async findAllAttendanceSessions(ctx: RequestContextDto) {
+    return this.hrmRepo.findAllAttendanceSessions(ctx.tenantId)
+  }
+
   // --- Leave Management ---
   async requestLeave(employeeId: string, data: any, ctx: RequestContextDto) {
-    const quotas = await this.hrmRepo.findLeaveQuota(employeeId, new Date(data.startDate).getFullYear(), ctx.tenantId)
-    const quota = quotas.find(q => q.leaveType === data.leaveType)
+    const quotas = await this.hrmRepo.findLeaveQuota(
+      employeeId,
+      new Date(data.startDate).getFullYear(),
+      ctx.tenantId,
+    )
+    const quota = quotas.find((q) => q.leaveType === data.leaveType)
 
-    if (quota && (quota.usedDays + data.totalDays > quota.totalDays)) {
+    if (quota && quota.usedDays + data.totalDays > quota.totalDays) {
       throw new Error(`Insufficient leave balance for ${data.leaveType}`)
     }
 
@@ -233,12 +380,24 @@ export class HrmService {
       endDate: new Date(data.endDate),
     })
 
-    await this.auditLogService.log(ctx, { action: 'CREATE', entity: 'LeaveRequest', entityId: res.id, newValue: res })
+    await this.auditLogService.log(ctx, {
+      action: 'CREATE',
+      entity: 'LeaveRequest',
+      entityId: res.id,
+      newValue: res,
+    })
     return res
   }
 
-  async approveLeave(requestId: string, approvedById: string, managerNote: string, ctx: RequestContextDto) {
-    const request = await (this.hrmRepo as any).leaveRequestRepo.findOne({ where: { id: requestId, tenantId: ctx.tenantId } })
+  async approveLeave(
+    requestId: string,
+    approvedById: string,
+    managerNote: string,
+    ctx: RequestContextDto,
+  ) {
+    const request = await (this.hrmRepo as any).leaveRequestRepo.findOne({
+      where: { id: requestId, tenantId: ctx.tenantId },
+    })
     if (!request) throw new NotFoundException('Leave request not found')
 
     await this.hrmRepo.updateLeaveRequest(requestId, {
@@ -248,15 +407,28 @@ export class HrmService {
     })
 
     // Update quota
-    const quotas = await this.hrmRepo.findLeaveQuota(request.employeeId, new Date(request.startDate).getFullYear(), ctx.tenantId)
-    const quota = quotas.find(q => q.leaveType === request.leaveType)
+    const quotas = await this.hrmRepo.findLeaveQuota(
+      request.employeeId,
+      new Date(request.startDate).getFullYear(),
+      ctx.tenantId,
+    )
+    const quota = quotas.find((q) => q.leaveType === request.leaveType)
     if (quota) {
       quota.usedDays += request.totalDays
       await (this.hrmRepo as any).leaveQuotaRepo.save(quota)
     }
 
-    await this.auditLogService.log(ctx, { action: 'APPROVE', entity: 'LeaveRequest', entityId: requestId, newValue: { status: 'APPROVED' } })
+    await this.auditLogService.log(ctx, {
+      action: 'APPROVE',
+      entity: 'LeaveRequest',
+      entityId: requestId,
+      newValue: { status: 'APPROVED' },
+    })
     return request
+  }
+
+  async findAllLeaveRequests(ctx: RequestContextDto) {
+    return this.hrmRepo.findAllLeaveRequests(ctx.tenantId)
   }
 
   // --- Payroll Engine ---
@@ -278,8 +450,10 @@ export class HrmService {
       if (employee.status !== 'ACTIVE' && employee.status !== 'PROBATION') continue
 
       const salary = employee.salaryConfig?.basicSalary || 0
-      const allowances = employee.salaryConfig?.allowances?.reduce((sum, a) => sum + Number(a.amount), 0) || 0
-      const deductions = employee.salaryConfig?.deductions?.reduce((sum, d) => sum + Number(d.amount), 0) || 0
+      const allowances =
+        employee.salaryConfig?.allowances?.reduce((sum, a) => sum + Number(a.amount), 0) || 0
+      const deductions =
+        employee.salaryConfig?.deductions?.reduce((sum, d) => sum + Number(d.amount), 0) || 0
 
       // Placeholder for complex production logic (e.g. counting work_hours from sessions)
       const overtimePay = 0
@@ -310,44 +484,91 @@ export class HrmService {
     // Update batch total
     await (this.hrmRepo as any).payrollBatchRepo.update(batch.id, {
       totalAmount: batchTotal,
-      status: 'APPROVED'
+      status: 'APPROVED',
     })
 
     // Accounting Integration
     try {
-      const journal = await this.accountingService.createJournalEntry({
-        type: JournalType.GENERAL,
-        description: `Payroll for ${period}: ${name}`,
-        referenceType: 'PAYROLL_BATCH',
-        referenceId: batch.id,
-        lines: [
-          { accountCode: '6000', side: LedgerEntrySide.DEBIT, amount: batchTotal }, // Salaries & Wages Expense
-          { accountCode: '2100', side: LedgerEntrySide.CREDIT, amount: batchTotal }, // Salaries Payable (Liability)
-        ],
-      }, ctx)
+      if (this.accountingService) {
+        const journal = await this.accountingService.createJournalEntry(
+          {
+            type: JournalType.GENERAL,
+            description: `Payroll for ${period}: ${name}`,
+            referenceType: 'PAYROLL_BATCH',
+            referenceId: batch.id,
+            lines: [
+              { accountCode: '6000', side: LedgerEntrySide.DEBIT, amount: batchTotal }, // Salaries & Wages Expense
+              { accountCode: '2100', side: LedgerEntrySide.CREDIT, amount: batchTotal }, // Salaries Payable
+            ],
+          },
+          ctx,
+        )
 
-      await (this.hrmRepo as any).payrollBatchRepo.update(batch.id, {
-        journalEntryId: journal.id,
-        status: 'PAID'
-      })
+        await (this.hrmRepo as any).payrollBatchRepo.update(batch.id, {
+          journalEntryId: journal.id,
+          status: 'PAID',
+        })
+      }
     } catch (error) {
-      this.logger.error(`Failed to create accounting entries for payroll ${batch.id}: ${error.message}`)
+      this.logger.error(
+        `Failed to create accounting entries for payroll ${batch.id}: ${error.message}`,
+      )
     }
 
-    await this.auditLogService.log(ctx, { action: 'PROCESS', entity: 'PayrollBatch', entityId: batch.id, newValue: batch })
+    await this.auditLogService.log(ctx, {
+      action: 'PROCESS',
+      entity: 'PayrollBatch',
+      entityId: batch.id,
+      newValue: batch,
+    })
     return { batch, slipCount: slips.length }
   }
 
+  async findAllPayrollBatches(ctx: RequestContextDto) {
+    return this.hrmRepo.findAllPayrollBatches(ctx.tenantId)
+  }
+
+  async findPayrollSlipsByBatch(batchId: string, ctx: RequestContextDto) {
+    return this.hrmRepo.findPayrollSlipsByBatch(batchId, ctx.tenantId)
+  }
+
   // --- Recruitment (ATS) ---
+  async findAllJobPostings(ctx: RequestContextDto) {
+    return this.hrmRepo.findAllJobPostings(ctx.tenantId)
+  }
+
   async createJobPosting(data: any, ctx: RequestContextDto) {
-    const job = await this.hrmRepo.createJobPosting({ ...data, tenantId: ctx.tenantId })
-    await this.auditLogService.log(ctx, { action: 'CREATE', entity: 'JobPosting', entityId: job.id, newValue: job })
+    const job = await this.hrmRepo.createJobPosting({
+      ...data,
+      tenantId: ctx.tenantId,
+      status: data.status || 'OPEN'
+    })
+    await this.auditLogService.log(ctx, {
+      action: 'CREATE',
+      entity: 'JobPosting',
+      entityId: job.id,
+      newValue: job,
+    })
     return job
   }
 
+  async findAllApplicants(ctx: RequestContextDto) {
+    return this.hrmRepo.findAllApplicants(ctx.tenantId)
+  }
+
   async applyForJob(data: any, ctx: RequestContextDto) {
-    const applicant = await this.hrmRepo.createApplicant({ ...data, tenantId: ctx.tenantId })
-    await this.auditLogService.log(ctx, { action: 'CREATE', entity: 'Applicant', entityId: applicant.id, newValue: applicant })
+    const applicant = await this.hrmRepo.createApplicant({
+      ...data,
+      name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'New Applicant',
+      tenantId: ctx.tenantId,
+      status: 'APPLIED'
+    })
+    await this.auditLogService.log(ctx, {
+      action: 'CREATE',
+      entity: 'Applicant',
+      entityId: applicant.id,
+      newValue: applicant,
+    })
     return applicant
   }
 
@@ -357,13 +578,27 @@ export class HrmService {
       tenantId: ctx.tenantId,
       scheduledAt: new Date(data.scheduledAt),
     })
-    await this.auditLogService.log(ctx, { action: 'SCHEDULE', entity: 'Interview', entityId: interview.id, newValue: interview })
+    await this.auditLogService.log(ctx, {
+      action: 'SCHEDULE',
+      entity: 'Interview',
+      entityId: interview.id,
+      newValue: interview,
+    })
     return interview
+  }
+
+  async findInterviewsByApplicant(applicantId: string, ctx: RequestContextDto) {
+    return this.hrmRepo.findInterviewsByApplicant(applicantId, ctx.tenantId)
   }
 
   async updateApplicantStatus(id: string, status: ApplicantStatus, ctx: RequestContextDto) {
     await this.hrmRepo.updateApplicantStatus(id, status)
-    await this.auditLogService.log(ctx, { action: 'UPDATE_STATUS', entity: 'Applicant', entityId: id, newValue: { status } })
+    await this.auditLogService.log(ctx, {
+      action: 'UPDATE_STATUS',
+      entity: 'Applicant',
+      entityId: id,
+      newValue: { status },
+    })
     return { id, status }
   }
 
@@ -373,7 +608,12 @@ export class HrmService {
       ...data,
       tenantId: ctx.tenantId,
     })
-    await this.auditLogService.log(ctx, { action: 'CREATE', entity: 'PerformanceReview', entityId: review.id, newValue: review })
+    await this.auditLogService.log(ctx, {
+      action: 'CREATE',
+      entity: 'PerformanceReview',
+      entityId: review.id,
+      newValue: review,
+    })
     return review
   }
 
@@ -389,10 +629,119 @@ export class HrmService {
       employeeId,
       period,
       metrics: [
-        { name: 'Sales Volume', value: salesVolume, unit: 'Currency' },
-        { name: 'Picking Speed', value: pickSpeed, unit: 'Tasks/Hr' },
+        { name: 'Sales Volume', value: salesVolume, target: 50000, unit: 'USD' },
+        { name: 'Fulfillment Speed', value: pickSpeed, target: 120, unit: 'sec/item' },
       ],
-      overallScore: 0, // Calculated based on weighted metrics
     }
+  }
+
+  // --- Demo Data Seeder ---
+  async fixDatabaseSchema() {
+    this.logger.log('Repairing HRM Database Schema...')
+    const queryRunner = this.hrmRepo.personalDetailsRepo.manager.connection.createQueryRunner()
+    await queryRunner.connect()
+    try {
+      // 1. Fix missing applicant columns (nullable name)
+      const hasName = await queryRunner.hasColumn('applicants', 'name')
+      if (hasName) {
+        await queryRunner.query('ALTER TABLE applicants ALTER COLUMN "name" DROP NOT NULL')
+      }
+
+      // 2. Fix enum values (Postgres doesn't sync enums automatically)
+      const statuses = ['APPLIED', 'SCREENING', 'INTERVIEW', 'TECHNICAL', 'HR_ROUND', 'OFFER', 'JOINED', 'REJECTED']
+      for (const status of statuses) {
+        try {
+          await queryRunner.query(`ALTER TYPE applicants_status_enum ADD VALUE IF NOT EXISTS '${status}'`)
+        } catch (e) {
+          // Ignore if value already exists
+        }
+      }
+    } catch (err) {
+      this.logger.error(`Schema repair failed: ${err.message}`)
+    } finally {
+      await queryRunner.release()
+    }
+  }
+
+  async seedDemoData(ctx: RequestContextDto) {
+    await this.fixDatabaseSchema()
+    this.logger.log(`Seeding demo HRM data for tenant ${ctx.tenantId}`)
+
+    // 1. Departments & Designations
+    const itDept = await this.hrmRepo.createDepartment({ name: 'IT & Engineering', tenantId: ctx.tenantId })
+    const salesDept = await this.hrmRepo.createDepartment({ name: 'Sales & Marketing', tenantId: ctx.tenantId })
+
+    const devDes = await this.hrmRepo.createDesignation({ name: 'Senior Developer', departmentId: itDept.id, tenantId: ctx.tenantId })
+    const mgrDes = await this.hrmRepo.createDesignation({ name: 'Sales Manager', departmentId: salesDept.id, tenantId: ctx.tenantId })
+
+    // 2. Shifts
+    const dayShift = await this.hrmRepo.createShift({
+      name: 'Standard Day Shift',
+      startTime: '09:00:00',
+      endTime: '18:00:00',
+      graceMinutes: 15,
+      tenantId: ctx.tenantId,
+    })
+
+    const nightShift = await this.hrmRepo.createShift({
+      name: 'Security Night Shift',
+      startTime: '22:00:00',
+      endTime: '06:00:00',
+      isNightShift: true,
+      graceMinutes: 30,
+      tenantId: ctx.tenantId,
+    })
+
+    // 3. Find some existing entities to link
+    const employees = await this.hrmRepo.findAllEmployees(ctx.tenantId)
+    if (employees.length === 0) return { message: 'Please create at least one employee first to link demo data.' }
+
+    const emp = employees[0]
+
+    // 4. Assignments
+    await this.hrmRepo.assignShift({
+      employeeId: emp.id,
+      shiftId: dayShift.id,
+      effectiveFrom: new Date('2026-01-01'),
+      tenantId: ctx.tenantId,
+    })
+
+    // 5. Attendance Logs (Last 5 days)
+    for (let i = 1; i <= 5; i++) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+
+      const clockIn = new Date(date)
+      clockIn.setHours(9, Math.floor(Math.random() * 20), 0) // Randomly late or on time
+
+      const clockOut = new Date(date)
+      clockOut.setHours(18, Math.floor(Math.random() * 30), 0)
+
+      const diffMs = clockOut.getTime() - clockIn.getTime()
+      const workHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2))
+
+      await this.hrmRepo.saveAttendanceSession({
+        employeeId: emp.id,
+        clockIn,
+        clockOut,
+        workHours,
+        lateMinutes: clockIn.getMinutes() > 15 ? clockIn.getMinutes() - 15 : 0,
+        tenantId: ctx.tenantId,
+      })
+    }
+
+    // 6. Leave Request
+    await this.hrmRepo.createLeaveRequest({
+      employeeId: emp.id,
+      leaveType: 'ANNUAL' as any,
+      startDate: new Date('2026-06-01'),
+      endDate: new Date('2026-06-05'),
+      totalDays: 5,
+      reason: 'Summer Vacation with family',
+      status: 'PENDING' as any,
+      tenantId: ctx.tenantId,
+    })
+
+    return { success: true, message: 'Demo data seeded successfully' }
   }
 }

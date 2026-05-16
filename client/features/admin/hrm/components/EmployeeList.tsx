@@ -176,7 +176,7 @@ export default function EmployeeList({
                         <div className="flex items-center gap-2">
                           <MapPin className="w-3 h-3 text-rose-500" />
                           <span className="text-xs font-bold text-slate-600 dark:text-slate-400 italic">
-                            {employee.branchId ? 'Main Branch' : employee.warehouseId ? 'Logistics Hub' : 'Remote'}
+                            {employee.branch?.name || employee.warehouse?.name || 'Remote'}
                           </span>
                         </div>
                       </td>

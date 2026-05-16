@@ -1,8 +1,6 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 import { EmployeeEntity } from './employee.entity'
-import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
-import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { AttendanceStatus } from '@/common/enums/hrm/hrm-enums'
 
@@ -24,9 +22,6 @@ export class AttendanceSessionEntity extends BaseEntity {
 
   @Column({ type: 'uuid', name: 'branch_id', nullable: true })
   branchId: string
-
-  @Column({ type: 'uuid', name: 'warehouse_id', nullable: true })
-  warehouseId: string
 
   @Column({ type: 'timestamp', name: 'clock_in' })
   clockIn: Date
