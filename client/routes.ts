@@ -82,6 +82,7 @@ export const navGroups = [
         roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPER_ADMIN],
         items: [
             { icon: Package, label: 'Inventory', href: '/admin/inventory', feature: '/admin/inventory' },
+            { icon: CheckCircle2, label: 'Fulfillment', href: '/admin/fulfillment', feature: '/admin/fulfillment' },
             { icon: Truck, label: 'Couriers', href: '/admin/couriers', feature: '/admin/couriers' },
             { icon: Receipt, label: 'Expenses', href: '/admin/expenses', feature: '/admin/expenses' },
         ]

@@ -63,6 +63,9 @@ export class ProductEntity extends BaseEntity {
   @Column({ type: 'int', default: 0 })
   stock: number
 
+  @Column({ type: 'int', name: 'reserved_stock', default: 0 })
+  reservedStock: number
+
   @Column({ type: 'int', default: 5, name: 'low_stock_threshold' })
   lowStockThreshold: number
 

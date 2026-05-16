@@ -10,6 +10,7 @@ import { PaginationDto } from '@/common/dto/pagination.dto'
 import { CacheService } from '../../infra/cache/cache.service'
 import { CogsService } from '@/modules/admin/operations/finance/accounting/services/cogs.service'
 import { AccountingIntegrationService } from '@/modules/admin/operations/finance/accounting/services/accounting-integration.service'
+import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 
 @Injectable()
 export class InventoryLedgerService {
@@ -48,38 +49,76 @@ export class InventoryLedgerService {
       InventoryTransactionType.RETURN,
       InventoryTransactionType.INITIAL_BALANCE,
       InventoryTransactionType.TRANSFER_IN,
+      InventoryTransactionType.RESERVATION_CANCEL,
     ].includes(dto.type) || (dto.type === InventoryTransactionType.ADJUSTMENT && dto.quantity > 0)
+
+    const isDecrement = [
+      InventoryTransactionType.SALE,
+      InventoryTransactionType.TRANSFER_OUT,
+      InventoryTransactionType.DAMAGE,
+      InventoryTransactionType.RESERVATION,
+    ].includes(dto.type) || (dto.type === InventoryTransactionType.ADJUSTMENT && dto.quantity < 0)
 
     // Calculate signed quantity for ledger balance
     const signedQty = isIncrement ? absQty : -absQty
 
     // Use transaction manager if provided
     const internalExecute = async (em: any) => {
-      // 1. Get current balance from ledger for performance/snapshotting
-      // Note: In Phase 2, we still use product.stock for global view, 
-      // but we start tracking per-warehouse balance in the ledger.
+      // 1. Get current balance from ledger
       const currentBalance = await this.repository.getLatestBalanceAfter(
         dto.productId,
         dto.variantId || null,
-        dto.warehouseId || '', // Handle global vs warehouse specific
+        dto.warehouseId || '',
         tenantId,
         em,
       )
 
       const balanceAfter = Number(currentBalance) + signedQty
 
-      // 2. Dual-Write: Update legacy stock column (Source of truth for Phase 2)
+      // 2. Dual-Write: Update legacy stock column
+      // CRITICAL: We only update legacy stock for RESERVATION (soft-deduct) 
+      // or physical movements that WERE NOT previously reserved.
+      // For Phase 5, if it's a SALE at shipment, we assume it was already reserved at order.
+      // So we skip legacy update for SALE if it's originating from an Order.
+
+      // Dual-Write to Legacy Columns (Modified for Phase 5)
+      const isReservation = dto.type === InventoryTransactionType.RESERVATION
+      const isReservationCancel = dto.type === InventoryTransactionType.RESERVATION_CANCEL
+      const isSaleFromOrder = dto.type === InventoryTransactionType.SALE && dto.referenceType === InventoryTransactionReferenceType.ORDER
+
       if (dto.variantId) {
-        if (isIncrement) {
-          await this.variantRepository.incrementStock(dto.variantId, tenantId, absQty, em)
-        } else {
+        if (isReservation) {
           await this.variantRepository.decrementStock(dto.variantId, tenantId, absQty, em)
+          await this.variantRepository.incrementReservedStock(dto.variantId, tenantId, absQty, em)
+        } else if (isReservationCancel) {
+          await this.variantRepository.incrementStock(dto.variantId, tenantId, absQty, em)
+          await this.variantRepository.decrementReservedStock(dto.variantId, tenantId, absQty, em)
+        } else if (isSaleFromOrder) {
+          await this.variantRepository.decrementReservedStock(dto.variantId, tenantId, absQty, em)
+        } else {
+          // Standard movement
+          if (isIncrement) {
+            await this.variantRepository.incrementStock(dto.variantId, tenantId, absQty, em)
+          } else if (isDecrement) {
+            await this.variantRepository.decrementStock(dto.variantId, tenantId, absQty, em)
+          }
         }
       } else {
-        if (isIncrement) {
-          await this.productRepository.incrementStock(product.id, tenantId, absQty, em)
-        } else {
+        if (isReservation) {
           await this.productRepository.decrementStock(product.id, tenantId, absQty, em)
+          await this.productRepository.incrementReservedStock(product.id, tenantId, absQty, em)
+        } else if (isReservationCancel) {
+          await this.productRepository.incrementStock(product.id, tenantId, absQty, em)
+          await this.productRepository.decrementReservedStock(product.id, tenantId, absQty, em)
+        } else if (isSaleFromOrder) {
+          await this.productRepository.decrementReservedStock(product.id, tenantId, absQty, em)
+        } else {
+          // Standard movement
+          if (isIncrement) {
+            await this.productRepository.incrementStock(product.id, tenantId, absQty, em)
+          } else if (isDecrement) {
+            await this.productRepository.decrementStock(product.id, tenantId, absQty, em)
+          }
         }
       }
 

@@ -24,7 +24,9 @@ export class ReportRepository {
         (SELECT COUNT(*) FROM users WHERE tenant_id = $1) as "totalUsers",
         (SELECT COUNT(*) FROM suppliers WHERE tenant_id = $1) as "totalSuppliers",
         (SELECT COUNT(*) FROM purchase_orders WHERE tenant_id = $1) as "totalPurchaseOrders",
-        (SELECT COALESCE(SUM(total_amount - COALESCE(paid_amount, 0)), 0) FROM purchase_orders WHERE tenant_id = $1 AND status != 'cancelled') as "totalAmountDue"
+        (SELECT COALESCE(SUM(total_amount - COALESCE(paid_amount, 0)), 0) FROM purchase_orders WHERE tenant_id = $1 AND status != 'cancelled') as "totalAmountDue",
+        (SELECT COUNT(*) FROM fulfillment_tasks WHERE tenant_id = $1 AND status = 'PENDING') as "pendingFulfillment",
+        (SELECT COUNT(*) FROM fulfillment_tasks WHERE tenant_id = $1 AND status = 'PICKING') as "pickingFulfillment"
     `
     const result = await this.dataSource.query(query, [tenantId, startDate, OrderStatus.PENDING])
     return result[0]

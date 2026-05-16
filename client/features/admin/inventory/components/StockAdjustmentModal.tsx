@@ -313,21 +313,20 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
                                         </div>
                                     </div>
 
-                                        <div className="space-y-3">
-                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Reference # (Optional)</label>
-                                            <input
-                                                type="text"
-                                                placeholder="PO-123, Order ID, etc."
-                                                value={referenceId}
-                                                onChange={(e) => setReferenceId(e.target.value)}
-                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all font-medium text-sm font-mono"
-                                            />
-                                        </div>
+                                    <div className="space-y-3">
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Reference # (Optional)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="PO-123, Order ID, etc."
+                                            value={referenceId}
+                                            onChange={(e) => setReferenceId(e.target.value)}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all font-medium text-sm font-mono"
+                                        />
                                     </div>
-                                </div>
-                            )}
-                        </form>
-                    </div>
+                                    </div>
+                                )}
+                            </form>
+                        </div>
 
                     {/* Footer */}
                     <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">

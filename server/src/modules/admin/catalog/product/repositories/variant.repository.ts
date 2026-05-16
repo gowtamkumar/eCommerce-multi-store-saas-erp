@@ -97,4 +97,24 @@ export class ProductVariantRepository {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
     await repo.decrement({ id, tenantId }, 'stock', quantity)
   }
+
+  async incrementReservedStock(
+    id: string,
+    tenantId: string,
+    quantity: number,
+    manager?: any,
+  ): Promise<void> {
+    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    await repo.increment({ id, tenantId }, 'reservedStock', quantity)
+  }
+
+  async decrementReservedStock(
+    id: string,
+    tenantId: string,
+    quantity: number,
+    manager?: any,
+  ): Promise<void> {
+    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    await repo.decrement({ id, tenantId }, 'reservedStock', quantity)
+  }
 }

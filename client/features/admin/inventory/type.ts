@@ -23,6 +23,7 @@ export interface VariantStock {
     price: number;
     stock: number;
     lowStockThreshold?: number;
+    reservedStock: number;
 }
 
 export interface ProductStock {

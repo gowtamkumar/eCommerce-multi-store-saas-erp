@@ -2,7 +2,7 @@
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
 import { motion } from 'framer-motion';
-import { Activity, BarChart3, History as HistoryIcon, Package, Plus, ShoppingBag, Store, TrendingUp, Truck, Users } from 'lucide-react';
+import { Activity, BarChart3, CheckCircle2, History as HistoryIcon, Package, Plus, ShoppingBag, Store, TrendingUp, Truck, Users } from 'lucide-react';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -219,6 +219,17 @@ export default function AdminDashboard() {
                     borderColorClass="border-rose-500/20"
                     loading={loading}
                 />
+
+                <StatCard
+                    label="Fulfillment Status"
+                    value={(stats as any)?.fulfillment?.pending || 0}
+                    subValue={`${(stats as any)?.fulfillment?.picking || 0} tasks in progress`}
+                    icon={Truck}
+                    colorClass="text-brand-600 font-mono"
+                    bgClass="bg-brand-50 dark:bg-brand-900/20"
+                    borderColorClass="border-brand-500/20"
+                    loading={loading}
+                />
             </div>
 
             {/* Platform Analytics Row */}
@@ -275,6 +286,10 @@ export default function AdminDashboard() {
                             <Link href="/admin/purchases/new" className="p-4 bg-white/10 hover:bg-white/20 rounded-3xl transition-all text-center group">
                                 <Truck className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform mx-auto" />
                                 <p className="text-[9px] font-black uppercase tracking-widest text-white/80">Purchase</p>
+                            </Link>
+                            <Link href="/admin/fulfillment" className="p-4 bg-white/10 hover:bg-white/20 rounded-3xl transition-all text-center group col-span-2">
+                                <CheckCircle2 className="w-6 h-6 text-white mb-2 group-hover:scale-110 transition-transform mx-auto" />
+                                <p className="text-[9px] font-black uppercase tracking-widest text-white/80">Fulfillment Hub</p>
                             </Link>
                         </div>
                     </div>

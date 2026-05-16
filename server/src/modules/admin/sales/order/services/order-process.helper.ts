@@ -65,13 +65,13 @@ export class OrderProcessHelper {
       )
     }
 
-    // Deduct stock immediately (Synchronous within transaction)
+    // Reserve stock immediately (Soft-deduct from product.stock, but no physical movement)
     await this.inventoryService.createLedgerEntry(
       {
         productId: product.id,
         variantId: variant?.id,
         quantity: quantity,
-        type: InventoryTransactionType.SALE,
+        type: InventoryTransactionType.RESERVATION,
         referenceType: InventoryTransactionReferenceType.ORDER,
       },
       ctx,

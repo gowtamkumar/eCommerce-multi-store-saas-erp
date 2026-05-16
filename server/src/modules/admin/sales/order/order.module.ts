@@ -1,3 +1,4 @@
+import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { InvoiceModule } from '@/modules/admin/operations/finance/invoice/invoice.module'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { SmsModule } from '@/modules/admin/operations/infra/sms/sms.module'
@@ -16,7 +17,8 @@ import { BullModule } from '@nestjs/bullmq'
 import { OrderProcessor } from './queue/order.processor'
 import { OrderProcessHelper } from './services/order-process.helper'
 
-import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { FulfillmentModule } from '@/modules/admin/operations/logistics/fulfillment/fulfillment.module'
+import { forwardRef } from '@nestjs/common'
 
 @Module({
   imports: [
@@ -33,6 +35,7 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
     MailModule,
     SmsModule,
     PushModule,
+    forwardRef(() => FulfillmentModule),
   ],
   controllers: [OrderController, ReturnController], // Registered
   providers: [OrderService, ReturnService, OrderProcessor, OrderProcessHelper], // Registered

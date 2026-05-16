@@ -37,6 +37,9 @@ import { FileEntity } from '@/modules/admin/operations/infra/file/entities/file.
 import { FileRepository } from '@/modules/admin/operations/infra/file/file.repository'
 import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
 import { InventoryLedgerRepository } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.repository'
+import { FulfillmentTaskEntity } from '@/modules/admin/operations/logistics/fulfillment/entities/fulfillment-task.entity'
+import { FulfillmentItemEntity } from '@/modules/admin/operations/logistics/fulfillment/entities/fulfillment-item.entity'
+import { FulfillmentRepository } from '@/modules/admin/operations/logistics/fulfillment/fulfillment.repository'
 import { CouponRepository } from '@/modules/admin/sales/coupon/repositoris/coupon.repository'
 import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entity'
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
@@ -114,6 +117,8 @@ import { TypeOrmModule } from '@nestjs/typeorm'
       StaffInvitationEntity,
       WishlistEntity,
       OrderReturnEntity,
+      FulfillmentTaskEntity,
+      FulfillmentItemEntity,
     ]),
   ],
   providers: [
@@ -152,6 +157,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     SubscriptionInvoiceRepository,
     TrafficRepository,
     WishlistRepository,
+    FulfillmentRepository,
   ],
   exports: [
     TenantRepository,
@@ -189,6 +195,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     SubscriptionInvoiceRepository,
     TrafficRepository,
     WishlistRepository,
+    FulfillmentRepository,
     TypeOrmModule,
   ],
 })

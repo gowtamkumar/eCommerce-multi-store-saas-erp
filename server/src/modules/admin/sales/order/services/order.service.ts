@@ -19,7 +19,8 @@ import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-setti
 import { CartService } from '@/modules/store/cart/cart.service'
 import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
 import { InjectQueue } from '@nestjs/bullmq'
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common'
+import { FulfillmentService } from '@/modules/admin/operations/logistics/fulfillment/fulfillment.service'
 import { Queue } from 'bullmq'
 import { DataSource } from 'typeorm'
 import { PaymentEntity } from '../../payment/entities/payment.entity'
@@ -43,6 +44,8 @@ export class OrderService {
     private readonly cacheService: CacheService,
     private readonly orderProcessHelper: OrderProcessHelper,
     @InjectQueue('order') private readonly orderQueue: Queue,
+    @Inject(forwardRef(() => FulfillmentService))
+    private readonly fulfillmentService: FulfillmentService,
   ) {}
 
   async createOrder(
@@ -318,7 +321,7 @@ export class OrderService {
               productId: item.productId,
               variantId: item.variantId,
               quantity: item.quantity,
-              type: InventoryTransactionType.RETURN,
+              type: InventoryTransactionType.RESERVATION_CANCEL,
               referenceType: InventoryTransactionReferenceType.ORDER,
               referenceId: order.id,
             },
@@ -338,6 +341,14 @@ export class OrderService {
         await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.PAID, ctx)
       } else if (updateOrderDto.status === OrderStatus.CANCELLED) {
         await this.invoiceService.updateInvoiceStatusByOrderId(id, InvoiceStatus.CANCELLED, ctx)
+      }
+
+      // Check for Order Confirmation to Trigger Fulfillment
+      if (
+        updateOrderDto.status === OrderStatus.CONFIRMED &&
+        oldStatus !== OrderStatus.CONFIRMED
+      ) {
+        await this.fulfillmentService.createFromOrder(id, ctx)
       }
 
       await queryRunner.commitTransaction()

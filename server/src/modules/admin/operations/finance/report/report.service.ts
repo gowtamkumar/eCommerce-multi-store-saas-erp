@@ -152,6 +152,10 @@ export class ReportService {
             purchaseOrders: parseInt(stats.totalPurchaseOrders, 10),
           },
           lowStockCount: parseInt(stats.lowStockCount, 10),
+          fulfillment: {
+            pending: parseInt(stats.pendingFulfillment, 10),
+            picking: parseInt(stats.pickingFulfillment, 10),
+          },
         }
       },
       600, // 10 mins cache

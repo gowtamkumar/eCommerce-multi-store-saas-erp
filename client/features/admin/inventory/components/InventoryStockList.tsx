@@ -84,8 +84,18 @@ const ProductRow = memo(({ product, isExpanded, onToggle, onAdjust, formatPrice 
                             style={{ width: `${s.pct}%` }}
                         />
                     </div>
-                    <span className="font-black text-slate-900 dark:text-white text-xs w-8 text-right font-mono">{product.stock}</span>
+                    <span className="font-black text-slate-900 dark:text-white text-xs w-8 text-right font-mono" title="Physical Stock">{product.stock}</span>
                 </div>
+            </td>
+            <td className="px-6 py-4">
+                <span className="font-black text-amber-600 dark:text-amber-400 text-xs font-mono">
+                    {product.reservedStock || 0}
+                </span>
+            </td>
+            <td className="px-6 py-4">
+                <span className={`font-black text-xs font-mono ${(product.stock - (product.reservedStock || 0)) <= (product.lowStockThreshold || 5) ? 'text-orange-500' : 'text-emerald-500'}`}>
+                    {product.stock - (product.reservedStock || 0)}
+                </span>
             </td>
             <td className="px-6 py-4">
                 <span className="font-black text-slate-900 dark:text-white font-mono text-sm underline decoration-slate-200 dark:decoration-slate-700 decoration-2 underline-offset-4">
@@ -143,29 +153,29 @@ const InventoryStockList = ({
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Summary Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <SummaryCard 
-                    title="Total Products" 
-                    value={stats.totalProducts} 
-                    icon={Package} 
-                    colorClass="bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400" 
+                <SummaryCard
+                    title="Total Products"
+                    value={stats.totalProducts}
+                    icon={Package}
+                    colorClass="bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400"
                 />
-                <SummaryCard 
-                    title="Estimated Assets" 
-                    value={formatPrice(stats.totalValue)} 
-                    icon={DollarSign} 
-                    colorClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" 
+                <SummaryCard
+                    title="Estimated Assets"
+                    value={formatPrice(stats.totalValue)}
+                    icon={DollarSign}
+                    colorClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
                 />
-                <SummaryCard 
-                    title="Low Stock" 
-                    value={stats.lowStockCount} 
-                    icon={AlertTriangle} 
+                <SummaryCard
+                    title="Low Stock"
+                    value={stats.lowStockCount}
+                    icon={AlertTriangle}
                     colorClass="bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400"
                     borderClass="border-orange-100 dark:border-orange-900/30"
                 />
-                <SummaryCard 
-                    title="Critical Stock" 
-                    value={stats.outOfStockCount} 
-                    icon={XCircle} 
+                <SummaryCard
+                    title="Critical Stock"
+                    value={stats.outOfStockCount}
+                    icon={XCircle}
                     colorClass="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
                     borderClass="border-red-100 dark:border-red-900/30"
                 />
@@ -211,7 +221,9 @@ const InventoryStockList = ({
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Product Line</th>
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Category</th>
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Inventory</th>
+                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Physical</th>
+                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Reserved</th>
+                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Available</th>
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Assets</th>
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Health</th>
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Settings</th>
@@ -221,14 +233,14 @@ const InventoryStockList = ({
                             {loading && products.length === 0 ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i}>
-                                        <td colSpan={7} className="px-6 py-10">
+                                        <td colSpan={9} className="px-6 py-10">
                                             <div className="h-12 bg-slate-100 dark:bg-slate-700/30 animate-pulse rounded-2xl" />
                                         </td>
                                     </tr>
                                 ))
                             ) : filteredProducts.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="py-32 text-center">
+                                    <td colSpan={9} className="py-32 text-center">
                                         <div className="flex flex-col items-center gap-4 max-w-xs mx-auto">
                                             <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-2">
                                                 <BarChart3 className="w-10 h-10 text-slate-200" strokeWidth={1} />
@@ -243,10 +255,10 @@ const InventoryStockList = ({
                             ) : (
                                 filteredProducts.map(p => (
                                     <Fragment key={p.id}>
-                                        <ProductRow 
-                                            product={p} 
-                                            isExpanded={expandedIds.has(p.id)} 
-                                            onToggle={onToggleExpand} 
+                                        <ProductRow
+                                            product={p}
+                                            isExpanded={expandedIds.has(p.id)}
+                                            onToggle={onToggleExpand}
                                             onAdjust={onAdjustProduct}
                                             formatPrice={formatPrice}
                                         />
@@ -278,6 +290,16 @@ const InventoryStockList = ({
                                                             {v.stock}
                                                         </span>
                                                     </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 font-mono">
+                                                        {v.reservedStock || 0}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`text-[10px] font-black font-mono ${(v.stock - (v.reservedStock || 0)) <= (v.lowStockThreshold || 5) ? 'text-orange-500' : 'text-emerald-500'}`}>
+                                                        {v.stock - (v.reservedStock || 0)}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className="text-xs font-black text-slate-500 dark:text-slate-400 font-mono">
