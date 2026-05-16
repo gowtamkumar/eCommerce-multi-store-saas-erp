@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { DepartmentEntity } from './entities/department.entity'
 import { DesignationEntity } from './entities/designation.entity'
@@ -17,11 +17,13 @@ import { HrmController } from './hrm.controller'
 import { HrmRepository } from './hrm.repository'
 import { AccountingModule } from '@/modules/admin/operations/finance/accounting/accounting.module'
 import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
+import { UserModule } from '@/modules/admin/core/user/user.module'
 
 @Module({
   imports: [
     AccountingModule,
     AuditLogModule,
+    forwardRef(() => UserModule),
     TypeOrmModule.forFeature([
       DepartmentEntity,
       DesignationEntity,

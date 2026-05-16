@@ -550,6 +550,20 @@ export class HrmController {
     }
   }
 
+  @Post('applicants/:id/onboard')
+  async onboardApplicant(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const res = await this.hrmService.onboardApplicant(id, ctx)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Applicant successfully onboarded as Employee',
+      data: res,
+    }
+  }
+
   // --- Performance & KPIs ---
   @Post('performance/reviews')
   async createPerformanceReview(

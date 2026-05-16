@@ -1,9 +1,11 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ApplicantStatus, LeaveStatus } from '@/common/enums/hrm/hrm-enums'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
+import { UserRole } from '@/common/enums/user/user-role.enum'
 import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
+import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common'
 import {
   AssignShiftDto,
   CreateDepartmentDto,
@@ -22,6 +24,8 @@ export class HrmService {
     private readonly hrmRepo: HrmRepository,
     private readonly accountingService: AccountingService,
     private readonly auditLogService: AuditLogService,
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
   ) { }
 
   // --- Department CRUD ---
@@ -602,6 +606,60 @@ export class HrmService {
     return { id, status }
   }
 
+  async onboardApplicant(id: string, ctx: RequestContextDto) {
+    const applicant = await (this.hrmRepo as any).applicantRepo.findOne({
+      where: { id, tenantId: ctx.tenantId },
+      relations: ['jobPosting']
+    })
+
+    if (!applicant) throw new Error('Applicant not found')
+
+    // 1. Create or Find User Account
+    let user = await this.userService.findUserByEmail(applicant.email, ctx.tenantId)
+    if (!user) {
+      this.logger.log(`Creating new user account for applicant: ${applicant.email}`)
+      user = await this.userService.createUser({
+        email: applicant.email,
+        username: applicant.email,
+        name: `${applicant.firstName} ${applicant.lastName}`,
+        role: UserRole.EMPLOYEE,
+        password: 'WelcomeEmployee123!', // In production, send a password reset link
+        tenantId: ctx.tenantId,
+      } as any, ctx)
+    }
+
+    // 2. Create Employee record linked to User
+    const employee = await this.hrmRepo.createEmployee({
+      tenantId: ctx.tenantId,
+      userId: user.id,
+      departmentId: applicant.jobPosting.departmentId,
+      status: 'PROBATION' as any,
+      employeeId: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+      joiningDate: new Date(),
+    })
+
+    // Create Personal Details
+    await this.hrmRepo.personalDetailsRepo.save(
+      this.hrmRepo.personalDetailsRepo.create({
+        userId: user.id,
+        employeeId: employee.id,
+        tenantId: ctx.tenantId,
+      })
+    )
+
+    // Update applicant status to reflect onboarding completion
+    await this.hrmRepo.updateApplicantStatus(id, ApplicantStatus.JOINED)
+
+    await this.auditLogService.log(ctx, {
+      action: 'ONBOARD',
+      entity: 'Employee',
+      entityId: employee.id,
+      newValue: employee,
+    })
+
+    return employee
+  }
+
   // --- Performance & KPIs ---
   async createPerformanceReview(data: any, ctx: RequestContextDto) {
     const review = await this.hrmRepo.createPerformanceReview({
@@ -645,6 +703,18 @@ export class HrmService {
       const hasName = await queryRunner.hasColumn('applicants', 'name')
       if (hasName) {
         await queryRunner.query('ALTER TABLE applicants ALTER COLUMN "name" DROP NOT NULL')
+      }
+
+      // 1.5 Fix missing employee columns
+      const hasEmpId = await queryRunner.hasColumn('employees', 'employee_id')
+      if (!hasEmpId) {
+        await queryRunner.query('ALTER TABLE employees ADD COLUMN "employee_id" VARCHAR(255) UNIQUE')
+      }
+
+      // 1.55 Fix mandatory designation constraint
+      const hasDesignation = await queryRunner.hasColumn('employees', 'designation_id')
+      if (hasDesignation) {
+        await queryRunner.query('ALTER TABLE employees ALTER COLUMN "designation_id" DROP NOT NULL')
       }
 
       // 2. Fix enum values (Postgres doesn't sync enums automatically)

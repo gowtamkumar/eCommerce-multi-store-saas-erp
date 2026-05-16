@@ -7,7 +7,8 @@ import {
   scheduleInterview,
   createJobPosting,
   getEmployees,
-  getDepartments
+  getDepartments,
+  onboardApplicant
 } from '@/services/hrm';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -149,9 +150,32 @@ export default function RecruitmentManagementPage() {
     }
   };
 
+  // const handleOnboard = async (id: string) => {
+  //   if (!confirm('Convert this applicant to an Employee?')) return;
+  //   try {
+  //     setIsProcessing(true);
+  //     await onboardApplicant(id);
+  //     await fetchData();
+  //     alert('Applicant onboarded successfully!');
+  //   } catch (err) {
+  //     console.error('Failed to onboard:', err);
+  //   } finally {
+  //     setIsProcessing(false);
+  //   }
+  // };
+
   const handleStatusChange = async (id: string, status: ApplicantStatus) => {
     try {
       await updateApplicantStatus(id, status);
+
+      // Auto-onboard if status is JOINED
+      if (status === ApplicantStatus.JOINED) {
+        if (confirm('Move to JOINED status and auto-onboard as Employee?')) {
+          await onboardApplicant(id);
+          alert('Applicant onboarded successfully!');
+        }
+      }
+
       fetchData();
     } catch (err) {
       console.error('Failed to update status:', err);

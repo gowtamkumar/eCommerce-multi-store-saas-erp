@@ -13,6 +13,9 @@ import { PerformanceReviewEntity } from './performance.entity'
 
 @Entity('employees')
 export class EmployeeEntity extends BaseEntity {
+  @Column({ name: 'employee_id', unique: true, nullable: true })
+  employeeId: string
+
 
   @OneToOne(() => UserEntity)
   @JoinColumn({ name: 'user_id' })
@@ -48,7 +51,7 @@ export class EmployeeEntity extends BaseEntity {
   @JoinColumn({ name: 'department_id' })
   department: DepartmentEntity
 
-  @Column({ type: 'uuid', name: 'designation_id' })
+  @Column({ type: 'uuid', name: 'designation_id', nullable: true })
   designationId: string
 
   @ManyToOne(() => DesignationEntity)

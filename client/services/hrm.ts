@@ -266,6 +266,13 @@ export async function getApplicantInterviews(applicantId: string) {
   return res.data;
 }
 
+export async function onboardApplicant(id: string) {
+  const res = await fetchAPI(`/operations/hrm/applicants/${id}/onboard`, {
+    method: "POST",
+  });
+  return res.data;
+}
+
 // ─────────────────────────────────────────────────
 // Performance
 // ─────────────────────────────────────────────────

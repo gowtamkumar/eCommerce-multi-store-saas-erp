@@ -6,4 +6,5 @@ export enum UserRole {
   STORE_MANAGER = 'store_manager',
   SUPPORT = 'support',
   MARKETING = 'marketing',
+  EMPLOYEE = 'employee',
 }
