@@ -11,8 +11,9 @@ import {
   Trash2,
   X
 } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { getDepartments } from '@/services/hrm';
 
 interface PR {
   id: string;
@@ -39,9 +40,22 @@ export default function RequisitionBoard() {
 
   // Form states
   const [newTitle, setNewTitle] = useState('');
-  const [newDept, setNewDept] = useState('Admin');
+  const [newDept, setNewDept] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [newDesc, setNewDesc] = useState('');
+
+  const [liveDepartments, setLiveDepartments] = useState<{id: string, name: string}[]>([]);
+
+  useEffect(() => {
+    getDepartments().then(data => {
+      if (Array.isArray(data)) {
+        setLiveDepartments(data);
+        if (data.length > 0 && !newDept) {
+          setNewDept(data[0].name);
+        }
+      }
+    }).catch(err => console.error('Failed to fetch departments for PR form:', err));
+  }, []);
 
   const columns = [
     { id: 'DRAFT', title: 'Drafts', color: 'slate', dot: 'bg-slate-500' },
@@ -357,12 +371,12 @@ export default function RequisitionBoard() {
                       onChange={(e) => setNewDept(e.target.value)}
                       className="w-full px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-xs"
                     >
-                      <option value="Admin">Admin</option>
-                      <option value="Engineering">Engineering</option>
-                      <option value="IT">IT Support</option>
-                      <option value="Warehouse">Warehouse</option>
-                      <option value="Finance">Finance</option>
-                      <option value="HR">HR Operations</option>
+                      {liveDepartments.length === 0 && <option value="Admin">Admin</option>}
+                      {liveDepartments.map((dept) => (
+                        <option key={dept.id} value={dept.name}>
+                          {dept.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
