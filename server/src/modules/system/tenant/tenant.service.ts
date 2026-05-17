@@ -19,6 +19,9 @@ import { TenantEntity } from './entities/tenant.entity'
 import { TenantRepository } from './tenant.repository'
 import { AccountEntity } from '@/modules/admin/operations/finance/accounting/entities/account.entity'
 import { DEFAULT_CHART_OF_ACCOUNTS } from '@/modules/admin/operations/finance/accounting/constants/default-coa'
+import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
+import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
+import { PosRegisterEntity } from '@/modules/admin/sales/pos/entities/pos-register.entity'
 
 export interface CreateTenantResponseDto {
   tenant: TenantEntity
@@ -101,7 +104,37 @@ export class TenantService {
       })
       const savedTenant = await tenantRepo.save(tenant)
 
-      // Create admin user
+      // Create default Main Branch
+      const branchRepo = manager.getRepository(BranchEntity)
+      const defaultBranch = branchRepo.create({
+        name: 'Main Branch',
+        code: `MAIN-${subdomain.toUpperCase()}`,
+        tenantId: savedTenant.id,
+        isActive: true,
+      })
+      const savedBranch = await branchRepo.save(defaultBranch)
+
+      // Create default Warehouse
+      const warehouseRepo = manager.getRepository(WarehouseEntity)
+      const defaultWarehouse = warehouseRepo.create({
+        name: 'Main Warehouse',
+        code: `WH-${subdomain.toUpperCase()}`,
+        tenantId: savedTenant.id,
+        branchId: savedBranch.id,
+        isActive: true,
+      })
+      await warehouseRepo.save(defaultWarehouse)
+
+      // Create default POS Register / Cash Drawer
+      const posRegisterRepo = manager.getRepository(PosRegisterEntity)
+      const defaultRegister = posRegisterRepo.create({
+        name: 'Main Till',
+        branchId: savedBranch.id,
+        tenantId: savedTenant.id,
+      })
+      await posRegisterRepo.save(defaultRegister)
+
+      // Create admin user linked to Main Branch
       const hashedPassword = await bcrypt.hash(password, 10)
       const verificationToken = crypto.randomBytes(32).toString('hex')
 
@@ -112,6 +145,7 @@ export class TenantService {
         password: hashedPassword,
         role: UserRole.ADMIN,
         tenantId: savedTenant.id,
+        branch: savedBranch,
         isAdmin: false,
         emailVerificationToken: verificationToken,
       })

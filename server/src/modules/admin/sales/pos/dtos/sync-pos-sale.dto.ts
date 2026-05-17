@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsString,
   IsUUID,
   Min,
   ValidateNested,
@@ -61,4 +62,23 @@ export class SyncPosSaleDto {
 
   @IsOptional()
   createdAt?: string // ISO string representing offline transaction timestamp
+
+  @IsOptional()
+  appliedCoupon?: string
+
+  @IsNumber()
+  @IsOptional()
+  couponDiscountAmount?: number
+
+  @IsOptional()
+  @IsString()
+  deliveryZone?: string
+
+  @IsNumber()
+  @IsOptional()
+  shippingFee?: number
+
+  @IsOptional()
+  @IsString()
+  shippingAddress?: string
 }

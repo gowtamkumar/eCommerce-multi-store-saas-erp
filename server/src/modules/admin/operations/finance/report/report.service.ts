@@ -171,7 +171,7 @@ export class ReportService {
       cacheKey,
       async () => {
         const [orders, payments, expenses, purchaseOrders] = (await Promise.all([
-          this.orderService.findAllOrders(ctx),
+          this.orderService.findAllOrders({ page: 1, limit: 1000 } as any, ctx),
           this.paymentService.findAllPaymentsRaw(ctx),
           this.expenseService.findAllExpensesRaw(ctx),
           this.purchaseOrderService.findAllPurchaseOrdersRaw(ctx),

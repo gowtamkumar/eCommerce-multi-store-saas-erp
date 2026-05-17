@@ -12,11 +12,15 @@ import {
   LayoutGrid,
   Loader2,
   Minus,
+  Percent,
   Plus,
+  Printer,
   QrCode,
+  Receipt,
   Search,
   ShoppingCart,
   Trash2,
+  User,
   X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -88,6 +92,26 @@ export default function Pos() {
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'MOBILE'>('CASH');
   const [amountTendered, setAmountTendered] = useState<number | ''>('');
   const [processingPayment, setProcessingPayment] = useState(false);
+  
+  // Advanced features: Customer, discount and receipt
+  const [discount, setDiscount] = useState<number>(0);
+  const [discountType, setDiscountType] = useState<'FIXED' | 'PERCENT'>('FIXED');
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [lastTransaction, setLastTransaction] = useState<any>(null);
+
+  // Premium POS Coupons State
+  const [couponCode, setCouponCode] = useState('');
+  const [couponApplied, setCouponApplied] = useState<any | null>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+
+  // Premium POS Delivery Zones & Custom Shipping Address State
+  const [deliveryZone, setDeliveryZone] = useState('');
+  const [shippingAddress, setShippingAddress] = useState('');
 
   // Close shift modal
   const [isCloseShiftOpen, setIsCloseShiftOpen] = useState(false);
@@ -250,16 +274,100 @@ export default function Pos() {
     setCart(updatedCart);
   };
 
+  const fetchCustomers = async (q = '') => {
+    setLoadingCustomers(true);
+    try {
+      const res = await fetchAPI(`/customer?q=${q}&limit=10`);
+      if (res.success && res.data) {
+        setCustomers(res.data.items || []);
+      }
+    } catch {
+      toast.error('Failed to load customers');
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeShift) {
+      fetchCustomers();
+    }
+  }, [activeShift]);
+
   const calculateSubtotal = () => {
     return cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   };
 
+  // Premium Coupon Handlers
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
+    setValidatingCoupon(true);
+    try {
+      const res = await fetchAPI('/coupons/validate', {
+        method: 'POST',
+        body: JSON.stringify({
+          code: couponCode.trim().toUpperCase(),
+          orderTotal: calculateSubtotal()
+        })
+      });
+      if (res.success && res.data?.valid) {
+        setCouponApplied({
+          code: res.data.coupon.code,
+          discountAmount: res.data.discountAmount
+        });
+        toast.success(`Coupon "${couponCode.trim().toUpperCase()}" applied successfully!`);
+      } else {
+        toast.error(res.message || 'Invalid or expired coupon code');
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to validate coupon');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponApplied(null);
+    setCouponCode('');
+    toast.success('Coupon removed');
+  };
+
+  const calculateCouponDiscount = () => {
+    return couponApplied ? Number(couponApplied.discountAmount || 0) : 0;
+  };
+
+  // Premium Delivery Config
+  const DELIVERY_ZONES = [
+    { name: 'Store Counter Pickup', fee: 0 },
+    { name: 'Inside City Zone (Standard)', fee: 60 },
+    { name: 'Inside City Zone (Express)', fee: 100 },
+    { name: 'Outside City Zone (Standard)', fee: 120 },
+    { name: 'Outside City Zone (Express)', fee: 180 },
+  ];
+
+  const calculateShippingFee = () => {
+    const zone = DELIVERY_ZONES.find((z) => z.name === deliveryZone);
+    return zone ? Number(zone.fee) : 0;
+  };
+
+  const calculateDiscountValue = () => {
+    const subtotal = calculateSubtotal();
+    return discountType === 'PERCENT' ? (subtotal * discount) / 100 : discount;
+  };
+
+  const calculateTaxableAmount = () => {
+    return Math.max(0, calculateSubtotal() - calculateDiscountValue() - calculateCouponDiscount());
+  };
+
   const calculateTax = () => {
-    return calculateSubtotal() * 0.05; // 5% flat VAT
+    return calculateTaxableAmount() * 0.05; // 5% flat VAT
   };
 
   const calculateGrandTotal = () => {
-    return calculateSubtotal() + calculateTax();
+    return calculateTaxableAmount() + calculateTax() + calculateShippingFee();
   };
 
   const changeDue = amountTendered !== '' ? Number(amountTendered) - calculateGrandTotal() : 0;
@@ -287,14 +395,48 @@ export default function Pos() {
           items: itemsPayload,
           paymentMethod,
           paymentAmount: calculateGrandTotal(),
+          customerId: selectedCustomer?.id || undefined,
+          appliedCoupon: couponApplied?.code || undefined,
+          couponDiscountAmount: calculateCouponDiscount(),
+          deliveryZone: deliveryZone || undefined,
+          shippingFee: calculateShippingFee(),
+          shippingAddress: shippingAddress || undefined,
         }),
       });
 
       if (res.success) {
         toast.success('Sale synced successfully & General Ledger journaled! 🧾');
+        
+        // Save transaction details for receipt modal
+        setLastTransaction({
+          receiptNo: `REC-${Date.now().toString().slice(-6)}`,
+          date: new Date().toLocaleString(),
+          items: [...cart],
+          subtotal: calculateSubtotal(),
+          discount: calculateDiscountValue(),
+          couponDiscount: calculateCouponDiscount(),
+          couponCode: couponApplied?.code || null,
+          shippingFee: calculateShippingFee(),
+          deliveryZone: deliveryZone || null,
+          tax: calculateTax(),
+          grandTotal: calculateGrandTotal(),
+          paymentMethod,
+          amountTendered: amountTendered === '' ? calculateGrandTotal() : Number(amountTendered),
+          changeDue: changeDue > 0 ? changeDue : 0,
+          customer: selectedCustomer,
+        });
+
         setCart([]);
         setIsCheckoutOpen(false);
         setAmountTendered('');
+        setDiscount(0);
+        setCouponApplied(null);
+        setCouponCode('');
+        setDeliveryZone('');
+        setShippingAddress('');
+        setSelectedCustomer(null);
+        setIsReceiptOpen(true); // Open premium receipt modal
+
         // Reload shift stats
         const activeRes = await fetchAPI('/pos/shift/active');
         if (activeRes.success) setActiveShift(activeRes.data);
@@ -513,6 +655,158 @@ export default function Pos() {
             )}
           </div>
 
+          {/* Customer Selection Block */}
+          <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-950/20">
+            <div className="relative">
+              {selectedCustomer ? (
+                <div className="flex items-center justify-between p-2.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 rounded-2xl">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <div>
+                      <p className="text-xs font-black text-emerald-900 dark:text-emerald-350">{selectedCustomer.name}</p>
+                      <p className="text-[9px] font-bold text-emerald-650 dark:text-emerald-500">{selectedCustomer.phone || selectedCustomer.email}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedCustomer(null)}
+                    className="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg text-emerald-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Link customer profile..."
+                      value={customerSearchQuery}
+                      onFocus={() => setShowCustomerDropdown(true)}
+                      onChange={(e) => {
+                        setCustomerSearchQuery(e.target.value);
+                        fetchCustomers(e.target.value);
+                      }}
+                      className="w-full pl-9 pr-4 py-2 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-2xl outline-none font-bold text-xs"
+                    />
+                    {customerSearchQuery && (
+                      <button
+                        onClick={() => {
+                          setCustomerSearchQuery('');
+                          fetchCustomers('');
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+
+                  {showCustomerDropdown && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl p-2 space-y-1">
+                      <div className="flex justify-between items-center px-2 py-1 border-b border-slate-50 dark:border-slate-850">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Search Results</span>
+                        <button onClick={() => setShowCustomerDropdown(false)} className="text-[9px] font-black text-brand-500">Close</button>
+                      </div>
+                      {loadingCustomers ? (
+                        <p className="text-[10px] text-slate-400 text-center py-2">Searching customers...</p>
+                      ) : customers.length === 0 ? (
+                        <p className="text-[10px] text-slate-400 text-center py-2">No matching customers found</p>
+                      ) : (
+                        customers.map((c) => (
+                          <button
+                            key={c.id}
+                            onClick={() => {
+                              setSelectedCustomer(c);
+                              setShowCustomerDropdown(false);
+                              setCustomerSearchQuery('');
+                            }}
+                            className="w-full text-left p-2 hover:bg-slate-50 dark:hover:bg-slate-850 rounded-xl transition-all"
+                          >
+                            <p className="text-xs font-black text-slate-800 dark:text-white">{c.name}</p>
+                            <p className="text-[9px] font-bold text-slate-400">{c.phone || c.email}</p>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Discount Block */}
+          <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/20 dark:bg-slate-950/20">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 text-slate-400">
+                <Percent className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-black uppercase tracking-wider">Discount</span>
+              </div>
+              <div className="flex-1 flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="0.00"
+                  value={discount === 0 ? '' : discount}
+                  onChange={(e) => setDiscount(e.target.value === '' ? 0 : Number(e.target.value))}
+                  className="flex-1 px-3 py-1.5 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-xl outline-none font-bold text-xs"
+                />
+                <select
+                  value={discountType}
+                  onChange={(e: any) => setDiscountType(e.target.value)}
+                  className="px-2 py-1.5 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-850 dark:text-white rounded-xl outline-none font-bold text-xs"
+                >
+                  <option value="FIXED">Flat ($)</option>
+                  <option value="PERCENT">Percent (%)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Coupon Code Promo Block */}
+          <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/40">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 text-slate-400">
+                <Percent className="w-3.5 h-3.5" strokeWidth={2.5} />
+                <span className="text-[10px] font-black uppercase tracking-wider">Promo Coupon</span>
+              </div>
+              <div className="flex-1 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="COUPON CODE"
+                  disabled={!!couponApplied}
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  className="flex-1 px-3 py-1.5 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-xl outline-none font-black text-xs placeholder:text-slate-350"
+                />
+                {couponApplied ? (
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-900/30 text-red-650 font-bold rounded-xl text-xs transition-all"
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={validatingCoupon || !couponCode.trim()}
+                    onClick={handleApplyCoupon}
+                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-850 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-bold rounded-xl text-xs transition-all disabled:opacity-50 flex items-center gap-1"
+                  >
+                    {validatingCoupon ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Apply'}
+                  </button>
+                )}
+              </div>
+            </div>
+            {couponApplied && (
+              <div className="flex justify-between items-center text-[10px] font-bold text-emerald-500 pt-1.5 pl-5">
+                <span>Code Applied: {couponApplied.code}</span>
+                <span>-${calculateCouponDiscount().toFixed(2)} off</span>
+              </div>
+            )}
+          </div>
+
           {/* Cart Pricing summary footer */}
           <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 space-y-4 rounded-b-3xl">
             <div className="space-y-2">
@@ -522,6 +816,18 @@ export default function Pos() {
                   ${calculateSubtotal().toFixed(2)}
                 </span>
               </div>
+              {calculateDiscountValue() > 0 && (
+                <div className="flex justify-between text-xs text-emerald-500 font-bold">
+                  <span>In-store Discount</span>
+                  <span>-${calculateDiscountValue().toFixed(2)}</span>
+                </div>
+              )}
+              {calculateCouponDiscount() > 0 && (
+                <div className="flex justify-between text-xs text-emerald-500 font-bold">
+                  <span>Promo Coupon Discount</span>
+                  <span>-${calculateCouponDiscount().toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-xs text-slate-500 font-medium">
                 <span>VAT / Flat Tax (5%)</span>
                 <span className="font-bold text-slate-800 dark:text-white">
@@ -671,11 +977,58 @@ export default function Pos() {
                   </div>
                 </div>
 
+                {/* Delivery Zone and Shipping Address Selector */}
+                <div className="space-y-3 p-4 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-850">
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Delivery Zone / Shipping Channel
+                    </label>
+                    <select
+                      value={deliveryZone}
+                      onChange={(e) => setDeliveryZone(e.target.value)}
+                      className="w-full px-3 py-2.5 text-xs font-bold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-xl outline-none focus:ring-1 focus:ring-brand-500"
+                    >
+                      {DELIVERY_ZONES.map((zone) => (
+                        <option key={zone.name} value={zone.name}>
+                          {zone.name} {zone.fee > 0 ? `(+$${zone.fee})` : '(Free Counter Pickup)'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {deliveryZone && deliveryZone !== 'Store Counter Pickup' && (
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Delivery/Shipping Address
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Enter customer's full shipping address..."
+                        value={shippingAddress}
+                        onChange={(e) => setShippingAddress(e.target.value)}
+                        className="w-full px-3 py-2 text-xs font-bold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-xl outline-none focus:ring-1 focus:ring-brand-500 resize-none placeholder:text-slate-350"
+                      />
+                    </div>
+                  )}
+                </div>
+
                 {/* Amount details */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl space-y-2">
                   <div className="flex justify-between text-xs text-slate-500">
-                    <span>Total Bill</span>
-                    <span className="font-extrabold text-slate-850 dark:text-white">
+                    <span>Cart Total (Incl. Tax)</span>
+                    <span className="font-bold text-slate-800 dark:text-white">
+                      ${(calculateTaxableAmount() + calculateTax()).toFixed(2)}
+                    </span>
+                  </div>
+                  {calculateShippingFee() > 0 && (
+                    <div className="flex justify-between text-xs text-emerald-500 font-bold">
+                      <span>Delivery Shipping Fee</span>
+                      <span>+${calculateShippingFee().toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs font-black text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-850">
+                    <span>Grand Payable Total</span>
+                    <span className="text-brand-600 dark:text-brand-400 font-black">
                       ${calculateGrandTotal().toFixed(2)}
                     </span>
                   </div>
@@ -694,6 +1047,31 @@ export default function Pos() {
                           className="w-28 text-right px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl outline-none font-black text-sm text-slate-900 dark:text-white"
                         />
                       </div>
+
+                      {/* Cash denomination buttons */}
+                      <div className="pt-2">
+                        <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Quick Tender Cash</p>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setAmountTendered(calculateGrandTotal())}
+                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-[10px] font-black rounded-lg text-slate-700 dark:text-white transition-all text-center"
+                          >
+                            Exact Cash
+                          </button>
+                          {[5, 10, 20, 50, 100].map((val) => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => setAmountTendered(val)}
+                              className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-[10px] font-black rounded-lg text-slate-700 dark:text-white transition-all text-center"
+                            >
+                              ${val}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       <div className="flex justify-between text-xs text-slate-500 pt-1">
                         <span>Change Due</span>
                         <span
@@ -914,6 +1292,193 @@ export default function Pos() {
                   className="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black rounded-xl"
                 >
                   Add Selection
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 6. THERMAL RECEIPT PRINT MODAL */}
+      <AnimatePresence>
+        {isReceiptOpen && lastTransaction && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-emerald-500" />
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">Transaction Success</h3>
+                </div>
+                <button
+                  onClick={() => setIsReceiptOpen(false)}
+                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-805 rounded-lg"
+                >
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
+              {/* Receipt Area (Stylized POS Layout) */}
+              <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 dark:bg-slate-950/20 max-h-[60vh] font-mono text-xs text-slate-800 dark:text-slate-300">
+                <div id="thermal-receipt" className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-850 shadow-sm space-y-4">
+                  {/* Store Info */}
+                  <div className="text-center space-y-1">
+                    <h2 className="text-base font-black tracking-wider uppercase text-slate-900 dark:text-white">STORE REGISTER</h2>
+                    <p className="text-[10px] text-slate-400">Terminal: {activeShift?.register?.name || 'Counter 1'}</p>
+                    <p className="text-[9px] text-slate-400">Date: {lastTransaction.date}</p>
+                    <p className="text-[9px] text-slate-400">Receipt: {lastTransaction.receiptNo}</p>
+                  </div>
+
+                  <div className="border-b border-dashed border-slate-200 dark:border-slate-800" />
+
+                  {/* Customer Info if linked */}
+                  {lastTransaction.customer && (
+                    <div className="space-y-0.5 text-[10px]">
+                      <p className="font-bold text-slate-900 dark:text-white">Customer Profile:</p>
+                      <p>Name: {lastTransaction.customer.name}</p>
+                      <p>Phone: {lastTransaction.customer.phone || 'N/A'}</p>
+                    </div>
+                  )}
+
+                  {lastTransaction.customer && <div className="border-b border-dashed border-slate-200 dark:border-slate-800" />}
+
+                  {/* Item Rows */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between font-black text-slate-900 dark:text-white text-[10px]">
+                      <span>Item Description</span>
+                      <span>Total</span>
+                    </div>
+                    {lastTransaction.items.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-start text-[10px] leading-tight">
+                        <div className="min-w-0 pr-4">
+                          <p className="font-bold text-slate-850 dark:text-slate-350 truncate">{item.product.name}</p>
+                          {item.variant && (
+                            <p className="text-[8px] text-slate-450 font-sans">
+                              {Object.entries(item.variant.combination || {}).map(([k, v]) => `${k}:${v}`).join('/')}
+                            </p>
+                          )}
+                          <p className="text-[9px] text-slate-450">{item.quantity} x ${item.price.toFixed(2)}</p>
+                        </div>
+                        <span className="font-black text-slate-900 dark:text-white">${(item.price * item.quantity).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-b border-dashed border-slate-200 dark:border-slate-800" />
+
+                  {/* Totals Summary */}
+                  <div className="space-y-1.5 text-[10px]">
+                    <div className="flex justify-between">
+                      <span>Subtotal</span>
+                      <span>${lastTransaction.subtotal.toFixed(2)}</span>
+                    </div>
+                    {lastTransaction.discount > 0 && (
+                      <div className="flex justify-between text-emerald-500 font-bold">
+                        <span>Discount Deducted</span>
+                        <span>-${lastTransaction.discount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span>VAT Tax (5%)</span>
+                      <span>${lastTransaction.tax.toFixed(2)}</span>
+                    </div>
+                    {lastTransaction.couponDiscount > 0 && (
+                      <div className="flex justify-between text-emerald-500 font-bold">
+                        <span>Coupon ({lastTransaction.couponCode})</span>
+                        <span>-${lastTransaction.couponDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {lastTransaction.shippingFee > 0 && (
+                      <div className="flex justify-between text-emerald-500 font-bold">
+                        <span>Shipping ({lastTransaction.deliveryZone})</span>
+                        <span>+${lastTransaction.shippingFee.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm font-black text-slate-900 dark:text-white pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                      <span>Grand Total</span>
+                      <span>${lastTransaction.grandTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="border-b border-dashed border-slate-200 dark:border-slate-800" />
+
+                  {/* Payment Tender details */}
+                  <div className="space-y-1 text-[9px] text-slate-455">
+                    <div className="flex justify-between">
+                      <span>Payment Mode</span>
+                      <span className="font-bold uppercase">{lastTransaction.paymentMethod}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Amount Collected</span>
+                      <span>${lastTransaction.amountTendered.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold text-slate-700 dark:text-slate-350">
+                      <span>Change Given Back</span>
+                      <span>${lastTransaction.changeDue.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="border-b border-dashed border-slate-200 dark:border-slate-800" />
+
+                  {/* Footer message */}
+                  <div className="text-center text-[9px] text-slate-400 pt-2 space-y-1 leading-tight">
+                    <p className="font-bold uppercase tracking-wider text-slate-900 dark:text-white">Thank You for your visit!</p>
+                    <p>Receipt generated via Automated Accounting Engine</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-850 flex gap-3">
+                <button
+                  onClick={() => setIsReceiptOpen(false)}
+                  className="flex-1 py-2.5 bg-slate-250 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-white text-xs font-bold rounded-xl transition-all"
+                >
+                  Close Receipt
+                </button>
+                <button
+                  onClick={() => {
+                    const printContent = document.getElementById('thermal-receipt')?.innerHTML;
+                    if (printContent) {
+                      const printWindow = window.open('', '_blank', 'width=300,height=600');
+                      if (printWindow) {
+                        printWindow.document.write(`
+                          <html>
+                            <head>
+                              <title>Receipt</title>
+                              <style>
+                                body { font-family: monospace; padding: 15px; font-size: 11px; max-width: 280px; margin: 0 auto; color: #000; }
+                                .text-center { text-align: center; }
+                                .space-y-1 > * { margin-bottom: 2px; }
+                                .space-y-2 > * { margin-bottom: 4px; }
+                                .flex { display: flex; }
+                                .justify-between { justify-content: space-between; }
+                                .border-dashed { border-bottom: 1px dashed #000; margin: 10px 0; }
+                                .font-black { font-weight: bold; }
+                                .text-sm { font-size: 12px; }
+                                .text-base { font-size: 14px; }
+                              </style>
+                            </head>
+                            <body>
+                              \${printContent}
+                              <script>
+                                window.onload = function() { window.print(); window.close(); }
+                              </script>
+                            </body>
+                          </html>
+                        `);
+                        printWindow.document.close();
+                      }
+                    }
+                  }}
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print Thermal
                 </button>
               </div>
             </motion.div>

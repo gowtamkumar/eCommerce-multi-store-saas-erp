@@ -13,6 +13,14 @@ import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inv
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
+import { OrderStatus } from '@/common/enums/order-status.enum'
+import { OrderSource } from '@/common/enums/order-source.enum'
+import { PaymentStatus } from '@/common/enums/payment-status.enum'
+import { PaymentMethod } from '@/common/enums/payment-method.enum'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entity'
 
 @Injectable()
 export class PosService {
@@ -161,12 +169,65 @@ export class PosService {
 
     // 2. Process transactions within a database runner to ensure transactional atomicity
     await this.dataSource.transaction(async (manager) => {
+      // Resolve Customer profile if provided
+      let customerName = 'Walk-in Customer'
+      let customerEmail = 'guest@store.com'
+      let customerPhone = 'N/A'
+      let customerAddress = 'POS Terminal Counter'
+
+      if (dto.customerId) {
+        const customer = await manager.findOne(UserEntity, { where: { id: dto.customerId, tenantId } })
+        if (customer) {
+          customerName = customer.name || customerName
+          customerEmail = customer.email || customerEmail
+          customerPhone = customer.phone || customerPhone
+          customerAddress = (customer as any).address || customerAddress
+        }
+      }
+
+      // Create the POS Order record
+      const orderRepo = manager.getRepository(OrderEntity)
+      const orderItemRepo = manager.getRepository(OrderItemEntity)
+
+      const order = orderRepo.create({
+        customerName,
+        customerEmail,
+        customerPhone,
+        address: dto.shippingAddress || customerAddress, // Use custom shipping address if supplied!
+        totalAmount: 0, // Summed dynamically below
+        shippingFee: dto.shippingFee || 0,
+        deliveryZone: dto.deliveryZone || undefined,
+        currency: 'USD',
+        currencyRate: 1,
+        status: OrderStatus.COMPLETED, // POS sales are immediately fulfilled
+        orderSource: OrderSource.POS, // Explicit order type categorization!
+        paymentMethod: dto.paymentMethod.toLowerCase() as unknown as PaymentMethod,
+        paymentStatus: PaymentStatus.PAID, // Cash collected on the counter
+        tenantId,
+        userId: dto.customerId || undefined,
+        appliedCoupon: dto.appliedCoupon || undefined,
+        couponDiscountAmount: dto.couponDiscountAmount || 0,
+      })
+
+      const savedOrder = await orderRepo.save(order)
       let totalSaleAmount = 0
 
       // A. Process each sold item
       for (const item of dto.items) {
         const itemTotal = Number(item.price) * Number(item.quantity)
         totalSaleAmount += itemTotal
+
+        // Create Order Item record
+        const orderItem = orderItemRepo.create({
+          orderId: savedOrder.id,
+          productId: item.productId,
+          variantId: item.variantId || undefined,
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.price),
+          totalAmount: itemTotal,
+          tenantId,
+        })
+        await orderItemRepo.save(orderItem)
 
         // Deduct inventory stock directly through the Ledger Service
         await this.inventoryService.createLedgerEntry(
@@ -176,24 +237,33 @@ export class PosService {
             quantity: Number(item.quantity), // Passed as positive; Ledger Service automatically handles negation for SALE
             type: InventoryTransactionType.SALE,
             referenceType: 'ORDER' as any, // POS orders are categorized under ORDER reference
-            referenceId: shift.id,
+            referenceId: savedOrder.id, // Linked to the brand new Sales Order
             warehouseId: (ctx.user as any)?.warehouseId || undefined, // Scope to cashier's warehouse
             branchId: shift.register?.branchId || undefined,
-            remarks: `POS Sale from Shift ID: ${shift.id}`,
+            remarks: `POS Sale - Order ID: ${savedOrder.id}`,
           },
           ctx,
           manager,
         )
       }
 
-      // B. Update Cashier shift sales aggregates
+      // Calculate net amounts accounting for coupon discount and shipping fees
+      const discount = Number(dto.couponDiscountAmount || 0)
+      const shipping = Number(dto.shippingFee || 0)
+      const netSaleAmount = Math.max(0, totalSaleAmount - discount) + shipping
+
+      // Update Order total sum
+      savedOrder.totalAmount = netSaleAmount
+      await orderRepo.save(savedOrder)
+
+      // B. Update Cashier shift sales aggregates using net collected amount
       const updatedFields: Partial<PosShiftEntity> = {}
       if (dto.paymentMethod === PosPaymentMethod.CASH) {
-        updatedFields.cashSales = Number(shift.cashSales || 0) + totalSaleAmount
+        updatedFields.cashSales = Number(shift.cashSales || 0) + netSaleAmount
       } else if (dto.paymentMethod === PosPaymentMethod.CARD) {
-        updatedFields.cardSales = Number(shift.cardSales || 0) + totalSaleAmount
+        updatedFields.cardSales = Number(shift.cardSales || 0) + netSaleAmount
       } else if (dto.paymentMethod === PosPaymentMethod.MOBILE) {
-        updatedFields.mobileSales = Number(shift.mobileSales || 0) + totalSaleAmount
+        updatedFields.mobileSales = Number(shift.mobileSales || 0) + netSaleAmount
       }
 
       updatedFields.expectedClosingBalance =
@@ -201,21 +271,33 @@ export class PosService {
 
       await this.shiftRepository.update(shift, updatedFields, manager)
 
-      // C. Post general ledger financial entry for Sales Revenue
+      // C. Post general ledger financial entry for Sales Revenue (actual net collected cash)
       await this.accountingService.createJournalEntry(
         {
           type: JournalType.SALES,
-          description: `POS Sale Synced - Payment Method: ${dto.paymentMethod}`,
+          description: `POS Sale Synced - Order ID: ${savedOrder.id} - Payment Method: ${dto.paymentMethod}${dto.appliedCoupon ? ` - Coupon Applied: ${dto.appliedCoupon}` : ''}`,
           referenceType: 'POS_SHIFT',
           referenceId: shift.id,
           lines: [
-            { accountCode: '1000', side: LedgerEntrySide.DEBIT, amount: totalSaleAmount }, // Debit Cash
-            { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: totalSaleAmount }, // Credit Sales Revenue
+            { accountCode: '1000', side: LedgerEntrySide.DEBIT, amount: netSaleAmount }, // Debit Cash
+            { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: netSaleAmount }, // Credit Sales Revenue
           ],
         },
         ctx,
         manager,
       )
+
+      // D. Increment coupon usage counter if valid
+      if (dto.appliedCoupon) {
+        const couponRepo = manager.getRepository(CouponEntity)
+        const coupon = await couponRepo.findOne({
+          where: { code: dto.appliedCoupon.toUpperCase().trim(), tenantId }
+        })
+        if (coupon) {
+          coupon.usedCount = Number(coupon.usedCount || 0) + 1
+          await couponRepo.save(coupon)
+        }
+      }
     })
 
     return {

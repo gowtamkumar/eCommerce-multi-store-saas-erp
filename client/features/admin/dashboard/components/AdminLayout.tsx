@@ -92,8 +92,8 @@ export default function AdminLayout({
             setExpandedGroups(prev => new Set(prev).add(activeGroup.title));
         }
 
-        // Auto-collapse sidebar when in Page Builder
-        if (pathname?.startsWith('/admin/pages/') && pathname.split('/').length > 3) {
+        // Auto-collapse sidebar when in Page Builder or POS register
+        if ((pathname?.startsWith('/admin/pages/') && pathname.split('/').length > 3) || pathname === '/admin/pos') {
             setIsSidebarCollapsed(true);
         }
     }, [pathname, searchParams, filteredNavGroups]);
@@ -132,6 +132,7 @@ export default function AdminLayout({
     const isSubscriptionExpired = settings?.status === 'expired' && session?.user?.role !== UserRole.SUPER_ADMIN;
     const isOnBillingPage = pathname?.startsWith('/admin/settings/billing');
     const showExpirationOverlay = isSubscriptionExpired && !isOnBillingPage;
+    const isPosRoute = pathname === '/admin/pos';
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
@@ -327,23 +328,25 @@ export default function AdminLayout({
 
             {/* Main Content */}
             <main className="flex-1 min-w-0">
-                {/* Mobile Header */}
-                <div className="md:hidden p-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between sticky top-0 z-30 print:hidden">
-                    <h1 className="text-xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
-                        {logo ? (
-                            <img src={logo} alt={brandName} className="h-8 w-auto object-contain" />
-                        ) : (
-                            <>
-                                {brandName.substring(0, 4)}<span className="text-brand-600">{brandName.substring(4)}</span>
-                            </>
-                        )}
-                    </h1>
-                    <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
-                        <Menu className="w-6 h-6" />
-                    </button>
-                </div>
+                {/* Mobile Header (hidden on POS route) */}
+                {!isPosRoute && (
+                    <div className="md:hidden p-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between sticky top-0 z-30 print:hidden">
+                        <h1 className="text-xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
+                            {logo ? (
+                                <img src={logo} alt={brandName} className="h-8 w-auto object-contain" />
+                            ) : (
+                                <>
+                                    {brandName.substring(0, 4)}<span className="text-brand-600">{brandName.substring(4)}</span>
+                                </>
+                            )}
+                        </h1>
+                        <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+                            <Menu className="w-6 h-6" />
+                        </button>
+                    </div>
+                )}
 
-                <div className="p-4 md:p-8 max-w-full mx-auto">
+                <div className={isPosRoute ? "p-4 md:p-6 w-full min-h-screen" : "p-4 md:p-8 max-w-full mx-auto"}>
                     {children}
                 </div>
             </main>
