@@ -24,9 +24,7 @@ export class InventoryLedgerController {
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateInventoryTransactionDto,
   ): Promise<BaseApiSuccessResponse<InventoryLedgerResponseDto>> {
-    this.logger.verbose(
-      `User "${ctx.user?.username || 'System'}" called createLedgerEntry.`,
-    )
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createLedgerEntry.`)
     const transaction = await this.service.createLedgerEntry(dto, ctx)
     return {
       success: true,
@@ -42,9 +40,7 @@ export class InventoryLedgerController {
     @Query() pagination: PaginationDto,
     @Query('type') type?: InventoryTransactionType,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(
-      `User "${ctx.user?.username || 'System'}" called findAllLedgerEntries.`,
-    )
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllLedgerEntries.`)
     const result = await this.service.findAllLedgerEntries(ctx, pagination, type)
     return {
       success: true,
@@ -75,9 +71,7 @@ export class InventoryLedgerController {
   async getStockSummary(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any[]>> {
-    this.logger.verbose(
-      `User "${ctx.user?.username || 'System'}" called getStockSummary.`,
-    )
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getStockSummary.`)
     const data = await this.service.getStockSummary(ctx)
     return {
       success: true,

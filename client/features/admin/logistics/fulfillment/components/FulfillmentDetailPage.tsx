@@ -109,7 +109,7 @@ export default function FulfillmentDetailPage({ task, onStart, onPick, onPack, o
                                     <div className="mt-2 flex items-center gap-3">
                                         <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-lg border border-amber-100 dark:border-amber-900/30">
                                             <MapPin className="w-3 h-3 text-amber-600" />
-                                            <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase">{item.bin?.name || 'A-102'}</span>
+                                            <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase">{item.bin?.name || 'Unassigned Bin'}</span>
                                         </div>
                                         <div className="flex items-center gap-1 text-slate-500">
                                             <Boxes className="w-3 h-3" />

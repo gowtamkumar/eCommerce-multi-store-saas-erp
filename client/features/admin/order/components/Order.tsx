@@ -20,6 +20,12 @@ export default function Order() {
     const [selectedCourier, setSelectedCourier] = useState<{ [orderId: string]: string }>({});
     const [showCourierModal, setShowCourierModal] = useState(false);
     const [pendingCourierOrder, setPendingCourierOrder] = useState<{ order: Order; courier: string } | null>(null);
+    
+    // Premium Filter States
+    const [statusFilter, setStatusFilter] = useState('');
+    const [sourceFilter, setSourceFilter] = useState('');
+    const [paymentFilter, setPaymentFilter] = useState('');
+
     const [pagination, setPagination] = useState<OrderListPagination>({
         total: 0,
         page: 1,
@@ -29,7 +35,13 @@ export default function Order() {
 
     const debouncedSearch = useDebounce(searchQuery, 500);
 
-    const fetchOrders = async (page: number, search: string) => {
+    const fetchOrders = async (
+        page: number, 
+        search: string, 
+        status = statusFilter, 
+        source = sourceFilter, 
+        payment = paymentFilter
+    ) => {
         setLoading(true);
         try {
             const params = new URLSearchParams({
@@ -38,6 +50,10 @@ export default function Order() {
                 search: search,
                 isAdmin: 'true'
             });
+            if (status) params.append('status', status);
+            if (source) params.append('orderSource', source);
+            if (payment) params.append('paymentStatus', payment);
+
             const res = await fetchAPI(`/orders?${params}`);
 
             if (res.data?.orders) {
@@ -134,6 +150,63 @@ export default function Order() {
         }
     };
 
+    // Premium Excel/CSV spreadsheet exporter
+    const handleExportCSV = async () => {
+        const toastId = toast.loading('Preparing CSV spreadsheet...');
+        try {
+            const params = new URLSearchParams({
+                page: '1',
+                limit: '1000',
+                search: debouncedSearch,
+                isAdmin: 'true'
+            });
+            if (statusFilter) params.append('status', statusFilter);
+            if (sourceFilter) params.append('orderSource', sourceFilter);
+            if (paymentFilter) params.append('paymentStatus', paymentFilter);
+
+            const res = await fetchAPI(`/orders?${params}`);
+            const dataToExport = res.data?.orders || res.data || [];
+
+            if (!Array.isArray(dataToExport) || dataToExport.length === 0) {
+                toast.error('No orders found with current filters', { id: toastId });
+                return;
+            }
+
+            // CSV Columns Header
+            let csv = '\ufeffOrder ID,Customer Name,Customer Email,Customer Phone,Sales Channel,Total Amount,Payment Method,Payment Status,Fulfillment Status,Created Date\n';
+
+            dataToExport.forEach((o: any) => {
+                const cleanName = (o.customerName || '').replace(/"/g, '""');
+                const cleanEmail = (o.customerEmail || '').replace(/"/g, '""');
+                const cleanPhone = (o.customerPhone || '').replace(/"/g, '""');
+                const channel = o.orderSource || 'website';
+                const total = o.totalAmount || 0;
+                const method = o.paymentMethod || 'N/A';
+                const payStatus = o.paymentStatus || 'PENDING';
+                const fulfillStatus = o.status || 'PENDING';
+                const created = new Date(o.createdAt).toLocaleString();
+
+                csv += `"${o.id}","${cleanName}","${cleanEmail}","${cleanPhone}","${channel}",${total},"${method}","${payStatus}","${fulfillStatus}","${created}"\n`;
+            });
+
+            // Browser download trigger
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `orders_report_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.success('Spreadsheet exported successfully!', { id: toastId });
+        } catch (error) {
+            console.error('Export failed', error);
+            toast.error('Failed to export orders to CSV', { id: toastId });
+        }
+    };
+
     return (
         <>
             <OrderList
@@ -141,6 +214,25 @@ export default function Order() {
                 loading={loading}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                
+                // Pass filter properties
+                statusFilter={statusFilter}
+                onStatusFilterChange={(val: string) => {
+                    setStatusFilter(val);
+                    fetchOrders(1, debouncedSearch, val, sourceFilter, paymentFilter);
+                }}
+                sourceFilter={sourceFilter}
+                onSourceFilterChange={(val: string) => {
+                    setSourceFilter(val);
+                    fetchOrders(1, debouncedSearch, statusFilter, val, paymentFilter);
+                }}
+                paymentFilter={paymentFilter}
+                onPaymentFilterChange={(val: string) => {
+                    setPaymentFilter(val);
+                    fetchOrders(1, debouncedSearch, statusFilter, sourceFilter, val);
+                }}
+                
+                onExportCSV={handleExportCSV}
                 pagination={pagination}
                 onPageChange={handlePageChange}
                 onStatusChange={handleStatusChange}

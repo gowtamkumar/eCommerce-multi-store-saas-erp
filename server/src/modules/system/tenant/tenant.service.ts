@@ -17,6 +17,11 @@ import { TenantOverviewResponseDto } from './dto/tenant-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { TenantEntity } from './entities/tenant.entity'
 import { TenantRepository } from './tenant.repository'
+import { AccountEntity } from '@/modules/admin/operations/finance/accounting/entities/account.entity'
+import { DEFAULT_CHART_OF_ACCOUNTS } from '@/modules/admin/operations/finance/accounting/constants/default-coa'
+import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
+import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
+import { PosRegisterEntity } from '@/modules/admin/sales/pos/entities/pos-register.entity'
 
 export interface CreateTenantResponseDto {
   tenant: TenantEntity
@@ -41,7 +46,7 @@ export class TenantService {
     private readonly subscriptionPlanService: SubscriptionPlanService,
     private readonly dataSource: DataSource,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   /**
    * Creates a new tenant with associated admin user and initial settings.
@@ -99,7 +104,37 @@ export class TenantService {
       })
       const savedTenant = await tenantRepo.save(tenant)
 
-      // Create admin user
+      // Create default Main Branch
+      const branchRepo = manager.getRepository(BranchEntity)
+      const defaultBranch = branchRepo.create({
+        name: 'Main Branch',
+        code: `MAIN-${subdomain.toUpperCase()}`,
+        tenantId: savedTenant.id,
+        isActive: true,
+      })
+      const savedBranch = await branchRepo.save(defaultBranch)
+
+      // Create default Warehouse
+      const warehouseRepo = manager.getRepository(WarehouseEntity)
+      const defaultWarehouse = warehouseRepo.create({
+        name: 'Main Warehouse',
+        code: `WH-${subdomain.toUpperCase()}`,
+        tenantId: savedTenant.id,
+        branchId: savedBranch.id,
+        isActive: true,
+      })
+      await warehouseRepo.save(defaultWarehouse)
+
+      // Create default POS Register / Cash Drawer
+      const posRegisterRepo = manager.getRepository(PosRegisterEntity)
+      const defaultRegister = posRegisterRepo.create({
+        name: 'Main Till',
+        branchId: savedBranch.id,
+        tenantId: savedTenant.id,
+      })
+      await posRegisterRepo.save(defaultRegister)
+
+      // Create admin user linked to Main Branch
       const hashedPassword = await bcrypt.hash(password, 10)
       const verificationToken = crypto.randomBytes(32).toString('hex')
 
@@ -110,6 +145,7 @@ export class TenantService {
         password: hashedPassword,
         role: UserRole.ADMIN,
         tenantId: savedTenant.id,
+        branch: savedBranch,
         isAdmin: false,
         emailVerificationToken: verificationToken,
       })
@@ -118,6 +154,16 @@ export class TenantService {
       // Link user to tenant
       savedTenant.userId = savedUser.id
       await tenantRepo.save(savedTenant)
+
+      // Initialize default Chart of Accounts (COA) for this new tenant
+      const accountRepo = manager.getRepository(AccountEntity)
+      const accounts = DEFAULT_CHART_OF_ACCOUNTS.map((coa) =>
+        accountRepo.create({
+          ...coa,
+          tenantId: savedTenant.id,
+        }),
+      )
+      await accountRepo.save(accounts)
 
       // 4. Parallelize non-critical initialization tasks
       await Promise.all([

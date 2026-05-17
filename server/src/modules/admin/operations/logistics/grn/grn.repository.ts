@@ -24,7 +24,7 @@ export class GrnRepository {
     manager?: EntityManager,
   ): Promise<GoodsReceivedNoteEntity> {
     const repo = manager ? manager.getRepository(GoodsReceivedNoteEntity) : this.repository
-    
+
     const grn = repo.create({
       grnNumber,
       poId: dto.poId,
@@ -48,7 +48,16 @@ export class GrnRepository {
   async findById(id: string, tenantId: string): Promise<GoodsReceivedNoteEntity> {
     const grn = await this.repository.findOne({
       where: { id, tenantId },
-      relations: ['items', 'items.product', 'items.variant', 'supplier', 'warehouse', 'branch', 'receivedByUser', 'purchaseOrder'],
+      relations: [
+        'items',
+        'items.product',
+        'items.variant',
+        'supplier',
+        'warehouse',
+        'branch',
+        'receivedByUser',
+        'purchaseOrder',
+      ],
     })
 
     if (!grn) {
@@ -62,7 +71,8 @@ export class GrnRepository {
     paginationDto: PaginationDto,
     status?: GrnStatus,
   ): Promise<{ items: GoodsReceivedNoteEntity[]; total: number }> {
-    const query = this.repository.createQueryBuilder('grn')
+    const query = this.repository
+      .createQueryBuilder('grn')
       .leftJoinAndSelect('grn.supplier', 'supplier')
       .leftJoinAndSelect('grn.warehouse', 'warehouse')
       .where('grn.tenantId = :tenantId', { tenantId })
@@ -72,7 +82,7 @@ export class GrnRepository {
     }
 
     query.orderBy('grn.createdAt', 'DESC')
-    
+
     const page = paginationDto.page || 1
     const limit = paginationDto.limit || 10
     query.skip((page - 1) * limit).take(limit)
@@ -81,7 +91,10 @@ export class GrnRepository {
     return { items, total }
   }
 
-  async save(grn: GoodsReceivedNoteEntity, manager?: EntityManager): Promise<GoodsReceivedNoteEntity> {
+  async save(
+    grn: GoodsReceivedNoteEntity,
+    manager?: EntityManager,
+  ): Promise<GoodsReceivedNoteEntity> {
     const repo = manager ? manager.getRepository(GoodsReceivedNoteEntity) : this.repository
     return repo.save(grn)
   }
@@ -89,8 +102,9 @@ export class GrnRepository {
   async generateGrnNumber(tenantId: string): Promise<string> {
     const today = new Date()
     const prefix = `GRN-${today.getFullYear()}${(today.getMonth() + 1).toString().padStart(2, '0')}-`
-    
-    const lastGrn = await this.repository.createQueryBuilder('grn')
+
+    const lastGrn = await this.repository
+      .createQueryBuilder('grn')
       .where('grn.tenantId = :tenantId', { tenantId })
       .andWhere('grn.grnNumber LIKE :prefix', { prefix: `${prefix}%` })
       .orderBy('grn.grnNumber', 'DESC')

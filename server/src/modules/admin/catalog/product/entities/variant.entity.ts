@@ -27,14 +27,7 @@ export class ProductVariantEntity extends BaseEntity {
   @Column({ type: 'boolean', default: false, name: 'is_default' })
   isDefault: boolean
 
-  /**
-   * @deprecated Use InventoryLedger for accurate stock tracking.
-   * This column is maintained as a cached aggregate for Phase 2 compatibility.
-   */
-  @Column({ type: 'int', default: 0 })
   stock: number
-
-  @Column({ type: 'int', name: 'reserved_stock', default: 0 })
   reservedStock: number
 
   @Column({ type: 'int', default: 5, name: 'low_stock_threshold' })

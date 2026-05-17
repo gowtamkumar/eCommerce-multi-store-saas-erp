@@ -7,7 +7,21 @@ import { SupplierModule } from './supplier/supplier.module'
 import { AccountingModule } from './accounting/accounting.module'
 
 @Module({
-  imports: [ExpenseModule, InvoiceModule, PurchaseModule, ReportModule, SupplierModule, AccountingModule],
-  exports: [ExpenseModule, InvoiceModule, PurchaseModule, ReportModule, SupplierModule, AccountingModule],
+  imports: [
+    ExpenseModule,
+    InvoiceModule,
+    PurchaseModule,
+    ReportModule,
+    SupplierModule,
+    AccountingModule,
+  ],
+  exports: [
+    ExpenseModule,
+    InvoiceModule,
+    PurchaseModule,
+    ReportModule,
+    SupplierModule,
+    AccountingModule,
+  ],
 })
 export class FinanceModule {}

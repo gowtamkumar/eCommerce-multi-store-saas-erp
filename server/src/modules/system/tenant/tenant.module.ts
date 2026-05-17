@@ -23,4 +23,4 @@ import { Global, Module } from '@nestjs/common'
   providers: [TenantService, TenantRepository],
   exports: [TenantService, TenantRepository],
 })
-export class TenantModule { }
+export class TenantModule {}

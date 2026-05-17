@@ -22,7 +22,7 @@ export class GrnService {
     private readonly dataSource: DataSource,
     @InjectQueue('product') private readonly productQueue: Queue,
     private readonly apLedgerRepository: SupplierAPLedgerRepository,
-  ) { }
+  ) {}
 
   async createGrn(dto: CreateGrnDto, ctx: RequestContextDto): Promise<GoodsReceivedNoteEntity> {
     this.logger.log(`${this.createGrn.name} Service Called`)
@@ -30,7 +30,11 @@ export class GrnService {
     return this.repository.createAndSave(dto, grnNumber, ctx)
   }
 
-  async verifyGrn(id: string, dto: VerifyGrnDto, ctx: RequestContextDto): Promise<GoodsReceivedNoteEntity> {
+  async verifyGrn(
+    id: string,
+    dto: VerifyGrnDto,
+    ctx: RequestContextDto,
+  ): Promise<GoodsReceivedNoteEntity> {
     this.logger.log(`${this.verifyGrn.name} Service Called`)
 
     const grn = await this.repository.findById(id, ctx.tenantId)
@@ -45,13 +49,13 @@ export class GrnService {
       return this.repository.save(grn)
     }
 
-    if (dto.status === GrnStatus.VERIFIED) {
+    if (dto.status === GrnStatus.RECEIVED) {
       const queryRunner = this.dataSource.createQueryRunner()
       await queryRunner.connect()
       await queryRunner.startTransaction()
 
       try {
-        grn.status = GrnStatus.VERIFIED
+        grn.status = GrnStatus.RECEIVED
         grn.notes = dto.notes || grn.notes
         const savedGrn = await this.repository.save(grn, queryRunner.manager)
 
@@ -78,14 +82,17 @@ export class GrnService {
 
         // 2. Update Supplier Accounts Payable Ledger
         if (totalGrnCost > 0) {
-          await this.apLedgerRepository.createEntry({
-            supplierId: grn.supplierId,
-            tenantId: ctx.tenantId,
-            referenceType: SupplierAPReferenceType.GRN,
-            referenceId: grn.id,
-            credit: totalGrnCost, // Increase AP balance
-            remarks: `GRN Verification: ${grn.grnNumber}`,
-          }, queryRunner.manager)
+          await this.apLedgerRepository.createEntry(
+            {
+              supplierId: grn.supplierId,
+              tenantId: ctx.tenantId,
+              referenceType: SupplierAPReferenceType.GRN,
+              referenceId: grn.id,
+              credit: totalGrnCost, // Increase AP balance
+              remarks: `GRN Verification: ${grn.grnNumber}`,
+            },
+            queryRunner.manager,
+          )
         }
 
         await queryRunner.commitTransaction()

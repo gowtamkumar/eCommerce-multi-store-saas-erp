@@ -41,7 +41,7 @@ export class OrderController {
     @Query() filterDto: FilterOrderDto,
   ): Promise<BaseApiSuccessResponse<{ orders: OrderResponseDto[]; pagination: any }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllOrders.`)
-    const { orders, total } = await this.orderService.findAllOrders(ctx)
+    const { orders, total } = await this.orderService.findAllOrders(filterDto, ctx)
 
     return {
       success: true,
@@ -51,9 +51,9 @@ export class OrderController {
         orders: orders as any,
         pagination: {
           total,
-          page: filterDto.page,
-          limit: filterDto.limit,
-          totalPages: Math.ceil(total / filterDto.limit),
+          page: Number(filterDto.page || 1),
+          limit: Number(filterDto.limit || 20),
+          totalPages: Math.ceil(total / Number(filterDto.limit || 20)),
         },
       },
     }

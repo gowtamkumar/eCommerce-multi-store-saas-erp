@@ -16,6 +16,9 @@ import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-stat
 import { PurchaseOrderRepository } from '../repositories/purchase-order.repository'
 import { SupplierPaymentRepository } from '../repositories/supplier-payment.repository'
 import { GrnRepository } from '@/modules/admin/operations/logistics/grn/grn.repository'
+import { GrnStatus } from '@/common/enums/grn-status.enum'
+import { SupplierAPLedgerEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier-ap-ledger.entity'
+import { SupplierAPReferenceType } from '@/modules/admin/operations/finance/supplier/enums/supplier-ap-Refernce-type.enum'
 
 @Injectable()
 export class PurchaseOrderService {
@@ -159,34 +162,105 @@ export class PurchaseOrderService {
     await queryRunner.startTransaction()
 
     try {
-      order.status = PurchaseOrderStatus.RECEIVED
-      const savedOrder = await this.repository.savePurchaseOrder(order, queryRunner.manager)
+      // 1. Re-fetch the order WITH items inside the transaction
+      const orderWithItems = await queryRunner.manager.findOne(PurchaseOrderEntity, {
+        where: { id: order.id, tenantId },
+        relations: ['items', 'items.product', 'items.variant'],
+      })
 
-      // Create a DRAFT GRN instead of updating stock directly
+      if (!orderWithItems) throw new BadRequestException('Purchase order not found')
+      if (!orderWithItems.items?.length)
+        throw new BadRequestException('Purchase order has no items to receive')
+
+      orderWithItems.status = PurchaseOrderStatus.RECEIVED
+      const savedOrder = await this.repository.savePurchaseOrder(
+        orderWithItems,
+        queryRunner.manager,
+      )
+
+      // 2. Build item DTOs from the PO items
+      const itemDtos = orderWithItems.items.map((item) => ({
+        productId: item.productId || (item.product as any)?.id,
+        variantId: item.variantId || (item.variant as any)?.id || null,
+        orderedQty: item.quantity,
+        receivedQty: item.quantity,
+        unitCost: Number(item.unitPrice),
+        condition: 'NEW',
+      }))
+
+      // 3. Strictly require warehouse / branch
       if (this.grnRepository) {
         const grnNumber = await this.grnRepository.generateGrnNumber(tenantId)
-        
-        // If warehouseId/branchId are missing from the DTO, the UI must provide them or they must be fetched
-        // For robustness, we enforce their presence or use dummy if testing (but we should require them)
-        if (!dto.warehouseId || !dto.branchId) {
-            throw new BadRequestException('warehouseId and branchId are required to receive goods')
+
+        const warehouseId = dto.warehouseId
+        const branchId = dto.branchId
+
+        if (!warehouseId || !branchId) {
+          throw new BadRequestException(
+            'Destination warehouse and branch must be selected to receive goods.',
+          )
         }
 
-        await this.grnRepository.createAndSave({
-          poId: order.id,
-          supplierId: order.supplierId,
-          warehouseId: dto.warehouseId,
-          branchId: dto.branchId,
-          notes: `Auto-generated GRN from PO ${order.referenceNumber}`,
-          items: order.items.map(item => ({
-            productId: item.productId || (item.product as any)?.id,
-            variantId: item.variantId || (item.variant as any)?.id,
-            orderedQty: item.quantity,
-            receivedQty: item.quantity, // Default to ordered quantity
-            unitCost: item.unitPrice,
-            condition: 'NEW',
-          }))
-        }, grnNumber, ctx, queryRunner.manager)
+        // 4. Create GRN
+        await this.grnRepository.createAndSave(
+          {
+            poId: orderWithItems.id,
+            supplierId: orderWithItems.supplierId,
+            warehouseId,
+            branchId,
+            notes: `Auto GRN from PO ${orderWithItems.referenceNumber}`,
+            items: itemDtos,
+          },
+          grnNumber,
+          ctx,
+          queryRunner.manager,
+        )
+
+        let totalGrnCost = 0
+
+        // 5. Dispatch stock update jobs using itemDtos (not grn.items which may be unloaded)
+        for (const item of itemDtos) {
+          totalGrnCost += item.receivedQty * item.unitCost
+          if (item.receivedQty > 0 && item.productId) {
+            await this.productQueue.add('update-stock', {
+              productId: item.productId,
+              variantId: item.variantId || null,
+              quantity: item.receivedQty,
+              type: InventoryTransactionType.PURCHASE,
+              referenceType: InventoryTransactionReferenceType.GOODS_RECEIVED_NOTE,
+              referenceId: grnNumber, // use grnNumber as reference until id available
+              supplierId: orderWithItems.supplierId,
+              tenantId,
+              unitCost: item.unitCost,
+              warehouseId,
+              branchId,
+            })
+          }
+        }
+
+        // 6. Update Supplier Accounts Payable Ledger
+        if (totalGrnCost > 0) {
+          const lastEntry = await queryRunner.manager
+            .createQueryBuilder(SupplierAPLedgerEntity, 'ap')
+            .setLock('pessimistic_write')
+            .where('ap.supplierId = :supplierId', { supplierId: orderWithItems.supplierId })
+            .andWhere('ap.tenantId = :tenantId', { tenantId })
+            .orderBy('ap.createdAt', 'DESC')
+            .getOne()
+
+          const balanceAfter = (lastEntry ? Number(lastEntry.balanceAfter) : 0) + totalGrnCost
+
+          const entry = queryRunner.manager.create(SupplierAPLedgerEntity, {
+            supplierId: orderWithItems.supplierId,
+            tenantId,
+            referenceType: SupplierAPReferenceType.GRN,
+            debit: 0,
+            credit: totalGrnCost,
+            balanceAfter,
+            remarks: `Auto GRN: PO ${orderWithItems.referenceNumber}`,
+          })
+          await queryRunner.manager.save(entry)
+        }
       }
 
       await queryRunner.commitTransaction()

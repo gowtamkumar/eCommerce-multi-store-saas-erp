@@ -26,7 +26,7 @@ export class SubscriptionBillingService {
     private readonly planRepository: SubscriptionPlanRepository,
     private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   async getCurrentSubscription(tenantId: string): Promise<CurrentSubscriptionResponseDto> {
     this.logger.log(`${this.getCurrentSubscription.name} Called for tenant: ${tenantId}`)

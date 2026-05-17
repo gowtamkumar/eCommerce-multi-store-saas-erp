@@ -1,4 +1,13 @@
-import { IsString, IsOptional, IsUUID, IsEnum, IsArray, ValidateNested, IsDateString, IsNumber } from 'class-validator'
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsEnum,
+  IsArray,
+  ValidateNested,
+  IsDateString,
+  IsNumber,
+} from 'class-validator'
 import { Type } from 'class-transformer'
 import { EmployeeStatus, ContractType } from '@/common/enums/hrm/hrm-enums'
 
@@ -194,4 +203,3 @@ export class AssignShiftDto {
   @IsOptional()
   effectiveTo?: string
 }
-

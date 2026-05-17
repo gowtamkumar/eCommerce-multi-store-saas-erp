@@ -9,7 +9,7 @@ export enum DebitNoteStatus {
   DRAFT = 'DRAFT',
   APPROVED = 'APPROVED',
   APPLIED = 'APPLIED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 
 @Entity('debit_notes')

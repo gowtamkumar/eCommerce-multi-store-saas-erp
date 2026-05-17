@@ -37,8 +37,8 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
     TenantModule,
   ],
   providers: [
-    AudienceService, 
-    CampaignService, 
+    AudienceService,
+    CampaignService,
     CampaignProcessor,
     CampaignRepository,
     CampaignMessageRepository,
@@ -46,12 +46,12 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
   ],
   controllers: [CampaignController],
   exports: [
-    TypeOrmModule, 
-    AudienceService, 
+    TypeOrmModule,
+    AudienceService,
     CampaignService,
     CampaignRepository,
     CampaignMessageRepository,
     CampaignLogRepository,
   ],
 })
-export class CampaignModule { }
+export class CampaignModule {}

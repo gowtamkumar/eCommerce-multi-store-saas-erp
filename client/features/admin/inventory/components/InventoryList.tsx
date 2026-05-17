@@ -176,7 +176,7 @@ export default function InventoryList() {
             <StockAdjustmentModal 
                 isOpen={isAdjustmentModalOpen}
                 onClose={() => setIsAdjustmentModalOpen(false)}
-                onSuccess={() => fetchTransactions(1, debouncedSearch, typeFilter)}
+                onSuccess={() => fetchTransactions(1, debouncedSearch, typeFilter, warehouseFilter)}
             />
 
             {/* Filters Bar */}

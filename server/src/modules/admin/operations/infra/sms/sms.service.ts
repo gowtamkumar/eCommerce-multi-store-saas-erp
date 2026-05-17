@@ -11,7 +11,7 @@ export class SmsService {
   constructor(
     private readonly configService: ConfigService,
     private readonly settingsService: SettingsService,
-  ) { }
+  ) {}
 
   async sendSms(
     phone: string,
@@ -54,7 +54,9 @@ export class SmsService {
         }
       }
 
-      this.logger.warn(`Bulksmsbd API returned error code ${res.data?.response_code}: ${res.data?.success_message || 'Unknown error'}`)
+      this.logger.warn(
+        `Bulksmsbd API returned error code ${res.data?.response_code}: ${res.data?.success_message || 'Unknown error'}`,
+      )
       return {
         success: false,
         messageId: '',

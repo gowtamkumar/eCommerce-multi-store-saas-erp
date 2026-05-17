@@ -14,6 +14,13 @@ export interface OrderListProps {
     loading: boolean;
     searchQuery: string;
     onSearchChange: (value: string) => void;
+    statusFilter?: string;
+    onStatusFilterChange?: (value: string) => void;
+    sourceFilter?: string;
+    onSourceFilterChange?: (value: string) => void;
+    paymentFilter?: string;
+    onPaymentFilterChange?: (value: string) => void;
+    onExportCSV?: () => void;
     pagination: OrderListPagination;
     onPageChange: (page: number) => void;
     onStatusChange: (id: string, newStatus: string) => void;

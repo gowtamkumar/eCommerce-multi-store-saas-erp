@@ -1,4 +1,13 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsEnum, IsNumber, IsInt, IsBoolean } from 'class-validator'
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsInt,
+  IsBoolean,
+} from 'class-validator'
 import { SupplierCategory } from '../enums/supplier-category.enum'
 
 export class CreateSupplierDto {

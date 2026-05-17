@@ -1,8 +1,8 @@
 'use client';
 
-import { Mail, Phone, MapPin, User, Search, Plus, Edit, Trash2, ChevronLeft, ChevronRight, Loader2, History } from 'lucide-react';
-import { memo } from 'react';
+import { ChevronLeft, ChevronRight, Edit, History, Mail, MapPin, Phone, Plus, Search, Trash2, User } from 'lucide-react';
 import Link from 'next/link';
+import { memo } from 'react';
 import { Supplier, SupplierListProps } from '../types';
 
 // Memoized Supplier Row component to prevent full table re-renders
@@ -14,10 +14,29 @@ const SupplierRow = memo(({ supplier, onEdit, onDelete }: { supplier: Supplier, 
                     <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-xl overflow-hidden text-slate-500 transition-transform group-hover:scale-110">
                         <User className="w-5 h-5" />
                     </div>
-                    <span className="font-semibold text-slate-900 dark:text-white">{supplier.name}</span>
+                    <div>
+                        <span className="font-semibold text-slate-900 dark:text-white block">{supplier.name}</span>
+                        <div className="flex gap-2 mt-1">
+                            <span className="text-[9px] font-black bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                {supplier.category ? supplier.category.replace('_', ' ') : 'OTHER'}
+                            </span>
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${supplier.isActive !== false ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400'}`}>
+                                {supplier.isActive !== false ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </td>
-            <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400 font-medium">{supplier.contactName || '-'}</td>
+            <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                <div>
+                    <span className="block font-semibold text-slate-900 dark:text-white">{supplier.contactName || '-'}</span>
+                    <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500 font-bold uppercase">
+                        <span>⭐ {supplier.rating !== undefined ? Number(supplier.rating).toFixed(1) : '5.0'}</span>
+                        <span className="text-slate-300 dark:text-slate-700">•</span>
+                        <span>⏱️ {supplier.leadTimeDays || 0} Days</span>
+                    </div>
+                </div>
+            </td>
             <td className="px-6 py-4">
                 <div className="space-y-1.5">
                     {supplier.email && (
@@ -47,12 +66,16 @@ const SupplierRow = memo(({ supplier, onEdit, onDelete }: { supplier: Supplier, 
                 ) : '-'}
             </td>
             <td className="px-6 py-4">
-                <div className="flex flex-col">
-                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Outstanding</span>
-                    <span className={`text-sm font-black ${(supplier as any).outstandingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format((supplier as any).outstandingBalance || 0)}
-                    </span>
-                </div>
+                {(supplier as any).outstandingBalance && Number((supplier as any).outstandingBalance) !== 0 ? (
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Outstanding</span>
+                        <span className={`text-sm font-black ${(supplier as any).outstandingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format((supplier as any).outstandingBalance)}
+                        </span>
+                    </div>
+                ) : (
+                    <span className="text-slate-400 dark:text-slate-600 text-xs font-semibold">-</span>
+                )}
             </td>
             <td className="px-6 py-4 text-right">
                 <div className="flex items-center justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 translate-x-1 group-hover:translate-x-0">
@@ -144,14 +167,14 @@ const SupplierList = ({
                             {loading && suppliers.length === 0 ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i}>
-                                        <td colSpan={5} className="px-6 py-8">
+                                        <td colSpan={6} className="px-6 py-8">
                                             <div className="h-12 bg-slate-100 dark:bg-slate-700/50 animate-pulse rounded-2xl" />
                                         </td>
                                     </tr>
                                 ))
                             ) : suppliers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-24 text-center">
+                                    <td colSpan={6} className="py-24 text-center">
                                         <div className="flex flex-col items-center gap-4 max-w-xs mx-auto">
                                             <div className="w-20 h-20 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mb-2">
                                                 <Search className="w-10 h-10 text-slate-300" strokeWidth={1} />
@@ -165,11 +188,11 @@ const SupplierList = ({
                                 </tr>
                             ) : (
                                 suppliers.map((supplier) => (
-                                    <SupplierRow 
-                                        key={supplier.id} 
-                                        supplier={supplier} 
-                                        onEdit={onEdit} 
-                                        onDelete={onDelete} 
+                                    <SupplierRow
+                                        key={supplier.id}
+                                        supplier={supplier}
+                                        onEdit={onEdit}
+                                        onDelete={onDelete}
                                     />
                                 ))
                             )}

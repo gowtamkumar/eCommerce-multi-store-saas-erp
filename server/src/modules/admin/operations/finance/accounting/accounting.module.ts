@@ -11,11 +11,9 @@ import { FinancialReportService } from './services/financial-report.service'
 import { AccountingController } from './controllers/accounting.controller'
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([AccountEntity, JournalEntryEntity, LedgerEntryEntity]),
-  ],
+  imports: [TypeOrmModule.forFeature([AccountEntity, JournalEntryEntity, LedgerEntryEntity])],
   controllers: [AccountingController],
   providers: [AccountingService, AccountingIntegrationService, CogsService, FinancialReportService],
   exports: [AccountingService, AccountingIntegrationService, CogsService, FinancialReportService],
 })
-export class AccountingModule { }
+export class AccountingModule {}

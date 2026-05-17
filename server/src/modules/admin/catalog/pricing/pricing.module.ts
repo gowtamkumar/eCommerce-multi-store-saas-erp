@@ -7,10 +7,7 @@ import { PricingController } from './pricing.controller'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([PriceBookEntity, ProductPriceEntity]),
-    TenantModule,
-  ],
+  imports: [TypeOrmModule.forFeature([PriceBookEntity, ProductPriceEntity]), TenantModule],
   controllers: [PricingController],
   providers: [PricingService],
   exports: [PricingService],

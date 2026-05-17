@@ -26,7 +26,8 @@ export class FulfillmentRepository {
   }
 
   async findAllTasksByTenant(tenantId: string, status?: string): Promise<FulfillmentTaskEntity[]> {
-    const query = this.taskRepository.createQueryBuilder('task')
+    const query = this.taskRepository
+      .createQueryBuilder('task')
       .leftJoinAndSelect('task.order', 'order')
       .where('task.tenantId = :tenantId', { tenantId })
 

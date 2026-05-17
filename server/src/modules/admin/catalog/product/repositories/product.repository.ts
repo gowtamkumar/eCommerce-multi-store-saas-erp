@@ -18,7 +18,7 @@ export class ProductRepository {
   async findAllWithFilters(filterDto: any, tenantId: string): Promise<[ProductEntity[], number]> {
     const page = Math.max(1, parseInt(filterDto.page) || 1)
     const limit = Math.max(1, parseInt(filterDto.limit) || 10)
-    const { q, status, categoryId, brandId } = filterDto
+    const { q, status, categoryId, brandId, exclude } = filterDto
 
     const query = this.repo
       .createQueryBuilder('product')
@@ -29,6 +29,7 @@ export class ProductRepository {
     if (status) query.andWhere('product.status = :status', { status })
     if (categoryId) query.andWhere('product.categoryId = :categoryId', { categoryId })
     if (brandId) query.andWhere('product.brandId = :brandId', { brandId })
+    if (exclude) query.andWhere('product.id != :exclude', { exclude })
 
     const finalPriceExpr = `CASE 
       WHEN product.discount_type = 'percentage' 
@@ -160,46 +161,6 @@ export class ProductRepository {
 
   async removeProduct(product: ProductEntity): Promise<void> {
     await this.repo.softRemove(product)
-  }
-
-  async incrementStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
-    await repo.increment({ id, tenantId }, 'stock', quantity)
-  }
-
-  async decrementStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
-    await repo.decrement({ id, tenantId }, 'stock', quantity)
-  }
-
-  async incrementReservedStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
-    await repo.increment({ id, tenantId }, 'reservedStock', quantity)
-  }
-
-  async decrementReservedStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
-    await repo.decrement({ id, tenantId }, 'reservedStock', quantity)
   }
 
   async findLatestProducts(tenantId: string, limit: number): Promise<ProductEntity[]> {

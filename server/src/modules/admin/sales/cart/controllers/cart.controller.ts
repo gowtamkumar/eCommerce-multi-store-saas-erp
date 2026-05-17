@@ -16,7 +16,7 @@ import { CartService } from '@/modules/store/cart/cart.service'
 export class AdminCartController {
   private readonly logger = new Logger(AdminCartController.name)
 
-  constructor(private readonly cartService: CartService) { }
+  constructor(private readonly cartService: CartService) {}
 
   @Get()
   @ApiOperation({ summary: 'List active shopping carts for tenant' })

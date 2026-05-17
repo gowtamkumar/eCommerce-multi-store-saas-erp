@@ -79,7 +79,7 @@ export class CampaignService {
     if (campaign.status !== CampaignStatus.DRAFT) {
       throw new BadRequestException('Only draft campaigns can be scheduled')
     }
-console.log("dto", dto);
+    console.log('dto', dto)
 
     const scheduleTime = new Date(dto.scheduleTime)
     const delay = scheduleTime.getTime() - Date.now()

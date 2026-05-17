@@ -39,7 +39,7 @@ export class ProductService {
     private readonly promotionService: PromotionService,
     private readonly dataSource: DataSource,
     @InjectQueue('product') private readonly productQueue: Queue,
-  ) { }
+  ) {}
 
   private async attachPromotions(product: any, ctx: RequestContextDto): Promise<AugmentedProduct> {
     this.logger.log(`${this.attachPromotions.name} Service Called`)
@@ -205,6 +205,34 @@ export class ProductService {
     return `${base}-${suffix}`
   }
 
+  private async populateProductsStock(products: any[], tenantId: string): Promise<any[]> {
+    if (!products || products.length === 0) return products
+    try {
+      const sums = await this.inventoryService.getStockSums(tenantId)
+      const stockMap = new Map<string, number>()
+      sums.forEach((item: any) => {
+        const key = item.variantId ? `${item.productId}:${item.variantId}` : item.productId
+        stockMap.set(key, Number(item.sum || 0))
+      })
+
+      products.forEach((product) => {
+        const hasVariants = product.variants && product.variants.length > 0
+
+        if (hasVariants) {
+          product.variants.forEach((v: any) => {
+            v.stock = stockMap.get(`${product.id}:${v.id}`) || 0
+          })
+          product.stock = product.variants.reduce((sum: number, v: any) => sum + (v.stock || 0), 0)
+        } else {
+          product.stock = stockMap.get(product.id) || 0
+        }
+      })
+    } catch (error) {
+      this.logger.error('Failed to populate products stock from inventory ledger', error)
+    }
+    return products
+  }
+
   async findAllProducts(
     ctx: RequestContextDto,
     filterDto: FilterProductDto = { page: 1, limit: 5 },
@@ -224,7 +252,8 @@ export class ProductService {
           filterDto,
           tenantId,
         )
-        const productsWithPromotions = await this.attachPromotionsMany(products, ctx)
+        const populated = await this.populateProductsStock(products, tenantId)
+        const productsWithPromotions = await this.attachPromotionsMany(populated, ctx)
         return { products: productsWithPromotions, total }
       },
       60, // 60-second TTL — short enough to reflect stock/price updates
@@ -284,7 +313,8 @@ export class ProductService {
       throw new NotFoundException('Product not found')
     }
 
-    return await this.attachPromotions(product, ctx)
+    const populated = await this.populateProductsStock([product], tenantId)
+    return await this.attachPromotions(populated[0], ctx)
   }
 
   async findLatestProducts(
@@ -299,7 +329,8 @@ export class ProductService {
       cacheKey,
       async () => {
         const products = await this.productRepository.findLatestProducts(tenantId, limit)
-        return await this.attachPromotionsMany(products, ctx)
+        const populated = await this.populateProductsStock(products, tenantId)
+        return await this.attachPromotionsMany(populated, ctx)
       },
       300, // 5 minutes
       tenantId,
@@ -317,7 +348,8 @@ export class ProductService {
       async () => {
         const p = await this.productRepository.findByIdWithRelations(id, tenantId)
         if (!p) throw new NotFoundException('Product not found')
-        return p
+        const populated = await this.populateProductsStock([p], tenantId)
+        return populated[0]
       },
       300, // 5 minutes
       tenantId,
@@ -340,11 +372,11 @@ export class ProductService {
       if (existing) throw new ConflictException('Product with this slug already exists')
 
       const { faqs, attributes, variants, ...productData } = createProductDto
-      
-      // ERP FIX: Stock must always start at 0 during creation. 
+
+      // ERP FIX: Stock must always start at 0 during creation.
       // Stock should only enter the system via PO/GRN or Stock Adjustment.
-      productData.stock = 0;
-      
+      productData.stock = 0
+
       const product = await this.productRepository.createAndSave(productData, ctx)
 
       if (faqs && faqs.length > 0) {
@@ -358,7 +390,7 @@ export class ProductService {
       if (variants && variants.length > 0) {
         for (const variantDto of variants) {
           // ERP FIX: Force variant stock to 0 as well
-          variantDto.stock = 0;
+          variantDto.stock = 0
 
           const savedVariant = await this.variantRepository.saveNewVariant(
             variantDto,
@@ -409,7 +441,7 @@ export class ProductService {
 
       // ERP FIX: Prevent manual stock updates during product edit.
       // Stock can only be changed via Procurement or Inventory Adjustment.
-      delete (productData as any).stock;
+      delete (productData as any).stock
 
       // 4. Update Base Product
       await this.productRepository.updateAndSave(product, productData, manager)
@@ -522,52 +554,11 @@ export class ProductService {
               { isDefault: false },
             )
           }
-
-          if (variantDto.stock > 0) {
-            if (product.supplierId) {
-              poItems.push({
-                productId: product.id,
-                variantId: savedVariant.id,
-                quantity: variantDto.stock,
-                unitPrice: variantDto.price || product.price,
-              })
-            } else {
-              await this.variantRepository.incrementStock(
-                savedVariant.id,
-                tenantId,
-                variantDto.stock,
-                manager,
-              )
-            }
-          }
-        }
-      } else {
-        // If NO variants, check if base stock was updated and needs a PO
-        if (productData.stock > 0 && product.supplierId) {
-          poItems.push({
-            productId: product.id,
-            quantity: productData.stock,
-            unitPrice: product.price,
-          })
-        }
-      }
-
-      // Prepare Background Job data if needed
-      if (poItems.length > 0 && product.supplierId) {
-        poData = {
-          supplierId: product.supplierId,
-          referenceNumber: `UPDATE_VAR_${product.slug.toUpperCase()}_${Date.now()}`,
-          items: poItems,
         }
       }
 
       await this.cache.delCache(`product:${id}`, tenantId)
     })
-
-    // Trigger background job AFTER transaction commits
-    if (poData) {
-      await this.productQueue.add('create-purchase-order', { ...poData, tenantId })
-    }
 
     return await this.findOneProduct(id, ctx)
   }

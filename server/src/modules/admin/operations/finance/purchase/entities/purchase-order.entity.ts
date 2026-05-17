@@ -20,7 +20,7 @@ export class PurchaseOrderEntity extends BaseEntity {
   @Index()
   supplierId: string
 
-  @ManyToOne(() => SupplierEntity, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => SupplierEntity, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'supplier_id' })
   supplier: SupplierEntity
 
@@ -58,7 +58,7 @@ export class PurchaseOrderEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
+  @ManyToOne(() => TenantEntity, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 

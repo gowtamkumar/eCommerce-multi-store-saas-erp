@@ -18,7 +18,7 @@ import { memo } from 'react';
 
 export const getGrnStatusBadge = (status: GrnStatus) => {
     switch (status) {
-        case GrnStatus.VERIFIED:
+        case GrnStatus.RECEIVED:
             return (
                 <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-1 w-fit">
                     <CheckCircle2 className="w-3 h-3" />
@@ -137,7 +137,7 @@ export default function GrnListPage({
                     >
                         <option value="">All Statuses</option>
                         <option value={GrnStatus.DRAFT}>Draft</option>
-                        <option value={GrnStatus.VERIFIED}>Verified</option>
+                        <option value={GrnStatus.RECEIVED}>Received</option>
                         <option value={GrnStatus.REJECTED}>Rejected</option>
                     </select>
                 </div>

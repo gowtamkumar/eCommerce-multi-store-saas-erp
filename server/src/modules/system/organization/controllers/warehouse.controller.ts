@@ -13,7 +13,12 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common'
-import { CreateWarehouseBinDto, CreateWarehouseDto, UpdateWarehouseBinDto, UpdateWarehouseDto } from '../dto/warehouse.dto'
+import {
+  CreateWarehouseBinDto,
+  CreateWarehouseDto,
+  UpdateWarehouseBinDto,
+  UpdateWarehouseDto,
+} from '../dto/warehouse.dto'
 import { WarehouseService } from '../services/warehouse.service'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
@@ -23,7 +28,7 @@ import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 export class WarehouseController {
   private readonly logger = new Logger(WarehouseController.name)
 
-  constructor(private readonly warehouseService: WarehouseService) { }
+  constructor(private readonly warehouseService: WarehouseService) {}
 
   @Post()
   @RequireFeature('/admin/warehouses')

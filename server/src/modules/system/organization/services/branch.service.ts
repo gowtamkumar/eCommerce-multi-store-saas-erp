@@ -28,7 +28,11 @@ export class BranchService {
     return this.branchRepository.create(createBranchDto, ctx)
   }
 
-  async update(id: string, updateBranchDto: UpdateBranchDto, ctx: RequestContextDto): Promise<BranchEntity> {
+  async update(
+    id: string,
+    updateBranchDto: UpdateBranchDto,
+    ctx: RequestContextDto,
+  ): Promise<BranchEntity> {
     const branch = await this.findOne(id, ctx)
     if (updateBranchDto.code && updateBranchDto.code !== branch.code) {
       const existing = await this.branchRepository.findByCode(updateBranchDto.code, ctx.tenantId)

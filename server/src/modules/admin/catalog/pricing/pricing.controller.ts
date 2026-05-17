@@ -1,16 +1,16 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common'
-import { PricingService } from './pricing.service'
-import { CreatePriceBookDto } from './dto/create-price-book.dto'
-import { AddProductPriceDto } from './dto/add-product-price.dto'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { RequireFeature } from '@/common/decorators/require-feature.decorator'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common'
+import { AddProductPriceDto } from './dto/add-product-price.dto'
+import { CreatePriceBookDto } from './dto/create-price-book.dto'
+import { PricingService } from './pricing.service'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/catalog')
+@RequireFeature('/admin/products')
 @Controller('pricing')
 export class PricingController {
   constructor(private readonly service: PricingService) {}
@@ -53,6 +53,34 @@ export class PricingController {
       statusCode: 201,
       message: 'Product price added successfully',
       data,
+    }
+  }
+
+  @Get('product-prices/:productId')
+  async findProductPrices(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('productId') productId: string,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
+    const data = await this.service.findProductPrices(productId, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Product prices retrieved successfully',
+      data,
+    }
+  }
+
+  @Delete('product-prices/:id')
+  async deleteProductPrice(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    await this.service.deleteProductPrice(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Product price deleted successfully',
+      data: null,
     }
   }
 }

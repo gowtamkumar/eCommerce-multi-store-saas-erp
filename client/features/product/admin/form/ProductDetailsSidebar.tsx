@@ -1,21 +1,19 @@
 'use client';
 
-import React, { memo } from 'react';
-import { Layout, Tag, Plus, MessageSquare, Star } from 'lucide-react';
 import { Category } from '@/types/product';
+import { Layout, MessageSquare, Star, Tag } from 'lucide-react';
+import { memo } from 'react';
 
 interface ProductDetailsSidebarProps {
   status: string;
   categoryId: string;
   brandId: string;
-  supplierId: string;
   isReview: boolean;
   isNew: boolean;
   isHot: boolean;
   isSale: boolean;
   categories: Category[];
   brands: any[];
-  suppliers: any[];
   onUpdate: (updates: any) => void;
 }
 
@@ -23,14 +21,12 @@ export const ProductDetailsSidebar = memo(({
   status,
   categoryId,
   brandId,
-  supplierId,
   isReview,
   isNew,
   isHot,
   isSale,
   categories,
   brands,
-  suppliers,
   onUpdate
 }: ProductDetailsSidebarProps) => {
   return (
@@ -82,24 +78,6 @@ export const ProductDetailsSidebar = memo(({
             {brands.map((brand) => (
               <option key={brand.id} value={brand.id}>
                 {brand.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Main Supplier
-          </label>
-          <select
-            value={supplierId}
-            onChange={(e) => onUpdate({ supplierId: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-          >
-            <option value="">No Supplier</option>
-            {suppliers.map((sup) => (
-              <option key={sup.id} value={sup.id}>
-                {sup.name}
               </option>
             ))}
           </select>

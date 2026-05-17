@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator'
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsUUID } from 'class-validator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 
 export class InviteStaffDto {
@@ -9,6 +9,14 @@ export class InviteStaffDto {
   @IsEnum(UserRole)
   @IsNotEmpty()
   role: UserRole
+
+  @IsUUID()
+  @IsOptional()
+  branchId?: string
+
+  @IsUUID()
+  @IsOptional()
+  warehouseId?: string
 }
 
 export class AcceptInvitationDto {

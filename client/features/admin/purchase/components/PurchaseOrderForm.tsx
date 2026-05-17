@@ -94,7 +94,12 @@ export default function PurchaseOrderForm() {
                     fetchAPI('/suppliers'),
                     fetchAPI('/products?limit=100')
                 ]);
-                setSuppliers(Array.isArray(supRes) ? supRes : (supRes?.data?.items || []));
+                const parsedSuppliers = Array.isArray(supRes)
+                    ? supRes
+                    : (Array.isArray(supRes?.data)
+                        ? supRes.data
+                        : (supRes?.data?.items || []));
+                setSuppliers(parsedSuppliers);
                 setProducts(prodRes?.data || []);
             } catch (error) {
                 console.error('Data loading failed', error);
@@ -102,22 +107,6 @@ export default function PurchaseOrderForm() {
         };
         loadInitialData();
     }, []);
-
-    // Handle pre-fill from URL
-    useEffect(() => {
-        if (prefillProductId && products.length > 0) {
-            const product = products.find(p => p.id === prefillProductId);
-            if (product && formData.items.length === 0) {
-                // If product has variants, don't auto-add, let user search it to pick variant. 
-                // Or if it's simple, add it.
-                if (!product.variants || product.variants.length === 0) {
-                    addItem(product);
-                } else {
-                    setSearchProduct(product.name);
-                }
-            }
-        }
-    }, [prefillProductId, products, addItem]);
 
     const addItem = useCallback((product: any, variant?: any) => {
         if (formData.items.find(item =>
@@ -143,6 +132,22 @@ export default function PurchaseOrderForm() {
         }));
         setSearchProduct('');
     }, [formData.items]);
+
+    // Handle pre-fill from URL
+    useEffect(() => {
+        if (prefillProductId && products.length > 0) {
+            const product = products.find(p => p.id === prefillProductId);
+            if (product && formData.items.length === 0) {
+                // If product has variants, don't auto-add, let user search it to pick variant. 
+                // Or if it's simple, add it.
+                if (!product.variants || product.variants.length === 0) {
+                    addItem(product);
+                } else {
+                    setSearchProduct(product.name);
+                }
+            }
+        }
+    }, [prefillProductId, products, addItem]);
 
     const removeItem = useCallback((index: number) => {
         setFormData(prev => {

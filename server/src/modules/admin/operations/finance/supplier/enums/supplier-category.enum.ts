@@ -6,5 +6,5 @@ export enum SupplierCategory {
   LOGISTICS = 'LOGISTICS',
   IT_SOFTWARE = 'IT_SOFTWARE',
   OFFICE_SUPPLIES = 'OFFICE_SUPPLIES',
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
 }

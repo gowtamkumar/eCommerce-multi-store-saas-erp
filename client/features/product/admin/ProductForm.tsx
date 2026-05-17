@@ -13,6 +13,7 @@ import { ProductInventoryLedger } from './form/ProductInventoryLedger';
 import { ProductMedia } from './form/ProductMedia';
 import { ProductPricing } from './form/ProductPricing';
 import { ProductSEO } from './form/ProductSEO';
+import { ProductPriceTiers } from './form/ProductPriceTiers';
 
 interface ProductFormProps {
   initialData?: any;
@@ -24,7 +25,6 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
-  const [suppliers, setSuppliers] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
@@ -47,7 +47,6 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     status: initialData?.status || 'active',
     categoryId: initialData?.categoryId || initialData?.category?.id || '',
     brandId: initialData?.brandId || initialData?.brand?.id || '',
-    supplierId: initialData?.supplierId || initialData?.supplier?.id || '',
     isReview: initialData?.isReview ?? true,
     attributes: initialData?.attributes || [] as ProductAttribute[],
     variants: initialData?.variants || [] as ProductVariant[],
@@ -65,12 +64,10 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   useEffect(() => {
     Promise.all([
       fetchAPI('/categories'),
-      fetchAPI('/brands'),
-      fetchAPI('/suppliers')
-    ]).then(([catRes, brandRes, supplierRes]) => {
+      fetchAPI('/brands')
+    ]).then(([catRes, brandRes]) => {
       if (catRes.success) setCategories(catRes.data);
       if (brandRes.success) setBrands(brandRes.data);
-      if (supplierRes.success) setSuppliers(supplierRes.data.items);
     });
   }, []);
 
@@ -113,7 +110,6 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       images: formData.images.split(',').map((s: string) => s.trim()).filter(Boolean),
       categoryId: formData.categoryId || null,
       brandId: formData.brandId || null,
-      supplierId: formData.supplierId || null,
       faqIds: formData.faqSource === 'selection' ? formData.faqIds : [],
       faqs: formData.faqSource === 'manual' ? formData.faqs.map((f: any) => ({
         question: f.question,
@@ -190,7 +186,14 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
           </div>
 
           {isEdit && initialData?.id && (
-            <ProductInventoryLedger productId={initialData.id} />
+            <>
+              <ProductInventoryLedger productId={initialData.id} />
+              <ProductPriceTiers
+                productId={initialData.id}
+                variants={formData.variants}
+                averageCost={formData.averageCost}
+              />
+            </>
           )}
 
           <ProductSEO
@@ -214,14 +217,12 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
             status={formData.status}
             categoryId={formData.categoryId}
             brandId={formData.brandId}
-            supplierId={formData.supplierId}
             isReview={formData.isReview}
             isNew={formData.isNew}
             isHot={formData.isHot}
             isSale={formData.isSale}
             categories={categories}
             brands={brands}
-            suppliers={suppliers}
             onUpdate={handleUpdate}
           />
 

@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer'
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 
@@ -32,4 +32,12 @@ export class UpdateUserDto {
   @IsEnum(UserStatus)
   @IsOptional()
   status?: UserStatus
+
+  @IsUUID()
+  @IsOptional()
+  branchId?: string
+
+  @IsUUID()
+  @IsOptional()
+  warehouseId?: string
 }

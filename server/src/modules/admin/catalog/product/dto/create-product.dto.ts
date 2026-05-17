@@ -116,7 +116,11 @@ export class CreateProductDto {
   @IsOptional()
   barcode?: string
 
-  @ApiProperty({ required: false, enum: ['SIMPLE', 'VARIABLE', 'BUNDLE', 'SERVICE'], default: 'SIMPLE' })
+  @ApiProperty({
+    required: false,
+    enum: ['SIMPLE', 'VARIABLE', 'BUNDLE', 'SERVICE'],
+    default: 'SIMPLE',
+  })
   @IsEnum(['SIMPLE', 'VARIABLE', 'BUNDLE', 'SERVICE'])
   @IsOptional()
   productType?: 'SIMPLE' | 'VARIABLE' | 'BUNDLE' | 'SERVICE'

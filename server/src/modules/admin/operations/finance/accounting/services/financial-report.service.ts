@@ -17,7 +17,7 @@ export class FinancialReportService {
     const sales = accounts
       .filter((a) => a.category === AccountCategory.SALES)
       .reduce((sum, a) => sum + Number(a.balance), 0)
-    
+
     const cogs = accounts
       .filter((a) => a.category === AccountCategory.COGS)
       .reduce((sum, a) => sum + Number(a.balance), 0)
@@ -45,16 +45,20 @@ export class FinancialReportService {
     const accounts = await repo.find({ where: { tenantId } })
 
     const assets = accounts
-      .filter((a) => [AccountCategory.CASH_BANK, AccountCategory.INVENTORY, AccountCategory.RECEIVABLE].includes(a.category))
-      .map(a => ({ name: a.name, balance: Number(a.balance) }))
-    
+      .filter((a) =>
+        [AccountCategory.CASH_BANK, AccountCategory.INVENTORY, AccountCategory.RECEIVABLE].includes(
+          a.category,
+        ),
+      )
+      .map((a) => ({ name: a.name, balance: Number(a.balance) }))
+
     const liabilities = accounts
       .filter((a) => a.category === AccountCategory.PAYABLE)
-      .map(a => ({ name: a.name, balance: Number(a.balance) }))
+      .map((a) => ({ name: a.name, balance: Number(a.balance) }))
 
     const equity = accounts
       .filter((a) => a.category === AccountCategory.EQUITY)
-      .map(a => ({ name: a.name, balance: Number(a.balance) }))
+      .map((a) => ({ name: a.name, balance: Number(a.balance) }))
 
     return {
       assets,

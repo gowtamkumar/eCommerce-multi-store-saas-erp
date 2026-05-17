@@ -6,7 +6,6 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 @Entity('devices')
 @Index(['tenantId', 'token'], { unique: true })
 export class DeviceEntity extends BaseEntity {
-
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
 

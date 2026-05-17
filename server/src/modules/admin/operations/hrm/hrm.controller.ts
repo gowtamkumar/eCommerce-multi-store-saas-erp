@@ -33,7 +33,7 @@ import { HrmService } from './hrm.service'
 export class HrmController {
   private readonly logger = new Logger(HrmController.name)
 
-  constructor(private readonly hrmService: HrmService) { }
+  constructor(private readonly hrmService: HrmService) {}
 
   @Get('dashboard/stats')
   async getDashboardStats(
@@ -263,7 +263,9 @@ export class HrmController {
   async findAllAttendanceSessions(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAllAttendanceSessions.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called findAllAttendanceSessions.`,
+    )
     const res = await this.hrmService.findAllAttendanceSessions(ctx)
     return {
       success: true,
@@ -309,7 +311,9 @@ export class HrmController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findPayrollSlipsByBatch for ${id}.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called findPayrollSlipsByBatch for ${id}.`,
+    )
     const res = await this.hrmService.findPayrollSlipsByBatch(id, ctx)
     return {
       success: true,
@@ -403,7 +407,9 @@ export class HrmController {
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getEmployeeShifts for ${id}.`)
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called getEmployeeShifts for ${id}.`,
+    )
     const res = await this.hrmService.findEmployeeShiftAssignments(id, ctx)
     return {
       success: true,

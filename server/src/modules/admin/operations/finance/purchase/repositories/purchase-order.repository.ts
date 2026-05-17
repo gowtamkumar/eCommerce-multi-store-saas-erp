@@ -11,7 +11,7 @@ export class PurchaseOrderRepository {
   constructor(
     @InjectRepository(PurchaseOrderEntity)
     private readonly repo: Repository<PurchaseOrderEntity>,
-  ) { }
+  ) {}
 
   private getRepo(manager?: EntityManager): Repository<PurchaseOrderEntity> {
     return manager ? manager.getRepository(PurchaseOrderEntity) : this.repo

@@ -1,4 +1,5 @@
 import { PromotionType } from "@/lib/enums/promotion-type.enum";
+import type { Promotion as ServicePromotion } from "@/services/promotion";
 
 export interface PromotionPagination {
     total: number;
@@ -43,19 +44,7 @@ export interface Product {
 }
 
 
-export interface Promotion {
-    id: string;
-    name: string;
-    slug: string;
-    description?: string;
-    promotionType: PromotionType;
-    value?: number;
-    targetType: string;
-    minOrderValue?: number;
-    startDate?: string;
-    endDate?: string;
-    isActive: boolean;
-}
+export type Promotion = ServicePromotion;
 
 export interface OfferGroup {
     promotion: Promotion;

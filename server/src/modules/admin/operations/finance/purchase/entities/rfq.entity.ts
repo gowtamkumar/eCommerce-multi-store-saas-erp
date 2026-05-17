@@ -9,7 +9,7 @@ export enum RFQStatus {
   OPEN = 'OPEN',
   CLOSED = 'CLOSED',
   AWARDED = 'AWARDED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 
 @Entity('rfqs')
@@ -45,6 +45,6 @@ export class RfqEntity extends BaseEntity {
   @JoinColumn({ name: 'created_by' })
   createdBy: UserEntity
 
-  @OneToMany(() => QuotationEntity, quotation => quotation.rfq)
+  @OneToMany(() => QuotationEntity, (quotation) => quotation.rfq)
   quotations: QuotationEntity[]
 }

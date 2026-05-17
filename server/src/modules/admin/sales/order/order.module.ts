@@ -12,6 +12,7 @@ import { ReturnService } from '@/modules/admin/sales/order/services/return.servi
 import { CartModule } from '@/modules/store/cart/cart.module'
 import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping-address.module'
 import { Module } from '@nestjs/common'
+import { PricingModule } from '@/modules/admin/catalog/pricing/pricing.module'
 import { PaymentModule } from '../payment/payment.module'
 import { BullModule } from '@nestjs/bullmq'
 import { OrderProcessor } from './queue/order.processor'
@@ -35,10 +36,11 @@ import { forwardRef } from '@nestjs/common'
     MailModule,
     SmsModule,
     PushModule,
+    PricingModule,
     forwardRef(() => FulfillmentModule),
   ],
   controllers: [OrderController, ReturnController], // Registered
   providers: [OrderService, ReturnService, OrderProcessor, OrderProcessHelper], // Registered
   exports: [OrderService, ReturnService],
 })
-export class OrderModule { }
+export class OrderModule {}

@@ -66,7 +66,7 @@ export default function CreateOrder() {
         if (customerSearch.length > 2) {
             const timer = setTimeout(async () => {
                 try {
-                    const res = await fetchAPI(`/users?search=${customerSearch}`);
+                    const res = await fetchAPI(`/users?q=${customerSearch}`);
                     if (res.data) {
                         setCustomers(res.data);
                     }
@@ -85,7 +85,7 @@ export default function CreateOrder() {
         if (productSearch.length > 2) {
             const timer = setTimeout(async () => {
                 try {
-                    const res = await fetchAPI(`/products?search=${productSearch}`);
+                    const res = await fetchAPI(`/products?q=${productSearch}`);
                     if (res.data) {
                         setProducts(res.data);
                     }
@@ -229,12 +229,12 @@ export default function CreateOrder() {
         setLoading(true);
         try {
             const orderData = {
-                userId: selectedCustomer?.id,
+                userId: selectedCustomer?.id || undefined,
                 customerName: manualCustomer.name,
-                customerEmail: manualCustomer.email,
+                customerEmail: manualCustomer.email || undefined,
                 customerPhone: String(phone),
                 address: shippingData.address,
-                orderNotes: shippingData.notes,
+                orderNotes: shippingData.notes || undefined,
                 paymentMethod: PaymentMethod.COD,
                 currency: selectedCurrency.code,
                 currencyRate: selectedCurrency.rate,

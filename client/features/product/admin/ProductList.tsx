@@ -224,7 +224,7 @@ export default function ProductList({
                       <div className="font-black text-slate-900 dark:text-white font-mono text-sm">
                         {formatPrice(product.price || 0)}
                       </div>
-                      {product.discountAmount > 0 && (
+                      {(product.discountAmount ?? 0) > 0 && (
                         <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
                           -{product.discountAmount}{product.discountType === 'percentage' ? '%' : ''} off
                         </div>
@@ -233,12 +233,12 @@ export default function ProductList({
 
                     {/* Wholesale Price */}
                     <td className="px-5 py-4">
-                      {product.wholesalePrice > 0 ? (
+                      {(product.wholesalePrice ?? 0) > 0 ? (
                         <div>
                           <div className="font-black text-indigo-700 dark:text-indigo-400 font-mono text-sm">
-                            {formatPrice(product.wholesalePrice)}
+                            {formatPrice(product.wholesalePrice ?? 0)}
                           </div>
-                          {product.minWholesaleQty > 1 && (
+                          {(product.minWholesaleQty ?? 0) > 1 && (
                             <div className="text-[10px] text-slate-400 font-mono">MOQ: {product.minWholesaleQty}</div>
                           )}
                         </div>
@@ -246,10 +246,10 @@ export default function ProductList({
                         <span className="text-[10px] text-slate-300 dark:text-slate-600">Not set</span>
                       )}
                     </td>
-
+ 
                     {/* Margin */}
                     <td className="px-5 py-4">
-                      <MarginBadge price={product.price} cost={product.averageCost} />
+                      <MarginBadge price={product.price} cost={product.averageCost ?? 0} />
                     </td>
 
                     {/* Status */}

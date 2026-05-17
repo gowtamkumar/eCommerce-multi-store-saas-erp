@@ -36,8 +36,9 @@ export const ProductInventoryLedger = ({ productId }: ProductInventoryLedgerProp
   const loadLedger = async () => {
     try {
       setLoading(true);
-      const res = await fetchAPI(`/operations/inventory/product/${productId}`);
-      setEntries(res || []);
+      const res = await fetchAPI(`/inventory-ledger/product/${productId}`);
+      const data = res?.data || res || [];
+      setEntries(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load ledger', error);
     } finally {
@@ -65,7 +66,7 @@ export const ProductInventoryLedger = ({ productId }: ProductInventoryLedgerProp
           <p className="text-sm text-slate-500">Audit trail of all physical stock movements.</p>
         </div>
         <Link
-          href={`/admin/operations/procurement/purchase-orders/new?productId=${productId}`}
+          href={`/admin/procurement/orders/new?productId=${productId}`}
           className="flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 rounded-xl font-semibold transition-colors text-sm"
         >
           <PackagePlus className="w-4 h-4" />

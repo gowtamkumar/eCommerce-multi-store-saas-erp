@@ -37,20 +37,25 @@ export class CacheRepository {
         // Step 1: Try to find the underlying redis client
         // This handles cache-manager-redis-yet, keyv-redis, and older cache-manager-redis-store
         const underlyingStore = store.store || store._cache || store
-        const client = underlyingStore.client || underlyingStore.redisClient || underlyingStore._client || underlyingStore.instance
+        const client =
+          underlyingStore.client ||
+          underlyingStore.redisClient ||
+          underlyingStore._client ||
+          underlyingStore.instance
 
         if (client && (typeof client.keys === 'function' || typeof client.scan === 'function')) {
           this.logger.debug(`Found Redis client in store. Using native keys/scan.`)
-          const keys = typeof client.keys === 'function' 
-            ? await client.keys(pattern)
-            : await this.scanRecursive(client, pattern)
+          const keys =
+            typeof client.keys === 'function'
+              ? await client.keys(pattern)
+              : await this.scanRecursive(client, pattern)
 
           if (Array.isArray(keys) && keys.length > 0) {
             await (client.del || client.delete).call(client, ...keys)
             this.logger.log(`[CACHE] Deleted ${keys.length} keys for pattern: ${pattern}`)
           }
           cleared = true
-        } 
+        }
         // Step 2: Fallback if the store itself has a keys method
         else if (typeof store.keys === 'function') {
           const keys = await store.keys(pattern)

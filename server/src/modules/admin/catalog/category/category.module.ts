@@ -11,4 +11,4 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
   providers: [CategoryService],
   exports: [CategoryService],
 })
-export class CategoryModule { }
+export class CategoryModule {}

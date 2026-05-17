@@ -15,6 +15,7 @@ import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.serv
 import { EntityManager } from 'typeorm'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { PricingService } from '@/modules/admin/catalog/pricing/pricing.service'
 
 @Injectable()
 export class OrderProcessHelper {
@@ -23,6 +24,7 @@ export class OrderProcessHelper {
   constructor(
     private readonly inventoryService: InventoryLedgerService,
     private readonly couponService: CouponService,
+    private readonly pricingService: PricingService,
   ) {}
 
   /**
@@ -58,27 +60,49 @@ export class OrderProcessHelper {
       }
     }
 
-    const currentStock = variant ? variant.stock : product.stock
-    if (currentStock < quantity) {
-      throw new BadRequestException(
-        `Insufficient stock for ${product.name}${variant ? ' (Variant)' : ''}. Only ${currentStock} items available.`,
+    const isService = product.productType === 'SERVICE'
+
+    if (!isService) {
+      const currentStock = await this.inventoryService.getGlobalLiveStock(
+        product.id,
+        variant?.id || null,
+        tenantId,
+        manager,
+      )
+      if (currentStock < quantity) {
+        throw new BadRequestException(
+          `Insufficient stock for ${product.name}${variant ? ' (Variant)' : ''}. Only ${currentStock} items available.`,
+        )
+      }
+
+      // Reserve stock immediately (Soft-deduct from product.stock, but no physical movement)
+      await this.inventoryService.createLedgerEntry(
+        {
+          productId: product.id,
+          variantId: variant?.id,
+          quantity: quantity,
+          type: InventoryTransactionType.RESERVATION,
+          referenceType: InventoryTransactionReferenceType.ORDER,
+        },
+        ctx,
+        manager,
       )
     }
 
-    // Reserve stock immediately (Soft-deduct from product.stock, but no physical movement)
-    await this.inventoryService.createLedgerEntry(
-      {
-        productId: product.id,
-        variantId: variant?.id,
-        quantity: quantity,
-        type: InventoryTransactionType.RESERVATION,
-        referenceType: InventoryTransactionReferenceType.ORDER,
-      },
-      ctx,
-      manager,
+    const tierPrice = await this.pricingService.getApplicablePrice(
+      product.id,
+      variant?.id || null,
+      quantity,
+      null, // Falls back to default price book
+      tenantId,
     )
 
-    const unitPrice = variant?.price ? Number(variant.price) : Number(product.price)
+    const unitPrice =
+      tierPrice !== null
+        ? tierPrice
+        : variant?.price
+          ? Number(variant.price)
+          : Number(product.price)
 
     let discountAmount: number
     if (itemPricingDto?.discount !== undefined) {

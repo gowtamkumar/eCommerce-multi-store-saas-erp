@@ -28,4 +28,8 @@ export class FilterProductDto extends PaginationDto {
   @IsOptional()
   @IsString()
   attributes?: string // JSON string of selected attributes
+
+  @IsOptional()
+  @IsString()
+  exclude?: string
 }

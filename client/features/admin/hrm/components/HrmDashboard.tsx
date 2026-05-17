@@ -13,29 +13,10 @@ import {
   ArrowRight,
   Plus,
   UserCheck,
-  FileText
 } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Link from 'next/link';
-import { getHrmDashboardStats } from '@/services/hrm';
-
-// Mock data for initial UI implementation
-const MOCK_STATS = [
-  { label: 'Total Employees', value: '124', subValue: '+4 this month', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-  { label: 'Present Today', value: '118', subValue: '95% attendance', icon: UserCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-  { label: 'Pending Leaves', value: '12', subValue: 'Requires approval', icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-  { label: 'Active Jobs', value: '6', subValue: '48 applications', icon: Briefcase, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
-];
-
-const MOCK_CHART_DATA = [
-  { name: 'Mon', attendance: 110, payroll: 4500 },
-  { name: 'Tue', attendance: 115, payroll: 4600 },
-  { name: 'Wed', attendance: 112, payroll: 4550 },
-  { name: 'Thu', attendance: 118, payroll: 4700 },
-  { name: 'Fri', attendance: 114, payroll: 4650 },
-  { name: 'Sat', attendance: 45, payroll: 2000 },
-  { name: 'Sun', attendance: 30, payroll: 1500 },
-];
+import { getHrmDashboardStats, getAttendanceSessions } from '@/services/hrm';
 
 const StatCard = ({ stat }: any) => (
   <motion.div 
@@ -82,12 +63,49 @@ const QuickAction = ({ label, icon: Icon, href, color }: any) => (
 export default function HrmDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
+  const [chartData, setChartData] = useState<any[]>([
+    { name: 'Mon', attendance: 0 },
+    { name: 'Tue', attendance: 0 },
+    { name: 'Wed', attendance: 0 },
+    { name: 'Thu', attendance: 0 },
+    { name: 'Fri', attendance: 0 },
+    { name: 'Sat', attendance: 0 },
+    { name: 'Sun', attendance: 0 },
+  ]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getHrmDashboardStats();
-        setStats(data);
+        setLoading(true);
+        const [statsData, sessionsData] = await Promise.all([
+          getHrmDashboardStats().catch(() => null),
+          getAttendanceSessions().catch(() => [])
+        ]);
+
+        if (statsData) {
+          setStats(statsData);
+        }
+
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayCounts: Record<string, number> = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+        
+        if (Array.isArray(sessionsData)) {
+          sessionsData.forEach((s: any) => {
+            if (s.clockIn) {
+              const d = new Date(s.clockIn);
+              const dayName = days[d.getDay()];
+              if (dayCounts[dayName] !== undefined) {
+                dayCounts[dayName]++;
+              }
+            }
+          });
+        }
+
+        const updatedChart = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(name => ({
+          name,
+          attendance: dayCounts[name] || 0
+        }));
+        setChartData(updatedChart);
       } catch (err) {
         console.error('Failed to fetch stats:', err);
       } finally {
@@ -98,10 +116,10 @@ export default function HrmDashboard() {
   }, []);
 
   const statCards = [
-    { label: 'Total Employees', value: stats?.employeeCount || '0', subValue: '+4 this month', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-    { label: 'Present Today', value: stats?.attendanceCount || '0', subValue: `${Math.round(stats?.attendanceRate || 0)}% attendance`, icon: UserCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-    { label: 'Pending Leaves', value: '12', subValue: 'Requires approval', icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-    { label: 'Active Jobs', value: stats?.jobCount || '0', subValue: `${stats?.applicantCount || 0} applications`, icon: Briefcase, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { label: 'Total Employees', value: stats?.employeeCount || '0', subValue: 'Registered personnel', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { label: 'Present Today', value: stats?.attendanceCount || '0', subValue: `${Math.round(stats?.attendanceRate || 0)}% attendance today`, icon: UserCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { label: 'Pending Leaves', value: stats?.leaveCount !== undefined ? stats.leaveCount.toString() : '0', subValue: 'Requires manager approval', icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { label: 'Active Jobs', value: stats?.jobCount || '0', subValue: `${stats?.applicantCount || 0} applicants listed`, icon: Briefcase, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
   ];
 
   return (
@@ -117,10 +135,12 @@ export default function HrmDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-6 py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-colors flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Add Employee
-          </button>
+          <Link href="/admin/hrm/employees">
+            <button className="px-6 py-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-colors flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Manage Employees
+            </button>
+          </Link>
         </div>
       </div>
 
@@ -140,18 +160,17 @@ export default function HrmDashboard() {
                 Attendance <span className="text-indigo-600">Trends</span>
               </h2>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                Daily activity logs for the current week
+                Daily clock-in totals for the current week
               </p>
             </div>
             <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-1 rounded-xl">
               <button className="px-4 py-1.5 bg-white dark:bg-slate-600 shadow-sm rounded-lg text-[10px] font-black uppercase tracking-widest">Week</button>
-              <button className="px-4 py-1.5 text-slate-400 text-[10px] font-black uppercase tracking-widest">Month</button>
             </div>
           </div>
           
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={MOCK_CHART_DATA}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1}/>
@@ -170,6 +189,7 @@ export default function HrmDashboard() {
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+                  allowDecimals={false}
                 />
                 <Tooltip 
                   contentStyle={{ 
@@ -216,12 +236,14 @@ export default function HrmDashboard() {
                 <h3 className="text-sm font-black uppercase tracking-[0.2em]">Live Insights</h3>
               </div>
               <p className="text-2xl font-black italic mb-4 leading-tight">
-                98% Productivity rate <br/>
-                <span className="text-indigo-400">across all hubs.</span>
+                Real-Time Operations <br/>
+                <span className="text-indigo-400">across all departments.</span>
               </p>
-              <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-300 hover:text-white transition-colors">
-                View Full Report <ArrowRight className="w-3 h-3" />
-              </button>
+              <Link href="/admin/hrm/employees">
+                <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-300 hover:text-white transition-colors">
+                  View Employees <ArrowRight className="w-3 h-3" />
+                </button>
+              </Link>
             </div>
           </div>
         </div>

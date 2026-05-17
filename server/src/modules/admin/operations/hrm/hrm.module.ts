@@ -48,4 +48,4 @@ import { UserModule } from '@/modules/admin/core/user/user.module'
   providers: [HrmService, HrmRepository],
   exports: [HrmService],
 })
-export class HrmModule { }
+export class HrmModule {}

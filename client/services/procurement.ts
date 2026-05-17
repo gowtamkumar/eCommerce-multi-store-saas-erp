@@ -2,12 +2,12 @@ import { fetchAPI } from './api';
 
 // --- Suppliers ---
 export async function getSuppliers() {
-  const res = await fetchAPI('/operations/procurement/suppliers');
-  return res.data;
+  const res = await fetchAPI('/suppliers?limit=100');
+  return Array.isArray(res.data) ? res.data : (res.data?.items || []);
 }
 
 export async function createSupplier(data: any) {
-  const res = await fetchAPI('/operations/procurement/suppliers', {
+  const res = await fetchAPI('/suppliers', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -16,7 +16,7 @@ export async function createSupplier(data: any) {
 
 // --- Purchase Orders ---
 export async function createPurchaseOrder(data: any) {
-  const res = await fetchAPI('/operations/procurement/orders', {
+  const res = await fetchAPI('/purchase-orders', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -25,7 +25,7 @@ export async function createPurchaseOrder(data: any) {
 
 // --- GRN ---
 export async function processGRN(data: any) {
-  const res = await fetchAPI('/operations/procurement/grn', {
+  const res = await fetchAPI('/operations/logistics/grn', {
     method: 'POST',
     body: JSON.stringify(data),
   });

@@ -12,9 +12,7 @@ import { BranchService } from './services/branch.service'
 import { WarehouseService } from './services/warehouse.service'
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([BranchEntity, WarehouseEntity, WarehouseBinEntity]),
-  ],
+  imports: [TypeOrmModule.forFeature([BranchEntity, WarehouseEntity, WarehouseBinEntity])],
   controllers: [BranchController, WarehouseController],
   providers: [
     BranchService,

@@ -11,4 +11,4 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
   controllers: [CustomerController],
   exports: [LeadModule, SubscriberModule],
 })
-export class CustomerModule { }
+export class CustomerModule {}

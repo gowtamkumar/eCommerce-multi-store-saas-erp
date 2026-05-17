@@ -15,6 +15,8 @@ export interface ProductVariant {
   images?: string[];
   isDefault?: boolean;
   combination: Record<string, string>;
+  barcode?: string;
+  wholesalePrice?: number;
 }
 
 export interface Category {
@@ -51,6 +53,9 @@ export interface Product {
   attributes?: ProductAttribute[];
   variants?: ProductVariant[];
   landingPage?: { id: string; slug: string };
+  wholesalePrice?: number;
+  minWholesaleQty?: number;
+  averageCost?: number;
   createdAt?: string;
   updatedAt?: string;
 }

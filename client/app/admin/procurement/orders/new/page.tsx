@@ -15,11 +15,15 @@ import {
   Calculator
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getSuppliers, createPurchaseOrder } from '@/services/procurement';
+import { fetchAPI } from '@/services/api';
 
 export default function NewPurchaseOrder() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryProductId = searchParams.get('productId');
+  
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -30,17 +34,40 @@ export default function NewPurchaseOrder() {
     expectedDeliveryDate: '',
     notes: '',
     items: [
-      { productId: 'P-001', productName: '', quantityOrdered: 1, unitPrice: 0, totalPrice: 0 }
+      { productId: '', productName: '', quantityOrdered: 1, unitPrice: 0, totalPrice: 0 }
     ]
   });
 
   useEffect(() => {
-    const fetchSuppliers = async () => {
+    const fetchInitialData = async () => {
       const data = await getSuppliers();
       setSuppliers(data);
+
+      if (queryProductId) {
+        try {
+          const productRes = await fetchAPI(`/products/${queryProductId}`);
+          if (productRes) {
+            setOrderData((prev) => ({
+              ...prev,
+              supplierId: productRes.supplierId || prev.supplierId || '',
+              items: [
+                {
+                  productId: productRes.id,
+                  productName: productRes.name,
+                  quantityOrdered: 10, // Recommended standard restock level
+                  unitPrice: Number(productRes.price || 0),
+                  totalPrice: Number(productRes.price || 0) * 10,
+                }
+              ]
+            }));
+          }
+        } catch (err) {
+          console.error('Failed to pre-populate product in PO:', err);
+        }
+      }
     };
-    fetchSuppliers();
-  }, []);
+    fetchInitialData();
+  }, [queryProductId]);
 
   const addItem = () => {
     setOrderData({

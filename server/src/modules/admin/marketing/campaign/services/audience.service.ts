@@ -38,8 +38,13 @@ export class AudienceService {
    * Fetches the audience for a campaign based on targeting options.
    * Deduplicates members by email to prevent double-sending.
    */
-  async getAudience(tenantId: string, options: AudienceOptions = { targetUsers: true }): Promise<AudienceMember[]> {
-    this.logger.log(`Fetching audience for tenant: ${tenantId} with options: ${JSON.stringify(options)}`)
+  async getAudience(
+    tenantId: string,
+    options: AudienceOptions = { targetUsers: true },
+  ): Promise<AudienceMember[]> {
+    this.logger.log(
+      `Fetching audience for tenant: ${tenantId} with options: ${JSON.stringify(options)}`,
+    )
 
     const membersMap = new Map<string, AudienceMember>()
 
@@ -49,7 +54,7 @@ export class AudienceService {
         where: { tenantId, status: 'active' as any },
         select: ['id', 'email', 'phone', 'pushToken', 'fcmToken', 'name'],
       })
-      users.forEach(u => {
+      users.forEach((u) => {
         if (u.email) {
           membersMap.set(u.email.toLowerCase(), {
             id: u.id,
@@ -58,7 +63,7 @@ export class AudienceService {
             pushToken: u.pushToken,
             fcmToken: u.fcmToken,
             name: u.name,
-            source: 'user'
+            source: 'user',
           })
         }
       })
@@ -70,13 +75,13 @@ export class AudienceService {
         where: { tenantId, isActive: true },
         select: ['id', 'email'],
       })
-      subscribers.forEach(s => {
+      subscribers.forEach((s) => {
         const email = s.email.toLowerCase()
         if (!membersMap.has(email)) {
           membersMap.set(email, {
             id: s.id,
             email: s.email,
-            source: 'subscriber'
+            source: 'subscriber',
           })
         }
       })
@@ -88,7 +93,7 @@ export class AudienceService {
         where: { tenantId },
         select: ['id', 'email', 'phone', 'name'],
       })
-      leads.forEach(l => {
+      leads.forEach((l) => {
         const email = l.email.toLowerCase()
         if (!membersMap.has(email)) {
           membersMap.set(email, {
@@ -96,7 +101,7 @@ export class AudienceService {
             email: l.email,
             phone: l.phone,
             name: l.name,
-            source: 'lead'
+            source: 'lead',
           })
         }
       })

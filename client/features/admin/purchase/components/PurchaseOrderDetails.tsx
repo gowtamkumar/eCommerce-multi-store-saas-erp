@@ -2,7 +2,7 @@
 import { useSettings } from '@/hooks/SettingsContext';
 import { PurchaseOrderStatus } from '@/lib/enums/purchase-order.type.enum';
 import { fetchAPI } from '@/services/api';
-import { ArrowLeft, Calendar, CheckCircle, CreditCard, FileText, History, Landmark, Package, Plus, Truck, XCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, CheckCircle, CreditCard, FileText, History, Landmark, Package, Plus, Truck, Warehouse, Building2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -15,6 +15,11 @@ export default function PurchaseOrderDetails() {
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
+    const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [branches, setBranches] = useState<any[]>([]);
+    const [receiveForm, setReceiveForm] = useState({ warehouseId: '', branchId: '' });
+    const [isReceiving, setIsReceiving] = useState(false);
     const [paymentForm, setPaymentForm] = useState({
         amount: '',
         paymentMethod: 'Bank Transfer',
@@ -38,17 +43,46 @@ export default function PurchaseOrderDetails() {
         }
     };
 
-    const handleReceive = async () => {
-        const toastId = toast.loading('Receiving order and updating stock...');
+    const openReceiveModal = async () => {
+        try {
+            const [whRes, brRes] = await Promise.all([
+                fetchAPI('/system/warehouses'),
+                fetchAPI('/system/branches'),
+            ]);
+            const whs = Array.isArray(whRes.data) ? whRes.data : (whRes.data?.items || []);
+            const brs = Array.isArray(brRes.data) ? brRes.data : (brRes.data?.items || []);
+            setWarehouses(whs);
+            setBranches(brs);
+            setReceiveForm({
+                warehouseId: '',
+                branchId: '',
+            });
+            setIsReceiveModalOpen(true);
+        } catch {
+            toast.error('Could not load warehouses / branches');
+        }
+    };
+
+    const handleReceive = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsReceiving(true);
+        const toastId = toast.loading('Receiving order — updating stock & AP ledger...');
         try {
             await fetchAPI(`/purchase-orders/${id}/status`, {
                 method: 'PATCH',
-                body: JSON.stringify({ status: PurchaseOrderStatus.RECEIVED })
+                body: JSON.stringify({
+                    status: PurchaseOrderStatus.RECEIVED,
+                    warehouseId: receiveForm.warehouseId || undefined,
+                    branchId: receiveForm.branchId || undefined,
+                })
             });
-            toast.success('Order received! Inventory updated.', { id: toastId });
+            toast.success('Order received! Stock updated & GRN created.', { id: toastId });
+            setIsReceiveModalOpen(false);
             fetchOrder();
-        } catch (error) {
-            toast.error('Failed to receive order', { id: toastId });
+        } catch (error: any) {
+            toast.error(error?.message || 'Failed to receive order', { id: toastId });
+        } finally {
+            setIsReceiving(false);
         }
     };
 
@@ -111,7 +145,7 @@ export default function PurchaseOrderDetails() {
                 <div className="flex items-center gap-4">
                     {order.status !== PurchaseOrderStatus.RECEIVED && order.status !== PurchaseOrderStatus.CANCELLED && (
                         <button
-                            onClick={handleReceive}
+                            onClick={openReceiveModal}
                             className="px-8 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-black transition-all shadow-xl shadow-brand-500/30 hover:scale-[1.02] active:scale-95 flex items-center gap-3"
                         >
                             <Package className="w-6 h-6" />
@@ -299,6 +333,84 @@ export default function PurchaseOrderDetails() {
                     </div>
                 </div>
             </div>
+
+            {/* Receive Products Modal */}
+            {isReceiveModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-in zoom-in-95 duration-300">
+                        <div className="p-8 bg-emerald-600 text-white flex items-center justify-between">
+                            <div>
+                                <h3 className="text-2xl font-black tracking-tight">Receive Products</h3>
+                                <p className="text-emerald-100 text-sm mt-1">Select destination — stock & AP ledger will update automatically</p>
+                            </div>
+                            <button onClick={() => setIsReceiveModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><XCircle className="w-6 h-6" /></button>
+                        </div>
+                        <form onSubmit={handleReceive} className="p-8 space-y-6">
+                            {/* Items Summary */}
+                            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 space-y-2 max-h-40 overflow-y-auto">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Items to Receive</p>
+                                {order.items?.map((item: any) => (
+                                    <div key={item.id} className="flex justify-between items-center text-sm">
+                                        <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[60%]">{item.product?.name || 'Product'}</span>
+                                        <span className="font-black text-slate-900 dark:text-white bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                            Qty: {item.quantity}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Warehouse Select */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 flex items-center gap-2">
+                                    <Warehouse className="w-3 h-3" /> Destination Warehouse
+                                </label>
+                                <select
+                                    required
+                                    value={receiveForm.warehouseId}
+                                    onChange={e => setReceiveForm(f => ({ ...f, warehouseId: e.target.value }))}
+                                    className="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-emerald-500 outline-none font-semibold text-sm transition-all"
+                                >
+                                    <option value="" disabled>Select destination warehouse...</option>
+                                    {warehouses.map(w => <option key={w.id} value={w.id}>{w.name} ({w.code})</option>)}
+                                </select>
+                            </div>
+
+                            {/* Branch Select */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 flex items-center gap-2">
+                                    <Building2 className="w-3 h-3" /> Branch
+                                </label>
+                                <select
+                                    required
+                                    value={receiveForm.branchId}
+                                    onChange={e => setReceiveForm(f => ({ ...f, branchId: e.target.value }))}
+                                    className="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl focus:border-emerald-500 outline-none font-semibold text-sm transition-all"
+                                >
+                                    <option value="" disabled>Select branch...</option>
+                                    {branches.map(b => <option key={b.id} value={b.id}>{b.name} ({b.code})</option>)}
+                                </select>
+                            </div>
+
+                            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-4 border border-emerald-100 dark:border-emerald-900/30">
+                                <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium leading-relaxed">
+                                    ✓ A verified GRN will be created automatically<br/>
+                                    ✓ Product stock levels will be incremented<br/>
+                                    ✓ Supplier AP ledger will be updated
+                                </p>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isReceiving}
+                                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-2xl font-black transition-all shadow-xl shadow-emerald-500/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3"
+                            >
+                                <CheckCircle className="w-5 h-5" />
+                                {isReceiving ? 'Processing...' : 'Confirm Receipt & Update Stock'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Payment Modal */}
             {isPaymentModalOpen && (

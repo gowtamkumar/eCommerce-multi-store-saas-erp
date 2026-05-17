@@ -1,12 +1,13 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { OrderStatus } from '@/common/enums/order-status.enum'
+import { OrderSource } from '@/common/enums/order-source.enum'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { PaymentStatus } from '@/common/enums/payment-status.enum'
+import { ShippingAddressEntity } from '@/modules/store/shipping-address/entities/shipping-address.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Index } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { OrderItemEntity } from './order-item.entity'
 import { OrderReturnEntity } from './order-return.entity'
-import { ShippingAddressEntity } from '@/modules/store/shipping-address/entities/shipping-address.entity'
 
 @Entity('orders')
 @Index(['tenantId', 'createdAt'])
@@ -56,7 +57,15 @@ export class OrderEntity extends BaseEntity {
   })
   status: OrderStatus
 
-  @Column({ type: 'enum', name: 'payment_method', enum: PaymentMethod })
+  @Column({
+    type: 'enum',
+    name: 'order_source',
+    enum: OrderSource,
+    default: OrderSource.WEBSITE,
+  })
+  orderSource: OrderSource
+
+  @Column({ type: 'varchar', name: 'payment_method', length: 50, nullable: true })
   paymentMethod: PaymentMethod
 
   @Column({

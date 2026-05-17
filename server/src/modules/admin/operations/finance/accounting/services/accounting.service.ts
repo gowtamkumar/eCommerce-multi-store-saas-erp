@@ -19,7 +19,9 @@ export class AccountingService {
    * Should be called during tenant onboarding.
    */
   async initializeTenantCOA(ctx: RequestContextDto, manager?: EntityManager) {
-    const repo = manager ? manager.getRepository(AccountEntity) : this.dataSource.getRepository(AccountEntity)
+    const repo = manager
+      ? manager.getRepository(AccountEntity)
+      : this.dataSource.getRepository(AccountEntity)
     const tenantId = ctx.tenantId
 
     const count = await repo.count({ where: { tenantId } })
@@ -74,7 +76,9 @@ export class AccountingService {
         .reduce((sum, l) => sum + Number(l.amount), 0)
 
       if (Math.abs(debitTotal - creditTotal) > 0.01) {
-        throw new BadRequestException(`Unbalanced journal entry: Debits (${debitTotal}) != Credits (${creditTotal})`)
+        throw new BadRequestException(
+          `Unbalanced journal entry: Debits (${debitTotal}) != Credits (${creditTotal})`,
+        )
       }
 
       // 2. Create Journal Header
@@ -83,16 +87,18 @@ export class AccountingService {
         totalAmount: debitTotal,
         tenantId,
       })
-      const savedJournal = await em.save(JournalEntryEntity, journal) as JournalEntryEntity
+      const savedJournal = (await em.save(JournalEntryEntity, journal)) as JournalEntryEntity
 
       // 3. Process Ledger Lines
       for (const line of lines) {
-        const account = await em.findOne(AccountEntity, {
+        const account = (await em.findOne(AccountEntity, {
           where: { code: line.accountCode, tenantId },
-        }) as AccountEntity | null
+        })) as AccountEntity | null
 
         if (!account) {
-          throw new NotFoundException(`Account with code ${line.accountCode} not found for tenant ${tenantId}`)
+          throw new NotFoundException(
+            `Account with code ${line.accountCode} not found for tenant ${tenantId}`,
+          )
         }
 
         // Update Account Balance

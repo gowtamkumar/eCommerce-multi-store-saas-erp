@@ -53,7 +53,7 @@ export class OrderRepository {
     tenantId: string,
   ): Promise<{ orders: OrderEntity[]; total: number }> {
     // this.logger.log(`${this.findAllOrders.name} Service Called`)
-    const { page, limit, search, status } = filterDto
+    const { page, limit, search, status, orderSource, paymentStatus } = filterDto
 
     const skip = (page - 1) * limit
 
@@ -65,6 +65,14 @@ export class OrderRepository {
 
     if (status) {
       queryBuilder.andWhere('order.status = :status', { status })
+    }
+
+    if (orderSource) {
+      queryBuilder.andWhere('order.orderSource = :orderSource', { orderSource })
+    }
+
+    if (paymentStatus) {
+      queryBuilder.andWhere('order.paymentStatus = :paymentStatus', { paymentStatus })
     }
 
     if (search) {

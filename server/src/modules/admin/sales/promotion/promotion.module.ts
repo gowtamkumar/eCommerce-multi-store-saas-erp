@@ -20,4 +20,4 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
   providers: [PromotionService, PromotionRepository],
   exports: [PromotionService],
 })
-export class PromotionModule { }
+export class PromotionModule {}

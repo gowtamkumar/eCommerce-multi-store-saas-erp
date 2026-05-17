@@ -12,6 +12,7 @@ import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inve
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.service'
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
+import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
@@ -19,7 +20,14 @@ import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-setti
 import { CartService } from '@/modules/store/cart/cart.service'
 import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
 import { InjectQueue } from '@nestjs/bullmq'
-import { BadRequestException, Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common'
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common'
 import { FulfillmentService } from '@/modules/admin/operations/logistics/fulfillment/fulfillment.service'
 import { Queue } from 'bullmq'
 import { DataSource } from 'typeorm'
@@ -215,10 +223,16 @@ export class OrderService {
     return result
   }
 
-  async findAllOrders(ctx: RequestContextDto): Promise<{ orders: OrderEntity[]; total: number }> {
+  async findAllOrders(filterDto: FilterOrderDto, ctx: RequestContextDto): Promise<{ orders: OrderEntity[]; total: number }> {
     this.logger.log(`${this.findAllOrders.name} Service Called`)
     const tenantId = ctx.tenantId
-    return await this.orderRepository.findAllOrders({ page: 1, limit: 1000 }, tenantId)
+    const page = filterDto.page ? Number(filterDto.page) : 1
+    const limit = filterDto.limit ? Number(filterDto.limit) : 20
+    return await this.orderRepository.findAllOrders({
+      ...filterDto,
+      page,
+      limit,
+    }, tenantId)
   }
 
   async findOneOrder(id: string, ctx: RequestContextDto): Promise<OrderEntity> {
@@ -316,6 +330,7 @@ export class OrderService {
         oldStatus !== OrderStatus.COMPLETED // Don't restore if already completed? Usually, returns handle that.
       ) {
         for (const item of order.items) {
+          if (item.product?.productType === 'SERVICE') continue
           await this.inventoryService.createLedgerEntry(
             {
               productId: item.productId,
@@ -344,10 +359,7 @@ export class OrderService {
       }
 
       // Check for Order Confirmation to Trigger Fulfillment
-      if (
-        updateOrderDto.status === OrderStatus.CONFIRMED &&
-        oldStatus !== OrderStatus.CONFIRMED
-      ) {
+      if (updateOrderDto.status === OrderStatus.CONFIRMED && oldStatus !== OrderStatus.CONFIRMED) {
         await this.fulfillmentService.createFromOrder(id, ctx)
       }
 

@@ -38,12 +38,22 @@ export class PricingService {
     productId: string,
     variantId: string | null,
     quantity: number,
-    priceBookCode: string,
+    priceBookCode: string | null | undefined,
     tenantId: string,
   ) {
-    const pb = await this.priceBookRepo.findOne({
-      where: { code: priceBookCode, tenantId, isActive: true },
-    })
+    let pb = null
+    if (priceBookCode) {
+      pb = await this.priceBookRepo.findOne({
+        where: { code: priceBookCode, tenantId, isActive: true },
+      })
+    }
+
+    if (!pb) {
+      pb = await this.priceBookRepo.findOne({
+        where: { tenantId, isActive: true },
+        order: { createdAt: 'ASC' },
+      })
+    }
 
     if (!pb) return null
 
@@ -60,7 +70,7 @@ export class PricingService {
     // Find the first price where quantity >= minQuantity
     const applicablePrice = prices.find((p) => quantity >= p.minQuantity)
 
-    return applicablePrice ? applicablePrice.price : null
+    return applicablePrice ? Number(applicablePrice.price) : null
   }
 
   async findAllPriceBooks(ctx: RequestContextDto) {
@@ -68,5 +78,21 @@ export class PricingService {
       where: { tenantId: ctx.tenantId },
       order: { createdAt: 'DESC' },
     })
+  }
+
+  async findProductPrices(productId: string, ctx: RequestContextDto) {
+    return await this.productPriceRepo.find({
+      where: { productId, tenantId: ctx.tenantId },
+      relations: ['priceBook', 'variant'],
+      order: { minQuantity: 'ASC' },
+    })
+  }
+
+  async deleteProductPrice(id: string, ctx: RequestContextDto) {
+    const pp = await this.productPriceRepo.findOne({
+      where: { id, tenantId: ctx.tenantId },
+    })
+    if (!pp) throw new NotFoundException('Product price tier not found')
+    return await this.productPriceRepo.remove(pp)
   }
 }

@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Length,
 } from 'class-validator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
@@ -57,4 +58,12 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   image?: string
+
+  @IsUUID()
+  @IsOptional()
+  branchId?: string
+
+  @IsUUID()
+  @IsOptional()
+  warehouseId?: string
 }

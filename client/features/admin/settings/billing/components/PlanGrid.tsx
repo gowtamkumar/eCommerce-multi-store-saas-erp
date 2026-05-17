@@ -58,7 +58,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
                 <ul className="space-y-4">
                     {plan.features?.map((featurePath: string, i: number) => {
                         const featureDisplay = getFeatureDisplay(featurePath);
-                        const FeatureIcon = featureDisplay.icon;
+                        const FeatureIcon = featureDisplay.icon || Check;
                         return (
                             <li key={i} className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300 font-medium font-display">
                                 <div className="p-1.5 bg-brand-50 dark:bg-brand-900/20 rounded-lg shrink-0">

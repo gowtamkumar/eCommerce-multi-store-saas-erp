@@ -190,12 +190,6 @@ export const navGroups = [
         href: "/admin/branches",
         feature: "/admin/branches",
       },
-      {
-        icon: Warehouse,
-        label: "Warehouses",
-        href: "/admin/warehouses",
-        feature: "/admin/warehouses",
-      },
     ],
   },
   {
@@ -250,6 +244,12 @@ export const navGroups = [
       UserRole.SUPER_ADMIN,
     ],
     items: [
+      {
+        icon: ShoppingBag,
+        label: "Point of Sale (POS)",
+        href: "/admin/pos",
+        feature: "/admin/orders",
+      },
       {
         icon: ShoppingBag,
         label: "Orders",
@@ -398,6 +398,12 @@ export const navGroups = [
       UserRole.SUPER_ADMIN,
     ],
     items: [
+      {
+        icon: Warehouse,
+        label: "Warehouses",
+        href: "/admin/warehouses",
+        feature: "/admin/warehouses",
+      },
       {
         icon: Package,
         label: "Inventory",

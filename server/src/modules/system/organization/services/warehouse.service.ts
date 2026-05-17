@@ -1,6 +1,11 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import { CreateWarehouseBinDto, CreateWarehouseDto, UpdateWarehouseBinDto, UpdateWarehouseDto } from '../dto/warehouse.dto'
+import {
+  CreateWarehouseBinDto,
+  CreateWarehouseDto,
+  UpdateWarehouseBinDto,
+  UpdateWarehouseDto,
+} from '../dto/warehouse.dto'
 import { WarehouseBinEntity } from '../entities/warehouse-bin.entity'
 import { WarehouseEntity } from '../entities/warehouse.entity'
 import { WarehouseBinRepository } from '../repositories/warehouse-bin.repository'
@@ -25,18 +30,31 @@ export class WarehouseService {
     return warehouse
   }
 
-  async create(createWarehouseDto: CreateWarehouseDto, ctx: RequestContextDto): Promise<WarehouseEntity> {
-    const existing = await this.warehouseRepository.findByCode(createWarehouseDto.code, ctx.tenantId)
+  async create(
+    createWarehouseDto: CreateWarehouseDto,
+    ctx: RequestContextDto,
+  ): Promise<WarehouseEntity> {
+    const existing = await this.warehouseRepository.findByCode(
+      createWarehouseDto.code,
+      ctx.tenantId,
+    )
     if (existing) {
       throw new ConflictException('Warehouse code already exists')
     }
     return this.warehouseRepository.create(createWarehouseDto, ctx)
   }
 
-  async update(id: string, updateWarehouseDto: UpdateWarehouseDto, ctx: RequestContextDto): Promise<WarehouseEntity> {
+  async update(
+    id: string,
+    updateWarehouseDto: UpdateWarehouseDto,
+    ctx: RequestContextDto,
+  ): Promise<WarehouseEntity> {
     const warehouse = await this.findOne(id, ctx)
     if (updateWarehouseDto.code && updateWarehouseDto.code !== warehouse.code) {
-      const existing = await this.warehouseRepository.findByCode(updateWarehouseDto.code, ctx.tenantId)
+      const existing = await this.warehouseRepository.findByCode(
+        updateWarehouseDto.code,
+        ctx.tenantId,
+      )
       if (existing) {
         throw new ConflictException('Warehouse code already exists')
       }
@@ -50,7 +68,11 @@ export class WarehouseService {
   }
 
   // Bin Management
-  async addBin(warehouseId: string, createBinDto: CreateWarehouseBinDto, ctx: RequestContextDto): Promise<WarehouseBinEntity> {
+  async addBin(
+    warehouseId: string,
+    createBinDto: CreateWarehouseBinDto,
+    ctx: RequestContextDto,
+  ): Promise<WarehouseBinEntity> {
     await this.findOne(warehouseId, ctx)
     const existing = await this.binRepository.findByCode(warehouseId, createBinDto.binCode)
     if (existing) {
@@ -59,10 +81,14 @@ export class WarehouseService {
     return this.binRepository.create({ ...createBinDto, warehouseId }, ctx)
   }
 
-  async updateBin(binId: string, updateBinDto: UpdateWarehouseBinDto, ctx: RequestContextDto): Promise<WarehouseBinEntity> {
+  async updateBin(
+    binId: string,
+    updateBinDto: UpdateWarehouseBinDto,
+    ctx: RequestContextDto,
+  ): Promise<WarehouseBinEntity> {
     const bin = await this.binRepository.findOne(binId)
     if (!bin) throw new NotFoundException('Bin not found')
-    
+
     // Ensure the warehouse belongs to the tenant
     await this.findOne(bin.warehouseId, ctx)
 

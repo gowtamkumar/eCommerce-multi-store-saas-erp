@@ -4,8 +4,6 @@ import { SupplierEntity } from './supplier.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { SupplierAPReferenceType } from '../enums/supplier-ap-Refernce-type.enum'
 
-
-
 @Entity('supplier_ap_ledger')
 @Index(['tenantId', 'supplierId'])
 export class SupplierAPLedgerEntity extends BaseEntity {

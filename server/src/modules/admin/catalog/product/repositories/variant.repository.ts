@@ -28,7 +28,11 @@ export class ProductVariantRepository {
     return this.repo.find({ where: { productId, tenantId } })
   }
 
-  async findById(id: string, tenantId: string, manager?: any): Promise<ProductVariantEntity | null> {
+  async findById(
+    id: string,
+    tenantId: string,
+    manager?: any,
+  ): Promise<ProductVariantEntity | null> {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
     return repo.findOne({ where: { id, tenantId } })
   }
@@ -57,10 +61,10 @@ export class ProductVariantRepository {
     manager?: any,
   ): Promise<ProductVariantEntity> {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
-    
+
     // ERP FIX: Never update stock via the product edit form.
-    const { stock, ...updateData } = variantDto;
-    
+    const { stock, ...updateData } = variantDto
+
     const variant = repo.create({
       ...updateData,
       productId,
@@ -95,45 +99,5 @@ export class ProductVariantRepository {
       const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
       await repo.softDelete(ids)
     }
-  }
-
-  async incrementStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
-    await repo.increment({ id, tenantId }, 'stock', quantity)
-  }
-
-  async decrementStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
-    await repo.decrement({ id, tenantId }, 'stock', quantity)
-  }
-
-  async incrementReservedStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
-    await repo.increment({ id, tenantId }, 'reservedStock', quantity)
-  }
-
-  async decrementReservedStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
-    await repo.decrement({ id, tenantId }, 'reservedStock', quantity)
   }
 }

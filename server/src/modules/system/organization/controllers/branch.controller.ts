@@ -23,7 +23,7 @@ import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 export class BranchController {
   private readonly logger = new Logger(BranchController.name)
 
-  constructor(private readonly branchService: BranchService) { }
+  constructor(private readonly branchService: BranchService) {}
 
   @Post()
   @RequireFeature('/admin/warehouses')

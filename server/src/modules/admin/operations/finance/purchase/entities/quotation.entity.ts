@@ -7,7 +7,7 @@ import { RfqEntity } from './rfq.entity'
 export enum QuotationStatus {
   PENDING = 'PENDING',
   ACCEPTED = 'ACCEPTED',
-  REJECTED = 'REJECTED'
+  REJECTED = 'REJECTED',
 }
 
 @Entity('quotations')
@@ -16,7 +16,7 @@ export class QuotationEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'rfq_id' })
   rfqId: string
 
-  @ManyToOne(() => RfqEntity, rfq => rfq.quotations, { onDelete: 'CASCADE' })
+  @ManyToOne(() => RfqEntity, (rfq) => rfq.quotations, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'rfq_id' })
   rfq: RfqEntity
 

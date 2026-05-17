@@ -9,7 +9,7 @@ export class SupplierAPLedgerRepository {
   constructor(
     @InjectRepository(SupplierAPLedgerEntity)
     private readonly repository: Repository<SupplierAPLedgerEntity>,
-  ) { }
+  ) {}
 
   async createEntry(
     data: {
@@ -26,7 +26,8 @@ export class SupplierAPLedgerRepository {
     const repo = manager ? manager.getRepository(SupplierAPLedgerEntity) : this.repository
 
     // Lock the last row to calculate running balance safely
-    const lastEntry = await repo.createQueryBuilder('ap')
+    const lastEntry = await repo
+      .createQueryBuilder('ap')
       .setLock('pessimistic_write')
       .where('ap.supplierId = :supplierId', { supplierId: data.supplierId })
       .andWhere('ap.tenantId = :tenantId', { tenantId: data.tenantId })

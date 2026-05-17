@@ -20,7 +20,8 @@ export class PushService {
     @InjectRepository(DeviceEntity)
     private readonly deviceRepository: Repository<DeviceEntity>,
   ) {
-    this.vapidSubject = this.configService.get<string>('VAPID_SUBJECT') || 'mailto:admin@example.com'
+    this.vapidSubject =
+      this.configService.get<string>('VAPID_SUBJECT') || 'mailto:admin@example.com'
     this.vapidPublicKey = this.configService.get<string>('VAPID_PUBLIC_KEY') || ''
     this.vapidPrivateKey = this.configService.get<string>('VAPID_PRIVATE_KEY') || ''
 

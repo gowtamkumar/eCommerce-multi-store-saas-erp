@@ -1,37 +1,157 @@
 'use client';
 
-import React from 'react';
+import { fetchAPI } from '@/services/api';
 import { motion } from 'framer-motion';
-import { 
-  Truck, 
-  Users, 
-  FileText, 
-  DollarSign, 
-  TrendingUp, 
-  ArrowRight,
+import {
+  AlertCircle,
+  DollarSign,
+  FileText,
   PackageCheck,
-  AlertCircle
+  TrendingUp,
+  Truck,
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-const MOCK_STATS = [
-  { label: 'Active Suppliers', value: '48', subValue: '+2 this month', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-  { label: 'Pending PRs', value: '12', subValue: 'Requires approval', icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-  { label: 'Open POs', value: '34', subValue: '$145K committed', icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
-  { label: 'YTD Spend', value: '$1.2M', subValue: 'On track', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-];
+// const MOCK_STATS = [
+//   { label: 'Active Suppliers', value: '48', subValue: '+2 this month', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+//   { label: 'Pending PRs', value: '12', subValue: 'Requires approval', icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+//   { label: 'Open POs', value: '34', subValue: '$145K committed', icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+//   { label: 'YTD Spend', value: '$1.2M', subValue: 'On track', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+// ];
 
-const MOCK_CHART_DATA = [
-  { name: 'Jan', spend: 120000 },
-  { name: 'Feb', spend: 145000 },
-  { name: 'Mar', spend: 130000 },
-  { name: 'Apr', spend: 180000 },
-  { name: 'May', spend: 165000 },
-  { name: 'Jun', spend: 210000 },
-];
+// const MOCK_CHART_DATA = [
+//   { name: 'Jan', spend: 120000 },
+//   { name: 'Feb', spend: 145000 },
+//   { name: 'Mar', spend: 130000 },
+//   { name: 'Apr', spend: 180000 },
+//   { name: 'May', spend: 165000 },
+//   { name: 'Jun', spend: 210000 },
+// ];
 
 export default function ProcurementDashboard() {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any[]>([
+    { label: 'Active Suppliers', value: '0', subValue: 'Registered SRM Vendors', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { label: 'Pending PRs', value: '0', subValue: 'Requires SCM Approval', icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { label: 'Open POs', value: '0', subValue: '$0 committed', icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { label: 'YTD Spend', value: '$0', subValue: 'Total committed spend', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+  ]);
+  const [chartData, setChartData] = useState<any[]>([
+    { name: 'Jan', spend: 0 },
+    { name: 'Feb', spend: 0 },
+    { name: 'Mar', spend: 0 },
+    { name: 'Apr', spend: 0 },
+    { name: 'May', spend: 0 },
+    { name: 'Jun', spend: 0 },
+  ]);
+
+  useEffect(() => {
+    const fetchSCMData = async () => {
+      try {
+        setLoading(true);
+        const [suppliersRes, poRes] = await Promise.all([
+          fetchAPI('/suppliers?limit=100').catch(() => null),
+          fetchAPI('/purchase-orders?limit=100').catch(() => null),
+        ]);
+
+        let activeSuppliersCount = 0;
+        if (suppliersRes && suppliersRes.success) {
+          activeSuppliersCount = suppliersRes.data?.total || suppliersRes.data?.items?.length || 0;
+        }
+
+        let openPOsCount = 0;
+        let ytdSpend = 0;
+        let pendingRequisitionsCount = 0;
+
+        if (poRes && poRes.success) {
+          const poList = poRes.data?.items || poRes.data?.list || poRes.data || [];
+          poList.forEach((po: any) => {
+            const status = po.status || '';
+            if (status === 'ORDERED' || status === 'PENDING' || status === 'DRAFT') {
+              openPOsCount++;
+            }
+            if (status === 'PENDING') {
+              pendingRequisitionsCount++;
+            }
+            ytdSpend += Number(po.totalAmount || 0);
+          });
+        }
+
+        setStats([
+          {
+            label: 'Active Suppliers',
+            value: activeSuppliersCount.toString(),
+            subValue: 'Registered SRM Vendors',
+            icon: Users,
+            color: 'text-blue-600',
+            bg: 'bg-blue-50',
+            border: 'border-blue-100'
+          },
+          {
+            label: 'Pending PRs',
+            value: pendingRequisitionsCount.toString(),
+            subValue: 'Requires SCM Approval',
+            icon: FileText,
+            color: 'text-amber-600',
+            bg: 'bg-amber-50',
+            border: 'border-amber-100'
+          },
+          {
+            label: 'Open POs',
+            value: openPOsCount.toString(),
+            subValue: `$${ytdSpend.toLocaleString()} committed`,
+            icon: Truck,
+            color: 'text-purple-600',
+            bg: 'bg-purple-50',
+            border: 'border-purple-100'
+          },
+          {
+            label: 'YTD Spend',
+            value: `$${ytdSpend.toLocaleString()}`,
+            subValue: 'Total committed spend',
+            icon: DollarSign,
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-50',
+            border: 'border-emerald-100'
+          },
+        ]);
+
+        if (poRes && poRes.success) {
+          const poList = poRes.data?.items || poRes.data?.list || poRes.data || [];
+          const monthlySpend: Record<string, number> = {
+            Jan: 0, Feb: 0, Mar: 0, Apr: 0, May: 0, Jun: 0,
+            Jul: 0, Aug: 0, Sep: 0, Oct: 0, Nov: 0, Dec: 0
+          };
+          poList.forEach((po: any) => {
+            if (po.createdAt) {
+              const date = new Date(po.createdAt);
+              const monthName = date.toLocaleString('default', { month: 'short' });
+              if (monthlySpend[monthName] !== undefined) {
+                monthlySpend[monthName] += Number(po.totalAmount || 0);
+              }
+            }
+          });
+
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+          const updatedChartData = months.map(m => ({
+            name: m,
+            spend: monthlySpend[m] || 0
+          }));
+          setChartData(updatedChartData);
+        }
+      } catch (error) {
+        console.error('Failed to load dynamic SCM dashboard metrics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSCMData();
+  }, []);
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8">
       {/* Header */}
@@ -55,8 +175,8 @@ export default function ProcurementDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {MOCK_STATS.map((stat, i) => (
-          <motion.div 
+        {stats.map((stat, i) => (
+          <motion.div
             key={i}
             whileHover={{ y: -5 }}
             className={`bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border ${stat.border} dark:border-slate-700 transition-all hover:shadow-lg group`}
@@ -96,41 +216,41 @@ export default function ProcurementDashboard() {
               <option>Last 12 Months</option>
             </select>
           </div>
-          
+
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={MOCK_CHART_DATA}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
                   dy={10}
                 />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
                   tickFormatter={(val) => `$${val / 1000}k`}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '16px', color: '#fff' }}
                   formatter={(value: any) => [`$${value.toLocaleString()}`, 'Spend']}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="spend" 
-                  stroke="#4f46e5" 
+                <Area
+                  type="monotone"
+                  dataKey="spend"
+                  stroke="#4f46e5"
                   strokeWidth={4}
-                  fillOpacity={1} 
-                  fill="url(#colorSpend)" 
+                  fillOpacity={1}
+                  fill="url(#colorSpend)"
                 />
               </AreaChart>
             </ResponsiveContainer>

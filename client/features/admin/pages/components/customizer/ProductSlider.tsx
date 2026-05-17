@@ -6,7 +6,7 @@ import SectionHeader from "./SectionHeader";
 import { animate, motion, useMotionValue } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import ProductCard from "@/features/product/components/ProductCard";
-import { ProductSliderProps } from "../../../type";
+import { ProductSliderProps } from "../../type";
 
 export default function ProductSlider({
   sectionId,
@@ -41,7 +41,7 @@ export default function ProductSlider({
         let fetchedProducts = res.data?.products || [];
         if (source === 'manual' && productIds.length > 0) {
           fetchedProducts = productIds
-            .map(id => fetchedProducts.find((p: any) => p.id === id))
+            .map((id: string) => fetchedProducts.find((p: any) => p.id === id))
             .filter(Boolean);
         }
 

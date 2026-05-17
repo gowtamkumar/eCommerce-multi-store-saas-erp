@@ -30,7 +30,7 @@ import { SupplierResponseDto } from './dto/supplier-response.dto'
 export class SupplierController {
   private readonly logger = new Logger(SupplierController.name)
 
-  constructor(private readonly service: SupplierService) { }
+  constructor(private readonly service: SupplierService) {}
 
   @Post()
   async createSupplier(

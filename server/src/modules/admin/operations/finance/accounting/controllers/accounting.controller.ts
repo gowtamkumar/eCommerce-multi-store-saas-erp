@@ -14,11 +14,13 @@ export class AccountingController {
   constructor(
     private readonly accountingService: AccountingService,
     private readonly reportService: FinancialReportService,
-  ) { }
+  ) {}
 
   @Post('init')
-  @RequireFeature("/admin/finance")
-  async initialize(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<void>> {
+  @RequireFeature('/admin/finance')
+  async initialize(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<void>> {
     await this.accountingService.initializeTenantCOA(ctx)
     return {
       success: true,
@@ -29,7 +31,7 @@ export class AccountingController {
   }
 
   @Get('reports/profit-loss')
-  @RequireFeature("/admin/finance/profit-loss")
+  @RequireFeature('/admin/finance/profit-loss')
   async getPL(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
     const data = await this.reportService.getProfitAndLoss(ctx)
     return {
@@ -41,8 +43,10 @@ export class AccountingController {
   }
 
   @Get('reports/balance-sheet')
-  @RequireFeature("/admin/finance/balance-sheet")
-  async getBalanceSheet(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
+  @RequireFeature('/admin/finance/balance-sheet')
+  async getBalanceSheet(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
     const data = await this.reportService.getBalanceSheet(ctx)
     return {
       success: true,

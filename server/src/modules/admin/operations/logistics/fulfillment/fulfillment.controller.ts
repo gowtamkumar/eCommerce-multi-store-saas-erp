@@ -11,7 +11,7 @@ import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 @Controller('operations/logistics/fulfillment')
 @RequireFeature('/admin/fulfillment')
 export class FulfillmentController {
-  constructor(private readonly service: FulfillmentService) { }
+  constructor(private readonly service: FulfillmentService) {}
 
   @Get()
   async findAll(

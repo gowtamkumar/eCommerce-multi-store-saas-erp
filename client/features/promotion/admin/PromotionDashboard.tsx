@@ -110,7 +110,7 @@ export default function PromotionDashboard() {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 pagination={pagination}
-                onPageChange={(page: number) => loadPromotions(page)}
+                onPageChange={(page: number) => loadPromotions(page, debouncedSearch)}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAddClick={handleAddClick}
