@@ -1,6 +1,6 @@
 'use client';
 
-import { assignShift, createShift, deleteShift, getEmployees, getShifts, seedDemoData, updateShift } from '@/services/hrm';
+import { assignShift, createShift, deleteShift, getEmployees, getShifts, updateShift } from '@/services/hrm';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Calendar,
@@ -141,18 +141,6 @@ export default function ShiftManagementPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={async () => {
-              if (confirm('Populate system with demo data?')) {
-                await seedDemoData();
-                window.location.reload();
-              }
-            }}
-            className="flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg"
-          >
-            <Calendar className="w-4 h-4" />
-            Seed Demo Data
-          </button>
           <button
             onClick={() => setShowAssignForm(true)}
             className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 hover:bg-slate-50 transition-all shadow-sm"
