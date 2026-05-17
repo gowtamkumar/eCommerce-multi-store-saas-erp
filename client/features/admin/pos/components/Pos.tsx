@@ -21,7 +21,8 @@ import {
   ShoppingCart,
   Trash2,
   User,
-  X
+  X,
+  ChevronDown
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -83,6 +84,10 @@ export default function Pos() {
   // Billing & Catalog state
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedBrandId, setSelectedBrandId] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -131,6 +136,7 @@ export default function Pos() {
       if (res.success && res.data) {
         setActiveShift(res.data);
         fetchProducts();
+        fetchCategoriesAndBrands();
       }
     } catch {
       // Shift not found, load registers for opening till
@@ -151,6 +157,23 @@ export default function Pos() {
       }
     } catch {
       toast.error('Failed to load register terminals');
+    }
+  };
+
+  const fetchCategoriesAndBrands = async () => {
+    try {
+      const [catRes, brandRes] = await Promise.all([
+        fetchAPI('/categories/stats'),
+        fetchAPI('/brands/stats'),
+      ]);
+      if (catRes.success) {
+        setCategories(catRes.data || []);
+      }
+      if (brandRes.success) {
+        setBrands(brandRes.data || []);
+      }
+    } catch {
+      toast.error('Failed to load categories or brands');
     }
   };
 
@@ -185,6 +208,7 @@ export default function Pos() {
         toast.success('Drawer register opened successfully!');
         setActiveShift(res.data);
         fetchProducts();
+        fetchCategoriesAndBrands();
       }
     } catch (error) {
       toast.error((error as { message?: string })?.message || 'Error opening till');
@@ -448,11 +472,30 @@ export default function Pos() {
     }
   };
 
-  const filteredProducts = products.filter(
-    (p) =>
+  const filteredProducts = products.filter((p: any) => {
+    // 1. Text search query
+    const matchesQuery =
+      !searchQuery ||
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.slug.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      (p.slug && p.slug.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    // 2. Category filter
+    const matchesCategory =
+      !selectedCategoryId ||
+      p.categoryId === selectedCategoryId ||
+      p.category_id === selectedCategoryId ||
+      p.category?.id === selectedCategoryId;
+
+    // 3. Brand filter
+    const matchesBrand =
+      !selectedBrandId ||
+      p.brandId === selectedBrandId ||
+      p.brand_id === selectedBrandId ||
+      p.brand?.id === selectedBrandId;
+
+    return matchesQuery && matchesCategory && matchesBrand;
+  });
 
   // loading view
   if (loadingShift) {
@@ -853,7 +896,7 @@ export default function Pos() {
         </div>
 
         {/* Right catalog grid (7 cols) */}
-        <div className="lg:col-span-7 space-y-6 flex flex-col h-[75vh]">
+        <div className="lg:col-span-7 space-y-4 flex flex-col h-[75vh]">
           {/* Quick Search */}
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -862,53 +905,92 @@ export default function Pos() {
               placeholder="Quick search products by name, code, SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all font-bold text-sm shadow-sm"
+              className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all font-bold text-sm shadow-sm"
             />
+          </div>
+
+          {/* Filters by Category and Brand */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="relative">
+              <select
+                value={selectedCategoryId}
+                onChange={(e) => setSelectedCategoryId(e.target.value)}
+                className="w-full pl-3 pr-8 py-2 text-xs font-bold border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-brand-500 shadow-sm appearance-none cursor-pointer transition-all"
+              >
+                <option value="">All Categories</option>
+                {categories.map((c: any) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                <ChevronDown className="w-3.5 h-3.5" />
+              </div>
+            </div>
+
+            <div className="relative">
+              <select
+                value={selectedBrandId}
+                onChange={(e) => setSelectedBrandId(e.target.value)}
+                className="w-full pl-3 pr-8 py-2 text-xs font-bold border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-brand-500 shadow-sm appearance-none cursor-pointer transition-all"
+              >
+                <option value="">All Brands</option>
+                {brands.map((b: any) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                <ChevronDown className="w-3.5 h-3.5" />
+              </div>
+            </div>
           </div>
 
           {/* Grid Catalog list */}
           <div className="flex-1 overflow-y-auto pr-1">
             {filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-8">
-                <LayoutGrid className="w-12 h-12 text-slate-300 dark:text-slate-700 mb-3" />
+                <LayoutGrid className="w-10 h-10 text-slate-300 dark:text-slate-700 mb-3" />
                 <p className="text-sm font-extrabold text-slate-500">No Catalog Matches</p>
                 <p className="text-[10px] text-slate-400 mt-1 max-w-[200px]">
-                  Adjust your text query or check server stock synchronization
+                  Adjust your search filters or check server stock synchronization
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-2">
                 {filteredProducts.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => addToCart(p)}
-                    className="flex flex-col p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-brand-500 hover:shadow-xl rounded-2xl text-left transition-all gap-3"
+                    className="flex flex-col p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-brand-500 hover:shadow-lg rounded-xl text-left transition-all gap-1.5 group"
                   >
-                    <div className="w-full aspect-square rounded-xl bg-slate-100 dark:bg-slate-950 overflow-hidden border border-slate-100 dark:border-slate-850">
+                    <div className="w-full aspect-square rounded-lg bg-slate-50 dark:bg-slate-950 overflow-hidden border border-slate-100/60 dark:border-slate-850 flex items-center justify-center relative">
                       {p.images?.[0] ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={p.images[0]}
                           alt=""
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-350">
-                          <ShoppingCart className="w-8 h-8" />
+                        <div className="text-slate-300 dark:text-slate-750">
+                          <ShoppingCart className="w-6 h-6" />
                         </div>
                       )}
                     </div>
 
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <p className="font-extrabold text-slate-900 dark:text-white text-sm truncate">
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                      <p className="font-bold text-slate-800 dark:text-slate-200 text-[11px] truncate leading-tight group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                         {p.name}
                       </p>
-                      <div className="flex justify-between items-center gap-1.5 pt-1">
-                        <span className="font-black text-sm text-brand-600 dark:text-brand-400">
+                      <div className="flex justify-between items-center gap-1">
+                        <span className="font-black text-xs text-brand-650 dark:text-brand-400">
                           ${p.price}
                         </span>
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-slate-500">
-                          Stock: {p.stock}
+                        <span className="text-[8px] font-bold px-1 py-0.5 bg-slate-50 dark:bg-slate-850 rounded text-slate-500">
+                          Qty: {p.stock}
                         </span>
                       </div>
                     </div>

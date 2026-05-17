@@ -229,12 +229,12 @@ export default function CreateOrder() {
         setLoading(true);
         try {
             const orderData = {
-                userId: selectedCustomer?.id,
+                userId: selectedCustomer?.id || undefined,
                 customerName: manualCustomer.name,
-                customerEmail: manualCustomer.email,
+                customerEmail: manualCustomer.email || undefined,
                 customerPhone: String(phone),
                 address: shippingData.address,
-                orderNotes: shippingData.notes,
+                orderNotes: shippingData.notes || undefined,
                 paymentMethod: PaymentMethod.COD,
                 currency: selectedCurrency.code,
                 currencyRate: selectedCurrency.rate,

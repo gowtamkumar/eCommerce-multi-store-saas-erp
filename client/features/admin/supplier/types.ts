@@ -5,6 +5,10 @@ export interface Supplier {
     email?: string;
     phone?: string;
     address?: string;
+    category?: string;
+    rating?: number;
+    leadTimeDays?: number;
+    isActive?: boolean;
     createdAt?: string;
     updatedAt?: string;
 }

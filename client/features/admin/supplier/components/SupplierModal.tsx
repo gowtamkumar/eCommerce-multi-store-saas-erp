@@ -19,7 +19,11 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
         contactName: '',
         email: '',
         phone: '',
-        address: ''
+        address: '',
+        category: 'OTHER',
+        rating: 5,
+        leadTimeDays: 0,
+        isActive: true
     });
 
     useEffect(() => {
@@ -29,7 +33,11 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
                 contactName: supplier.contactName || '',
                 email: supplier.email || '',
                 phone: supplier.phone || '',
-                address: supplier.address || ''
+                address: supplier.address || '',
+                category: supplier.category || 'OTHER',
+                rating: typeof supplier.rating === 'number' ? supplier.rating : Number(supplier.rating || 5),
+                leadTimeDays: typeof supplier.leadTimeDays === 'number' ? supplier.leadTimeDays : Number(supplier.leadTimeDays || 0),
+                isActive: typeof supplier.isActive === 'boolean' ? supplier.isActive : (supplier.isActive !== 'false' && supplier.isActive !== false)
             });
         } else {
             setFormData({
@@ -37,7 +45,11 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
                 contactName: '',
                 email: '',
                 phone: '',
-                address: ''
+                address: '',
+                category: 'OTHER',
+                rating: 5,
+                leadTimeDays: 0,
+                isActive: true
             });
         }
     }, [supplier, isOpen]);
@@ -52,9 +64,16 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
             const url = supplier ? `/suppliers/${supplier.id}` : '/suppliers';
             const method = supplier ? 'PATCH' : 'POST';
 
+            const payload = {
+                ...formData,
+                rating: Number(formData.rating),
+                leadTimeDays: parseInt(String(formData.leadTimeDays), 10) || 0,
+                isActive: Boolean(formData.isActive)
+            };
+
             await fetchAPI(url, {
                 method,
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
 
             toast.success(`Supplier ${supplier ? 'updated' : 'created'} successfully`);
@@ -144,9 +163,73 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
                             value={formData.address}
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                             className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"
-                            rows={3}
+                            rows={2}
                             placeholder="Full address here..."
                         />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                Category
+                            </label>
+                            <select
+                                value={formData.category}
+                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                            >
+                                <option value="RAW_MATERIALS">Raw Materials</option>
+                                <option value="PACKAGING">Packaging</option>
+                                <option value="SERVICES">Services</option>
+                                <option value="EQUIPMENT">Equipment</option>
+                                <option value="LOGISTICS">Logistics</option>
+                                <option value="IT_SOFTWARE">IT & Software</option>
+                                <option value="OFFICE_SUPPLIES">Office Supplies</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                Lead Time (Days)
+                            </label>
+                            <input
+                                type="number"
+                                min={0}
+                                value={formData.leadTimeDays}
+                                onChange={(e) => setFormData({ ...formData, leadTimeDays: parseInt(e.target.value) || 0 })}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                placeholder="e.g. 5"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                Rating (1-5)
+                            </label>
+                            <input
+                                type="number"
+                                min={1}
+                                max={5}
+                                step={0.1}
+                                value={formData.rating}
+                                onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) || 5 })}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                placeholder="5.0"
+                            />
+                        </div>
+                        <div className="flex items-center pt-8">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.isActive}
+                                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                                    className="w-5 h-5 rounded text-brand-600 focus:ring-brand-500 border-slate-300 bg-slate-50 dark:bg-slate-900 dark:border-slate-700 transition-all"
+                                />
+                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Active Vendor</span>
+                            </label>
+                        </div>
                     </div>
 
                     <div className="pt-4 flex gap-3">
