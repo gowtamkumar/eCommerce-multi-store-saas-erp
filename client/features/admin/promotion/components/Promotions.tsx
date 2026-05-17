@@ -1,1 +1,1 @@
-export { default } from '@/features/promotion/admin/Promotions';
+export { default } from '@/features/promotion/admin/PromotionDashboard';

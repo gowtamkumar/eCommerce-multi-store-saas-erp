@@ -6,6 +6,7 @@ export interface Brand {
     image?: string;
     website?: string;
     productCount?: number;
+    isActive?: boolean;
 }
 
 export interface BrandFormProps {

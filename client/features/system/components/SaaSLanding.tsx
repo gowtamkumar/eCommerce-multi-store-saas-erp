@@ -158,7 +158,7 @@ export default function SaaSLanding() {
                     <ul className="text-left space-y-4 mb-10 flex-1">
                       {(plan.features || []).map((item: string) => {
                         const featureDisplay = getFeatureDisplay(item);
-                        const FeatureIcon = featureDisplay.icon;
+                        const FeatureIcon = featureDisplay.icon || Icons.Check;
                         return (
                           <li key={item} className="flex items-center gap-3 text-slate-600 dark:text-slate-300 group/item">
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${isPopular ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
