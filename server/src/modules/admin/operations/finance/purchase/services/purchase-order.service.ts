@@ -169,13 +169,17 @@ export class PurchaseOrderService {
       })
 
       if (!orderWithItems) throw new BadRequestException('Purchase order not found')
-      if (!orderWithItems.items?.length) throw new BadRequestException('Purchase order has no items to receive')
+      if (!orderWithItems.items?.length)
+        throw new BadRequestException('Purchase order has no items to receive')
 
       orderWithItems.status = PurchaseOrderStatus.RECEIVED
-      const savedOrder = await this.repository.savePurchaseOrder(orderWithItems, queryRunner.manager)
+      const savedOrder = await this.repository.savePurchaseOrder(
+        orderWithItems,
+        queryRunner.manager,
+      )
 
       // 2. Build item DTOs from the PO items
-      const itemDtos = orderWithItems.items.map(item => ({
+      const itemDtos = orderWithItems.items.map((item) => ({
         productId: item.productId || (item.product as any)?.id,
         variantId: item.variantId || (item.variant as any)?.id || null,
         orderedQty: item.quantity,
@@ -192,18 +196,25 @@ export class PurchaseOrderService {
         const branchId = dto.branchId
 
         if (!warehouseId || !branchId) {
-          throw new BadRequestException('Destination warehouse and branch must be selected to receive goods.')
+          throw new BadRequestException(
+            'Destination warehouse and branch must be selected to receive goods.',
+          )
         }
 
         // 4. Create GRN
-        await this.grnRepository.createAndSave({
-          poId: orderWithItems.id,
-          supplierId: orderWithItems.supplierId,
-          warehouseId,
-          branchId,
-          notes: `Auto GRN from PO ${orderWithItems.referenceNumber}`,
-          items: itemDtos,
-        }, grnNumber, ctx, queryRunner.manager)
+        await this.grnRepository.createAndSave(
+          {
+            poId: orderWithItems.id,
+            supplierId: orderWithItems.supplierId,
+            warehouseId,
+            branchId,
+            notes: `Auto GRN from PO ${orderWithItems.referenceNumber}`,
+            items: itemDtos,
+          },
+          grnNumber,
+          ctx,
+          queryRunner.manager,
+        )
 
         let totalGrnCost = 0
 
@@ -262,7 +273,6 @@ export class PurchaseOrderService {
       await queryRunner.release()
     }
   }
-
 
   /**
    * Records a payment against the purchase order.

@@ -23,7 +23,7 @@ export class InventoryLedgerService {
     private readonly cacheService: CacheService,
     private readonly cogsService: CogsService,
     private readonly accountingIntegration: AccountingIntegrationService,
-  ) { }
+  ) {}
 
   /**
    * Records a stock movement and updates the product/variant static stock cache atomically.
@@ -44,20 +44,24 @@ export class InventoryLedgerService {
 
     // Determine absolute quantity and direction
     const absQty = Math.abs(dto.quantity)
-    const isIncrement = [
-      InventoryTransactionType.PURCHASE,
-      InventoryTransactionType.RETURN,
-      InventoryTransactionType.INITIAL_BALANCE,
-      InventoryTransactionType.TRANSFER_IN,
-      InventoryTransactionType.RESERVATION_CANCEL,
-    ].includes(dto.type) || (dto.type === InventoryTransactionType.ADJUSTMENT && dto.quantity > 0)
+    const isIncrement =
+      [
+        InventoryTransactionType.PURCHASE,
+        InventoryTransactionType.RETURN,
+        InventoryTransactionType.INITIAL_BALANCE,
+        InventoryTransactionType.TRANSFER_IN,
+        InventoryTransactionType.RESERVATION_CANCEL,
+      ].includes(dto.type) ||
+      (dto.type === InventoryTransactionType.ADJUSTMENT && dto.quantity > 0)
 
-    const isDecrement = [
-      InventoryTransactionType.SALE,
-      InventoryTransactionType.TRANSFER_OUT,
-      InventoryTransactionType.DAMAGE,
-      InventoryTransactionType.RESERVATION,
-    ].includes(dto.type) || (dto.type === InventoryTransactionType.ADJUSTMENT && dto.quantity < 0)
+    const isDecrement =
+      [
+        InventoryTransactionType.SALE,
+        InventoryTransactionType.TRANSFER_OUT,
+        InventoryTransactionType.DAMAGE,
+        InventoryTransactionType.RESERVATION,
+      ].includes(dto.type) ||
+      (dto.type === InventoryTransactionType.ADJUSTMENT && dto.quantity < 0)
 
     // Calculate signed quantity for ledger balance
     const signedQty = isIncrement ? absQty : -absQty
@@ -68,13 +72,12 @@ export class InventoryLedgerService {
       const currentBalance = await this.repository.getLatestBalanceAfter(
         dto.productId,
         dto.variantId || null,
-        dto.warehouseId || '',
+        dto.warehouseId || null,
         tenantId,
         em,
       )
 
       const balanceAfter = Number(currentBalance) + signedQty
-
 
       // 3. Calculate COGS for Sales
       let cogsAmount = 0
@@ -82,7 +85,7 @@ export class InventoryLedgerService {
         cogsAmount = await this.cogsService.calculateAndConsumeCogs(
           dto.productId,
           dto.variantId || null,
-          dto.warehouseId || '',
+          dto.warehouseId || null,
           absQty,
           ctx,
           em,
@@ -94,18 +97,27 @@ export class InventoryLedgerService {
         const currentStock = Math.max(0, Number(currentBalance))
         const incomingQty = absQty
         const incomingCost = Number(dto.unitCost)
-        
+
         if (currentStock + incomingQty > 0) {
           if (dto.variantId) {
-            const variant = await this.variantRepository.findById(dto.variantId, tenantId, em);
+            const variant = await this.variantRepository.findById(dto.variantId, tenantId, em)
             if (variant) {
               const currentAvgCost = Number(variant.averageCost || 0)
-              const newAvgCost = ((currentStock * currentAvgCost) + (incomingQty * incomingCost)) / (currentStock + incomingQty)
-              await this.variantRepository.updateAverageCost(dto.variantId, tenantId, newAvgCost, em)
+              const newAvgCost =
+                (currentStock * currentAvgCost + incomingQty * incomingCost) /
+                (currentStock + incomingQty)
+              await this.variantRepository.updateAverageCost(
+                dto.variantId,
+                tenantId,
+                newAvgCost,
+                em,
+              )
             }
           } else {
             const currentAvgCost = Number(product.averageCost || 0)
-            const newAvgCost = ((currentStock * currentAvgCost) + (incomingQty * incomingCost)) / (currentStock + incomingQty)
+            const newAvgCost =
+              (currentStock * currentAvgCost + incomingQty * incomingCost) /
+              (currentStock + incomingQty)
             await this.productRepository.updateAverageCost(product.id, tenantId, newAvgCost, em)
           }
         }
@@ -226,15 +238,15 @@ export class InventoryLedgerService {
             : product.stock
           const totalValue = hasVariants
             ? product.variants.reduce(
-              (sum, v) => sum + (v.stock || 0) * Number(v.price || product.price),
-              0,
-            )
+                (sum, v) => sum + (v.stock || 0) * Number(v.price || product.price),
+                0,
+              )
             : product.stock * Number(product.price)
 
           const isLowStock = hasVariants
             ? product.variants.some(
-              (v) => v.stock <= (v.lowStockThreshold ?? product.lowStockThreshold ?? 5),
-            )
+                (v) => v.stock <= (v.lowStockThreshold ?? product.lowStockThreshold ?? 5),
+              )
             : product.stock <= (product.lowStockThreshold ?? 5)
 
           const isOutOfStock = hasVariants
@@ -255,13 +267,13 @@ export class InventoryLedgerService {
             stockValue: totalValue,
             variants: hasVariants
               ? product.variants.map((v: any) => ({
-                id: v.id,
-                sku: v.sku,
-                combination: v.combination,
-                price: v.price || product.price,
-                stock: v.stock,
-                lowStockThreshold: v.lowStockThreshold || product.lowStockThreshold || 5,
-              }))
+                  id: v.id,
+                  sku: v.sku,
+                  combination: v.combination,
+                  price: v.price || product.price,
+                  stock: v.stock,
+                  lowStockThreshold: v.lowStockThreshold || product.lowStockThreshold || 5,
+                }))
               : [],
             lowStock: isLowStock,
             outOfStock: isOutOfStock,
@@ -273,7 +285,16 @@ export class InventoryLedgerService {
     )
   }
 
-  async getGlobalLiveStock(productId: string, variantId: string | null, tenantId: string, manager?: any): Promise<number> {
+  async getGlobalLiveStock(
+    productId: string,
+    variantId: string | null,
+    tenantId: string,
+    manager?: any,
+  ): Promise<number> {
     return await this.repository.getGlobalLiveStock(productId, variantId, tenantId, manager)
+  }
+
+  async getStockSums(tenantId: string): Promise<any[]> {
+    return await this.repository.getStockSums(tenantId)
   }
 }

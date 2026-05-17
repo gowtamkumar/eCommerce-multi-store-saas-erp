@@ -11,7 +11,7 @@ export enum PRStatus {
   PENDING_APPROVAL = 'PENDING_APPROVAL',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
-  PO_CREATED = 'PO_CREATED'
+  PO_CREATED = 'PO_CREATED',
 }
 
 @Entity('purchase_requisitions')
@@ -64,6 +64,8 @@ export class PurchaseRequisitionEntity extends BaseEntity {
   @JoinColumn({ name: 'warehouse_id' })
   warehouse: WarehouseEntity
 
-  @OneToMany(() => PurchaseRequisitionItemEntity, item => item.purchaseRequisition, { cascade: true })
+  @OneToMany(() => PurchaseRequisitionItemEntity, (item) => item.purchaseRequisition, {
+    cascade: true,
+  })
   items: PurchaseRequisitionItemEntity[]
 }

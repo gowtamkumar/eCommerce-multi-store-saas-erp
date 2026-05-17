@@ -19,7 +19,14 @@ import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-setti
 import { CartService } from '@/modules/store/cart/cart.service'
 import { ShippingAddressService } from '@/modules/store/shipping-address/shipping-address.service'
 import { InjectQueue } from '@nestjs/bullmq'
-import { BadRequestException, Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common'
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common'
 import { FulfillmentService } from '@/modules/admin/operations/logistics/fulfillment/fulfillment.service'
 import { Queue } from 'bullmq'
 import { DataSource } from 'typeorm'
@@ -345,10 +352,7 @@ export class OrderService {
       }
 
       // Check for Order Confirmation to Trigger Fulfillment
-      if (
-        updateOrderDto.status === OrderStatus.CONFIRMED &&
-        oldStatus !== OrderStatus.CONFIRMED
-      ) {
+      if (updateOrderDto.status === OrderStatus.CONFIRMED && oldStatus !== OrderStatus.CONFIRMED) {
         await this.fulfillmentService.createFromOrder(id, ctx)
       }
 

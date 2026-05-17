@@ -97,9 +97,12 @@ export class OrderProcessHelper {
       tenantId,
     )
 
-    const unitPrice = tierPrice !== null
-      ? tierPrice
-      : (variant?.price ? Number(variant.price) : Number(product.price))
+    const unitPrice =
+      tierPrice !== null
+        ? tierPrice
+        : variant?.price
+          ? Number(variant.price)
+          : Number(product.price)
 
     let discountAmount: number
     if (itemPricingDto?.discount !== undefined) {

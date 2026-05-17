@@ -28,7 +28,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 export class ExpenseController {
   private readonly logger = new Logger(ExpenseController.name)
 
-  constructor(private readonly expenseService: ExpenseService) { }
+  constructor(private readonly expenseService: ExpenseService) {}
 
   @Post()
   async createExpense(

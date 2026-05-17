@@ -157,7 +157,10 @@ export class CampaignProcessor extends WorkerHost {
     // Fetch fresh campaign data for completion check
     const currentCampaign = await this.campaignRepository.findByIdRaw(campaignId)
     if (currentCampaign) {
-      if (currentCampaign.sentCount + currentCampaign.failedCount >= currentCampaign.totalAudience) {
+      if (
+        currentCampaign.sentCount + currentCampaign.failedCount >=
+        currentCampaign.totalAudience
+      ) {
         currentCampaign.status = CampaignStatus.COMPLETED
         await this.campaignRepository.save(currentCampaign)
       }

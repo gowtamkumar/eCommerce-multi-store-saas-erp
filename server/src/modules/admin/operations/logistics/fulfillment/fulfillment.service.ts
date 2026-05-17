@@ -25,7 +25,10 @@ export class FulfillmentService {
     private readonly orderRepository: Repository<OrderEntity>,
   ) {}
 
-  async createFromOrder(orderId: string, ctx: RequestContextDto): Promise<FulfillmentTaskEntity | null> {
+  async createFromOrder(
+    orderId: string,
+    ctx: RequestContextDto,
+  ): Promise<FulfillmentTaskEntity | null> {
     const order = await this.orderRepository.findOne({
       where: { id: orderId, tenantId: ctx.tenantId },
       relations: ['items', 'items.product', 'items.variant'],
@@ -69,7 +72,11 @@ export class FulfillmentService {
     return task
   }
 
-  async startPicking(taskId: string, userId: string, ctx: RequestContextDto): Promise<FulfillmentTaskEntity> {
+  async startPicking(
+    taskId: string,
+    userId: string,
+    ctx: RequestContextDto,
+  ): Promise<FulfillmentTaskEntity> {
     const task = await this.repository.findTaskById(taskId, ctx.tenantId)
     if (!task) throw new NotFoundException('Fulfillment task not found')
 
@@ -86,7 +93,13 @@ export class FulfillmentService {
     return this.repository.findTaskById(taskId, ctx.tenantId) as Promise<FulfillmentTaskEntity>
   }
 
-  async pickItem(taskId: string, itemId: string, quantity: number, binId: string | undefined, ctx: RequestContextDto): Promise<void> {
+  async pickItem(
+    taskId: string,
+    itemId: string,
+    quantity: number,
+    binId: string | undefined,
+    ctx: RequestContextDto,
+  ): Promise<void> {
     const task = await this.repository.findTaskById(taskId, ctx.tenantId)
     if (!task) throw new NotFoundException('Fulfillment task not found')
 
@@ -101,7 +114,10 @@ export class FulfillmentService {
     await this.repository.updateItem(itemId, {
       pickedQuantity: newPickedQty,
       binId: binId,
-      status: newPickedQty === item.quantity ? FulfillmentItemStatus.PICKED : FulfillmentItemStatus.PENDING,
+      status:
+        newPickedQty === item.quantity
+          ? FulfillmentItemStatus.PICKED
+          : FulfillmentItemStatus.PENDING,
     })
   }
 

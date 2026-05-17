@@ -14,7 +14,7 @@ import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 @RequireFeature('/admin/grn')
 @Controller('operations/logistics/grn')
 export class GrnController {
-  constructor(private readonly grnService: GrnService) { }
+  constructor(private readonly grnService: GrnService) {}
 
   @Post()
   async create(

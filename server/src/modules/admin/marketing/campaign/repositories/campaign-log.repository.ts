@@ -18,7 +18,11 @@ export class CampaignLogRepository {
     return this.repo.save(log)
   }
 
-  async findLogsByCampaign(campaignId: string, skip: number, take: number): Promise<[CampaignLogEntity[], number]> {
+  async findLogsByCampaign(
+    campaignId: string,
+    skip: number,
+    take: number,
+  ): Promise<[CampaignLogEntity[], number]> {
     return this.repo.findAndCount({
       where: { campaignId },
       relations: ['recipient'],

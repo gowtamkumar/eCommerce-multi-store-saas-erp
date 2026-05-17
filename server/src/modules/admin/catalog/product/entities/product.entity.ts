@@ -52,7 +52,14 @@ export class ProductEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'average_cost' })
   averageCost: number
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'wholesale_price', nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+    name: 'wholesale_price',
+    nullable: true,
+  })
   wholesalePrice: number
 
   @Column({ type: 'int', default: 1, name: 'min_wholesale_qty', nullable: true })
@@ -134,7 +141,7 @@ export class ProductEntity extends BaseEntity {
 
   @OneToMany(() => ReviewEntity, (reviews) => reviews.product)
   reviews: ReviewEntity[]
-  
+
   @OneToMany(() => InventoryLedgerEntity, (ledger) => ledger.product)
   inventoryLedger: InventoryLedgerEntity[]
 

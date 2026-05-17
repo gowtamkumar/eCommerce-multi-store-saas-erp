@@ -30,7 +30,7 @@ export class AuthService {
     private readonly tenantService: TenantService,
     private readonly configService: ConfigService,
     private readonly staffInvitationService: StaffInvitationService,
-  ) { }
+  ) {}
 
   async register(
     registerCredentialDto: RegisterCredentialDto,

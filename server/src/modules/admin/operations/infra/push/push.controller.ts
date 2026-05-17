@@ -8,15 +8,12 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 @ApiTags('Push Notifications')
 @Controller('notifications')
 export class PushController {
-  constructor(private readonly pushService: PushService) { }
+  constructor(private readonly pushService: PushService) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register device for push notifications' })
   // @UseGuards(TenantGuard) - We might want to allow this public-facing API to use a tenant ID via header, same as other store APIs.
-  async registerDevice(
-    @Body() dto: RegisterDeviceDto,
-    @RequestContext() ctx: RequestContextDto,
-  ) {
+  async registerDevice(@Body() dto: RegisterDeviceDto, @RequestContext() ctx: RequestContextDto) {
     if (!ctx.tenantId) {
       throw new Error('Tenant ID is required')
     }

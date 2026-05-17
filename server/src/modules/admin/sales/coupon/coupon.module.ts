@@ -14,4 +14,4 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
   providers: [CouponService, CouponRepository],
   exports: [CouponService],
 })
-export class CouponModule { }
+export class CouponModule {}

@@ -50,10 +50,10 @@ export class SupplierService {
       cacheKey,
       async () => {
         const [items, total] = await this.repository.findAllByTenant(tenantId, page, limit, search)
-        
+
         // Populate outstanding balances for list if needed (optional optimization)
         for (const item of items) {
-            item.outstandingBalance = await this.apLedgerRepository.getBalance(item.id, tenantId)
+          item.outstandingBalance = await this.apLedgerRepository.getBalance(item.id, tenantId)
         }
 
         return {

@@ -17,6 +17,8 @@ import { TenantOverviewResponseDto } from './dto/tenant-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { TenantEntity } from './entities/tenant.entity'
 import { TenantRepository } from './tenant.repository'
+import { AccountEntity } from '@/modules/admin/operations/finance/accounting/entities/account.entity'
+import { DEFAULT_CHART_OF_ACCOUNTS } from '@/modules/admin/operations/finance/accounting/constants/default-coa'
 
 export interface CreateTenantResponseDto {
   tenant: TenantEntity
@@ -41,7 +43,7 @@ export class TenantService {
     private readonly subscriptionPlanService: SubscriptionPlanService,
     private readonly dataSource: DataSource,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   /**
    * Creates a new tenant with associated admin user and initial settings.
@@ -118,6 +120,16 @@ export class TenantService {
       // Link user to tenant
       savedTenant.userId = savedUser.id
       await tenantRepo.save(savedTenant)
+
+      // Initialize default Chart of Accounts (COA) for this new tenant
+      const accountRepo = manager.getRepository(AccountEntity)
+      const accounts = DEFAULT_CHART_OF_ACCOUNTS.map((coa) =>
+        accountRepo.create({
+          ...coa,
+          tenantId: savedTenant.id,
+        }),
+      )
+      await accountRepo.save(accounts)
 
       // 4. Parallelize non-critical initialization tasks
       await Promise.all([

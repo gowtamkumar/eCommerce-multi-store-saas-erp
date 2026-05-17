@@ -2,6 +2,7 @@ import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
+import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
 import {
   Column,
   CreateDateColumn,
@@ -92,6 +93,14 @@ export class UserEntity {
   @ManyToOne(() => BranchEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'branch_id' })
   branch: BranchEntity
+
+  @Column({ type: 'uuid', name: 'warehouse_id', nullable: true })
+  @Index()
+  warehouseId: string
+
+  @ManyToOne(() => WarehouseEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'warehouse_id' })
+  warehouse: WarehouseEntity
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date

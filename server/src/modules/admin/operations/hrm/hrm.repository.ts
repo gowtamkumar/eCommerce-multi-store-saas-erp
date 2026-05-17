@@ -52,7 +52,7 @@ export class HrmRepository {
     private readonly interviewRepo: Repository<InterviewEntity>,
     @InjectRepository(PerformanceReviewEntity)
     private readonly performanceReviewRepo: Repository<PerformanceReviewEntity>,
-  ) { }
+  ) {}
 
   // --- Department ---
   async createDepartment(data: Partial<DepartmentEntity>): Promise<DepartmentEntity> {
@@ -104,14 +104,7 @@ export class HrmRepository {
   async findAllEmployees(tenantId: string): Promise<EmployeeEntity[]> {
     return this.employeeRepo.find({
       where: { tenantId },
-      relations: [
-        'user',
-        'department',
-        'designation',
-        'branch',
-        'manager',
-        'personalDetails',
-      ],
+      relations: ['user', 'department', 'designation', 'branch', 'manager', 'personalDetails'],
     })
   }
 
@@ -161,11 +154,14 @@ export class HrmRepository {
     return this.shiftAssignmentRepo.save(this.shiftAssignmentRepo.create(data))
   }
 
-  async findEmployeeShiftAssignments(employeeId: string, tenantId: string): Promise<EmployeeShiftAssignmentEntity[]> {
+  async findEmployeeShiftAssignments(
+    employeeId: string,
+    tenantId: string,
+  ): Promise<EmployeeShiftAssignmentEntity[]> {
     return this.shiftAssignmentRepo.find({
       where: { employeeId, tenantId },
       relations: ['shift'],
-      order: { effectiveFrom: 'DESC' }
+      order: { effectiveFrom: 'DESC' },
     })
   }
 
@@ -222,7 +218,13 @@ export class HrmRepository {
   async findAllLeaveRequests(tenantId: string): Promise<LeaveRequestEntity[]> {
     return this.leaveRequestRepo.find({
       where: { tenantId },
-      relations: ['employee', 'employee.user', 'employee.department', 'approvedBy', 'approvedBy.user'],
+      relations: [
+        'employee',
+        'employee.user',
+        'employee.department',
+        'approvedBy',
+        'approvedBy.user',
+      ],
       order: { createdAt: 'DESC' },
     })
   }
@@ -291,7 +293,10 @@ export class HrmRepository {
     return this.interviewRepo.save(this.interviewRepo.create(data))
   }
 
-  async findInterviewsByApplicant(applicantId: string, tenantId: string): Promise<InterviewEntity[]> {
+  async findInterviewsByApplicant(
+    applicantId: string,
+    tenantId: string,
+  ): Promise<InterviewEntity[]> {
     return this.interviewRepo.find({
       where: { applicantId, tenantId },
       relations: ['interviewer', 'interviewer.user'],
@@ -324,11 +329,11 @@ export class HrmRepository {
       this.jobPostingRepo.count({ where: { tenantId, status: 'PUBLISHED' as any } }),
       this.applicantRepo.count({ where: { tenantId } }),
       this.attendanceSessionRepo.count({
-        where: { 
+        where: {
           tenantId,
-          clockIn: Between(today, new Date())
-        }
-      })
+          clockIn: Between(today, new Date()),
+        },
+      }),
     ])
 
     return {
@@ -336,7 +341,7 @@ export class HrmRepository {
       jobCount,
       applicantCount,
       attendanceCount,
-      attendanceRate: employeeCount > 0 ? (attendanceCount / employeeCount) * 100 : 0
+      attendanceRate: employeeCount > 0 ? (attendanceCount / employeeCount) * 100 : 0,
     }
   }
 }

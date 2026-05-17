@@ -13,4 +13,4 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
   providers: [SubscriptionBillingService],
   exports: [SubscriptionBillingService],
 })
-export class SubscriptionBillingModule { }
+export class SubscriptionBillingModule {}

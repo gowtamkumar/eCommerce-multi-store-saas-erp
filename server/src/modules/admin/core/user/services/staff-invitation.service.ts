@@ -49,6 +49,8 @@ export class StaffInvitationService {
         expiresAt,
         invitedBy,
         status: InvitationStatus.Pending,
+        branchId: dto.branchId || null,
+        warehouseId: dto.warehouseId || null,
       },
       ctx,
     )
@@ -116,6 +118,8 @@ export class StaffInvitationService {
         role: invitation.role,
         status: UserStatus.ACTIVE,
         isEmailVerified: true,
+        branchId: invitation.branchId || null,
+        warehouseId: invitation.warehouseId || null,
       },
       { tenantId: invitation.tenantId, userId: 'system' } as RequestContextDto,
     )

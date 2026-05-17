@@ -9,7 +9,7 @@ export class WarehouseBinRepository {
   constructor(
     @InjectRepository(WarehouseBinEntity)
     private readonly repo: Repository<WarehouseBinEntity>,
-  ) { }
+  ) {}
 
   async findByWarehouse(warehouseId: string): Promise<WarehouseBinEntity[]> {
     return this.repo.find({ where: { warehouseId } })

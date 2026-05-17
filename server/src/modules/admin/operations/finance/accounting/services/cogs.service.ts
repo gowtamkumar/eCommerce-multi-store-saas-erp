@@ -46,7 +46,7 @@ export class CogsService {
       const toTake = Math.min(remainingToProcess, lotAvailable)
 
       totalCogs += toTake * Number(lot.unitCost || 0)
-      
+
       // Update lot remaining quantity
       lot.remainingQuantity = lotAvailable - toTake
       await manager.save(lot)

@@ -43,4 +43,4 @@ import { forwardRef } from '@nestjs/common'
   providers: [OrderService, ReturnService, OrderProcessor, OrderProcessHelper], // Registered
   exports: [OrderService, ReturnService],
 })
-export class OrderModule { }
+export class OrderModule {}

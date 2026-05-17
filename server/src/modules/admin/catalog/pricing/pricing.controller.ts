@@ -1,16 +1,16 @@
-import { Body, Controller, Get, Post, UseGuards, Param, Delete } from '@nestjs/common'
-import { PricingService } from './pricing.service'
-import { CreatePriceBookDto } from './dto/create-price-book.dto'
-import { AddProductPriceDto } from './dto/add-product-price.dto'
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { RequireFeature } from '@/common/decorators/require-feature.decorator'
-import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common'
+import { AddProductPriceDto } from './dto/add-product-price.dto'
+import { CreatePriceBookDto } from './dto/create-price-book.dto'
+import { PricingService } from './pricing.service'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/catalog')
+@RequireFeature('/admin/products')
 @Controller('pricing')
 export class PricingController {
   constructor(private readonly service: PricingService) {}

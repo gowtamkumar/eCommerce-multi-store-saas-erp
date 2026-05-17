@@ -9,7 +9,7 @@ export class PurchaseRequisitionItemEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'pr_id' })
   prId: string
 
-  @ManyToOne(() => PurchaseRequisitionEntity, pr => pr.items, { onDelete: 'CASCADE' })
+  @ManyToOne(() => PurchaseRequisitionEntity, (pr) => pr.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'pr_id' })
   purchaseRequisition: PurchaseRequisitionEntity
 

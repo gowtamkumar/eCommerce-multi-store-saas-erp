@@ -19,5 +19,4 @@ import { SupplierDocumentEntity } from './entities/supplier-document.entity'
   providers: [SupplierService, SupplierRepository, SupplierAPLedgerRepository],
   exports: [SupplierService, SupplierRepository, SupplierAPLedgerRepository],
 })
-export class SupplierModule { }
-
+export class SupplierModule {}

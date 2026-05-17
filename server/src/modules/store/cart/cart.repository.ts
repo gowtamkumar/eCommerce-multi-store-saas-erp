@@ -9,7 +9,7 @@ export class CartRepository {
   constructor(
     @InjectRepository(CartEntity)
     private readonly repo: Repository<CartEntity>,
-  ) { }
+  ) {}
 
   async findByUserId(userId: string, tenantId: string): Promise<CartEntity | null> {
     return await this.repo.findOne({

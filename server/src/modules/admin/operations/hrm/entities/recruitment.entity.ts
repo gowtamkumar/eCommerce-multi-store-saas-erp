@@ -48,7 +48,6 @@ export class JobPostingEntity extends BaseEntity {
 
 @Entity('applicants')
 export class ApplicantEntity extends BaseEntity {
-
   @Column({ name: 'first_name', nullable: true })
   firstName: string
 

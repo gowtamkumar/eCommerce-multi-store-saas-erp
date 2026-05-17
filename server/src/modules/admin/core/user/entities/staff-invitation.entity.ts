@@ -30,4 +30,10 @@ export class StaffInvitationEntity extends BaseEntity {
 
   @Column({ name: 'invited_by', type: 'uuid', nullable: true })
   invitedBy: string
+
+  @Column({ name: 'branch_id', type: 'uuid', nullable: true })
+  branchId: string
+
+  @Column({ name: 'warehouse_id', type: 'uuid', nullable: true })
+  warehouseId: string
 }

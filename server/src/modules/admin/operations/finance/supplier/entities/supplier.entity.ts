@@ -27,7 +27,7 @@ export class SupplierEntity extends BaseEntity {
   @Column({ type: 'enum', enum: SupplierCategory, default: SupplierCategory.OTHER })
   category: SupplierCategory
 
-  @Column({ type: 'decimal', precision: 3, scale: 2, default: 0.00 })
+  @Column({ type: 'decimal', precision: 3, scale: 2, default: 0.0 })
   rating: number
 
   @Column({ type: 'int', name: 'lead_time_days', default: 0 })
@@ -56,10 +56,10 @@ export class SupplierEntity extends BaseEntity {
   @Column({ nullable: true })
   taxId: string
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0.00 })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0.0 })
   openingBalance: number
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0.00 })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0.0 })
   currentBalance: number
 
   @Column({ default: 'ACTIVE' })
@@ -75,6 +75,6 @@ export class SupplierEntity extends BaseEntity {
   // Virtual property populated from SupplierAPLedger
   outstandingBalance?: number
 
-  @OneToMany(() => SupplierDocumentEntity, document => document.supplier)
+  @OneToMany(() => SupplierDocumentEntity, (document) => document.supplier)
   documents: SupplierDocumentEntity[]
 }

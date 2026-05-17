@@ -20,7 +20,8 @@ export class AccountingIntegrationService {
     ctx: RequestContextDto,
     manager?: EntityManager,
   ) {
-    const { type, quantity, unitCost, cogsAmount, referenceType, referenceId, remarks } = ledgerEntry
+    const { type, quantity, unitCost, cogsAmount, referenceType, referenceId, remarks } =
+      ledgerEntry
     const absQty = Math.abs(quantity)
     const totalCost = absQty * Number(unitCost || 0)
 
@@ -35,7 +36,9 @@ export class AccountingIntegrationService {
         // Add more cases for Adjustment, Return, etc.
       }
     } catch (error) {
-      this.logger.error(`Failed to post financial entry for ledger ${ledgerEntry.id}: ${error.message}`)
+      this.logger.error(
+        `Failed to post financial entry for ledger ${ledgerEntry.id}: ${error.message}`,
+      )
       // In a production system, we might want to queue this for retry or mark as "unposted"
     }
   }

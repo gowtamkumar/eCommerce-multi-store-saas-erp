@@ -252,6 +252,12 @@ export const navGroups = [
     items: [
       {
         icon: ShoppingBag,
+        label: "Point of Sale (POS)",
+        href: "/admin/pos",
+        feature: "/admin/orders",
+      },
+      {
+        icon: ShoppingBag,
         label: "Orders",
         href: "/admin/orders",
         feature: "/admin/orders",

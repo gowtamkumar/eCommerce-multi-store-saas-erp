@@ -14,4 +14,4 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
   providers: [PaymentService],
   exports: [PaymentService],
 })
-export class PaymentModule { }
+export class PaymentModule {}

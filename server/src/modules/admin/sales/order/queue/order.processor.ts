@@ -73,7 +73,9 @@ export class OrderProcessor extends WorkerHost {
 
         try {
           await this.smsService.sendSms(orderWithRelations.customerPhone, message, tenantId)
-          this.logger.log(`SMS notification sent successfully to ${orderWithRelations.customerPhone}`)
+          this.logger.log(
+            `SMS notification sent successfully to ${orderWithRelations.customerPhone}`,
+          )
         } catch (smsError) {
           this.logger.error(`Failed to send SMS notification for order ${orderId}`, smsError.stack)
           // Don't throw - we don't want to fail the whole job if only SMS fails
@@ -95,7 +97,10 @@ export class OrderProcessor extends WorkerHost {
           )
           this.logger.log(`Push notification triggered successfully for order ${orderId}`)
         } catch (pushError) {
-          this.logger.error(`Failed to trigger push notification for order ${orderId}`, pushError.stack)
+          this.logger.error(
+            `Failed to trigger push notification for order ${orderId}`,
+            pushError.stack,
+          )
         }
       }
     } else {

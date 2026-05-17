@@ -1,158 +1,295 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm'
 
 export class AddMessagingCampaign1776619062019 implements MigrationInterface {
-    name = 'AddMessagingCampaign1776619062019'
+  name = 'AddMessagingCampaign1776619062019'
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`CREATE TABLE "campaign_messages" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "user_id" uuid, "campaign_id" uuid NOT NULL, "subject" character varying(255), "html_content" text, "text" text, "title" character varying(255), "body" text, "image_url" character varying(500), CONSTRAINT "PK_f87903f05267f5fd956a4b9a12e" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "IDX_e00f0f4e7d2f6ec5960e75ee6a" ON "campaign_messages" ("user_id") `);
-        await queryRunner.query(`CREATE TYPE "public"."campaign_logs_status_enum" AS ENUM('pending', 'sent', 'failed', 'opened', 'clicked')`);
-        await queryRunner.query(`CREATE TABLE "campaign_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "user_id" uuid, "campaign_id" uuid NOT NULL, "status" "public"."campaign_logs_status_enum" NOT NULL DEFAULT 'pending', "sent_at" TIMESTAMP, "error" text, "metadata" jsonb, CONSTRAINT "PK_354bae2218a1c854c161c010cef" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "IDX_6efd91be9be9719763fa9442b1" ON "campaign_logs" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_baf89b47ea379dd0193a50b865" ON "campaign_logs" ("user_id", "status") `);
-        await queryRunner.query(`CREATE INDEX "IDX_9d2f4aa7859760e2d5a0cf6df2" ON "campaign_logs" ("campaign_id", "status") `);
-        await queryRunner.query(`CREATE TYPE "public"."campaigns_type_enum" AS ENUM('email', 'sms', 'push')`);
-        await queryRunner.query(`CREATE TYPE "public"."campaigns_status_enum" AS ENUM('draft', 'scheduled', 'running', 'completed', 'failed')`);
-        await queryRunner.query(`CREATE TABLE "campaigns" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "user_id" uuid, "name" character varying(255) NOT NULL, "type" "public"."campaigns_type_enum" NOT NULL DEFAULT 'email', "status" "public"."campaigns_status_enum" NOT NULL DEFAULT 'draft', "schedule_time" TIMESTAMP, "tenant_id" uuid NOT NULL, "total_audience" integer NOT NULL DEFAULT '0', "sent_count" integer NOT NULL DEFAULT '0', "failed_count" integer NOT NULL DEFAULT '0', CONSTRAINT "PK_831e3fcd4fc45b4e4c3f57a9ee4" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "IDX_45455b21195721407322ddce00" ON "campaigns" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_4913e660b7e5d3f608b66a65e5" ON "campaigns" ("tenant_id", "schedule_time") `);
-        await queryRunner.query(`CREATE INDEX "IDX_8848968b61761dabc955081229" ON "campaigns" ("tenant_id", "status") `);
-        await queryRunner.query(`ALTER TABLE "users" ADD "push_token" character varying`);
-        await queryRunner.query(`ALTER TABLE "users" ADD "fcm_token" character varying`);
-        await queryRunner.query(`ALTER TABLE "subscription_invoices" ADD "user_id" uuid`);
-        await queryRunner.query(`ALTER TABLE "staff_invitations" ADD "user_id" uuid`);
-        await queryRunner.query(`ALTER TABLE "reviews" DROP CONSTRAINT "FK_728447781a30bc3fcfe5c2f1cdf"`);
-        await queryRunner.query(`ALTER TABLE "reviews" ALTER COLUMN "user_id" DROP NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "wishlists" DROP CONSTRAINT "FK_b5e6331a1a7d61c25d7a25cab8f"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_d1e5aa828aec675770f3f435bd"`);
-        await queryRunner.query(`ALTER TABLE "wishlists" ALTER COLUMN "user_id" DROP NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "shipping_addresses" ALTER COLUMN "user_id" DROP NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "carts" DROP CONSTRAINT "FK_2ec1c94a977b940d85a4f498aea"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_101cb71b62ea2d4e9cc56ab54d"`);
-        await queryRunner.query(`ALTER TABLE "carts" ALTER COLUMN "user_id" DROP NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "order_returns" DROP CONSTRAINT "FK_a511b1124729b644c1c26cbb098"`);
-        await queryRunner.query(`ALTER TABLE "order_returns" ALTER COLUMN "user_id" DROP NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "orders" ALTER COLUMN "user_id" DROP NOT NULL`);
-        await queryRunner.query(`CREATE INDEX "IDX_f06b516e6bdc44a370ca7d69a0" ON "subscription_plans" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_0e2bb90ad27fa92910185792ac" ON "tenants" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_718255c609f0cf64754afc09b6" ON "tenant_traffic" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_ea43f73792e24d01f0cb2f19e2" ON "subscription_invoices" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_637c1fee01f70e1a7eb00261ac" ON "platform_settings" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_bd2726fd31b35443f2245b93ba" ON "audit_logs" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_728447781a30bc3fcfe5c2f1cd" ON "reviews" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_98ceb5433a66707b9c649503dc" ON "pages" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_efa33cfbfffe5e5ddf10b8360e" ON "faqs" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_5d26f3a7d19d380538c9dd57d0" ON "brands" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_2296b7fe012d95646fa41921c8" ON "categories" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_2cf0031fe3f0a6a5e9085f390f" ON "product_attributes" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_e96e3e3799fe4b21ad07b3b3cf" ON "product_variants" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_b5e6331a1a7d61c25d7a25cab8" ON "wishlists" ("user_id") `);
-        await queryRunner.query(`CREATE UNIQUE INDEX "IDX_d1e5aa828aec675770f3f435bd" ON "wishlists" ("user_id", "product_id", "tenant_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_75ab21980cabc5be328df3e49c" ON "shipping_addresses" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_b7213c20c1ecdc6597abc8f121" ON "cart_items" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_2ec1c94a977b940d85a4f498ae" ON "carts" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_101cb71b62ea2d4e9cc56ab54d" ON "carts" ("user_id", "tenant_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_e3c0b0f92d46ec87d2aedb0895" ON "site_settings" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_6b9285677a2fa46c96d6f88e9f" ON "promotions" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_bf96e1bdbc1ce2ec1f7fe66e8c" ON "order_items" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_a511b1124729b644c1c26cbb09" ON "order_returns" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_a922b820eeef29ac1c6800e826" ON "orders" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_427785468fb7d2733f59e7d7d3" ON "payments" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_9974c02e617aa96ddafd840432" ON "coupons" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_e51672a4898b02f686769f71c2" ON "inventory_transactions" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_a7435dbb7583938d5e7d137604" ON "files" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_33d621ab2004ace0d32a966e25" ON "purchase_order_items" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_c13036093717212c2c6aa111c7" ON "purchase_orders" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_99283b63c5ce97cf7a4dcc0880" ON "supplier_payments" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_49a0ca239d34e74fdc4e0625a7" ON "expenses" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_0c99e87bda40ab7c44e49e88ef" ON "subscribers" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_0cec49f8f07d5ac4a8a9bbe6ac" ON "leads" ("user_id") `);
-        await queryRunner.query(`CREATE INDEX "IDX_22802f1b9ba6a6c757db786ad5" ON "staff_invitations" ("user_id") `);
-        await queryRunner.query(`ALTER TABLE "reviews" ADD CONSTRAINT "FK_728447781a30bc3fcfe5c2f1cdf" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "wishlists" ADD CONSTRAINT "FK_b5e6331a1a7d61c25d7a25cab8f" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "carts" ADD CONSTRAINT "FK_2ec1c94a977b940d85a4f498aea" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "order_returns" ADD CONSTRAINT "FK_a511b1124729b644c1c26cbb098" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "campaign_messages" ADD CONSTRAINT "FK_39d9109a0190b76618b817e669d" FOREIGN KEY ("campaign_id") REFERENCES "campaigns"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "campaign_logs" ADD CONSTRAINT "FK_1f6e0536f9ac0189d6654b414da" FOREIGN KEY ("campaign_id") REFERENCES "campaigns"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "campaign_logs" ADD CONSTRAINT "FK_6efd91be9be9719763fa9442b14" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "campaigns" ADD CONSTRAINT "FK_d4b32d1e898a336c770e08bf5e8" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "campaigns" ADD CONSTRAINT "FK_45455b21195721407322ddce007" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-    }
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `CREATE TABLE "campaign_messages" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "user_id" uuid, "campaign_id" uuid NOT NULL, "subject" character varying(255), "html_content" text, "text" text, "title" character varying(255), "body" text, "image_url" character varying(500), CONSTRAINT "PK_f87903f05267f5fd956a4b9a12e" PRIMARY KEY ("id"))`,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_e00f0f4e7d2f6ec5960e75ee6a" ON "campaign_messages" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE TYPE "public"."campaign_logs_status_enum" AS ENUM('pending', 'sent', 'failed', 'opened', 'clicked')`,
+    )
+    await queryRunner.query(
+      `CREATE TABLE "campaign_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "user_id" uuid, "campaign_id" uuid NOT NULL, "status" "public"."campaign_logs_status_enum" NOT NULL DEFAULT 'pending', "sent_at" TIMESTAMP, "error" text, "metadata" jsonb, CONSTRAINT "PK_354bae2218a1c854c161c010cef" PRIMARY KEY ("id"))`,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_6efd91be9be9719763fa9442b1" ON "campaign_logs" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_baf89b47ea379dd0193a50b865" ON "campaign_logs" ("user_id", "status") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_9d2f4aa7859760e2d5a0cf6df2" ON "campaign_logs" ("campaign_id", "status") `,
+    )
+    await queryRunner.query(
+      `CREATE TYPE "public"."campaigns_type_enum" AS ENUM('email', 'sms', 'push')`,
+    )
+    await queryRunner.query(
+      `CREATE TYPE "public"."campaigns_status_enum" AS ENUM('draft', 'scheduled', 'running', 'completed', 'failed')`,
+    )
+    await queryRunner.query(
+      `CREATE TABLE "campaigns" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "user_id" uuid, "name" character varying(255) NOT NULL, "type" "public"."campaigns_type_enum" NOT NULL DEFAULT 'email', "status" "public"."campaigns_status_enum" NOT NULL DEFAULT 'draft', "schedule_time" TIMESTAMP, "tenant_id" uuid NOT NULL, "total_audience" integer NOT NULL DEFAULT '0', "sent_count" integer NOT NULL DEFAULT '0', "failed_count" integer NOT NULL DEFAULT '0', CONSTRAINT "PK_831e3fcd4fc45b4e4c3f57a9ee4" PRIMARY KEY ("id"))`,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_45455b21195721407322ddce00" ON "campaigns" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_4913e660b7e5d3f608b66a65e5" ON "campaigns" ("tenant_id", "schedule_time") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_8848968b61761dabc955081229" ON "campaigns" ("tenant_id", "status") `,
+    )
+    await queryRunner.query(`ALTER TABLE "users" ADD "push_token" character varying`)
+    await queryRunner.query(`ALTER TABLE "users" ADD "fcm_token" character varying`)
+    await queryRunner.query(`ALTER TABLE "subscription_invoices" ADD "user_id" uuid`)
+    await queryRunner.query(`ALTER TABLE "staff_invitations" ADD "user_id" uuid`)
+    await queryRunner.query(
+      `ALTER TABLE "reviews" DROP CONSTRAINT "FK_728447781a30bc3fcfe5c2f1cdf"`,
+    )
+    await queryRunner.query(`ALTER TABLE "reviews" ALTER COLUMN "user_id" DROP NOT NULL`)
+    await queryRunner.query(
+      `ALTER TABLE "wishlists" DROP CONSTRAINT "FK_b5e6331a1a7d61c25d7a25cab8f"`,
+    )
+    await queryRunner.query(`DROP INDEX "public"."IDX_d1e5aa828aec675770f3f435bd"`)
+    await queryRunner.query(`ALTER TABLE "wishlists" ALTER COLUMN "user_id" DROP NOT NULL`)
+    await queryRunner.query(`ALTER TABLE "shipping_addresses" ALTER COLUMN "user_id" DROP NOT NULL`)
+    await queryRunner.query(`ALTER TABLE "carts" DROP CONSTRAINT "FK_2ec1c94a977b940d85a4f498aea"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_101cb71b62ea2d4e9cc56ab54d"`)
+    await queryRunner.query(`ALTER TABLE "carts" ALTER COLUMN "user_id" DROP NOT NULL`)
+    await queryRunner.query(
+      `ALTER TABLE "order_returns" DROP CONSTRAINT "FK_a511b1124729b644c1c26cbb098"`,
+    )
+    await queryRunner.query(`ALTER TABLE "order_returns" ALTER COLUMN "user_id" DROP NOT NULL`)
+    await queryRunner.query(`ALTER TABLE "orders" ALTER COLUMN "user_id" DROP NOT NULL`)
+    await queryRunner.query(
+      `CREATE INDEX "IDX_f06b516e6bdc44a370ca7d69a0" ON "subscription_plans" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_0e2bb90ad27fa92910185792ac" ON "tenants" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_718255c609f0cf64754afc09b6" ON "tenant_traffic" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ea43f73792e24d01f0cb2f19e2" ON "subscription_invoices" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_637c1fee01f70e1a7eb00261ac" ON "platform_settings" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_bd2726fd31b35443f2245b93ba" ON "audit_logs" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_728447781a30bc3fcfe5c2f1cd" ON "reviews" ("user_id") `,
+    )
+    await queryRunner.query(`CREATE INDEX "IDX_98ceb5433a66707b9c649503dc" ON "pages" ("user_id") `)
+    await queryRunner.query(`CREATE INDEX "IDX_efa33cfbfffe5e5ddf10b8360e" ON "faqs" ("user_id") `)
+    await queryRunner.query(
+      `CREATE INDEX "IDX_5d26f3a7d19d380538c9dd57d0" ON "brands" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_2296b7fe012d95646fa41921c8" ON "categories" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_2cf0031fe3f0a6a5e9085f390f" ON "product_attributes" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_e96e3e3799fe4b21ad07b3b3cf" ON "product_variants" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_b5e6331a1a7d61c25d7a25cab8" ON "wishlists" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX "IDX_d1e5aa828aec675770f3f435bd" ON "wishlists" ("user_id", "product_id", "tenant_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_75ab21980cabc5be328df3e49c" ON "shipping_addresses" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_b7213c20c1ecdc6597abc8f121" ON "cart_items" ("user_id") `,
+    )
+    await queryRunner.query(`CREATE INDEX "IDX_2ec1c94a977b940d85a4f498ae" ON "carts" ("user_id") `)
+    await queryRunner.query(
+      `CREATE INDEX "IDX_101cb71b62ea2d4e9cc56ab54d" ON "carts" ("user_id", "tenant_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_e3c0b0f92d46ec87d2aedb0895" ON "site_settings" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_6b9285677a2fa46c96d6f88e9f" ON "promotions" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_bf96e1bdbc1ce2ec1f7fe66e8c" ON "order_items" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_a511b1124729b644c1c26cbb09" ON "order_returns" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_a922b820eeef29ac1c6800e826" ON "orders" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_427785468fb7d2733f59e7d7d3" ON "payments" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_9974c02e617aa96ddafd840432" ON "coupons" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_e51672a4898b02f686769f71c2" ON "inventory_transactions" ("user_id") `,
+    )
+    await queryRunner.query(`CREATE INDEX "IDX_a7435dbb7583938d5e7d137604" ON "files" ("user_id") `)
+    await queryRunner.query(
+      `CREATE INDEX "IDX_33d621ab2004ace0d32a966e25" ON "purchase_order_items" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_c13036093717212c2c6aa111c7" ON "purchase_orders" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_99283b63c5ce97cf7a4dcc0880" ON "supplier_payments" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_49a0ca239d34e74fdc4e0625a7" ON "expenses" ("user_id") `,
+    )
+    await queryRunner.query(
+      `CREATE INDEX "IDX_0c99e87bda40ab7c44e49e88ef" ON "subscribers" ("user_id") `,
+    )
+    await queryRunner.query(`CREATE INDEX "IDX_0cec49f8f07d5ac4a8a9bbe6ac" ON "leads" ("user_id") `)
+    await queryRunner.query(
+      `CREATE INDEX "IDX_22802f1b9ba6a6c757db786ad5" ON "staff_invitations" ("user_id") `,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "reviews" ADD CONSTRAINT "FK_728447781a30bc3fcfe5c2f1cdf" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "wishlists" ADD CONSTRAINT "FK_b5e6331a1a7d61c25d7a25cab8f" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "carts" ADD CONSTRAINT "FK_2ec1c94a977b940d85a4f498aea" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "order_returns" ADD CONSTRAINT "FK_a511b1124729b644c1c26cbb098" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "campaign_messages" ADD CONSTRAINT "FK_39d9109a0190b76618b817e669d" FOREIGN KEY ("campaign_id") REFERENCES "campaigns"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "campaign_logs" ADD CONSTRAINT "FK_1f6e0536f9ac0189d6654b414da" FOREIGN KEY ("campaign_id") REFERENCES "campaigns"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "campaign_logs" ADD CONSTRAINT "FK_6efd91be9be9719763fa9442b14" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "campaigns" ADD CONSTRAINT "FK_d4b32d1e898a336c770e08bf5e8" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "campaigns" ADD CONSTRAINT "FK_45455b21195721407322ddce007" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+    )
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "campaigns" DROP CONSTRAINT "FK_45455b21195721407322ddce007"`);
-        await queryRunner.query(`ALTER TABLE "campaigns" DROP CONSTRAINT "FK_d4b32d1e898a336c770e08bf5e8"`);
-        await queryRunner.query(`ALTER TABLE "campaign_logs" DROP CONSTRAINT "FK_6efd91be9be9719763fa9442b14"`);
-        await queryRunner.query(`ALTER TABLE "campaign_logs" DROP CONSTRAINT "FK_1f6e0536f9ac0189d6654b414da"`);
-        await queryRunner.query(`ALTER TABLE "campaign_messages" DROP CONSTRAINT "FK_39d9109a0190b76618b817e669d"`);
-        await queryRunner.query(`ALTER TABLE "order_returns" DROP CONSTRAINT "FK_a511b1124729b644c1c26cbb098"`);
-        await queryRunner.query(`ALTER TABLE "carts" DROP CONSTRAINT "FK_2ec1c94a977b940d85a4f498aea"`);
-        await queryRunner.query(`ALTER TABLE "wishlists" DROP CONSTRAINT "FK_b5e6331a1a7d61c25d7a25cab8f"`);
-        await queryRunner.query(`ALTER TABLE "reviews" DROP CONSTRAINT "FK_728447781a30bc3fcfe5c2f1cdf"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_22802f1b9ba6a6c757db786ad5"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_0cec49f8f07d5ac4a8a9bbe6ac"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_0c99e87bda40ab7c44e49e88ef"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_49a0ca239d34e74fdc4e0625a7"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_99283b63c5ce97cf7a4dcc0880"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_c13036093717212c2c6aa111c7"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_33d621ab2004ace0d32a966e25"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_a7435dbb7583938d5e7d137604"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_e51672a4898b02f686769f71c2"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_9974c02e617aa96ddafd840432"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_427785468fb7d2733f59e7d7d3"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_a922b820eeef29ac1c6800e826"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_a511b1124729b644c1c26cbb09"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bf96e1bdbc1ce2ec1f7fe66e8c"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_6b9285677a2fa46c96d6f88e9f"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_e3c0b0f92d46ec87d2aedb0895"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_101cb71b62ea2d4e9cc56ab54d"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_2ec1c94a977b940d85a4f498ae"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_b7213c20c1ecdc6597abc8f121"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_75ab21980cabc5be328df3e49c"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_d1e5aa828aec675770f3f435bd"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_b5e6331a1a7d61c25d7a25cab8"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_e96e3e3799fe4b21ad07b3b3cf"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_2cf0031fe3f0a6a5e9085f390f"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_2296b7fe012d95646fa41921c8"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_5d26f3a7d19d380538c9dd57d0"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_efa33cfbfffe5e5ddf10b8360e"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_98ceb5433a66707b9c649503dc"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_728447781a30bc3fcfe5c2f1cd"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bd2726fd31b35443f2245b93ba"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_637c1fee01f70e1a7eb00261ac"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_ea43f73792e24d01f0cb2f19e2"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_718255c609f0cf64754afc09b6"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_0e2bb90ad27fa92910185792ac"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_f06b516e6bdc44a370ca7d69a0"`);
-        await queryRunner.query(`ALTER TABLE "orders" ALTER COLUMN "user_id" SET NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "order_returns" ALTER COLUMN "user_id" SET NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "order_returns" ADD CONSTRAINT "FK_a511b1124729b644c1c26cbb098" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "carts" ALTER COLUMN "user_id" SET NOT NULL`);
-        await queryRunner.query(`CREATE INDEX "IDX_101cb71b62ea2d4e9cc56ab54d" ON "carts" ("tenant_id", "user_id") `);
-        await queryRunner.query(`ALTER TABLE "carts" ADD CONSTRAINT "FK_2ec1c94a977b940d85a4f498aea" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "shipping_addresses" ALTER COLUMN "user_id" SET NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "wishlists" ALTER COLUMN "user_id" SET NOT NULL`);
-        await queryRunner.query(`CREATE UNIQUE INDEX "IDX_d1e5aa828aec675770f3f435bd" ON "wishlists" ("product_id", "tenant_id", "user_id") `);
-        await queryRunner.query(`ALTER TABLE "wishlists" ADD CONSTRAINT "FK_b5e6331a1a7d61c25d7a25cab8f" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "reviews" ALTER COLUMN "user_id" SET NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "reviews" ADD CONSTRAINT "FK_728447781a30bc3fcfe5c2f1cdf" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "staff_invitations" DROP COLUMN "user_id"`);
-        await queryRunner.query(`ALTER TABLE "subscription_invoices" DROP COLUMN "user_id"`);
-        await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "fcm_token"`);
-        await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "push_token"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_8848968b61761dabc955081229"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_4913e660b7e5d3f608b66a65e5"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_45455b21195721407322ddce00"`);
-        await queryRunner.query(`DROP TABLE "campaigns"`);
-        await queryRunner.query(`DROP TYPE "public"."campaigns_status_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."campaigns_type_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_9d2f4aa7859760e2d5a0cf6df2"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_baf89b47ea379dd0193a50b865"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_6efd91be9be9719763fa9442b1"`);
-        await queryRunner.query(`DROP TABLE "campaign_logs"`);
-        await queryRunner.query(`DROP TYPE "public"."campaign_logs_status_enum"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_e00f0f4e7d2f6ec5960e75ee6a"`);
-        await queryRunner.query(`DROP TABLE "campaign_messages"`);
-    }
-
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "campaigns" DROP CONSTRAINT "FK_45455b21195721407322ddce007"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "campaigns" DROP CONSTRAINT "FK_d4b32d1e898a336c770e08bf5e8"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "campaign_logs" DROP CONSTRAINT "FK_6efd91be9be9719763fa9442b14"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "campaign_logs" DROP CONSTRAINT "FK_1f6e0536f9ac0189d6654b414da"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "campaign_messages" DROP CONSTRAINT "FK_39d9109a0190b76618b817e669d"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "order_returns" DROP CONSTRAINT "FK_a511b1124729b644c1c26cbb098"`,
+    )
+    await queryRunner.query(`ALTER TABLE "carts" DROP CONSTRAINT "FK_2ec1c94a977b940d85a4f498aea"`)
+    await queryRunner.query(
+      `ALTER TABLE "wishlists" DROP CONSTRAINT "FK_b5e6331a1a7d61c25d7a25cab8f"`,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "reviews" DROP CONSTRAINT "FK_728447781a30bc3fcfe5c2f1cdf"`,
+    )
+    await queryRunner.query(`DROP INDEX "public"."IDX_22802f1b9ba6a6c757db786ad5"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_0cec49f8f07d5ac4a8a9bbe6ac"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_0c99e87bda40ab7c44e49e88ef"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_49a0ca239d34e74fdc4e0625a7"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_99283b63c5ce97cf7a4dcc0880"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_c13036093717212c2c6aa111c7"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_33d621ab2004ace0d32a966e25"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_a7435dbb7583938d5e7d137604"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_e51672a4898b02f686769f71c2"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_9974c02e617aa96ddafd840432"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_427785468fb7d2733f59e7d7d3"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_a922b820eeef29ac1c6800e826"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_a511b1124729b644c1c26cbb09"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_bf96e1bdbc1ce2ec1f7fe66e8c"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_6b9285677a2fa46c96d6f88e9f"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_e3c0b0f92d46ec87d2aedb0895"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_101cb71b62ea2d4e9cc56ab54d"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_2ec1c94a977b940d85a4f498ae"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_b7213c20c1ecdc6597abc8f121"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_75ab21980cabc5be328df3e49c"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_d1e5aa828aec675770f3f435bd"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_b5e6331a1a7d61c25d7a25cab8"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_e96e3e3799fe4b21ad07b3b3cf"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_2cf0031fe3f0a6a5e9085f390f"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_2296b7fe012d95646fa41921c8"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_5d26f3a7d19d380538c9dd57d0"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_efa33cfbfffe5e5ddf10b8360e"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_98ceb5433a66707b9c649503dc"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_728447781a30bc3fcfe5c2f1cd"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_bd2726fd31b35443f2245b93ba"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_637c1fee01f70e1a7eb00261ac"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_ea43f73792e24d01f0cb2f19e2"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_718255c609f0cf64754afc09b6"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_0e2bb90ad27fa92910185792ac"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_f06b516e6bdc44a370ca7d69a0"`)
+    await queryRunner.query(`ALTER TABLE "orders" ALTER COLUMN "user_id" SET NOT NULL`)
+    await queryRunner.query(`ALTER TABLE "order_returns" ALTER COLUMN "user_id" SET NOT NULL`)
+    await queryRunner.query(
+      `ALTER TABLE "order_returns" ADD CONSTRAINT "FK_a511b1124729b644c1c26cbb098" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(`ALTER TABLE "carts" ALTER COLUMN "user_id" SET NOT NULL`)
+    await queryRunner.query(
+      `CREATE INDEX "IDX_101cb71b62ea2d4e9cc56ab54d" ON "carts" ("tenant_id", "user_id") `,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "carts" ADD CONSTRAINT "FK_2ec1c94a977b940d85a4f498aea" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(`ALTER TABLE "shipping_addresses" ALTER COLUMN "user_id" SET NOT NULL`)
+    await queryRunner.query(`ALTER TABLE "wishlists" ALTER COLUMN "user_id" SET NOT NULL`)
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX "IDX_d1e5aa828aec675770f3f435bd" ON "wishlists" ("product_id", "tenant_id", "user_id") `,
+    )
+    await queryRunner.query(
+      `ALTER TABLE "wishlists" ADD CONSTRAINT "FK_b5e6331a1a7d61c25d7a25cab8f" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(`ALTER TABLE "reviews" ALTER COLUMN "user_id" SET NOT NULL`)
+    await queryRunner.query(
+      `ALTER TABLE "reviews" ADD CONSTRAINT "FK_728447781a30bc3fcfe5c2f1cdf" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    )
+    await queryRunner.query(`ALTER TABLE "staff_invitations" DROP COLUMN "user_id"`)
+    await queryRunner.query(`ALTER TABLE "subscription_invoices" DROP COLUMN "user_id"`)
+    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "fcm_token"`)
+    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "push_token"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_8848968b61761dabc955081229"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_4913e660b7e5d3f608b66a65e5"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_45455b21195721407322ddce00"`)
+    await queryRunner.query(`DROP TABLE "campaigns"`)
+    await queryRunner.query(`DROP TYPE "public"."campaigns_status_enum"`)
+    await queryRunner.query(`DROP TYPE "public"."campaigns_type_enum"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_9d2f4aa7859760e2d5a0cf6df2"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_baf89b47ea379dd0193a50b865"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_6efd91be9be9719763fa9442b1"`)
+    await queryRunner.query(`DROP TABLE "campaign_logs"`)
+    await queryRunner.query(`DROP TYPE "public"."campaign_logs_status_enum"`)
+    await queryRunner.query(`DROP INDEX "public"."IDX_e00f0f4e7d2f6ec5960e75ee6a"`)
+    await queryRunner.query(`DROP TABLE "campaign_messages"`)
+  }
 }

@@ -25,7 +25,7 @@ export class CartService {
     private readonly couponService: CouponService,
     private readonly promotionService: PromotionService,
     private readonly pricingEngine: PricingEngineService,
-  ) { }
+  ) {}
 
   async createOrGetCart(ctx: RequestContextDto): Promise<CartResponseDto> {
     this.logger.log(`${this.createOrGetCart.name} Service Called`)

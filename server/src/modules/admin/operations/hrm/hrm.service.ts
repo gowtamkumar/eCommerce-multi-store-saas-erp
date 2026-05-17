@@ -26,7 +26,7 @@ export class HrmService {
     private readonly auditLogService: AuditLogService,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
-  ) { }
+  ) {}
 
   async getDashboardStats(ctx: RequestContextDto) {
     return this.hrmRepo.getStats(ctx.tenantId)
@@ -549,7 +549,7 @@ export class HrmService {
     const job = await this.hrmRepo.createJobPosting({
       ...data,
       tenantId: ctx.tenantId,
-      status: data.status || 'OPEN'
+      status: data.status || 'OPEN',
     })
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
@@ -569,7 +569,7 @@ export class HrmService {
       ...data,
       name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'New Applicant',
       tenantId: ctx.tenantId,
-      status: 'APPLIED'
+      status: 'APPLIED',
     })
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
@@ -613,7 +613,7 @@ export class HrmService {
   async onboardApplicant(id: string, ctx: RequestContextDto) {
     const applicant = await (this.hrmRepo as any).applicantRepo.findOne({
       where: { id, tenantId: ctx.tenantId },
-      relations: ['jobPosting']
+      relations: ['jobPosting'],
     })
 
     if (!applicant) throw new Error('Applicant not found')
@@ -622,14 +622,17 @@ export class HrmService {
     let user = await this.userService.findUserByEmail(applicant.email, ctx.tenantId)
     if (!user) {
       this.logger.log(`Creating new user account for applicant: ${applicant.email}`)
-      user = await this.userService.createUser({
-        email: applicant.email,
-        username: applicant.email,
-        name: `${applicant.firstName} ${applicant.lastName}`,
-        role: UserRole.EMPLOYEE,
-        password: 'WelcomeEmployee123!', // In production, send a password reset link
-        tenantId: ctx.tenantId,
-      } as any, ctx)
+      user = await this.userService.createUser(
+        {
+          email: applicant.email,
+          username: applicant.email,
+          name: `${applicant.firstName} ${applicant.lastName}`,
+          role: UserRole.EMPLOYEE,
+          password: 'WelcomeEmployee123!', // In production, send a password reset link
+          tenantId: ctx.tenantId,
+        } as any,
+        ctx,
+      )
     }
 
     // 2. Create Employee record linked to User
@@ -648,7 +651,7 @@ export class HrmService {
         userId: user.id,
         employeeId: employee.id,
         tenantId: ctx.tenantId,
-      })
+      }),
     )
 
     // Update applicant status to reflect onboarding completion
@@ -712,7 +715,9 @@ export class HrmService {
       // 1.5 Fix missing employee columns
       const hasEmpId = await queryRunner.hasColumn('employees', 'employee_id')
       if (!hasEmpId) {
-        await queryRunner.query('ALTER TABLE employees ADD COLUMN "employee_id" VARCHAR(255) UNIQUE')
+        await queryRunner.query(
+          'ALTER TABLE employees ADD COLUMN "employee_id" VARCHAR(255) UNIQUE',
+        )
       }
 
       // 1.55 Fix mandatory designation constraint
@@ -722,10 +727,21 @@ export class HrmService {
       }
 
       // 2. Fix enum values (Postgres doesn't sync enums automatically)
-      const statuses = ['APPLIED', 'SCREENING', 'INTERVIEW', 'TECHNICAL', 'HR_ROUND', 'OFFER', 'JOINED', 'REJECTED']
+      const statuses = [
+        'APPLIED',
+        'SCREENING',
+        'INTERVIEW',
+        'TECHNICAL',
+        'HR_ROUND',
+        'OFFER',
+        'JOINED',
+        'REJECTED',
+      ]
       for (const status of statuses) {
         try {
-          await queryRunner.query(`ALTER TYPE applicants_status_enum ADD VALUE IF NOT EXISTS '${status}'`)
+          await queryRunner.query(
+            `ALTER TYPE applicants_status_enum ADD VALUE IF NOT EXISTS '${status}'`,
+          )
         } catch (e) {
           // Ignore if value already exists
         }
@@ -742,11 +758,25 @@ export class HrmService {
     this.logger.log(`Seeding demo HRM data for tenant ${ctx.tenantId}`)
 
     // 1. Departments & Designations
-    const itDept = await this.hrmRepo.createDepartment({ name: 'IT & Engineering', tenantId: ctx.tenantId })
-    const salesDept = await this.hrmRepo.createDepartment({ name: 'Sales & Marketing', tenantId: ctx.tenantId })
+    const itDept = await this.hrmRepo.createDepartment({
+      name: 'IT & Engineering',
+      tenantId: ctx.tenantId,
+    })
+    const salesDept = await this.hrmRepo.createDepartment({
+      name: 'Sales & Marketing',
+      tenantId: ctx.tenantId,
+    })
 
-    const devDes = await this.hrmRepo.createDesignation({ name: 'Senior Developer', departmentId: itDept.id, tenantId: ctx.tenantId })
-    const mgrDes = await this.hrmRepo.createDesignation({ name: 'Sales Manager', departmentId: salesDept.id, tenantId: ctx.tenantId })
+    const devDes = await this.hrmRepo.createDesignation({
+      name: 'Senior Developer',
+      departmentId: itDept.id,
+      tenantId: ctx.tenantId,
+    })
+    const mgrDes = await this.hrmRepo.createDesignation({
+      name: 'Sales Manager',
+      departmentId: salesDept.id,
+      tenantId: ctx.tenantId,
+    })
 
     // 2. Shifts
     const dayShift = await this.hrmRepo.createShift({
@@ -768,7 +798,8 @@ export class HrmService {
 
     // 3. Find some existing entities to link
     const employees = await this.hrmRepo.findAllEmployees(ctx.tenantId)
-    if (employees.length === 0) return { message: 'Please create at least one employee first to link demo data.' }
+    if (employees.length === 0)
+      return { message: 'Please create at least one employee first to link demo data.' }
 
     const emp = employees[0]
 
