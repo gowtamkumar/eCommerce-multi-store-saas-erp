@@ -8,6 +8,8 @@ import RichEditor from '@/components/shared/RichEditor';
 interface ProductGeneralInfoProps {
   name: string;
   slug: string;
+  sku: string;
+  barcode: string;
   shortDescription: string;
   description: string;
   isEdit?: boolean;
@@ -18,6 +20,8 @@ interface ProductGeneralInfoProps {
 export const ProductGeneralInfo = memo(({
   name,
   slug,
+  sku,
+  barcode,
   shortDescription,
   description,
   isEdit,
@@ -58,6 +62,29 @@ export const ProductGeneralInfo = memo(({
               value={slug}
               onChange={(val) => onUpdate({ slug: generateSlug(val) })}
               className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white text-sm font-mono"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">SKU (Stock Keeping Unit)</label>
+            <DebouncedInput
+              type="text"
+              placeholder="e.g. PROD-001"
+              value={sku}
+              onChange={(val) => onUpdate({ sku: val })}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-mono"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Barcode (EAN / UPC / QR)</label>
+            <DebouncedInput
+              type="text"
+              placeholder="e.g. 1234567890123"
+              value={barcode}
+              onChange={(val) => onUpdate({ barcode: val })}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-mono"
             />
           </div>
         </div>

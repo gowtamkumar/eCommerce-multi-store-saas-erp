@@ -106,6 +106,7 @@ export default function Categories() {
                 onClose={closeModal}
                 onSubmit={handleFormSubmit}
                 initialData={editingCategory}
+                allCategories={categories}
             />
 
             <ConfirmModal

@@ -12,8 +12,17 @@ export class ProductVariantEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   sku: string
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  barcode: string
+
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   price: number // Override base price
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'average_cost' })
+  averageCost: number
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, name: 'wholesale_price' })
+  wholesalePrice: number
 
   @Column({ type: 'boolean', default: false, name: 'is_default' })
   isDefault: boolean

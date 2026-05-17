@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { ToggleLeft, ToggleRight, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Brand, BrandFormProps } from '../type';
 import { generateSlug } from '@/lib/generate-slug';
@@ -13,9 +13,9 @@ export default function BrandForm({ isOpen, onClose, onSubmit, initialData }: Br
 
     useEffect(() => {
         if (initialData) {
-            setFormData(initialData);
+            setFormData({ ...initialData, isActive: initialData.isActive ?? true });
         } else {
-            setFormData({} as Brand);
+            setFormData({ name: '', slug: '', description: '', website: '', isActive: true } as Brand);
         }
     }, [initialData, isOpen]);
 
@@ -100,7 +100,23 @@ export default function BrandForm({ isOpen, onClose, onSubmit, initialData }: Br
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500"
                         />
                     </div>
-                    <div className="pt-4">
+                    {/* Active toggle */}
+                    <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                        <div>
+                            <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">Active Status</div>
+                            <div className="text-xs text-slate-400 mt-0.5">{formData.isActive ? 'Brand is visible in catalog' : 'Brand is hidden'}</div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
+                            className={`transition-colors ${formData.isActive ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`}
+                        >
+                            {formData.isActive
+                                ? <ToggleRight className="w-9 h-9" />
+                                : <ToggleLeft className="w-9 h-9" />}
+                        </button>
+                    </div>
+                    <div className="pt-2">
                         <button
                             type="submit"
                             disabled={isSubmitting}

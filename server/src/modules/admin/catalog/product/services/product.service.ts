@@ -340,18 +340,12 @@ export class ProductService {
       if (existing) throw new ConflictException('Product with this slug already exists')
 
       const { faqs, attributes, variants, ...productData } = createProductDto
+      
+      // ERP FIX: Stock must always start at 0 during creation. 
+      // Stock should only enter the system via PO/GRN or Stock Adjustment.
+      productData.stock = 0;
+      
       const product = await this.productRepository.createAndSave(productData, ctx)
-
-      const poItems = []
-
-      // Base stock if no variants
-      if (productData.stock > 0 && (!variants || variants.length === 0)) {
-        poItems.push({
-          productId: product.id,
-          quantity: productData.stock,
-          unitPrice: productData.price,
-        })
-      }
 
       if (faqs && faqs.length > 0) {
         await this.faqRepository.saveMultiple(faqs, product.id, ctx, manager)
@@ -363,6 +357,9 @@ export class ProductService {
 
       if (variants && variants.length > 0) {
         for (const variantDto of variants) {
+          // ERP FIX: Force variant stock to 0 as well
+          variantDto.stock = 0;
+
           const savedVariant = await this.variantRepository.saveNewVariant(
             variantDto,
             product.id,
@@ -378,32 +375,11 @@ export class ProductService {
               { isDefault: false },
             )
           }
-
-          if (variantDto.stock > 0) {
-            poItems.push({
-              productId: product.id,
-              variantId: savedVariant.id,
-              quantity: variantDto.stock,
-              unitPrice: variantDto.price || productData.price,
-            })
-          }
-        }
-      }
-
-      if (poItems.length > 0 && createProductDto.supplierId) {
-        poData = {
-          supplierId: createProductDto.supplierId,
-          referenceNumber: `INITIAL_${product.slug.toUpperCase()}_${Date.now()}`,
-          items: poItems,
         }
       }
 
       return product
     })
-
-    if (poData) {
-      await this.productQueue.add('create-po', { ...poData, tenantId })
-    }
 
     return await this.findOneProduct(savedProduct.id, ctx)
   }
@@ -431,11 +407,9 @@ export class ProductService {
 
       const { faqs, attributes, variants, ...productData } = updateProductDto
 
-      // 3. Handle Base Stock vs Variants
-      // If variants are being added/updated, base product stock should likely be 0
-      if (variants && variants.length > 0) {
-        productData.stock = 0
-      }
+      // ERP FIX: Prevent manual stock updates during product edit.
+      // Stock can only be changed via Procurement or Inventory Adjustment.
+      delete (productData as any).stock;
 
       // 4. Update Base Product
       await this.productRepository.updateAndSave(product, productData, manager)

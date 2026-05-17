@@ -148,6 +148,16 @@ export class ProductRepository {
     return repo.save(product)
   }
 
+  async updateAverageCost(
+    id: string,
+    tenantId: string,
+    newCost: number,
+    manager?: any,
+  ): Promise<void> {
+    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
+    await repo.update({ id, tenantId }, { averageCost: newCost })
+  }
+
   async removeProduct(product: ProductEntity): Promise<void> {
     await this.repo.softRemove(product)
   }

@@ -3,7 +3,7 @@
 import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
 import { ShoppingBag, Save, Loader2, Plus, Trash2, Package, Search, ChevronLeft, Truck, FileText } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, memo, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
@@ -73,6 +73,8 @@ PurchaseOrderItemRow.displayName = 'PurchaseOrderItemRow';
 
 export default function PurchaseOrderForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const prefillProductId = searchParams?.get('productId');
     const { formatPrice } = useSettings();
     const [loading, setLoading] = useState(false);
     const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -100,6 +102,22 @@ export default function PurchaseOrderForm() {
         };
         loadInitialData();
     }, []);
+
+    // Handle pre-fill from URL
+    useEffect(() => {
+        if (prefillProductId && products.length > 0) {
+            const product = products.find(p => p.id === prefillProductId);
+            if (product && formData.items.length === 0) {
+                // If product has variants, don't auto-add, let user search it to pick variant. 
+                // Or if it's simple, add it.
+                if (!product.variants || product.variants.length === 0) {
+                    addItem(product);
+                } else {
+                    setSearchProduct(product.name);
+                }
+            }
+        }
+    }, [prefillProductId, products, addItem]);
 
     const addItem = useCallback((product: any, variant?: any) => {
         if (formData.items.find(item =>

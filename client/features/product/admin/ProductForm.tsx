@@ -9,6 +9,7 @@ import ProductVariants from './ProductVariants';
 import { ProductDetailsSidebar } from './form/ProductDetailsSidebar';
 import { ProductFAQs } from './form/ProductFAQs';
 import { ProductGeneralInfo } from './form/ProductGeneralInfo';
+import { ProductInventoryLedger } from './form/ProductInventoryLedger';
 import { ProductMedia } from './form/ProductMedia';
 import { ProductPricing } from './form/ProductPricing';
 import { ProductSEO } from './form/ProductSEO';
@@ -28,9 +29,15 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     slug: initialData?.slug || '',
+    sku: initialData?.sku || '',
+    barcode: initialData?.barcode || '',
+    productType: initialData?.productType || 'SIMPLE',
     description: initialData?.description || '',
     shortDescription: initialData?.shortDescription || '',
     price: initialData?.price?.toString() || '0',
+    wholesalePrice: initialData?.wholesalePrice?.toString() || '0',
+    minWholesaleQty: initialData?.minWholesaleQty?.toString() || '1',
+    averageCost: initialData?.averageCost?.toString() || '0',
     discountAmount: initialData?.discountAmount?.toString() || '0',
     discountType: initialData?.discountType || 'percentage',
     taxRate: initialData?.taxRate?.toString() || '0',
@@ -91,13 +98,17 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     e.preventDefault();
     setLoading(true);
 
-    const payload = {
+    const payload: any = {
       ...formData,
-      price: parseFloat(formData.price),
-      discountAmount: parseFloat(formData.discountAmount),
+      price: parseFloat(formData.price) || 0,
+      wholesalePrice: parseFloat(formData.wholesalePrice) || 0,
+      minWholesaleQty: parseInt(formData.minWholesaleQty) || 1,
+      discountAmount: parseFloat(formData.discountAmount) || 0,
       taxRate: parseFloat(formData.taxRate) || 0,
-      stock: parseInt(formData.stock),
-      lowStockThreshold: parseInt(formData.lowStockThreshold),
+      lowStockThreshold: parseInt(formData.lowStockThreshold) || 5,
+      sku: formData.sku || null,
+      barcode: formData.barcode || null,
+      productType: formData.productType || 'SIMPLE',
       slug: formData.slug || generateSlug(formData.name),
       images: formData.images.split(',').map((s: string) => s.trim()).filter(Boolean),
       categoryId: formData.categoryId || null,
@@ -109,13 +120,26 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
         answer: f.answer,
         order: f.order
       })) : [],
-      variants: formData.variants.map((v: any) => ({
-        ...v,
-        price: parseFloat(v.price) || 0,
-        stock: parseInt(v.stock) || 0,
-        lowStockThreshold: parseInt(v.lowStockThreshold || '5'),
-      })),
+      variants: formData.variants.map((v: any) => {
+        const { stock, ...variantData } = v;
+        return {
+          ...variantData,
+          price: parseFloat(v.price) || 0,
+          wholesalePrice: parseFloat(v.wholesalePrice) || 0,
+          lowStockThreshold: parseInt(v.lowStockThreshold || '5'),
+          // Only send stock 0 for new variants (those without an ID)
+          ...(!v.id && { stock: 0 })
+        };
+      }),
     };
+
+    // ERP FIX: Only set stock 0 for NEW products. 
+    // For existing products, remove the field so it doesn't overwrite.
+    if (!isEdit) {
+      payload.stock = 0;
+    } else {
+      delete payload.stock;
+    }
 
     try {
       const url = isEdit ? `/products/${initialData.id}` : '/products';
@@ -145,6 +169,8 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
           <ProductGeneralInfo
             name={formData.name}
             slug={formData.slug}
+            sku={formData.sku}
+            barcode={formData.barcode}
             shortDescription={formData.shortDescription}
             description={formData.description}
             isEdit={isEdit}
@@ -162,6 +188,10 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
               onChange={handleVariantChange}
             />
           </div>
+
+          {isEdit && initialData?.id && (
+            <ProductInventoryLedger productId={initialData.id} />
+          )}
 
           <ProductSEO
             metaTitle={formData.metaTitle}
@@ -197,6 +227,9 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
 
           <ProductPricing
             price={formData.price}
+            wholesalePrice={formData.wholesalePrice}
+            minWholesaleQty={formData.minWholesaleQty}
+            averageCost={formData.averageCost}
             discountAmount={formData.discountAmount}
             discountType={formData.discountType}
             taxRate={formData.taxRate}

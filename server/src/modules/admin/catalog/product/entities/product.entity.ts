@@ -26,6 +26,20 @@ export class ProductEntity extends BaseEntity {
   @Index()
   slug: string
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  sku: string
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  barcode: string
+
+  @Column({
+    type: 'enum',
+    enum: ['SIMPLE', 'VARIABLE', 'BUNDLE', 'SERVICE'],
+    default: 'SIMPLE',
+    name: 'product_type',
+  })
+  productType: 'SIMPLE' | 'VARIABLE' | 'BUNDLE' | 'SERVICE'
+
   @Column({ type: 'text' })
   description: string
 
@@ -34,6 +48,15 @@ export class ProductEntity extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price: number
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'average_cost' })
+  averageCost: number
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, name: 'wholesale_price', nullable: true })
+  wholesalePrice: number
+
+  @Column({ type: 'int', default: 1, name: 'min_wholesale_qty', nullable: true })
+  minWholesaleQty: number
 
   @Column({ type: 'boolean', name: 'is_review', default: true })
   isReview: boolean

@@ -8,11 +8,13 @@ import { ProcurementController } from './procurement.controller'
 import { ProcurementRepository } from './procurement.repository'
 import { AccountingModule } from '@/modules/admin/operations/finance/accounting/accounting.module'
 import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
+import { InventoryLedgerModule } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-transaction.module'
 
 @Module({
   imports: [
     AccountingModule,
     AuditLogModule,
+    InventoryLedgerModule,
     TypeOrmModule.forFeature([
       SupplierEntity,
       PurchaseOrderEntity,

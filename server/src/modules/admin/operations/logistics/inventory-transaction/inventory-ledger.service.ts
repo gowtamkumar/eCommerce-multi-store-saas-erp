@@ -135,6 +135,28 @@ export class InventoryLedgerService {
         )
       }
 
+      // 3.5 Recalculate Average Cost for PURCHASE (Procurement Intake)
+      if (dto.type === InventoryTransactionType.PURCHASE && dto.unitCost) {
+        const currentStock = Math.max(0, Number(currentBalance))
+        const incomingQty = absQty
+        const incomingCost = Number(dto.unitCost)
+        
+        if (currentStock + incomingQty > 0) {
+          if (dto.variantId) {
+            const variant = await this.variantRepository.findById(dto.variantId, tenantId, em);
+            if (variant) {
+              const currentAvgCost = Number(variant.averageCost || 0)
+              const newAvgCost = ((currentStock * currentAvgCost) + (incomingQty * incomingCost)) / (currentStock + incomingQty)
+              await this.variantRepository.updateAverageCost(dto.variantId, tenantId, newAvgCost, em)
+            }
+          } else {
+            const currentAvgCost = Number(product.averageCost || 0)
+            const newAvgCost = ((currentStock * currentAvgCost) + (incomingQty * incomingCost)) / (currentStock + incomingQty)
+            await this.productRepository.updateAverageCost(product.id, tenantId, newAvgCost, em)
+          }
+        }
+      }
+
       // 4. Write to Ledger
       const ledgerEntry = await this.repository.createAndSave(
         {

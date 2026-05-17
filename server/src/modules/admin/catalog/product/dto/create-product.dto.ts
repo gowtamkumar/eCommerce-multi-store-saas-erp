@@ -54,9 +54,20 @@ class ProductVariantDto {
   sku?: string
 
   @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  barcode?: string
+
+  @ApiProperty({ required: false })
   @IsNumber()
   @IsOptional()
   price?: number
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  wholesalePrice?: number
 
   @ApiProperty({ required: false, default: false })
   @IsBoolean()
@@ -95,6 +106,21 @@ export class CreateProductDto {
   @IsNotEmpty()
   slug: string
 
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  sku?: string
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  barcode?: string
+
+  @ApiProperty({ required: false, enum: ['SIMPLE', 'VARIABLE', 'BUNDLE', 'SERVICE'], default: 'SIMPLE' })
+  @IsEnum(['SIMPLE', 'VARIABLE', 'BUNDLE', 'SERVICE'])
+  @IsOptional()
+  productType?: 'SIMPLE' | 'VARIABLE' | 'BUNDLE' | 'SERVICE'
+
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
@@ -109,6 +135,18 @@ export class CreateProductDto {
   @IsNumber()
   @Min(0)
   price: number
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  wholesalePrice?: number
+
+  @ApiProperty({ required: false, default: 1 })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  minWholesaleQty?: number
 
   @ApiProperty({ required: false })
   @IsNumber()

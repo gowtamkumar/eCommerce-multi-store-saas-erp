@@ -92,7 +92,7 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
       return {
         sku,
         price: +basePrice || 0,
-        stock: stock || 0,
+        stock: 0,
         lowStockThreshold: 5,
         combination: combo,
       };
@@ -241,7 +241,7 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
                     </div>
 
                     {/* SKU */}
-                    <div className="flex-1 min-w-[150px]">
+                    <div className="flex-1 min-w-[130px]">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">SKU</label>
                       <input
                         type="text"
@@ -251,9 +251,21 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
                       />
                     </div>
 
-                    {/* Price */}
-                    <div className="w-28">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Price Override</label>
+                    {/* Barcode */}
+                    <div className="flex-1 min-w-[120px]">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Barcode</label>
+                      <input
+                        type="text"
+                        value={variant.barcode || ''}
+                        onChange={(e) => updateVariant(idx, { barcode: e.target.value })}
+                        placeholder="EAN/UPC"
+                        className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:ring-2 focus:ring-brand-500 outline-none transition-all font-mono"
+                      />
+                    </div>
+
+                    {/* Retail Price */}
+                    <div className="w-24">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Retail Price</label>
                       <div className="relative">
                         <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
                         <input
@@ -266,15 +278,26 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
                       </div>
                     </div>
 
-                    {/* Stock */}
+                    {/* Wholesale Price */}
                     <div className="w-24">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">B2B Price</label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                        <input
+                          type="number"
+                          placeholder="0"
+                          value={variant.wholesalePrice || ''}
+                          onChange={(e) => updateVariant(idx, { wholesalePrice: e.target.value ? Number(e.target.value) : undefined })}
+                          className="w-full pl-7 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                    {/* Current Stock (Read Only) */}
+                    <div className="w-20">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Stock</label>
-                      <input
-                        type="number"
-                        value={variant.stock}
-                        onChange={(e) => updateVariant(idx, { stock: Number(e.target.value) })}
-                        className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                      />
+                      <div className="px-3 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-center">
+                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono">{variant.stock || 0}</span>
+                      </div>
                     </div>
 
                     {/* Threshold */}

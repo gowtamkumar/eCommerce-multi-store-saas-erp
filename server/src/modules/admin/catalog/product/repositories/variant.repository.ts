@@ -28,6 +28,11 @@ export class ProductVariantRepository {
     return this.repo.find({ where: { productId, tenantId } })
   }
 
+  async findById(id: string, tenantId: string, manager?: any): Promise<ProductVariantEntity | null> {
+    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    return repo.findOne({ where: { id, tenantId } })
+  }
+
   async saveNewVariant(
     variantDto: any,
     productId: string,
@@ -52,13 +57,27 @@ export class ProductVariantRepository {
     manager?: any,
   ): Promise<ProductVariantEntity> {
     const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    
+    // ERP FIX: Never update stock via the product edit form.
+    const { stock, ...updateData } = variantDto;
+    
     const variant = repo.create({
-      ...variantDto,
+      ...updateData,
       productId,
       tenantId: ctx.tenantId,
       userId: ctx.userId,
     } as ProductVariantEntity)
     return repo.save(variant)
+  }
+
+  async updateAverageCost(
+    id: string,
+    tenantId: string,
+    newCost: number,
+    manager?: any,
+  ): Promise<void> {
+    const repo = manager ? manager.getRepository(ProductVariantEntity) : this.repo
+    await repo.update({ id, tenantId }, { averageCost: newCost })
   }
 
   async findBySku(
