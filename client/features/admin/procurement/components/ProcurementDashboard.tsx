@@ -33,8 +33,20 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 
 export default function ProcurementDashboard() {
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState([] as any[]);
-  const [chartData, setChartData] = useState([] as any[]);
+  const [stats, setStats] = useState<any[]>([
+    { label: 'Active Suppliers', value: '0', subValue: 'Registered SRM Vendors', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { label: 'Pending PRs', value: '0', subValue: 'Requires SCM Approval', icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { label: 'Open POs', value: '0', subValue: '$0 committed', icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+    { label: 'YTD Spend', value: '$0', subValue: 'Total committed spend', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+  ]);
+  const [chartData, setChartData] = useState<any[]>([
+    { name: 'Jan', spend: 0 },
+    { name: 'Feb', spend: 0 },
+    { name: 'Mar', spend: 0 },
+    { name: 'Apr', spend: 0 },
+    { name: 'May', spend: 0 },
+    { name: 'Jun', spend: 0 },
+  ]);
 
   useEffect(() => {
     const fetchSCMData = async () => {
@@ -45,7 +57,7 @@ export default function ProcurementDashboard() {
           fetchAPI('/purchase-orders?limit=100').catch(() => null),
         ]);
 
-        let activeSuppliersCount = 48;
+        let activeSuppliersCount = 0;
         if (suppliersRes && suppliersRes.success) {
           activeSuppliersCount = suppliersRes.data?.total || suppliersRes.data?.items?.length || 0;
         }
@@ -68,74 +80,67 @@ export default function ProcurementDashboard() {
           });
         }
 
-        // Only update if we successfully hit the APIs and have data
-        if (suppliersRes?.success || poRes?.success) {
-          setStats([
-            {
-              label: 'Active Suppliers',
-              value: activeSuppliersCount.toString(),
-              subValue: 'Registered SRM Vendors',
-              icon: Users,
-              color: 'text-blue-600',
-              bg: 'bg-blue-50',
-              border: 'border-blue-100'
-            },
-            {
-              label: 'Pending PRs',
-              value: pendingRequisitionsCount > 0 ? pendingRequisitionsCount.toString() : '12',
-              subValue: 'Requires SCM Approval',
-              icon: FileText,
-              color: 'text-amber-600',
-              bg: 'bg-amber-50',
-              border: 'border-amber-100'
-            },
-            {
-              label: 'Open POs',
-              value: openPOsCount > 0 ? openPOsCount.toString() : '34',
-              subValue: `$${(ytdSpend / 1000).toFixed(0)}K committed`,
-              icon: Truck,
-              color: 'text-purple-600',
-              bg: 'bg-purple-50',
-              border: 'border-purple-100'
-            },
-            {
-              label: 'YTD Spend',
-              value: ytdSpend > 0 ? `$${(ytdSpend / 1000).toFixed(0)}K` : '$1.2M',
-              subValue: 'On track',
-              icon: DollarSign,
-              color: 'text-emerald-600',
-              bg: 'bg-emerald-50',
-              border: 'border-emerald-100'
-            },
-          ]);
+        setStats([
+          {
+            label: 'Active Suppliers',
+            value: activeSuppliersCount.toString(),
+            subValue: 'Registered SRM Vendors',
+            icon: Users,
+            color: 'text-blue-600',
+            bg: 'bg-blue-50',
+            border: 'border-blue-100'
+          },
+          {
+            label: 'Pending PRs',
+            value: pendingRequisitionsCount.toString(),
+            subValue: 'Requires SCM Approval',
+            icon: FileText,
+            color: 'text-amber-600',
+            bg: 'bg-amber-50',
+            border: 'border-amber-100'
+          },
+          {
+            label: 'Open POs',
+            value: openPOsCount.toString(),
+            subValue: `$${ytdSpend.toLocaleString()} committed`,
+            icon: Truck,
+            color: 'text-purple-600',
+            bg: 'bg-purple-50',
+            border: 'border-purple-100'
+          },
+          {
+            label: 'YTD Spend',
+            value: `$${ytdSpend.toLocaleString()}`,
+            subValue: 'Total committed spend',
+            icon: DollarSign,
+            color: 'text-emerald-600',
+            bg: 'bg-emerald-50',
+            border: 'border-emerald-100'
+          },
+        ]);
 
-          if (poRes?.success) {
-            const poList = poRes.data?.items || poRes.data?.list || poRes.data || [];
-            const monthlySpend: Record<string, number> = {
-              Jan: 0, Feb: 0, Mar: 0, Apr: 0, May: 0, Jun: 0,
-              Jul: 0, Aug: 0, Sep: 0, Oct: 0, Nov: 0, Dec: 0
-            };
-            poList.forEach((po: any) => {
-              if (po.createdAt) {
-                const date = new Date(po.createdAt);
-                const monthName = date.toLocaleString('default', { month: 'short' });
-                if (monthlySpend[monthName] !== undefined) {
-                  monthlySpend[monthName] += Number(po.totalAmount || 0);
-                }
+        if (poRes && poRes.success) {
+          const poList = poRes.data?.items || poRes.data?.list || poRes.data || [];
+          const monthlySpend: Record<string, number> = {
+            Jan: 0, Feb: 0, Mar: 0, Apr: 0, May: 0, Jun: 0,
+            Jul: 0, Aug: 0, Sep: 0, Oct: 0, Nov: 0, Dec: 0
+          };
+          poList.forEach((po: any) => {
+            if (po.createdAt) {
+              const date = new Date(po.createdAt);
+              const monthName = date.toLocaleString('default', { month: 'short' });
+              if (monthlySpend[monthName] !== undefined) {
+                monthlySpend[monthName] += Number(po.totalAmount || 0);
               }
-            });
-
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-            const updatedChartData = months.map(m => ({
-              name: m,
-              spend: monthlySpend[m] || 0
-            }));
-
-            const hasSpend = updatedChartData.some(d => d.spend > 0);
-            if (hasSpend) {
-              setChartData(updatedChartData);
             }
-          }
+          });
+
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+          const updatedChartData = months.map(m => ({
+            name: m,
+            spend: monthlySpend[m] || 0
+          }));
+          setChartData(updatedChartData);
         }
       } catch (error) {
         console.error('Failed to load dynamic SCM dashboard metrics:', error);
