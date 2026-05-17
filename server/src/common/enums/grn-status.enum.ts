@@ -1,5 +1,5 @@
 export enum GrnStatus {
-  DRAFT = 'draft',
-  VERIFIED = 'verified',
-  REJECTED = 'rejected',
+  DRAFT = 'DRAFT',
+  RECEIVED = 'RECEIVED',
+  REJECTED = 'REJECTED',
 }

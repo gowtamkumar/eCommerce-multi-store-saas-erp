@@ -25,7 +25,7 @@ export class FulfillmentService {
     private readonly orderRepository: Repository<OrderEntity>,
   ) {}
 
-  async createFromOrder(orderId: string, ctx: RequestContextDto): Promise<FulfillmentTaskEntity> {
+  async createFromOrder(orderId: string, ctx: RequestContextDto): Promise<FulfillmentTaskEntity | null> {
     const order = await this.orderRepository.findOne({
       where: { id: orderId, tenantId: ctx.tenantId },
       relations: ['items', 'items.product', 'items.variant'],
@@ -33,6 +33,14 @@ export class FulfillmentService {
 
     if (!order) {
       throw new NotFoundException('Order not found')
+    }
+
+    const physicalItems = order.items.filter((item) => item.product?.productType !== 'SERVICE')
+
+    if (physicalItems.length === 0) {
+      // If there are no physical items to fulfill, we mark order as SHIPPED immediately
+      await this.orderRepository.update(orderId, { status: OrderStatus.SHIPPED })
+      return null
     }
 
     // Try to find a default warehouse for the tenant
@@ -50,7 +58,7 @@ export class FulfillmentService {
       tenantId: ctx.tenantId,
       status: FulfillmentStatus.PENDING,
       warehouseId: warehouseId,
-      items: order.items.map((item) => ({
+      items: physicalItems.map((item) => ({
         productId: item.productId,
         variantId: item.variantId,
         quantity: item.quantity,

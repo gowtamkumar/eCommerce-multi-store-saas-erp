@@ -8,17 +8,17 @@ import { SupplierDocumentEntity } from './supplier-document.entity'
 @Entity('suppliers')
 @Index(['tenantId', 'name'])
 export class SupplierEntity extends BaseEntity {
-  @Column({ type: 'varchar', length: 255 })
+  @Column()
   name: string
 
   @Column({ type: 'varchar', length: 255, name: 'contact_name', nullable: true })
   contactName: string
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ nullable: true })
   @Index()
   email: string
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ nullable: true })
   phone: string
 
   @Column({ type: 'text', nullable: true })
@@ -46,6 +46,31 @@ export class SupplierEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
+
+  @Column({ nullable: true })
+  code: string
+
+  @Column({ nullable: true })
+  contactPerson: string
+
+  @Column({ nullable: true })
+  taxId: string
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0.00 })
+  openingBalance: number
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0.00 })
+  currentBalance: number
+
+  @Column({ default: 'ACTIVE' })
+  status: string
+
+  @Column({ type: 'jsonb', nullable: true })
+  performance: {
+    onTimeDeliveryRate: number
+    fulfillmentRate: number
+    qualityScore: number
+  }
 
   // Virtual property populated from SupplierAPLedger
   outstandingBalance?: number

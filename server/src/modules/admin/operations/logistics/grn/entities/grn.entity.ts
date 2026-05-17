@@ -19,7 +19,7 @@ export class GoodsReceivedNoteEntity extends BaseEntity {
   @Index()
   poId: string
 
-  @ManyToOne(() => PurchaseOrderEntity, { onDelete: 'CASCADE' })
+  @ManyToOne(() => PurchaseOrderEntity, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'po_id' })
   purchaseOrder: PurchaseOrderEntity
 
@@ -27,7 +27,7 @@ export class GoodsReceivedNoteEntity extends BaseEntity {
   @Index()
   supplierId: string
 
-  @ManyToOne(() => SupplierEntity)
+  @ManyToOne(() => SupplierEntity, { nullable: false })
   @JoinColumn({ name: 'supplier_id' })
   supplier: SupplierEntity
 
@@ -37,21 +37,21 @@ export class GoodsReceivedNoteEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'received_by_user_id' })
   receivedByUserId: string
 
-  @ManyToOne(() => UserEntity)
+  @ManyToOne(() => UserEntity, { nullable: false })
   @JoinColumn({ name: 'received_by_user_id' })
   receivedByUser: UserEntity
 
   @Column({ type: 'uuid', name: 'warehouse_id' })
   warehouseId: string
 
-  @ManyToOne(() => WarehouseEntity)
+  @ManyToOne(() => WarehouseEntity, { nullable: false })
   @JoinColumn({ name: 'warehouse_id' })
   warehouse: WarehouseEntity
 
   @Column({ type: 'uuid', name: 'branch_id' })
   branchId: string
 
-  @ManyToOne(() => BranchEntity)
+  @ManyToOne(() => BranchEntity, { nullable: false })
   @JoinColumn({ name: 'branch_id' })
   branch: BranchEntity
 
@@ -73,7 +73,7 @@ export class GoodsReceivedNoteEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
+  @ManyToOne(() => TenantEntity, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 }

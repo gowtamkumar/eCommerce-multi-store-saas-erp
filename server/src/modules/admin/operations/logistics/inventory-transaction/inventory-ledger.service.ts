@@ -75,52 +75,6 @@ export class InventoryLedgerService {
 
       const balanceAfter = Number(currentBalance) + signedQty
 
-      // 2. Dual-Write: Update legacy stock column
-      // CRITICAL: We only update legacy stock for RESERVATION (soft-deduct) 
-      // or physical movements that WERE NOT previously reserved.
-      // For Phase 5, if it's a SALE at shipment, we assume it was already reserved at order.
-      // So we skip legacy update for SALE if it's originating from an Order.
-
-      // Dual-Write to Legacy Columns (Modified for Phase 5)
-      const isReservation = dto.type === InventoryTransactionType.RESERVATION
-      const isReservationCancel = dto.type === InventoryTransactionType.RESERVATION_CANCEL
-      const isSaleFromOrder = dto.type === InventoryTransactionType.SALE && dto.referenceType === InventoryTransactionReferenceType.ORDER
-
-      if (dto.variantId) {
-        if (isReservation) {
-          await this.variantRepository.decrementStock(dto.variantId, tenantId, absQty, em)
-          await this.variantRepository.incrementReservedStock(dto.variantId, tenantId, absQty, em)
-        } else if (isReservationCancel) {
-          await this.variantRepository.incrementStock(dto.variantId, tenantId, absQty, em)
-          await this.variantRepository.decrementReservedStock(dto.variantId, tenantId, absQty, em)
-        } else if (isSaleFromOrder) {
-          await this.variantRepository.decrementReservedStock(dto.variantId, tenantId, absQty, em)
-        } else {
-          // Standard movement
-          if (isIncrement) {
-            await this.variantRepository.incrementStock(dto.variantId, tenantId, absQty, em)
-          } else if (isDecrement) {
-            await this.variantRepository.decrementStock(dto.variantId, tenantId, absQty, em)
-          }
-        }
-      } else {
-        if (isReservation) {
-          await this.productRepository.decrementStock(product.id, tenantId, absQty, em)
-          await this.productRepository.incrementReservedStock(product.id, tenantId, absQty, em)
-        } else if (isReservationCancel) {
-          await this.productRepository.incrementStock(product.id, tenantId, absQty, em)
-          await this.productRepository.decrementReservedStock(product.id, tenantId, absQty, em)
-        } else if (isSaleFromOrder) {
-          await this.productRepository.decrementReservedStock(product.id, tenantId, absQty, em)
-        } else {
-          // Standard movement
-          if (isIncrement) {
-            await this.productRepository.incrementStock(product.id, tenantId, absQty, em)
-          } else if (isDecrement) {
-            await this.productRepository.decrementStock(product.id, tenantId, absQty, em)
-          }
-        }
-      }
 
       // 3. Calculate COGS for Sales
       let cogsAmount = 0
@@ -249,8 +203,24 @@ export class InventoryLedgerService {
           tenantId,
         )
 
+        const sums = await this.repository.getStockSums(tenantId)
+        const stockMap = new Map<string, number>()
+        sums.forEach((item: any) => {
+          const key = item.variantId ? `${item.productId}:${item.variantId}` : item.productId
+          stockMap.set(key, Number(item.sum || 0))
+        })
+
         return products.map((product) => {
           const hasVariants = product.variants && product.variants.length > 0
+
+          if (hasVariants) {
+            product.variants.forEach((v) => {
+              v.stock = stockMap.get(`${product.id}:${v.id}`) || 0
+            })
+          } else {
+            product.stock = stockMap.get(product.id) || 0
+          }
+
           const totalStock = hasVariants
             ? product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)
             : product.stock
@@ -301,5 +271,9 @@ export class InventoryLedgerService {
       600,
       tenantId,
     )
+  }
+
+  async getGlobalLiveStock(productId: string, variantId: string | null, tenantId: string, manager?: any): Promise<number> {
+    return await this.repository.getGlobalLiveStock(productId, variantId, tenantId, manager)
   }
 }

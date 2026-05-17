@@ -209,7 +209,7 @@ export default function GrnDetailPage({ grn, onVerify, onReject, isProcessing }:
                         </div>
                     </div>
 
-                    {grn.status === GrnStatus.VERIFIED && (
+                    {grn.status === GrnStatus.RECEIVED && (
                         <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-3xl p-6 border border-emerald-100 dark:border-emerald-900/20">
                             <div className="flex items-center gap-3 mb-3">
                                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />

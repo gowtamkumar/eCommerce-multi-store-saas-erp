@@ -81,4 +81,31 @@ export class InventoryLedgerRepository {
     const transaction = repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId })
     return await (repo.save(transaction) as unknown as Promise<InventoryLedgerEntity>)
   }
+  async getStockSums(tenantId: string): Promise<any[]> {
+    return await this.repo.createQueryBuilder('ledger')
+      .select('ledger.productId', 'productId')
+      .addSelect('ledger.variantId', 'variantId')
+      .addSelect('SUM(ledger.quantity)', 'sum')
+      .where('ledger.tenantId = :tenantId', { tenantId })
+      .groupBy('ledger.productId')
+      .addGroupBy('ledger.variantId')
+      .getRawMany()
+  }
+  async getGlobalLiveStock(productId: string, variantId: string | null, tenantId: string, manager?: any): Promise<number> {
+    const repo = manager ? manager.getRepository(InventoryLedgerEntity) : this.repo
+    
+    const query = repo.createQueryBuilder('ledger')
+      .select('SUM(ledger.quantity)', 'sum')
+      .where('ledger.productId = :productId', { productId })
+      .andWhere('ledger.tenantId = :tenantId', { tenantId })
+
+    if (variantId) {
+      query.andWhere('ledger.variantId = :variantId', { variantId })
+    } else {
+      query.andWhere('ledger.variantId IS NULL')
+    }
+
+    const result = await query.getRawOne()
+    return Number(result?.sum || 0)
+  }
 }

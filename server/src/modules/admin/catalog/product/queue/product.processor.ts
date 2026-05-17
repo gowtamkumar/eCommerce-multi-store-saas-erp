@@ -59,6 +59,9 @@ export class ProductProcessor extends WorkerHost {
       referenceId,
       supplierId,
       tenantId,
+      unitCost,
+      warehouseId,
+      branchId,
     } = data
     this.logger.log(
       `Updating stock for product ${productId} (variant: ${variantId || 'none'}) for tenant ${tenantId}`,
@@ -73,6 +76,9 @@ export class ProductProcessor extends WorkerHost {
         referenceType: referenceType || InventoryTransactionReferenceType.ORDER,
         referenceId,
         supplierId,
+        unitCost,
+        warehouseId,
+        branchId,
       },
       { tenantId } as any,
     )

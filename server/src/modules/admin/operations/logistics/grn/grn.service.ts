@@ -45,13 +45,13 @@ export class GrnService {
       return this.repository.save(grn)
     }
 
-    if (dto.status === GrnStatus.VERIFIED) {
+    if (dto.status === GrnStatus.RECEIVED) {
       const queryRunner = this.dataSource.createQueryRunner()
       await queryRunner.connect()
       await queryRunner.startTransaction()
 
       try {
-        grn.status = GrnStatus.VERIFIED
+        grn.status = GrnStatus.RECEIVED
         grn.notes = dto.notes || grn.notes
         const savedGrn = await this.repository.save(grn, queryRunner.manager)
 

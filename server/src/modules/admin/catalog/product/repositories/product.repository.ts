@@ -162,45 +162,6 @@ export class ProductRepository {
     await this.repo.softRemove(product)
   }
 
-  async incrementStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
-    await repo.increment({ id, tenantId }, 'stock', quantity)
-  }
-
-  async decrementStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
-    await repo.decrement({ id, tenantId }, 'stock', quantity)
-  }
-
-  async incrementReservedStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
-    await repo.increment({ id, tenantId }, 'reservedStock', quantity)
-  }
-
-  async decrementReservedStock(
-    id: string,
-    tenantId: string,
-    quantity: number,
-    manager?: any,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(ProductEntity) : this.repo
-    await repo.decrement({ id, tenantId }, 'reservedStock', quantity)
-  }
 
   async findLatestProducts(tenantId: string, limit: number): Promise<ProductEntity[]> {
     return this.repo.find({

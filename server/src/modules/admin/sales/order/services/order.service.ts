@@ -316,6 +316,7 @@ export class OrderService {
         oldStatus !== OrderStatus.COMPLETED // Don't restore if already completed? Usually, returns handle that.
       ) {
         for (const item of order.items) {
+          if (item.product?.productType === 'SERVICE') continue
           await this.inventoryService.createLedgerEntry(
             {
               productId: item.productId,

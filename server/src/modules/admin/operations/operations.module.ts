@@ -3,10 +3,10 @@ import { FinanceModule } from './finance/finance.module'
 import { LogisticsModule } from './logistics/logistics.module'
 import { InfraModule } from './infra/infra.module'
 import { HrmModule } from './hrm/hrm.module'
-import { ProcurementModule } from './procurement/procurement.module'
+
 
 @Module({
-  imports: [FinanceModule, LogisticsModule, InfraModule, HrmModule, ProcurementModule],
-  exports: [FinanceModule, LogisticsModule, InfraModule, HrmModule, ProcurementModule],
+  imports: [FinanceModule, LogisticsModule, InfraModule, HrmModule],
+  exports: [FinanceModule, LogisticsModule, InfraModule, HrmModule],
 })
 export class OperationsModule {}

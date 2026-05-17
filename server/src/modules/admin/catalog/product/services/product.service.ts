@@ -522,52 +522,11 @@ export class ProductService {
               { isDefault: false },
             )
           }
-
-          if (variantDto.stock > 0) {
-            if (product.supplierId) {
-              poItems.push({
-                productId: product.id,
-                variantId: savedVariant.id,
-                quantity: variantDto.stock,
-                unitPrice: variantDto.price || product.price,
-              })
-            } else {
-              await this.variantRepository.incrementStock(
-                savedVariant.id,
-                tenantId,
-                variantDto.stock,
-                manager,
-              )
-            }
-          }
-        }
-      } else {
-        // If NO variants, check if base stock was updated and needs a PO
-        if (productData.stock > 0 && product.supplierId) {
-          poItems.push({
-            productId: product.id,
-            quantity: productData.stock,
-            unitPrice: product.price,
-          })
-        }
-      }
-
-      // Prepare Background Job data if needed
-      if (poItems.length > 0 && product.supplierId) {
-        poData = {
-          supplierId: product.supplierId,
-          referenceNumber: `UPDATE_VAR_${product.slug.toUpperCase()}_${Date.now()}`,
-          items: poItems,
         }
       }
 
       await this.cache.delCache(`product:${id}`, tenantId)
     })
-
-    // Trigger background job AFTER transaction commits
-    if (poData) {
-      await this.productQueue.add('create-purchase-order', { ...poData, tenantId })
-    }
 
     return await this.findOneProduct(id, ctx)
   }

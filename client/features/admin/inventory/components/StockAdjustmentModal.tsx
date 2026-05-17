@@ -19,6 +19,7 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
     const [type, setType] = useState('ADJUSTMENT');
     const [direction, setDirection] = useState<'IN' | 'OUT'>('IN');
     const [quantity, setQuantity] = useState(1);
+    const [unitCost, setUnitCost] = useState<number | ''>('');
     const [referenceId, setReferenceId] = useState('');
 
     useEffect(() => {
@@ -74,6 +75,13 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
         }
 
         setLoading(true);
+        let mappedReferenceType = 'MANUAL';
+        if (type === 'ADJUSTMENT') mappedReferenceType = 'STOCK_ADJUSTMENT';
+        else if (type === 'RETURN') mappedReferenceType = 'SALES_RETURN';
+        else if (type === 'DAMAGE') mappedReferenceType = 'MANUAL';
+        else if (type === 'INITIAL_BALANCE') mappedReferenceType = 'INITIAL_IMPORT';
+        else if (type === 'PURCHASE') mappedReferenceType = 'MANUAL';
+
         try {
             const res = await fetchAPI('/inventory-ledger', {
                 method: 'POST',
@@ -83,7 +91,8 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
                     warehouseId: selectedWarehouseId,
                     type: type,
                     quantity: direction === 'IN' ? Number(quantity) : -Number(quantity),
-                    referenceType: type === 'ADJUSTMENT' ? 'STOCK_ADJUSTMENT' : type,
+                    unitCost: direction === 'IN' && unitCost !== '' ? Number(unitCost) : undefined,
+                    referenceType: mappedReferenceType,
                     referenceId
                 })
             });
@@ -105,6 +114,7 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
         if (!initialProduct) setSelectedProduct(null);
         setSelectedVariant(null);
         setQuantity(1);
+        setUnitCost('');
         setDirection('IN');
         setType('ADJUSTMENT');
         setSearchQuery('');
@@ -311,6 +321,21 @@ export default function StockAdjustmentModal({ isOpen, onClose, onSuccess, initi
                                                 </button>
                                             </div>
                                         </div>
+
+                                        {direction === 'IN' && (
+                                            <div className="space-y-3">
+                                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Unit Cost (Optional)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    placeholder="0.00"
+                                                    value={unitCost}
+                                                    onChange={(e) => setUnitCost(e.target.value === '' ? '' : Number(e.target.value))}
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all font-medium text-sm"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="space-y-3">

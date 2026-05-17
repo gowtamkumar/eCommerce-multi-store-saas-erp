@@ -41,7 +41,7 @@ export default function GrnPage() {
             const response = await fetchAPI(`operations/logistics/grn/${id}/verify`, {
                 method: 'PATCH',
                 body: JSON.stringify({
-                    status: GrnStatus.VERIFIED,
+                    status: GrnStatus.RECEIVED,
                 })
             });
             if (response.success) {
