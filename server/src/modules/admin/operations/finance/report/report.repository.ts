@@ -15,12 +15,26 @@ export class ReportRepository {
         (SELECT COUNT(*) FROM orders WHERE tenant_id = $1 AND status = $3) as "activeOrders",
         (SELECT COUNT(*) FROM products WHERE tenant_id = $1) as "totalProducts",
         (SELECT COUNT(*) FROM pages WHERE tenant_id = $1) as "totalPages",
-        (SELECT COUNT(*) FROM products p 
-         LEFT JOIN product_variants v ON v.product_id = p.id
-         WHERE p.tenant_id = $1 AND (
-           (v.id IS NOT NULL AND v.stock <= COALESCE(v.low_stock_threshold, 5)) OR
-           (v.id IS NULL AND p.stock <= COALESCE(p.low_stock_threshold, 5))
-         )) as "lowStockCount",
+        (SELECT COUNT(*) FROM (
+          -- Products with low stock: sum inventory_ledger.quantity by product/variant and compare against threshold
+          SELECT p.id
+          FROM products p
+          LEFT JOIN product_variants v ON v.product_id = p.id
+          LEFT JOIN LATERAL (
+            SELECT COALESCE(SUM(il.quantity), 0) as current_stock
+            FROM inventory_ledger il
+            WHERE il.product_id = p.id
+              AND ((il.variant_id IS NULL AND v.id IS NULL) OR (il.variant_id = v.id))
+              AND il.tenant_id = $1
+          ) stock ON true
+          WHERE p.tenant_id = $1
+            AND (
+              (v.id IS NOT NULL AND stock.current_stock <= COALESCE(v.low_stock_threshold, 5))
+              OR
+              (v.id IS NULL AND stock.current_stock <= COALESCE(p.low_stock_threshold, 5))
+            )
+          GROUP BY p.id
+        )) as "lowStockCount",
         (SELECT COUNT(*) FROM users WHERE tenant_id = $1) as "totalUsers",
         (SELECT COUNT(*) FROM suppliers WHERE tenant_id = $1) as "totalSuppliers",
         (SELECT COUNT(*) FROM purchase_orders WHERE tenant_id = $1) as "totalPurchaseOrders",
@@ -75,10 +89,7 @@ export class ReportRepository {
         p.id,
         p.name,
         p.images,
-        CASE 
-          WHEN v.id IS NOT NULL THEN v.stock 
-          ELSE p.stock 
-        END as stock,
+        stock.current_stock as stock,
         CASE 
           WHEN v.id IS NOT NULL THEN COALESCE(v.low_stock_threshold, 5)
           ELSE COALESCE(p.low_stock_threshold, 5)
@@ -89,10 +100,19 @@ export class ReportRepository {
         END as "variantCombination"
       FROM products p
       LEFT JOIN product_variants v ON v.product_id = p.id
-      WHERE p.tenant_id = $1 AND (
-        (v.id IS NOT NULL AND v.stock <= COALESCE(v.low_stock_threshold, 5)) OR
-        (v.id IS NULL AND p.stock <= COALESCE(p.low_stock_threshold, 5))
-      )
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(SUM(il.quantity), 0) as current_stock
+        FROM inventory_ledger il
+        WHERE il.product_id = p.id
+          AND ((il.variant_id IS NULL AND v.id IS NULL) OR (il.variant_id = v.id))
+          AND il.tenant_id = $1
+      ) stock ON true
+      WHERE p.tenant_id = $1
+        AND (
+          (v.id IS NOT NULL AND stock.current_stock <= COALESCE(v.low_stock_threshold, 5))
+          OR
+          (v.id IS NULL AND stock.current_stock <= COALESCE(p.low_stock_threshold, 5))
+        )
       LIMIT $2
     `
     return this.dataSource.query(query, [tenantId, limit])
