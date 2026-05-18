@@ -37,10 +37,10 @@ This analysis defines the strict boundaries between **Tenant**, **Branch**, and 
 ---
 
 ### Step 5: The Procurement Boundary (Cost)
-**Owner:** Warehouse (usually)
-*   **Definition:** Purchase Orders and Goods Received Notes (GRN).
-*   **Rule:** Since stock physically arrives at a Warehouse, the Warehouse staff "owns" the GRN process. 
-*   **Financial Impact:** The moment a Warehouse staff clicks "Verify GRN", the **Tenant's** Accounts Payable increases.
+**Owner:** Tenant (PO) + Warehouse (GRN)
+*   **Definition:** **Purchase Orders** are Tenant commitments (with mandatory ship-to `warehouseId`). **GRNs** are Warehouse execution when goods arrive.
+*   **Rule:** Procurement creates/approves the PO centrally; warehouse staff own receiving, verification, and GRN posting.
+*   **Financial Impact:** When GRN is verified, **Tenant** AP and inventory asset update via events (not by warehouse-owned GL tables).
 
 ---
 
@@ -58,6 +58,7 @@ This analysis defines the strict boundaries between **Tenant**, **Branch**, and 
 | **POS / Sales** | Branch | Tenant (Admin) |
 | **Stock Levels** | Warehouse | Branch (View Only) |
 | **Expenses** | Branch | Tenant (Finance) |
-| **PO / Receiving** | Warehouse | Tenant (Procurement) |
+| **PO (commitment)** | Tenant | Warehouse (ship-to target) |
+| **GRN / Receiving** | Warehouse | Tenant (Procurement, Finance) |
 | **Customer Data** | Tenant (Shared) | Branch (Local History) |
 | **Payroll** | Tenant (HR) | Branch (Attendance Data) |
