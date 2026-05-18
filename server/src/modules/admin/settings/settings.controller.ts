@@ -42,6 +42,7 @@ export class SettingsController {
 
   @Put()
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   async updateSettings(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: UpdateSiteSettingsDto,
@@ -59,6 +60,7 @@ export class SettingsController {
   @Post('cache/clear')
   @HttpCode(200)
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   async clearCache(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<null>> {
