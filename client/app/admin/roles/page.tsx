@@ -269,7 +269,7 @@ export default function RolesPermissionsPage() {
             {/* Create/Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                    <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
                         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900">
                             <div>
                                 <h3 className="text-xl font-black text-slate-950 dark:text-white font-display tracking-tight">
@@ -280,6 +280,7 @@ export default function RolesPermissionsPage() {
                                 </p>
                             </div>
                             <button
+                                type="button"
                                 onClick={() => setShowModal(false)}
                                 className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
                             >
@@ -396,7 +397,7 @@ export default function RolesPermissionsPage() {
                                 Cancel
                             </button>
                             <button
-                                onClick={handleSubmit}
+                                type="submit"
                                 disabled={submitting}
                                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-xs font-black tracking-wider uppercase transition-all shadow-md shadow-indigo-500/10 active:scale-95"
                             >
@@ -404,7 +405,7 @@ export default function RolesPermissionsPage() {
                                 {editingRole ? 'Update Role' : 'Create Role'}
                             </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             )}
         </div>
