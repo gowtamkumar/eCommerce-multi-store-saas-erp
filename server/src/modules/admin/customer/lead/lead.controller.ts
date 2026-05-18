@@ -4,6 +4,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Get, Logger, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { FilterLeadDto } from './dto/filter-lead.dto'
 import { LeadResponseDto } from './dto/lead-response.dto'
@@ -19,6 +21,8 @@ export class LeadController {
   constructor(private readonly leadService: LeadService) {}
 
   @Post()
+  @RequirePermissions(SystemPermissions.CRM_WRITE)
+  @RequirePermissions(SystemPermissions.CRM_WRITE)
   async createLead(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateLeadDto,
@@ -34,6 +38,8 @@ export class LeadController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.CRM_READ)
+  @RequirePermissions(SystemPermissions.CRM_READ)
   async findAllLeads(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterLeadDto,
@@ -55,6 +61,8 @@ export class LeadController {
   }
 
   @Patch(':id')
+  @RequirePermissions(SystemPermissions.CRM_WRITE)
+  @RequirePermissions(SystemPermissions.CRM_WRITE)
   async updateLead(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

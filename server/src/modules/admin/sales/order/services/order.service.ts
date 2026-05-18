@@ -223,16 +223,22 @@ export class OrderService {
     return result
   }
 
-  async findAllOrders(filterDto: FilterOrderDto, ctx: RequestContextDto): Promise<{ orders: OrderEntity[]; total: number }> {
+  async findAllOrders(
+    filterDto: FilterOrderDto,
+    ctx: RequestContextDto,
+  ): Promise<{ orders: OrderEntity[]; total: number }> {
     this.logger.log(`${this.findAllOrders.name} Service Called`)
     const tenantId = ctx.tenantId
     const page = filterDto.page ? Number(filterDto.page) : 1
     const limit = filterDto.limit ? Number(filterDto.limit) : 20
-    return await this.orderRepository.findAllOrders({
-      ...filterDto,
-      page,
-      limit,
-    }, tenantId)
+    return await this.orderRepository.findAllOrders(
+      {
+        ...filterDto,
+        page,
+        limit,
+      },
+      tenantId,
+    )
   }
 
   async findOneOrder(id: string, ctx: RequestContextDto): Promise<OrderEntity> {

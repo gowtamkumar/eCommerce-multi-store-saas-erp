@@ -176,7 +176,9 @@ export class PosService {
       let customerAddress = 'POS Terminal Counter'
 
       if (dto.customerId) {
-        const customer = await manager.findOne(UserEntity, { where: { id: dto.customerId, tenantId } })
+        const customer = await manager.findOne(UserEntity, {
+          where: { id: dto.customerId, tenantId },
+        })
         if (customer) {
           customerName = customer.name || customerName
           customerEmail = customer.email || customerEmail
@@ -291,7 +293,7 @@ export class PosService {
       if (dto.appliedCoupon) {
         const couponRepo = manager.getRepository(CouponEntity)
         const coupon = await couponRepo.findOne({
-          where: { code: dto.appliedCoupon.toUpperCase().trim(), tenantId }
+          where: { code: dto.appliedCoupon.toUpperCase().trim(), tenantId },
         })
         if (coupon) {
           coupon.usedCount = Number(coupon.usedCount || 0) + 1

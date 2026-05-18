@@ -324,23 +324,24 @@ export class HrmRepository {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const [employeeCount, jobCount, applicantCount, attendanceCount, leaveCount] = await Promise.all([
-      this.employeeRepo.count({ where: { tenantId } }),
-      this.jobPostingRepo.count({ where: { tenantId, status: 'PUBLISHED' as any } }),
-      this.applicantRepo.count({ where: { tenantId } }),
-      this.attendanceSessionRepo.count({
-        where: {
-          tenantId,
-          clockIn: Between(today, new Date()),
-        },
-      }),
-      this.leaveRequestRepo.count({
-        where: {
-          tenantId,
-          status: 'PENDING' as any
-        }
-      }),
-    ])
+    const [employeeCount, jobCount, applicantCount, attendanceCount, leaveCount] =
+      await Promise.all([
+        this.employeeRepo.count({ where: { tenantId } }),
+        this.jobPostingRepo.count({ where: { tenantId, status: 'PUBLISHED' as any } }),
+        this.applicantRepo.count({ where: { tenantId } }),
+        this.attendanceSessionRepo.count({
+          where: {
+            tenantId,
+            clockIn: Between(today, new Date()),
+          },
+        }),
+        this.leaveRequestRepo.count({
+          where: {
+            tenantId,
+            status: 'PENDING' as any,
+          },
+        }),
+      ])
 
     return {
       employeeCount,

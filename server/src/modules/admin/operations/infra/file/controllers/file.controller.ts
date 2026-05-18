@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -35,6 +37,8 @@ export class AdminMediaController {
   constructor(private readonly filesService: FilesService) {}
 
   @Get()
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async findAllFiles(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterFileDto,
@@ -89,6 +93,8 @@ export class AdminMediaController {
   }
 
   @Delete(':id')
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async removeFile(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,

@@ -30,6 +30,41 @@ export const SystemPermissions = {
 
   // Coupons & Promotions
   COUPONS_MANAGE: 'coupons:manage',
+  PROMOTIONS_MANAGE: 'promotions:manage',
+
+  // Catalog
+  CATALOG_READ: 'catalog:read',
+  CATALOG_WRITE: 'catalog:write',
+
+  // Marketing & CRM
+  MARKETING_MANAGE: 'marketing:manage',
+  CRM_READ: 'crm:read',
+  CRM_WRITE: 'crm:write',
+
+  // Purchasing & Inventory
+  PURCHASING_READ: 'purchasing:read',
+  PURCHASING_WRITE: 'purchasing:write',
+  INVENTORY_READ: 'inventory:read',
+  INVENTORY_WRITE: 'inventory:write',
+  SUPPLIER_MANAGE: 'supplier:manage',
+
+  // Accounting & Invoicing
+  ACCOUNTING_READ: 'accounting:read',
+  ACCOUNTING_WRITE: 'accounting:write',
+  INVOICES_MANAGE: 'invoices:manage',
+
+  // Reports & Analytics
+  REPORTS_READ: 'reports:read',
+
+  // Logistics
+  LOGISTICS_MANAGE: 'logistics:manage',
+  FULFILLMENT_MANAGE: 'fulfillment:manage',
+
+  // Settings
+  SETTINGS_MANAGE: 'settings:manage',
+
+  // Content
+  CONTENT_MANAGE: 'content:manage',
 } as const
 
-export type SystemPermissionCode = typeof SystemPermissions[keyof typeof SystemPermissions]
+export type SystemPermissionCode = (typeof SystemPermissions)[keyof typeof SystemPermissions]

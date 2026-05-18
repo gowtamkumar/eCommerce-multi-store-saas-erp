@@ -15,7 +15,7 @@ export class AddFulfillmentTasksTable1779365123456 implements MigrationInterface
     `)
 
     const tableExists = await queryRunner.query(
-      `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'fulfillment_tasks')`
+      `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'fulfillment_tasks')`,
     )
 
     if (!tableExists[0].exists) {

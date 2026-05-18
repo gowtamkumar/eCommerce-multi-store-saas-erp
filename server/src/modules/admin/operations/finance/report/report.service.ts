@@ -657,13 +657,19 @@ export class ReportService {
         const filteredSupplierPaymentsData = supplierPayments || []
         const filteredPurchaseOrders = purchaseOrders || []
 
-        const inflow = filteredCustomerPayments.filter((p: any) => p.status === 'completed' && filterByDate(p))
+        const inflow = filteredCustomerPayments.filter(
+          (p: any) => p.status === 'completed' && filterByDate(p),
+        )
         const totalRevenue = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0)
-        
-        const filteredExpenses = filteredExpensesData.filter((e: any) => filterByDate(e, 'expenseDate'))
+
+        const filteredExpenses = filteredExpensesData.filter((e: any) =>
+          filterByDate(e, 'expenseDate'),
+        )
         const totalOpExpenses = filteredExpenses.reduce((sum, e) => sum + (+e.amount || 0), 0)
-        
-        const filteredSupplierPayments = filteredSupplierPaymentsData.filter((sp: any) => filterByDate(sp, 'paymentDate'))
+
+        const filteredSupplierPayments = filteredSupplierPaymentsData.filter((sp: any) =>
+          filterByDate(sp, 'paymentDate'),
+        )
         const totalSupplierPayments = filteredSupplierPayments.reduce(
           (sum, sp) => sum + (+sp.amount || 0),
           0,
@@ -671,10 +677,7 @@ export class ReportService {
         const totalExpenses = totalOpExpenses + totalSupplierPayments
         const totalAmountDue = filteredPurchaseOrders
           .filter((po: any) => filterByDate(po))
-          .reduce(
-            (sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)),
-            0,
-          )
+          .reduce((sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)), 0)
 
         // Monthly Trend (Last 6 Months)
         const months = Array.from({ length: 6 }, (_, i) => {
@@ -693,7 +696,9 @@ export class ReportService {
 
         const chartData = months.map((month) => {
           const monthInflow = customerPayments
-            .filter((p: any) => p.status === 'completed' && getYearMonthString(p.createdAt) === month)
+            .filter(
+              (p: any) => p.status === 'completed' && getYearMonthString(p.createdAt) === month,
+            )
             .reduce((sum, p) => sum + (+p.amount || 0), 0)
           const monthOpEx = expenses
             .filter((e: any) => getYearMonthString(e.expenseDate) === month)

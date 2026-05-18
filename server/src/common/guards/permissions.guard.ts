@@ -59,9 +59,36 @@ export class PermissionsGuard implements CanActivate {
           'payments:read',
           // Marketing
           'coupons:manage',
+          'promotions:manage',
+          'marketing:manage',
           // Users
           'users:read',
           'users:invite',
+          // Catalog
+          'catalog:read',
+          'catalog:write',
+          // CRM
+          'crm:read',
+          'crm:write',
+          // Purchasing
+          'purchasing:read',
+          'purchasing:write',
+          'inventory:read',
+          'inventory:write',
+          'supplier:manage',
+          // Accounting
+          'accounting:read',
+          'accounting:write',
+          'invoices:manage',
+          // Reports
+          'reports:read',
+          // Logistics
+          'logistics:manage',
+          'fulfillment:manage',
+          // Settings
+          'settings:manage',
+          // Content
+          'content:manage',
         ]
       } else if (roleName === UserRole.OPERATOR || roleName === UserRole.SUPPORT) {
         assignedPermissions = [
@@ -71,12 +98,19 @@ export class PermissionsGuard implements CanActivate {
           'orders:write',
           'returns:read',
           'payments:read',
+          'catalog:read',
+          'crm:read',
+          'crm:write',
+          'inventory:read',
+          'reports:read',
+          'fulfillment:manage',
         ]
       } else if (roleName === UserRole.EMPLOYEE) {
         assignedPermissions = [
           'hrm:clock-attendance',
           'pos:create-sale',
           'orders:read',
+          'catalog:read',
         ]
       }
     }

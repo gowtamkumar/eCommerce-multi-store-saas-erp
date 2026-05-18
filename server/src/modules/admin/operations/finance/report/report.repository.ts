@@ -132,7 +132,7 @@ export class ReportRepository {
   async getOrderCountInRange(tenantId: string, startDate: Date, endDate: Date): Promise<number> {
     const result = await this.dataSource.query(
       `SELECT COUNT(*) as count FROM orders WHERE tenant_id = $1 AND created_at >= $2 AND created_at <= $3`,
-      [tenantId, startDate, endDate]
+      [tenantId, startDate, endDate],
     )
     return +result[0]?.count || 0
   }
@@ -142,7 +142,7 @@ export class ReportRepository {
       `SELECT COALESCE(SUM(cogs_amount), 0) as "totalCogs" 
        FROM inventory_ledger 
        WHERE tenant_id = $1 AND created_at >= $2 AND created_at <= $3`,
-      [tenantId, startDate, endDate]
+      [tenantId, startDate, endDate],
     )
     return +result[0]?.totalCogs || 0
   }

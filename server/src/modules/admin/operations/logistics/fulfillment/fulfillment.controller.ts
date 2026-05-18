@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common'
 import { FulfillmentService } from './fulfillment.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
@@ -14,6 +16,8 @@ export class FulfillmentController {
   constructor(private readonly service: FulfillmentService) {}
 
   @Get()
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async findAll(
     @RequestContext() ctx: RequestContextDto,
     @Query('status') status?: string,
@@ -28,6 +32,8 @@ export class FulfillmentController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async findOne(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -42,6 +48,8 @@ export class FulfillmentController {
   }
 
   @Post(':id/start')
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async startPicking(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -56,6 +64,8 @@ export class FulfillmentController {
   }
 
   @Post(':id/pick')
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async pickItems(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -74,6 +84,8 @@ export class FulfillmentController {
   }
 
   @Post(':id/pack')
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async completePacking(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -88,6 +100,8 @@ export class FulfillmentController {
   }
 
   @Post(':id/ship')
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
+  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async shipOrder(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

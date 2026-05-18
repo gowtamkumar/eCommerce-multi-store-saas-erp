@@ -4,6 +4,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Get, Logger, Put, UseGuards } from '@nestjs/common'
 import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SiteSettingsResponseDto } from './dto/site-settings-response.dto'
@@ -24,6 +26,7 @@ export class SettingsController {
 
   @Get()
   @RequireFeature('/admin')
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   async findByTenantSettings(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<SiteSettingsResponseDto>> {

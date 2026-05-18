@@ -15,12 +15,7 @@ import { UserService } from './services/user.service'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      UserEntity,
-      StaffInvitationEntity,
-      RoleEntity,
-      PermissionEntity,
-    ]),
+    TypeOrmModule.forFeature([UserEntity, StaffInvitationEntity, RoleEntity, PermissionEntity]),
     MailModule,
     CacheModule,
   ],

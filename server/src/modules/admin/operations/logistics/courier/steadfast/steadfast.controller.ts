@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Post, UseGuards, Logger } from '@nestjs/common'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
@@ -20,6 +22,7 @@ export class SteadfastController {
 
   @Post('create-order')
   @ApiOperation({ summary: 'Create a Steadfast courier order' })
+  @RequirePermissions(SystemPermissions.LOGISTICS_MANAGE)
   async createSteadfastOrder(
     @RequestContext() ctx: RequestContextDto,
     @Body() createOrderDto: CreateSteadfastOrderDto,

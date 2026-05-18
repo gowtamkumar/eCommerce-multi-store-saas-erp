@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Post, Query, Res, Logger, UseGuards } from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
 import { Response } from 'express'
@@ -36,6 +38,8 @@ export class PaymentActionController {
 
   // Redirect endpoints — cannot return JSON wrappers as they perform HTTP redirects
   @Post('success')
+  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
+  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async success(
     @Query('tran_id') tran_id: string,
     @Body() gatewayResponse: any,
@@ -52,6 +56,8 @@ export class PaymentActionController {
   }
 
   @Post('fail')
+  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
+  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async fail(
     @Query('tran_id') tran_id: string,
     @Body() gatewayResponse: any,
@@ -68,6 +74,8 @@ export class PaymentActionController {
   }
 
   @Post('cancel')
+  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
+  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async cancel(
     @Query('tran_id') tran_id: string,
     @Body() gatewayResponse: any,
@@ -84,6 +92,8 @@ export class PaymentActionController {
   }
 
   @Post('ipn')
+  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
+  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async ipn(
     @Body() gatewayResponse: any,
   ): Promise<BaseApiSuccessResponse<{ success: boolean }> | { received: boolean }> {

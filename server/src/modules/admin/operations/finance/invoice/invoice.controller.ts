@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -32,6 +34,8 @@ export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
   @Post()
+  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
+  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
   async createInvoice(
     @Body() createInvoiceDto: CreateInvoiceDto,
     @RequestContext() ctx: RequestContextDto,
@@ -47,6 +51,8 @@ export class InvoiceController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
+  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
   async findAllInvoices(
     @RequestContext() ctx: RequestContextDto,
     @Query() paginationDto: PaginationDto,
@@ -63,6 +69,8 @@ export class InvoiceController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
+  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
   async findOneInvoice(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -78,6 +86,8 @@ export class InvoiceController {
   }
 
   @Patch(':id')
+  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
+  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
   async updateInvoice(
     @Param('id') id: string,
     @Body() updateInvoiceDto: UpdateInvoiceDto,
@@ -94,6 +104,8 @@ export class InvoiceController {
   }
 
   @Delete(':id')
+  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
+  @RequirePermissions(SystemPermissions.INVOICES_MANAGE)
   async removeInvoice(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,

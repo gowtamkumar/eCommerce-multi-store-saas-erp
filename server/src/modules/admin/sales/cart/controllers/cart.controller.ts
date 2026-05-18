@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Controller, Get, Query, UseGuards, Logger } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -20,6 +22,7 @@ export class AdminCartController {
 
   @Get()
   @ApiOperation({ summary: 'List active shopping carts for tenant' })
+  @RequirePermissions(SystemPermissions.ORDERS_READ)
   async findAllCarts(
     @RequestContext() ctx: RequestContextDto,
     @Query('page') page: number = 1,

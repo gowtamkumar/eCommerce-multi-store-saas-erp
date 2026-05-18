@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Get, Param, Post, UseGuards, Logger, Query } from '@nestjs/common'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
@@ -20,6 +22,8 @@ export class InventoryLedgerController {
   constructor(private readonly service: InventoryLedgerService) {}
 
   @Post()
+  @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
   async createLedgerEntry(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateInventoryTransactionDto,
@@ -35,6 +39,8 @@ export class InventoryLedgerController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.INVENTORY_READ)
+  @RequirePermissions(SystemPermissions.INVENTORY_READ)
   async findAllLedgerEntries(
     @RequestContext() ctx: RequestContextDto,
     @Query() pagination: PaginationDto,
@@ -51,6 +57,8 @@ export class InventoryLedgerController {
   }
 
   @Get('product/:productId')
+  @RequirePermissions(SystemPermissions.INVENTORY_READ)
+  @RequirePermissions(SystemPermissions.INVENTORY_READ)
   async findByProductLedgerEntries(
     @RequestContext() ctx: RequestContextDto,
     @Param('productId') productId: string,
@@ -68,6 +76,8 @@ export class InventoryLedgerController {
   }
 
   @Get('stock-summary')
+  @RequirePermissions(SystemPermissions.INVENTORY_READ)
+  @RequirePermissions(SystemPermissions.INVENTORY_READ)
   async getStockSummary(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any[]>> {

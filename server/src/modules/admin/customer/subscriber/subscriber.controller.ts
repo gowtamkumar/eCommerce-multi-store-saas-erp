@@ -2,6 +2,8 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Get, Logger, Post, Query, UseGuards } from '@nestjs/common'
 import { SubscriberResponseDto } from './dto/subscriber-response.dto'
 import { CreateSubscriberDto } from './dto/subscriber.dto'
@@ -18,6 +20,8 @@ export class SubscriberController {
   constructor(private readonly subscriberService: SubscriberService) {}
 
   @Post()
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async createSubscriber(
     @Body() createSubscriberDto: CreateSubscriberDto,
     @RequestContext() ctx: RequestContextDto,
@@ -34,6 +38,8 @@ export class SubscriberController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async findAllSubscribers(
     @Query() filterDto: any,
     @RequestContext() ctx: RequestContextDto,
