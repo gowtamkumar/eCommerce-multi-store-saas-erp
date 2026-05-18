@@ -1,16 +1,16 @@
 'use client';
 
 import { UserRole } from '@/lib/enums/user-role.enum';
-import { Loader2, Mail, UserCog, X, Building2 } from 'lucide-react';
+import { Loader2, Mail, UserCog, X, Building2, Sparkles, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { InviteStaffModalProps } from '../type';
 
 const roles = [
-    { value: UserRole.ADMIN, label: 'Admin', description: 'Full access to all features.' },
-    { value: UserRole.MARKETING, label: 'Marketing', description: 'Can manage marketing features.' },
-    { value: UserRole.STORE_MANAGER, label: 'Store Manager', description: 'Can manage store features.' },
-    { value: UserRole.OPERATOR, label: 'Operator', description: 'Can manage orders, products, and customers.' },
-    { value: UserRole.SUPPORT, label: 'Support', description: 'Can manage orders, products, and customers.' },
+    { value: UserRole.ADMIN, label: 'Admin', description: 'Complete system privileges.' },
+    { value: UserRole.MARKETING, label: 'Marketing', description: 'Manage coupons & campaigns.' },
+    { value: UserRole.STORE_MANAGER, label: 'Store Manager', description: 'Supervise catalogs & catalog stocks.' },
+    { value: UserRole.OPERATOR, label: 'Operator', description: 'Process POS & logistics orders.' },
+    { value: UserRole.SUPPORT, label: 'Support', description: 'Manage profiles & support tickets.' },
 ];
 
 export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModalProps) {
@@ -83,24 +83,31 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-[8px] animate-in fade-in duration-300">
             <div
-                className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-200"
+                className="relative w-full max-w-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-[28px] shadow-[0_25px_50px_-12px_rgba(99,102,241,0.15)] dark:shadow-[0_25px_50px_-12px_rgba(99,102,241,0.08)] border border-slate-200/60 dark:border-slate-800/60 overflow-hidden animate-in fade-in zoom-in-95 duration-300"
             >
+                {/* Visual Accent Gradient Top Border */}
+                <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center">
-                            <Mail className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/30">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 dark:border-indigo-500/10 flex items-center justify-center shadow-inner">
+                            <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400 animate-pulse" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Invite Team Member</h2>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">They&apos;ll receive an email with a link to join.</p>
+                            <h2 className="text-xl font-black bg-gradient-to-r from-slate-900 via-indigo-950 to-indigo-900 dark:from-white dark:via-slate-100 dark:to-slate-300 bg-clip-text text-transparent font-display tracking-tight">
+                                Invite Team Member
+                            </h2>
+                            <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-0.5">
+                                Add an administrator or operational staff profile.
+                            </p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        className="p-2.5 rounded-2xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all hover:scale-105 duration-200"
                         id="close-invite-modal-btn"
                     >
                         <X className="w-5 h-5" />
@@ -108,14 +115,14 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
                 </div>
 
                 {/* Body */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                    {/* Email */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                <form onSubmit={handleSubmit} className="px-8 py-6 space-y-6">
+                    {/* Email Input */}
+                    <div className="space-y-2">
+                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
                             Email Address
                         </label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <div className="relative group">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                             <input
                                 type="email"
                                 id="invite-email-input"
@@ -123,75 +130,74 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="staff@example.com"
-                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow"
+                                className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-950/30 text-slate-900 dark:text-white text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/80 outline-none transition-all shadow-sm font-semibold placeholder-slate-300 dark:placeholder-slate-700"
                             />
                         </div>
                     </div>
 
-                    {/* Branch (Assigned Operating Branch Location) */}
-                    {branches.length > 0 && (
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                                <div className="flex items-center gap-1.5">
-                                    <Building2 className="w-4 h-4 text-indigo-500" /> Assigned Home Branch
-                                </div>
-                            </label>
-                            <div className="relative">
-                                <select
-                                    value={branchId}
-                                    onChange={(e) => setBranchId(e.target.value)}
-                                    className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow appearance-none font-semibold cursor-pointer"
-                                >
-                                    {branches.map((b) => (
-                                        <option key={b.id} value={b.id}>
-                                            {b.name} ({b.code})
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
-                                    <X className="w-4 h-4 rotate-45" />
+                    {/* Dual Dropdowns Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Branch Select */}
+                        {branches.length > 0 && (
+                            <div className="space-y-2">
+                                <label className="block text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                    Home Branch
+                                </label>
+                                <div className="relative">
+                                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                    <select
+                                        value={branchId}
+                                        onChange={(e) => setBranchId(e.target.value)}
+                                        className="w-full pl-11 pr-10 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-950/30 text-slate-900 dark:text-white text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/80 outline-none transition-all appearance-none font-bold cursor-pointer"
+                                    >
+                                        {branches.map((b) => (
+                                            <option key={b.id} value={b.id} className="dark:bg-slate-950">
+                                                {b.name} ({b.code})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                                        <X className="w-4 h-4 rotate-45" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Custom Tenant Roles */}
-                    {customRoles.length > 0 && (
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                                <div className="flex items-center gap-1.5">
-                                    <UserCog className="w-4 h-4 text-indigo-500" /> Dynamic Custom Role
-                                </div>
-                            </label>
-                            <div className="relative">
-                                <select
-                                    value={selectedRoleId}
-                                    onChange={(e) => setSelectedRoleId(e.target.value)}
-                                    className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow appearance-none font-semibold cursor-pointer"
-                                    id="custom-role-select"
-                                >
-                                    <option value="">-- Use Standard System Role below --</option>
-                                    {customRoles.map((r) => (
-                                        <option key={r.id} value={r.id}>
-                                            {r.name} ({r.permissions?.length || 0} Permissions)
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
-                                    <X className="w-4 h-4 rotate-45" />
+                        {/* Custom Tenant Roles */}
+                        {customRoles.length > 0 && (
+                            <div className="space-y-2">
+                                <label className="block text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                    Dynamic Custom Role
+                                </label>
+                                <div className="relative">
+                                    <UserCog className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                    <select
+                                        value={selectedRoleId}
+                                        onChange={(e) => setSelectedRoleId(e.target.value)}
+                                        className="w-full pl-11 pr-10 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-950/30 text-slate-900 dark:text-white text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/80 outline-none transition-all appearance-none font-bold cursor-pointer"
+                                        id="custom-role-select"
+                                    >
+                                        <option value="" className="dark:bg-slate-950">-- Standard Role --</option>
+                                        {customRoles.map((r) => (
+                                            <option key={r.id} value={r.id} className="dark:bg-slate-950">
+                                                {r.name} ({r.permissions?.length || 0} Perms)
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                                        <X className="w-4 h-4 rotate-45" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
-                    {/* Role */}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            <div className="flex items-center gap-1.5">
-                                <UserCog className="w-4 h-4" /> Standard System Role
-                            </div>
+                    {/* Standard System Role Selector */}
+                    <div className="space-y-3">
+                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            Standard System Role
                         </label>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[190px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
                             {roles.map((r) => {
                                 const isSelected = !selectedRoleId && role === r.value;
                                 return (
@@ -203,33 +209,51 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
                                             setSelectedRoleId('');
                                             setRole(r.value as UserRole);
                                         }}
-                                        className={`p-3 rounded-xl border-2 text-left transition-all ${isSelected
-                                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/50'
-                                            : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 opacity-60 hover:opacity-100'
+                                        className={`group p-4 rounded-2xl border text-left transition-all duration-300 relative overflow-hidden ${isSelected
+                                            ? 'border-indigo-500/80 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 dark:from-indigo-500/10 dark:to-purple-500/5 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.12)]'
+                                            : 'border-slate-200 dark:border-slate-800 bg-white/20 dark:bg-slate-950/10 hover:border-slate-300 dark:hover:border-slate-700 hover:scale-[1.01]'
                                             }`}
                                     >
-                                        <div className="font-semibold text-sm text-slate-900 dark:text-white">{r.label}</div>
-                                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{r.description}</div>
+                                        {/* Glow visual backdrops */}
+                                        {isSelected && (
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 blur-xl pointer-events-none rounded-full" />
+                                        )}
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full transition-transform ${isSelected ? 'bg-indigo-500 scale-125' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                                            <div className="font-bold text-sm text-slate-900 dark:text-white">{r.label}</div>
+                                        </div>
+                                        <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1 pl-4 leading-relaxed group-hover:text-slate-500 dark:group-hover:text-slate-400 transition-colors">
+                                            {r.description}
+                                        </div>
                                     </button>
                                 );
                             })}
                         </div>
                     </div>
 
+                    {/* Alert Message */}
                     {error && (
-                        <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 p-3 rounded-lg border border-red-100 dark:border-red-900">
+                        <div className="text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/5 border border-rose-500/20 p-4 rounded-2xl flex items-center gap-2.5 animate-in fade-in duration-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
                             {error}
                         </div>
                     )}
 
+                    {/* Submit Button */}
                     <button
                         type="submit"
                         id="send-invitation-btn"
                         disabled={loading}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold text-sm transition-colors"
+                        className="w-full relative overflow-hidden flex items-center justify-center gap-2.5 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-indigo-800 hover:from-indigo-500 hover:to-indigo-600 text-white font-black text-sm transition-all duration-300 disabled:opacity-50 hover:shadow-xl hover:shadow-indigo-500/10 active:scale-[0.99]"
                     >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-                        {loading ? 'Sending...' : 'Send Invitation'}
+                        {loading ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <>
+                                <span>Send Invitation</span>
+                                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                            </>
+                        )}
                     </button>
                 </form>
             </div>
