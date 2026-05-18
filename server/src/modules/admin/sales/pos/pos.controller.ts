@@ -24,6 +24,7 @@ export class PosController {
   constructor(private readonly service: PosService) {}
 
   @Post('register')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async createRegister(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePosRegisterDto,
@@ -40,6 +41,7 @@ export class PosController {
 
   @Get('register')
   @RequireFeature('/admin/pos')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async findAllRegisters(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PosRegisterEntity[]>> {
@@ -54,6 +56,7 @@ export class PosController {
   }
 
   @Get('register/:id')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async findOneRegister(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -88,6 +91,7 @@ export class PosController {
 
   @Get('shift/active')
   @RequireFeature('/admin/pos')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async findActiveShift(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PosShiftEntity>> {

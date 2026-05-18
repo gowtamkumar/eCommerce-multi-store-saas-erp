@@ -38,6 +38,7 @@ export class HrmController {
   constructor(private readonly hrmService: HrmService) {}
 
   @Get('dashboard/stats')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async getDashboardStats(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -51,6 +52,7 @@ export class HrmController {
   }
 
   @Post('departments')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async createDepartment(
     @RequestContext() ctx: RequestContextDto,
     @Body() data: CreateDepartmentDto,
@@ -66,6 +68,7 @@ export class HrmController {
   }
 
   @Get('departments')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async findAllDepartments(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -80,6 +83,7 @@ export class HrmController {
   }
 
   @Patch('departments/:id')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async updateDepartment(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -96,6 +100,7 @@ export class HrmController {
   }
 
   @Delete('departments/:id')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async deleteDepartment(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -111,6 +116,7 @@ export class HrmController {
   }
 
   @Post('designations')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async createDesignation(
     @RequestContext() ctx: RequestContextDto,
     @Body() data: CreateDesignationDto,
@@ -126,6 +132,7 @@ export class HrmController {
   }
 
   @Get('designations')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async findAllDesignations(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -140,6 +147,7 @@ export class HrmController {
   }
 
   @Patch('designations/:id')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async updateDesignation(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -156,6 +164,7 @@ export class HrmController {
   }
 
   @Delete('designations/:id')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async deleteDesignation(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -187,6 +196,7 @@ export class HrmController {
   }
 
   @Get('employees')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async findAllEmployees(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -201,6 +211,7 @@ export class HrmController {
   }
 
   @Get('employees/:id')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async findOneEmployee(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -266,6 +277,7 @@ export class HrmController {
   }
 
   @Get('attendance')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async findAllAttendanceSessions(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -300,6 +312,7 @@ export class HrmController {
   }
 
   @Get('payroll/batches')
+  @RequirePermissions(SystemPermissions.HRM_PAYROLL_PROCESS)
   async findAllPayrollBatches(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -314,6 +327,7 @@ export class HrmController {
   }
 
   @Get('payroll/batches/:id/slips')
+  @RequirePermissions(SystemPermissions.HRM_PAYROLL_PROCESS)
   async findPayrollSlipsByBatch(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -332,6 +346,7 @@ export class HrmController {
 
   // --- Shift Management ---
   @Post('shifts')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async createShift(
     @RequestContext() ctx: RequestContextDto,
     @Body() data: CreateShiftDto,
@@ -347,6 +362,7 @@ export class HrmController {
   }
 
   @Get('shifts')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async findAllShifts(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -361,6 +377,7 @@ export class HrmController {
   }
 
   @Patch('shifts/:id')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async updateShift(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -377,6 +394,7 @@ export class HrmController {
   }
 
   @Delete('shifts/:id')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async deleteShift(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -392,6 +410,7 @@ export class HrmController {
   }
 
   @Post('employees/:id/assign-shift')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async assignShift(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -410,6 +429,7 @@ export class HrmController {
   }
 
   @Get('employees/:id/shifts')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async getEmployeeShifts(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -428,6 +448,7 @@ export class HrmController {
 
   // --- Leave Management ---
   @Post('employees/:id/leaves')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async requestLeave(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -446,6 +467,7 @@ export class HrmController {
   }
 
   @Get('leaves')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async findAllLeaveRequests(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -460,6 +482,7 @@ export class HrmController {
   }
 
   @Post('leaves/:id/approve')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async approveLeave(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -480,6 +503,7 @@ export class HrmController {
 
   // --- Recruitment (ATS) ---
   @Post('jobs')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async createJobPosting(
     @RequestContext() ctx: RequestContextDto,
     @Body() data: any,
@@ -494,6 +518,7 @@ export class HrmController {
   }
 
   @Get('jobs')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async findAllJobPostings(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -507,6 +532,7 @@ export class HrmController {
   }
 
   @Post('applicants')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async applyForJob(
     @RequestContext() ctx: RequestContextDto,
     @Body() data: any,
@@ -521,6 +547,7 @@ export class HrmController {
   }
 
   @Get('applicants')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async findAllApplicants(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -534,6 +561,7 @@ export class HrmController {
   }
 
   @Post('interviews')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async scheduleInterview(
     @RequestContext() ctx: RequestContextDto,
     @Body() data: any,
@@ -548,6 +576,7 @@ export class HrmController {
   }
 
   @Get('applicants/:id/interviews')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async findInterviewsByApplicant(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -562,6 +591,7 @@ export class HrmController {
   }
 
   @Patch('applicants/:id/status')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async updateApplicantStatus(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -577,6 +607,7 @@ export class HrmController {
   }
 
   @Post('applicants/:id/onboard')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async onboardApplicant(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -592,6 +623,7 @@ export class HrmController {
 
   // --- Performance & KPIs ---
   @Post('performance/reviews')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async createPerformanceReview(
     @RequestContext() ctx: RequestContextDto,
     @Body() data: any,
@@ -606,6 +638,7 @@ export class HrmController {
   }
 
   @Get('employees/:id/performance')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async getPerformanceScore(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -621,6 +654,7 @@ export class HrmController {
   }
 
   @Post('seed')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async seedDemoData(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
