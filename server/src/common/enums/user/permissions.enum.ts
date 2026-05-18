@@ -35,6 +35,7 @@ export const SystemPermissions = {
   // Catalog
   CATALOG_READ: 'catalog:read',
   CATALOG_WRITE: 'catalog:write',
+  CATALOG_FEATURED: 'catalog:featured',
 
   // Marketing & CRM
   MARKETING_MANAGE: 'marketing:manage',

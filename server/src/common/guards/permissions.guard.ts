@@ -88,9 +88,10 @@ export class PermissionsGuard implements CanActivate {
           // Users
           'users:read',
           'users:invite',
-          // Catalog
+           // Catalog
           'catalog:read',
           'catalog:write',
+          'catalog:featured',
           // CRM
           'crm:read',
           'crm:write',

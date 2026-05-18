@@ -11,7 +11,9 @@ const roles = [
     { value: UserRole.STORE_MANAGER, label: 'Store Manager', description: 'Supervise catalogs & catalog stocks.' },
     { value: UserRole.OPERATOR, label: 'Operator', description: 'Process POS & logistics orders.' },
     { value: UserRole.SUPPORT, label: 'Support', description: 'Manage profiles & support tickets.' },
+    { value: UserRole.EMPLOYEE, label: 'Employee', description: 'Clock attendance, process POS sales, and view catalogs.' },
 ];
+
 
 export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModalProps) {
     const [email, setEmail] = useState('');

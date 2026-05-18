@@ -147,6 +147,12 @@ export class UserService implements OnApplicationBootstrap {
         module: 'Catalog',
       },
       {
+        code: 'catalog:featured',
+        name: 'Manage Featured Items',
+        description: 'Can manage featured products, promotional items, and storefront sliders',
+        module: 'Catalog',
+      },
+      {
         code: 'marketing:manage',
         name: 'Manage Marketing',
         description: 'Can manage campaigns and subscribers',
