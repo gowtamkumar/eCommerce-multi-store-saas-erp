@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     Bell,
+    Building2,
     ChevronDown,
     CreditCard,
     LogOut,
@@ -38,9 +39,14 @@ export default function AdminTopBar({
     const [searchQuery, setSearchQuery] = useState('');
     const [chatMessage, setChatMessage] = useState('');
 
+    const [branches, setBranches] = useState<any[]>([]);
+    const [activeBranch, setActiveBranch] = useState<any>(null);
+    const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+
     const notificationRef = useRef<HTMLDivElement>(null);
     const chatRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
+    const branchDropdownRef = useRef<HTMLDivElement>(null);
 
     const userName = session?.user?.name || session?.user?.username || 'Administrator';
     const userEmail = session?.user?.email || 'admin@store.com';
@@ -83,6 +89,33 @@ export default function AdminTopBar({
 
     const unreadNotificationsCount = notifications.filter((n) => n.unread).length;
 
+    // Load active operating branches list
+    useEffect(() => {
+        const fetchBranchesList = async () => {
+            try {
+                const { getBranches } = await import('@/services/organization');
+                const res = await getBranches();
+                if (res.success && res.data) {
+                    const branchItems = res.data.items || res.data || [];
+                    setBranches(branchItems);
+                    
+                    const savedBranchId = localStorage.getItem('activeBranchId');
+                    let active = branchItems.find((b: any) => b.id === savedBranchId);
+                    
+                    if (!active && branchItems.length > 0) {
+                        active = branchItems[0];
+                        localStorage.setItem('activeBranchId', active.id);
+                    }
+                    setActiveBranch(active);
+                }
+            } catch (error) {
+                console.error('Failed to load branches in top bar:', error);
+            }
+        };
+
+        fetchBranchesList();
+    }, []);
+
     // Click outside listener to close dropdowns
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -95,10 +128,21 @@ export default function AdminTopBar({
             if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
                 setIsProfileOpen(false);
             }
+            if (branchDropdownRef.current && !branchDropdownRef.current.contains(e.target as Node)) {
+                setIsBranchDropdownOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const handleBranchSwitch = (branch: any) => {
+        localStorage.setItem('activeBranchId', branch.id);
+        setActiveBranch(branch);
+        setIsBranchDropdownOpen(false);
+        window.dispatchEvent(new Event('branch-changed'));
+        window.location.reload();
+    };
 
     const markAllAsRead = () => {
         setNotifications(notifications.map((n) => ({ ...n, unread: false })));
@@ -178,6 +222,59 @@ export default function AdminTopBar({
                             className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder-slate-400 dark:placeholder-slate-500"
                         />
                     </div>
+
+                    {/* Premium Branch Switcher */}
+                    {branches.length > 0 && (
+                        <div className="relative" ref={branchDropdownRef}>
+                            <button
+                                onClick={() => {
+                                    setIsBranchDropdownOpen(!isBranchDropdownOpen);
+                                    setIsChatOpen(false);
+                                    setIsNotificationOpen(false);
+                                    setIsProfileOpen(false);
+                                }}
+                                className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95 text-xs font-bold font-display shadow-sm"
+                            >
+                                <Building2 className="w-3.5 h-3.5 text-indigo-500" />
+                                <span className="max-w-[120px] truncate">{activeBranch?.name || 'Loading branch...'}</span>
+                                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                            </button>
+
+                            <AnimatePresence>
+                                {isBranchDropdownOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute left-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl shadow-indigo-500/10 overflow-hidden z-50 p-1.5"
+                                    >
+                                        <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700/50">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Active Operating Branch</span>
+                                        </div>
+                                        <div className="py-1 space-y-0.5 max-h-60 overflow-y-auto">
+                                            {branches.map((b: any) => (
+                                                <button
+                                                    key={b.id}
+                                                    onClick={() => handleBranchSwitch(b)}
+                                                    className={`w-full text-left flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all font-semibold ${
+                                                        activeBranch?.id === b.id
+                                                            ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-bold'
+                                                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
+                                                    }`}
+                                                >
+                                                    <span className="truncate">{b.name}</span>
+                                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-mono font-bold text-slate-400 dark:text-slate-500">
+                                                        {b.code}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
                 </div>
 
                 {/* Actions: Notifications, Profile */}
