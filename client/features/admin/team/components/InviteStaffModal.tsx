@@ -18,26 +18,38 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
     const [role, setRole] = useState<UserRole>(UserRole.OPERATOR);
     const [branches, setBranches] = useState<any[]>([]);
     const [branchId, setBranchId] = useState('');
+    const [customRoles, setCustomRoles] = useState<any[]>([]);
+    const [selectedRoleId, setSelectedRoleId] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        const fetchBranches = async () => {
+        const fetchBranchesAndRoles = async () => {
             try {
                 const { getBranches } = await import('@/services/organization');
-                const res = await getBranches();
-                if (res.success && res.data) {
-                    const items = res.data.items || res.data || [];
+                const { fetchAPI } = await import('@/services/api');
+                
+                const [branchesRes, rolesRes] = await Promise.all([
+                    getBranches(),
+                    fetchAPI('/users/roles'),
+                ]);
+
+                if (branchesRes.success && branchesRes.data) {
+                    const items = branchesRes.data.items || branchesRes.data || [];
                     setBranches(items);
                     if (items.length > 0) {
                         setBranchId(items[0].id);
                     }
                 }
+
+                if (rolesRes?.success && rolesRes?.data) {
+                    setCustomRoles(rolesRes.data);
+                }
             } catch (err) {
-                console.error('Failed to load branches in invite modal:', err);
+                console.error('Failed to load branches or roles in invite modal:', err);
             }
         };
-        fetchBranches();
+        fetchBranchesAndRoles();
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -51,7 +63,8 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
                 method: 'POST',
                 body: JSON.stringify({ 
                     email, 
-                    role, 
+                    role: selectedRoleId ? UserRole.EMPLOYEE : role,
+                    roleId: selectedRoleId || undefined,
                     branchId: branchId || undefined 
                 }),
             });
@@ -142,27 +155,64 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
                         </div>
                     )}
 
+                    {/* Custom Tenant Roles */}
+                    {customRoles.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                <div className="flex items-center gap-1.5">
+                                    <UserCog className="w-4 h-4 text-indigo-500" /> Dynamic Custom Role
+                                </div>
+                            </label>
+                            <div className="relative">
+                                <select
+                                    value={selectedRoleId}
+                                    onChange={(e) => setSelectedRoleId(e.target.value)}
+                                    className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow appearance-none font-semibold cursor-pointer"
+                                    id="custom-role-select"
+                                >
+                                    <option value="">-- Use Standard System Role below --</option>
+                                    {customRoles.map((r) => (
+                                        <option key={r.id} value={r.id}>
+                                            {r.name} ({r.permissions?.length || 0} Permissions)
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                                    <X className="w-4 h-4 rotate-45" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Role */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                            <div className="flex items-center gap-1.5"><UserCog className="w-4 h-4" /> Assign Role</div>
+                            <div className="flex items-center gap-1.5">
+                                <UserCog className="w-4 h-4" /> Standard System Role
+                            </div>
                         </label>
                         <div className="grid grid-cols-2 gap-3">
-                            {roles.map((r) => (
-                                <button
-                                    key={r.value}
-                                    type="button"
-                                    id={`role-btn-${r.value.toLowerCase()}`}
-                                    onClick={() => setRole(r.value as UserRole)}
-                                    className={`p-3 rounded-xl border-2 text-left transition-all ${role === r.value
-                                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/50'
-                                        : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300'
-                                        }`}
-                                >
-                                    <div className="font-semibold text-sm text-slate-900 dark:text-white">{r.label}</div>
-                                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{r.description}</div>
-                                </button>
-                            ))}
+                            {roles.map((r) => {
+                                const isSelected = !selectedRoleId && role === r.value;
+                                return (
+                                    <button
+                                        key={r.value}
+                                        type="button"
+                                        id={`role-btn-${r.value.toLowerCase()}`}
+                                        onClick={() => {
+                                            setSelectedRoleId('');
+                                            setRole(r.value as UserRole);
+                                        }}
+                                        className={`p-3 rounded-xl border-2 text-left transition-all ${isSelected
+                                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/50'
+                                            : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 opacity-60 hover:opacity-100'
+                                            }`}
+                                    >
+                                        <div className="font-semibold text-sm text-slate-900 dark:text-white">{r.label}</div>
+                                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{r.description}</div>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 

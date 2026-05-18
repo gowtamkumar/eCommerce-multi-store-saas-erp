@@ -17,6 +17,10 @@ export class InviteStaffDto {
   @IsUUID()
   @IsOptional()
   warehouseId?: string
+
+  @IsUUID()
+  @IsOptional()
+  roleId?: string
 }
 
 export class AcceptInvitationDto {
