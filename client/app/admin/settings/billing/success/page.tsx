@@ -1,24 +1,56 @@
 "use client";
 
-import { Check, ArrowLeft } from "lucide-react";
+import { Check, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSettings } from "@/hooks/SettingsContext";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
+import { fetchAPI } from "@/services/api";
 
 function SuccessContent() {
   const { refreshSettings } = useSettings();
   const searchParams = useSearchParams();
   const tran_id = searchParams.get("tran_id");
+  const [isVerifying, setIsVerifying] = useState(true);
+  const hasTriggered = useRef(false);
 
   useEffect(() => {
-    refreshSettings();
-  }, []);
+    if (!tran_id || hasTriggered.current) {
+      setIsVerifying(false);
+      return;
+    }
+    hasTriggered.current = true;
+
+    const verifyPayment = async () => {
+      try {
+        await fetchAPI(`/billing/complete/success?tran_id=${tran_id}`, {
+          method: "POST",
+          body: JSON.stringify({ source: "admin_settings" })
+        });
+        await refreshSettings();
+      } catch (error) {
+        console.error("Failed to complete subscription update:", error);
+      } finally {
+        setIsVerifying(false);
+      }
+    };
+
+    verifyPayment();
+  }, [tran_id, refreshSettings]);
+
+  if (isVerifying) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 font-display">
+        <Loader2 className="w-12 h-12 animate-spin text-indigo-600" />
+        <p className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-[0.2em] text-[10px] animate-pulse">Securing transaction details...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh] p-6">
+    <div className="flex items-center justify-center min-h-[60vh] p-6 font-display">
       <div className="bg-white dark:bg-slate-800 rounded-[3rem] shadow-2xl p-10 max-w-lg w-full text-center border border-slate-100 dark:border-slate-700/50">
-        <div className="w-24 h-24 bg-emerald-50 dark:bg-emerald-900/20 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/10">
+        <div className="w-24 h-24 bg-emerald-50 dark:bg-emerald-900/20 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/10 animate-bounce">
           <Check className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
         </div>
 

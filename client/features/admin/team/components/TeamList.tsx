@@ -15,6 +15,7 @@ import InviteStaffModal from './InviteStaffModal';
 import TeamStatsGrid from './TeamStatsGrid';
 import MemberTable from './MemberTable';
 import InvitationTable from './InvitationTable';
+import ChangeRoleModal from './ChangeRoleModal';
 import { TeamMember, Invitation } from '../type';
 
 const roleIcons: Record<UserRole, React.ReactElement> = {
@@ -25,6 +26,7 @@ const roleIcons: Record<UserRole, React.ReactElement> = {
     [UserRole.STORE_MANAGER]: <Settings className="w-3.5 h-3.5 text-blue-500" />,
     [UserRole.SUPPORT]: <Users className="w-3.5 h-3.5 text-slate-400" />,
     [UserRole.MARKETING]: <Settings className="w-3.5 h-3.5 text-blue-500" />,
+    [UserRole.EMPLOYEE]: <Users className="w-3.5 h-3.5 text-slate-400" />,
 };
 
 const roleColors: Record<UserRole, string> = {
@@ -35,6 +37,7 @@ const roleColors: Record<UserRole, string> = {
     [UserRole.STORE_MANAGER]: 'bg-blue-100/50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200/50 dark:border-blue-900/50',
     [UserRole.SUPPORT]: 'bg-slate-100/50 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400 border-slate-200/50 dark:border-slate-700/50',
     [UserRole.MARKETING]: 'bg-blue-100/50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-blue-200/50 dark:border-blue-900/50',
+    [UserRole.EMPLOYEE]: 'bg-slate-100/50 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400 border-slate-200/50 dark:border-slate-700/50',
 };
 
 export default function TeamList() {
@@ -42,6 +45,7 @@ export default function TeamList() {
     const [invitations, setInvitations] = useState<Invitation[]>([]);
     const [loading, setLoading] = useState(true);
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'members' | 'invitations'>('members');
 
@@ -176,6 +180,10 @@ export default function TeamList() {
                     setActiveDropdown={setActiveDropdown}
                     handleRoleChange={handleRoleChange}
                     handleRemoveMember={handleRemoveMember}
+                    handleEditRole={(member) => {
+                        setEditingMember(member);
+                        setActiveDropdown(null);
+                    }}
                     roleIcons={roleIcons}
                     roleColors={roleColors}
                     getInitials={getInitials}
@@ -193,6 +201,15 @@ export default function TeamList() {
                 <InviteStaffModal
                     onClose={() => setShowInviteModal(false)}
                     onInvited={fetchData}
+                />
+            )}
+
+            {editingMember && (
+                <ChangeRoleModal
+                    member={editingMember}
+                    onClose={() => setEditingMember(null)}
+                    onUpdated={fetchData}
+                    roleIcons={roleIcons}
                 />
             )}
         </div>

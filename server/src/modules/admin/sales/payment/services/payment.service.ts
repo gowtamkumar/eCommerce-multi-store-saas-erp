@@ -234,10 +234,9 @@ export class PaymentService {
     return items
   }
 
-  async findAllPaymentsByCustomer(ctx: RequestContextDto): Promise<PaymentEntity[]> {
+  async findAllPaymentsByCustomer(customerId: string, ctx: RequestContextDto): Promise<PaymentEntity[]> {
     this.logger.log(`${this.findAllPaymentsByCustomer.name} Service Called`)
     const tenantId = ctx.tenantId
-    const userId = ctx.userId
-    return await this.paymentRepository.findPaymentsByUser(userId, tenantId)
+    return await this.paymentRepository.findPaymentsByUser(customerId, tenantId)
   }
 }

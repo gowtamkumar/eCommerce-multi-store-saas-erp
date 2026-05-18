@@ -141,9 +141,11 @@ export class ReportController {
   @RequireFeature('/admin/reports/finance')
   async getFinanceSummary(
     @RequestContext() ctx: RequestContextDto,
+    @Query('startDate') startDateStr?: string,
+    @Query('endDate') endDateStr?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFinanceSummary.`)
-    const result = await this.reportService.getFinanceSummary(ctx)
+    const result = await this.reportService.getFinanceSummary(ctx, startDateStr, endDateStr)
     return {
       success: true,
       statusCode: 200,
