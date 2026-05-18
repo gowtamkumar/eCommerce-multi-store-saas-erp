@@ -3,6 +3,7 @@ import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { UserController } from './controllers/user.controller'
+import { RoleController } from './controllers/role.controller'
 import { UserEntity } from './entities/user.entity'
 import { StaffInvitationEntity } from './entities/staff-invitation.entity'
 import { RoleEntity } from './entities/role.entity'
@@ -23,7 +24,7 @@ import { UserService } from './services/user.service'
     MailModule,
     CacheModule,
   ],
-  controllers: [UserController],
+  controllers: [UserController, RoleController],
   providers: [UserService, StaffInvitationService, UserRepository, StaffInvitationRepository],
   exports: [UserService, StaffInvitationService],
 })

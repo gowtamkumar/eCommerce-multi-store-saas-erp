@@ -6,18 +6,52 @@ import * as bcrypt from 'bcrypt'
 import { CreateUserDto, FilterUserDto, UpdatePasswordDto, UpdateUserDto } from '../dtos'
 import { StaffInvitationEntity } from '../entities/staff-invitation.entity'
 import { UserEntity } from '../entities/user.entity'
+import { PermissionEntity } from '../entities/permission.entity'
 import { UserRepository } from '../repositories/user.repository'
 import { StaffInvitationService } from './staff-invitation.service'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { OnApplicationBootstrap } from '@nestjs/common'
 
 @Injectable()
-export class UserService {
+export class UserService implements OnApplicationBootstrap {
   private readonly logger = new Logger(UserService.name)
 
   constructor(
     private readonly userRepo: UserRepository,
     private readonly cacheService: CacheService,
     private readonly invitationService: StaffInvitationService,
+    @InjectRepository(PermissionEntity)
+    private readonly permissionRepo: Repository<PermissionEntity>,
   ) {}
+
+  async onApplicationBootstrap() {
+    await this.seedPermissions()
+  }
+
+  async seedPermissions(): Promise<void> {
+    this.logger.log('Seeding system permissions...')
+    const permissionsToSeed = [
+      { code: 'users:read', name: 'View Users', description: 'Can view user accounts and team members', module: 'Access Control' },
+      { code: 'users:write', name: 'Manage Users', description: 'Can create, edit, or delete users', module: 'Access Control' },
+      { code: 'users:invite', name: 'Invite Staff', description: 'Can invite staff members', module: 'Access Control' },
+      { code: 'pos:create-sale', name: 'Create POS Sale', description: 'Can run POS register sales', module: 'POS' },
+      { code: 'pos:manage-shifts', name: 'Manage POS Shifts', description: 'Can manage register shifts', module: 'POS' },
+      { code: 'finance:read-ledger', name: 'View Ledger', description: 'Can view books and ledgers', module: 'Finance' },
+      { code: 'finance:write-expense', name: 'Write Expense', description: 'Can record new expenses', module: 'Finance' },
+      { code: 'hrm:clock-attendance', name: 'Clock Attendance', description: 'Can clock in/out for shift attendance', module: 'HRM' },
+      { code: 'hrm:process-payroll', name: 'Process Payroll', description: 'Can run payroll cycles', module: 'HRM' },
+      { code: 'hrm:manage-employees', name: 'Manage Employees', description: 'Can manage legal employee records', module: 'HRM' },
+    ]
+
+    for (const p of permissionsToSeed) {
+      const existing = await this.permissionRepo.findOne({ where: { code: p.code } })
+      if (!existing) {
+        await this.permissionRepo.save(this.permissionRepo.create(p))
+      }
+    }
+    this.logger.log('Permissions seeded successfully.')
+  }
 
   async getUsers(
     filterUserDto: FilterUserDto,

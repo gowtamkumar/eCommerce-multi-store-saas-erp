@@ -559,6 +559,12 @@ export const navGroups = [
         href: "/admin/team",
         feature: "/admin/team",
       },
+      {
+        icon: ShieldCheck,
+        label: "Roles & Permissions",
+        href: "/admin/roles",
+        feature: "/admin/roles",
+      },
     ],
   },
   {

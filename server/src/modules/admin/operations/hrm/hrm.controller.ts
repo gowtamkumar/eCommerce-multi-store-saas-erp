@@ -1,5 +1,7 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ApplicantStatus } from '@/common/enums/hrm/hrm-enums'
@@ -169,6 +171,7 @@ export class HrmController {
   }
 
   @Post('employees')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async createEmployee(
     @RequestContext() ctx: RequestContextDto,
     @Body() data: CreateEmployeeDto,
@@ -213,6 +216,7 @@ export class HrmController {
   }
 
   @Patch('employees/:id')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async updateEmployee(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -229,6 +233,7 @@ export class HrmController {
   }
 
   @Post('employees/:id/clock-in')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async clockIn(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -245,6 +250,7 @@ export class HrmController {
   }
 
   @Post('employees/:id/clock-out')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
   async clockOut(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -276,6 +282,7 @@ export class HrmController {
   }
 
   @Post('payroll/process')
+  @RequirePermissions(SystemPermissions.HRM_PAYROLL_PROCESS)
   async processPayroll(
     @RequestContext() ctx: RequestContextDto,
     @Body() data: { period: string; name: string },
