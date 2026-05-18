@@ -42,6 +42,12 @@ export class UserService implements OnApplicationBootstrap {
       { code: 'hrm:clock-attendance', name: 'Clock Attendance', description: 'Can clock in/out for shift attendance', module: 'HRM' },
       { code: 'hrm:process-payroll', name: 'Process Payroll', description: 'Can run payroll cycles', module: 'HRM' },
       { code: 'hrm:manage-employees', name: 'Manage Employees', description: 'Can manage legal employee records', module: 'HRM' },
+      { code: 'orders:read', name: 'View Orders', description: 'Can view all customer orders', module: 'Orders' },
+      { code: 'orders:write', name: 'Manage Orders', description: 'Can create and update orders', module: 'Orders' },
+      { code: 'returns:read', name: 'View Returns', description: 'Can view return and refund requests', module: 'Orders' },
+      { code: 'returns:write', name: 'Manage Returns', description: 'Can approve, reject, or update returns', module: 'Orders' },
+      { code: 'payments:read', name: 'View Payments', description: 'Can view payment transactions and history', module: 'Finance' },
+      { code: 'coupons:manage', name: 'Manage Coupons', description: 'Can create, edit, and delete discount coupons', module: 'Marketing' },
     ]
 
     for (const p of permissionsToSeed) {

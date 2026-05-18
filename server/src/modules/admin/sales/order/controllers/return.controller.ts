@@ -9,6 +9,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { OrderReturnResponseDto } from '../dto/order-return-response.dto'
 
 @Controller('returns')
@@ -20,6 +22,7 @@ export class ReturnController {
   constructor(private readonly returnService: ReturnService) {}
 
   @Post()
+  @RequirePermissions(SystemPermissions.RETURNS_WRITE)
   async createReturnRequest(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateReturnDto,
@@ -35,6 +38,7 @@ export class ReturnController {
   }
 
   @Get('my-returns')
+  @RequirePermissions(SystemPermissions.RETURNS_READ)
   async findMyReturns(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<OrderReturnResponseDto[]>> {
@@ -49,6 +53,7 @@ export class ReturnController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.RETURNS_READ)
   async findAllReturns(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterReturnDto,
@@ -72,6 +77,7 @@ export class ReturnController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.RETURNS_READ)
   async findReturnById(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -87,6 +93,7 @@ export class ReturnController {
   }
 
   @Patch(':id/status')
+  @RequirePermissions(SystemPermissions.RETURNS_WRITE)
   async updateStatus(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

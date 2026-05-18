@@ -41,21 +41,42 @@ export class PermissionsGuard implements CanActivate {
       const roleName = (user.role || '').toLowerCase()
       if (roleName === UserRole.STORE_MANAGER || roleName === UserRole.ADMIN) {
         assignedPermissions = [
+          // POS
           'pos:create-sale',
           'pos:manage-shifts',
+          // HRM
           'hrm:clock-attendance',
           'hrm:manage-employees',
+          'hrm:process-payroll',
+          // Finance
           'finance:read-ledger',
           'finance:write-expense',
+          // Orders
+          'orders:read',
+          'orders:write',
+          'returns:read',
+          'returns:write',
+          'payments:read',
+          // Marketing
+          'coupons:manage',
+          // Users
+          'users:read',
+          'users:invite',
         ]
       } else if (roleName === UserRole.OPERATOR || roleName === UserRole.SUPPORT) {
         assignedPermissions = [
           'pos:create-sale',
           'hrm:clock-attendance',
+          'orders:read',
+          'orders:write',
+          'returns:read',
+          'payments:read',
         ]
       } else if (roleName === UserRole.EMPLOYEE) {
         assignedPermissions = [
           'hrm:clock-attendance',
+          'pos:create-sale',
+          'orders:read',
         ]
       }
     }

@@ -16,6 +16,20 @@ export const SystemPermissions = {
   HRM_ATTENDANCE_CLOCK: 'hrm:clock-attendance',
   HRM_PAYROLL_PROCESS: 'hrm:process-payroll',
   HRM_EMPLOYEE_MANAGE: 'hrm:manage-employees',
+
+  // Orders & Sales
+  ORDERS_READ: 'orders:read',
+  ORDERS_WRITE: 'orders:write',
+
+  // Returns & Refunds
+  RETURNS_READ: 'returns:read',
+  RETURNS_WRITE: 'returns:write',
+
+  // Payments
+  PAYMENTS_READ: 'payments:read',
+
+  // Coupons & Promotions
+  COUPONS_MANAGE: 'coupons:manage',
 } as const
 
 export type SystemPermissionCode = typeof SystemPermissions[keyof typeof SystemPermissions]
