@@ -14,6 +14,7 @@ import {
     Sparkles,
     User,
     X,
+    Lock,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -49,6 +50,7 @@ export default function AdminTopBar({
     const userName = session?.user?.name || session?.user?.username || 'Administrator';
     const userEmail = session?.user?.email || 'admin@store.com';
     const userRole = session?.user?.role || 'Admin';
+    const isGlobalAdmin = ['admin', 'super_admin'].includes(userRole.toLowerCase());
 
     // Mock Notifications
     const [notifications, setNotifications] = useState([
@@ -216,20 +218,30 @@ export default function AdminTopBar({
                         <div className="relative" ref={branchDropdownRef}>
                             <button
                                 onClick={() => {
+                                    if (!isGlobalAdmin) return;
                                     setIsBranchDropdownOpen(!isBranchDropdownOpen);
                                     setIsChatOpen(false);
                                     setIsNotificationOpen(false);
                                     setIsProfileOpen(false);
                                 }}
-                                className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95 text-xs font-bold font-display shadow-sm"
+                                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 text-slate-700 dark:text-slate-200 text-xs font-bold font-display shadow-sm ${
+                                    isGlobalAdmin 
+                                        ? 'hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95 cursor-pointer' 
+                                        : 'cursor-default opacity-95'
+                                }`}
+                                title={isGlobalAdmin ? 'Switch Branch' : 'You are locked to your home branch'}
                             >
                                 <Building2 className="w-3.5 h-3.5 text-indigo-500" />
                                 <span className="max-w-[120px] truncate">{activeBranch?.name || 'Loading branch...'}</span>
-                                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                                {isGlobalAdmin ? (
+                                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                                ) : (
+                                    <Lock className="w-3 h-3 text-slate-400/70" />
+                                )}
                             </button>
 
                             <AnimatePresence>
-                                {isBranchDropdownOpen && (
+                                {isGlobalAdmin && isBranchDropdownOpen && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 15, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}

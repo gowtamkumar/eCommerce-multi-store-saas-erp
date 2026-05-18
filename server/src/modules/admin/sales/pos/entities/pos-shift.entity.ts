@@ -3,6 +3,7 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 import { PosRegisterEntity } from './pos-register.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 
 export enum PosShiftStatus {
   OPEN = 'OPEN',
@@ -12,7 +13,15 @@ export enum PosShiftStatus {
 @Entity('pos_shifts')
 @Index(['registerId'])
 @Index(['tenantId'])
+@Index(['branchId'])
 export class PosShiftEntity extends BaseEntity {
+  @Column({ type: 'uuid', name: 'branch_id', nullable: true })
+  branchId: string
+
+  @ManyToOne(() => BranchEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'branch_id' })
+  branch: BranchEntity
+
   @Column({ type: 'uuid', name: 'register_id' })
   registerId: string
 

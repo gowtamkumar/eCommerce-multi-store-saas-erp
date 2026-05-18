@@ -1,10 +1,9 @@
 'use client';
 
 import { UserRole } from '@/lib/enums/user-role.enum';
-import { Loader2, Mail, UserCog, X } from 'lucide-react';
-import { useState } from 'react';
+import { Loader2, Mail, UserCog, X, Building2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { InviteStaffModalProps } from '../type';
-
 
 const roles = [
     { value: UserRole.ADMIN, label: 'Admin', description: 'Full access to all features.' },
@@ -17,8 +16,29 @@ const roles = [
 export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModalProps) {
     const [email, setEmail] = useState('');
     const [role, setRole] = useState<UserRole>(UserRole.OPERATOR);
+    const [branches, setBranches] = useState<any[]>([]);
+    const [branchId, setBranchId] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchBranches = async () => {
+            try {
+                const { getBranches } = await import('@/services/organization');
+                const res = await getBranches();
+                if (res.success && res.data) {
+                    const items = res.data.items || res.data || [];
+                    setBranches(items);
+                    if (items.length > 0) {
+                        setBranchId(items[0].id);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load branches in invite modal:', err);
+            }
+        };
+        fetchBranches();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,7 +49,11 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
             const { fetchAPI } = await import('@/services/api');
             const res = await fetchAPI('/users/team/invite', {
                 method: 'POST',
-                body: JSON.stringify({ email, role }),
+                body: JSON.stringify({ 
+                    email, 
+                    role, 
+                    branchId: branchId || undefined 
+                }),
             });
 
             if (res.success) {
@@ -90,6 +114,33 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
                             />
                         </div>
                     </div>
+
+                    {/* Branch (Assigned Operating Branch Location) */}
+                    {branches.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                <div className="flex items-center gap-1.5">
+                                    <Building2 className="w-4 h-4 text-indigo-500" /> Assigned Home Branch
+                                </div>
+                            </label>
+                            <div className="relative">
+                                <select
+                                    value={branchId}
+                                    onChange={(e) => setBranchId(e.target.value)}
+                                    className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-shadow appearance-none font-semibold cursor-pointer"
+                                >
+                                    {branches.map((b) => (
+                                        <option key={b.id} value={b.id}>
+                                            {b.name} ({b.code})
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                                    <X className="w-4 h-4 rotate-45" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Role */}
                     <div>

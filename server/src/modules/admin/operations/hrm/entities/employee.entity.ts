@@ -16,7 +16,7 @@ export class EmployeeEntity extends BaseEntity {
   @Column({ name: 'employee_id', unique: true, nullable: true })
   employeeId: string
 
-  @OneToOne(() => UserEntity)
+  @OneToOne(() => UserEntity, (user) => user.employee, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
 
