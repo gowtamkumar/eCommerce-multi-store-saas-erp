@@ -2,6 +2,8 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import {
   Body,
   Controller,
@@ -31,6 +33,7 @@ export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 
   @Post()
+  @RequirePermissions(SystemPermissions.FINANCE_EXPENSE_WRITE)
   async createExpense(
     @Body() createExpenseDto: CreateExpenseDto,
     @RequestContext() ctx: RequestContextDto,
@@ -46,6 +49,7 @@ export class ExpenseController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.FINANCE_LEDGER_READ)
   async findAllExpenses(
     @RequestContext() ctx: RequestContextDto,
     @Query('page') page?: string,
@@ -69,6 +73,7 @@ export class ExpenseController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.FINANCE_LEDGER_READ)
   async findOneExpense(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -84,6 +89,7 @@ export class ExpenseController {
   }
 
   @Patch(':id')
+  @RequirePermissions(SystemPermissions.FINANCE_EXPENSE_WRITE)
   async updateExpense(
     @Param('id') id: string,
     @Body() updateExpenseDto: UpdateExpenseDto,
@@ -100,6 +106,7 @@ export class ExpenseController {
   }
 
   @Delete(':id')
+  @RequirePermissions(SystemPermissions.FINANCE_EXPENSE_WRITE)
   async removeExpense(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
