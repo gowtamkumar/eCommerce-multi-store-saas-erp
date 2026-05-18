@@ -2,10 +2,17 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@
 import { Reflector } from '@nestjs/core'
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator'
 import { UserRole } from '../enums/user/user-role.enum'
+import { UserService } from '@/modules/admin/core/user/services/user.service'
+import { ConfigService } from '@nestjs/config'
+import * as jwt from 'jsonwebtoken'
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly userService: UserService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredPermissions = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
@@ -18,7 +25,24 @@ export class PermissionsGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest()
-    const { user } = request
+    let { user } = request
+
+    if (!user) {
+      const authHeader = request.headers['authorization']
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7)
+        try {
+          const secret = this.configService.get('JWT_SECRET_KEY')
+          const decoded = jwt.verify(token, secret) as any
+          if (decoded && decoded.sub) {
+            user = await this.userService.getUser(decoded.sub)
+            request.user = user
+          }
+        } catch (error) {
+          // Ignore token parsing error, let it fall through
+        }
+      }
+    }
 
     if (!user) {
       return false // Require auth first
