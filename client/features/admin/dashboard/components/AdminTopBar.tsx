@@ -3,6 +3,7 @@
 import { UserRole } from '@/lib/enums/user-role.enum';
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useSocketEvent } from '@/hooks/SocketContext';
 import {
     Bell,
     Building2,
@@ -19,6 +20,7 @@ import {
     X,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { toast } from 'react-hot-toast';
 
 interface AdminTopBarProps {
     logo?: string;
@@ -68,6 +70,42 @@ export default function AdminTopBar({
             console.error('Failed to fetch notifications:', error);
         }
     };
+
+    // Listen to real-time notification events over WebSockets
+    useSocketEvent('notification', (newNotif: any) => {
+        toast.custom((t) => (
+            <div
+                className={`${
+                    t.visible ? 'animate-enter' : 'animate-leave'
+                } max-w-md w-full bg-white dark:bg-slate-900 shadow-lg rounded-2xl pointer-events-auto flex ring-1 ring-black/5 dark:ring-white/10 p-4 border border-brand-500/20`}
+            >
+                <div className="flex-1 w-0">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                        {newNotif.title}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {newNotif.message}
+                    </p>
+                </div>
+                <div className="flex border-l border-slate-200 dark:border-slate-800 ml-4 pl-4 items-center">
+                    <button
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                            if (newNotif.link) {
+                                window.location.href = newNotif.link;
+                            }
+                        }}
+                        className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-500 focus:outline-none"
+                    >
+                        View
+                    </button>
+                </div>
+            </div>
+        ), { duration: 6000 });
+
+        setNotifications((prev) => [newNotif, ...prev.slice(0, 9)]);
+        setUnreadNotificationsCount((prev) => prev + 1);
+    });
 
     useEffect(() => {
         if (session) {

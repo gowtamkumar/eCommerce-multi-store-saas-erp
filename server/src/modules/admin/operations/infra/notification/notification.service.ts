@@ -2,10 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotificationEntity } from './entities/notification.entity';
+import { NotificationGateway } from './notification.gateway';
 import { RequestContextDto } from '@/common/dto/request-context.dto';
 
 export interface CreateNotificationDto {
-  userId: string;
+  userId?: string;
   title: string;
   message: string;
   type?: string;
@@ -19,6 +20,7 @@ export class NotificationService {
   constructor(
     @InjectRepository(NotificationEntity)
     private readonly notificationRepository: Repository<NotificationEntity>,
+    private readonly notificationGateway: NotificationGateway,
   ) {}
 
   /**
@@ -27,7 +29,7 @@ export class NotificationService {
   async createNotification(dto: CreateNotificationDto, tenantId: string | null): Promise<NotificationEntity> {
     const notification = this.notificationRepository.create({
       tenantId,
-      userId: dto.userId,
+      userId: dto.userId || null,
       title: dto.title,
       message: dto.message,
       type: dto.type || 'SYSTEM',
@@ -35,7 +37,24 @@ export class NotificationService {
       isRead: false,
     });
 
-    return await this.notificationRepository.save(notification);
+    const savedNotification = await this.notificationRepository.save(notification);
+
+    try {
+      if (dto.userId) {
+        // Send to specific user
+        this.notificationGateway.sendToUser(dto.userId, 'notification', savedNotification);
+      } else if (tenantId) {
+        // Broadcast to whole tenant
+        this.notificationGateway.sendToTenant(tenantId, 'notification', savedNotification);
+      } else {
+        // Global system notification (Super Admins)
+        this.notificationGateway.sendToRole('SUPER_ADMIN', 'notification', savedNotification);
+      }
+    } catch (wsError) {
+      this.logger.error('Failed to dispatch notification over WebSockets', wsError.stack);
+    }
+
+    return savedNotification;
   }
 
   /**

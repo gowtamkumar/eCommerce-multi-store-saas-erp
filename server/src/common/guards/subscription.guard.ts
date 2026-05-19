@@ -1,11 +1,12 @@
+import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
+import { TenantService } from '@/modules/system/tenant/tenant.service'
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { TenantService } from '@/modules/system/tenant/tenant.service'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
 import { REQUIRED_FEATURE_KEY } from '../decorators/require-feature.decorator'
 import { UserRole } from '../enums/user/user-role.enum'
-import { InjectRepository } from '@nestjs/typeorm'
-import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
-import { Repository } from 'typeorm'
 
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
@@ -17,6 +18,15 @@ export class SubscriptionGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // 0. Bypass subscription check for public endpoints
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ])
+    if (isPublic) {
+      return true
+    }
+
     const request = context.switchToHttp().getRequest()
     const tenantId = request.tenantId
     const user = request.user

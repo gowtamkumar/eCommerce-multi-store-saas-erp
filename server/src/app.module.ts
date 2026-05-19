@@ -147,6 +147,8 @@ export class AppModule implements NestModule {
         'uploads/*path',
         'subscribers',
         'subscribers/*path',
+        'infra/notifications',
+        'infra/notifications/*path',
       )
       .forRoutes('*path') // Apply Middleware for These Routes
   }
