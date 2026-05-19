@@ -18,6 +18,7 @@ import { BullModule } from '@nestjs/bullmq'
 import { OrderProcessor } from './queue/order.processor'
 import { OrderProcessHelper } from './services/order-process.helper'
 
+import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 import { FulfillmentModule } from '@/modules/admin/operations/logistics/fulfillment/fulfillment.module'
 import { forwardRef } from '@nestjs/common'
 
@@ -36,6 +37,7 @@ import { forwardRef } from '@nestjs/common'
     MailModule,
     SmsModule,
     PushModule,
+    NotificationModule,
     PricingModule,
     forwardRef(() => FulfillmentModule),
   ],

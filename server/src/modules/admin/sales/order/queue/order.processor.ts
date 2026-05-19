@@ -5,6 +5,7 @@ import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoi
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { SmsService } from '@/modules/admin/operations/infra/sms/sms.service'
 import { PushService } from '@/modules/admin/operations/infra/push/push.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderService } from '../services/order.service'
 
@@ -17,6 +18,7 @@ export class OrderProcessor extends WorkerHost {
     private readonly mailService: MailService,
     private readonly smsService: SmsService,
     private readonly pushService: PushService,
+    private readonly notificationService: NotificationService,
     private readonly orderService: OrderService,
   ) {
     super()
@@ -102,6 +104,20 @@ export class OrderProcessor extends WorkerHost {
             pushError.stack,
           )
         }
+      }
+
+      // 4. Send In-App System Notification for Admins
+      try {
+        await this.notificationService.createNotification({
+          userId: null as any, // Null means tenant-wide notification for all admins
+          title: `New Order #${orderWithRelations.id}`,
+          message: `A new order has been placed for ${orderWithRelations.currency} ${Number(orderWithRelations.totalAmount).toFixed(2)}.`,
+          type: 'ORDER',
+          link: `/admin/orders/${orderWithRelations.id}`,
+        }, tenantId);
+        this.logger.log(`In-app system notification created for order ${orderId}`);
+      } catch (sysNotifError) {
+        this.logger.error(`Failed to create system notification for order ${orderId}`, sysNotifError.stack);
       }
     } else {
       this.logger.warn(`Order ${orderId} not found for notification`)

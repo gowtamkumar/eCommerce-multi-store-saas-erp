@@ -86,6 +86,7 @@ export class SuperAdminController {
           '/admin/media',
           '/admin/profile',
           '/admin/faqs',
+          '/admin/pos',
         ],
         isActive: true,
         isPopular: false,

@@ -1,11 +1,14 @@
 'use client';
 
+import { UserRole } from '@/lib/enums/user-role.enum';
+import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     Bell,
     Building2,
     ChevronDown,
     CreditCard,
+    Lock,
     LogOut,
     Menu,
     MessageSquare,
@@ -14,7 +17,6 @@ import {
     Sparkles,
     User,
     X,
-    Lock,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -50,35 +52,31 @@ export default function AdminTopBar({
     const userName = session?.user?.name || session?.user?.username || 'Administrator';
     const userEmail = session?.user?.email || 'admin@store.com';
     const userRole = session?.user?.role || 'Admin';
-    const isGlobalAdmin = ['admin', 'super_admin'].includes(userRole.toLowerCase());
+    const isGlobalAdmin = [UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(userRole as UserRole);
 
-    // Mock Notifications
-    const [notifications, setNotifications] = useState([
-        {
-            id: 1,
-            title: 'New Order Received',
-            description: 'Order #ORD-9842 has been placed by Rahim Khan.',
-            time: '5 mins ago',
-            type: 'order',
-            unread: true,
-        },
-        {
-            id: 2,
-            title: 'Low Stock Warning',
-            description: 'iPhone 15 Pro is below the threshold (2 remaining).',
-            time: '1 hour ago',
-            type: 'stock',
-            unread: true,
-        },
-        {
-            id: 3,
-            title: 'New Staff Invitation Accepted',
-            description: 'Jamil Ahmed joined as Store Manager.',
-            time: '4 hours ago',
-            type: 'team',
-            unread: false,
-        },
-    ]);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+    const fetchNotifications = async () => {
+        try {
+            const data = await fetchAPI('/infra/notifications?limit=10');
+            if (data.success && data.data) {
+                setNotifications(data.data.notifications || []);
+                setUnreadNotificationsCount(data.data.unreadCount || 0);
+            }
+        } catch (error) {
+            console.error('Failed to fetch notifications:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (session) {
+            fetchNotifications();
+            // Poll every 30 seconds
+            const interval = setInterval(fetchNotifications, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [session]);
 
     // Mock Live Chat Messages
     const [chatMessages, setChatMessages] = useState([
@@ -87,7 +85,38 @@ export default function AdminTopBar({
         { id: 3, sender: 'Support Staff', message: 'Absolutely! You can find it in the Financial Reports under Profit & Loss or Export center.', time: '10:33 AM', self: false },
     ]);
 
-    const unreadNotificationsCount = notifications.filter((n) => n.unread).length;
+    const markAllAsRead = async () => {
+        try {
+            await fetchAPI('/infra/notifications/read-all', {
+                method: 'PATCH',
+            });
+            setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
+            setUnreadNotificationsCount(0);
+        } catch (error) {
+            console.error('Failed to mark all as read:', error);
+        }
+    };
+
+    const handleNotificationClick = async (notif: any) => {
+        if (!notif.isRead) {
+            try {
+                await fetchAPI(`/infra/notifications/${notif.id}/read`, {
+                    method: 'PATCH',
+                });
+
+                setNotifications(notifications.map((n) =>
+                    n.id === notif.id ? { ...n, isRead: true } : n
+                ));
+                setUnreadNotificationsCount(prev => Math.max(0, prev - 1));
+            } catch (error) {
+                console.error('Failed to mark as read:', error);
+            }
+        }
+
+        if (notif.link) {
+            window.location.href = notif.link;
+        }
+    };
 
     // Load active operating branches list
     useEffect(() => {
@@ -98,10 +127,10 @@ export default function AdminTopBar({
                 if (res.success && res.data) {
                     const branchItems = res.data.items || res.data || [];
                     setBranches(branchItems);
-                    
+
                     const savedBranchId = localStorage.getItem('activeBranchId');
                     let active = branchItems.find((b: any) => b.id === savedBranchId);
-                    
+
                     if (!active && branchItems.length > 0) {
                         active = branchItems[0];
                         localStorage.setItem('activeBranchId', active.id);
@@ -142,10 +171,6 @@ export default function AdminTopBar({
         setIsBranchDropdownOpen(false);
         window.dispatchEvent(new Event('branch-changed'));
         window.location.reload();
-    };
-
-    const markAllAsRead = () => {
-        setNotifications(notifications.map((n) => ({ ...n, unread: false })));
     };
 
     const handleSendMessage = (e: React.FormEvent) => {
@@ -224,11 +249,10 @@ export default function AdminTopBar({
                                     setIsNotificationOpen(false);
                                     setIsProfileOpen(false);
                                 }}
-                                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 text-slate-700 dark:text-slate-200 text-xs font-bold font-display shadow-sm ${
-                                    isGlobalAdmin 
-                                        ? 'hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95 cursor-pointer' 
-                                        : 'cursor-default opacity-95'
-                                }`}
+                                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/30 text-slate-700 dark:text-slate-200 text-xs font-bold font-display shadow-sm ${isGlobalAdmin
+                                    ? 'hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95 cursor-pointer'
+                                    : 'cursor-default opacity-95'
+                                    }`}
                                 title={isGlobalAdmin ? 'Switch Branch' : 'You are locked to your home branch'}
                             >
                                 <Building2 className="w-3.5 h-3.5 text-indigo-500" />
@@ -257,11 +281,10 @@ export default function AdminTopBar({
                                                 <button
                                                     key={b.id}
                                                     onClick={() => handleBranchSwitch(b)}
-                                                    className={`w-full text-left flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all font-semibold ${
-                                                        activeBranch?.id === b.id
-                                                            ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-bold'
-                                                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
-                                                    }`}
+                                                    className={`w-full text-left flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all font-semibold ${activeBranch?.id === b.id
+                                                        ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-bold'
+                                                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
+                                                        }`}
                                                 >
                                                     <span className="truncate">{b.name}</span>
                                                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-mono font-bold text-slate-400 dark:text-slate-500">
@@ -288,8 +311,8 @@ export default function AdminTopBar({
                                 setIsProfileOpen(false);
                             }}
                             className={`p-2.5 rounded-xl border transition-all relative ${isNotificationOpen
-                                    ? 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                                    : 'border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/30'
+                                ? 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                : 'border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/30'
                                 }`}
                             title="Alert System Hub"
                         >
@@ -335,16 +358,19 @@ export default function AdminTopBar({
                                             notifications.map((n) => (
                                                 <div
                                                     key={n.id}
-                                                    className={`p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/30 flex gap-3 relative ${n.unread ? 'bg-indigo-50/20 dark:bg-indigo-950/10' : ''
+                                                    onClick={() => handleNotificationClick(n)}
+                                                    className={`p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/30 flex gap-3 relative cursor-pointer ${!n.isRead ? 'bg-indigo-50/20 dark:bg-indigo-950/10' : ''
                                                         }`}
                                                 >
-                                                    {n.unread && (
+                                                    {!n.isRead && (
                                                         <span className="absolute top-4 left-1.5 w-1.5 h-1.5 rounded-full bg-indigo-600" />
                                                     )}
                                                     <div className="flex-1">
                                                         <span className="font-bold text-xs text-slate-800 dark:text-white">{n.title}</span>
-                                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 leading-relaxed">{n.description}</p>
-                                                        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium mt-2 block">{n.time}</span>
+                                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-1 leading-relaxed">{n.message}</p>
+                                                        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium mt-2 block">
+                                                            {new Date(n.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} at {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             ))
@@ -473,8 +499,8 @@ export default function AdminTopBar({
                                         <span className="text-[10px] text-slate-400 dark:text-slate-500 mb-1">{msg.sender}</span>
                                         <div
                                             className={`px-3.5 py-2 rounded-2xl text-xs max-w-[85%] leading-relaxed ${msg.self
-                                                    ? 'bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-500/10'
-                                                    : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 rounded-tl-none'
+                                                ? 'bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-500/10'
+                                                : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 rounded-tl-none'
                                                 }`}
                                         >
                                             {msg.message}
@@ -512,8 +538,8 @@ export default function AdminTopBar({
                         setIsProfileOpen(false);
                     }}
                     className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 border border-indigo-500/10 relative ${isChatOpen
-                            ? 'bg-slate-900 dark:bg-slate-700 text-white rotate-90 shadow-slate-900/20'
-                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30'
+                        ? 'bg-slate-900 dark:bg-slate-700 text-white rotate-90 shadow-slate-900/20'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30'
                         }`}
                     title="Live Support Chat"
                 >
