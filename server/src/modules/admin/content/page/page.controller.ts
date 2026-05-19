@@ -49,8 +49,7 @@ export class PageController {
   }
 
   @Get()
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
+  @Public()
   async findAllPages(
     @RequestContext() ctx: RequestContextDto,
     @Query('status') status?: string,

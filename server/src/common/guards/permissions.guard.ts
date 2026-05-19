@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator'
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
 import { UserRole } from '../enums/user/user-role.enum'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { ConfigService } from '@nestjs/config'
@@ -17,6 +18,15 @@ export class PermissionsGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // 0. Bypass permission check for @Public() routes
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ])
+    if (isPublic) {
+      return true
+    }
+
     const requiredPermissions = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
       context.getHandler(),
       context.getClass(),
