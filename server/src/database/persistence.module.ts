@@ -81,6 +81,12 @@ import { WishlistRepository } from '@/modules/store/wishlist/wishlist.repository
 import { WishlistEntity } from '@/modules/store/wishlist/entities/wishlist.entity'
 import { Global, Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
+import { PermissionEntity } from '@/modules/admin/core/user/entities/permission.entity'
+import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
+import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
+import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
+import { FeatureDefinitionEntity } from '@/modules/system/platform/entities/feature-definition.entity'
 
 @Global()
 @Module({
@@ -131,6 +137,12 @@ import { TypeOrmModule } from '@nestjs/typeorm'
       RfqEntity,
       QuotationEntity,
       DebitNoteEntity,
+      RoleEntity,
+      PermissionEntity,
+      FeatureDefinitionEntity,
+      TenantFeatureEntity,
+      UserRoleAssignmentEntity,
+      UserPermissionOverrideEntity,
     ]),
   ],
   providers: [
@@ -211,4 +223,4 @@ import { TypeOrmModule } from '@nestjs/typeorm'
     TypeOrmModule,
   ],
 })
-export class PersistenceModule {}
+export class PersistenceModule { }

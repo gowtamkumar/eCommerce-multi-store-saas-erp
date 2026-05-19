@@ -25,6 +25,8 @@ export class AuditLogService {
     try {
       await this.auditLogRepository.createAndSave(ctx, {
         userId: dto.userId ?? ctx.userId,
+        actorId: dto.userId ?? ctx.userId ?? null,
+        actorName: (dto as any).actorName ?? null,
         action: dto.action,
         entity: dto.entity,
         entityId: dto.entityId,
@@ -32,12 +34,166 @@ export class AuditLogService {
         newValue: dto.newValue,
         ipAddress: dto.ipAddress ?? ipAddress,
         userAgent: dto.userAgent ?? userAgent,
-      })
+      } as any)
     } catch (err) {
       // Never let audit logging break the main request flow
       console.error('[AuditLog] Failed to write audit log:', err?.message)
     }
   }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Permission-Specific Typed Audit Methods
+  // ─────────────────────────────────────────────────────────────────
+
+  /** Fired when a tenant admin creates a new role */
+  async logRoleCreated(
+    tenantId: string,
+    actorId: string,
+    actorName: string,
+    roleId: string,
+    roleName: string,
+    permissionSlugs: string[],
+  ): Promise<void> {
+    await this.safeLog(tenantId, actorId, actorName, 'ROLE_CREATED', 'Role', roleId, null, {
+      name: roleName,
+      permissions: permissionSlugs,
+    })
+  }
+
+  /** Fired when a role's name, description, or permission set changes */
+  async logRoleModified(
+    tenantId: string,
+    actorId: string,
+    actorName: string,
+    roleId: string,
+    before: Record<string, any>,
+    after: Record<string, any>,
+  ): Promise<void> {
+    await this.safeLog(tenantId, actorId, actorName, 'ROLE_MODIFIED', 'Role', roleId, before, after)
+  }
+
+  /** Fired when a role is deleted */
+  async logRoleDeleted(
+    tenantId: string,
+    actorId: string,
+    actorName: string,
+    roleId: string,
+    roleName: string,
+  ): Promise<void> {
+    await this.safeLog(tenantId, actorId, actorName, 'ROLE_DELETED', 'Role', roleId, { name: roleName }, null)
+  }
+
+  /** Fired when a role is assigned to a user */
+  async logUserRoleAssigned(
+    tenantId: string,
+    actorId: string,
+    actorName: string,
+    targetUserId: string,
+    roleId: string,
+    scope: { scopeType: string; scopeId?: string | null; expiresAt?: Date | null },
+  ): Promise<void> {
+    await this.safeLog(
+      tenantId,
+      actorId,
+      actorName,
+      'USER_ROLE_ASSIGNED',
+      'UserRoleAssignment',
+      `${targetUserId}:${roleId}`,
+      null,
+      { targetUserId, roleId, ...scope },
+    )
+  }
+
+  /** Fired when a role is revoked from a user */
+  async logUserRoleRevoked(
+    tenantId: string,
+    actorId: string,
+    actorName: string,
+    targetUserId: string,
+    roleId: string,
+    reason?: string,
+  ): Promise<void> {
+    await this.safeLog(
+      tenantId,
+      actorId,
+      actorName,
+      'USER_ROLE_REVOKED',
+      'UserRoleAssignment',
+      `${targetUserId}:${roleId}`,
+      { targetUserId, roleId },
+      { reason: reason ?? null },
+    )
+  }
+
+  /** Fired when an explicit allow/deny override is added to a user */
+  async logPermissionOverrideAdded(
+    tenantId: string,
+    actorId: string,
+    actorName: string,
+    targetUserId: string,
+    permissionSlug: string,
+    effect: string,
+    reason: string | null,
+    expiresAt: Date | null,
+  ): Promise<void> {
+    await this.safeLog(
+      tenantId,
+      actorId,
+      actorName,
+      'PERMISSION_OVERRIDE_ADDED',
+      'UserPermissionOverride',
+      `${targetUserId}:${permissionSlug}`,
+      null,
+      { targetUserId, permissionSlug, effect, reason, expiresAt },
+    )
+  }
+
+  /** Fired when an override is removed */
+  async logPermissionOverrideRemoved(
+    tenantId: string,
+    actorId: string,
+    actorName: string,
+    overrideId: string,
+    targetUserId: string,
+    permissionSlug: string,
+  ): Promise<void> {
+    await this.safeLog(
+      tenantId,
+      actorId,
+      actorName,
+      'PERMISSION_OVERRIDE_REMOVED',
+      'UserPermissionOverride',
+      overrideId,
+      { targetUserId, permissionSlug },
+      null,
+    )
+  }
+
+  /**
+   * Fired when a permission check fails — useful for security monitoring
+   * to detect suspicious access attempts or misconfigured roles.
+   */
+  async logPermissionCheckFailed(
+    tenantId: string,
+    userId: string,
+    permissionSlug: string,
+    reason?: string,
+  ): Promise<void> {
+    await this.safeLog(
+      tenantId,
+      userId,
+      null,
+      'PERMISSION_CHECK_FAILED',
+      'Permission',
+      permissionSlug,
+      null,
+      { userId, permissionSlug, reason: reason ?? 'Access denied' },
+    )
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Generic Queries
+  // ─────────────────────────────────────────────────────────────────
 
   /**
    * Paginated list with optional filters — tenant-scoped always.
@@ -94,5 +250,35 @@ export class AuditLogService {
     await this.auditLogRepository.deleteOlderThan(tenantId, cutoff)
 
     return { message: `Audit logs older than ${days} days deleted for tenant ${tenantId}` }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // Private Helpers
+  // ─────────────────────────────────────────────────────────────────
+
+  private async safeLog(
+    tenantId: string,
+    actorId: string,
+    actorName: string | null,
+    action: string,
+    entity: string,
+    entityId: string,
+    oldValue: Record<string, any> | null,
+    newValue: Record<string, any> | null,
+  ): Promise<void> {
+    try {
+      await this.auditLogRepository.createAndSave({ tenantId } as RequestContextDto, {
+        userId: actorId,
+        actorId,
+        actorName,
+        action,
+        entity,
+        entityId,
+        oldValue,
+        newValue,
+      } as any)
+    } catch (err) {
+      console.error('[AuditLog] Failed to write permission audit log:', err?.message)
+    }
   }
 }

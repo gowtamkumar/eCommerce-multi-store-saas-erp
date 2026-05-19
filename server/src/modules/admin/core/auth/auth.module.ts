@@ -9,12 +9,14 @@ import { AdminAuthController } from '@/modules/admin/core/auth/controllers/admin
 import { AuthController } from '@/modules/admin/core/auth/controllers/auth.controller'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
+import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 
 @Module({
   imports: [
     UserModule,
     TenantModule,
     MailModule,
+    RbacModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

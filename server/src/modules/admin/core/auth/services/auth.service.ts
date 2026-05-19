@@ -20,6 +20,8 @@ import * as crypto from 'crypto'
 import { UserEntity } from '../../user/entities/user.entity'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 
+import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name)
@@ -30,6 +32,7 @@ export class AuthService {
     private readonly tenantService: TenantService,
     private readonly configService: ConfigService,
     private readonly staffInvitationService: StaffInvitationService,
+    private readonly permissionResolutionService: PermissionResolutionService,
   ) {}
 
   async register(
@@ -109,10 +112,16 @@ export class AuthService {
 
     const tokens = await this.getTokens(user, features)
 
+    let permissionManifest = null
+    if (tenantId) {
+      permissionManifest = await this.permissionResolutionService.resolvePermissionsManifest(user.id, tenantId)
+    }
+
     return {
       user: { ...user, features } as any,
+      permissionManifest,
       ...tokens,
-    }
+    } as any
   }
 
   async getMe(user: UserDto): Promise<UserDto> {

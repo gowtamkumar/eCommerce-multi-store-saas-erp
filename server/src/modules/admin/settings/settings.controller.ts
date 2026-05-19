@@ -6,6 +6,7 @@ import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
+import { Public } from '@/common/decorators/public.decorator'
 import { Body, Controller, Get, Logger, Put, UseGuards } from '@nestjs/common'
 import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SiteSettingsResponseDto } from './dto/site-settings-response.dto'
@@ -37,6 +38,25 @@ export class SettingsController {
       statusCode: 200,
       message: 'Settings retrieved successfully',
       data: settings as any,
+    }
+  }
+
+  @Get('public')
+  @Public()
+  async getPublicSettings(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`System called getPublicSettings.`)
+    const settings = await this.settingsService.findByTenantSettings(ctx)
+
+    // Strip sensitive fields explicitly
+    const { smtp, payment, pathaoCourier, steadfastCourier, sms, ...publicSettings } = settings
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Settings retrieved successfully',
+      data: publicSettings,
     }
   }
 

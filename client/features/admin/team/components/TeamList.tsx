@@ -15,7 +15,7 @@ import InviteStaffModal from './InviteStaffModal';
 import TeamStatsGrid from './TeamStatsGrid';
 import MemberTable from './MemberTable';
 import InvitationTable from './InvitationTable';
-import ChangeRoleModal from './ChangeRoleModal';
+import ManageAccessModal from './ManageAccessModal';
 import { TeamMember, Invitation } from '../type';
 
 const roleIcons: Record<UserRole, React.ReactElement> = {
@@ -205,11 +205,10 @@ export default function TeamList() {
             )}
 
             {editingMember && (
-                <ChangeRoleModal
+                <ManageAccessModal
                     member={editingMember}
                     onClose={() => setEditingMember(null)}
                     onUpdated={fetchData}
-                    roleIcons={roleIcons}
                 />
             )}
         </div>

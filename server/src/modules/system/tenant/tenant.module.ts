@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { TenantEntity } from './entities/tenant.entity'
 import { UserModule } from '@/modules/admin/core/user/user.module'
 import { Global, Module } from '@nestjs/common'
+import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 
 @Global()
 @Module({
@@ -18,6 +19,7 @@ import { Global, Module } from '@nestjs/common'
     MailModule,
     SubscriptionPlanModule,
     UserModule,
+    RbacModule,
   ],
   controllers: [TenantController, OnboardController],
   providers: [TenantService, TenantRepository],

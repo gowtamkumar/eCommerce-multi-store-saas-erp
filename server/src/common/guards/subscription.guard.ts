@@ -3,12 +3,17 @@ import { Reflector } from '@nestjs/core'
 import { TenantService } from '@/modules/system/tenant/tenant.service'
 import { REQUIRED_FEATURE_KEY } from '../decorators/require-feature.decorator'
 import { UserRole } from '../enums/user/user-role.enum'
+import { InjectRepository } from '@nestjs/typeorm'
+import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
+import { Repository } from 'typeorm'
 
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
   constructor(
     private readonly tenantService: TenantService,
     private readonly reflector: Reflector,
+    @InjectRepository(TenantFeatureEntity)
+    private readonly tenantFeatureRepo: Repository<TenantFeatureEntity>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -37,16 +42,29 @@ export class SubscriptionGuard implements CanActivate {
     }
 
     try {
-      const tenant = await this.tenantService.findOneTenants(tenantId)
+      // 3. Verify if feature is explicitly enabled in tenant_features
+      const feature = await this.tenantFeatureRepo.findOne({
+        where: { tenantId, featureSlug: requiredFeature },
+      })
 
+      if (feature && !feature.isEnabled) {
+        throw new ForbiddenException({
+          success: false,
+          message: `The '${requiredFeature}' feature is currently disabled for your store.`,
+          requiredFeature,
+        })
+      }
+
+      // 4. Fallback check: verify if plan has the feature (for legacy or before migration)
+      const tenant = await this.tenantService.findOneTenants(tenantId)
       if (!tenant) {
         throw new ForbiddenException('Tenant not found')
       }
 
-      // 3. Verify if plan has the feature
       const features = tenant.subscriptionPlan?.features || []
 
-      if (!features.includes(requiredFeature)) {
+      // If neither explicitly enabled in DB nor present in plan JSONB array, deny
+      if (!feature && !features.includes(requiredFeature)) {
         throw new ForbiddenException({
           success: false,
           message: `Upgrade your plan to access the '${requiredFeature}' feature.`,
@@ -61,3 +79,4 @@ export class SubscriptionGuard implements CanActivate {
     }
   }
 }
+

@@ -3,11 +3,13 @@ import { SubscriptionStatus } from '@/common/enums/subscription/subscription-sta
 import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
+import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
 import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { SubscriptionPlanService } from '@/modules/system/subscription-plan/subscription-plan.service'
+import { RoleManagementService } from '@/modules/admin/core/rbac/role-management.service'
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcrypt'
 import * as crypto from 'crypto'
@@ -16,12 +18,14 @@ import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantOverviewResponseDto } from './dto/tenant-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { TenantEntity } from './entities/tenant.entity'
+import { TenantFeatureEntity } from './entities/tenant-feature.entity'
 import { TenantRepository } from './tenant.repository'
 import { AccountEntity } from '@/modules/admin/operations/finance/accounting/entities/account.entity'
 import { DEFAULT_CHART_OF_ACCOUNTS } from '@/modules/admin/operations/finance/accounting/constants/default-coa'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
 import { PosRegisterEntity } from '@/modules/admin/sales/pos/entities/pos-register.entity'
+import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
 
 export interface CreateTenantResponseDto {
   tenant: TenantEntity
@@ -44,6 +48,7 @@ export class TenantService {
     private readonly settingsService: SettingsService,
     private readonly mailService: MailService,
     private readonly subscriptionPlanService: SubscriptionPlanService,
+    private readonly roleManagementService: RoleManagementService,
     private readonly dataSource: DataSource,
     private readonly cacheService: CacheService,
   ) {}
@@ -143,7 +148,7 @@ export class TenantService {
         username,
         email,
         password: hashedPassword,
-        role: UserRole.ADMIN,
+        role: UserRole.ADMIN, // Keep for backward compat
         tenantId: savedTenant.id,
         branch: savedBranch,
         isAdmin: false,
@@ -154,6 +159,34 @@ export class TenantService {
       // Link user to tenant
       savedTenant.userId = savedUser.id
       await tenantRepo.save(savedTenant)
+
+      // Seed default roles and assign Super Admin to the new user
+      const superAdminRole = await this.roleManagementService.seedSuperAdminRole(savedTenant.id, manager)
+      await this.roleManagementService.seedDefaultRoles(savedTenant.id, manager)
+
+      const assignmentRepo = manager.getRepository(UserRoleAssignmentEntity)
+      await assignmentRepo.save(
+        assignmentRepo.create({
+          userId: savedUser.id,
+          roleId: superAdminRole.id,
+          tenantId: savedTenant.id,
+          scopeType: RoleScopeType.GLOBAL,
+          assignedBy: savedUser.id,
+        })
+      )
+
+      // Seed tenant features based on subscription plan
+      if (subscriptionPlan?.features?.length) {
+        const featureRepo = manager.getRepository(TenantFeatureEntity)
+        const featuresToSeed = subscriptionPlan.features.map(f => featureRepo.create({
+          tenantId: savedTenant.id,
+          featureSlug: f,
+          isEnabled: true,
+          enabledBy: savedUser.id,
+          enabledAt: new Date(),
+        }))
+        await featureRepo.save(featuresToSeed)
+      }
 
       // Initialize default Chart of Accounts (COA) for this new tenant
       const accountRepo = manager.getRepository(AccountEntity)

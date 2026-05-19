@@ -14,11 +14,22 @@ export class AuditLogEntity extends BaseEntity {
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 
-  /** e.g. CREATE, UPDATE, DELETE, LOGIN, LOGOUT */
+  /**
+   * The user who performed the action.
+   * Nullable for system-triggered events (e.g. plan downgrade, scheduled task).
+   */
+  @Column({ type: 'uuid', name: 'actor_id', nullable: true })
+  actorId: string | null
+
+  /** Denormalized name of the actor for fast display (avoids JOIN on audit log reads) */
+  @Column({ type: 'varchar', length: 255, name: 'actor_name', nullable: true })
+  actorName: string | null
+
+  /** e.g. CREATE, UPDATE, DELETE, LOGIN, LOGOUT, PERMISSION_GRANT, PERMISSION_REVOKE */
   @Column({ type: 'varchar', length: 100 })
   action: string
 
-  /** e.g. Product, Order, Category */
+  /** e.g. Product, Order, Category, Role, UserRoleAssignment, PermissionOverride */
   @Column({ type: 'varchar', length: 100 })
   entity: string
 

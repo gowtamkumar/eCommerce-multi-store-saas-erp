@@ -3,6 +3,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Shield, Plus, Key, Edit, Trash2, CheckSquare, Square, Check, Loader2 } from 'lucide-react';
 
+export enum RoleScopeType {
+    GLOBAL = 'GLOBAL',
+    BRANCH = 'BRANCH',
+    WAREHOUSE = 'WAREHOUSE',
+}
+
 interface Permission {
     id: string;
     code: string;
@@ -15,13 +21,14 @@ interface Role {
     id: string;
     name: string;
     description: string;
-    isSystemDefault: boolean;
+    isSystemRole: boolean;
+    scopeType: RoleScopeType;
     permissions: Permission[];
 }
 
 export default function RolesPermissionsPage() {
     const [roles, setRoles] = useState<Role[]>([]);
-    const [permissions, setPermissions] = useState<Permission[]>([]);
+    const [groupedPermissions, setGroupedPermissions] = useState<Record<string, Permission[]>>({});
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingRole, setEditingRole] = useState<Role | null>(null);
@@ -29,6 +36,7 @@ export default function RolesPermissionsPage() {
     // Form states
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const [scopeType, setScopeType] = useState<RoleScopeType>(RoleScopeType.GLOBAL);
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
     const [submitting, setSubmitting] = useState(false);
 
@@ -37,11 +45,11 @@ export default function RolesPermissionsPage() {
         try {
             const { fetchAPI } = await import('@/services/api');
             const [rolesRes, permsRes] = await Promise.all([
-                fetchAPI('/users/roles'),
-                fetchAPI('/users/permissions'),
+                fetchAPI('/rbac/roles'),
+                fetchAPI('/rbac/permissions/grouped'),
             ]);
             if (rolesRes?.data) setRoles(rolesRes.data);
-            if (permsRes?.data) setPermissions(permsRes.data);
+            if (permsRes?.data) setGroupedPermissions(permsRes.data);
         } catch (err) {
             console.error('Failed to load roles and permissions', err);
         } finally {
@@ -57,6 +65,7 @@ export default function RolesPermissionsPage() {
         setEditingRole(null);
         setName('');
         setDescription('');
+        setScopeType(RoleScopeType.GLOBAL);
         setSelectedPermissions([]);
         setShowModal(true);
     };
@@ -65,7 +74,8 @@ export default function RolesPermissionsPage() {
         setEditingRole(role);
         setName(role.name);
         setDescription(role.description || '');
-        setSelectedPermissions(role.permissions.map(p => p.code));
+        setScopeType(role.scopeType || RoleScopeType.GLOBAL);
+        setSelectedPermissions(role.permissions?.map(p => p.code) || []);
         setShowModal(true);
     };
 
@@ -91,15 +101,15 @@ export default function RolesPermissionsPage() {
         setSubmitting(true);
         try {
             const { fetchAPI } = await import('@/services/api');
-            const payload = { name, description, permissionCodes: selectedPermissions };
+            const payload = { name, description, scopeType, permissionCodes: selectedPermissions };
 
             if (editingRole) {
-                await fetchAPI(`/users/roles/${editingRole.id}`, {
+                await fetchAPI(`/rbac/roles/${editingRole.id}`, {
                     method: 'PATCH',
                     body: JSON.stringify(payload),
                 });
             } else {
-                await fetchAPI('/users/roles', {
+                await fetchAPI('/rbac/roles', {
                     method: 'POST',
                     body: JSON.stringify(payload),
                 });
@@ -117,19 +127,12 @@ export default function RolesPermissionsPage() {
         if (!confirm('Are you sure you want to delete this custom role? This will orphan any users assigned to it.')) return;
         try {
             const { fetchAPI } = await import('@/services/api');
-            await fetchAPI(`/users/roles/${roleId}`, { method: 'DELETE' });
+            await fetchAPI(`/rbac/roles/${roleId}`, { method: 'DELETE' });
             fetchData();
         } catch (err) {
             console.error('Failed to delete role', err);
         }
     };
-
-    // Group permissions by module
-    const groupedPermissions = permissions.reduce<Record<string, Permission[]>>((acc, p) => {
-        if (!acc[p.module]) acc[p.module] = [];
-        acc[p.module].push(p);
-        return acc;
-    }, {});
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
@@ -177,11 +180,14 @@ export default function RolesPermissionsPage() {
                                         <div className="flex items-center justify-between">
                                             <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                                 {role.name}
-                                                {role.isSystemDefault && (
+                                                {role.isSystemRole && (
                                                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600 font-medium">
                                                         System
                                                     </span>
                                                 )}
+                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 font-medium capitalize">
+                                                    {role.scopeType.toLowerCase()}
+                                                </span>
                                             </h3>
                                         </div>
                                         <p className="text-xs text-slate-500 mt-2 font-medium leading-relaxed">
@@ -192,7 +198,7 @@ export default function RolesPermissionsPage() {
                                         <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 rounded-xl">
                                             {role.permissions?.length || 0} Permissions
                                         </span>
-                                        {!role.isSystemDefault && (
+                                        {!role.isSystemRole && (
                                             <div className="flex items-center gap-1">
                                                 <button
                                                     onClick={() => handleOpenEdit(role)}
@@ -316,6 +322,22 @@ export default function RolesPermissionsPage() {
                                         placeholder="Briefly state this role's target responsibilities"
                                         className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-semibold shadow-sm"
                                     />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                                        Scope Type
+                                    </label>
+                                    <select
+                                        value={scopeType}
+                                        onChange={e => setScopeType(e.target.value as RoleScopeType)}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-semibold shadow-sm"
+                                    >
+                                        <option value={RoleScopeType.GLOBAL}>Global (All Locations)</option>
+                                        <option value={RoleScopeType.BRANCH}>Branch Specific</option>
+                                        <option value={RoleScopeType.WAREHOUSE}>Warehouse Specific</option>
+                                    </select>
                                 </div>
                             </div>
 

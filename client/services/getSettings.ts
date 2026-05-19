@@ -117,7 +117,7 @@ export async function getSiteSettings() {
       };
     }
 
-    const res = await fetch(`${nestApiUrl}/settings`, {
+    const res = await fetch(`${nestApiUrl}/settings/public`, {
       headers: {
         "x-tenant-id": tenantId,
       },

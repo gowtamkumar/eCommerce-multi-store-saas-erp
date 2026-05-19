@@ -180,18 +180,18 @@ export const navGroups = [
       },
     ],
   },
-  {
-    title: "Organization",
-    roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN],
-    items: [
-      {
-        icon: Building2,
-        label: "Branches",
-        href: "/admin/branches",
-        feature: "/admin/branches",
-      },
-    ],
-  },
+  // {
+  //   title: "Organization",
+  //   roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN],
+  //   items: [
+  //     {
+  //       icon: Building2,
+  //       label: "Branches",
+  //       href: "/admin/branches",
+  //       feature: "/admin/branches",
+  //     },
+  //   ],
+  // },
   {
     title: "Catalog",
     roles: [
@@ -551,7 +551,7 @@ export const navGroups = [
   },
   {
     title: "Access Control",
-    roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN],
+    roles: [UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.SUPER_ADMIN],
     items: [
       {
         icon: ShieldCheck,
@@ -567,25 +567,25 @@ export const navGroups = [
       },
     ],
   },
-  {
-    title: "User Account",
-    roles: [
-      UserRole.ADMIN,
-      UserRole.STORE_MANAGER,
-      UserRole.OPERATOR,
-      UserRole.SUPPORT,
-      UserRole.MARKETING,
-      UserRole.SUPER_ADMIN,
-    ],
-    items: [
-      {
-        icon: User,
-        label: "My Profile",
-        href: "/admin/profile",
-        feature: "/admin/profile",
-      },
-    ],
-  },
+  // {
+  //   title: "User Account",
+  //   roles: [
+  //     UserRole.ADMIN,
+  //     UserRole.STORE_MANAGER,
+  //     UserRole.OPERATOR,
+  //     UserRole.SUPPORT,
+  //     UserRole.MARKETING,
+  //     UserRole.SUPER_ADMIN,
+  //   ],
+  //   items: [
+  //     {
+  //       icon: User,
+  //       label: "My Profile",
+  //       href: "/admin/profile",
+  //       feature: "/admin/profile",
+  //     },
+  //   ],
+  // },
   {
     title: "System Settings",
     roles: [UserRole.ADMIN, UserRole.SUPER_ADMIN],

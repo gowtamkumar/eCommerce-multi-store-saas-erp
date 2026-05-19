@@ -5,6 +5,7 @@ import { UserRole } from '../enums/user/user-role.enum'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { ConfigService } from '@nestjs/config'
 import * as jwt from 'jsonwebtoken'
+import { PermissionResolutionService } from '../services/permission-resolution.service'
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -12,6 +13,7 @@ export class PermissionsGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly userService: UserService,
     private readonly configService: ConfigService,
+    private readonly resolutionService: PermissionResolutionService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -20,7 +22,7 @@ export class PermissionsGuard implements CanActivate {
       context.getClass(),
     ])
 
-    if (!requiredPermissions) {
+    if (!requiredPermissions || requiredPermissions.length === 0) {
       return true // No permissions are required for this endpoint
     }
 
@@ -52,100 +54,27 @@ export class PermissionsGuard implements CanActivate {
     const isGlobalAdmin = [UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(userRole.toLowerCase())
 
     // 1. Super Admins and Admins bypass all dynamic permissions checks
+    // Step 0: The global bypass (for backward compat)
     if (isGlobalAdmin) {
       return true
     }
 
-    // 2. Load custom role permissions if assigned, or fallback to default legacy permissions
-    let assignedPermissions: string[] = []
-    if (user.roleEntity) {
-      assignedPermissions = user.roleEntity.permissions?.map((p: any) => p.code) || []
-    } else {
-      // Fallback mapping for legacy role enums
-      const roleName = (user.role || '').toLowerCase()
-      if (roleName === UserRole.STORE_MANAGER || roleName === UserRole.ADMIN) {
-        assignedPermissions = [
-          // POS
-          'pos:create-sale',
-          'pos:manage-shifts',
-          // HRM
-          'hrm:clock-attendance',
-          'hrm:manage-employees',
-          'hrm:process-payroll',
-          // Finance
-          'finance:read-ledger',
-          'finance:write-expense',
-          // Orders
-          'orders:read',
-          'orders:write',
-          'returns:read',
-          'returns:write',
-          'payments:read',
-          // Marketing
-          'coupons:manage',
-          'promotions:manage',
-          'marketing:manage',
-          // Users
-          'users:read',
-          'users:invite',
-           // Catalog
-          'catalog:read',
-          'catalog:write',
-          'catalog:featured',
-          // CRM
-          'crm:read',
-          'crm:write',
-          // Purchasing
-          'purchasing:read',
-          'purchasing:write',
-          'inventory:read',
-          'inventory:write',
-          'supplier:manage',
-          // Accounting
-          'accounting:read',
-          'accounting:write',
-          'invoices:manage',
-          // Reports
-          'reports:read',
-          // Logistics
-          'logistics:manage',
-          'fulfillment:manage',
-          // Settings
-          'settings:manage',
-          // Content
-          'content:manage',
-        ]
-      } else if (roleName === UserRole.OPERATOR || roleName === UserRole.SUPPORT) {
-        assignedPermissions = [
-          'pos:create-sale',
-          'hrm:clock-attendance',
-          'orders:read',
-          'orders:write',
-          'returns:read',
-          'payments:read',
-          'catalog:read',
-          'crm:read',
-          'crm:write',
-          'inventory:read',
-          'reports:read',
-          'fulfillment:manage',
-        ]
-      } else if (roleName === UserRole.EMPLOYEE) {
-        assignedPermissions = [
-          'hrm:clock-attendance',
-          'pos:create-sale',
-          'orders:read',
-          'catalog:read',
-        ]
-      }
+    const tenantId = user.tenantId
+    if (!tenantId) {
+      throw new ForbiddenException('User is not associated with a tenant.')
     }
 
-    // 3. Verify that the user has all of the required permissions
-    const hasAllRequired = requiredPermissions.every((p) => assignedPermissions.includes(p))
-    if (!hasAllRequired) {
-      throw new ForbiddenException(
-        'Access Denied: You do not possess the required functional permission to execute this operation.',
-      )
+    // Extract potential scope from request headers
+    const scopeId = request.headers['x-scope-id'] || undefined
+
+    // 2. Use the 5-step PermissionResolutionService for each required permission
+    for (const perm of requiredPermissions) {
+      const allowed = await this.resolutionService.resolvePermission(user.id, tenantId, perm, scopeId)
+      if (!allowed) {
+        throw new ForbiddenException(
+          `Access Denied: You do not possess the required permission (${perm}) to execute this operation.`
+        )
+      }
     }
 
     return true

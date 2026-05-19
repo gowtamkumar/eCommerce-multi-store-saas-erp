@@ -11,6 +11,7 @@ export interface TeamMember {
     status: TeamStatus;
     image?: string;
     createdAt: string;
+    roleAssignments?: any[];
 }
 
 export interface Invitation {

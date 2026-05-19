@@ -75,14 +75,7 @@ export class ReportRepository {
         p.id,
         p.name,
         p.images,
-<<<<<<< HEAD
         stock.current_stock as stock,
-=======
-        CASE 
-          WHEN v.id IS NOT NULL THEN (SELECT COALESCE(SUM(quantity), 0) FROM inventory_ledger WHERE variant_id = v.id)
-          ELSE (SELECT COALESCE(SUM(quantity), 0) FROM inventory_ledger WHERE product_id = p.id AND variant_id IS NULL)
-        END as stock,
->>>>>>> 445f3c93b3dfec4bc57d0dec13ebb60e332add74
         CASE 
           WHEN v.id IS NOT NULL THEN COALESCE(v.low_stock_threshold, 5)
           ELSE COALESCE(p.low_stock_threshold, 5)
@@ -93,7 +86,6 @@ export class ReportRepository {
         END as "variantCombination"
       FROM products p
       LEFT JOIN product_variants v ON v.product_id = p.id
-<<<<<<< HEAD
       LEFT JOIN LATERAL (
         SELECT COALESCE(SUM(il.quantity), 0) as current_stock
         FROM inventory_ledger il
@@ -107,12 +99,6 @@ export class ReportRepository {
           OR
           (v.id IS NULL AND stock.current_stock <= COALESCE(p.low_stock_threshold, 5))
         )
-=======
-      WHERE p.tenant_id = $1 AND (
-        (v.id IS NOT NULL AND (SELECT COALESCE(SUM(quantity), 0) FROM inventory_ledger WHERE variant_id = v.id) <= COALESCE(v.low_stock_threshold, 5)) OR
-        (v.id IS NULL AND (SELECT COALESCE(SUM(quantity), 0) FROM inventory_ledger WHERE product_id = p.id AND variant_id IS NULL) <= COALESCE(p.low_stock_threshold, 5))
-      )
->>>>>>> 445f3c93b3dfec4bc57d0dec13ebb60e332add74
       LIMIT $2
     `
     return this.dataSource.query(query, [tenantId, limit])

@@ -124,7 +124,6 @@ export class AppModule implements NestModule {
         'super-admin/*path',
         'audit-logs',
         'audit-logs/*path',
-        'settings',
         'home',
         'categories',
         'categories/*path',
