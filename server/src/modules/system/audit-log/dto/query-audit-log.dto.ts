@@ -15,6 +15,21 @@ export class QueryAuditLogDto {
   @Max(100)
   limit?: number = 20
 
+  /** Filter by tenant ID (super-admin only) */
+  @IsOptional()
+  @IsUUID()
+  tenantId?: string
+
+  /** Filter by branch ID */
+  @IsOptional()
+  @IsUUID()
+  branchId?: string
+
+  /** Filter by warehouse ID */
+  @IsOptional()
+  @IsUUID()
+  warehouseId?: string
+
   /** Filter by userId */
   @IsOptional()
   @IsUUID()

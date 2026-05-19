@@ -565,6 +565,12 @@ export const navGroups = [
         href: "/admin/roles",
         feature: "/admin/roles",
       },
+      {
+        icon: FileText,
+        label: "Audit Logs",
+        href: "/admin/audit-logs",
+        feature: "/admin/team",
+      },
     ],
   },
   // {

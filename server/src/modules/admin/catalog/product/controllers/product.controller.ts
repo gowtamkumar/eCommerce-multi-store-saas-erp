@@ -6,6 +6,7 @@ import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
+import { Audit } from '@/common/decorators/audit.decorator'
 import {
   Body,
   Controller,
@@ -40,6 +41,7 @@ export class ProductController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'Product', action: 'CREATE' })
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() createProductDto: CreateProductDto,
@@ -143,6 +145,7 @@ export class ProductController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'Product', action: 'UPDATE' })
   async updateProduct(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -161,6 +164,7 @@ export class ProductController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'Product', action: 'DELETE' })
   async removeProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeProduct.`)
     const result = await this.productService.removeProduct(id, ctx)
@@ -191,6 +195,7 @@ export class ProductController {
   @Post(':id/reviews')
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'ProductReview', action: 'CREATE' })
   async createReviewProduct(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') productId: string,

@@ -5,7 +5,9 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 @Entity('audit_logs')
 @Index(['tenantId', 'createdAt'])
 @Index(['tenantId', 'entity', 'entityId'])
-@Index(['tenantId', 'userId'])
+@Index(['tenantId', 'actorId'])
+@Index(['tenantId', 'branchId'])
+@Index(['tenantId', 'warehouseId'])
 export class AuditLogEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
@@ -41,6 +43,12 @@ export class AuditLogEntity extends BaseEntity {
 
   @Column({ type: 'jsonb', name: 'new_value', nullable: true })
   newValue: Record<string, any>
+
+  @Column({ type: 'uuid', name: 'branch_id', nullable: true })
+  branchId: string | null
+
+  @Column({ type: 'uuid', name: 'warehouse_id', nullable: true })
+  warehouseId: string | null
 
   @Column({ type: 'varchar', length: 45, name: 'ip_address', nullable: true })
   ipAddress: string

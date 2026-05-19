@@ -11,6 +11,7 @@ export default function SystemSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }:
         { icon: Globe, label: 'Tenants (Stores)', href: '/system/tenants' },
         { icon: Users, label: 'Global Users', href: '/system/users' },
         { icon: Activity, label: 'Platform Health', href: '/system/health' },
+        { icon: ShieldCheck, label: 'Platform Audit Logs', href: '/system/audit-logs' },
         { icon: Layers, label: 'Subscription Plans', href: '/system/plans' },
         { icon: Users, label: 'Subscribers', href: '/system/subscribers' },
         { icon: Settings, label: 'Global Settings', href: '/system/settings' },

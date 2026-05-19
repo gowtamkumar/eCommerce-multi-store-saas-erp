@@ -15,17 +15,21 @@ export class AuditLogRepository {
     const entry = this.repo.create({
       ...data,
       tenantId: ctx.tenantId,
-      userId: ctx.userId,
+      actorId: ctx.userId || data.userId || null,
+      branchId: ctx.branchId || data.branchId || null,
+      warehouseId: ctx.warehouseId || data.warehouseId || null,
     })
     await this.repo.save(entry)
   }
 
   async findAllWithFilters(
-    tenantId: string,
+    tenantId: string | null,
     filters: {
       page: number
       limit: number
       userId?: string
+      branchId?: string
+      warehouseId?: string
       action?: string
       entity?: string
       entityId?: string
@@ -33,10 +37,16 @@ export class AuditLogRepository {
       to?: string
     },
   ): Promise<[AuditLogEntity[], number]> {
-    const { page, limit, userId, action, entity, entityId, from, to } = filters
-    const where: FindOptionsWhere<AuditLogEntity> = { tenantId }
+    const { page, limit, userId, branchId, warehouseId, action, entity, entityId, from, to } = filters
+    const where: FindOptionsWhere<AuditLogEntity> = {}
 
-    if (userId) where.userId = userId
+    if (tenantId) {
+      where.tenantId = tenantId
+    }
+
+    if (userId) where.actorId = userId
+    if (branchId) where.branchId = branchId
+    if (warehouseId) where.warehouseId = warehouseId
     if (action) where.action = action
     if (entity) where.entity = entity
     if (entityId) where.entityId = entityId
@@ -53,8 +63,12 @@ export class AuditLogRepository {
     })
   }
 
-  async findById(id: string, tenantId: string): Promise<AuditLogEntity | null> {
-    return await this.repo.findOne({ where: { id, tenantId } })
+  async findById(id: string, tenantId: string | null): Promise<AuditLogEntity | null> {
+    const where: FindOptionsWhere<AuditLogEntity> = { id }
+    if (tenantId) {
+      where.tenantId = tenantId
+    }
+    return await this.repo.findOne({ where })
   }
 
   async deleteOlderThan(tenantId: string, cutoff: Date): Promise<void> {

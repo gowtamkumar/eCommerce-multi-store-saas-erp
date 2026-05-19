@@ -4,5 +4,6 @@ export class RequestContextDto {
   userId: string
   tenantId: string
   branchId?: string
+  warehouseId?: string
   user: UserDto
 }

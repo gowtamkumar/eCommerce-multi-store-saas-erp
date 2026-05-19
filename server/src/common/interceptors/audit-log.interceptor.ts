@@ -30,8 +30,10 @@ export class AuditLogInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest()
     const { method, url, ip, user, headers } = request
 
-    // Extract tenant ID
+    // Extract tenant ID, branch ID, and warehouse ID
     const tenantId = request.tenantId || headers['x-tenant-id']
+    const branchId = request.branchId || headers['x-branch-id'] || request.body?.branchId || null
+    const warehouseId = request.warehouseId || headers['x-warehouse-id'] || request.body?.warehouseId || null
 
     return next.handle().pipe(
       tap(async () => {
@@ -44,6 +46,8 @@ export class AuditLogInterceptor implements NestInterceptor {
           action,
           entity: auditOptions.entity,
           entityId: request.params?.id || request.body?.id,
+          branchId,
+          warehouseId,
           // For now, we log the request body as newValue for mutations
           // In a more complex setup, we could compare old and new state
           newValue: method !== 'DELETE' ? request.body : null,
@@ -53,7 +57,14 @@ export class AuditLogInterceptor implements NestInterceptor {
 
         // Log asynchronously (service handles errors internally)
         if (tenantId) {
-          await this.auditLogService.log(tenantId, auditData)
+          const ctx = {
+            tenantId,
+            userId: user?.id,
+            user,
+            branchId,
+            warehouseId,
+          } as any
+          await this.auditLogService.log(ctx, auditData)
         }
       }),
     )

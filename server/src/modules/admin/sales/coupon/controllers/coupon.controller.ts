@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import {
   Body,
   Controller,
@@ -34,6 +35,7 @@ export class CouponController {
 
   @Post()
   @RequirePermissions(SystemPermissions.COUPONS_MANAGE)
+  @Audit({ entity: 'Coupon', action: 'CREATE' })
   async createCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Body() createCouponDto: CreateCouponDto,
@@ -101,6 +103,7 @@ export class CouponController {
 
   @Patch(':id')
   @RequirePermissions(SystemPermissions.COUPONS_MANAGE)
+  @Audit({ entity: 'Coupon', action: 'UPDATE' })
   async updateCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -118,6 +121,7 @@ export class CouponController {
 
   @Delete(':id')
   @RequirePermissions(SystemPermissions.COUPONS_MANAGE)
+  @Audit({ entity: 'Coupon', action: 'DELETE' })
   async removeCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

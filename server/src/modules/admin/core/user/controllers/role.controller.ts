@@ -9,6 +9,7 @@ import { PermissionEntity } from '../entities/permission.entity'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { Audit } from '@/common/decorators/audit.decorator'
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
@@ -54,6 +55,7 @@ export class RoleController {
 
   @Post('roles')
   @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @Audit({ entity: 'Role', action: 'CREATE' })
   async createRole(
     @RequestContext() ctx: RequestContextDto,
     @Body() body: { name: string; description?: string; permissionCodes: string[] },
@@ -84,6 +86,7 @@ export class RoleController {
 
   @Patch('roles/:id')
   @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @Audit({ entity: 'Role', action: 'UPDATE' })
   async updateRole(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -119,6 +122,7 @@ export class RoleController {
 
   @Delete('roles/:id')
   @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @Audit({ entity: 'Role', action: 'DELETE' })
   async deleteRole(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

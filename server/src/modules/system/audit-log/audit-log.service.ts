@@ -203,9 +203,19 @@ export class AuditLogService {
     query: QueryAuditLogDto,
   ): Promise<{ data: AuditLogEntity[]; meta: any }> {
     this.logger.log(`${this.findAllAuditLogs.name} Service Called`)
-    const { tenantId } = ctx
+    
+    // Scoping check: If super_admin or admin role, allow querying by any tenantId (or all if omitted).
+    // Otherwise, strictly force tenantId to be the user's tenantId.
+    const userRole = ctx.user?.role || ''
+    const isGlobalAdmin = ['admin', 'super_admin'].includes(userRole.toLowerCase())
+    
+    let targetTenantId: string | null = ctx.tenantId
+    if (isGlobalAdmin) {
+      targetTenantId = query.tenantId ?? null
+    }
+
     const { page = 1, limit = 20, userId, action, entity, entityId, from, to } = query
-    const [data, total] = await this.auditLogRepository.findAllWithFilters(tenantId, {
+    const [data, total] = await this.auditLogRepository.findAllWithFilters(targetTenantId, {
       page,
       limit,
       userId,
@@ -232,7 +242,11 @@ export class AuditLogService {
    */
   async findOneAuditLog(id: string, ctx: RequestContextDto): Promise<AuditLogEntity | null> {
     this.logger.log(`${this.findOneAuditLog.name} Service Called`)
-    return await this.auditLogRepository.findById(id, ctx.tenantId)
+    const userRole = ctx.user?.role || ''
+    const isGlobalAdmin = ['admin', 'super_admin'].includes(userRole.toLowerCase())
+    
+    const targetTenantId = isGlobalAdmin ? null : ctx.tenantId
+    return await this.auditLogRepository.findById(id, targetTenantId)
   }
 
   /**

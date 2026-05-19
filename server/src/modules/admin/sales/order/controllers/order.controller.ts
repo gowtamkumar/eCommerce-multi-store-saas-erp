@@ -9,6 +9,7 @@ import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto
 import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
 import { OrderService } from '@/modules/admin/sales/order/services/order.service'
+import { Audit } from '@/common/decorators/audit.decorator'
 import { Body, Controller, Get, Logger, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { RequestContextDto } from 'src/common/dto/request-context.dto'
 import { OrderResponseDto } from '../dto/order-response.dto'
@@ -24,6 +25,7 @@ export class OrderController {
   // @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Post()
   @RequirePermissions(SystemPermissions.ORDERS_WRITE)
+  @Audit({ entity: 'Order', action: 'CREATE' })
   async createOrder(
     @RequestContext() ctx: RequestContextDto,
     @Body() createOrderDto: CreateOrderDto,
@@ -124,6 +126,7 @@ export class OrderController {
 
   @Patch(':id')
   @RequirePermissions(SystemPermissions.ORDERS_WRITE)
+  @Audit({ entity: 'Order', action: 'UPDATE' })
   async updateOrder(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

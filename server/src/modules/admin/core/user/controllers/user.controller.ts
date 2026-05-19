@@ -5,6 +5,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { Audit } from '@/common/decorators/audit.decorator'
 import {
   Body,
   Controller,
@@ -91,6 +92,7 @@ export class UserController {
 
   @Post('/team/invite')
   @RequirePermissions(SystemPermissions.USERS_INVITE)
+  @Audit({ entity: 'User', action: 'INVITE_MEMBER' })
   async inviteStaff(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: InviteStaffDto,
@@ -114,6 +116,7 @@ export class UserController {
 
   @Delete('/team/invitations/:invitationId')
   @RequirePermissions(SystemPermissions.USERS_INVITE)
+  @Audit({ entity: 'User', action: 'REVOKE_INVITATION' })
   async revokeInvitation(
     @RequestContext() ctx: RequestContextDto,
     @Param('invitationId', ParseUUIDPipe) invitationId: string,
@@ -125,6 +128,7 @@ export class UserController {
 
   @Patch('/team/members/:memberId/role')
   @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @Audit({ entity: 'User', action: 'UPDATE_MEMBER_ROLE' })
   async updateMemberRole(
     @RequestContext() ctx: RequestContextDto,
     @Param('memberId', ParseUUIDPipe) memberId: string,
@@ -142,6 +146,7 @@ export class UserController {
 
   @Delete('/team/members/:memberId')
   @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @Audit({ entity: 'User', action: 'REMOVE_MEMBER' })
   async removeTeamMember(
     @RequestContext() ctx: RequestContextDto,
     @Param('memberId', ParseUUIDPipe) memberId: string,
@@ -171,6 +176,7 @@ export class UserController {
 
   @Post('/')
   @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @Audit({ entity: 'User', action: 'CREATE' })
   async createUser(
     @Body() createUserDto: CreateUserDto,
     @RequestContext() ctx: RequestContextDto,
@@ -188,6 +194,7 @@ export class UserController {
   }
 
   @Patch('/profile')
+  @Audit({ entity: 'User', action: 'UPDATE_PROFILE' })
   async updateProfile(
     @RequestContext() ctx: RequestContextDto,
     @Body() updateUserDto: UpdateUserDto,
@@ -210,6 +217,7 @@ export class UserController {
   }
 
   @Patch('/profile/password')
+  @Audit({ entity: 'User', action: 'UPDATE_PROFILE_PASSWORD' })
   async updateProfilePassword(
     @RequestContext() ctx: RequestContextDto,
     @Body() updatePasswordDto: UpdatePasswordDto,
@@ -228,6 +236,7 @@ export class UserController {
 
   @Patch('/:id')
   @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @Audit({ entity: 'User', action: 'UPDATE' })
   async updateUser(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,
@@ -247,6 +256,7 @@ export class UserController {
 
   @Patch('/update-password/:id')
   @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @Audit({ entity: 'User', action: 'UPDATE_PASSWORD' })
   async updatePassword(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) userId: string,
@@ -266,6 +276,7 @@ export class UserController {
 
   @Delete('/:id')
   @RequirePermissions(SystemPermissions.USERS_WRITE)
+  @Audit({ entity: 'User', action: 'DELETE' })
   async deleteUser(
     @Param('id', ParseUUIDPipe) userId: string,
   ): Promise<BaseApiSuccessResponse<any>> {

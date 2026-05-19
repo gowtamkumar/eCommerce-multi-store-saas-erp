@@ -9,6 +9,7 @@ import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { CategoryService } from '@/modules/admin/catalog/category/category.service'
 import { CreateCategoryDto } from '@/modules/admin/catalog/category/dto/create-category.dto'
 import { UpdateCategoryDto } from '@/modules/admin/catalog/category/dto/update-category.dto'
+import { Audit } from '@/common/decorators/audit.decorator'
 import {
   Body,
   Controller,
@@ -33,6 +34,7 @@ export class CategoryController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'Category', action: 'CREATE' })
   async createCategory(
     @RequestContext() ctx: RequestContextDto,
     @Body() createCategoryDto: CreateCategoryDto,
@@ -99,6 +101,7 @@ export class CategoryController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'Category', action: 'UPDATE' })
   async updateCategory(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -117,6 +120,7 @@ export class CategoryController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  @Audit({ entity: 'Category', action: 'DELETE' })
   async removeCategory(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCategory.`)
     const result = await this.categoryService.removeCategory(id, ctx)
