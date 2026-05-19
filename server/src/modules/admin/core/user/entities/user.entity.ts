@@ -3,6 +3,8 @@ import { UserStatus } from '@/common/enums/user/user-status.enum'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
+import { EmployeeEntity } from '@/modules/admin/operations/hrm/entities/employee.entity'
+import { RoleEntity } from './role.entity'
 import {
   Column,
   CreateDateColumn,
@@ -11,6 +13,7 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm'
@@ -73,6 +76,13 @@ export class UserEntity {
   })
   role: UserRole
 
+  @Column({ type: 'uuid', name: 'role_id', nullable: true })
+  roleId: string
+
+  @ManyToOne(() => RoleEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'role_id' })
+  roleEntity?: RoleEntity
+
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
   status: UserStatus
 
@@ -101,6 +111,9 @@ export class UserEntity {
   @ManyToOne(() => WarehouseEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'warehouse_id' })
   warehouse: WarehouseEntity
+
+  @OneToOne(() => EmployeeEntity, (employee) => employee.user, { nullable: true })
+  employee?: EmployeeEntity
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date

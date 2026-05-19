@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -30,6 +32,7 @@ export class PageController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async createPage(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePageDto,
@@ -45,6 +48,8 @@ export class PageController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async findAllPages(
     @RequestContext() ctx: RequestContextDto,
     @Query('status') status?: string,
@@ -60,6 +65,8 @@ export class PageController {
   }
 
   @Get('home')
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async findHomePage(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PageResponseDto>> {
@@ -74,6 +81,8 @@ export class PageController {
   }
 
   @Get('slug/:slug')
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async findBySlugPage(
     @RequestContext() ctx: RequestContextDto,
     @Param('slug') slug: string,
@@ -90,6 +99,7 @@ export class PageController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async findOnePage(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -106,6 +116,7 @@ export class PageController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async updatePage(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -123,6 +134,7 @@ export class PageController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async removePage(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removePage.`)
     const result = await this.pageService.removePage(id, ctx)

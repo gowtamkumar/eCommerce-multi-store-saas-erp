@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Controller, Get, Post, UseGuards } from '@nestjs/common'
 import { AccountingService } from '../services/accounting.service'
 import { FinancialReportService } from '../services/financial-report.service'
@@ -14,10 +16,11 @@ export class AccountingController {
   constructor(
     private readonly accountingService: AccountingService,
     private readonly reportService: FinancialReportService,
-  ) {}
+  ) { }
 
   @Post('init')
   @RequireFeature('/admin/finance')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async initialize(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<void>> {
@@ -32,6 +35,7 @@ export class AccountingController {
 
   @Get('reports/profit-loss')
   @RequireFeature('/admin/finance/profit-loss')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async getPL(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
     const data = await this.reportService.getProfitAndLoss(ctx)
     return {
@@ -44,6 +48,7 @@ export class AccountingController {
 
   @Get('reports/balance-sheet')
   @RequireFeature('/admin/finance/balance-sheet')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async getBalanceSheet(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {

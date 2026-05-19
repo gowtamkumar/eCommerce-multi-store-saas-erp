@@ -27,7 +27,7 @@ export class ReportService {
     private readonly expenseService: ExpenseService,
     private readonly reportRepo: ReportRepository,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   async getAnalytics(ctx: RequestContextDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getAnalytics.`)
@@ -153,8 +153,8 @@ export class ReportService {
           },
           lowStockCount: parseInt(stats.lowStockCount, 10),
           fulfillment: {
-            pending: parseInt(stats.pendingFulfillment, 10),
-            picking: parseInt(stats.pickingFulfillment, 10),
+            pending: stats.pendingFulfillment || 0,
+            picking: stats.pickingFulfillment || 0,
           },
         }
       },
@@ -170,18 +170,6 @@ export class ReportService {
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [orders, payments, expenses, purchaseOrders] = (await Promise.all([
-          this.orderService.findAllOrders({ page: 1, limit: 1000 } as any, ctx),
-          this.paymentService.findAllPaymentsRaw(ctx),
-          this.expenseService.findAllExpensesRaw(ctx),
-          this.purchaseOrderService.findAllPurchaseOrdersRaw(ctx),
-        ])) as [any, any, any, any]
-
-        const ordersData = orders.orders || []
-        const paymentsData = payments || []
-        const expensesData = expenses || []
-        const purchaseOrdersData = purchaseOrders || []
-
         let startDate = startDateStr
           ? new Date(startDateStr)
           : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
@@ -190,28 +178,33 @@ export class ReportService {
         // Set end date to end of day to include full day
         endDate.setHours(23, 59, 59, 999)
 
+        const [payments, expenses, purchaseOrders, orderCount, cogs] = (await Promise.all([
+          this.paymentService.findAllPaymentsRaw(ctx),
+          this.expenseService.findAllExpensesRaw(ctx),
+          this.purchaseOrderService.findAllPurchaseOrdersRaw(ctx),
+          this.reportRepo.getOrderCountInRange(tenantId, startDate, endDate),
+          this.reportRepo.getCogsInRange(tenantId, startDate, endDate),
+        ])) as [any, any, any, number, number]
+
+        const paymentsData = payments || []
+        const expensesData = expenses || []
+        const purchaseOrdersData = purchaseOrders || []
+
         // Filter data by date range
         const filterByDate = (item: any, dateField: string = 'createdAt') => {
           const itemDate = new Date(item[dateField])
           return itemDate >= startDate && itemDate <= endDate
         }
 
-        const filteredOrders = ordersData.filter((o: any) => filterByDate(o))
         const filteredPayments = paymentsData.filter((p: any) => filterByDate(p))
         const filteredExpenses = expensesData.filter((e: any) => filterByDate(e, 'expenseDate'))
         const filteredPurchaseOrders = purchaseOrdersData.filter((po: any) => filterByDate(po))
 
         // Calculate Sales Revenue
-        // Revenue can be either Total Value of Completed/Delivered Orders or sum of Payments depending on accounting logic.
         // Using Payment amounts (completed transactions) is standard for cash-based accounting.
         const revenue = filteredPayments.reduce((sum: number, p: any) => sum + (+p.amount || 0), 0)
 
-        // Calculate COGS (Cost of Goods Sold)
-        // Using actual Purchase Orders that are completed or approved
-        const cogs = filteredPurchaseOrders
-          .filter((po: any) => po.status !== 'cancelled')
-          .reduce((sum: number, po: any) => sum + (+po.totalAmount || 0), 0)
-
+        // Calculate Gross Profit based on true COGS from ledger
         const grossProfit = revenue - cogs
 
         // Calculate Operating Expenses
@@ -239,7 +232,7 @@ export class ReportService {
           },
           revenue: {
             total: revenue,
-            orderCount: filteredOrders.length,
+            orderCount,
           },
           cogs: {
             total: cogs,
@@ -300,7 +293,11 @@ export class ReportService {
             method: p.paymentMethod,
             note: p.note,
           })),
-        ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        ].sort((a, b) => {
+          const dateA = a.date ? new Date(a.date).getTime() : 0
+          const dateB = b.date ? new Date(b.date).getTime() : 0
+          return dateA - dateB
+        })
 
         // Calculate running balance and summary
         let runningBalance = 0
@@ -342,7 +339,7 @@ export class ReportService {
         const [customer, ordersResult, payments] = await Promise.all([
           this.userService.findOneUser(customerId, ctx),
           this.orderService.findByUserId(customerId, ctx),
-          this.paymentService.findAllPaymentsByCustomer(ctx),
+          this.paymentService.findAllPaymentsByCustomer(customerId, ctx),
         ])
 
         const orders = ordersResult?.orders || []
@@ -370,7 +367,11 @@ export class ReportService {
             method: p.method,
             note: p.gatewayResponse?.note || '',
           })),
-        ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        ].sort((a, b) => {
+          const dateA = a.date ? new Date(a.date).getTime() : 0
+          const dateB = b.date ? new Date(b.date).getTime() : 0
+          return dateA - dateB
+        })
 
         // Calculate running balance and summary
         let runningBalance = 0
@@ -442,13 +443,19 @@ export class ReportService {
             category: 'Supplier Payment',
             reference: sp.transactionId || 'Vendor Payout',
           })),
-        ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        ].sort((a, b) => {
+          const dateA = a.date ? new Date(a.date).getTime() : 0
+          const dateB = b.date ? new Date(b.date).getTime() : 0
+          return dateA - dateB
+        })
 
         // Optimization: Single-pass grouping by date (O(N) instead of O(Days * N))
         const dailyAggregates = new Map<string, { inflow: number; outflow: number }>()
 
         movements.forEach((m) => {
+          if (!m.date) return
           const mDate = m.date instanceof Date ? m.date : new Date(m.date)
+          if (isNaN(mDate.getTime())) return
           const dateStr = mDate.toISOString().split('T')[0]
 
           if (!dailyAggregates.has(dateStr)) {
@@ -557,9 +564,52 @@ export class ReportService {
         break
       }
       case 'cash-flow': {
-        const data = await this.getCashFlow(ctx)
+        const [customerPayments, expenses, supplierPayments] = await Promise.all([
+          this.paymentService.findAllPaymentsRaw(ctx, startDate, endDate),
+          this.expenseService.findAllExpensesRaw(ctx, startDate, endDate),
+          this.purchaseOrderService.findAllPaymentsByPurchaseOrder(ctx),
+        ])
+
+        const inflow = customerPayments.filter((p: any) => p.status === 'completed')
+
+        const filterByDate = (dateVal: any) => {
+          if (!dateVal) return false
+          const d = new Date(dateVal)
+          return d >= startDate && d <= endDate
+        }
+
+        const movements: any[] = [
+          ...inflow.map((p) => ({
+            date: p.createdAt,
+            amount: +p.amount,
+            type: 'INFLOW',
+            category: 'Sales',
+            reference: p.transactionId,
+          })),
+          ...expenses.map((e) => ({
+            date: e.expenseDate,
+            amount: +e.amount,
+            type: 'OUTFLOW',
+            category: e.category,
+            reference: e.description,
+          })),
+          ...supplierPayments
+            .filter((sp: any) => filterByDate(sp.paymentDate))
+            .map((sp) => ({
+              date: sp.paymentDate,
+              amount: +sp.amount,
+              type: 'OUTFLOW',
+              category: 'Supplier Payment',
+              reference: sp.transactionId || 'Vendor Payout',
+            })),
+        ].sort((a, b) => {
+          const dateA = a.date ? new Date(a.date).getTime() : 0
+          const dateB = b.date ? new Date(b.date).getTime() : 0
+          return dateB - dateA
+        })
+
         csvContent = 'Date,Type,Category,Reference,Amount\n'
-        data.recentMovements.forEach((m: any) => {
+        movements.forEach((m: any) => {
           csvContent += `${m.date},${m.type},${m.category},"${m.reference || ''}",${m.amount}\n`
         })
         break
@@ -574,10 +624,10 @@ export class ReportService {
     }
   }
 
-  async getFinanceSummary(ctx: RequestContextDto) {
+  async getFinanceSummary(ctx: RequestContextDto, startDateStr?: string, endDateStr?: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getFinanceSummary.`)
     const tenantId = ctx.tenantId
-    const cacheKey = `finance:summary`
+    const cacheKey = `finance:summary:${startDateStr || 'none'}:${endDateStr || 'none'}`
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
@@ -588,35 +638,73 @@ export class ReportService {
           this.purchaseOrderService.findAllPurchaseOrdersRaw(ctx),
         ])) as [any, any, any, any]
 
-        const inflow = customerPayments.filter((p: any) => p.status === 'completed')
+        let startDate = startDateStr
+          ? new Date(startDateStr)
+          : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+        let endDate = endDateStr ? new Date(endDateStr) : new Date()
+
+        // Set end date to end of day to include full day
+        endDate.setHours(23, 59, 59, 999)
+
+        // Filter data by date range
+        const filterByDate = (item: any, dateField: string = 'createdAt') => {
+          const itemDate = new Date(item[dateField])
+          return itemDate >= startDate && itemDate <= endDate
+        }
+
+        const filteredCustomerPayments = customerPayments || []
+        const filteredExpensesData = expenses || []
+        const filteredSupplierPaymentsData = supplierPayments || []
+        const filteredPurchaseOrders = purchaseOrders || []
+
+        const inflow = filteredCustomerPayments.filter(
+          (p: any) => p.status === 'completed' && filterByDate(p),
+        )
         const totalRevenue = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0)
-        const totalOpExpenses = expenses.reduce((sum, e) => sum + (+e.amount || 0), 0)
-        const totalSupplierPayments = supplierPayments.reduce(
+
+        const filteredExpenses = filteredExpensesData.filter((e: any) =>
+          filterByDate(e, 'expenseDate'),
+        )
+        const totalOpExpenses = filteredExpenses.reduce((sum, e) => sum + (+e.amount || 0), 0)
+
+        const filteredSupplierPayments = filteredSupplierPaymentsData.filter((sp: any) =>
+          filterByDate(sp, 'paymentDate'),
+        )
+        const totalSupplierPayments = filteredSupplierPayments.reduce(
           (sum, sp) => sum + (+sp.amount || 0),
           0,
         )
         const totalExpenses = totalOpExpenses + totalSupplierPayments
-        const totalAmountDue = purchaseOrders.reduce(
-          (sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)),
-          0,
-        )
+        const totalAmountDue = filteredPurchaseOrders
+          .filter((po: any) => filterByDate(po))
+          .reduce((sum: number, po: any) => sum + (po.totalAmount - (po.paidAmount || 0)), 0)
 
         // Monthly Trend (Last 6 Months)
         const months = Array.from({ length: 6 }, (_, i) => {
           const d = new Date()
+          d.setDate(1) // Avoid month overflow bugs (e.g., Feb 30th)
           d.setMonth(d.getMonth() - i)
           return d.toISOString().substring(0, 7) // YYYY-MM
         }).reverse()
 
+        const getYearMonthString = (dateInput: any) => {
+          if (!dateInput) return ''
+          const d = dateInput instanceof Date ? dateInput : new Date(dateInput)
+          if (isNaN(d.getTime())) return ''
+          return d.toISOString().substring(0, 7) // Returns YYYY-MM
+        }
+
         const chartData = months.map((month) => {
-          const monthInflow = inflow
-            .filter((p) => p.createdAt.toString().startsWith(month))
+          const monthInflow = customerPayments
+            .filter(
+              (p: any) => p.status === 'completed' && getYearMonthString(p.createdAt) === month,
+            )
             .reduce((sum, p) => sum + (+p.amount || 0), 0)
           const monthOpEx = expenses
-            .filter((e) => e.expenseDate.toString().startsWith(month))
+            .filter((e: any) => getYearMonthString(e.expenseDate) === month)
             .reduce((sum, e) => sum + (+e.amount || 0), 0)
           const monthSuppEx = supplierPayments
-            .filter((sp) => sp.paymentDate.toString().startsWith(month))
+            .filter((sp) => getYearMonthString(sp.paymentDate) === month)
             .reduce((sum, sp) => sum + (+sp.amount || 0), 0)
 
           return {
@@ -629,7 +717,7 @@ export class ReportService {
 
         // Categorized Expenses
         const categories: Record<string, number> = {}
-        expenses.forEach((e) => {
+        filteredExpenses.forEach((e: any) => {
           categories[e.category] = (categories[e.category] || 0) + (+e.amount || 0)
         })
         categories['Supplier Payouts'] = totalSupplierPayments

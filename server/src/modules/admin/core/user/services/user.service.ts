@@ -6,18 +6,258 @@ import * as bcrypt from 'bcrypt'
 import { CreateUserDto, FilterUserDto, UpdatePasswordDto, UpdateUserDto } from '../dtos'
 import { StaffInvitationEntity } from '../entities/staff-invitation.entity'
 import { UserEntity } from '../entities/user.entity'
+import { PermissionEntity } from '../entities/permission.entity'
 import { UserRepository } from '../repositories/user.repository'
 import { StaffInvitationService } from './staff-invitation.service'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { OnApplicationBootstrap } from '@nestjs/common'
 
 @Injectable()
-export class UserService {
+export class UserService implements OnApplicationBootstrap {
   private readonly logger = new Logger(UserService.name)
 
   constructor(
     private readonly userRepo: UserRepository,
     private readonly cacheService: CacheService,
     private readonly invitationService: StaffInvitationService,
+    @InjectRepository(PermissionEntity)
+    private readonly permissionRepo: Repository<PermissionEntity>,
   ) {}
+
+  async onApplicationBootstrap() {
+    await this.seedPermissions()
+  }
+
+  async seedPermissions(): Promise<void> {
+    this.logger.log('Seeding system permissions...')
+    const permissionsToSeed = [
+      {
+        code: 'users:read',
+        name: 'View Users',
+        description: 'Can view user accounts and team members',
+        module: 'Access Control',
+      },
+      {
+        code: 'users:write',
+        name: 'Manage Users',
+        description: 'Can create, edit, or delete users',
+        module: 'Access Control',
+      },
+      {
+        code: 'users:invite',
+        name: 'Invite Staff',
+        description: 'Can invite staff members',
+        module: 'Access Control',
+      },
+      {
+        code: 'pos:create-sale',
+        name: 'Create POS Sale',
+        description: 'Can run POS register sales',
+        module: 'POS',
+      },
+      {
+        code: 'pos:manage-shifts',
+        name: 'Manage POS Shifts',
+        description: 'Can manage register shifts',
+        module: 'POS',
+      },
+      {
+        code: 'finance:read-ledger',
+        name: 'View Ledger',
+        description: 'Can view books and ledgers',
+        module: 'Finance',
+      },
+      {
+        code: 'finance:write-expense',
+        name: 'Write Expense',
+        description: 'Can record new expenses',
+        module: 'Finance',
+      },
+      {
+        code: 'hrm:clock-attendance',
+        name: 'Clock Attendance',
+        description: 'Can clock in/out for shift attendance',
+        module: 'HRM',
+      },
+      {
+        code: 'hrm:process-payroll',
+        name: 'Process Payroll',
+        description: 'Can run payroll cycles',
+        module: 'HRM',
+      },
+      {
+        code: 'hrm:manage-employees',
+        name: 'Manage Employees',
+        description: 'Can manage legal employee records',
+        module: 'HRM',
+      },
+      {
+        code: 'orders:read',
+        name: 'View Orders',
+        description: 'Can view all customer orders',
+        module: 'Orders',
+      },
+      {
+        code: 'orders:write',
+        name: 'Manage Orders',
+        description: 'Can create and update orders',
+        module: 'Orders',
+      },
+      {
+        code: 'returns:read',
+        name: 'View Returns',
+        description: 'Can view return and refund requests',
+        module: 'Orders',
+      },
+      {
+        code: 'returns:write',
+        name: 'Manage Returns',
+        description: 'Can approve, reject, or update returns',
+        module: 'Orders',
+      },
+      {
+        code: 'payments:read',
+        name: 'View Payments',
+        description: 'Can view payment transactions and history',
+        module: 'Finance',
+      },
+      {
+        code: 'coupons:manage',
+        name: 'Manage Coupons',
+        description: 'Can create, edit, and delete discount coupons',
+        module: 'Marketing',
+      },
+      {
+        code: 'promotions:manage',
+        name: 'Manage Promotions',
+        description: 'Can create and manage promotions',
+        module: 'Marketing',
+      },
+      {
+        code: 'catalog:read',
+        name: 'View Catalog',
+        description: 'Can view products, categories, brands',
+        module: 'Catalog',
+      },
+      {
+        code: 'catalog:write',
+        name: 'Manage Catalog',
+        description: 'Can create and edit products and categories',
+        module: 'Catalog',
+      },
+      {
+        code: 'catalog:featured',
+        name: 'Manage Featured Items',
+        description: 'Can manage featured products, promotional items, and storefront sliders',
+        module: 'Catalog',
+      },
+      {
+        code: 'marketing:manage',
+        name: 'Manage Marketing',
+        description: 'Can manage campaigns and subscribers',
+        module: 'Marketing',
+      },
+      {
+        code: 'crm:read',
+        name: 'View Customers',
+        description: 'Can view customer and lead info',
+        module: 'CRM',
+      },
+      {
+        code: 'crm:write',
+        name: 'Manage Customers',
+        description: 'Can edit customer and lead info',
+        module: 'CRM',
+      },
+      {
+        code: 'purchasing:read',
+        name: 'View Purchasing',
+        description: 'Can view purchase orders',
+        module: 'Purchasing',
+      },
+      {
+        code: 'purchasing:write',
+        name: 'Manage Purchasing',
+        description: 'Can create and edit purchase orders',
+        module: 'Purchasing',
+      },
+      {
+        code: 'inventory:read',
+        name: 'View Inventory',
+        description: 'Can view inventory ledgers and stock',
+        module: 'Inventory',
+      },
+      {
+        code: 'inventory:write',
+        name: 'Manage Inventory',
+        description: 'Can manage stock and GRN',
+        module: 'Inventory',
+      },
+      {
+        code: 'supplier:manage',
+        name: 'Manage Suppliers',
+        description: 'Can manage suppliers',
+        module: 'Purchasing',
+      },
+      {
+        code: 'accounting:read',
+        name: 'View Accounting',
+        description: 'Can view accounting reports',
+        module: 'Accounting',
+      },
+      {
+        code: 'accounting:write',
+        name: 'Manage Accounting',
+        description: 'Can manage chart of accounts',
+        module: 'Accounting',
+      },
+      {
+        code: 'invoices:manage',
+        name: 'Manage Invoices',
+        description: 'Can manage invoices',
+        module: 'Accounting',
+      },
+      {
+        code: 'reports:read',
+        name: 'View Reports',
+        description: 'Can view analytical reports',
+        module: 'Reports',
+      },
+      {
+        code: 'logistics:manage',
+        name: 'Manage Logistics',
+        description: 'Can manage logistics integrations',
+        module: 'Logistics',
+      },
+      {
+        code: 'fulfillment:manage',
+        name: 'Manage Fulfillment',
+        description: 'Can manage order fulfillment',
+        module: 'Logistics',
+      },
+      {
+        code: 'settings:manage',
+        name: 'Manage Settings',
+        description: 'Can manage system settings',
+        module: 'Settings',
+      },
+      {
+        code: 'content:manage',
+        name: 'Manage Content',
+        description: 'Can manage pages and FAQs',
+        module: 'Content',
+      },
+    ]
+
+    for (const p of permissionsToSeed) {
+      const existing = await this.permissionRepo.findOne({ where: { code: p.code } })
+      if (!existing) {
+        await this.permissionRepo.save(this.permissionRepo.create(p))
+      }
+    }
+    this.logger.log('Permissions seeded successfully.')
+  }
 
   async getUsers(
     filterUserDto: FilterUserDto,

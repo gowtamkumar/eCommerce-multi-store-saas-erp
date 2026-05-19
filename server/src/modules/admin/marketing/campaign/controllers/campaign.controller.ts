@@ -4,6 +4,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { CreateCampaignDto } from '../dto/create-campaign.dto'
 import { ScheduleCampaignDto } from '../dto/schedule-campaign.dto'
@@ -18,6 +20,8 @@ export class CampaignController {
   constructor(private readonly campaignService: CampaignService) {}
 
   @Post()
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateCampaignDto,
@@ -32,6 +36,8 @@ export class CampaignController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async findAll(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<CampaignEntity[]>> {
@@ -45,6 +51,8 @@ export class CampaignController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async findOne(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -59,6 +67,8 @@ export class CampaignController {
   }
 
   @Post(':id/schedule')
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async schedule(
     @Param('id') id: string,
     @Body() dto: ScheduleCampaignDto,
@@ -74,6 +84,8 @@ export class CampaignController {
   }
 
   @Post(':id/cancel')
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async cancel(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -88,6 +100,8 @@ export class CampaignController {
   }
 
   @Patch(':id')
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateCampaignDto,
@@ -103,6 +117,8 @@ export class CampaignController {
   }
 
   @Delete(':id')
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async delete(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -117,6 +133,8 @@ export class CampaignController {
   }
 
   @Get(':id/logs')
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async getLogs(
     @Param('id') id: string,
     @Query('page') page: number = 1,

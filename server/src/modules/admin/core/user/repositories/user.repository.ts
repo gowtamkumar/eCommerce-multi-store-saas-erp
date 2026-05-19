@@ -83,7 +83,9 @@ export class UserRepository {
         'createdAt',
         'tenantId',
         'isEmailVerified',
+        'roleId',
       ],
+      relations: ['roleEntity', 'roleEntity.permissions'],
     })
   }
 
@@ -103,7 +105,9 @@ export class UserRepository {
         'createdAt',
         'tenantId',
         'isEmailVerified',
+        'roleId',
       ],
+      relations: ['roleEntity', 'roleEntity.permissions'],
     })
   }
 

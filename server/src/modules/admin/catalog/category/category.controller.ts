@@ -4,6 +4,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { CategoryService } from '@/modules/admin/catalog/category/category.service'
 import { CreateCategoryDto } from '@/modules/admin/catalog/category/dto/create-category.dto'
 import { UpdateCategoryDto } from '@/modules/admin/catalog/category/dto/update-category.dto'
@@ -30,6 +32,7 @@ export class CategoryController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async createCategory(
     @RequestContext() ctx: RequestContextDto,
     @Body() createCategoryDto: CreateCategoryDto,
@@ -45,6 +48,7 @@ export class CategoryController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findAllCategories(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<CategoryResponseDto[]>> {
@@ -60,6 +64,7 @@ export class CategoryController {
 
   @Get('stats')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findAllCategoriesWithStats(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -76,6 +81,7 @@ export class CategoryController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findOneCategory(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -92,6 +98,7 @@ export class CategoryController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async updateCategory(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -109,6 +116,7 @@ export class CategoryController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async removeCategory(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeCategory.`)
     const result = await this.categoryService.removeCategory(id, ctx)

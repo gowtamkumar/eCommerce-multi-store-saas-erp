@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Post, UseGuards, Logger } from '@nestjs/common'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
@@ -19,6 +21,8 @@ export class PathaoController {
   constructor(private readonly pathaoService: PathaoService) {}
 
   @Post('create-order')
+  @RequirePermissions(SystemPermissions.LOGISTICS_MANAGE)
+  @RequirePermissions(SystemPermissions.LOGISTICS_MANAGE)
   async createPathaoOrder(
     @RequestContext() ctx: RequestContextDto,
     @Body() createOrderDto: CreatePathaoOrderDto,

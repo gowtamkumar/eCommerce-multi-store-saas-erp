@@ -1,5 +1,7 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -19,9 +21,10 @@ import { PosService } from './pos.service'
 export class PosController {
   private readonly logger = new Logger(PosController.name)
 
-  constructor(private readonly service: PosService) {}
+  constructor(private readonly service: PosService) { }
 
   @Post('register')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async createRegister(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePosRegisterDto,
@@ -38,6 +41,7 @@ export class PosController {
 
   @Get('register')
   @RequireFeature('/admin/pos')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async findAllRegisters(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PosRegisterEntity[]>> {
@@ -52,6 +56,7 @@ export class PosController {
   }
 
   @Get('register/:id')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async findOneRegister(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -69,6 +74,7 @@ export class PosController {
   }
 
   @Post('shift/open')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async openShift(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: OpenPosShiftDto,
@@ -85,6 +91,7 @@ export class PosController {
 
   @Get('shift/active')
   @RequireFeature('/admin/pos')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async findActiveShift(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PosShiftEntity>> {
@@ -99,6 +106,7 @@ export class PosController {
   }
 
   @Post('shift/:id/close')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async closeShift(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -117,6 +125,7 @@ export class PosController {
   }
 
   @Get('shift')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async getShifts(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PosShiftEntity[]>> {
@@ -131,6 +140,7 @@ export class PosController {
   }
 
   @Post('sync')
+  @RequirePermissions(SystemPermissions.POS_SALE_CREATE)
   async syncPosSale(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: SyncPosSaleDto,

@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Controller, Get, Logger, Query, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
@@ -18,6 +20,8 @@ export class CustomerController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
+  @RequirePermissions(SystemPermissions.CRM_READ)
+  @RequirePermissions(SystemPermissions.CRM_READ)
   async findAll(
     @RequestContext() ctx: RequestContextDto,
     @Query() query: FilterUserDto,

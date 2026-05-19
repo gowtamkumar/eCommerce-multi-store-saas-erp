@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
@@ -17,6 +19,8 @@ export class GrnController {
   constructor(private readonly grnService: GrnService) {}
 
   @Post()
+  @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
   async create(
     @Body() dto: CreateGrnDto,
     @RequestContext() ctx: RequestContextDto,
@@ -31,6 +35,8 @@ export class GrnController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.INVENTORY_READ)
+  @RequirePermissions(SystemPermissions.INVENTORY_READ)
   async findAll(
     @Query() paginationDto: PaginationDto,
     @Query('status') status: GrnStatus,
@@ -46,6 +52,8 @@ export class GrnController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.INVENTORY_READ)
+  @RequirePermissions(SystemPermissions.INVENTORY_READ)
   async findOne(
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
@@ -60,6 +68,8 @@ export class GrnController {
   }
 
   @Patch(':id/verify')
+  @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
   async verify(
     @Param('id') id: string,
     @Body() dto: VerifyGrnDto,

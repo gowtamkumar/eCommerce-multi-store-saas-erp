@@ -1,10 +1,14 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
 import { EmployeeEntity } from './employee.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { AttendanceStatus } from '@/common/enums/hrm/hrm-enums'
 
 @Entity('attendance_sessions')
+@Index(['tenantId'])
+@Index(['employeeId'])
+@Index(['branchId'])
 export class AttendanceSessionEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'employee_id' })
   employeeId: string
@@ -22,6 +26,10 @@ export class AttendanceSessionEntity extends BaseEntity {
 
   @Column({ type: 'uuid', name: 'branch_id', nullable: true })
   branchId: string
+
+  @ManyToOne(() => BranchEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'branch_id' })
+  branch: BranchEntity
 
   @Column({ type: 'timestamp', name: 'clock_in' })
   clockIn: Date

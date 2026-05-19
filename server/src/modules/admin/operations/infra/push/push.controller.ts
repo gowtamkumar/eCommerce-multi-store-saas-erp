@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Post, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { RegisterDeviceDto, UnregisterDeviceDto } from './dto/device.dto'
@@ -23,6 +25,7 @@ export class PushController {
 
   @Post('unregister')
   @ApiOperation({ summary: 'Unregister device from push notifications' })
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async unregisterDevice(
     @Body() dto: UnregisterDeviceDto,
     @RequestContext() ctx: RequestContextDto,

@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { PaginationDto } from '@/common/dto/pagination.dto'
@@ -33,6 +35,8 @@ export class SupplierController {
   constructor(private readonly service: SupplierService) {}
 
   @Post()
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
   async createSupplier(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateSupplierDto,
@@ -48,6 +52,8 @@ export class SupplierController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
   async findAllSuppliers(
     @RequestContext() ctx: RequestContextDto,
     @Query() paginationDto: PaginationDto,
@@ -63,6 +69,8 @@ export class SupplierController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
   async findOneSupplier(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -78,6 +86,8 @@ export class SupplierController {
   }
 
   @Patch(':id')
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
   async updateSupplier(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -94,6 +104,8 @@ export class SupplierController {
   }
 
   @Delete(':id')
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
   async removeSupplier(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -108,6 +120,8 @@ export class SupplierController {
     }
   }
   @Get(':id/ledger')
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
+  @RequirePermissions(SystemPermissions.SUPPLIER_MANAGE)
   async getLedger(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

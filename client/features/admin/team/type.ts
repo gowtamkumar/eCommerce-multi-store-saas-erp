@@ -29,6 +29,7 @@ export interface MemberRowProps {
     setActiveDropdown: (id: string | null) => void;
     handleRoleChange: (memberId: string, role: UserRole) => void;
     handleRemoveMember: (memberId: string) => void;
+    handleEditRole: (member: TeamMember) => void;
     roleIcons: Record<UserRole, React.ReactElement>;
     roleColors: Record<UserRole, string>;
     getInitials: (name: string) => string;
@@ -40,6 +41,7 @@ export interface MemberTableProps {
     setActiveDropdown: (id: string | null) => void;
     handleRoleChange: (memberId: string, role: UserRole) => void;
     handleRemoveMember: (memberId: string) => void;
+    handleEditRole: (member: TeamMember) => void;
     roleIcons: Record<UserRole, React.ReactElement>;
     roleColors: Record<UserRole, string>;
     getInitials: (name: string) => string;

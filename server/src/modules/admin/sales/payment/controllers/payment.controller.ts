@@ -5,6 +5,8 @@ import { PaginationDto } from '@/common/dto/pagination.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Controller, Get, Logger, Query, UseGuards } from '@nestjs/common'
 import { PaymentService } from '../services/payment.service'
 
@@ -17,6 +19,7 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   @Get()
+  @RequirePermissions(SystemPermissions.PAYMENTS_READ)
   async findAllPayments(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: PaginationDto,

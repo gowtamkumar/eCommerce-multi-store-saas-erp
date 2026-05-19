@@ -13,6 +13,7 @@ const MemberTable: React.FC<MemberTableProps> = ({
     setActiveDropdown,
     handleRoleChange,
     handleRemoveMember,
+    handleEditRole,
     roleIcons,
     roleColors,
     getInitials
@@ -28,7 +29,7 @@ const MemberTable: React.FC<MemberTableProps> = ({
                     <p className="text-xs font-medium mt-1">Invite your first staff member to get started.</p>
                 </div>
             ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto min-h-[260px]">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
@@ -48,6 +49,7 @@ const MemberTable: React.FC<MemberTableProps> = ({
                                     setActiveDropdown={setActiveDropdown}
                                     handleRoleChange={handleRoleChange}
                                     handleRemoveMember={handleRemoveMember}
+                                    handleEditRole={handleEditRole}
                                     roleIcons={roleIcons}
                                     roleColors={roleColors}
                                     getInitials={getInitials}

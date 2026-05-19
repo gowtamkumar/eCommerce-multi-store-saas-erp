@@ -1,5 +1,7 @@
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -13,9 +15,10 @@ import { PricingService } from './pricing.service'
 @RequireFeature('/admin/products')
 @Controller('pricing')
 export class PricingController {
-  constructor(private readonly service: PricingService) {}
+  constructor(private readonly service: PricingService) { }
 
   @Post('price-books')
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async createPriceBook(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePriceBookDto,
@@ -30,6 +33,7 @@ export class PricingController {
   }
 
   @Get('price-books')
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findAllPriceBooks(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any[]>> {
@@ -43,6 +47,7 @@ export class PricingController {
   }
 
   @Post('product-prices')
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async addProductPrice(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: AddProductPriceDto,
@@ -57,6 +62,7 @@ export class PricingController {
   }
 
   @Get('product-prices/:productId')
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findProductPrices(
     @RequestContext() ctx: RequestContextDto,
     @Param('productId') productId: string,
@@ -71,6 +77,7 @@ export class PricingController {
   }
 
   @Delete('product-prices/:id')
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async deleteProductPrice(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

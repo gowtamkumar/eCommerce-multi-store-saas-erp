@@ -20,7 +20,7 @@ export class StaffInvitationService {
     private readonly userRepo: UserRepository,
     private readonly mailService: MailService,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   async inviteStaff(
     dto: InviteStaffDto,
@@ -51,6 +51,7 @@ export class StaffInvitationService {
         status: InvitationStatus.Pending,
         branchId: dto.branchId || null,
         warehouseId: dto.warehouseId || null,
+        roleId: dto.roleId || null,
       },
       ctx,
     )
@@ -116,6 +117,7 @@ export class StaffInvitationService {
         name,
         username,
         role: invitation.role,
+        roleId: invitation.roleId || null,
         status: UserStatus.ACTIVE,
         isEmailVerified: true,
         branchId: invitation.branchId || null,

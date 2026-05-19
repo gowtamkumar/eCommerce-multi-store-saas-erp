@@ -4,6 +4,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import {
   Body,
   Controller,
@@ -37,6 +39,7 @@ export class ProductController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() createProductDto: CreateProductDto,
@@ -52,6 +55,7 @@ export class ProductController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findAllProducts(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterProductDto,
@@ -73,6 +77,7 @@ export class ProductController {
   }
 
   @Get('filters')
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async getFilterOptions(
     @RequestContext() ctx: RequestContextDto,
     @Query('categoryId') categoryId?: string,
@@ -88,6 +93,7 @@ export class ProductController {
   }
 
   @Get('latest')
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findLatestProducts(
     @RequestContext() ctx: RequestContextDto,
     @Query('limit') limit?: number,
@@ -103,6 +109,7 @@ export class ProductController {
   }
 
   @Get('slug/:slug')
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findBySlugProduct(
     @RequestContext() ctx: RequestContextDto,
     @Param('slug') slug: string,
@@ -118,6 +125,7 @@ export class ProductController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findOneProduct(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -134,6 +142,7 @@ export class ProductController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async updateProduct(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -151,6 +160,7 @@ export class ProductController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async removeProduct(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeProduct.`)
     const result = await this.productService.removeProduct(id, ctx)
@@ -163,6 +173,7 @@ export class ProductController {
   }
 
   @Get(':id/reviews')
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async getReviewsProduct(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -179,6 +190,7 @@ export class ProductController {
 
   @Post(':id/reviews')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async createReviewProduct(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') productId: string,

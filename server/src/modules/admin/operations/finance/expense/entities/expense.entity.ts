@@ -2,13 +2,22 @@ import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { ExpenseCategory } from '@/common/enums/expense-category.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
 /** Composite index for fast tenant-scoped date-ordered list queries */
 @Index(['tenantId', 'expenseDate'])
 /** Composite index for fast category-filtered queries per tenant */
 @Index(['tenantId', 'category'])
+@Index(['branchId'])
 @Entity('expenses')
 export class ExpenseEntity extends BaseEntity {
+  @Column({ type: 'uuid', name: 'branch_id', nullable: true })
+  branchId: string
+
+  @ManyToOne(() => BranchEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'branch_id' })
+  branch: BranchEntity
+
   @Column({ type: 'varchar', length: 255 })
   title: string
 

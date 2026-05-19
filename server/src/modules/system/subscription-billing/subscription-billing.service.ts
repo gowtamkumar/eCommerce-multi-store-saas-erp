@@ -98,8 +98,8 @@ export class SubscriptionBillingService {
     let amount = isYearly ? Number(plan.yearlyPrice || 0) : Number(plan.monthlyPrice || 0)
 
     // Fallback: if yearly is zero, use 12x monthly
-    if (isYearly && amount > 0) {
-      amount = Number(plan.yearlyPrice || 0) * 12
+    if (isYearly && amount === 0) {
+      amount = Number(plan.monthlyPrice || 0) * 12
     }
 
     this.logger.log(`Subscription initiation: ${cycle} calculation Result: ${amount}`)

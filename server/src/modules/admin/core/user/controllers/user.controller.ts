@@ -1,10 +1,10 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
-import { Roles } from '@/common/decorators/roles.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { RolesGuard } from '@/common/guards/roles.guard'
 import {
   Body,
   Controller,
@@ -38,8 +38,7 @@ export class UserController {
   ) {}
 
   @Get('/')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @RequirePermissions(SystemPermissions.USERS_READ)
   async getUsers(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterUserDto: FilterUserDto,
@@ -80,9 +79,8 @@ export class UserController {
 
   // ─── Team Management Endpoints ───────────────────────────────────────────────
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Get('/team')
+  @RequirePermissions(SystemPermissions.USERS_READ)
   async getTeamMembers(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -91,9 +89,8 @@ export class UserController {
     return { success: true, statusCode: 200, message: 'Team members', data }
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Post('/team/invite')
+  @RequirePermissions(SystemPermissions.USERS_INVITE)
   async inviteStaff(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: InviteStaffDto,
@@ -105,9 +102,8 @@ export class UserController {
     return { success: true, statusCode: 201, message: data.message, data: data.invitation }
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Get('/team/invitations')
+  @RequirePermissions(SystemPermissions.USERS_INVITE)
   async getInvitations(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -116,9 +112,8 @@ export class UserController {
     return { success: true, statusCode: 200, message: 'Invitations', data }
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Delete('/team/invitations/:invitationId')
+  @RequirePermissions(SystemPermissions.USERS_INVITE)
   async revokeInvitation(
     @RequestContext() ctx: RequestContextDto,
     @Param('invitationId', ParseUUIDPipe) invitationId: string,
@@ -128,9 +123,8 @@ export class UserController {
     return { success: true, statusCode: 200, message: 'Invitation revoked', data }
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Patch('/team/members/:memberId/role')
+  @RequirePermissions(SystemPermissions.USERS_WRITE)
   async updateMemberRole(
     @RequestContext() ctx: RequestContextDto,
     @Param('memberId', ParseUUIDPipe) memberId: string,
@@ -146,9 +140,8 @@ export class UserController {
     }
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @Delete('/team/members/:memberId')
+  @RequirePermissions(SystemPermissions.USERS_WRITE)
   async removeTeamMember(
     @RequestContext() ctx: RequestContextDto,
     @Param('memberId', ParseUUIDPipe) memberId: string,
@@ -159,8 +152,7 @@ export class UserController {
   }
 
   @Get('/:id')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @RequirePermissions(SystemPermissions.USERS_READ)
   async getUser(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,
@@ -178,8 +170,7 @@ export class UserController {
   }
 
   @Post('/')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @RequirePermissions(SystemPermissions.USERS_WRITE)
   async createUser(
     @Body() createUserDto: CreateUserDto,
     @RequestContext() ctx: RequestContextDto,
@@ -236,8 +227,7 @@ export class UserController {
   }
 
   @Patch('/:id')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @RequirePermissions(SystemPermissions.USERS_WRITE)
   async updateUser(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) id: string,
@@ -256,8 +246,7 @@ export class UserController {
   }
 
   @Patch('/update-password/:id')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @RequirePermissions(SystemPermissions.USERS_WRITE)
   async updatePassword(
     @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) userId: string,
@@ -276,8 +265,7 @@ export class UserController {
   }
 
   @Delete('/:id')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
+  @RequirePermissions(SystemPermissions.USERS_WRITE)
   async deleteUser(
     @Param('id', ParseUUIDPipe) userId: string,
   ): Promise<BaseApiSuccessResponse<any>> {

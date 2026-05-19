@@ -14,6 +14,8 @@ import { Throttle } from '@nestjs/throttler'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { CouponService } from '../services/coupon.service'
 import { CreateCouponDto } from '../dto/create-coupon.dto'
 import { UpdateCouponDto } from '../dto/update-coupon.dto'
@@ -31,6 +33,7 @@ export class CouponController {
   constructor(private readonly couponService: CouponService) {}
 
   @Post()
+  @RequirePermissions(SystemPermissions.COUPONS_MANAGE)
   async createCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Body() createCouponDto: CreateCouponDto,
@@ -46,6 +49,7 @@ export class CouponController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.COUPONS_MANAGE)
   async findAllCoupons(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: any,
@@ -80,6 +84,7 @@ export class CouponController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.COUPONS_MANAGE)
   async findOneCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -95,6 +100,7 @@ export class CouponController {
   }
 
   @Patch(':id')
+  @RequirePermissions(SystemPermissions.COUPONS_MANAGE)
   async updateCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -111,6 +117,7 @@ export class CouponController {
   }
 
   @Delete(':id')
+  @RequirePermissions(SystemPermissions.COUPONS_MANAGE)
   async removeCoupon(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

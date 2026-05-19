@@ -5,6 +5,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import {
   Body,
   Controller,
@@ -31,6 +33,7 @@ export class BrandController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   @Audit({ entity: 'Brand', action: 'CREATE' })
   async createBrand(
     @RequestContext() ctx: RequestContextDto,
@@ -47,6 +50,7 @@ export class BrandController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findAllBrands(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<BrandResponseDto[]>> {
@@ -62,6 +66,7 @@ export class BrandController {
 
   @Get('stats')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findAllBrandsWithStats(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -76,6 +81,7 @@ export class BrandController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findOneBrand(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -92,6 +98,7 @@ export class BrandController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   @Audit({ entity: 'Brand', action: 'UPDATE' })
   async updateBrand(
     @RequestContext() ctx: RequestContextDto,
@@ -110,6 +117,7 @@ export class BrandController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   @Audit({ entity: 'Brand', action: 'DELETE' })
   async removeBrand(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeBrand.`)

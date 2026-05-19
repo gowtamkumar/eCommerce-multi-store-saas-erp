@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -31,6 +33,7 @@ export class FaqController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async createFaq(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateFaqDto,
@@ -46,6 +49,8 @@ export class FaqController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async findAllFaqs(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterFaqDto,
@@ -68,6 +73,7 @@ export class FaqController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async updateFaq(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -85,6 +91,7 @@ export class FaqController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async removeFaq(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeFaq.`)
     const result = await this.faqService.removeFaq(id, ctx)
@@ -97,6 +104,8 @@ export class FaqController {
   }
 
   @Post('multiple')
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async findMultipleFaqs(
     @RequestContext() ctx: RequestContextDto,
     @Body() body: { ids: string[] },
@@ -112,6 +121,8 @@ export class FaqController {
   }
 
   @Post('page')
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
+  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async findByPageFaq(
     @RequestContext() ctx: RequestContextDto,
     @Body() body: { pageId: string },

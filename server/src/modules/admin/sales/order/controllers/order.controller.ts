@@ -3,6 +3,8 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
 import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto'
 import { UpdateOrderDto } from '@/modules/admin/sales/order/dto/update-order.dto'
@@ -21,6 +23,7 @@ export class OrderController {
 
   // @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Post()
+  @RequirePermissions(SystemPermissions.ORDERS_WRITE)
   async createOrder(
     @RequestContext() ctx: RequestContextDto,
     @Body() createOrderDto: CreateOrderDto,
@@ -36,6 +39,7 @@ export class OrderController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.ORDERS_READ)
   async findAllOrders(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterOrderDto,
@@ -60,6 +64,7 @@ export class OrderController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.ORDERS_READ)
   async findOneOrder(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -75,6 +80,7 @@ export class OrderController {
   }
 
   @Get('user/:userId/count')
+  @RequirePermissions(SystemPermissions.ORDERS_READ)
   async getUserOrderCount(
     @RequestContext() ctx: RequestContextDto,
     @Param('userId') userId: string,
@@ -90,6 +96,7 @@ export class OrderController {
   }
 
   @Get('user/:userId')
+  @RequirePermissions(SystemPermissions.ORDERS_READ)
   async getUserOrders(
     @RequestContext() ctx: RequestContextDto,
     @Param('userId') userId: string,
@@ -116,6 +123,7 @@ export class OrderController {
   }
 
   @Patch(':id')
+  @RequirePermissions(SystemPermissions.ORDERS_WRITE)
   async updateOrder(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

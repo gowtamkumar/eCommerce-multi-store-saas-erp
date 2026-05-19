@@ -1,3 +1,5 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -31,6 +33,7 @@ export class PromotionController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
   async createPromotion(
     @RequestContext() ctx: RequestContextDto,
     @Body() createPromotionDto: CreatePromotionDto,
@@ -47,6 +50,7 @@ export class PromotionController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
   async findAllPromotions(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: any,
@@ -63,6 +67,7 @@ export class PromotionController {
 
   @Get('active')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
   async findActivePromotions(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PromotionResponseDto[]>> {
@@ -78,6 +83,8 @@ export class PromotionController {
 
   // ─── Public endpoint (no auth) — used by storefront /offers page ───
   @Get('offers')
+  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
+  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
   async getOfferProducts(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -92,6 +99,8 @@ export class PromotionController {
   }
 
   @Get('slug/:slug')
+  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
+  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
   async getPromotionBySlug(
     @Param('slug') slug: string,
     @RequestContext() ctx: RequestContextDto,
@@ -110,6 +119,7 @@ export class PromotionController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
   async findOnePromotion(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -126,6 +136,7 @@ export class PromotionController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
   async updatePromotion(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -143,6 +154,7 @@ export class PromotionController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
   async removePromotion(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

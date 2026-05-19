@@ -4,6 +4,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import {
   Body,
   Controller,
@@ -31,6 +33,7 @@ export class ReviewController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async createReview(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateReviewDto,
@@ -47,6 +50,7 @@ export class ReviewController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findAllReviews(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterReviewDto,
@@ -68,6 +72,7 @@ export class ReviewController {
   }
 
   @Get('public')
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findPublicReviews(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<ReviewResponseDto[]>> {
@@ -82,6 +87,7 @@ export class ReviewController {
   }
 
   @Get('product/:productId')
+  @RequirePermissions(SystemPermissions.CATALOG_READ)
   async findByProductReviews(
     @RequestContext() ctx: RequestContextDto,
     @Param('productId') productId: string,
@@ -98,6 +104,7 @@ export class ReviewController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async updateReview(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -115,6 +122,7 @@ export class ReviewController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
   async removeReview(@RequestContext() ctx: RequestContextDto, @Param('id') id: string) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called removeReview.`)
     const result = await this.reviewService.removeReview(id, ctx)

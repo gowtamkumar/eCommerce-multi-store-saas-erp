@@ -6,6 +6,8 @@ import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Body, Controller, Get, Logger, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import { PurchaseOrderResponseDto } from '../dto/purchase-order-response.dto'
@@ -24,6 +26,8 @@ export class PurchaseOrderController {
   constructor(private readonly service: PurchaseOrderService) {}
 
   @Post()
+  @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
   async createPurchaseOrder(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreatePurchaseOrderDto,
@@ -39,6 +43,8 @@ export class PurchaseOrderController {
   }
 
   @Get()
+  @RequirePermissions(SystemPermissions.PURCHASING_READ)
+  @RequirePermissions(SystemPermissions.PURCHASING_READ)
   async findAllPurchaseOrder(
     @RequestContext() ctx: RequestContextDto,
     @Query() paginationDto: PaginationDto,
@@ -61,6 +67,8 @@ export class PurchaseOrderController {
   }
 
   @Get(':id')
+  @RequirePermissions(SystemPermissions.PURCHASING_READ)
+  @RequirePermissions(SystemPermissions.PURCHASING_READ)
   async findOnePurchaseOrder(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -76,6 +84,8 @@ export class PurchaseOrderController {
   }
 
   @Patch(':id/status')
+  @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
   async updatePurchaseOrderStatus(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -94,6 +104,8 @@ export class PurchaseOrderController {
   }
 
   @Post(':id/payments')
+  @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
   async recordSupplierPayment(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
