@@ -14,6 +14,7 @@ import { DataSource } from 'typeorm'
 import { TenantEntity } from './entities/tenant.entity'
 import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entities/subscription-plan.entity'
 import { NotFoundException } from '@nestjs/common'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 describe('TenantService', () => {
   let service: TenantService
@@ -74,6 +75,7 @@ describe('TenantService', () => {
         { provide: SettingsService, useValue: {} },
         { provide: RoleManagementService, useValue: {} },
         { provide: DataSource, useValue: dataSource },
+        { provide: NotificationService, useValue: { createNotification: jest.fn().mockResolvedValue({}) } },
       ],
     }).compile()
 

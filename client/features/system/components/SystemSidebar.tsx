@@ -1,6 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
-import { Activity, Globe, Layers, LayoutDashboard, LogOut, Settings, ShieldCheck, Users, X } from 'lucide-react';
+import { Activity, Bell, Globe, Layers, LayoutDashboard, LogOut, Settings, ShieldCheck, Users, X } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -11,6 +11,7 @@ export default function SystemSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }:
         { icon: Globe, label: 'Tenants (Stores)', href: '/system/tenants' },
         { icon: Users, label: 'Global Users', href: '/system/users' },
         { icon: Activity, label: 'Platform Health', href: '/system/health' },
+        { icon: Bell, label: 'Platform Alerts', href: '/system/notifications' },
         { icon: ShieldCheck, label: 'Platform Audit Logs', href: '/system/audit-logs' },
         { icon: Layers, label: 'Subscription Plans', href: '/system/plans' },
         { icon: Users, label: 'Subscribers', href: '/system/subscribers' },

@@ -91,9 +91,8 @@ export default function AdminTopBar({
     useSocketEvent('notification', (newNotif: any) => {
         toast.custom((t) => (
             <div
-                className={`${
-                    t.visible ? 'animate-enter' : 'animate-leave'
-                } max-w-md w-full bg-white dark:bg-slate-900 shadow-lg rounded-2xl pointer-events-auto flex ring-1 ring-black/5 dark:ring-white/10 p-4 border border-brand-500/20`}
+                className={`${t.visible ? 'animate-enter' : 'animate-leave'
+                    } max-w-md w-full bg-white dark:bg-slate-900 shadow-lg rounded-2xl pointer-events-auto flex ring-1 ring-black/5 dark:ring-white/10 p-4 border border-brand-500/20`}
             >
                 <div className="flex-1 w-0">
                     <p className="text-sm font-semibold text-slate-900 dark:text-white">
@@ -560,7 +559,7 @@ export default function AdminTopBar({
                                             <CreditCard className="w-3.5 h-3.5 text-indigo-500" /> Billing & Plan
                                         </a>
                                         <a
-                                            href="/admin/settings"
+                                            href="/admin/settings/general"
                                             onClick={() => setIsProfileOpen(false)}
                                             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white transition-all font-bold"
                                         >
@@ -652,11 +651,10 @@ export default function AdminTopBar({
                                                                 {isSelf ? "You" : (msg.senderName || "Visitor")}
                                                             </span>
                                                             <div
-                                                                className={`px-3.5 py-2 rounded-2xl text-xs max-w-[85%] leading-relaxed ${
-                                                                    isSelf
-                                                                        ? 'bg-indigo-600 text-white rounded-tr-none shadow-md'
-                                                                        : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 rounded-tl-none'
-                                                                }`}
+                                                                className={`px-3.5 py-2 rounded-2xl text-xs max-w-[85%] leading-relaxed ${isSelf
+                                                                    ? 'bg-indigo-600 text-white rounded-tr-none shadow-md'
+                                                                    : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 rounded-tl-none'
+                                                                    }`}
                                                             >
                                                                 {msg.message}
                                                             </div>
@@ -744,11 +742,10 @@ export default function AdminTopBar({
                             setIsNotificationOpen(false);
                             setIsProfileOpen(false);
                         }}
-                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 border border-indigo-500/10 relative ${
-                            isChatOpen
-                                ? 'bg-slate-900 dark:bg-slate-700 text-white rotate-90 shadow-slate-900/20'
-                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30'
-                        }`}
+                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 border border-indigo-500/10 relative ${isChatOpen
+                            ? 'bg-slate-900 dark:bg-slate-700 text-white rotate-90 shadow-slate-900/20'
+                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30'
+                            }`}
                         title="Customer Live Support"
                     >
                         {isChatOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
