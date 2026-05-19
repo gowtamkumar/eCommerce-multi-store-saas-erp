@@ -1,17 +1,19 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.dto'
-import { FilterReturnDto } from '../dto/filter-return.dto'
 import { OrderReturnRepository } from '@/modules/admin/sales/order/repositoris/order-return.repository'
 import { OrderRepository } from '@/modules/admin/sales/order/repositoris/order.repository'
-import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
+import { FilterReturnDto } from '../dto/filter-return.dto'
 import { OrderReturnEntity } from '../entities/order-return.entity'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class ReturnService {
@@ -22,6 +24,7 @@ export class ReturnService {
     private orderRepository: OrderRepository,
     private inventoryService: InventoryLedgerService,
     private readonly cacheService: CacheService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createReturnRequest(
@@ -55,6 +58,20 @@ export class ReturnService {
     }
 
     const result = await this.returnRepository.createAndSaveReturn({ orderId, reason, items }, ctx)
+
+    // Trigger Notification for Refund/Return Request
+    try {
+      await this.notificationService.createNotification({
+        title: 'Refund Requested',
+        message: `Customer requested a refund/return for Order #${order.id.substring(0, 8)}.`,
+        type: 'WARNING',
+        link: `/admin/sales/returns/${result.id}`,
+        userId: null as any,
+      }, tenantId);
+    } catch (e) {
+      this.logger.error(`Failed to trigger return/refund notification: ${e.message}`)
+    }
+
     // Invalidate the admin list cache so the new return appears immediately
     await this.cacheService.delCache('returns:all', tenantId)
     return result

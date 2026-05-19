@@ -4,6 +4,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { LeadEntity } from './entities/lead.entity'
 import { LeadRepository } from './lead.repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class LeadService {
@@ -12,12 +13,27 @@ export class LeadService {
   constructor(
     private readonly leadRepository: LeadRepository,
     private readonly cache: CacheService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createLead(dto: CreateLeadDto, ctx: RequestContextDto): Promise<LeadEntity> {
     this.logger.log(`${this.createLead.name} Service Called`)
     const tenantId = ctx.tenantId
     const lead = await this.leadRepository.createAndSave(dto, ctx)
+
+    // Trigger New Lead Notification
+    try {
+      await this.notificationService.createNotification({
+        title: 'New Lead Generated',
+        message: `New lead "${lead.name || lead.email}" generated from Website.`,
+        type: 'SUCCESS',
+        link: `/admin/marketing/leads`,
+        userId: null as any, // Send to all admins
+      }, tenantId);
+    } catch (e) {
+      this.logger.error(`Failed to trigger new lead notification: ${e.message}`)
+    }
+
     await this.cache.delCache('leads:list', tenantId)
     return lead
   }

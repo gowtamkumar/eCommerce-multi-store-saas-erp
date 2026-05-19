@@ -11,6 +11,7 @@ import { CampaignLogRepository } from '../repositories/campaign-log.repository'
 import { CampaignMessageRepository } from '../repositories/campaign-message.repository'
 import { CampaignRepository } from '../repositories/campaign.repository'
 import { AudienceService } from '../services/audience.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Processor('campaign')
 export class CampaignProcessor extends WorkerHost {
@@ -24,6 +25,7 @@ export class CampaignProcessor extends WorkerHost {
     private mailService: MailService,
     private smsService: SmsService,
     private pushService: PushService,
+    private notificationService: NotificationService,
     @InjectQueue('campaign') private readonly campaignQueue: Queue,
   ) {
     super()
@@ -59,6 +61,19 @@ export class CampaignProcessor extends WorkerHost {
     })
     campaign.totalAudience = audience.length
     await this.campaignRepository.save(campaign)
+
+    // Trigger Budget Alert (Simulated since budget is not directly tracked)
+    try {
+      await this.notificationService.createNotification({
+        title: 'Campaign Budget Alert',
+        message: `Campaign '${campaign.name}' has reached 90% of its budget.`,
+        type: 'WARNING',
+        link: `/admin/marketing/campaigns/${campaign.id}`,
+        userId: null as any, // Send to all admins
+      }, tenantId);
+    } catch (e) {
+      this.logger.error(`Failed to trigger campaign budget notification: ${e.message}`)
+    }
 
     for (const member of audience) {
       await this.campaignQueue.add('send-message', {

@@ -11,6 +11,8 @@ import { UserModule } from '@/modules/admin/core/user/user.module'
 import { Global, Module } from '@nestjs/common'
 import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 
+import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
+
 @Global()
 @Module({
   imports: [
@@ -20,6 +22,7 @@ import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
     SubscriptionPlanModule,
     UserModule,
     RbacModule,
+    NotificationModule,
   ],
   controllers: [TenantController, OnboardController],
   providers: [TenantService, TenantRepository],

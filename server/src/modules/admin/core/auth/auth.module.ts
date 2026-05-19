@@ -11,12 +11,15 @@ import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 
+import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
+
 @Module({
   imports: [
     UserModule,
     TenantModule,
     MailModule,
     RbacModule,
+    NotificationModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

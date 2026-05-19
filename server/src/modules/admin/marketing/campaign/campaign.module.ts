@@ -19,6 +19,7 @@ import { AudienceService } from './services/audience.service'
 import { CampaignService } from './services/campaign.service'
 
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
     SmsModule,
     PushModule,
     TenantModule,
+    NotificationModule,
   ],
   providers: [
     AudienceService,

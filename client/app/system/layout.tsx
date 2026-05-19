@@ -1,7 +1,7 @@
 'use client';
 import SystemSidebar from '@/features/system/components/SystemSidebar';
+import SystemTopBar from '@/features/system/components/SystemTopBar';
 import { UserRole } from '@/lib/enums/user-role.enum';
-import { Menu } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -40,15 +40,10 @@ export default function SuperAdminLayout({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
       <SystemSidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
-      <main className="flex-1">
-        <div className="md:hidden p-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between sticky top-0 z-30">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Super Panel</h1>
-          <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 dark:text-slate-300">
-            <Menu className="w-6 h-6" />
-          </button>
-        </div>
+      <main className="flex-1 flex flex-col min-h-screen">
+        <SystemTopBar session={session} onMenuClick={() => setIsMobileMenuOpen(true)} />
 
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="p-4 md:p-8 max-w-7xl w-full mx-auto flex-1">
           {children}
         </div>
       </main>

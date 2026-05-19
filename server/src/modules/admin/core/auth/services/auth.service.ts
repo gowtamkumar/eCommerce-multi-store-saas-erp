@@ -21,6 +21,7 @@ import { UserEntity } from '../../user/entities/user.entity'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class AuthService {
@@ -33,6 +34,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly staffInvitationService: StaffInvitationService,
     private readonly permissionResolutionService: PermissionResolutionService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async register(
@@ -115,6 +117,21 @@ export class AuthService {
     let permissionManifest = null
     if (tenantId) {
       permissionManifest = await this.permissionResolutionService.resolvePermissionsManifest(user.id, tenantId)
+    }
+
+    // Trigger New Device Login Alert (Simulation)
+    try {
+      if (tenantId) {
+        await this.notificationService.createNotification({
+          title: 'Security Warning: New Login',
+          message: `A new device logged into your account (${user.username}). If this wasn't you, please reset your password.`,
+          type: 'WARNING',
+          link: `/admin/settings/security`,
+          userId: user.id, // specifically alert the user
+        }, tenantId);
+      }
+    } catch (e) {
+      this.logger.error(`Failed to trigger security notification: ${e.message}`)
     }
 
     return {

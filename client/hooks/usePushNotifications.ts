@@ -44,6 +44,13 @@ export function usePushNotifications() {
     if (!isSupported) return null;
 
     try {
+      const permissionResult = await Notification.requestPermission();
+      setPermission(permissionResult);
+      if (permissionResult !== 'granted') {
+        console.warn('User denied push notification permission');
+        return null;
+      }
+
       const registration = await navigator.serviceWorker.ready;
 
       // Get the VAPID public key from env
@@ -59,8 +66,6 @@ export function usePushNotifications() {
       });
 
       setSubscription(sub);
-      setPermission(Notification.permission);
-
       return sub;
     } catch (error) {
       console.error('Failed to subscribe the user:', error);

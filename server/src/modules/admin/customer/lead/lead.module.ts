@@ -7,9 +7,10 @@ import { LeadEntity } from './entities/lead.entity'
 import { LeadRepository } from './lead.repository'
 
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LeadEntity]), CacheModule, TenantModule],
+  imports: [TypeOrmModule.forFeature([LeadEntity]), CacheModule, TenantModule, NotificationModule],
   controllers: [LeadController],
   providers: [LeadService, LeadRepository],
   exports: [LeadService],

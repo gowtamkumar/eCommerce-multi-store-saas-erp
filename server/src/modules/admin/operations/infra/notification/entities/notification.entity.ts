@@ -6,8 +6,8 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 @Entity('system_notifications')
 @Index(['tenantId', 'userId'])
 export class NotificationEntity extends BaseEntity {
-  @Column({ type: 'uuid', name: 'tenant_id' })
-  tenantId: string;
+  @Column({ type: 'uuid', name: 'tenant_id', nullable: true })
+  tenantId: string | null;
 
   @Column({ type: 'varchar', length: 255 })
   title: string;
@@ -28,7 +28,7 @@ export class NotificationEntity extends BaseEntity {
   @JoinColumn({ name: 'user_id' })
   user: UserEntity | null;
 
-  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
+  @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'tenant_id' })
-  tenant: TenantEntity;
+  tenant: TenantEntity | null;
 }

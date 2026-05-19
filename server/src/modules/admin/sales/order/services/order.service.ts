@@ -36,6 +36,8 @@ import { PaymentRepository } from '../../payment/repositoris/payment.repository'
 import { OrderRepository } from '../repositoris/order.repository'
 import { OrderProcessHelper } from './order-process.helper'
 
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(OrderService.name)
@@ -54,6 +56,7 @@ export class OrderService {
     @InjectQueue('order') private readonly orderQueue: Queue,
     @Inject(forwardRef(() => FulfillmentService))
     private readonly fulfillmentService: FulfillmentService,
+    private readonly notificationService: NotificationService,
   ) { }
 
   async createOrder(
@@ -370,6 +373,45 @@ export class OrderService {
       }
 
       await queryRunner.commitTransaction()
+
+      // Notifications
+      try {
+        // Payment Failures / Refund Request
+        if (
+          (updateOrderDto.paymentStatus === PaymentStatus.FAILED && oldPaymentStatus !== PaymentStatus.FAILED)
+        ) {
+          const action = 'failed';
+          await this.notificationService.createNotification({
+            title: 'Payment Failed',
+            message: `Payment for Order #${savedOrder.id.substring(0, 8)} ${action}.`,
+            type: 'DANGER',
+            link: `/admin/sales/orders/${savedOrder.id}`,
+            userId: null as any,
+          }, tenantId);
+        }
+
+        // Shipped / Completed
+        if (updateOrderDto.status === OrderStatus.SHIPPED && oldStatus !== OrderStatus.SHIPPED) {
+          await this.notificationService.createNotification({
+            title: 'Order Shipped',
+            message: `Order #${savedOrder.id.substring(0, 8)} has been shipped.`,
+            type: 'INFO',
+            link: `/admin/sales/orders/${savedOrder.id}`,
+            userId: null as any,
+          }, tenantId);
+        } else if (updateOrderDto.status === OrderStatus.COMPLETED && oldStatus !== OrderStatus.COMPLETED) {
+          await this.notificationService.createNotification({
+            title: 'Order Delivered',
+            message: `Order #${savedOrder.id.substring(0, 8)} has been delivered successfully.`,
+            type: 'SUCCESS',
+            link: `/admin/sales/orders/${savedOrder.id}`,
+            userId: null as any,
+          }, tenantId);
+        }
+      } catch (e) {
+        this.logger.error(`Failed to trigger order notifications: ${e.message}`);
+      }
+
       await this.cacheService.delCache('orders:overview', tenantId)
       return savedOrder
     } catch (err) {

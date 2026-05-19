@@ -16,6 +16,8 @@ import { CurrentSubscriptionResponseDto } from './dto/current-subscription-respo
 import { SubscriptionInvoiceEntity } from './entities/subscription-invoice.entity'
 import { SubscriptionInvoiceRepository } from './subscription-invoice.repository'
 
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+
 @Injectable()
 export class SubscriptionBillingService {
   private readonly logger = new Logger(SubscriptionBillingService.name)
@@ -26,6 +28,7 @@ export class SubscriptionBillingService {
     private readonly planRepository: SubscriptionPlanRepository,
     private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async getCurrentSubscription(tenantId: string): Promise<CurrentSubscriptionResponseDto> {
@@ -37,6 +40,32 @@ export class SubscriptionBillingService {
       async () => {
         const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
         if (!tenant) throw new NotFoundException('Tenant not found')
+        
+        // Subscription Expiration Alert Logic
+        if (tenant.subscriptionEndsAt && !tenant.isExpired) {
+          const daysUntilExpiry = Math.ceil((tenant.subscriptionEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          if (daysUntilExpiry <= 7 && daysUntilExpiry > 0) {
+            // Use cache to prevent spamming the notification every time they load the page
+            const alertKey = `subscription_alert:${tenantId}`
+            const alertSent = await this.cacheService.getCache(alertKey, tenantId)
+            if (!alertSent) {
+              try {
+                await this.notificationService.createNotification({
+                  title: 'Subscription Expiring Soon',
+                  message: `Your billing plan is nearing expiry (in ${daysUntilExpiry} days). Please renew to avoid interruption.`,
+                  type: 'WARNING',
+                  link: `/admin/settings/billing`,
+                  userId: null as any,
+                }, tenantId);
+                // Set cache to prevent re-alerting for 24 hours
+                await this.cacheService.setCache(alertKey, true, 86400, tenantId)
+              } catch (e) {
+                this.logger.error(`Failed to trigger subscription expiry notification: ${e.message}`)
+              }
+            }
+          }
+        }
+
         return {
           planName: tenant.subscriptionPlan?.name || 'No Plan',
           status: tenant.subscriptionStatus,
@@ -221,6 +250,19 @@ export class SubscriptionBillingService {
       this.logger.log(
         `Tenant ${tenant.id} subscription updated: Plan ${plan.name}, startsAt: ${currentDate}, endsAt: ${newEndsAt}`,
       )
+
+      // Trigger global notification for new purchase/upgrade
+      try {
+        await this.notificationService.createNotification({
+          title: 'Subscription Purchase',
+          message: `Tenant '${tenant.storeName}' purchased/renewed the ${plan.name} plan for BDT ${record.amount}.`,
+          type: 'SUCCESS',
+          link: `/admin/system/tenants/${tenant.id}`,
+          userId: null as any,
+        }, null);
+      } catch (e) {
+        this.logger.error(`Failed to trigger global billing notification: ${e.message}`);
+      }
     }
 
     return record
@@ -233,10 +275,25 @@ export class SubscriptionBillingService {
     this.logger.log(`Handling failed subscription payment for transaction: ${transactionId}`)
     const record = await this.planRecordRepository.findByTransactionId(transactionId)
     if (record) {
-      return await this.planRecordRepository.updateAndSave(record, {
+      const updated = await this.planRecordRepository.updateAndSave(record, {
         status: PaymentStatus.FAILED,
         gatewayResponse,
       })
+
+      // Trigger global notification for payment failure
+      try {
+        await this.notificationService.createNotification({
+          title: 'Billing Payment Failed',
+          message: `Subscription payment of BDT ${record.amount} failed for Tenant ID: ${record.tenantId}.`,
+          type: 'DANGER',
+          link: `/admin/system/billing/invoices/${record.id}`,
+          userId: null as any,
+        }, null);
+      } catch (e) {
+        this.logger.error(`Failed to trigger global billing failure notification: ${e.message}`);
+      }
+
+      return updated;
     }
     return { success: false }
   }

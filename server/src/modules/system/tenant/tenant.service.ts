@@ -37,6 +37,8 @@ export interface CreateTenantResponseDto {
   }
 }
 
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+
 @Injectable()
 export class TenantService {
   private readonly logger = new Logger(TenantService.name)
@@ -51,6 +53,7 @@ export class TenantService {
     private readonly roleManagementService: RoleManagementService,
     private readonly dataSource: DataSource,
     private readonly cacheService: CacheService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -226,6 +229,16 @@ export class TenantService {
         .catch((err) =>
           this.logger.error(`Failed to send verification email for ${email}:`, err),
         ),
+      // Trigger Global Super Admin Notification
+      this.notificationService
+        .createNotification({
+          title: 'New Tenant Signup',
+          message: `A new store '${storeName}' (${subdomain}) has registered on the platform.`,
+          type: 'INFO',
+          link: `/admin/system/tenants/${result.tenant.id}`,
+          userId: null as any,
+        }, null)
+        .catch((err) => this.logger.error(`Failed to trigger super admin tenant notification:`, err)),
     ])
 
     return {
