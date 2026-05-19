@@ -6,6 +6,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { Public } from '@/common/decorators/public.decorator'
 import {
   Body,
   Controller,
@@ -65,8 +66,7 @@ export class PageController {
   }
 
   @Get('home')
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
+  @Public()
   async findHomePage(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<PageResponseDto>> {
@@ -81,8 +81,7 @@ export class PageController {
   }
 
   @Get('slug/:slug')
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
+  @Public()
   async findBySlugPage(
     @RequestContext() ctx: RequestContextDto,
     @Param('slug') slug: string,

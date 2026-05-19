@@ -4,10 +4,13 @@ import { UserRole } from '@/lib/enums/user-role.enum';
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSocketEvent } from '@/hooks/SocketContext';
+import { io, Socket } from 'socket.io-client';
+import { usePathname } from 'next/navigation';
 import {
     Bell,
     Building2,
     ChevronDown,
+    ChevronLeft,
     CreditCard,
     Lock,
     LogOut,
@@ -37,10 +40,23 @@ export default function AdminTopBar({
     onMenuClick,
     onLogout,
 }: AdminTopBarProps) {
+    const pathname = usePathname();
+    const isSupportRoute = pathname === "/admin/support";
+
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [chatMessage, setChatMessage] = useState('');
+    const [inputMessage, setInputMessage] = useState('');
+
+    const [conversations, setConversations] = useState<any[]>([]);
+    const [selectedConv, setSelectedConv] = useState<any | null>(null);
+    const [messages, setMessages] = useState<any[]>([]);
+    const [socket, setSocket] = useState<Socket | null>(null);
+    const [loadingConversations, setLoadingConversations] = useState(false);
+    const [loadingMessages, setLoadingMessages] = useState(false);
+
+    const selectedConvRef = useRef<any | null>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const [branches, setBranches] = useState<any[]>([]);
     const [activeBranch, setActiveBranch] = useState<any>(null);
@@ -116,12 +132,111 @@ export default function AdminTopBar({
         }
     }, [session]);
 
-    // Mock Live Chat Messages
-    const [chatMessages, setChatMessages] = useState([
-        { id: 1, sender: 'Support Staff', message: 'Hello! How can I assist you with the store management today?', time: '10:30 AM', self: false },
-        { id: 2, sender: 'You', message: 'I need to check the monthly sales payout reports.', time: '10:32 AM', self: true },
-        { id: 3, sender: 'Support Staff', message: 'Absolutely! You can find it in the Financial Reports under Profit & Loss or Export center.', time: '10:33 AM', self: false },
-    ]);
+    // Real Live Chat Logic
+    const loadConversations = async () => {
+        setLoadingConversations(true);
+        try {
+            const res = await fetchAPI('/chat/conversations?status=ACTIVE');
+            if (res.success && res.data) {
+                setConversations(res.data.conversations || []);
+            }
+        } catch (err) {
+            console.error('Failed to load conversations in top bar:', err);
+        } finally {
+            setLoadingConversations(false);
+        }
+    };
+
+    // Load active customer conversations on mount / open
+    useEffect(() => {
+        if (session && isChatOpen) {
+            loadConversations();
+        }
+    }, [session, isChatOpen]);
+
+    // WebSocket chat connection for Agent
+    useEffect(() => {
+        if (!session?.user?.accessToken || !isChatOpen) return;
+
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:3900";
+        const socketInstance = io(`${wsUrl}/chat`, {
+            auth: {
+                token: `Bearer ${session.user.accessToken}`,
+            },
+            transports: ["websocket"],
+        });
+
+        socketInstance.on("connect", () => {
+            console.log("Global Admin Chat Socket connected");
+            if (selectedConvRef.current) {
+                socketInstance.emit("room.join", {
+                    conversationId: selectedConvRef.current.id,
+                    senderType: "AGENT",
+                });
+            }
+        });
+
+        socketInstance.on("agent.conversation_updated", (data: any) => {
+            loadConversations();
+        });
+
+        socketInstance.on("message.receive", (message: any) => {
+            if (selectedConvRef.current?.id === message.conversationId) {
+                setMessages((prev) => {
+                    if (prev.some((m) => m.id === message.id)) return prev;
+                    return [...prev, message];
+                });
+            }
+        });
+
+        setSocket(socketInstance);
+
+        return () => {
+            socketInstance.disconnect();
+        };
+    }, [session, isChatOpen]);
+
+    // Dynamic Room Join
+    useEffect(() => {
+        if (!socket || !selectedConv) return;
+        socket.emit("room.join", {
+            conversationId: selectedConv.id,
+            senderType: "AGENT",
+        });
+    }, [socket, selectedConv?.id]);
+
+    const handleSelectConversation = async (conv: any) => {
+        setSelectedConv(conv);
+        setLoadingMessages(true);
+        try {
+            const res = await fetchAPI(`/chat/conversations/${conv.id}/messages`);
+            if (res.success && res.data) {
+                setMessages(res.data.messages || []);
+            }
+            // Mark read locally
+            setConversations((prev) =>
+                prev.map((c) => (c.id === conv.id ? { ...c, unreadCountAdmin: 0 } : c))
+            );
+        } catch (err) {
+            console.error('Failed to load conversation messages:', err);
+        } finally {
+            setLoadingMessages(false);
+        }
+    };
+
+    const handleSendRealMessage = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!inputMessage.trim() || !socket || !selectedConv) return;
+
+        socket.emit("message.send", {
+            conversationId: selectedConv.id,
+            message: inputMessage.trim(),
+            senderType: "AGENT",
+            senderName: session?.user?.name || "Agent",
+        });
+
+        setInputMessage("");
+    };
 
     const markAllAsRead = async () => {
         try {
@@ -211,35 +326,7 @@ export default function AdminTopBar({
         window.location.reload();
     };
 
-    const handleSendMessage = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!chatMessage.trim()) return;
 
-        const newMsg = {
-            id: Date.now(),
-            sender: 'You',
-            message: chatMessage,
-            time: new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
-            self: true,
-        };
-
-        setChatMessages([...chatMessages, newMsg]);
-        setChatMessage('');
-
-        // Mock automated support response after 1 second
-        setTimeout(() => {
-            setChatMessages((prev) => [
-                ...prev,
-                {
-                    id: Date.now() + 1,
-                    sender: 'Support Staff',
-                    message: 'Your query has been logged. Our operations desk is reviewing the ledgers.',
-                    time: new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
-                    self: false,
-                },
-            ]);
-        }, 1200);
-    };
 
     // Get initials for profile avatar fallback
     const getInitials = (name: string) => {
@@ -501,92 +588,178 @@ export default function AdminTopBar({
             </header>
 
             {/* Floating Live Support Chat (Fixed bottom-right corner) */}
-            <div className="fixed bottom-6 right-6 z-50 font-display flex flex-col items-end print:hidden" ref={chatRef}>
-                <AnimatePresence>
-                    {isChatOpen && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 30, scale: 0.95 }}
-                            transition={{ duration: 0.2 }}
-                            className="w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl shadow-indigo-500/15 overflow-hidden flex flex-col mb-4 animate-in fade-in slide-in-from-bottom-5 duration-200"
-                        >
-                            {/* Header */}
-                            <div className="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between shadow-sm">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="relative">
-                                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-xs">
-                                            HQ
+            {!isSupportRoute && (
+                <div className="fixed bottom-6 right-6 z-50 font-display flex flex-col items-end print:hidden" ref={chatRef}>
+                    <AnimatePresence>
+                        {isChatOpen && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 30, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                                className="w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl shadow-indigo-500/15 overflow-hidden flex flex-col mb-4 animate-in fade-in slide-in-from-bottom-5 duration-200"
+                            >
+                                {/* Header */}
+                                <div className="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between shadow-sm">
+                                    <div className="flex items-center gap-2.5">
+                                        {selectedConv ? (
+                                            <button
+                                                onClick={() => setSelectedConv(null)}
+                                                className="p-1 rounded-lg hover:bg-white/10 text-white transition-colors"
+                                            >
+                                                <ChevronLeft className="w-5 h-5" />
+                                            </button>
+                                        ) : (
+                                            <div className="relative">
+                                                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-xs">
+                                                    💬
+                                                </div>
+                                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border border-indigo-600 animate-pulse" />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <span className="font-extrabold text-xs block tracking-tight">
+                                                {selectedConv ? (selectedConv.customer?.name || selectedConv.customer?.username || `Visitor (#${selectedConv.visitorId.substring(0, 5)})`) : "Store Customer Chats"}
+                                            </span>
+                                            <span className="text-[10px] text-indigo-100 font-medium block">
+                                                {selectedConv ? "Active conversation session" : "Manage incoming customer messages"}
+                                            </span>
                                         </div>
-                                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border border-indigo-600 animate-pulse" />
                                     </div>
-                                    <div>
-                                        <span className="font-extrabold text-xs block tracking-tight">Merchant Help Desk</span>
-                                        <span className="text-[10px] text-indigo-100 font-medium block">Typically replies in a few minutes</span>
-                                    </div>
+                                    <button onClick={() => setIsChatOpen(false)} className="p-1 rounded-lg hover:bg-white/10 text-white transition-colors">
+                                        <X className="w-4 h-4" />
+                                    </button>
                                 </div>
-                                <button onClick={() => setIsChatOpen(false)} className="p-1 rounded-lg hover:bg-white/10 text-white transition-colors">
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
 
-                            {/* Message Logs */}
-                            <div className="p-4 h-72 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-slate-900/10">
-                                {chatMessages.map((msg) => (
-                                    <div key={msg.id} className={`flex flex-col ${msg.self ? 'items-end' : 'items-start'}`}>
-                                        <span className="text-[10px] text-slate-400 dark:text-slate-500 mb-1">{msg.sender}</span>
-                                        <div
-                                            className={`px-3.5 py-2 rounded-2xl text-xs max-w-[85%] leading-relaxed ${msg.self
-                                                ? 'bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-500/10'
-                                                : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 rounded-tl-none'
-                                                }`}
+                                {/* Message Logs / Active Chat Selection */}
+                                <div className="p-4 h-72 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-slate-900/10">
+                                    {selectedConv ? (
+                                        loadingMessages ? (
+                                            <div className="flex items-center justify-center h-full text-xs text-slate-400">
+                                                Loading messages...
+                                            </div>
+                                        ) : messages.length === 0 ? (
+                                            <div className="flex items-center justify-center h-full text-xs text-slate-400">
+                                                No messages yet. Send a greeting!
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {messages.map((msg: any) => {
+                                                    const isSelf = msg.senderType === "AGENT";
+                                                    return (
+                                                        <div key={msg.id} className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'}`}>
+                                                            <span className="text-[10px] text-slate-400 dark:text-slate-500 mb-1">
+                                                                {isSelf ? "You" : (msg.senderName || "Visitor")}
+                                                            </span>
+                                                            <div
+                                                                className={`px-3.5 py-2 rounded-2xl text-xs max-w-[85%] leading-relaxed ${
+                                                                    isSelf
+                                                                        ? 'bg-indigo-600 text-white rounded-tr-none shadow-md'
+                                                                        : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 rounded-tl-none'
+                                                                }`}
+                                                            >
+                                                                {msg.message}
+                                                            </div>
+                                                            <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-1">
+                                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
+                                                <div ref={messagesEndRef} />
+                                            </>
+                                        )
+                                    ) : (
+                                        loadingConversations ? (
+                                            <div className="flex items-center justify-center h-full text-xs text-slate-400">
+                                                Loading active customer list...
+                                            </div>
+                                        ) : conversations.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                                                <MessageSquare className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
+                                                <span className="text-xs font-bold text-slate-400">No active customer chats</span>
+                                                <span className="text-[10px] text-slate-400 mt-0.5">When visitors chat on the storefront, they appear here.</span>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {conversations.map((conv: any) => {
+                                                    const lastMsg = conv.messages?.[0]?.message || "Open chat thread...";
+                                                    const senderLabel = conv.customer?.name || conv.customer?.username || `Visitor (#${conv.visitorId.substring(0, 5)})`;
+                                                    return (
+                                                        <button
+                                                            key={conv.id}
+                                                            onClick={() => handleSelectConversation(conv)}
+                                                            className="w-full text-left p-3 rounded-xl border border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all flex items-center justify-between"
+                                                        >
+                                                            <div className="flex-1 min-w-0 pr-2">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-xs font-bold text-slate-800 dark:text-white truncate">
+                                                                        {senderLabel}
+                                                                    </span>
+                                                                    <span className="text-[9px] text-slate-400">
+                                                                        {new Date(conv.lastMessageAt || conv.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                                                                    {lastMsg}
+                                                                </p>
+                                                            </div>
+                                                            {conv.unreadCountAdmin > 0 && (
+                                                                <span className="w-2.5 h-2.5 bg-rose-600 rounded-full flex-shrink-0" />
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+
+                                {/* Footer Send Form (Only when conversation selected) */}
+                                {selectedConv && (
+                                    <form onSubmit={handleSendRealMessage} className="p-3 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Type support query..."
+                                            value={inputMessage}
+                                            onChange={(e) => setInputMessage(e.target.value)}
+                                            className="flex-1 px-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25"
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center"
                                         >
-                                            {msg.message}
-                                        </div>
-                                        <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-1">{msg.time}</span>
-                                    </div>
-                                ))}
-                            </div>
+                                            <Send className="w-3.5 h-3.5" />
+                                        </button>
+                                    </form>
+                                )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                            {/* Footer Send Form */}
-                            <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="Type support query..."
-                                    value={chatMessage}
-                                    onChange={(e) => setChatMessage(e.target.value)}
-                                    className="flex-1 px-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25"
-                                />
-                                <button
-                                    type="submit"
-                                    className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center"
-                                >
-                                    <Send className="w-3.5 h-3.5" />
-                                </button>
-                            </form>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Floating Action Button */}
-                <button
-                    onClick={() => {
-                        setIsChatOpen(!isChatOpen);
-                        setIsNotificationOpen(false);
-                        setIsProfileOpen(false);
-                    }}
-                    className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 border border-indigo-500/10 relative ${isChatOpen
-                        ? 'bg-slate-900 dark:bg-slate-700 text-white rotate-90 shadow-slate-900/20'
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30'
+                    {/* Floating Action Button */}
+                    <button
+                        onClick={() => {
+                            setIsChatOpen(!isChatOpen);
+                            setIsNotificationOpen(false);
+                            setIsProfileOpen(false);
+                        }}
+                        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 border border-indigo-500/10 relative ${
+                            isChatOpen
+                                ? 'bg-slate-900 dark:bg-slate-700 text-white rotate-90 shadow-slate-900/20'
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30'
                         }`}
-                    title="Live Support Chat"
-                >
-                    {isChatOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
-                    {!isChatOpen && (
-                        <span className="absolute top-0 right-0 w-3 h-3 bg-emerald-400 rounded-full ring-2 ring-white dark:ring-slate-800 animate-pulse" />
-                    )}
-                </button>
-            </div>
+                        title="Customer Live Support"
+                    >
+                        {isChatOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+                        {!isChatOpen && conversations.some(c => c.unreadCountAdmin > 0) && (
+                            <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-rose-600 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-800 text-[8px] font-black text-white">
+                                {conversations.reduce((sum, c) => sum + (c.unreadCountAdmin || 0), 0)}
+                            </span>
+                        )}
+                    </button>
+                </div>
+            )}
         </>
     );
 }
