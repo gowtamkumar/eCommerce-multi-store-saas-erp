@@ -7,9 +7,10 @@ import { ExpenseRepository } from './expense.repository'
 import { ExpenseService } from './expense.service'
 
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
+import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ExpenseEntity]), CacheModule, TenantModule],
+  imports: [TypeOrmModule.forFeature([ExpenseEntity]), CacheModule, TenantModule, NotificationModule],
   controllers: [ExpenseController],
   providers: [ExpenseService, ExpenseRepository],
   exports: [ExpenseService],

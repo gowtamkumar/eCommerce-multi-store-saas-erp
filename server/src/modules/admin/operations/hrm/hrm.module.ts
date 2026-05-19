@@ -18,12 +18,14 @@ import { HrmRepository } from './hrm.repository'
 import { AccountingModule } from '@/modules/admin/operations/finance/accounting/accounting.module'
 import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
 import { UserModule } from '@/modules/admin/core/user/user.module'
+import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 
 @Module({
   imports: [
     AccountingModule,
     AuditLogModule,
     forwardRef(() => UserModule),
+    NotificationModule,
     TypeOrmModule.forFeature([
       DepartmentEntity,
       DesignationEntity,

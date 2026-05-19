@@ -10,6 +10,7 @@ import { InvitationStatus, StaffInvitationEntity } from '../entities/staff-invit
 import { UserEntity } from '../entities/user.entity'
 import { StaffInvitationRepository } from '../repositories/staff-invitation.repository'
 import { UserRepository } from '../repositories/user.repository'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class StaffInvitationService {
@@ -20,6 +21,7 @@ export class StaffInvitationService {
     private readonly userRepo: UserRepository,
     private readonly mailService: MailService,
     private readonly cacheService: CacheService,
+    private readonly notificationService: NotificationService,
   ) { }
 
   async inviteStaff(
@@ -128,6 +130,19 @@ export class StaffInvitationService {
 
     await this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Accepted })
     await this.cacheService.delCache('team:members', invitation.tenantId)
+
+    // Trigger Notification for Admin
+    try {
+      await this.notificationService.createNotification({
+        title: 'Staff Invitation Accepted',
+        message: `${name || username} (${invitation.email}) has accepted the invitation and joined the team as ${invitation.role}.`,
+        type: 'SUCCESS',
+        link: '/admin/settings/team',
+        userId: null as any, // Send to all admins
+      }, invitation.tenantId)
+    } catch (e) {
+      this.logger.error(`Failed to trigger invitation acceptance notification: ${e.message}`)
+    }
 
     return { message: 'Invitation accepted successfully.', user }
   }

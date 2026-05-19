@@ -13,6 +13,7 @@ import { ProductVariantRepository } from '@/modules/admin/catalog/product/reposi
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { AccountingModule } from '@/modules/admin/operations/finance/accounting/accounting.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
+import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module
     TenantModule,
     AccountingModule,
     CacheModule,
+    NotificationModule,
   ],
   controllers: [InventoryLedgerController],
   providers: [

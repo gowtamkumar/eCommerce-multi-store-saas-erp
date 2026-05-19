@@ -15,6 +15,8 @@ interface FindAllOptions {
   endDate?: Date
 }
 
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+
 @Injectable()
 export class ExpenseService {
   private readonly logger = new Logger(ExpenseService.name)
@@ -22,6 +24,7 @@ export class ExpenseService {
   constructor(
     private readonly expenseRepository: ExpenseRepository,
     private readonly cacheService: CacheService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createExpense(
@@ -31,6 +34,23 @@ export class ExpenseService {
     this.logger.log(`${this.createExpense.name} Service Called`)
     const tenantId = ctx.tenantId
     const result = await this.expenseRepository.createAndSave(createExpenseDto, ctx)
+    
+    // Trigger High Expense Warning
+    try {
+      const EXPENSE_THRESHOLD = 1000;
+      if (createExpenseDto.amount > EXPENSE_THRESHOLD) {
+        await this.notificationService.createNotification({
+          title: 'High Expense Recorded',
+          message: `A new expense "${createExpenseDto.title}" for ${createExpenseDto.amount} requires review.`,
+          type: 'WARNING',
+          link: '/admin/finance/expenses',
+          userId: null as any, // Tenant-wide admin notification
+        }, tenantId);
+      }
+    } catch (e) {
+      this.logger.error(`Failed to trigger high expense notification: ${e.message}`)
+    }
+
     // Invalidate list cache on creation
     await this.cacheService.delCache('expenses:list', tenantId)
     return result

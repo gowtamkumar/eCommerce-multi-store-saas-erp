@@ -11,6 +11,7 @@ import { CacheService } from '../../infra/cache/cache.service'
 import { CogsService } from '@/modules/admin/operations/finance/accounting/services/cogs.service'
 import { AccountingIntegrationService } from '@/modules/admin/operations/finance/accounting/services/accounting-integration.service'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class InventoryLedgerService {
@@ -23,6 +24,7 @@ export class InventoryLedgerService {
     private readonly cacheService: CacheService,
     private readonly cogsService: CogsService,
     private readonly accountingIntegration: AccountingIntegrationService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -147,6 +149,45 @@ export class InventoryLedgerService {
     // Invalidate inventory caches
     await this.cacheService.delCache(`inventory:list`, tenantId)
     await this.cacheService.delCache(`inventory:summary`, tenantId)
+
+    // Trigger Low Stock / Out of Stock Warnings
+    try {
+      const newGlobalStock = await this.repository.getGlobalLiveStock(dto.productId, dto.variantId || null, tenantId)
+      const currentGlobalStock = newGlobalStock - signedQty
+
+      let threshold = product.lowStockThreshold ?? 5
+      let skuText = ''
+      if (dto.variantId && product.variants) {
+        const variant = product.variants.find((v) => v.id === dto.variantId)
+        if (variant) {
+          threshold = variant.lowStockThreshold ?? threshold
+          skuText = variant.sku ? ` (${variant.sku})` : ''
+        }
+      }
+
+      // Out of Stock Transition
+      if (currentGlobalStock > 0 && newGlobalStock <= 0) {
+        await this.notificationService.createNotification({
+          title: 'Product Out of Stock',
+          message: `Product "${product.name}"${skuText} is completely out of stock!`,
+          type: 'DANGER',
+          link: `/admin/products/${product.id}`,
+          userId: null as any,
+        }, tenantId)
+      }
+      // Low Stock Transition
+      else if (currentGlobalStock > threshold && newGlobalStock <= threshold && newGlobalStock > 0) {
+        await this.notificationService.createNotification({
+          title: 'Low Stock Alert',
+          message: `Product "${product.name}"${skuText} is low on stock. Current quantity: ${newGlobalStock} (Threshold: ${threshold}).`,
+          type: 'WARNING',
+          link: `/admin/products/${product.id}`,
+          userId: null as any,
+        }, tenantId)
+      }
+    } catch (notifError) {
+      this.logger.error(`Failed to trigger inventory notification: ${notifError.message}`)
+    }
 
     return transaction
   }

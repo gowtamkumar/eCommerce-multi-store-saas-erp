@@ -19,6 +19,7 @@ import { GrnRepository } from '@/modules/admin/operations/logistics/grn/grn.repo
 import { GrnStatus } from '@/common/enums/grn-status.enum'
 import { SupplierAPLedgerEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier-ap-ledger.entity'
 import { SupplierAPReferenceType } from '@/modules/admin/operations/finance/supplier/enums/supplier-ap-Refernce-type.enum'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class PurchaseOrderService {
@@ -31,6 +32,7 @@ export class PurchaseOrderService {
     private readonly dataSource: DataSource,
     @InjectQueue('product') private readonly productQueue: Queue,
     private readonly grnRepository?: GrnRepository,
+    private readonly notificationService?: NotificationService,
   ) {}
 
   /**
@@ -264,6 +266,20 @@ export class PurchaseOrderService {
       }
 
       await queryRunner.commitTransaction()
+
+      // Trigger Notification for Supplier Invoice Due
+      try {
+        await this.notificationService.createNotification({
+          title: 'Supplier Invoice Due soon',
+          message: `Invoice for PO ${savedOrder.referenceNumber} is generated and will be due.`,
+          type: 'WARNING',
+          link: `/admin/finance/purchases/orders/${savedOrder.id}`,
+          userId: null as any,
+        }, tenantId);
+      } catch (e) {
+        this.logger.error(`Failed to trigger supplier invoice notification: ${e.message}`);
+      }
+
       return savedOrder
     } catch (err) {
       this.logger.error('Receive Purchase Order failed', err.stack)

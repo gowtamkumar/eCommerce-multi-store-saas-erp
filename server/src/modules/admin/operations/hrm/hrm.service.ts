@@ -5,6 +5,7 @@ import { UserRole } from '@/common/enums/user/user-role.enum'
 import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common'
 import {
   AssignShiftDto,
@@ -26,6 +27,7 @@ export class HrmService {
     private readonly auditLogService: AuditLogService,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async getDashboardStats(ctx: RequestContextDto) {
@@ -388,6 +390,21 @@ export class HrmService {
       endDate: new Date(data.endDate),
     })
 
+    // Trigger Notification for Admin
+    try {
+      const employee = await this.hrmRepo.findEmployeeById(employeeId, ctx.tenantId)
+      const empName = employee?.user?.name || employee?.user?.username || 'An employee'
+      await this.notificationService.createNotification({
+        title: 'New Leave Request Submitted',
+        message: `${empName} has requested ${data.totalDays} days of ${data.leaveType} leave starting from ${new Date(data.startDate).toLocaleDateString()}.`,
+        type: 'info',
+        link: '/admin/hrm/leaves',
+        userId: null, // Send to all admins
+      }, ctx.tenantId)
+    } catch (e) {
+      this.logger.error(`Failed to trigger leave request notification: ${e.message}`)
+    }
+
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
       entity: 'LeaveRequest',
@@ -424,6 +441,22 @@ export class HrmService {
     if (quota) {
       quota.usedDays += request.totalDays
       await (this.hrmRepo as any).leaveQuotaRepo.save(quota)
+    }
+
+    // Trigger Notification for Employee
+    try {
+      const employee = await this.hrmRepo.findEmployeeById(request.employeeId, ctx.tenantId)
+      if (employee?.userId) {
+        await this.notificationService.createNotification({
+          title: 'Leave Request Approved',
+          message: `Your leave request for ${new Date(request.startDate).toLocaleDateString()} has been approved.`,
+          type: 'success',
+          link: '/admin/profile',
+          userId: employee.userId,
+        }, ctx.tenantId)
+      }
+    } catch (e) {
+      this.logger.error(`Failed to trigger leave approval notification: ${e.message}`)
     }
 
     await this.auditLogService.log(ctx, {
@@ -656,6 +689,20 @@ export class HrmService {
 
     // Update applicant status to reflect onboarding completion
     await this.hrmRepo.updateApplicantStatus(id, ApplicantStatus.JOINED)
+
+    // Trigger Notification for Admin
+    try {
+      const applicantName = `${applicant.firstName} ${applicant.lastName}`.trim() || 'An applicant'
+      await this.notificationService.createNotification({
+        title: 'Applicant Onboarded Successfully',
+        message: `Applicant "${applicantName}" has been onboarded as an Employee.`,
+        type: 'SUCCESS',
+        link: '/admin/hrm/employees',
+        userId: null as any, // Send to all admins
+      }, ctx.tenantId)
+    } catch (e) {
+      this.logger.error(`Failed to trigger applicant onboarding notification: ${e.message}`)
+    }
 
     await this.auditLogService.log(ctx, {
       action: 'ONBOARD',
