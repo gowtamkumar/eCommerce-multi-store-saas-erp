@@ -402,6 +402,83 @@ export class TenantService {
     }, {})
   }
 
+  async updateTenantPlan(id: string, planId: string): Promise<TenantEntity> {
+    this.logger.log(`Updating tenant plan for tenant ID: ${id} to plan ID: ${planId}`)
+
+    const tenant = await this.findOneTenants(id)
+    const newPlan = await this.subscriptionPlanService.findOneSubscriptionPlan(planId)
+    if (!newPlan) {
+      throw new NotFoundException(`Subscription plan with ID "${planId}" not found`)
+    }
+
+    return await this.dataSource.transaction(async (manager) => {
+      const tenantRepo = manager.getRepository(TenantEntity)
+      const featureRepo = manager.getRepository(TenantFeatureEntity)
+
+      // 1. Update the tenant's plan relation
+      tenant.subscriptionPlanId = planId
+      tenant.subscriptionPlan = newPlan
+      const updatedTenant = await tenantRepo.save(tenant)
+
+      // 2. Load existing feature flags for this tenant
+      const existingFeatures = await featureRepo.find({ where: { tenantId: id } })
+      const existingMap = new Map(existingFeatures.map((f) => [f.featureSlug, f]))
+
+      const featuresToSave: TenantFeatureEntity[] = []
+
+      // Sync feature flags based on the new plan's features list
+      const newFeaturesList = newPlan.features || []
+      for (const slug of newFeaturesList) {
+        const existing = existingMap.get(slug)
+        if (existing) {
+          if (!existing.isEnabled) {
+            existing.isEnabled = true
+            existing.enabledAt = new Date()
+            featuresToSave.push(existing)
+          }
+        } else {
+          featuresToSave.push(
+            featureRepo.create({
+              tenantId: id,
+              featureSlug: slug,
+              isEnabled: true,
+              enabledAt: new Date(),
+            }),
+          )
+        }
+      }
+
+      // Mark features NOT in the new plan as disabled (soft downgrade)
+      const newFeaturesSet = new Set(newFeaturesList)
+      for (const feat of existingFeatures) {
+        if (!newFeaturesSet.has(feat.featureSlug) && feat.isEnabled) {
+          feat.isEnabled = false
+          featuresToSave.push(feat)
+        }
+      }
+
+      if (featuresToSave.length > 0) {
+        await featureRepo.save(featuresToSave)
+      }
+
+      // 3. Clear tenant cache
+      await this.invalidateTenantCache(id, tenant.subdomain, tenant.customDomain)
+
+      // 4. Invalidate permission manifest caches for all tenant users
+      try {
+        const members = await this.userRepository.findTeamMembers(id)
+        for (const member of members) {
+          const cacheKey = `rbac:manifest:${id}:${member.id}`
+          await this.cacheService.delCache(cacheKey)
+        }
+      } catch (err) {
+        this.logger.error(`Failed to invalidate team member permission caches: ${err.message}`)
+      }
+
+      return updatedTenant
+    })
+  }
+
   isSubscriptionExpired(tenant: TenantEntity): boolean {
     return tenant.isExpired
   }

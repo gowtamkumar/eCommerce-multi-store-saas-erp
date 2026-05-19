@@ -43,7 +43,7 @@ export class SuperAdminController {
     private readonly pageService: PageService,
     private readonly planService: SubscriptionPlanService,
     private readonly cacheService: CacheService,
-  ) {}
+  ) { }
 
   @Post('/setup')
   async setup(
@@ -70,47 +70,128 @@ export class SuperAdminController {
       { tenantId: 'system', userId: 'system' } as RequestContextDto,
     )
 
-    // Create Initial Subscription Plans if none exist
-    const existingPlans = await this.planService.findAllSubscriptionPlans()
-    if (existingPlans.length === 0) {
-      await this.planService.createSubscriptionPlan(
-        {
-          name: 'Pro Seller',
-          description:
-            'The essentials to get your store up and running with professional features.',
-          price: 29,
-          monthlyPrice: 29,
-          yearlyPrice: 290,
-          features: [
-            'Unlimited Products',
-            'Custom Domains',
-            'Advanced Analytics',
-            'Priority Support',
-          ],
-          isActive: true,
-          isPopular: true,
-        },
-        { tenantId: 'system', userId: 'system' } as RequestContextDto,
-      )
+    // Create or Update Initial Subscription Plans
+    const plansToSeed = [
+      {
+        name: 'Starter',
+        description: 'Basic storefront configuration and single-location catalog.',
+        price: 0,
+        monthlyPrice: 0,
+        yearlyPrice: 0,
+        features: [
+          '/admin',
+          '/admin/products',
+          '/admin/categories',
+          '/admin/brands',
+          '/admin/media',
+          '/admin/profile',
+          '/admin/faqs',
+        ],
+        isActive: true,
+        isPopular: false,
+      },
+      {
+        name: 'Pro Seller',
+        description: 'The essentials to get your store up and running with professional features.',
+        price: 29,
+        monthlyPrice: 29,
+        yearlyPrice: 290,
+        features: [
+          '/admin',
+          '/admin/products',
+          '/admin/categories',
+          '/admin/brands',
+          '/admin/media',
+          '/admin/profile',
+          '/admin/faqs',
+          '/admin/pos',
+          '/admin/orders',
+          '/admin/returns',
+          '/admin/fulfillment',
+          '/admin/couriers',
+          '/admin/coupons',
+          '/admin/promotions',
+          '/admin/pages',
+          '/admin/reviews',
+          '/admin/expenses',
+          '/admin/settings',
+          '/admin/customers',
+          '/admin/subscribers',
+          '/admin/leads',
+          '/admin/carts',
+          '/admin/payments',
+          '/admin/campaigns',
+        ],
+        isActive: true,
+        isPopular: true,
+      },
+      {
+        name: 'Enterprise',
+        description: 'Scale your business with dedicated support and advanced infrastructure.',
+        price: 99,
+        monthlyPrice: 99,
+        yearlyPrice: 990,
+        features: [
+          '/admin',
+          '/admin/products',
+          '/admin/categories',
+          '/admin/brands',
+          '/admin/media',
+          '/admin/profile',
+          '/admin/faqs',
+          '/admin/pos',
+          '/admin/orders',
+          '/admin/returns',
+          '/admin/fulfillment',
+          '/admin/couriers',
+          '/admin/coupons',
+          '/admin/promotions',
+          '/admin/pages',
+          '/admin/reviews',
+          '/admin/expenses',
+          '/admin/settings',
+          '/admin/customers',
+          '/admin/subscribers',
+          '/admin/leads',
+          '/admin/carts',
+          '/admin/payments',
+          '/admin/campaigns',
+          '/admin/warehouses',
+          '/admin/hrm',
+          '/admin/inventory',
+          '/admin/finance',
+          '/admin/finance/profit-loss',
+          '/admin/finance/balance-sheet',
+          '/admin/finance/ledger',
+          '/admin/invoices',
+          '/admin/purchases',
+          '/admin/grn',
+          '/admin/suppliers',
+          '/admin/reports',
+          '/admin/reports/sales',
+          '/admin/reports/profit-loss',
+          '/admin/reports/supplier-ledger',
+          '/admin/reports/customer-ledger',
+          '/admin/reports/cash-flow',
+          '/admin/reports/export',
+          '/admin/reports/finance',
+        ],
+        isActive: true,
+        isPopular: false,
+      },
+    ]
 
-      await this.planService.createSubscriptionPlan(
-        {
-          name: 'Enterprise',
-          description: 'Scale your business with dedicated support and advanced infrastructure.',
-          price: 99,
-          monthlyPrice: 99,
-          yearlyPrice: 990,
-          features: [
-            'Priority 24/7 Support',
-            'Dedicated Account Manager',
-            'Custom API Access',
-            'SLA Guarantee',
-          ],
-          isActive: true,
-          isPopular: false,
-        },
-        { tenantId: 'system', userId: 'system' } as RequestContextDto,
-      )
+    const existingPlans = await this.planService.findAllSubscriptionPlans()
+    for (const planData of plansToSeed) {
+      const existing = existingPlans.find((p) => p.name === planData.name)
+      if (existing) {
+        await this.planService.updateSubscriptionPlan(existing.id, planData)
+      } else {
+        await this.planService.createSubscriptionPlan(
+          planData,
+          { tenantId: 'system', userId: 'system' } as RequestContextDto,
+        )
+      }
     }
 
     return {
@@ -376,12 +457,11 @@ export class SuperAdminController {
     @Param('id') id: string,
     @Body('planId') planId: string,
   ): Promise<BaseApiSuccessResponse<null>> {
-    // This would require a new method in TenantService to update the plan relation
-    // For now, removing the legacy tier logic.
+    await this.tenantService.updateTenantPlan(id, planId)
     return {
       success: true,
       statusCode: 200,
-      message: 'Plan update logic to be implemented with dynamic plans',
+      message: 'Plan updated successfully',
       data: null,
     }
   }
