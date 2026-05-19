@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useCart } from "@/hooks/CartContext";
 import { useSettings } from "@/hooks/SettingsContext";
 import { PaymentMethod } from "@/lib/enums/payment-method.enum";
@@ -12,14 +11,14 @@ import { motion } from "framer-motion";
 import { Check, Download, Loader2, ShoppingBag } from "lucide-react";
 import { getSession, signIn, useSession } from "next-auth/react";
 import Link from "next/link";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
-import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
+import { ShippingZoneType } from "@/lib/enums/shipping-zone-type.enum";
 import type { ShippingAddress } from "@/services/shippingAddress";
 import * as shippingAddressApi from "@/services/shippingAddress";
-import { ShippingZoneType } from "@/lib/enums/shipping-zone-type.enum";
 
 // Sub-components
 import CheckoutForm from "./CheckoutForm";
@@ -36,12 +35,12 @@ export default function Checkout() {
     const { selectedCurrency, settings } = useSettings();
     const { data: session } = useSession();
     const { downloadInvoice } = useDownloadInvoice();
-    
+
     // UI State
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<"form" | "success">("form");
     const [lastOrder, setLastOrder] = useState<any>(null);
-    
+
     // Form & Address State
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.COD);
     const [shippingZone, setShippingZone] = useState<ShippingZoneType>(ShippingZoneType.INSIDE);
@@ -51,7 +50,7 @@ export default function Checkout() {
     const [saveNewAddress, setSaveNewAddress] = useState(false);
     const [couponCode, setCouponCode] = useState("");
     const [couponLoading, setCouponLoading] = useState(false);
-    
+
     const [newAddressForm, setNewAddressForm] = useState({
         label: 'Home',
         recipientName: '',
@@ -60,7 +59,7 @@ export default function Checkout() {
         city: '',
         zone: ShippingZoneType.INSIDE,
     });
-    
+
     const [formData, setFormData] = useState({
         email: "",
         notes: "",
@@ -70,12 +69,12 @@ export default function Checkout() {
     useEffect(() => {
         if (session?.user) {
             setFormData(prev => ({ ...prev, email: session.user?.email || "" }));
-            setNewAddressForm(prev => ({ 
-                ...prev, 
-                recipientName: session.user?.name || '', 
-                phone: session.user?.phone || '' 
+            setNewAddressForm(prev => ({
+                ...prev,
+                recipientName: session.user?.name || '',
+                phone: session.user?.phone || ''
             }));
-            
+
             shippingAddressApi.getShippingAddresses().then(addresses => {
                 setSavedAddresses(addresses);
                 if (addresses.length > 0) {
@@ -101,9 +100,9 @@ export default function Checkout() {
         is_free_shipping: false,
     }, [cart?.summary]);
 
-    const finalShippingFee = useMemo(() => 
+    const finalShippingFee = useMemo(() =>
         summary.is_free_shipping ? 0 : calculateShippingFee(shippingZone, settings?.shippingConfig, summary.payable)
-    , [shippingZone, settings?.shippingConfig, summary.payable, summary.is_free_shipping]);
+        , [shippingZone, settings?.shippingConfig, summary.payable, summary.is_free_shipping]);
 
     const finalPayable = useMemo(() => summary.payable + finalShippingFee, [summary.payable, finalShippingFee]);
 
@@ -266,7 +265,6 @@ export default function Checkout() {
                     </div>
                 </div>
                 <Footer />
-                <WhatsAppWidget />
             </>
         );
     }
@@ -295,7 +293,6 @@ export default function Checkout() {
                     </motion.div>
                 </div>
                 <Footer />
-                <WhatsAppWidget />
             </>
         );
     }
@@ -308,7 +305,7 @@ export default function Checkout() {
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-8">Checkout</h1>
                     <div className="grid lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2">
-                            <CheckoutForm 
+                            <CheckoutForm
                                 session={session}
                                 formData={formData}
                                 onInputChange={handleInputChange}
@@ -327,7 +324,7 @@ export default function Checkout() {
                             />
                         </div>
                         <div className="lg:col-span-1">
-                            <OrderSummary 
+                            <OrderSummary
                                 items={items}
                                 summary={summary}
                                 finalShippingFee={finalShippingFee}
@@ -344,7 +341,6 @@ export default function Checkout() {
                 </div>
             </div>
             <Footer />
-            <WhatsAppWidget />
         </>
     );
 }

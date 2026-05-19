@@ -1,6 +1,5 @@
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
-import WhatsAppWidget from '@/components/shared/WhatsAppWidget';
 import PromotionDetails from '@/features/promotion/shop/PromotionDetails';
 import { getSiteSettings } from '@/services/getSettings';
 import { getPromotionBySlug } from '@/services/promotion';
@@ -59,7 +58,6 @@ export default async function PromotionSlugRoutePage({ params }: { params: { slu
             <Navbar />
             <PromotionDetails promotion={data.promotion} products={data.products || []} />
             <Footer />
-            <WhatsAppWidget />
         </main>
     );
 }

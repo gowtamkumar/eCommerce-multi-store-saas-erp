@@ -286,6 +286,11 @@ export const navGroups = [
         href: "/admin/customers",
         feature: "/admin/customers",
       },
+      {
+        icon: MessageSquare,
+        label: "Live Chat",
+        href: "/admin/support",
+      },
     ],
   },
   {

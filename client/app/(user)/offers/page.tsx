@@ -1,6 +1,5 @@
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
-import WhatsAppWidget from '@/components/shared/WhatsAppWidget';
 import OffersPage from '@/features/promotion/shop/OffersPage';
 import { fetchAPI } from '@/services/api';
 import { getSiteSettings } from '@/services/getSettings';
@@ -65,7 +64,6 @@ export default async function OffersRoutePage() {
                 offersSettings={offersSettings}
             />
             <Footer />
-            <WhatsAppWidget />
         </main>
     );
 }

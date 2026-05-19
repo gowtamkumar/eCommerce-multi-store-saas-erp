@@ -27,11 +27,10 @@ import toast from "react-hot-toast";
 
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
-import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
+import { ShippingZoneType } from "@/lib/enums/shipping-zone-type.enum";
 import type { ShippingAddress } from "@/services/shippingAddress";
 import * as shippingAddressApi from "@/services/shippingAddress";
 import { MapPin, Plus } from "lucide-react";
-import { ShippingZoneType } from "@/lib/enums/shipping-zone-type.enum";
 
 export default function Checkout() {
     const {
@@ -335,7 +334,6 @@ export default function Checkout() {
                     </div>
                 </div>
                 <Footer />
-                <WhatsAppWidget />
             </>
         );
     }
@@ -386,7 +384,6 @@ export default function Checkout() {
                     </motion.div>
                 </div>
                 <Footer />
-                <WhatsAppWidget />
             </>
         );
     }
@@ -787,7 +784,6 @@ export default function Checkout() {
                 </div>
             </div>
             <Footer />
-            <WhatsAppWidget />
         </>
     );
 }

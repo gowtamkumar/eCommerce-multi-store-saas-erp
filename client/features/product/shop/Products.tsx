@@ -1,14 +1,13 @@
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import PaymentStatus from "@/components/shared/PaymentStatus";
-import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
+import ProductPageBanner from "@/features/product/shop/ProductPageBanner";
+import ProductsClientWrapper from "@/features/product/shop/ProductsClientWrapper";
 import { fetchAPI } from "@/services/api";
 import { getSiteSettings } from "@/services/getSettings";
 import { getTenantId } from "@/services/tenant";
 import Link from "next/link";
 import { Suspense } from "react";
-import ProductsClientWrapper from "@/features/product/shop/ProductsClientWrapper";
-import ProductPageBanner from "@/features/product/shop/ProductPageBanner";
 
 // ISR: Regenerate every 30 seconds. Short enough to reflect price/stock changes,
 // fast enough to serve cached HTML on high-traffic filter combinations.
@@ -142,7 +141,6 @@ export default async function Products({
             </div>
 
             <Footer />
-            <WhatsAppWidget />
         </main>
     );
 }

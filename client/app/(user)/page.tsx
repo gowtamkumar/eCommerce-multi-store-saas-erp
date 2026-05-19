@@ -1,14 +1,13 @@
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import PaymentStatus from "@/components/shared/PaymentStatus";
-import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
+import RecentlyViewedProducts from "@/components/shared/RecentlyViewedProducts";
+import SectionRenderer from "@/features/admin/pages/components/customizer/SectionRenderer";
+import SaaSLanding from "@/features/system/components/SaaSLanding";
 import { fetchAPI } from "@/services/api";
 import { getSiteSettings } from "@/services/getSettings";
 import { getTenantId } from "@/services/tenant";
 import { Suspense } from "react";
-import SaaSLanding from "@/features/system/components/SaaSLanding";
-import SectionRenderer from "@/features/admin/pages/components/customizer/SectionRenderer";
-import RecentlyViewedProducts from "@/components/shared/RecentlyViewedProducts";
 
 // ISR: Regenerate the home page at most once every 60 seconds.
 // This avoids a full SSR on every request while keeping content fresh.
@@ -101,7 +100,6 @@ export default async function Home() {
         )}
         <RecentlyViewedProducts />
       </div>
-      <WhatsAppWidget />
       <Footer />
     </main>
   );

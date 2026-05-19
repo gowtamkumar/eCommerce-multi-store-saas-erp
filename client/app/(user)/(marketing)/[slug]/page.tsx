@@ -1,7 +1,6 @@
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import PaymentStatus from "@/components/shared/PaymentStatus";
-import WhatsAppWidget from "@/components/shared/WhatsAppWidget";
 import SectionRenderer from "@/features/admin/pages/components/customizer/SectionRenderer";
 import { fetchAPI } from "@/services/api";
 import { notFound } from "next/navigation";
@@ -80,7 +79,7 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
                 <PaymentStatus />
             </Suspense>
             <Navbar />
-            
+
             <div className="pt-20" style={typographyStyles}>
                 {/* Dynamically render page sections */}
                 {page.sections?.length > 0 &&
@@ -89,7 +88,6 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
                     ))}
             </div>
 
-            <WhatsAppWidget />
             <Footer />
         </main>
     );

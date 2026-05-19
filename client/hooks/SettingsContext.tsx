@@ -146,6 +146,7 @@ interface SiteSettings {
   robotsTxt?: string;
   status?: string;
   isSaaS?: boolean;
+  tenantId?: string;
 }
 
 interface SettingsContextType {

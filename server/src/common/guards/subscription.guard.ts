@@ -30,7 +30,6 @@ export class SubscriptionGuard implements CanActivate {
     const request = context.switchToHttp().getRequest()
     const tenantId = request.tenantId
     const user = request.user
-    console.log('user?.role', user?.role)
 
     // 1. Allow Super Admin to bypass all feature checks
     if (user?.role === UserRole.SUPER_ADMIN) {
