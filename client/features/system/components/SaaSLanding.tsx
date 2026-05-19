@@ -5,6 +5,7 @@ import { getFeatureDisplay } from '@/routes';
 import * as Icons from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import MarketingFooter from './MarketingFooter';
 import MarketingHero from './MarketingHero';
 import MarketingNavbar from './MarketingNavbar';
@@ -97,74 +98,138 @@ export default function SaaSLanding() {
             <h2 className="text-4xl lg:text-5xl font-black font-display text-slate-900 dark:text-white mb-6 tracking-tight">
               Simple, <span className="text-brand-600 dark:text-brand-400">transparent</span> pricing
             </h2>
-            <p className="text-lg lg:text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto">
+            <p className="text-lg lg:text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto font-medium">
               Choose the perfect plan for your business and scale without limits.
             </p>
 
-            {/* Billing Toggle */}
-            <div className="flex items-center justify-center gap-4 mb-12">
-              <span className={`text-sm font-bold transition-colors ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>Monthly</span>
+            {/* Premium Billing Cycle Slider */}
+            <div className="inline-flex items-center justify-center p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl mb-16 shadow-inner relative z-10 border border-slate-200/40 dark:border-slate-700/50">
               <button
-                onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
-                className="w-14 h-7 bg-slate-200 dark:bg-slate-800 rounded-full p-1 relative transition-colors focus:ring-2 focus:ring-brand-500 outline-none"
+                onClick={() => setBillingCycle('monthly')}
+                className={`relative px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 z-10 ${
+                  billingCycle === 'monthly'
+                    ? 'text-slate-900 dark:text-white'
+                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
               >
-                <div className={`w-5 h-5 bg-brand-600 rounded-full shadow-md transition-transform duration-300 ${billingCycle === 'yearly' ? 'translate-x-7' : 'translate-x-0'}`} />
+                {billingCycle === 'monthly' && (
+                  <motion.div
+                    layoutId="billingToggle"
+                    className="absolute inset-0 bg-white dark:bg-slate-700 rounded-xl shadow-md border border-slate-200/50 dark:border-slate-600/50 -z-10"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                Monthly
               </button>
-              <span className={`text-sm font-bold transition-colors ${billingCycle === 'yearly' ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
-                Yearly <span className="ml-1 text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">Save 20%</span>
-              </span>
+              <button
+                onClick={() => setBillingCycle('yearly')}
+                className={`relative px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 z-10 flex items-center gap-1.5 ${
+                  billingCycle === 'yearly'
+                    ? 'text-slate-900 dark:text-white'
+                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                {billingCycle === 'yearly' && (
+                  <motion.div
+                    layoutId="billingToggle"
+                    className="absolute inset-0 bg-white dark:bg-slate-700 rounded-xl shadow-md border border-slate-200/50 dark:border-slate-600/50 -z-10"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                Yearly
+                <span className="text-[9px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-black normal-case">
+                  Save 20%
+                </span>
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
             {plans.length > 0 ? (
               plans.map((plan: any, idx: number) => {
                 const price = billingCycle === 'yearly'
                   ? (plan.yearlyPrice || parseFloat(plan.price) * 0.8)
                   : (plan.monthlyPrice || parseFloat(plan.price));
-                const isPopular = plan.isPopular || idx === 1;
+                const name = plan.name.toLowerCase();
+                const isStarter = name.includes('starter') || name.includes('free') || idx === 0;
+                const isEnterprise = name.includes('enterprise') || idx === 2;
+                const isPopular = !isStarter && !isEnterprise;
 
                 return (
                   <div
                     key={plan.id}
-                    className={`group p-8 rounded-[2.5rem] border transition-all duration-500 flex flex-col relative ${isPopular
-                      ? 'bg-white dark:bg-slate-900 border-brand-200 dark:border-brand-800 shadow-[0_32px_64px_-16px_rgba(79,70,229,0.15)] scale-105 z-10'
-                      : 'bg-white/50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900 backdrop-blur-sm'
-                      }`}
+                    className={`group p-10 rounded-[2.5rem] border transition-all duration-500 flex flex-col relative ${
+                      isEnterprise
+                        ? 'bg-slate-950 text-white border-slate-800/80 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.4)] scale-100 lg:hover:scale-[1.03] lg:-translate-y-1'
+                        : isPopular
+                        ? 'bg-white dark:bg-slate-900 border-brand-200 dark:border-brand-800/60 shadow-[0_32px_64px_-16px_rgba(79,70,229,0.12)] scale-100 lg:scale-105 z-10 lg:hover:scale-[1.08]'
+                        : 'bg-white/60 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800/60 hover:bg-white dark:hover:bg-slate-900 backdrop-blur-sm shadow-sm hover:shadow-xl lg:hover:scale-[1.03] lg:-translate-y-1'
+                    }`}
                   >
                     {isPopular && (
                       <div className="absolute top-0 right-12 translate-y-[-50%] bg-gradient-to-r from-brand-600 to-indigo-600 text-white px-6 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-brand-500/30">
                         Most Popular
                       </div>
                     )}
+                    {isEnterprise && (
+                      <div className="absolute top-0 right-12 translate-y-[-50%] bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 px-6 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-amber-500/20">
+                        Ultimate Tier
+                      </div>
+                    )}
 
-                    <div className="mb-8">
-                      <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 font-display">{plan.name}</h3>
-                      <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{plan.description || "The essentials to get your store up and running."}</p>
+                    <div className="mb-8 text-left">
+                      <h3 className={`text-2xl font-black mb-2 font-display tracking-tight ${
+                        isEnterprise
+                          ? 'bg-gradient-to-r from-amber-200 via-amber-300 to-yellow-500 bg-clip-text text-transparent font-black uppercase'
+                          : 'text-slate-900 dark:text-white'
+                      }`}>{plan.name}</h3>
+                      <p className={`text-sm leading-relaxed ${
+                        isEnterprise ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'
+                      }`}>{plan.description || "The essentials to get your store up and running."}</p>
                     </div>
 
-                    <div className="flex items-baseline gap-1 mb-2 font-display">
-                      <span className="text-5xl font-black text-slate-900 dark:text-white">${Number(price).toFixed(0)}</span>
-                      <span className="text-slate-500 dark:text-slate-400 font-bold">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                    <div className="flex items-baseline gap-1 mb-2 font-display text-left">
+                      <span className={`text-5xl font-black tracking-tight ${
+                        isEnterprise ? 'text-white' : 'text-slate-900 dark:text-white'
+                      }`}>${Number(price).toFixed(0)}</span>
+                      <span className={`font-bold ${
+                        isEnterprise ? 'text-slate-500' : 'text-slate-500 dark:text-slate-400'
+                      }`}>/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
                     </div>
-                    <div className="mb-8 font-bold">
-                      <span className="text-[10px] font-black text-brand-600 bg-brand-50/50 dark:bg-brand-900/30 px-3 py-1 rounded-full uppercase tracking-[0.2em]">
+                    <div className="mb-8 font-bold text-left">
+                      <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-[0.2em] ${
+                        isEnterprise
+                          ? 'text-amber-400 bg-amber-950/40 border border-amber-900/30'
+                          : 'text-brand-600 bg-brand-50/50 dark:bg-brand-900/30'
+                      }`}>
                         14-Day Free Trial
                       </span>
                     </div>
 
-                    <div className="w-full h-px bg-slate-100 dark:bg-slate-800 mb-8" />
+                    <div className={`w-full h-px mb-8 ${
+                      isEnterprise ? 'bg-slate-800' : 'bg-slate-100 dark:bg-slate-800'
+                    }`} />
 
                     <ul className="text-left space-y-4 mb-10 flex-1">
                       {(plan.features || []).map((item: string) => {
                         const featureDisplay = getFeatureDisplay(item);
                         const FeatureIcon = featureDisplay.icon || Icons.Check;
                         return (
-                          <li key={item} className="flex items-center gap-3 text-slate-600 dark:text-slate-300 group/item">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${isPopular ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                          <li key={item} className="flex items-center gap-3 text-sm group/item">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors shrink-0 ${
+                              isEnterprise
+                                ? 'bg-amber-950/40 text-amber-400 border border-amber-900/30'
+                                : isPopular
+                                ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                            }`}>
                               <FeatureIcon className="w-3.5 h-3.5" strokeWidth={2.5} />
                             </div>
-                            <span className="text-sm font-bold group-hover/item:text-slate-900 dark:group-hover/item:text-white transition-colors">{featureDisplay.label}</span>
+                            <span className={`font-bold transition-colors ${
+                              isEnterprise
+                                ? 'text-slate-200 group-hover/item:text-amber-300'
+                                : 'text-slate-600 dark:text-slate-300 group-hover/item:text-slate-900 dark:group-hover/item:text-white'
+                            }`}>{featureDisplay.label}</span>
                           </li>
                         );
                       })}
@@ -172,10 +237,13 @@ export default function SaaSLanding() {
 
                     <Link
                       href={`/create-store?planId=${plan.id}&cycle=${billingCycle}`}
-                      className={`block w-full py-5 rounded-2xl font-black text-[13px] uppercase tracking-widest transition-all shadow-xl text-center active:scale-[0.98] ${isPopular
-                        ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white hover:from-brand-700 hover:to-indigo-700 shadow-brand-500/30 hover:shadow-brand-500/50'
-                        : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100'
-                        }`}
+                      className={`block w-full py-5 rounded-2xl font-black text-[13px] uppercase tracking-widest transition-all shadow-xl text-center active:scale-[0.98] ${
+                        isEnterprise
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_24px_rgba(245,158,11,0.25)]'
+                          : isPopular
+                          ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white hover:from-brand-700 hover:to-indigo-700 shadow-brand-500/30 hover:shadow-brand-500/50'
+                          : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100'
+                      }`}
                     >
                       Step into success
                     </Link>

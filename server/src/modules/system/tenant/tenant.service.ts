@@ -93,7 +93,7 @@ export class TenantService {
     }
 
     // 3. Execute creation in a transaction
-    return await this.dataSource.transaction(async (manager) => {
+    const result = await this.dataSource.transaction(async (manager) => {
       const tenantRepo = manager.withRepository(this.tenantRepository['repo'])
       const userRepo = manager.getRepository(this.userRepository['repo'].target)
 
@@ -178,7 +178,8 @@ export class TenantService {
       // Seed tenant features based on subscription plan
       if (subscriptionPlan?.features?.length) {
         const featureRepo = manager.getRepository(TenantFeatureEntity)
-        const featuresToSeed = subscriptionPlan.features.map(f => featureRepo.create({
+        const uniqueFeatures = subscriptionPlan.features.filter((f, i, self) => self.indexOf(f) === i)
+        const featuresToSeed = uniqueFeatures.map(f => featureRepo.create({
           tenantId: savedTenant.id,
           featureSlug: f,
           isEnabled: true,
@@ -198,23 +199,6 @@ export class TenantService {
       )
       await accountRepo.save(accounts)
 
-      // 4. Parallelize non-critical initialization tasks
-      await Promise.all([
-        // Initialize Site Settings
-        this.settingsService.createSetting({ tenantId: savedTenant.id } as RequestContextDto, {
-          userId: savedUser.id,
-          brandName: storeName,
-          siteDescription: `Welcome to ${storeName}! Premium products and excellent service.`,
-          contactEmail: email,
-        }),
-        // Send verification email (fire and forget or handle errors gracefully)
-        this.mailService
-          .sendVerificationEmail(email, verificationToken, savedTenant.id)
-          .catch((err) =>
-            this.logger.error(`Failed to send verification email for ${email}:`, err),
-          ),
-      ])
-
       return {
         tenant: savedTenant,
         admin: {
@@ -223,8 +207,31 @@ export class TenantService {
           username: savedUser.username,
           email: savedUser.email,
         },
+        verificationToken,
       }
     })
+
+    // 4. Parallelize non-critical initialization tasks (after transaction has committed)
+    await Promise.all([
+      // Initialize Site Settings
+      this.settingsService.createSetting({ tenantId: result.tenant.id } as RequestContextDto, {
+        userId: result.admin.id,
+        brandName: storeName,
+        siteDescription: `Welcome to ${storeName}! Premium products and excellent service.`,
+        contactEmail: email,
+      }),
+      // Send verification email (fire and forget or handle errors gracefully)
+      this.mailService
+        .sendVerificationEmail(email, result.verificationToken, result.tenant.id)
+        .catch((err) =>
+          this.logger.error(`Failed to send verification email for ${email}:`, err),
+        ),
+    ])
+
+    return {
+      tenant: result.tenant,
+      admin: result.admin,
+    }
   }
 
   async findAllTenants(): Promise<TenantEntity[]> {
@@ -427,7 +434,7 @@ export class TenantService {
       const featuresToSave: TenantFeatureEntity[] = []
 
       // Sync feature flags based on the new plan's features list
-      const newFeaturesList = newPlan.features || []
+      const newFeaturesList = (newPlan.features || []).filter((f, i, self) => self.indexOf(f) === i)
       for (const slug of newFeaturesList) {
         const existing = existingMap.get(slug)
         if (existing) {

@@ -1,18 +1,18 @@
 'use client';
 
 import { UserRole } from '@/lib/enums/user-role.enum';
-import { Loader2, Mail, UserCog, X, Building2, Sparkles, ArrowRight } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { ArrowRight, Building2, Loader2, Mail, Sparkles, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { InviteStaffModalProps } from '../type';
 
-const roles = [
-    { value: UserRole.ADMIN, label: 'Admin', description: 'Complete system privileges.' },
-    { value: UserRole.MARKETING, label: 'Marketing', description: 'Manage coupons & campaigns.' },
-    { value: UserRole.STORE_MANAGER, label: 'Store Manager', description: 'Supervise catalogs & catalog stocks.' },
-    { value: UserRole.OPERATOR, label: 'Operator', description: 'Process POS & logistics orders.' },
-    { value: UserRole.SUPPORT, label: 'Support', description: 'Manage profiles & support tickets.' },
-    { value: UserRole.EMPLOYEE, label: 'Employee', description: 'Clock attendance, process POS sales, and view catalogs.' },
-];
+// const roles = [
+//     { value: UserRole.ADMIN, label: 'Admin', description: 'Complete system privileges.' },
+//     { value: UserRole.MARKETING, label: 'Marketing', description: 'Manage coupons & campaigns.' },
+//     { value: UserRole.STORE_MANAGER, label: 'Store Manager', description: 'Supervise catalogs & catalog stocks.' },
+//     { value: UserRole.OPERATOR, label: 'Operator', description: 'Process POS & logistics orders.' },
+//     { value: UserRole.SUPPORT, label: 'Support', description: 'Manage profiles & support tickets.' },
+//     { value: UserRole.EMPLOYEE, label: 'Employee', description: 'Clock attendance, process POS sales, and view catalogs.' },
+// ];
 
 
 export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModalProps) {
@@ -30,7 +30,7 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
             try {
                 const { getBranches } = await import('@/services/organization');
                 const { fetchAPI } = await import('@/services/api');
-                
+
                 const [branchesRes, rolesRes] = await Promise.all([
                     getBranches(),
                     fetchAPI('/users/roles'),
@@ -63,11 +63,11 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
             const { fetchAPI } = await import('@/services/api');
             const res = await fetchAPI('/users/team/invite', {
                 method: 'POST',
-                body: JSON.stringify({ 
-                    email, 
+                body: JSON.stringify({
+                    email,
                     role: selectedRoleId ? UserRole.EMPLOYEE : role,
                     roleId: selectedRoleId || undefined,
-                    branchId: branchId || undefined 
+                    branchId: branchId || undefined
                 }),
             });
 
@@ -137,79 +137,64 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
                         </div>
                     </div>
 
-                    {/* Dual Dropdowns Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Branch Select */}
-                        {branches.length > 0 && (
-                            <div className="space-y-2">
-                                <label className="block text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                                    Home Branch
-                                </label>
-                                <div className="relative">
-                                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                    <select
-                                        value={branchId}
-                                        onChange={(e) => setBranchId(e.target.value)}
-                                        className="w-full pl-11 pr-10 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-950/30 text-slate-900 dark:text-white text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/80 outline-none transition-all appearance-none font-bold cursor-pointer"
-                                    >
-                                        {branches.map((b) => (
-                                            <option key={b.id} value={b.id} className="dark:bg-slate-950">
-                                                {b.name} ({b.code})
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
-                                        <X className="w-4 h-4 rotate-45" />
-                                    </div>
+                    {/* Home Branch select (full-width) */}
+                    {branches.length > 0 && (
+                        <div className="space-y-2">
+                            <label className="block text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                Home Branch
+                            </label>
+                            <div className="relative">
+                                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                <select
+                                    value={branchId}
+                                    onChange={(e) => setBranchId(e.target.value)}
+                                    className="w-full pl-11 pr-10 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-950/30 text-slate-900 dark:text-white text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/80 outline-none transition-all appearance-none font-bold cursor-pointer"
+                                >
+                                    {branches.map((b) => (
+                                        <option key={b.id} value={b.id} className="dark:bg-slate-950">
+                                            {b.name} ({b.code})
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                                    <X className="w-4 h-4 rotate-45" />
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {/* Custom Tenant Roles */}
-                        {customRoles.length > 0 && (
-                            <div className="space-y-2">
-                                <label className="block text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                                    Dynamic Custom Role
-                                </label>
-                                <div className="relative">
-                                    <UserCog className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                    <select
-                                        value={selectedRoleId}
-                                        onChange={(e) => setSelectedRoleId(e.target.value)}
-                                        className="w-full pl-11 pr-10 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-950/30 text-slate-900 dark:text-white text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/80 outline-none transition-all appearance-none font-bold cursor-pointer"
-                                        id="custom-role-select"
-                                    >
-                                        <option value="" className="dark:bg-slate-950">-- Standard Role --</option>
-                                        {customRoles.map((r) => (
-                                            <option key={r.id} value={r.id} className="dark:bg-slate-950">
-                                                {r.name} ({r.permissions?.length || 0} Perms)
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
-                                        <X className="w-4 h-4 rotate-45" />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Standard System Role Selector */}
+                    {/* Unified System & Custom Role Selector */}
                     <div className="space-y-3">
                         <label className="block text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                            Standard System Role
+                            Assign Account Role
                         </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[190px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
-                            {roles.map((r) => {
-                                const isSelected = !selectedRoleId && role === r.value;
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[250px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+                            {[
+
+                                ...customRoles.map(r => ({
+                                    id: r.id,
+                                    name: r.name,
+                                    description: r.description || `${r.permissions?.length || 0} customized system capabilities.`,
+                                    isCustom: true,
+                                    roleType: UserRole.EMPLOYEE
+                                }))
+                            ].map((r) => {
+                                const isSelected = r.isCustom
+                                    ? selectedRoleId === r.id
+                                    : (!selectedRoleId && role === r.roleType);
+
                                 return (
                                     <button
-                                        key={r.value}
+                                        key={r.id}
                                         type="button"
-                                        id={`role-btn-${r.value.toLowerCase()}`}
                                         onClick={() => {
-                                            setSelectedRoleId('');
-                                            setRole(r.value as UserRole);
+                                            if (r.isCustom) {
+                                                setSelectedRoleId(r.id);
+                                                setRole(UserRole.EMPLOYEE);
+                                            } else {
+                                                setSelectedRoleId('');
+                                                setRole(r.roleType as UserRole);
+                                            }
                                         }}
                                         className={`group p-4 rounded-2xl border text-left transition-all duration-300 relative overflow-hidden ${isSelected
                                             ? 'border-indigo-500/80 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 dark:from-indigo-500/10 dark:to-purple-500/5 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.12)]'
@@ -220,11 +205,18 @@ export default function InviteStaffModal({ onClose, onInvited }: InviteStaffModa
                                         {isSelected && (
                                             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 blur-xl pointer-events-none rounded-full" />
                                         )}
-                                        <div className="flex items-center gap-2">
-                                            <div className={`w-2 h-2 rounded-full transition-transform ${isSelected ? 'bg-indigo-500 scale-125' : 'bg-slate-300 dark:bg-slate-700'}`} />
-                                            <div className="font-bold text-sm text-slate-900 dark:text-white">{r.label}</div>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-2 h-2 rounded-full transition-transform ${isSelected ? 'bg-indigo-500 scale-125' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                                                <div className="font-bold text-sm text-slate-900 dark:text-white">{r.name}</div>
+                                            </div>
+                                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider flex-shrink-0 ${r.isCustom
+                                                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-750 dark:text-purple-400 border border-purple-200/50 dark:border-purple-800/50'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-750'}`}>
+                                                {r.isCustom ? 'Custom' : 'System'}
+                                            </span>
                                         </div>
-                                        <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1 pl-4 leading-relaxed group-hover:text-slate-500 dark:group-hover:text-slate-400 transition-colors">
+                                        <div className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-2 pl-4 leading-relaxed group-hover:text-slate-500 dark:group-hover:text-slate-400 transition-colors">
                                             {r.description}
                                         </div>
                                     </button>

@@ -1,6 +1,7 @@
 'use client';
 
 import { fetchAPI } from '@/services/api';
+import { getFeatureDisplay } from '@/routes';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Edit2, Layers, Plus, Search, Trash2, XCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -173,19 +174,25 @@ export default function PlanList({ initialPlans }: PlanListProps) {
                                 <div className="space-y-4 pt-6 border-t border-slate-50 dark:border-slate-800">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Core Entitlements</p>
                                     <ul className="space-y-3">
-                                        {(plan.features || []).slice(0, 4).map((feature, idx) => (
-                                            <li key={idx} className="flex items-center gap-3 text-sm font-bold text-slate-600 dark:text-slate-300">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-brand-500 shadow-[0_0_8px_rgba(79,70,229,0.5)]" />
-                                                {feature}
-                                            </li>
-                                        ))}
+                                        {(plan.features || []).slice(0, 4).map((feature, idx) => {
+                                            const display = getFeatureDisplay(feature);
+                                            const FeatureIcon = display.icon || CheckCircle2;
+                                            return (
+                                                <li key={idx} className="flex items-center gap-2.5 text-xs font-bold text-slate-600 dark:text-slate-300">
+                                                    <div className="p-1 bg-brand-50 dark:bg-brand-900/20 text-brand-600 rounded-lg shrink-0">
+                                                        <FeatureIcon className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <span className="truncate">{display.label}</span>
+                                                </li>
+                                            );
+                                        })}
                                         {plan.features?.length > 4 && (
-                                            <li className="text-xs font-black text-brand-500 pl-4.5 pt-1">
+                                            <li className="text-[10px] font-black text-brand-500 pl-8 pt-1">
                                                 + {plan.features.length - 4} Advanced Features
                                             </li>
                                         )}
                                         {(!plan.features || plan.features.length === 0) && (
-                                            <li className="text-xs italic text-slate-400 italic">No features defined.</li>
+                                            <li className="text-xs italic text-slate-400 pl-1">No features defined.</li>
                                         )}
                                     </ul>
                                 </div>

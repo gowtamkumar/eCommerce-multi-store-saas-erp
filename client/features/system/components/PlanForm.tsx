@@ -186,12 +186,31 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
 
                             <div className="columns-1 md:columns-2 gap-8 space-y-8">
                                 {navGroups.map((group: any) => {
-                                    const filteredItems: any[] = group.items.filter((item: any) =>
-                                        item.feature &&
-                                        item.type !== 'header' &&
-                                        item.href !== '/admin/profile' &&
-                                        item.href !== '/admin/settings/billing'
-                                    );
+                                    const seenFeatures = new Set<string>();
+                                    const filteredItems: any[] = [];
+                                    
+                                    for (const item of group.items) {
+                                        if (
+                                            item.feature &&
+                                            item.type !== 'header' &&
+                                            item.href !== '/admin/profile' &&
+                                            item.href !== '/admin/settings/billing'
+                                        ) {
+                                            if (!seenFeatures.has(item.feature)) {
+                                                seenFeatures.add(item.feature);
+                                                // Enhance label slightly if it is generic like "Dashboard" inside HRM or Finance
+                                                let displayLabel = item.label;
+                                                if (displayLabel === 'Dashboard' && group.title !== 'Insights') {
+                                                    displayLabel = `${group.title} Dashboard`;
+                                                }
+                                                filteredItems.push({
+                                                    ...item,
+                                                    label: displayLabel
+                                                });
+                                            }
+                                        }
+                                    }
+                                    
                                     if (filteredItems.length === 0) return null;
 
                                     const groupFeatureKeys = filteredItems.map(i => i.feature);

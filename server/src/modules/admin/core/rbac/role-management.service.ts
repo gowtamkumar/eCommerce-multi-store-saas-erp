@@ -90,7 +90,7 @@ export class RoleManagementService {
       name: dto.name,
       description: dto.description,
       tenantId,
-      scopeType: dto.scopeType ?? RoleScopeType.GLOBAL,
+      scopeType: (dto.scopeType ? dto.scopeType.toLowerCase() as RoleScopeType : RoleScopeType.GLOBAL),
       parentRoleId: dto.parentRoleId ?? null,
       permissions,
       isSystemRole: false,
@@ -134,7 +134,7 @@ export class RoleManagementService {
 
     if (dto.name !== undefined) role.name = dto.name
     if (dto.description !== undefined) role.description = dto.description
-    if (dto.scopeType !== undefined) role.scopeType = dto.scopeType
+    if (dto.scopeType !== undefined) role.scopeType = dto.scopeType.toLowerCase() as RoleScopeType
     if (dto.parentRoleId !== undefined) role.parentRoleId = dto.parentRoleId
 
     if (dto.permissionCodes !== undefined) {

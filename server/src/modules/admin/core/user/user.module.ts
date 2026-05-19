@@ -19,7 +19,7 @@ import { UserService } from './services/user.service'
     MailModule,
     CacheModule,
   ],
-  controllers: [UserController, RoleController],
+  controllers: [RoleController, UserController],
   providers: [UserService, StaffInvitationService, UserRepository, StaffInvitationRepository],
   exports: [UserService, StaffInvitationService],
 })

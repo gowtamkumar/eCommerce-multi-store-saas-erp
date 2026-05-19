@@ -4,9 +4,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { Shield, Plus, Key, Edit, Trash2, CheckSquare, Square, Check, Loader2 } from 'lucide-react';
 
 export enum RoleScopeType {
-    GLOBAL = 'GLOBAL',
-    BRANCH = 'BRANCH',
-    WAREHOUSE = 'WAREHOUSE',
+    GLOBAL = 'global',
+    BRANCH = 'branch',
+    WAREHOUSE = 'warehouse',
 }
 
 interface Permission {
