@@ -7,6 +7,7 @@ import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Audit } from '@/common/decorators/audit.decorator'
+import { Public } from '@/common/decorators/public.decorator'
 import {
   Body,
   Controller,
@@ -57,7 +58,7 @@ export class ProductController {
   }
 
   @Get()
-  @RequirePermissions(SystemPermissions.CATALOG_READ)
+  @Public()
   async findAllProducts(
     @RequestContext() ctx: RequestContextDto,
     @Query() filterDto: FilterProductDto,
@@ -79,7 +80,7 @@ export class ProductController {
   }
 
   @Get('filters')
-  @RequirePermissions(SystemPermissions.CATALOG_READ)
+  @Public()
   async getFilterOptions(
     @RequestContext() ctx: RequestContextDto,
     @Query('categoryId') categoryId?: string,
@@ -95,7 +96,7 @@ export class ProductController {
   }
 
   @Get('latest')
-  @RequirePermissions(SystemPermissions.CATALOG_READ)
+  @Public()
   async findLatestProducts(
     @RequestContext() ctx: RequestContextDto,
     @Query('limit') limit?: number,
@@ -111,7 +112,7 @@ export class ProductController {
   }
 
   @Get('slug/:slug')
-  @RequirePermissions(SystemPermissions.CATALOG_READ)
+  @Public()
   async findBySlugProduct(
     @RequestContext() ctx: RequestContextDto,
     @Param('slug') slug: string,
@@ -127,7 +128,7 @@ export class ProductController {
   }
 
   @Get(':id')
-  @RequirePermissions(SystemPermissions.CATALOG_READ)
+  @Public()
   async findOneProduct(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -177,7 +178,7 @@ export class ProductController {
   }
 
   @Get(':id/reviews')
-  @RequirePermissions(SystemPermissions.CATALOG_READ)
+  @Public()
   async getReviewsProduct(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

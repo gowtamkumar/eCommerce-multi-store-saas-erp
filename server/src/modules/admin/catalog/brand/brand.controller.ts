@@ -7,6 +7,7 @@ import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
+import { Public } from '@/common/decorators/public.decorator'
 import {
   Body,
   Controller,
@@ -50,7 +51,7 @@ export class BrandController {
   }
 
   @Get()
-  @RequirePermissions(SystemPermissions.CATALOG_READ)
+  @Public()
   async findAllBrands(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<BrandResponseDto[]>> {
@@ -81,7 +82,7 @@ export class BrandController {
   }
 
   @Get(':id')
-  @RequirePermissions(SystemPermissions.CATALOG_READ)
+  @Public()
   async findOneBrand(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
