@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Bell,
   BookOpen,
   Briefcase,
   Building2,
@@ -178,6 +179,12 @@ export const navGroups = [
         href: "/admin",
         feature: "/admin",
       },
+      {
+        icon: Bell,
+        label: "Notifications",
+        href: "/admin/notifications",
+        feature: "/admin",
+      },
     ],
   },
   // {
@@ -248,7 +255,7 @@ export const navGroups = [
         icon: ShoppingBag,
         label: "Point of Sale (POS)",
         href: "/admin/pos",
-        feature: "/admin/orders",
+        feature: "/admin/pos",
       },
       {
         icon: ShoppingBag,
