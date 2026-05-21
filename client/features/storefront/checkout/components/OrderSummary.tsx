@@ -23,6 +23,8 @@ interface OrderSummaryProps {
     onRemoveCoupon: () => void;
     couponLoading: boolean;
     loading: boolean;
+    walletDeduction?: number;
+    netPayable?: number;
 }
 
 const OrderSummary = React.memo(({
@@ -35,7 +37,9 @@ const OrderSummary = React.memo(({
     onApplyCoupon,
     onRemoveCoupon,
     couponLoading,
-    loading
+    loading,
+    walletDeduction = 0,
+    netPayable
 }: OrderSummaryProps) => {
     return (
         <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm p-6 sticky top-24">
@@ -168,9 +172,17 @@ const OrderSummary = React.memo(({
                         </span>
                     )}
                 </div>
+                {walletDeduction > 0 && (
+                    <div className="flex justify-between text-emerald-600 font-semibold">
+                        <span>Wallet Deduction</span>
+                        <span>
+                            -<Price amount={walletDeduction} />
+                        </span>
+                    </div>
+                )}
                 <div className="flex justify-between text-lg font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-700">
-                    <span>Total</span>
-                    <Price amount={finalPayable} />
+                    <span>{walletDeduction > 0 ? "Net Payable" : "Total"}</span>
+                    <Price amount={netPayable !== undefined ? netPayable : finalPayable} />
                 </div>
             </div>
 

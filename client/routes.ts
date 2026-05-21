@@ -476,6 +476,12 @@ export const navGroups = [
         href: "/admin/finance/ar",
         feature: "/admin/finance/ar",
       },
+      {
+        icon: Wallet,
+        label: "Customer Wallets",
+        href: "/admin/finance/wallet",
+        feature: "/admin/finance",
+      },
     ],
   },
   {

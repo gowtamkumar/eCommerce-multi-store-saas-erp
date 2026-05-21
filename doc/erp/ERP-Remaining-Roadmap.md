@@ -27,18 +27,17 @@ Use this checkable roadmap to track and implement the remaining features needed 
 
 ---
 
-## 📅 Phase 2: Store Credit & Wallet System
+## 📅 Phase 2: Store Credit & Wallet System ✅ COMPLETED
 **Goal:** Manage customer refund balances and support wallet-based checkout.
 
-- [ ] **Implement Wallet Ledger Table:**
-  * Create `wallet_ledger` table with fields for `amount`, `balance_after`, `type` (`STORE_CREDIT`, `GIFT_VOUCHER`), and references to orders/returns.
-- [ ] **Refund-to-Wallet Workflow:**
-  * Refactored return/refund service to allow refunding direct orders to customer store credits instead of card processors.
-- [ ] **Checkout Deduction Logic:**
-  * Support full or partial order payment deductions from the user's available wallet balance at checkout (Online + POS).
-- [ ] **Finance GL Integration:**
-  * Debit refund expense and Credit wallet liabilities when store credit is issued.
-  * Debit wallet liabilities and Credit sales revenue when wallet balance is spent.
+- [x] **Implement Wallet Ledger Table:**
+  * Created `wallet_ledger` table via `WalletLedgerEntity` with fields for transaction type, reference, amount, and running balance.
+- [x] **Refund-to-Wallet Workflow:**
+  * Refactored returns and refund services to support refunding to customer wallet/store credit ledger.
+- [x] **Checkout Deduction Logic:**
+  * Added wallet payment checkboxes and checkout validation hooks in POS, Admin, and storefront checkout routes to deduct orders using wallet balance.
+- [x] **Finance GL Integration:**
+  * Automated journal entries: Debit Refund/Return Liabilities & Credit Customer Wallets (2300-StoreCredit); Debit Store Credit Liabilities & Credit Cash/Sales Revenue (4000) on wallet usage.
 
 ---
 

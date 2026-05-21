@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer'
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -82,4 +83,19 @@ export class SyncPosSaleDto {
   @IsOptional()
   @IsString()
   shippingAddress?: string
+
+  /** Set to true to deduct from the customer's available wallet balance at checkout. */
+  @IsBoolean()
+  @IsOptional()
+  useWalletBalance?: boolean
+
+  /**
+   * Optional: specify an exact wallet deduction amount (partial payment).
+   * If omitted but useWalletBalance is true, the full available balance is applied.
+   */
+  @IsNumber()
+  @Min(0.01)
+  @IsOptional()
+  walletAmountToUse?: number
 }
+

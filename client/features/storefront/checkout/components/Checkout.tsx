@@ -65,6 +65,9 @@ export default function Checkout() {
         notes: "",
     });
 
+    const [walletBalance, setWalletBalance] = useState<number | null>(null);
+    const [useWalletBalance, setUseWalletBalance] = useState(false);
+
     // 1. Initial Data Loading
     useEffect(() => {
         if (session?.user) {
@@ -85,8 +88,21 @@ export default function Checkout() {
                     setAddingNewAddress(true);
                 }
             }).catch(() => setAddingNewAddress(true));
+
+            // Load Customer Wallet balance
+            import('@/services/wallet').then(({ getMyWallet }) => {
+                getMyWallet()
+                    .then(summary => {
+                        setWalletBalance(summary.balance);
+                    })
+                    .catch(err => {
+                        console.error("Failed to load customer wallet:", err);
+                    });
+            });
         } else {
             setAddingNewAddress(true);
+            setWalletBalance(null);
+            setUseWalletBalance(false);
         }
     }, [session]);
 
@@ -105,6 +121,14 @@ export default function Checkout() {
         , [shippingZone, settings?.shippingConfig, summary.payable, summary.is_free_shipping]);
 
     const finalPayable = useMemo(() => summary.payable + finalShippingFee, [summary.payable, finalShippingFee]);
+
+    const walletDeduction = useMemo(() => {
+        return useWalletBalance ? Math.min(walletBalance || 0, finalPayable) : 0;
+    }, [useWalletBalance, walletBalance, finalPayable]);
+
+    const netPayable = useMemo(() => {
+        return Math.max(0, finalPayable - walletDeduction);
+    }, [finalPayable, walletDeduction]);
 
     // 3. Stable Handlers
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -189,6 +213,11 @@ export default function Checkout() {
                 shippingZone,
             };
 
+            if (useWalletBalance) {
+                orderData.useWalletBalance = true;
+                orderData.walletAmountToUse = walletDeduction;
+            }
+
             if (selectedAddressId && !addingNewAddress) {
                 const addr = savedAddresses.find(a => a.id === selectedAddressId);
                 if (addr) {
@@ -218,12 +247,12 @@ export default function Checkout() {
             if (!orderJson.success) throw new Error(orderJson.error || "Failed to create order");
 
             const order = orderJson.data?.order;
-            if (paymentMethod === PaymentMethod.SSLCOMMERZ) {
+            if (paymentMethod === PaymentMethod.SSLCOMMERZ && order?.paymentStatus !== 'PAID') {
                 const paymentJson = await fetchAPI("/payment/init", {
                     method: "POST",
                     body: JSON.stringify({ orderId: order.id, callbackUrl: `${window.location.origin}/api/payment` }),
                 });
-                if (paymentJson.data.gatewayUrl) {
+                if (paymentJson.data?.gatewayUrl) {
                     window.location.href = paymentJson.data.gatewayUrl;
                     return;
                 }
@@ -236,7 +265,7 @@ export default function Checkout() {
         } catch (error: any) {
             toast.error(error.message || "Checkout failed");
         } finally {
-            if (paymentMethod !== PaymentMethod.SSLCOMMERZ) setLoading(false);
+            if (paymentMethod !== PaymentMethod.SSLCOMMERZ || (lastOrder && lastOrder.paymentStatus === 'PAID')) setLoading(false);
         }
     };
 
@@ -321,6 +350,9 @@ export default function Checkout() {
                                 paymentMethod={paymentMethod}
                                 onPaymentMethodChange={setPaymentMethod}
                                 onSubmit={handleSubmit}
+                                walletBalance={walletBalance}
+                                useWalletBalance={useWalletBalance}
+                                onUseWalletBalanceChange={setUseWalletBalance}
                             />
                         </div>
                         <div className="lg:col-span-1">
@@ -335,6 +367,8 @@ export default function Checkout() {
                                 onRemoveCoupon={removeCoupon}
                                 couponLoading={couponLoading}
                                 loading={loading}
+                                walletDeduction={walletDeduction}
+                                netPayable={netPayable}
                             />
                         </div>
                     </div>

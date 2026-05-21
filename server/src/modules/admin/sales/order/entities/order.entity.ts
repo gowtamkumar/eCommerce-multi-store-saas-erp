@@ -106,4 +106,8 @@ export class OrderEntity extends BaseEntity {
 
   @Column({ type: 'varchar', name: 'delivery_zone', length: 50, nullable: true })
   deliveryZone: string
+
+  /** Amount deducted from the customer's wallet balance at checkout. */
+  @Column({ type: 'decimal', name: 'wallet_deduction_amount', precision: 10, scale: 2, default: 0 })
+  walletDeductionAmount: number
 }

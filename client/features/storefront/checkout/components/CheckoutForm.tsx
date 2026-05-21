@@ -26,6 +26,9 @@ interface CheckoutFormProps {
     paymentMethod: PaymentMethod;
     onPaymentMethodChange: (method: PaymentMethod) => void;
     onSubmit: (e: React.FormEvent) => void;
+    walletBalance?: number | null;
+    useWalletBalance?: boolean;
+    onUseWalletBalanceChange?: (val: boolean) => void;
 }
 
 const CheckoutForm = React.memo(({
@@ -43,7 +46,10 @@ const CheckoutForm = React.memo(({
     onToggleSaveAddress,
     paymentMethod,
     onPaymentMethodChange,
-    onSubmit
+    onSubmit,
+    walletBalance = null,
+    useWalletBalance = false,
+    onUseWalletBalanceChange
 }: CheckoutFormProps) => {
     return (
         <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm p-6 md:p-8">
@@ -211,36 +217,73 @@ const CheckoutForm = React.memo(({
                     />
                 </div>
 
-                {/* Payment Methods */}
-                <div className="space-y-3 pt-4">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Payment Method
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
-                        {[PaymentMethod.COD, PaymentMethod.SSLCOMMERZ].map(method => (
-                            <button
-                                key={method}
-                                type="button"
-                                onClick={() => onPaymentMethodChange(method)}
-                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all relative overflow-hidden ${paymentMethod === method
-                                    ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20 text-brand-700"
-                                    : "border-slate-200 dark:border-slate-700 text-slate-600"
-                                    }`}
-                            >
-                                {paymentMethod === method && (
-                                    <motion.div
-                                        layoutId="activePaymentCheckout"
-                                        className="absolute inset-0 border-2 border-brand-600 rounded-xl pointer-events-none"
-                                    />
-                                )}
-                                {method === PaymentMethod.COD ? <Truck className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
-                                <span className="font-semibold text-sm">
-                                    {method === PaymentMethod.COD ? 'Cash on Delivery' : 'Online Payment'}
-                                </span>
-                            </button>
-                        ))}
+                {/* Store Credit & Wallet Section */}
+                {session?.user && walletBalance !== null && walletBalance > 0 && (
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/50 rounded-2xl flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center text-emerald-600">
+                                <CreditCard className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Pay using Store Credit</h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Available Balance: <span className="font-bold text-emerald-600 font-mono">${walletBalance.toFixed(2)}</span></p>
+                            </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={useWalletBalance}
+                                onChange={(e) => onUseWalletBalanceChange?.(e.target.checked)}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+                        </label>
                     </div>
-                </div>
+                )}
+
+                {/* Payment Methods */}
+                {(!useWalletBalance || (walletBalance !== null && walletBalance < 0.01)) ? (
+                    <div className="space-y-3 pt-4">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Payment Method
+                        </label>
+                        <div className="grid grid-cols-2 gap-4">
+                            {[PaymentMethod.COD, PaymentMethod.SSLCOMMERZ].map(method => (
+                                <button
+                                    key={method}
+                                    type="button"
+                                    onClick={() => onPaymentMethodChange(method)}
+                                    className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all relative overflow-hidden ${paymentMethod === method
+                                        ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20 text-brand-700"
+                                        : "border-slate-200 dark:border-slate-700 text-slate-600"
+                                        }`}
+                                >
+                                    {paymentMethod === method && (
+                                        <motion.div
+                                            layoutId="activePaymentCheckout"
+                                            className="absolute inset-0 border-2 border-brand-600 rounded-xl pointer-events-none"
+                                        />
+                                    )}
+                                    {method === PaymentMethod.COD ? <Truck className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
+                                    <span className="font-semibold text-sm">
+                                        {method === PaymentMethod.COD ? 'Cash on Delivery' : 'Online Payment'}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    useWalletBalance && walletBalance !== null && walletBalance > 0 && (
+                        <div className="space-y-3 pt-4">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                Payment Method
+                            </label>
+                            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/50 rounded-2xl text-center text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                                🎉 Fully Covered by Wallet Balance. No further payment required.
+                            </div>
+                        </div>
+                    )
+                )}
             </form>
         </div>
     );

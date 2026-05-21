@@ -51,6 +51,20 @@ export const DEFAULT_CHART_OF_ACCOUNTS = [
     isSystem: true,
   },
   {
+    code: '5100',
+    name: 'Refund Expense',
+    type: AccountType.EXPENSE,
+    category: AccountCategory.OPERATING_EXPENSE,
+    isSystem: true,
+  },
+  {
+    code: '2300',
+    name: 'Customer Wallet Liabilities',
+    type: AccountType.LIABILITY,
+    category: AccountCategory.OTHER,
+    isSystem: true,
+  },
+  {
     code: '6000',
     name: 'Operating Expenses',
     type: AccountType.EXPENSE,

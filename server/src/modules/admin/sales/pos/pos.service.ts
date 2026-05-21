@@ -23,6 +23,8 @@ import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entity'
 import { ArService } from '@/modules/admin/operations/finance/accounting/services/ar.service'
 import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
+import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
+import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
 
 @Injectable()
 export class PosService {
@@ -34,6 +36,7 @@ export class PosService {
     private readonly inventoryService: InventoryLedgerService,
     private readonly accountingService: AccountingService,
     private readonly arService: ArService,
+    private readonly walletService: WalletService,
     private readonly dataSource: DataSource,
   ) { }
 
@@ -260,6 +263,38 @@ export class PosService {
 
       // Update Order total sum
       savedOrder.totalAmount = netSaleAmount
+
+      // Wallet Balance Deduction (within same transaction, before GL posting)
+      let walletDeductionAmount = 0
+      if (dto.useWalletBalance && dto.customerId && customer) {
+        const availableBalance = await this.walletService.getAvailableBalance(
+          dto.customerId,
+          tenantId,
+          manager,
+        )
+        if (availableBalance > 0) {
+          const deductAmount = dto.walletAmountToUse
+            ? Math.min(Number(dto.walletAmountToUse), availableBalance, netSaleAmount)
+            : Math.min(availableBalance, netSaleAmount)
+
+          if (deductAmount > 0) {
+            await this.walletService.debitWallet(
+              {
+                customerId: dto.customerId,
+                amount: deductAmount,
+                referenceType: 'POS_SALE',
+                referenceId: savedOrder.id,
+                note: `POS wallet payment — Order #${savedOrder.id.substring(0, 8)}`,
+              },
+              ctx,
+              manager,
+            )
+            walletDeductionAmount = deductAmount
+            savedOrder.walletDeductionAmount = deductAmount
+          }
+        }
+      }
+
       await orderRepo.save(savedOrder)
 
       // Verify B2B Credit Limits & Post AR Ledger if ON_ACCOUNT

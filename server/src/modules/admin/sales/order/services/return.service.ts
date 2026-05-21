@@ -14,6 +14,8 @@ import { OrderReturnEntity } from '../entities/order-return.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
+import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
 
 @Injectable()
 export class ReturnService {
@@ -25,6 +27,7 @@ export class ReturnService {
     private inventoryService: InventoryLedgerService,
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
+    private readonly walletService: WalletService,
   ) {}
 
   async createReturnRequest(
@@ -142,6 +145,38 @@ export class ReturnService {
     }
 
     const updated = await this.returnRepository.updateStatus(returnRequest, status, adminComment)
+
+    // Refund-to-Wallet: credit customer wallet when return is marked as REFUNDED
+    if (status === ReturnStatus.REFUNDED) {
+      const refundAmount = Number(returnRequest.refundAmount || 0)
+      const customerId = returnRequest.order?.userId || (returnRequest as any).userId
+
+      if (refundAmount > 0 && customerId) {
+        try {
+          await this.walletService.creditWallet(
+            {
+              customerId,
+              amount: refundAmount,
+              type: WalletTransactionType.STORE_CREDIT,
+              referenceType: 'ORDER_RETURN',
+              referenceId: returnRequest.id,
+              note: `Refund for Return #${returnRequest.id.substring(0, 8)}`,
+            },
+            ctx,
+          )
+          this.logger.log(
+            `Wallet credited for return ${returnRequest.id}: customer=${customerId}, amount=${refundAmount}`,
+          )
+        } catch (e) {
+          this.logger.error(`Failed to credit wallet for return ${returnRequest.id}: ${e.message}`)
+        }
+      } else {
+        this.logger.warn(
+          `Return ${returnRequest.id} marked REFUNDED but refundAmount=${refundAmount} or customerId=${customerId} is missing — wallet not credited`,
+        )
+      }
+    }
+
     // Invalidate the admin list cache so the status change is reflected on next load
     await this.cacheService.delCache('returns:all', tenantId)
     return updated

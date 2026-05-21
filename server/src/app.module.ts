@@ -20,6 +20,7 @@ import { SettingsModule } from '@/modules/admin/settings/settings.module'
 import { CartModule } from '@/modules/store/cart/cart.module'
 import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping-address.module'
 import { WishlistModule } from '@/modules/store/wishlist/wishlist.module'
+import { StoreWalletModule } from '@/modules/store/wallet/store-wallet.module'
 import { SystemModule } from '@/modules/system/system.module'
 import { MarketingModule } from '@/modules/admin/marketing/marketing.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
@@ -55,6 +56,7 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     CartModule,
     ShippingAddressModule,
     WishlistModule,
+    StoreWalletModule,
 
     // Admin Sub-Domains
     CatalogModule,

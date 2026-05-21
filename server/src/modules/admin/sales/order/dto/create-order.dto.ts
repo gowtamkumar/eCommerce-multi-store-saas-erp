@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import {
   IsArray,
+  IsBoolean,
   IsDefined,
   IsEmail,
   IsEnum,
@@ -106,4 +107,20 @@ export class CreateOrderDto {
   @IsUUID()
   @IsOptional()
   shippingAddressId?: string
+
+  /** Set to true to deduct from the customer's available wallet balance at checkout. */
+  @ApiProperty({ required: false })
+  @IsBoolean()
+  @IsOptional()
+  useWalletBalance?: boolean
+
+  /**
+   * Optional: specify an exact amount to deduct from wallet (partial payment).
+   * If omitted but useWalletBalance is true, the max available balance is deducted.
+   */
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @Min(0.01)
+  @IsOptional()
+  walletAmountToUse?: number
 }

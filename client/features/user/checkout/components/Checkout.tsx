@@ -72,6 +72,9 @@ export default function Checkout() {
     const [couponLoading, setCouponLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    const [walletBalance, setWalletBalance] = useState<number | null>(null);
+    const [useWalletBalance, setUseWalletBalance] = useState(false);
+
     // Update form + load addresses when session loads
     useEffect(() => {
         if (session?.user) {
@@ -91,8 +94,21 @@ export default function Checkout() {
                     setAddingNewAddress(true);
                 }
             }).catch(() => setAddingNewAddress(true));
+
+            // Load Customer Wallet balance
+            import('@/services/wallet').then(({ getMyWallet }) => {
+                getMyWallet()
+                    .then(summary => {
+                        setWalletBalance(summary.balance);
+                    })
+                    .catch(err => {
+                        console.error("Failed to load customer wallet:", err);
+                    });
+            });
         } else {
             setAddingNewAddress(true);
+            setWalletBalance(null);
+            setUseWalletBalance(false);
         }
     }, [session]);
 
@@ -118,6 +134,10 @@ export default function Checkout() {
     const finalShippingFee = summary.is_free_shipping ? 0 : calculateShippingFee(shippingZone, settings?.shippingConfig, summary.payable);
 
     const finalPayable = summary.payable + finalShippingFee;
+
+    const walletDeduction = useWalletBalance ? Math.min(walletBalance || 0, finalPayable) : 0;
+
+    const netPayable = Math.max(0, finalPayable - walletDeduction);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -204,6 +224,11 @@ export default function Checkout() {
                 shippingZone,
             };
 
+            if (useWalletBalance) {
+                orderData.useWalletBalance = true;
+                orderData.walletAmountToUse = walletDeduction;
+            }
+
             // If a saved address was selected, include shippingAddressId
             if (selectedAddressId && !addingNewAddress) {
                 orderData.shippingAddressId = selectedAddressId;
@@ -258,7 +283,7 @@ export default function Checkout() {
 
             const order = orderJson.data?.order;
 
-            if (paymentMethod === (PaymentMethod.SSLCOMMERZ as any)) {
+            if (paymentMethod === (PaymentMethod.SSLCOMMERZ as any) && order?.paymentStatus !== 'PAID') {
                 // 2. Initiate Payment
                 const paymentJson = await fetchAPI("/payment/init", {
                     method: "POST",
@@ -268,7 +293,7 @@ export default function Checkout() {
                     }),
                 });
 
-                if (paymentJson.data.gatewayUrl) {
+                if (paymentJson.data?.gatewayUrl) {
                     // await clearCart();
                     window.location.href = paymentJson.data.gatewayUrl;
                     return;
@@ -285,7 +310,7 @@ export default function Checkout() {
             console.error("Checkout error:", error);
             toast.error(error.message || "Something went wrong. Please try again.");
         } finally {
-            if (paymentMethod !== (PaymentMethod.SSLCOMMERZ as any)) {
+            if (paymentMethod !== (PaymentMethod.SSLCOMMERZ as any) || (lastOrder && lastOrder.paymentStatus === 'PAID')) {
                 setLoading(false);
             }
         }
@@ -576,54 +601,91 @@ export default function Checkout() {
                                         />
                                     </div>
 
-                                    {/* Payment Methods */}
-                                    <div className="space-y-3 pt-4">
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                            Payment Method
-                                        </label>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <button
-                                                type="button"
-                                                onClick={() => setPaymentMethod(PaymentMethod.COD)}
-                                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all relative overflow-hidden ${paymentMethod === PaymentMethod.COD
-                                                    ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400"
-                                                    : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-600 dark:text-slate-400"
-                                                    }`}
-                                            >
-                                                {paymentMethod === PaymentMethod.COD && (
-                                                    <motion.div
-                                                        layoutId="activePaymentCheckout"
-                                                        className="absolute inset-0 border-2 border-brand-600 rounded-xl pointer-events-none"
-                                                    />
-                                                )}
-                                                <Truck className="w-6 h-6" />
-                                                <span className="font-semibold text-sm">
-                                                    Cash on Delivery
-                                                </span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setPaymentMethod(PaymentMethod.SSLCOMMERZ)
-                                                }
-                                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all relative overflow-hidden ${paymentMethod === PaymentMethod.SSLCOMMERZ
-                                                    ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400"
-                                                    : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-600 dark:text-slate-400"
-                                                    }`}
-                                            >
-                                                {paymentMethod === PaymentMethod.SSLCOMMERZ && (
-                                                    <motion.div
-                                                        layoutId="activePaymentCheckout"
-                                                        className="absolute inset-0 border-2 border-brand-600 rounded-xl pointer-events-none"
-                                                    />
-                                                )}
-                                                <CreditCard className="w-6 h-6" />
-                                                <span className="font-semibold text-sm">
-                                                    Online Payment
-                                                </span>
-                                            </button>
+                                    {/* Store Credit & Wallet Section */}
+                                    {session?.user && walletBalance !== null && walletBalance > 0 && (
+                                        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/50 rounded-2xl flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center text-emerald-600">
+                                                    <CreditCard className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Pay using Store Credit</h4>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Available Balance: <span className="font-bold text-emerald-600 font-mono">${walletBalance.toFixed(2)}</span></p>
+                                                </div>
+                                            </div>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={useWalletBalance}
+                                                    onChange={(e) => setUseWalletBalance(e.target.checked)}
+                                                    className="sr-only peer"
+                                                />
+                                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+                                            </label>
                                         </div>
-                                    </div>
+                                    )}
+
+                                    {/* Payment Methods */}
+                                    {(!useWalletBalance || (walletBalance !== null && walletBalance < 0.01)) ? (
+                                        <div className="space-y-3 pt-4">
+                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                Payment Method
+                                            </label>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPaymentMethod(PaymentMethod.COD)}
+                                                    className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all relative overflow-hidden ${paymentMethod === PaymentMethod.COD
+                                                        ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400"
+                                                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-600 dark:text-slate-400"
+                                                        }`}
+                                                >
+                                                    {paymentMethod === PaymentMethod.COD && (
+                                                        <motion.div
+                                                            layoutId="activePaymentCheckout"
+                                                            className="absolute inset-0 border-2 border-brand-600 rounded-xl pointer-events-none"
+                                                        />
+                                                    )}
+                                                    <Truck className="w-6 h-6" />
+                                                    <span className="font-semibold text-sm">
+                                                        Cash on Delivery
+                                                    </span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setPaymentMethod(PaymentMethod.SSLCOMMERZ)
+                                                    }
+                                                    className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all relative overflow-hidden ${paymentMethod === PaymentMethod.SSLCOMMERZ
+                                                        ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400"
+                                                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-600 dark:text-slate-400"
+                                                        }`}
+                                                >
+                                                    {paymentMethod === PaymentMethod.SSLCOMMERZ && (
+                                                        <motion.div
+                                                            layoutId="activePaymentCheckout"
+                                                            className="absolute inset-0 border-2 border-brand-600 rounded-xl pointer-events-none"
+                                                        />
+                                                    )}
+                                                    <CreditCard className="w-6 h-6" />
+                                                    <span className="font-semibold text-sm">
+                                                        Online Payment
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        useWalletBalance && walletBalance !== null && walletBalance > 0 && (
+                                            <div className="space-y-3 pt-4">
+                                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                    Payment Method
+                                                </label>
+                                                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/50 rounded-2xl text-center text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                                                    🎉 Fully Covered by Wallet Balance. No further payment required.
+                                                </div>
+                                            </div>
+                                        )
+                                    )}
                                 </form>
                             </div>
                         </div>
@@ -760,9 +822,17 @@ export default function Checkout() {
                                             </span>
                                         )}
                                     </div>
+                                    {walletDeduction > 0 && (
+                                        <div className="flex justify-between text-emerald-600 font-semibold">
+                                            <span>Wallet Deduction</span>
+                                            <span>
+                                                -<Price amount={walletDeduction} />
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between text-lg font-bold text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-700">
-                                        <span>Total</span>
-                                        <Price amount={finalPayable} />
+                                        <span>{walletDeduction > 0 ? "Net Payable" : "Total"}</span>
+                                        <Price amount={netPayable} />
                                     </div>
                                 </div>
 

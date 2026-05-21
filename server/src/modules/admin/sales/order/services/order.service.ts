@@ -41,6 +41,8 @@ import { ArService } from '@/modules/admin/operations/finance/accounting/service
 import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
 import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
+import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
+import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
 
 @Injectable()
 export class OrderService {
@@ -63,6 +65,7 @@ export class OrderService {
     private readonly notificationService: NotificationService,
     private readonly arService: ArService,
     private readonly accountingService: AccountingService,
+    private readonly walletService: WalletService,
   ) { }
 
   async createOrder(
@@ -194,6 +197,41 @@ export class OrderService {
 
       // 8. Persist Order
       const savedOrder = await manager.save(order)
+
+      // 8.5 Wallet Balance Deduction (within the same atomic transaction)
+      if (createOrderDto.useWalletBalance && (ctx.userId || user?.id)) {
+        const walletUserId = ctx.userId || user?.id
+        const availableBalance = await this.walletService.getAvailableBalance(
+          walletUserId,
+          tenantId,
+          manager,
+        )
+        if (availableBalance > 0) {
+          const deductAmount = createOrderDto.walletAmountToUse
+            ? Math.min(Number(createOrderDto.walletAmountToUse), availableBalance, Number(savedOrder.totalAmount))
+            : Math.min(availableBalance, Number(savedOrder.totalAmount))
+
+          if (deductAmount > 0) {
+            await this.walletService.debitWallet(
+              {
+                customerId: walletUserId,
+                amount: deductAmount,
+                referenceType: 'ORDER',
+                referenceId: savedOrder.id,
+                note: `Wallet payment for Order #${savedOrder.id.substring(0, 8)}`,
+              },
+              ctx,
+              manager,
+            )
+            savedOrder.walletDeductionAmount = deductAmount
+            // Mark order as paid if wallet covers the full amount
+            if (deductAmount >= Number(savedOrder.totalAmount)) {
+              savedOrder.paymentStatus = PaymentStatus.PAID
+            }
+            await manager.save(OrderEntity, savedOrder)
+          }
+        }
+      }
 
       // 9. Post Accounts Receivable and General Ledger Entries
       if (savedOrder.paymentMethod === PaymentMethod.ON_ACCOUNT) {
