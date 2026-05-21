@@ -43,6 +43,8 @@ import { AccountingService } from '@/modules/admin/operations/finance/accounting
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
 import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
+import { LoyaltyService } from '@/modules/admin/marketing/loyalty/services/loyalty.service'
+import { ReferralService } from '@/modules/admin/marketing/loyalty/services/referral.service'
 
 @Injectable()
 export class OrderService {
@@ -66,6 +68,8 @@ export class OrderService {
     private readonly arService: ArService,
     private readonly accountingService: AccountingService,
     private readonly walletService: WalletService,
+    private readonly loyaltyService: LoyaltyService,
+    private readonly referralService: ReferralService,
   ) { }
 
   async createOrder(
@@ -459,6 +463,20 @@ export class OrderService {
 
       Object.assign(order, updateOrderDto)
       const savedOrder = await queryRunner.manager.save(order)
+
+      // Loyalty points and referral rewards upon order completion
+      if (updateOrderDto.status === OrderStatus.COMPLETED && oldStatus !== OrderStatus.COMPLETED) {
+        await this.loyaltyService.processOrderEarning(savedOrder, ctx, queryRunner.manager)
+        if (savedOrder.userId) {
+          await this.referralService.processFirstPurchaseReward(
+            savedOrder.userId,
+            savedOrder.id,
+            savedOrder.totalAmount,
+            ctx,
+            queryRunner.manager,
+          )
+        }
+      }
 
       // Sync Invoice Status
       if (updateOrderDto.paymentStatus === PaymentStatus.PAID) {

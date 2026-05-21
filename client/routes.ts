@@ -34,6 +34,7 @@ import {
   Wallet,
   Warehouse,
   Zap,
+  Award,
 } from "lucide-react";
 import { UserRole } from "./lib/enums/user-role.enum";
 
@@ -522,6 +523,12 @@ export const navGroups = [
         label: "Messaging Campaigns",
         href: "/admin/campaigns",
         feature: "/admin/campaigns",
+      },
+      {
+        icon: Award,
+        label: "Loyalty & Referrals",
+        href: "/admin/marketing/loyalty",
+        feature: "/admin/campaigns", // Protected under same feature permission for simplicity
       },
     ],
   },

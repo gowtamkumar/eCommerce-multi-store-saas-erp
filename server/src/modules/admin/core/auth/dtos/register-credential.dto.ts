@@ -33,4 +33,8 @@ export class RegisterCredentialDto {
   @IsNotEmpty()
   @IsOptional()
   emailVerificationToken?: string
+
+  @IsString()
+  @IsOptional()
+  referralCode?: string
 }

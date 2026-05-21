@@ -1,6 +1,6 @@
 'use client';
 
-import { getPayrollBatches, getPayrollSlips, processPayroll } from '@/services/hrm';
+import { getPayrollBatches, getPayrollSlips, processPayroll, payPayrollBatch } from '@/services/hrm';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -81,6 +81,21 @@ export default function PayrollManagementPage() {
       fetchData();
     } catch (err: any) {
       alert(err.message || 'Payroll processing failed');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handlePayBatch = async () => {
+    if (!selectedBatch) return;
+    try {
+      setProcessing(true);
+      const updatedBatch = await payPayrollBatch(selectedBatch.id);
+      setSelectedBatch(updatedBatch);
+      fetchData();
+      alert('Payroll batch disbursed and GL journal entries successfully created!');
+    } catch (err: any) {
+      alert(err.message || 'Payment release failed');
     } finally {
       setProcessing(false);
     }
@@ -256,8 +271,12 @@ export default function PayrollManagementPage() {
               </div>
 
               <div className="p-8 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex gap-4">
-                <button className="flex-1 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-xl">
-                  Disburse Batch
+                <button 
+                  onClick={handlePayBatch}
+                  disabled={processing || selectedBatch.status === 'PAID'}
+                  className="flex-1 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-xl disabled:opacity-50"
+                >
+                  {processing ? 'Processing...' : selectedBatch.status === 'PAID' ? 'PAID / SETTLED' : 'Release Payroll Payment'}
                 </button>
                 <button className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 hover:text-indigo-600 transition-all">
                   Export PDF

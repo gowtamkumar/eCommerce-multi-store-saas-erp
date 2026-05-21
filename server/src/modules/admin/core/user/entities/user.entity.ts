@@ -118,6 +118,23 @@ export class UserEntity {
   @Column({ type: 'boolean', name: 'credit_hold', default: false })
   creditHold: boolean
 
+  @Column({ type: 'varchar', name: 'membership_tier', length: 20, default: 'BRONZE' })
+  membershipTier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM'
+
+  @Column({ type: 'varchar', name: 'referral_code', length: 50, nullable: true })
+  @Index({ unique: true, where: 'referral_code IS NOT NULL' })
+  referralCode: string | null
+
+  @Column({ type: 'uuid', name: 'referred_by_id', nullable: true })
+  referredById: string | null
+
+  @ManyToOne(() => UserEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'referred_by_id' })
+  referredBy: UserEntity | null
+
+  @Column({ type: 'integer', name: 'loyalty_points_balance', default: 0 })
+  loyaltyPointsBalance: number
+
   @Column({ type: 'varchar', length: 100, nullable: true, name: 'tax_id' })
   taxId: string
 

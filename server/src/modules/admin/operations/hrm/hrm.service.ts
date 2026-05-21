@@ -6,7 +6,7 @@ import { AccountingService } from '@/modules/admin/operations/finance/accounting
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
-import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common'
 import {
   AssignShiftDto,
   CreateDepartmentDto,
@@ -477,6 +477,13 @@ export class HrmService {
     this.logger.log(`Starting payroll process for period ${period}`)
     const employees = await this.hrmRepo.findAllEmployees(ctx.tenantId)
 
+    // Month and Year parsing from period string "YYYY-MM"
+    const [yearStr, monthStr] = period.split('-')
+    const year = parseInt(yearStr, 10)
+    const month = parseInt(monthStr, 10)
+    const startDate = new Date(year, month - 1, 1)
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999)
+
     const batch = await this.hrmRepo.createPayrollBatch({
       name,
       period,
@@ -484,7 +491,10 @@ export class HrmService {
       status: 'DRAFT',
     })
 
-    let batchTotal = 0
+    let batchNetTotal = 0
+    let totalGrossSalaries = 0
+    let totalTaxesWithheld = 0
+    let totalDeductionsSum = 0
     const slips = []
 
     for (const employee of employees) {
@@ -493,14 +503,39 @@ export class HrmService {
       const salary = employee.salaryConfig?.basicSalary || 0
       const allowances =
         employee.salaryConfig?.allowances?.reduce((sum, a) => sum + Number(a.amount), 0) || 0
-      const deductions =
+      const baseDeductions =
         employee.salaryConfig?.deductions?.reduce((sum, d) => sum + Number(d.amount), 0) || 0
 
-      // Placeholder for complex production logic (e.g. counting work_hours from sessions)
-      const overtimePay = 0
-      const leaveDeductions = 0
+      // Fetch verified attendance sessions in billing period for late & overtime
+      const sessions = await this.hrmRepo.findAttendanceSessionsForEmployee(
+        employee.id,
+        startDate,
+        endDate,
+        ctx.tenantId,
+      )
 
-      const netSalary = salary + allowances + overtimePay - (deductions + leaveDeductions)
+      const overtimeHours = sessions.reduce((sum, s) => sum + Number(s.overtimeHours || 0), 0)
+      const lateMinutes = sessions.reduce((sum, s) => sum + Number(s.lateMinutes || 0), 0)
+
+      // Rates Calculations
+      const hourlyRate = salary / 160
+      const overtimePay = parseFloat((overtimeHours * (hourlyRate * 1.5)).toFixed(2))
+      const lateDeductions = parseFloat((Math.floor(lateMinutes / 30) * (hourlyRate * 0.5)).toFixed(2))
+
+      // Progressive Income Tax Calculations
+      const grossSalary = salary + allowances + overtimePay
+      let incomeTax = 0
+      if (grossSalary > 3000) {
+        incomeTax = 75 + (grossSalary - 3000) * 0.10
+      } else if (grossSalary > 1500) {
+        incomeTax = (grossSalary - 1500) * 0.05
+      }
+      incomeTax = parseFloat(incomeTax.toFixed(2))
+
+      // Net Salary formula
+      const netSalary = parseFloat(
+        (grossSalary - (baseDeductions + lateDeductions + incomeTax)).toFixed(2),
+      )
 
       const slip = await this.hrmRepo.createPayrollSlip({
         batchId: batch.id,
@@ -508,61 +543,181 @@ export class HrmService {
         tenantId: ctx.tenantId,
         basicSalary: salary,
         totalAllowances: allowances,
-        totalDeductions: deductions,
+        totalDeductions: baseDeductions + lateDeductions + incomeTax,
         netSalary,
         details: {
           allowances: employee.salaryConfig?.allowances || [],
           deductions: employee.salaryConfig?.deductions || [],
           overtimePay,
-          leaveDeductions,
+          leaveDeductions: lateDeductions, // map lateDeductions to leaveDeductions for backward compatibility
+          lateDeductions,
+          incomeTax,
+          overtimeHours,
+          lateMinutes,
         },
       })
 
       slips.push(slip)
-      batchTotal += netSalary
+      batchNetTotal += netSalary
+      totalGrossSalaries += grossSalary
+      totalTaxesWithheld += incomeTax
+      totalDeductionsSum += baseDeductions + lateDeductions
     }
 
     // Update batch total
     await (this.hrmRepo as any).payrollBatchRepo.update(batch.id, {
-      totalAmount: batchTotal,
+      totalAmount: batchNetTotal,
       status: 'APPROVED',
     })
 
-    // Accounting Integration
+    // Accounting Journal Posting (Salary Accrual Entry)
     try {
       if (this.accountingService) {
-        const journal = await this.accountingService.createJournalEntry(
+        // Debit: Salaries & Wages Expense (6000) -> Gross Salaries
+        // Credit: Salaries Payable (2100) -> Net Payable
+        // Credit: Payroll Tax Liabilities (2200) -> Taxes withheld
+        // Credit: Miscellaneous Deductions Recovery (2150) -> Cumulative employee deductions
+        await this.accountingService.createJournalEntry(
           {
             type: JournalType.GENERAL,
-            description: `Payroll for ${period}: ${name}`,
+            description: `Salary Accrual for Period ${period}: ${name}`,
             referenceType: 'PAYROLL_BATCH',
             referenceId: batch.id,
             lines: [
-              { accountCode: '6000', side: LedgerEntrySide.DEBIT, amount: batchTotal }, // Salaries & Wages Expense
-              { accountCode: '2100', side: LedgerEntrySide.CREDIT, amount: batchTotal }, // Salaries Payable
-            ],
+              {
+                accountCode: '6000',
+                side: LedgerEntrySide.DEBIT,
+                amount: parseFloat(totalGrossSalaries.toFixed(2)),
+              },
+              {
+                accountCode: '2100',
+                side: LedgerEntrySide.CREDIT,
+                amount: parseFloat(batchNetTotal.toFixed(2)),
+              },
+              {
+                accountCode: '2200',
+                side: LedgerEntrySide.CREDIT,
+                amount: parseFloat(totalTaxesWithheld.toFixed(2)),
+              },
+              {
+                accountCode: '2100', // Offset remainder to keep COA simple if recovery accounts aren't initialized
+                side: LedgerEntrySide.CREDIT,
+                amount: parseFloat(totalDeductionsSum.toFixed(2)),
+              },
+            ].filter((line) => line.amount > 0),
           },
           ctx,
         )
-
-        await (this.hrmRepo as any).payrollBatchRepo.update(batch.id, {
-          journalEntryId: journal.id,
-          status: 'PAID',
-        })
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
-        `Failed to create accounting entries for payroll ${batch.id}: ${error.message}`,
+        `Failed to create accrual accounting entries for payroll batch ${batch.id}: ${error.message}`,
       )
     }
+
+    const updatedBatch = await this.hrmRepo.findPayrollBatchById(batch.id, ctx.tenantId)
 
     await this.auditLogService.log(ctx, {
       action: 'PROCESS',
       entity: 'PayrollBatch',
       entityId: batch.id,
-      newValue: batch,
+      newValue: updatedBatch,
     })
-    return { batch, slipCount: slips.length }
+    return { batch: updatedBatch, slipCount: slips.length }
+  }
+
+  async payPayrollBatch(batchId: string, ctx: RequestContextDto) {
+    this.logger.log(`Starting payroll release run for batch ${batchId}`)
+    const batch = await this.hrmRepo.findPayrollBatchById(batchId, ctx.tenantId)
+    if (!batch) throw new NotFoundException('Payroll batch not found')
+    if (batch.status === 'PAID') throw new BadRequestException('Payroll batch already paid')
+
+    // Accounting Journal Posting (Salary Payment Settlement)
+    try {
+      if (this.accountingService) {
+        const amountToPay = Number(batch.totalAmount)
+        // Debit: Salaries Payable (2100) -> Net wages cleared
+        // Credit: Cash & Bank Account (1000) -> Cash outlay
+        await this.accountingService.createJournalEntry(
+          {
+            type: JournalType.GENERAL,
+            description: `Payment Settlement for Payroll Batch: ${batch.name}`,
+            referenceType: 'PAYROLL_PAYMENT',
+            referenceId: batch.id,
+            lines: [
+              { accountCode: '2100', side: LedgerEntrySide.DEBIT, amount: amountToPay },
+              { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: amountToPay },
+            ],
+          },
+          ctx,
+        )
+      }
+    } catch (error: any) {
+      this.logger.error(
+        `Failed to post payment journal entries for batch ${batchId}: ${error.message}`,
+      )
+      throw new Error(`Accounting GL post failed: ${error.message}`)
+    }
+
+    await (this.hrmRepo as any).payrollBatchRepo.update(batch.id, {
+      status: 'PAID',
+    })
+
+    const updatedBatch = await this.hrmRepo.findPayrollBatchById(batchId, ctx.tenantId)
+
+    await this.auditLogService.log(ctx, {
+      action: 'PAY',
+      entity: 'PayrollBatch',
+      entityId: batchId,
+      newValue: updatedBatch,
+    })
+
+    return updatedBatch
+  }
+
+  async rejectLeave(
+    requestId: string,
+    rejectedById: string,
+    managerNote: string,
+    ctx: RequestContextDto,
+  ) {
+    const request = await (this.hrmRepo as any).leaveRequestRepo.findOne({
+      where: { id: requestId, tenantId: ctx.tenantId },
+    })
+    if (!request) throw new NotFoundException('Leave request not found')
+
+    await this.hrmRepo.updateLeaveRequest(requestId, {
+      status: LeaveStatus.REJECTED as any,
+      approvedById: rejectedById,
+      managerNote,
+    })
+
+    // Trigger Notification for Employee
+    try {
+      const employee = await this.hrmRepo.findEmployeeById(request.employeeId, ctx.tenantId)
+      if (employee?.userId) {
+        await this.notificationService.createNotification(
+          {
+            title: 'Leave Request Rejected',
+            message: `Your leave request for ${new Date(request.startDate).toLocaleDateString()} has been rejected.`,
+            type: 'error',
+            link: '/admin/profile',
+            userId: employee.userId,
+          },
+          ctx.tenantId,
+        )
+      }
+    } catch (e: any) {
+      this.logger.error(`Failed to trigger leave rejection notification: ${e.message}`)
+    }
+
+    await this.auditLogService.log(ctx, {
+      action: 'REJECT',
+      entity: 'LeaveRequest',
+      entityId: requestId,
+      newValue: { status: 'REJECTED' },
+    })
+    return request
   }
 
   async findAllPayrollBatches(ctx: RequestContextDto) {

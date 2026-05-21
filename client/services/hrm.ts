@@ -148,6 +148,18 @@ export async function approveLeave(
   return res.data;
 }
 
+export async function rejectLeave(
+  requestId: string,
+  rejectedById: string,
+  managerNote: string,
+) {
+  const res = await fetchAPI(`/operations/hrm/leaves/${requestId}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ rejectedById, managerNote }),
+  });
+  return res.data;
+}
+
 export async function getLeaveRequests() {
   const res = await fetchAPI("/operations/hrm/leaves");
   return res.data;
@@ -171,6 +183,13 @@ export async function getPayrollBatches() {
 
 export async function getPayrollSlips(batchId: string) {
   const res = await fetchAPI(`/operations/hrm/payroll/batches/${batchId}/slips`);
+  return res.data;
+}
+
+export async function payPayrollBatch(batchId: string) {
+  const res = await fetchAPI(`/operations/hrm/payroll/batches/${batchId}/pay`, {
+    method: "POST",
+  });
   return res.data;
 }
 

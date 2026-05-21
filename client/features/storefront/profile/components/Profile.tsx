@@ -4,7 +4,7 @@ import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, Loader2, LogOut, MapPin, Package, ShieldCheck, User, Heart, ChevronRight } from 'lucide-react';
+import { Calendar, Loader2, LogOut, MapPin, Package, ShieldCheck, User, Heart, ChevronRight, Award } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -23,10 +23,14 @@ const WishlistComponent = dynamic(() => import('./WishlistComponent'), {
     loading: () => <div className="p-12 text-center text-slate-500 font-bold animate-pulse">Loading wishlist...</div>
 });
 
+const LoyaltyRewards = dynamic(() => import('./LoyaltyRewards'), {
+    loading: () => <div className="p-12 text-center text-slate-500 font-bold animate-pulse">Loading loyalty details...</div>
+});
+
 export default function Profile() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'personal' | 'orders' | 'addresses' | 'wishlist' | 'security'>('personal');
+    const [activeTab, setActiveTab] = useState<'personal' | 'orders' | 'loyalty' | 'addresses' | 'wishlist' | 'security'>('personal');
 
     const [stats, setStats] = useState({
         totalOrders: 0,
@@ -83,6 +87,7 @@ export default function Profile() {
     const tabs = [
         { id: 'personal', label: 'Personal Info', icon: User },
         { id: 'orders', label: 'Order History', icon: Package },
+        { id: 'loyalty', label: 'Loyalty & Rewards', icon: Award },
         { id: 'wishlist', label: 'Wishlist Items', icon: Heart },
         { id: 'addresses', label: 'Manage Addresses', icon: MapPin },
         { id: 'security', label: 'Account Security', icon: ShieldCheck },
@@ -197,6 +202,7 @@ export default function Profile() {
                                             <p className="text-slate-500 dark:text-slate-400 text-xs font-bold mt-1">
                                                 {activeTab === 'personal' && 'Manage your account details and profile information'}
                                                 {activeTab === 'orders' && 'Track and manage your recent purchase history'}
+                                                {activeTab === 'loyalty' && 'Track your points, check tier benefits, and share your referral link'}
                                                 {activeTab === 'wishlist' && 'Products you have saved to buy later'}
                                                 {activeTab === 'addresses' && 'Manage your primary and secondary shipping locations'}
                                                 {activeTab === 'security' && 'Manage your account password and security preferences'}
@@ -218,6 +224,10 @@ export default function Profile() {
                                             <div className="p-2">
                                                 <CustomerOrders />
                                             </div>
+                                        )}
+
+                                        {activeTab === 'loyalty' && (
+                                            <LoyaltyRewards />
                                         )}
 
                                         {activeTab === 'addresses' && (

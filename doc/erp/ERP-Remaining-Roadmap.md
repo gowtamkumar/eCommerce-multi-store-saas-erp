@@ -41,29 +41,29 @@ Use this checkable roadmap to track and implement the remaining features needed 
 
 ---
 
-## 📅 Phase 3: Loyalty & Referrals Engine
+## 📅 Phase 3: Loyalty & Referrals Engine ✅ COMPLETED
 **Goal:** Increase retention via points, tiers, and referral bonuses.
 
-- [ ] **Create Loyalty Ledger & Rules:**
+- [x] **Create Loyalty Ledger & Rules:**
   * Create `loyalty_ledger` to log points earned, redeemed, or expired.
   * Create configurations for earning points (e.g. $1 spent = 1 point) and redeeming points (e.g. 100 points = $1).
-- [ ] **Membership Tier Automation:**
+- [x] **Membership Tier Automation:**
   * Implement job/scheduler to evaluate rolling 12-month customer spending and auto-upgrade or downgrade tiers (`BRONZE`, `SILVER`, `GOLD`, `PLATINUM`).
-- [ ] **Referrals System:**
+- [x] **Referrals System:**
   * Generate unique referral codes on user signup.
   * Reward referrer with points or wallet balance after the referee completes their first qualified purchase.
 
 ---
 
-## 📅 Phase 4: HRM Payroll Consolidation
+## 📅 Phase 4: HRM Payroll Consolidation ✅ COMPLETED
 **Goal:** Automate salary runs and connect labor costs to the ledger.
 
-- [ ] **Implement Payroll Batch Engine:**
+- [x] **Implement Payroll Batch Engine:**
   * Add a service to compile employee monthly salary sheets.
   * Automatically calculate late-attendance deductions, overtime pay, and taxes.
-- [ ] **Finance GL Integration:**
+- [x] **Finance GL Integration:**
   * Auto-post salary payments to the General Ledger (Debit Salary Expense / Credit Cash at Bank).
-- [ ] **Leave Approval Workflows:**
+- [x] **Leave Approval Workflows:**
   * Build leave request API with manager approval flow and automatic adjustments to leaf accrual balances.
 
 ---

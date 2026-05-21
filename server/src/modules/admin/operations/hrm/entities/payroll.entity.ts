@@ -65,6 +65,10 @@ export class PayrollSlipEntity extends BaseEntity {
     deductions: { type: string; amount: number }[]
     overtimePay: number
     leaveDeductions: number
+    lateDeductions?: number
+    incomeTax?: number
+    overtimeHours?: number
+    lateMinutes?: number
   }
 
   @Column({ type: 'uuid', name: 'tenant_id' })

@@ -1,6 +1,6 @@
 'use client';
 
-import { approveLeave, getEmployees, getLeaveRequests, requestLeave } from '@/services/hrm';
+import { approveLeave, getEmployees, getLeaveRequests, requestLeave, rejectLeave } from '@/services/hrm';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Calendar,
@@ -67,6 +67,7 @@ export default function LeaveManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState<string | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -127,6 +128,23 @@ export default function LeaveManagementPage() {
       fetchData();
     } catch (err: any) {
       alert(err.message || 'Approval failed');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRejectAction = async (requestId: string) => {
+    if (!approveData.approvedById) {
+      alert("Please select an approving manager for this simulation.");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await rejectLeave(requestId, approveData.approvedById, approveData.managerNote);
+      setShowRejectModal(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Rejection failed');
     } finally {
       setSubmitting(false);
     }
@@ -293,6 +311,7 @@ export default function LeaveManagementPage() {
                                   <ThumbsUp className="w-4 h-4" />
                                 </button>
                                 <button 
+                                  onClick={() => setShowRejectModal(request.id)}
                                   className="p-3 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all"
                                   title="Reject"
                                 >
@@ -418,6 +437,46 @@ export default function LeaveManagementPage() {
                 >
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ThumbsUp className="w-4 h-4" />}
                   Confirm Approval
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Rejection Modal */}
+      <AnimatePresence>
+        {showRejectModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRejectModal(null)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl p-8">
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-8 italic">Reject <span className="text-rose-600">Application</span></h2>
+              
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rejecting Manager</label>
+                  <select 
+                    value={approveData.approvedById} 
+                    onChange={e => setApproveData({...approveData, approvedById: e.target.value})}
+                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none"
+                  >
+                    <option value="">Select Manager...</option>
+                    {employees.map(e => <option key={e.id} value={e.id}>{e.user?.name}</option>)}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rejection Reason</label>
+                  <textarea value={approveData.managerNote} onChange={e => setApproveData({...approveData, managerNote: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none h-24 resize-none" placeholder="Explain the reason for rejecting this leave application..." />
+                </div>
+
+                <button 
+                  onClick={() => handleRejectAction(showRejectModal)}
+                  disabled={submitting || !approveData.approvedById}
+                  className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ThumbsDown className="w-4 h-4" />}
+                  Confirm Rejection
                 </button>
               </div>
             </motion.div>

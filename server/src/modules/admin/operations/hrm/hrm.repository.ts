@@ -206,6 +206,22 @@ export class HrmRepository {
     })
   }
 
+  async findAttendanceSessionsForEmployee(
+    employeeId: string,
+    startDate: Date,
+    endDate: Date,
+    tenantId: string,
+  ): Promise<AttendanceSessionEntity[]> {
+    return this.attendanceSessionRepo.find({
+      where: {
+        employeeId,
+        tenantId,
+        clockIn: Between(startDate, endDate),
+      },
+      order: { clockIn: 'ASC' },
+    })
+  }
+
   // --- Leaves ---
   async createLeaveRequest(data: Partial<LeaveRequestEntity>): Promise<LeaveRequestEntity> {
     return this.leaveRequestRepo.save(this.leaveRequestRepo.create(data))
@@ -247,6 +263,14 @@ export class HrmRepository {
       where: { tenantId },
       order: { createdAt: 'DESC' },
     })
+  }
+
+  async findPayrollBatchById(id: string, tenantId: string): Promise<PayrollBatchEntity | null> {
+    return this.payrollBatchRepo.findOne({ where: { id, tenantId } })
+  }
+
+  async updatePayrollBatch(id: string, data: Partial<PayrollBatchEntity>): Promise<void> {
+    await this.payrollBatchRepo.update(id, data)
   }
 
   async createPayrollSlip(data: Partial<PayrollSlipEntity>): Promise<PayrollSlipEntity> {

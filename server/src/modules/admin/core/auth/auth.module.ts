@@ -12,6 +12,7 @@ import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
+import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
     MailModule,
     RbacModule,
     NotificationModule,
+    LoyaltyModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

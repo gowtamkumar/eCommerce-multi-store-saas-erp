@@ -344,6 +344,24 @@ export class HrmController {
     }
   }
 
+  @Post('payroll/batches/:id/pay')
+  @RequirePermissions(SystemPermissions.HRM_PAYROLL_PROCESS)
+  async payPayrollBatch(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called payPayrollBatch for ${id}.`,
+    )
+    const res = await this.hrmService.payPayrollBatch(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Payroll batch paid successfully',
+      data: res,
+    }
+  }
+
   // --- Shift Management ---
   @Post('shifts')
   @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
@@ -497,6 +515,26 @@ export class HrmController {
       success: true,
       statusCode: 200,
       message: 'Leave request approved',
+      data: res,
+    }
+  }
+
+  @Post('leaves/:id/reject')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
+  async rejectLeave(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body('rejectedById') rejectedById: string,
+    @Body('managerNote') managerNote: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called rejectLeave for request ${id}.`,
+    )
+    const res = await this.hrmService.rejectLeave(id, rejectedById, managerNote, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Leave request rejected',
       data: res,
     }
   }

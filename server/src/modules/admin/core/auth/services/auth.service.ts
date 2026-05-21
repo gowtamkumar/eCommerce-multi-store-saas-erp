@@ -22,6 +22,7 @@ import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { ReferralService } from '@/modules/admin/marketing/loyalty/services/referral.service'
 
 @Injectable()
 export class AuthService {
@@ -35,6 +36,7 @@ export class AuthService {
     private readonly staffInvitationService: StaffInvitationService,
     private readonly permissionResolutionService: PermissionResolutionService,
     private readonly notificationService: NotificationService,
+    private readonly referralService: ReferralService,
   ) {}
 
   async register(
@@ -63,6 +65,24 @@ export class AuthService {
 
     if (!user) {
       throw new InternalServerErrorException('Failed to create user')
+    }
+
+    // Generate unique referral code for the user
+    try {
+      const refCode = await this.referralService.generateUniqueReferralCode(user.name, tenantId)
+      await this.userService.updateUser(user.id, { referralCode: refCode } as any)
+      user.referralCode = refCode
+    } catch (e) {
+      this.logger.error(`Failed to generate referral code: ${e.message}`)
+    }
+
+    // Link referral if referrer code was supplied
+    if (registerCredentialDto.referralCode) {
+      try {
+        await this.referralService.linkReferral(user.id, registerCredentialDto.referralCode, tenantId)
+      } catch (e) {
+        this.logger.error(`Failed to link referral code: ${e.message}`)
+      }
     }
 
     // await this.mailService.sendVerificationEmail(user.email, verificationToken, tenantId)
