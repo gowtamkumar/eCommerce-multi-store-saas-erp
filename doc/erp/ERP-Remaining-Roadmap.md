@@ -68,12 +68,12 @@ Use this checkable roadmap to track and implement the remaining features needed 
 
 ---
 
-## 📅 Phase 5: Courier SDK Integrations
+## 📅 Phase 5: Courier SDK Integrations ✅ COMPLETED
 **Goal:** Connect local logistics systems with third-party shippers.
 
-- [ ] **Complete Steadfast API Integration:**
-  * Wire the Steadfast shipping API to create orders, get courier status updates, and download shipping labels automatically.
-- [ ] **Complete Pathao SDK Integration:**
-  * Wire Pathao merchant API to perform address validation and check pricing rates based on weight and destination.
-- [ ] **Webhook Receivers:**
-  * Build endpoints to receive delivery notifications and update order shipment statuses automatically.
+- [x] **Complete Steadfast API Integration:**
+  * Wired Steadfast shipping API to create orders, fetch tracking status, and retrieve portal print label redirects automatically.
+- [x] **Complete Pathao SDK Integration:**
+  * Configured Pathao merchant API, loaded locations dropdowns, and checked live shipping rates dynamically based on weight and destination.
+- [x] **Webhook Receivers:**
+  * Built public, bypassable webhook handlers for both Steadfast and Pathao to synchronize delivery updates in real-time.

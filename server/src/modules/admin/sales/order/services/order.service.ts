@@ -372,6 +372,14 @@ export class OrderService {
     return order
   }
 
+  async findOrderByTrackingId(trackingId: string): Promise<OrderEntity | null> {
+    return await this.orderRepository.findOrderByTrackingId(trackingId)
+  }
+
+  async findOrderByInvoiceCode(invoiceCode: string): Promise<OrderEntity | null> {
+    return await this.orderRepository.findOrderByInvoiceCode(invoiceCode)
+  }
+
   async findByUserId(
     userId: string,
     ctx: RequestContextDto,
@@ -472,6 +480,25 @@ export class OrderService {
             savedOrder.userId,
             savedOrder.id,
             savedOrder.totalAmount,
+            ctx,
+            queryRunner.manager,
+          )
+        }
+
+        // Recognition of Cash/Payment and Sales Revenue for standard sales
+        if (savedOrder.paymentMethod !== PaymentMethod.ON_ACCOUNT) {
+          const orderTotal = Number(savedOrder.totalAmount)
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.SALES,
+              description: `Sales Revenue & Cash Recognition - Order ID: ${savedOrder.id}`,
+              referenceType: 'ORDER',
+              referenceId: savedOrder.id,
+              lines: [
+                { accountCode: '1000', side: LedgerEntrySide.DEBIT, amount: orderTotal }, // Debit Cash
+                { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: orderTotal }, // Credit Sales Revenue
+              ],
+            },
             ctx,
             queryRunner.manager,
           )

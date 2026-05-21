@@ -121,4 +121,35 @@ export class SteadfastService {
       throw error
     }
   }
+
+  async getSteadfastStatus(trackingCode: string, ctx: RequestContextDto): Promise<any> {
+    this.logger.log(`${this.getSteadfastStatus.name} Service Called for trackingCode: ${trackingCode}`)
+    const creds = await this.getCredentials(ctx)
+    const url = `${creds.baseUrl}/status_by_trackingcode/${trackingCode}`
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: {
+            'Api-Key': creds.apiKey,
+            'Secret-Key': creds.secretKey,
+            'Content-Type': 'application/json',
+          },
+        }),
+      )
+      return response.data
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch Steadfast status for trackingCode ${trackingCode}`,
+        error.response?.data || error.message,
+      )
+      throw error
+    }
+  }
+
+  async getSteadfastLabel(trackingCode: string, ctx: RequestContextDto): Promise<{ printUrl: string }> {
+    this.logger.log(`${this.getSteadfastLabel.name} Service Called for trackingCode: ${trackingCode}`)
+    const portalUrl = 'https://portal.steadfastcourier.com.bd/print_label'
+    return { printUrl: `${portalUrl}/${trackingCode}` }
+  }
 }

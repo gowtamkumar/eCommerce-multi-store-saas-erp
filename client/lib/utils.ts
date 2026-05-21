@@ -58,19 +58,28 @@ export function calculateShippingFee(
 }
 
 
-export const handleCreatePathaoOrder = async (order: Order, setCreatingPathaoOrder: (orderId: string | null) => void) => {
+export const handleCreatePathaoOrder = async (
+  order: Order,
+  setCreatingPathaoOrder: (orderId: string | null) => void,
+  locationData?: { recipient_city?: number; recipient_zone?: number; recipient_area?: number; item_weight?: number }
+) => {
   setCreatingPathaoOrder(order.id);
 
   try {
     const response = await fetchAPI('/courier/pathao/create-order', {
       method: 'POST',
-      body: JSON.stringify({ orderId: order.id }),
+      body: JSON.stringify({
+        orderId: order.id,
+        ...locationData
+      }),
     });
 
     toast.success('Pathao order created successfully!');
+    return { success: true, data: response };
   } catch (error: any) {
     console.error('Failed to create Pathao order:', error);
     toast.error(error?.message || 'Failed to create Pathao order. Please check your courier settings.');
+    return { success: false, error };
   } finally {
     setCreatingPathaoOrder(null);
   }
@@ -113,9 +122,11 @@ export const handleCreateSteadfastOrder = async (order: Order, setCreatingOrder:
 
     toast.success('Steadfast order created successfully!');
     console.log('Steadfast order response:', response);
+    return { success: true, data: response };
   } catch (error: any) {
     console.error('Failed to create Steadfast order:', error);
     toast.error(error?.message || 'Failed to create Steadfast order. Please check your courier settings.');
+    return { success: false, error };
   } finally {
     setCreatingOrder(null);
   }

@@ -119,14 +119,14 @@ export class PathaoService {
       recipient_name: order.customerName,
       recipient_phone: order.customerPhone || '01700000000',
       recipient_address: order.address || 'Address not provided',
-      recipient_city: Number((order as any).cityId) || 1,
-      recipient_zone: Number((order as any).zoneId) || 1,
-      recipient_area: Number((order as any).areaId) || 1,
+      recipient_city: Number(createOrderDto.recipient_city || (order as any).cityId || 1),
+      recipient_zone: Number(createOrderDto.recipient_zone || (order as any).zoneId || 1),
+      recipient_area: Number(createOrderDto.recipient_area || (order as any).areaId || 1),
       delivery_type: 48,
       item_type: 2,
       item_quantity:
         order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 1,
-      item_weight: 0.5,
+      item_weight: Number(createOrderDto.item_weight || 0.5),
       item_description:
         order.items
           ?.map((item: any) => `${item.quantity}x ${item.product?.name || 'Product'}`)
@@ -255,5 +255,62 @@ export class PathaoService {
       86400,
       tenantId,
     )
+  }
+
+  async calculatePathaoPrice(data: any, ctx: RequestContextDto): Promise<any> {
+    this.logger.log(`${this.calculatePathaoPrice.name} Service Called`)
+    const client = await this.getAuthenticatedClient(ctx)
+    const payload = {
+      store_id: client.storeId,
+      item_type: Number(data.itemType || 2),
+      delivery_type: Number(data.deliveryType || 48),
+      item_weight: Number(data.itemWeight || 0.5),
+      recipient_city: Number(data.recipientCity),
+      recipient_zone: Number(data.recipientZone),
+    }
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${client.baseURL}/aladdin/api/v1/merchant/price-calculation`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${client.accessToken}`,
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+          },
+        ),
+      )
+      return response.data
+    } catch (error) {
+      this.logger.error('Failed to calculate Pathao price', error.response?.data || error.message)
+      throw error
+    }
+  }
+
+  async getPathaoStatus(trackingCode: string, ctx: RequestContextDto): Promise<any> {
+    this.logger.log(`${this.getPathaoStatus.name} Service Called for trackingCode: ${trackingCode}`)
+    const client = await this.getAuthenticatedClient(ctx)
+    const url = `${client.baseURL}/aladdin/api/v1/orders/${trackingCode}/tracking`
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: {
+            Authorization: `Bearer ${client.accessToken}`,
+            Accept: 'application/json',
+          },
+        }),
+      )
+      return response.data
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch Pathao status for trackingCode ${trackingCode}`,
+        error.response?.data || error.message,
+      )
+      throw error
+    }
   }
 }

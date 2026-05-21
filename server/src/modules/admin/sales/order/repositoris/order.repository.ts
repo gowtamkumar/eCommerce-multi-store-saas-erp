@@ -34,6 +34,25 @@ export class OrderRepository {
     })
   }
 
+  async findOrderByTrackingId(trackingId: string): Promise<OrderEntity | null> {
+    return await this.repo.findOne({
+      where: { trackingId },
+      relations: ['items', 'items.product', 'shippingAddress'],
+    })
+  }
+
+  async findOrderByInvoiceCode(invoiceCode: string): Promise<OrderEntity | null> {
+    return await this.repo
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .leftJoinAndSelect('order.shippingAddress', 'shippingAddress')
+      .where('UPPER(RIGHT(CAST(order.id AS VARCHAR), 8)) = :invoiceCode', {
+        invoiceCode: invoiceCode.toUpperCase(),
+      })
+      .getOne()
+  }
+
   async findOneForCourier(id: string, tenantId: string): Promise<OrderEntity | null> {
     return await this.repo.findOne({
       where: { id, tenantId },
