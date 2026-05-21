@@ -1,4 +1,5 @@
 import {
+  Award,
   BarChart3,
   Bell,
   BookOpen,
@@ -34,7 +35,6 @@ import {
   Wallet,
   Warehouse,
   Zap,
-  Award,
 } from "lucide-react";
 import { UserRole } from "./lib/enums/user-role.enum";
 
@@ -227,6 +227,12 @@ export const navGroups = [
         label: "Brands",
         href: "/admin/brands",
         feature: "/admin/brands",
+      },
+      {
+        icon: Scale,
+        label: "Price Books",
+        href: "/admin/price-books",
+        feature: "/admin/products",
       },
       {
         icon: User,

@@ -6,7 +6,7 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { AddProductPriceDto } from './dto/add-product-price.dto'
 import { CreatePriceBookDto } from './dto/create-price-book.dto'
 import { PricingService } from './pricing.service'
@@ -87,6 +87,37 @@ export class PricingController {
       success: true,
       statusCode: 200,
       message: 'Product price deleted successfully',
+      data: null,
+    }
+  }
+
+  @Patch('price-books/:id')
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  async updatePriceBook(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body() dto: any,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.service.updatePriceBook(id, dto, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Price book updated successfully',
+      data,
+    }
+  }
+
+  @Delete('price-books/:id')
+  @RequirePermissions(SystemPermissions.CATALOG_WRITE)
+  async deletePriceBook(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    await this.service.deletePriceBook(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Price book deleted successfully',
       data: null,
     }
   }

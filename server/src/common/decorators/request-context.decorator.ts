@@ -9,6 +9,7 @@ export const RequestContext = createParamDecorator(
       tenantId: request.tenantId || request.headers['x-tenant-id'] || null,
       branchId: request.headers['x-branch-id'] || null,
       user: request.user || null,
+      sessionId: request.user?.sessionId || null,
     }
   },
 )

@@ -20,10 +20,20 @@ export class AdminAuthController {
     @RequestContext() ctx: RequestContextDto,
     @Body() loginCredentialDto: LoginCredentialDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called login.`)
     try {
-      const authPayload = await this.authService.login(loginCredentialDto, ctx.tenantId)
+      const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress
+      const userAgent = req.headers['user-agent'] || ''
+      const ipStr = typeof ip === 'string' ? ip : (Array.isArray(ip) ? ip[0] : '')
+
+      const authPayload = await this.authService.login(
+        loginCredentialDto,
+        ctx.tenantId,
+        ipStr,
+        userAgent,
+      )
       // set cookies token
       this.cookiesBuildTokenResponsive(res, authPayload.accessToken)
 
@@ -48,7 +58,7 @@ export class AdminAuthController {
     this.logger.verbose(`Admin logout called.`)
     //revoke token from database
     if (req.user) {
-      await this.authService.logout((req.user as any).id)
+      await this.authService.logout((req.user as any).id, (req.user as any).sessionId)
     }
 
     // clear cookies
@@ -67,8 +77,18 @@ export class AdminAuthController {
   async refresh(
     @Body() body: { userId: string; refreshToken: string },
     @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const tokens = await this.authService.refreshTokens(body.userId, body.refreshToken)
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress
+    const userAgent = req.headers['user-agent'] || ''
+    const ipStr = typeof ip === 'string' ? ip : (Array.isArray(ip) ? ip[0] : '')
+
+    const tokens = await this.authService.refreshTokens(
+      body.userId,
+      body.refreshToken,
+      ipStr,
+      userAgent,
+    )
     this.cookiesBuildTokenResponsive(res, tokens.accessToken)
 
     return {

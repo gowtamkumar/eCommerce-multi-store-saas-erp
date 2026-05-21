@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Post, Res, UseGuards, Logger } from '@nestjs/common'
+import { Body, Controller, Get, Post, Delete, Param, Res, Req, UseGuards, Logger } from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
-import { Response } from 'express'
+import { Request, Response } from 'express'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RegisterCredentialDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
@@ -21,9 +21,19 @@ export class AuthController {
     @RequestContext() ctx: RequestContextDto,
     @Body() registerCredentialDto: RegisterCredentialDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called register.`)
-    const authPayload = await this.authService.register(registerCredentialDto, ctx.tenantId)
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress
+    const userAgent = req.headers['user-agent'] || ''
+    const ipStr = typeof ip === 'string' ? ip : (Array.isArray(ip) ? ip[0] : '')
+
+    const authPayload = await this.authService.register(
+      registerCredentialDto,
+      ctx.tenantId,
+      ipStr,
+      userAgent,
+    )
     // set cookies token
     this.cookiesBuildTokenResponsive(res, authPayload.accessToken)
 
@@ -40,8 +50,18 @@ export class AuthController {
   async refresh(
     @Body() body: { userId: string; refreshToken: string },
     @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const tokens = await this.authService.refreshTokens(body.userId, body.refreshToken)
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress
+    const userAgent = req.headers['user-agent'] || ''
+    const ipStr = typeof ip === 'string' ? ip : (Array.isArray(ip) ? ip[0] : '')
+
+    const tokens = await this.authService.refreshTokens(
+      body.userId,
+      body.refreshToken,
+      ipStr,
+      userAgent,
+    )
     this.cookiesBuildTokenResponsive(res, tokens.accessToken)
 
     return {
@@ -59,12 +79,55 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called logout.`)
-    await this.authService.logout(ctx.userId)
+    await this.authService.logout(ctx.userId, ctx.sessionId)
     res.clearCookie('token')
     return {
       success: true,
       statusCode: 200,
       message: `Logout successful`,
+      data: null,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/sessions')
+  async getSessions(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const sessions = await this.authService.getUserSessions(ctx.userId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Active sessions retrieved successfully',
+      data: sessions,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('/sessions/other')
+  async revokeOtherSessions(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<null>> {
+    await this.authService.revokeAllOtherSessions(ctx.userId, ctx.sessionId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Other sessions revoked successfully',
+      data: null,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('/sessions/:id')
+  async revokeSession(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') sessionId: string,
+  ): Promise<BaseApiSuccessResponse<null>> {
+    await this.authService.revokeSession(sessionId, ctx.userId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Session revoked successfully',
       data: null,
     }
   }

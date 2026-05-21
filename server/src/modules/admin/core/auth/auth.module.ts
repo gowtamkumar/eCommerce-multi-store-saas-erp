@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
+import { TypeOrmModule } from '@nestjs/typeorm'
 import { JwtAuthStrategy } from '@/common/strategies/jwt-auth.strategy'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { UserModule } from '@/modules/admin/core/user/user.module'
 import { AdminAuthController } from '@/modules/admin/core/auth/controllers/admin-auth.controller'
 import { AuthController } from '@/modules/admin/core/auth/controllers/auth.controller'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
+import { SessionEntity } from '@/modules/admin/core/auth/entities/session.entity'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 import { RbacModule } from '@/modules/admin/core/rbac/rbac.module'
 
@@ -22,6 +24,7 @@ import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
     RbacModule,
     NotificationModule,
     LoyaltyModule,
+    TypeOrmModule.forFeature([SessionEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -34,6 +37,6 @@ import { LoyaltyModule } from '@/modules/admin/marketing/loyalty/loyalty.module'
   ],
   controllers: [AuthController, AdminAuthController],
   providers: [AuthService, JwtAuthStrategy],
-  exports: [],
+  exports: [AuthService],
 })
 export class AuthModule {}

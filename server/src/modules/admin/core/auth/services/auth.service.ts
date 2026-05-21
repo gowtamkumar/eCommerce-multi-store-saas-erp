@@ -16,8 +16,11 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository, Not } from 'typeorm'
 import * as crypto from 'crypto'
 import { UserEntity } from '../../user/entities/user.entity'
+import { SessionEntity } from '../entities/session.entity'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
@@ -37,11 +40,15 @@ export class AuthService {
     private readonly permissionResolutionService: PermissionResolutionService,
     private readonly notificationService: NotificationService,
     private readonly referralService: ReferralService,
+    @InjectRepository(SessionEntity)
+    private readonly sessionRepository: Repository<SessionEntity>,
   ) {}
 
   async register(
     registerCredentialDto: RegisterCredentialDto,
     tenantId: string,
+    ipAddress?: string,
+    userAgent?: string,
   ): Promise<{ accessToken: string; refreshToken: string; user: UserEntity }> {
     this.logger.log(`${this.register.name} Service Called`)
 
@@ -87,7 +94,7 @@ export class AuthService {
 
     // await this.mailService.sendVerificationEmail(user.email, verificationToken, tenantId)
 
-    const tokens = await this.getTokens(user)
+    const tokens = await this.getTokens(user, [], ipAddress, userAgent)
 
     return { ...tokens, user }
   }
@@ -95,6 +102,8 @@ export class AuthService {
   async login(
     loginCredentialsDto: LoginCredentialDto,
     tenantId: string,
+    ipAddress?: string,
+    userAgent?: string,
   ): Promise<{ user: UserEntity; accessToken: string; refreshToken: string }> {
     this.logger.log(`${this.login.name} Service Called`)
     const { username, password } = loginCredentialsDto
@@ -132,7 +141,7 @@ export class AuthService {
       features = tenant?.subscriptionPlan?.features || []
     }
 
-    const tokens = await this.getTokens(user, features)
+    const tokens = await this.getTokens(user, features, ipAddress, userAgent)
 
     let permissionManifest = null
     if (tenantId) {
@@ -199,14 +208,32 @@ export class AuthService {
   async getTokens(
     user: any,
     features: string[] = [],
+    ipAddress?: string,
+    userAgent?: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     this.logger.log(`${this.getTokens.name} Service Called`)
+    
+    const sessionId = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days matching refresh token default
+    
+    // Save session in database
+    await this.sessionRepository.save({
+      id: sessionId,
+      userId: user.id,
+      tenantId: user.tenantId,
+      ipAddress,
+      userAgent,
+      expiresAt,
+      isActive: true,
+    })
+
     const payload = {
       username: user.username,
       tenantId: user.tenantId,
       role: user.role,
       sub: user.id,
       features,
+      sessionId,
     }
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -231,6 +258,8 @@ export class AuthService {
   async refreshTokens(
     userId: string,
     refreshToken: string,
+    ipAddress?: string,
+    userAgent?: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     this.logger.log(`${this.refreshTokens.name} Service Called`)
     const user = await this.userService.getUserIfRefreshTokenMatches(refreshToken, userId)
@@ -244,12 +273,50 @@ export class AuthService {
       features = tenant?.subscriptionPlan?.features || []
     }
 
-    const tokens = await this.getTokens(user, features)
+    // Invalidate old session from rotated token
+    let oldSessionId: string | null = null
+    try {
+      const decoded = this.jwtService.decode(refreshToken) as any
+      if (decoded && decoded.sessionId) {
+        oldSessionId = decoded.sessionId
+      }
+    } catch (e) {
+      this.logger.error(`Failed to decode refresh token: ${e.message}`)
+    }
+
+    if (oldSessionId) {
+      await this.sessionRepository.update({ id: oldSessionId }, { isActive: false })
+    }
+
+    const tokens = await this.getTokens(user, features, ipAddress, userAgent)
     return tokens
   }
 
-  async logout(userId: string): Promise<void> {
+  async logout(userId: string, sessionId?: string): Promise<void> {
     this.logger.log(`${this.logout.name} Service Called`)
+    if (sessionId) {
+      await this.sessionRepository.update({ id: sessionId, userId }, { isActive: false })
+    } else {
+      await this.sessionRepository.update({ userId, isActive: true }, { isActive: false })
+    }
     return this.userService.removeRefreshToken(userId)
+  }
+
+  async getUserSessions(userId: string): Promise<SessionEntity[]> {
+    return this.sessionRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    })
+  }
+
+  async revokeSession(sessionId: string, userId: string): Promise<void> {
+    await this.sessionRepository.update({ id: sessionId, userId }, { isActive: false })
+  }
+
+  async revokeAllOtherSessions(userId: string, currentSessionId: string): Promise<void> {
+    await this.sessionRepository.update(
+      { userId, id: Not(currentSessionId) },
+      { isActive: false },
+    )
   }
 }

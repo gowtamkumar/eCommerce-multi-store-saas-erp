@@ -66,7 +66,7 @@ export class UserController {
   @Get('/profile')
   async getProfile(
     @RequestContext() ctx: RequestContextDto,
-  ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
+  ): Promise<BaseApiSuccessResponse<UserResponseDto & { sessionId?: string }>> {
     this.logger.log(`${this.getProfile.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getProfile.`)
     const result = await this.userService.getUser(ctx.userId)
@@ -74,7 +74,7 @@ export class UserController {
       success: true,
       statusCode: 200,
       message: 'Profile retrieved',
-      data: result as any,
+      data: { ...(result as any), sessionId: ctx.sessionId } as any,
     }
   }
 

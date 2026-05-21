@@ -13,7 +13,7 @@ This document provides a comprehensive analysis of the multi-tenant SaaS ERP pro
 | **Granular Permissions** | `PermissionEntity` with action-level check | `/admin/roles` | **Complete** | Assigned dynamically to roles. |
 | **Staff Invitations** | `StaffInvitationEntity` + mail service | `/admin/team` | **Complete** | Inviting users to join a tenant works. |
 | **Audit Logs** | `AuditLogEntity` + append-only logger | `/admin/audit-logs` | **Complete** | Captures changes made by administrators. |
-| **User Sessions** | Stateless JWT tokens | None | **Incomplete** | Proposed stateful database session tracking (`sessions` table) is not implemented (uses standard stateless JWTs instead). |
+| **User Sessions** | Stateful DB sessions tracking (`sessions` table) | `/admin/profile` | **Complete** | Stateful tracking of active sessions with IP, User Agent, and revocation capability. |
 
 ---
 
@@ -24,7 +24,7 @@ This document provides a comprehensive analysis of the multi-tenant SaaS ERP pro
 | **Multi-Tenancy** | Isolation enforced via `tenantId` check | Implicit / signup flow | **Complete** | Enforced in all entities, queries, and caches (`t:{tenantId}:`). |
 | **Branches** | `BranchEntity` system-level | `/admin/branches` | **Complete** | Core business unit categorization. |
 | **Warehouses** | `WarehouseEntity` system-level | `/admin/warehouses` | **Complete** | Core physical storage location; links to branch or central tenant. |
-| **Warehouse Bins** | `WarehouseBinEntity` system-level | None | **Backend Only** | Bins are defined in database and ledger entities but have no frontend list/setup pages. |
+| **Warehouse Bins** | `WarehouseBinEntity` system-level | `/admin/warehouses` | **Complete** | Managed via inline bins modal in the warehouse details. |
 
 ## 📦 3. Catalog & Pricing Domain
 
@@ -32,7 +32,7 @@ This document provides a comprehensive analysis of the multi-tenant SaaS ERP pro
 | :--- | :--- | :--- | :---: | :--- |
 | **Products & Variants** | `ProductEntity`, `ProductVariantEntity` | `/admin/products` | **Complete** | Enforces static stocks, combinations, attributes. |
 | **Categories & Brands** | `CategoryEntity`, `BrandEntity` | `/admin/categories`, `/admin/brands` | **Complete** | Catalog structural mappings. |
-| **Price Books** | `PriceBookEntity` + `ProductPriceEntity` | None | **Backend Only** | Supported in DB (`price_books` table) and backend pricing service, but lacks front-end management. |
+| **Price Books** | `PriceBookEntity` + `ProductPriceEntity` | `/admin/price-books` | **Complete** | Managed via Catalog Price Books setup page, allowing creation, editing, deletion, and assignment of custom pricing tiers. |
 | **Customer Reviews** | `ReviewEntity` | `/admin/reviews` | **Complete** | Customer feedback tracking. |
 
 ---

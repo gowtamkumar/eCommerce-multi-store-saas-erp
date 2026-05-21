@@ -11,6 +11,7 @@ import { AccountingModule } from '@/modules/admin/operations/finance/accounting/
 import { BullModule } from '@nestjs/bullmq'
 import { TierSchedulerProcessor } from './queue/tier-scheduler.processor'
 import { LoyaltySchedulerService } from './services/loyalty-scheduler.service'
+import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { LoyaltySchedulerService } from './services/loyalty-scheduler.service'
       OrderEntity,
     ]),
     AccountingModule, // Provides WalletService
+    NotificationModule,
     BullModule.registerQueue({
       name: 'loyalty',
     }),

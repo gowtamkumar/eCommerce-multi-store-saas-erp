@@ -5,5 +5,6 @@ export class RequestContextDto {
   tenantId: string
   branchId?: string
   warehouseId?: string
-  user: UserDto
+  user: UserDto & { sessionId?: string }
+  sessionId?: string
 }

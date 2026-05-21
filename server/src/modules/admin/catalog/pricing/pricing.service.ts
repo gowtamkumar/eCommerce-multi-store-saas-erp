@@ -95,4 +95,21 @@ export class PricingService {
     if (!pp) throw new NotFoundException('Product price tier not found')
     return await this.productPriceRepo.remove(pp)
   }
+
+  async updatePriceBook(id: string, data: any, ctx: RequestContextDto) {
+    const pb = await this.priceBookRepo.findOne({
+      where: { id, tenantId: ctx.tenantId },
+    })
+    if (!pb) throw new NotFoundException('Price book not found')
+    Object.assign(pb, data)
+    return await this.priceBookRepo.save(pb)
+  }
+
+  async deletePriceBook(id: string, ctx: RequestContextDto) {
+    const pb = await this.priceBookRepo.findOne({
+      where: { id, tenantId: ctx.tenantId },
+    })
+    if (!pb) throw new NotFoundException('Price book not found')
+    return await this.priceBookRepo.remove(pb)
+  }
 }

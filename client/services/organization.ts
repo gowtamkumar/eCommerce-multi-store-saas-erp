@@ -54,3 +54,16 @@ export async function addWarehouseBin(warehouseId: string, data: any) {
     body: JSON.stringify(data),
   });
 }
+
+export async function updateWarehouseBin(binId: string, data: any) {
+  return fetchAPI(`/system/warehouses/bins/${binId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteWarehouseBin(binId: string) {
+  return fetchAPI(`/system/warehouses/bins/${binId}`, {
+    method: "DELETE",
+  });
+}

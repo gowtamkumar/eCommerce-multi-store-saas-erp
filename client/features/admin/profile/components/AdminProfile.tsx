@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { User, Mail, Phone, MapPin, Shield, Key, Save, Loader2, Camera } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Shield, Key, Save, Loader2, Camera, Laptop, Smartphone, Trash2, ShieldAlert } from 'lucide-react';
 import { fetchAPI } from '@/services/api';
 import toast from 'react-hot-toast';
 
@@ -23,6 +23,24 @@ export default function AdminProfile() {
     confirmPassword: '',
   });
 
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string>('');
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+
+  const fetchSessions = async () => {
+    try {
+      const res = await fetchAPI('/auth/sessions');
+      const sessionsData = res.data || res;
+      if (Array.isArray(sessionsData)) {
+        setSessions(sessionsData.filter((s: any) => s.isActive));
+      }
+    } catch (error) {
+      console.error('Failed to load sessions', error);
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -37,6 +55,9 @@ export default function AdminProfile() {
             address: userData.address || '',
             image: userData.image || '',
           });
+          if (userData.sessionId) {
+            setCurrentSessionId(userData.sessionId);
+          }
         }
       } catch (error) {
         toast.error('Failed to load profile');
@@ -45,6 +66,7 @@ export default function AdminProfile() {
       }
     };
     fetchProfile();
+    fetchSessions();
   }, []);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -85,6 +107,59 @@ export default function AdminProfile() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleRevokeSession = async (sessionId: string) => {
+    try {
+      await fetchAPI(`/auth/sessions/${sessionId}`, {
+        method: 'DELETE',
+      });
+      toast.success('Session revoked successfully');
+      fetchSessions();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to revoke session');
+    }
+  };
+
+  const handleRevokeOtherSessions = async () => {
+    try {
+      await fetchAPI('/auth/sessions/other', {
+        method: 'DELETE',
+      });
+      toast.success('Other sessions revoked successfully');
+      fetchSessions();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to revoke other sessions');
+    }
+  };
+
+  const getDeviceDetails = (userAgent: string) => {
+    if (!userAgent) return { os: 'Unknown OS', browser: 'Unknown Browser', device: 'desktop' };
+    
+    let os = 'Unknown OS';
+    let browser = 'Unknown Browser';
+    let device = 'desktop';
+
+    const ua = userAgent.toLowerCase();
+
+    if (ua.includes('windows')) os = 'Windows';
+    else if (ua.includes('macintosh') || ua.includes('mac os')) os = 'macOS';
+    else if (ua.includes('linux')) os = 'Linux';
+    else if (ua.includes('android')) {
+      os = 'Android';
+      device = 'mobile';
+    } else if (ua.includes('iphone') || ua.includes('ipad')) {
+      os = 'iOS';
+      device = 'mobile';
+    }
+
+    if (ua.includes('firefox')) browser = 'Firefox';
+    else if (ua.includes('chrome') && !ua.includes('chromium')) browser = 'Chrome';
+    else if (ua.includes('safari') && !ua.includes('chrome')) browser = 'Safari';
+    else if (ua.includes('edge') || ua.includes('edg')) browser = 'Edge';
+    else if (ua.includes('opera') || ua.includes('opr')) browser = 'Opera';
+
+    return { os, browser, device };
   };
 
   if (loading) {
@@ -275,6 +350,91 @@ export default function AdminProfile() {
               </button>
             </div>
           </form>
+
+          {/* Active Sessions UI Card */}
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 border border-slate-100 dark:border-slate-700 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <ShieldAlert className="w-5 h-5 text-brand-500" /> Active User Sessions
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  Manage and revoke your active sessions on other browsers or devices.
+                </p>
+              </div>
+              {sessions.filter(s => s.id !== currentSessionId).length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleRevokeOtherSessions}
+                  className="text-xs font-bold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 dark:border-red-800 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 px-3.5 py-2 rounded-xl transition-all self-start sm:self-center"
+                >
+                  Log out all other devices
+                </button>
+              )}
+            </div>
+
+            {sessionsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
+              </div>
+            ) : sessions.length === 0 ? (
+              <div className="text-center py-6 text-slate-500 dark:text-slate-400 text-sm">
+                No active sessions found.
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                {sessions.map((session) => {
+                  const dev = getDeviceDetails(session.userAgent);
+                  const isCurrent = session.id === currentSessionId;
+                  
+                  return (
+                    <div key={session.id} className="py-4 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
+                      <div className="flex items-center gap-3.5">
+                        <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100/50 dark:border-slate-700/30 text-slate-600 dark:text-slate-400">
+                          {dev.device === 'mobile' ? (
+                            <Smartphone className="w-5 h-5 text-brand-500" />
+                          ) : (
+                            <Laptop className="w-5 h-5 text-brand-500" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 dark:text-white text-sm">
+                              {dev.browser} on {dev.os}
+                            </span>
+                            {isCurrent && (
+                              <span className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border border-emerald-100 dark:border-emerald-900/30">
+                                This Device
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            <span>{session.ipAddress || 'Unknown IP'}</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                            <span>
+                              Logged in: {new Date(session.createdAt).toLocaleDateString()} at{' '}
+                              {new Date(session.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {!isCurrent && (
+                        <button
+                          type="button"
+                          onClick={() => handleRevokeSession(session.id)}
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all"
+                          title="Revoke session"
+                        >
+                          <Trash2 className="w-4.5 h-4.5" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
