@@ -6,7 +6,7 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { Body, Controller, Get, Logger, Param, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { ClosePosShiftDto } from './dtos/close-pos-shift.dto'
 import { CreatePosRegisterDto } from './dtos/create-pos-register.dto'
 import { OpenPosShiftDto } from './dtos/open-pos-shift.dto'
@@ -70,6 +70,39 @@ export class PosController {
       statusCode: 200,
       message: 'POS terminal register retrieved successfully',
       data: register,
+    }
+  }
+
+  @Patch('register/:id')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
+  async updateRegister(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body() dto: any,
+  ): Promise<BaseApiSuccessResponse<PosRegisterEntity>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateRegister for ${id}.`)
+    const register = await this.service.updateRegister(id, dto, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'POS terminal register updated successfully',
+      data: register,
+    }
+  }
+
+  @Delete('register/:id')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
+  async deleteRegister(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<null>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called deleteRegister for ${id}.`)
+    await this.service.deleteRegister(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'POS terminal register deleted successfully',
+      data: null,
     }
   }
 

@@ -19,6 +19,7 @@ import {
   Megaphone,
   Menu,
   MessageSquare,
+  Monitor,
   Package,
   Receipt,
   RotateCcw,
@@ -262,6 +263,12 @@ export const navGroups = [
         icon: ShoppingBag,
         label: "Point of Sale (POS)",
         href: "/admin/pos",
+        feature: "/admin/pos",
+      },
+      {
+        icon: Monitor,
+        label: "POS Terminals",
+        href: "/admin/pos-registers",
         feature: "/admin/pos",
       },
       {

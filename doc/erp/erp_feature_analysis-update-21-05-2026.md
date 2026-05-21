@@ -42,7 +42,7 @@ This document provides a comprehensive analysis of the multi-tenant SaaS ERP pro
 | Feature | Backend Implementation | Frontend UI Page | Status | Details / Notes |
 | :--- | :--- | :--- | :---: | :--- |
 | **POS Interface** | `PosService` with transaction processing | `/admin/pos` | **Complete** | High-speed POS workspace with local storage backups. |
-| **POS Register Terminals** | `PosRegisterEntity` + CRUD services | None | **Backend Only** | DB register terminals exist, but front-end relies on local selector or stubs (no register admin page). |
+| **POS Register Terminals** | `PosRegisterEntity` + CRUD services | `/admin/pos-registers` | **Complete** | Full administrative panel for counter register setup and branch mapping. |
 | **Cashier Shifts & Audit** | `PosShiftEntity` with Open/Close + Cash Audit | In POS Component | **Complete** | Cashier shifts are managed and audited directly in the inline POS component. |
 | **B2B Credit Limits** | Checkout block on exceeding limit or credit hold | In Checkout flow | **Complete** | Enforced for `ON_ACCOUNT` payment method. |
 | **Loyalty Point Deduction**| Deducts points from checkout balance | POS & Checkout UI | **Complete** | Integrated with sales and returns. |

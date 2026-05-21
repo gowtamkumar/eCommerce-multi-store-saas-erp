@@ -66,6 +66,25 @@ export class PosService {
     return register
   }
 
+  async updateRegister(
+    id: string,
+    data: any,
+    ctx: RequestContextDto,
+  ): Promise<PosRegisterEntity> {
+    this.logger.log(`${this.updateRegister.name} Service Called`)
+    const register = await this.findOneRegister(id, ctx)
+    return this.registerRepository.update(register, data)
+  }
+
+  async deleteRegister(
+    id: string,
+    ctx: RequestContextDto,
+  ): Promise<void> {
+    this.logger.log(`${this.deleteRegister.name} Service Called`)
+    const register = await this.findOneRegister(id, ctx)
+    return this.registerRepository.remove(register)
+  }
+
   // =========================================================================
   // CASHIER SHIFT METHODS
   // =========================================================================
