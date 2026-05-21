@@ -1,9 +1,9 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { NotificationEntity } from './entities/notification.entity';
 import { NotificationGateway } from './notification.gateway';
-import { RequestContextDto } from '@/common/dto/request-context.dto';
 
 export interface CreateNotificationDto {
   userId?: string;
@@ -61,11 +61,13 @@ export class NotificationService {
    * Fetch all notifications for a specific user and tenant-wide
    */
   async getUserNotifications(ctx: RequestContextDto, limit: number = 20, offset: number = 0): Promise<[NotificationEntity[], number]> {
-    const tenantId = ctx.tenantId || null;
+    const tenantId = ctx.tenantId || IsNull();
+    const userId = ctx.userId || IsNull();
+
     return await this.notificationRepository.findAndCount({
       where: [
-        { tenantId, userId: ctx.user.id },
-        { tenantId, userId: null as any },
+        { tenantId, userId },
+        { tenantId, userId: IsNull() },
       ],
       order: {
         createdAt: 'DESC',
@@ -79,11 +81,13 @@ export class NotificationService {
    * Mark a specific notification as read
    */
   async markAsRead(id: string, ctx: RequestContextDto): Promise<void> {
-    const tenantId = ctx.tenantId || null;
+    const tenantId = ctx.tenantId || IsNull();
+    const userId = ctx.userId || IsNull();
+
     const notification = await this.notificationRepository.findOne({
       where: [
-        { id, tenantId, userId: ctx.user.id },
-        { id, tenantId, userId: null as any },
+        { id, tenantId, userId },
+        { id, tenantId, userId: IsNull() },
       ]
     });
     
@@ -97,11 +101,13 @@ export class NotificationService {
    * Mark all notifications as read for a user
    */
   async markAllAsRead(ctx: RequestContextDto): Promise<void> {
-    const tenantId = ctx.tenantId || null;
+    const tenantId = ctx.tenantId || IsNull();
+    const userId = ctx.userId || IsNull();
+
     const notifications = await this.notificationRepository.find({
       where: [
-        { tenantId, userId: ctx.user.id, isRead: false },
-        { tenantId, userId: null as any, isRead: false },
+        { tenantId, userId, isRead: false },
+        { tenantId, userId: IsNull(), isRead: false },
       ]
     });
     
@@ -115,11 +121,13 @@ export class NotificationService {
    * Get unread count
    */
   async getUnreadCount(ctx: RequestContextDto): Promise<number> {
-    const tenantId = ctx.tenantId || null;
+    const tenantId = ctx.tenantId || IsNull();
+    const userId = ctx.userId || IsNull();
+
     return await this.notificationRepository.count({
       where: [
-        { tenantId, userId: ctx.user.id, isRead: false },
-        { tenantId, userId: null as any, isRead: false },
+        { tenantId, userId, isRead: false },
+        { tenantId, userId: IsNull(), isRead: false },
       ]
     });
   }

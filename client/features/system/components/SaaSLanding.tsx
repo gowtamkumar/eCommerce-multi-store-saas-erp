@@ -211,11 +211,11 @@ export default function SaaSLanding() {
                     }`} />
 
                     <ul className="text-left space-y-4 mb-10 flex-1">
-                      {(plan.features || []).map((item: string) => {
+                      {(plan.features || []).map((item: string, idx: number) => {
                         const featureDisplay = getFeatureDisplay(item);
                         const FeatureIcon = featureDisplay.icon || Icons.Check;
                         return (
-                          <li key={item} className="flex items-center gap-3 text-sm group/item">
+                          <li key={`${item}-${idx}`} className="flex items-center gap-3 text-sm group/item">
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors shrink-0 ${
                               isEnterprise
                                 ? 'bg-amber-950/40 text-amber-400 border border-amber-900/30'
