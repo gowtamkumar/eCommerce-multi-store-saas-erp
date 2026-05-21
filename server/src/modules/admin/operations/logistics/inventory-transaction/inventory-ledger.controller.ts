@@ -90,4 +90,52 @@ export class InventoryLedgerController {
       data: data as any,
     }
   }
+
+  @Post('stock-transfer')
+  @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  async createStockTransfer(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: {
+      productId: string
+      variantId?: string
+      sourceWarehouseId: string
+      destinationWarehouseId: string
+      quantity: number
+      remarks?: string
+    },
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createStockTransfer.`)
+    const result = await this.service.createStockTransfer(dto, ctx)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Stock transfer processed successfully',
+      data: result,
+    }
+  }
+
+  @Post('cycle-count')
+  @RequirePermissions(SystemPermissions.INVENTORY_WRITE)
+  async createCycleCount(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() dto: {
+      countRef: string
+      warehouseId: string
+      lines: Array<{
+        productId: string
+        variantId?: string
+        countedQty: number
+        remarks?: string
+      }>
+    },
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createCycleCount.`)
+    const result = await this.service.createCycleCount(dto, ctx)
+    return {
+      success: true,
+      statusCode: 201,
+      message: `Cycle count processed: ${result.adjustments.length} adjustments made out of ${result.processed} lines`,
+      data: result,
+    }
+  }
 }

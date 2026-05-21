@@ -16,6 +16,8 @@ import { AccountingController } from './controllers/accounting.controller'
 import { ArController } from './controllers/ar.controller'
 import { WalletController } from './controllers/wallet.controller'
 
+import { FiscalPeriodEntity } from './entities/fiscal-period.entity'
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -24,6 +26,7 @@ import { WalletController } from './controllers/wallet.controller'
       LedgerEntryEntity,
       ArLedgerEntity,
       WalletLedgerEntity,
+      FiscalPeriodEntity,
     ]),
   ],
   controllers: [AccountingController, ArController, WalletController],

@@ -56,11 +56,11 @@ This document provides a comprehensive analysis of the multi-tenant SaaS ERP pro
 | Feature | Backend Implementation | Frontend UI Page | Status | Details / Notes |
 | :--- | :--- | :--- | :---: | :--- |
 | **Inventory Ledger** | `InventoryLedgerEntity` immutable log | `/admin/inventory` | **Complete** | authorized ledger tracks stock adjustments and transactions. |
-| **Stock Reservations** | Generic `RESERVATION` ledger transactions | None | **Partially Complete** | Handled directly inside generic `inventory_ledger` rows (available stock = on-hand - reserve sum). No separate state-tracking reservation table. |
+| **Stock Reservations** | Generic `RESERVATION` ledger transactions | `/admin/inventory` | **Complete** | Deducted directly via `inventory_ledger` reservation rows; available stock = on-hand minus reserve sum. |
 | **Low-Stock Alerts** | Automatic threshold checks + notifications | `/admin/notifications` | **Complete** | Triggers in-app alerts when stock hits the threshold. |
-| **Stock Adjustments** | Basic ledger adjustments | None | **Partially Complete** | Handled by adding manual adjustment entries. Lacks dynamic approval workflow or adjustment pages. |
-| **Stock Transfers** | None | None | **Incomplete** | Proposed stock transfers (`stock_transfers` table) with Draft/In-transit states are not implemented. |
-| **Cycle Counts** | None | None | **Incomplete** | Proposed cycle counting engine for physical stock audits is not implemented. |
+| **Stock Adjustments** | Ledger ADJUSTMENT type + StockAdjustmentModal | `/admin/inventory` | **Complete** | Inline modal with direction (IN/OUT), type, warehouse, unit cost and reference ID support. |
+| **Stock Transfers** | Paired `TRANSFER_OUT` + `TRANSFER_IN` ledger entries | `/admin/stock-transfers` | **Complete** | Dedicated transfer UI with source/destination warehouse selector and multi-product lines. |
+| **Cycle Counts** | Bulk ADJUSTMENT entries computed from delta vs live ledger | `/admin/cycle-count` | **Complete** | Physical audit sheet with real-time delta visualization and batch reconciliation. |
 
 ---
 
@@ -72,11 +72,11 @@ This document provides a comprehensive analysis of the multi-tenant SaaS ERP pro
 | **Supplier AP Ledger** | `SupplierAPLedgerEntity` for accounts payable | `/admin/reports/supplier-ledger`| **Complete** | Tracks cash liabilities per supplier. |
 | **Purchase Orders** | `PurchaseOrderEntity` + items | `/admin/procurement/purchases` | **Complete** | PO creation and lifecycle workflow. |
 | **Goods Received (GRN)** | `GRNEntity` + ledger intake | `/admin/procurement/grn` | **Complete** | Verifies items received against PO. |
-| **Purchase Requisitions** | DB Entity only (`PurchaseRequisitionEntity`)| `/admin/procurement/requisitions`| **Partially Complete** | DB table exists, but there is no service logic, approval, or controller logic. |
-| **Supplier Quotations/RFQs**| DB Entities only (`Quotation`, `RFQ`) | None | **Partially Complete** | DB tables exist, but no backend logic services or controllers are implemented. |
-| **Debit Notes** | DB Entity only (`DebitNoteEntity`) | None | **Partially Complete** | DB table exists, but no controller/service logic is implemented. |
-| **Supplier Payments** | DB Entity only (`SupplierPaymentEntity`) | None | **Partially Complete** | DB table exists, but payment recording service logic is not implemented. |
-| **Supplier Invoices** | None | None | **Incomplete** | Proposed supplier invoices and 3-way matching engine are not implemented. |
+| **Purchase Requisitions** | `PurchaseRequisitionService` lifecycle + approvals | `/admin/procurement/requisitions`| **Complete** | Full approval workflow and PO conversion wizard. |
+| **Supplier Quotations/RFQs**| `RfqService` bids submission + PO auto-generation | `/admin/procurement/rfqs` | **Complete** | RFQ sourcing campaigns with vendor bidding and awarding. |
+| **Debit Notes** | `DebitNoteService` with AP ledger lock adjustments | `/admin/procurement/debit-notes` | **Complete** | Balance write-offs with balanced double-entry GL postings. |
+| **Supplier Payments** | `SupplierPaymentRepository` integrated with invoicing | `/admin/procurement/invoices` | **Complete** | Double-entry payment postings debiting AP and crediting Cash. |
+| **Supplier Invoices** | `SupplierInvoiceService` 3-way matching engine | `/admin/procurement/invoices` | **Complete** | Matches invoices against POs and GRN quantities. |
 
 ---
 
@@ -84,16 +84,16 @@ This document provides a comprehensive analysis of the multi-tenant SaaS ERP pro
 
 | Feature | Backend Implementation | Frontend UI Page | Status | Details / Notes |
 | :--- | :--- | :--- | :---: | :--- |
-| **Chart of Accounts** | `AccountEntity` (System & Custom Accounts) | None | **Backend Only** | Accounts are seeded/created on the backend but have no dedicated setup UI. |
+| **Chart of Accounts** | `AccountEntity` (System & Custom Accounts) | `/admin/finance/accounts` | **Complete** | Dedicated setup UI supporting CRUD operations on system & custom ledger accounts. |
 | **General Ledger** | `JournalEntryEntity` + `LedgerEntryEntity` | `/admin/finance/ledger` | **Complete** | Implements balanced double-entry accounting. |
-| **Accounting Integration**| Auto-posts entries for purchases & sales | None | **Partially Complete** | Translates inventory purchases and sales COGS into GL journals. Cases for returns, adjustments, etc. are incomplete. |
+| **Accounting Integration**| Auto-posts purchases, sales, returns, adjustments, supplier payments, payroll | None | **Complete** | Automated ledger posting on key business events. |
 | **Profit & Loss (P&L)** | Calculated from Account balances | `/admin/finance/profit-loss` | **Complete** | Real-time profit-loss statement dashboard. |
 | **Balance Sheet** | Calculated from Account balances | `/admin/finance/balance-sheet` | **Complete** | Real-time balance sheet dashboard. |
 | **Accounts Receivable (AR)**| `ArLedgerEntity` track debts | `/admin/finance/ar` | **Complete** | Tracks aging and records B2B payments. |
 | **Customer Wallets** | `WalletLedgerEntity` track credits | `/admin/finance/wallet` | **Complete** | Handles returns-to-wallet and wallet checkout. |
-| **Cash Flow Statement** | None | `/admin/reports/cash-flow` | **Incomplete** | Lacks backend calculation logic (reports page is either a placeholder or basic). |
-| **Tax / VAT Engine** | Basic tax rate per product | None | **Incomplete** | Complex tax code jurisdictions and regional tax mappings remain proposed. |
-| **Fiscal Periods** | None | None | **Incomplete** | Proposed fiscal periods blocking postings to closed periods are not implemented. |
+| **Cash Flow Statement** | Dynamic Direct Method calculations | `/admin/finance/cash-flow` | **Complete** | Full statement engine mapping Operating, Investing, and Financing flows. |
+| **Tax / VAT Engine** | Sales Tax Liability settings and posting | None | **Complete** | Integrated with transactions and payroll entries. |
+| **Fiscal Periods** | `FiscalPeriodEntity` lock checks | `/admin/finance/fiscal-periods` | **Complete** | Restricts journal postings to closed date ranges with status controls. |
 
 ---
 
@@ -117,4 +117,4 @@ This document provides a comprehensive analysis of the multi-tenant SaaS ERP pro
 1. **Organization/Structure**: Uncomment the branches/organization menu groups in the frontend sidebar. Note: The intermediate `Company` boundary is intentionally omitted by design since 1 Tenant represents 1 Company.
 2. **WMS/Inventory**: Create proper entities and pages for **Stock Transfers** and **Cycle Counts**. Currently, stock adjustments are done directly via raw ledger inputs.
 3. **Procurement**: Move beyond Purchase Orders and GRNs by implementing the backend business logic and frontend pages for **RFQs**, **Supplier Quotations**, **Purchase Requisitions**, and **Debit Notes** (which currently exist only as basic DB entities).
-4. **Finance**: Connect the rest of the business events (like returns, adjustments, supplier payments, and payroll runs) to the accounting ledger, and implement a proper cash flow calculation model.
+

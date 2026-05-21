@@ -65,6 +65,13 @@ export const DEFAULT_CHART_OF_ACCOUNTS = [
     isSystem: true,
   },
   {
+    code: '2200',
+    name: 'Sales Tax Liability',
+    type: AccountType.LIABILITY,
+    category: AccountCategory.PAYABLE,
+    isSystem: true,
+  },
+  {
     code: '6000',
     name: 'Operating Expenses',
     type: AccountType.EXPENSE,

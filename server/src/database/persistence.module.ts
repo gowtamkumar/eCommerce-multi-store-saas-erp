@@ -37,6 +37,8 @@ import { PurchaseRequisitionItemEntity } from '@/modules/admin/operations/financ
 import { RfqEntity } from '@/modules/admin/operations/finance/purchase/entities/rfq.entity'
 import { QuotationEntity } from '@/modules/admin/operations/finance/purchase/entities/quotation.entity'
 import { DebitNoteEntity } from '@/modules/admin/operations/finance/purchase/entities/debit-note.entity'
+import { SupplierInvoiceEntity } from '@/modules/admin/operations/finance/purchase/entities/supplier-invoice.entity'
+import { SupplierInvoiceItemEntity } from '@/modules/admin/operations/finance/purchase/entities/supplier-invoice-item.entity'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 import { SupplierRepository } from '@/modules/admin/operations/finance/supplier/supplier.repository'
 import { FileEntity } from '@/modules/admin/operations/infra/file/entities/file.entity'
@@ -137,6 +139,8 @@ import { FeatureDefinitionEntity } from '@/modules/system/platform/entities/feat
       RfqEntity,
       QuotationEntity,
       DebitNoteEntity,
+      SupplierInvoiceEntity,
+      SupplierInvoiceItemEntity,
       RoleEntity,
       PermissionEntity,
       FeatureDefinitionEntity,

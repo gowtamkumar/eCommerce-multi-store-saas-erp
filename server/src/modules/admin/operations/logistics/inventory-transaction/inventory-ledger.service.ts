@@ -326,6 +326,115 @@ export class InventoryLedgerService {
     )
   }
 
+  // =========================================================================
+  // STOCK TRANSFERS
+  // =========================================================================
+
+  /**
+   * Moves stock between two warehouses atomically via paired ledger entries.
+   * TRANSFER_OUT deducts from source; TRANSFER_IN credits destination.
+   */
+  async createStockTransfer(
+    dto: {
+      productId: string
+      variantId?: string
+      sourceWarehouseId: string
+      destinationWarehouseId: string
+      quantity: number
+      remarks?: string
+    },
+    ctx: RequestContextDto,
+  ): Promise<{ outEntry: InventoryLedgerEntity; inEntry: InventoryLedgerEntity }> {
+    this.logger.log(`${this.createStockTransfer.name} Service Called`)
+
+    const transferRef = `XFER-${Date.now()}`
+
+    const outEntry = await this.createLedgerEntry(
+      {
+        productId: dto.productId,
+        variantId: dto.variantId,
+        warehouseId: dto.sourceWarehouseId,
+        type: InventoryTransactionType.TRANSFER_OUT,
+        quantity: dto.quantity,
+        referenceType: InventoryTransactionReferenceType.STOCK_TRANSFER,
+        referenceId: transferRef,
+        remarks: dto.remarks || `Transfer to warehouse ${dto.destinationWarehouseId}`,
+      },
+      ctx,
+    )
+
+    const inEntry = await this.createLedgerEntry(
+      {
+        productId: dto.productId,
+        variantId: dto.variantId,
+        warehouseId: dto.destinationWarehouseId,
+        type: InventoryTransactionType.TRANSFER_IN,
+        quantity: dto.quantity,
+        referenceType: InventoryTransactionReferenceType.STOCK_TRANSFER,
+        referenceId: transferRef,
+        remarks: dto.remarks || `Transfer from warehouse ${dto.sourceWarehouseId}`,
+      },
+      ctx,
+    )
+
+    return { outEntry, inEntry }
+  }
+
+  // =========================================================================
+  // CYCLE COUNT
+  // =========================================================================
+
+  /**
+   * Processes a physical stock count. Each line compares the counted qty
+   * against the live ledger balance and fires an ADJUSTMENT entry for the delta.
+   */
+  async createCycleCount(
+    dto: {
+      countRef: string
+      warehouseId: string
+      lines: Array<{
+        productId: string
+        variantId?: string
+        countedQty: number
+        remarks?: string
+      }>
+    },
+    ctx: RequestContextDto,
+  ): Promise<{ processed: number; adjustments: InventoryLedgerEntity[] }> {
+    this.logger.log(`${this.createCycleCount.name} Service Called`)
+
+    const adjustments: InventoryLedgerEntity[] = []
+
+    for (const line of dto.lines) {
+      const liveStock = await this.repository.getGlobalLiveStock(
+        line.productId,
+        line.variantId || null,
+        ctx.tenantId,
+      )
+
+      const delta = Number(line.countedQty) - Number(liveStock)
+
+      if (delta !== 0) {
+        const entry = await this.createLedgerEntry(
+          {
+            productId: line.productId,
+            variantId: line.variantId,
+            warehouseId: dto.warehouseId,
+            type: InventoryTransactionType.ADJUSTMENT,
+            quantity: delta, // positive = stock-in, negative = stock-out
+            referenceType: InventoryTransactionReferenceType.CYCLE_COUNT,
+            referenceId: dto.countRef,
+            remarks: line.remarks || `Cycle count ${dto.countRef}: system ${liveStock} → counted ${line.countedQty}`,
+          },
+          ctx,
+        )
+        adjustments.push(entry)
+      }
+    }
+
+    return { processed: dto.lines.length, adjustments }
+  }
+
   async getGlobalLiveStock(
     productId: string,
     variantId: string | null,
