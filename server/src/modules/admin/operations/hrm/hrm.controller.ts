@@ -691,6 +691,35 @@ export class HrmController {
     }
   }
 
+  @Get('performance/reviews')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
+  async getAllPerformanceReviews(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
+    const res = await this.hrmService.getAllPerformanceReviews(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Performance reviews retrieved successfully',
+      data: res,
+    }
+  }
+
+  @Get('employees/:id/performance/reviews')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
+  async getEmployeePerformanceReviews(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
+    const res = await this.hrmService.getEmployeeReviews(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Employee performance reviews retrieved successfully',
+      data: res,
+    }
+  }
+
   @Post('seed')
   @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async seedDemoData(

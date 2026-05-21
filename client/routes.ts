@@ -433,6 +433,12 @@ export const navGroups = [
         href: "/admin/hrm/recruitment",
         feature: "/admin/hrm",
       },
+      {
+        icon: Award,
+        label: "Performance",
+        href: "/admin/hrm/performance",
+        feature: "/admin/hrm",
+      },
     ],
   },
   {

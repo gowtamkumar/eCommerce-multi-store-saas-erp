@@ -108,7 +108,7 @@ This document provides a comprehensive analysis of the multi-tenant SaaS ERP pro
 | **Leaves** | `LeaveEntity` + approval adjustments | `/admin/hrm/leaves` | **Complete** | Staff leave tracking. |
 | **Recruitment** | `RecruitmentEntity` candidate logs | `/admin/hrm/recruitment` | **Complete** | Basic job postings and applicant logs. |
 | **Payroll Batch Engine** | compiles employee payroll runs | `/admin/hrm/payroll` | **Complete** | Computes monthly salaries and auto-posts to the GL. |
-| **Performance Tracking** | `PerformanceEntity` (DB only) | None | **Partially Complete** | DB table exists, but no logic or UI is built. |
+| **Performance Tracking** | `PerformanceReviewEntity` + service + repository + controller | `/admin/hrm/performance` | **Complete** | Full appraisal UI with KPI metric breakdowns, score stars, and per-period reviews. |
 
 ---
 

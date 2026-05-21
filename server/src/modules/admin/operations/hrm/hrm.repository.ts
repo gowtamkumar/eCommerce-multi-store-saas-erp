@@ -335,15 +335,25 @@ export class HrmRepository {
     return this.performanceReviewRepo.save(this.performanceReviewRepo.create(data))
   }
 
+  async findAllPerformanceReviews(tenantId: string): Promise<PerformanceReviewEntity[]> {
+    return this.performanceReviewRepo.find({
+      where: { tenantId },
+      relations: ['employee', 'employee.user', 'employee.department', 'reviewer', 'reviewer.user'],
+      order: { createdAt: 'DESC' },
+    })
+  }
+
   async findEmployeeReviews(
     employeeId: string,
     tenantId: string,
   ): Promise<PerformanceReviewEntity[]> {
     return this.performanceReviewRepo.find({
       where: { employeeId, tenantId },
-      relations: ['reviewer'],
+      relations: ['reviewer', 'reviewer.user'],
+      order: { createdAt: 'DESC' },
     })
   }
+
   async getStats(tenantId: string) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)

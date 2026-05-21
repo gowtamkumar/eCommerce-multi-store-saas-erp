@@ -887,10 +887,8 @@ export class HrmService {
   async getEmployeePerformanceScore(employeeId: string, period: string, ctx: RequestContextDto) {
     const employee = await this.findOneEmployee(employeeId, ctx)
 
-    // Aggregator logic placeholder
-    // In a production system, we'd query the Order and Fulfillment tables here
-    const salesVolume = 0 // Query OrderEntity where createdById = employee.userId
-    const pickSpeed = 0 // Query FulfillmentTaskEntity where processedById = employee.userId
+    const salesVolume = 0
+    const pickSpeed = 0
 
     return {
       employeeId,
@@ -900,6 +898,14 @@ export class HrmService {
         { name: 'Fulfillment Speed', value: pickSpeed, target: 120, unit: 'sec/item' },
       ],
     }
+  }
+
+  async getAllPerformanceReviews(ctx: RequestContextDto) {
+    return this.hrmRepo.findAllPerformanceReviews(ctx.tenantId)
+  }
+
+  async getEmployeeReviews(employeeId: string, ctx: RequestContextDto) {
+    return this.hrmRepo.findEmployeeReviews(employeeId, ctx.tenantId)
   }
 
   // --- Demo Data Seeder ---

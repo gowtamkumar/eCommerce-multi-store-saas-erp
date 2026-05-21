@@ -308,6 +308,16 @@ export async function createPerformanceReview(data: any) {
   return res.data;
 }
 
+export async function getPerformanceReviews() {
+  const res = await fetchAPI("/operations/hrm/performance/reviews");
+  return res.data;
+}
+
+export async function getEmployeePerformanceReviews(employeeId: string) {
+  const res = await fetchAPI(`/operations/hrm/employees/${employeeId}/performance/reviews`);
+  return res.data;
+}
+
 export async function getEmployeePerformance(
   employeeId: string,
   period: string,
