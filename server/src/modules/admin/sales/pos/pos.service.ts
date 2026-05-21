@@ -21,6 +21,8 @@ import { PaymentStatus } from '@/common/enums/payment-status.enum'
 import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entity'
+import { ArService } from '@/modules/admin/operations/finance/accounting/services/ar.service'
+import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
 
 @Injectable()
 export class PosService {
@@ -31,6 +33,7 @@ export class PosService {
     private readonly shiftRepository: PosShiftRepository,
     private readonly inventoryService: InventoryLedgerService,
     private readonly accountingService: AccountingService,
+    private readonly arService: ArService,
     private readonly dataSource: DataSource,
   ) { }
 
@@ -175,8 +178,9 @@ export class PosService {
       let customerPhone = 'N/A'
       let customerAddress = 'POS Terminal Counter'
 
+      let customer: UserEntity = null
       if (dto.customerId) {
-        const customer = await manager.findOne(UserEntity, {
+        customer = await manager.findOne(UserEntity, {
           where: { id: dto.customerId, tenantId },
         })
         if (customer) {
@@ -204,7 +208,7 @@ export class PosService {
         status: OrderStatus.COMPLETED, // POS sales are immediately fulfilled
         orderSource: OrderSource.POS, // Explicit order type categorization!
         paymentMethod: dto.paymentMethod.toLowerCase() as unknown as PaymentMethod,
-        paymentStatus: PaymentStatus.PAID, // Cash collected on the counter
+        paymentStatus: dto.paymentMethod === PosPaymentMethod.ON_ACCOUNT ? PaymentStatus.PENDING : PaymentStatus.PAID,
         tenantId,
         userId: dto.customerId || undefined,
         appliedCoupon: dto.appliedCoupon || undefined,
@@ -258,6 +262,40 @@ export class PosService {
       savedOrder.totalAmount = netSaleAmount
       await orderRepo.save(savedOrder)
 
+      // Verify B2B Credit Limits & Post AR Ledger if ON_ACCOUNT
+      if (dto.paymentMethod === PosPaymentMethod.ON_ACCOUNT) {
+        if (!customer) {
+          throw new BadRequestException('Customer user profile is required for credit/on-account checkout')
+        }
+        if (customer.creditHold) {
+          throw new BadRequestException('Checkout blocked: Customer account is on credit hold')
+        }
+        const currentOutstanding = await this.arService.getCustomerOutstandingBalance(customer.id, tenantId, manager)
+        const limit = Number(customer.creditLimit || 0)
+        if (currentOutstanding + netSaleAmount > limit) {
+          throw new BadRequestException(
+            `Checkout blocked: POS sale total ($${netSaleAmount}) exceeds customer credit limit ($${limit}) with current debt ($${currentOutstanding})`
+          )
+        }
+
+        const dueDate = new Date()
+        dueDate.setDate(dueDate.getDate() + 30) // Net 30 Terms
+
+        await this.arService.postArTransaction(
+          {
+            customerId: customer.id,
+            type: ArTransactionType.INVOICE,
+            amount: netSaleAmount,
+            referenceType: 'ORDER',
+            referenceId: savedOrder.id,
+            dueDate,
+            currency: 'USD',
+          },
+          ctx,
+          manager,
+        )
+      }
+
       // B. Update Cashier shift sales aggregates using net collected amount
       const updatedFields: Partial<PosShiftEntity> = {}
       if (dto.paymentMethod === PosPaymentMethod.CASH) {
@@ -273,7 +311,8 @@ export class PosService {
 
       await this.shiftRepository.update(shift, updatedFields, manager)
 
-      // C. Post general ledger financial entry for Sales Revenue (actual net collected cash)
+      // C. Post general ledger financial entry for Sales Revenue (Debit Cash/AR & Credit Revenue)
+      const debitAccount = dto.paymentMethod === PosPaymentMethod.ON_ACCOUNT ? '1200' : '1000'
       await this.accountingService.createJournalEntry(
         {
           type: JournalType.SALES,
@@ -281,7 +320,7 @@ export class PosService {
           referenceType: 'POS_SHIFT',
           referenceId: shift.id,
           lines: [
-            { accountCode: '1000', side: LedgerEntrySide.DEBIT, amount: netSaleAmount }, // Debit Cash
+            { accountCode: debitAccount, side: LedgerEntrySide.DEBIT, amount: netSaleAmount }, // Debit Cash (1000) or AR (1200)
             { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: netSaleAmount }, // Credit Sales Revenue
           ],
         },

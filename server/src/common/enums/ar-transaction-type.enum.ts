@@ -1,0 +1,7 @@
+export enum ArTransactionType {
+  INVOICE = 'INVOICE',
+  PAYMENT = 'PAYMENT',
+  CREDIT_NOTE = 'CREDIT_NOTE',
+  WRITE_OFF = 'WRITE_OFF',
+  ADJUSTMENT = 'ADJUSTMENT',
+}

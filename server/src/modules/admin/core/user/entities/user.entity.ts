@@ -112,6 +112,24 @@ export class UserEntity {
   @JoinColumn({ name: 'warehouse_id' })
   warehouse: WarehouseEntity
 
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, name: 'credit_limit' })
+  creditLimit: number
+
+  @Column({ type: 'boolean', name: 'credit_hold', default: false })
+  creditHold: boolean
+
+  @Column({ type: 'varchar', length: 100, nullable: true, name: 'tax_id' })
+  taxId: string
+
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'company_name' })
+  companyName: string
+
+  @Column({ type: 'varchar', length: 100, nullable: true, name: 'customer_code' })
+  customerCode: string
+
+  @Column({ type: 'uuid', name: 'preferred_branch_id', nullable: true })
+  preferredBranchId: string
+
   @OneToOne(() => EmployeeEntity, (employee) => employee.user, { nullable: true })
   employee?: EmployeeEntity
 

@@ -15,6 +15,7 @@ export enum PosPaymentMethod {
   CASH = 'CASH',
   CARD = 'CARD',
   MOBILE = 'MOBILE',
+  ON_ACCOUNT = 'ON_ACCOUNT',
 }
 
 export class PosSaleItemDto {

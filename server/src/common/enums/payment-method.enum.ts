@@ -4,4 +4,5 @@ export enum PaymentMethod {
   CASH = 'cash',
   CARD = 'card',
   MOBILE = 'mobile',
+  ON_ACCOUNT = 'on_account',
 }

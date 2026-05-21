@@ -108,3 +108,46 @@ A snapshot of the business's health at a specific point in time:
 ## 6. Petty Cash Management
 - Dedicated sub-ledger for small, daily cash expenses managed at the **Branch** level.
 - Requires periodic "Replenishment" workflows with manager approval.
+
+---
+
+## 7. Operational Payments vs. Financial General Ledger
+
+To maintain a scalable, performant, and audit-compliant architecture, the system enforces a strict separation of concerns between operational payment tables (`payments`, `supplier_payments`) and the General Ledger (`journal_entries`, `ledger_entries`).
+
+### 7.1 Architecture & Flow
+```mermaid
+graph TD
+    %% Operational Layer
+    subgraph Operational Layer (Sales & Sourcing)
+        Order[Order Entity] -->|1. Triggers| CustPay[Payment Entity]
+        PO[Purchase Order] -->|1. Triggers| SuppPay[Supplier Payment Entity]
+    end
+
+    %% Event / Integration Layer
+    subgraph Integration / Event Bridge
+        CustPay -->|2. Emit PaymentCompleted| EventBus{Event Dispatcher}
+        SuppPay -->|2. Emit SupplierPaymentRecorded| EventBus
+    end
+
+    %% Accounting Layer
+    subgraph Financial Accounting Layer (General Ledger)
+        EventBus -->|3. Listen & Process| AccountingService[Accounting Service]
+        AccountingService -->|4. Create Journal| Journal[Journal Entry Entity]
+        Journal -->|5. Insert Debit/Credit Lines| Ledger[Ledger Entries Entity]
+        Ledger -->|6. Update Account Balance| ChartOfAccounts[(Chart of Accounts)]
+    end
+
+    classDef operational fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef accounting fill:#efebe9,stroke:#4e342e,stroke-width:2px;
+    classDef event fill:#efe8fa,stroke:#4b0082,stroke-width:2px;
+    class Order,PO,CustPay,SuppPay operational;
+    class EventBus event;
+    class AccountingService,Journal,Ledger,ChartOfAccounts accounting;
+```
+
+### 7.2 Why this is a Best Practice
+1. **Compliance & Immutability:** General Ledger entries are strictly immutable. Using the operational payment tables as a "sandbox" ensures only successful, finalized payments write to the GL, preventing noise from failed or pending transactions.
+2. **Detailed Metadata Storage:** The `payments` table tracks rich, API-specific data (e.g. gateway Webhook JSON payloads, card brands, device IP addresses), which keeps the core ledger clean.
+3. **Gateway Fee Allocation (Reconciliation):** When a payment is processed (e.g., $100 paid, with $3 in gateway fees), the operational payment table captures the $100 client intent, while the ledger cleanly records the debit/credit splits ($97 Cash Asset, $3 Gateway Expense, $100 Accounts Receivable).
+4. **Domain Decoupling:** The Sales and Procurement modules remain completely decoupled from Accounting. Changing gateways or sourcing policies has zero code impact on General Ledger logic.

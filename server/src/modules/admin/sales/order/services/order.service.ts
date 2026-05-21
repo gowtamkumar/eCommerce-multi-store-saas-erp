@@ -37,6 +37,10 @@ import { OrderRepository } from '../repositoris/order.repository'
 import { OrderProcessHelper } from './order-process.helper'
 
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { ArService } from '@/modules/admin/operations/finance/accounting/services/ar.service'
+import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
+import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
+import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 
 @Injectable()
 export class OrderService {
@@ -57,6 +61,8 @@ export class OrderService {
     @Inject(forwardRef(() => FulfillmentService))
     private readonly fulfillmentService: FulfillmentService,
     private readonly notificationService: NotificationService,
+    private readonly arService: ArService,
+    private readonly accountingService: AccountingService,
   ) { }
 
   async createOrder(
@@ -168,8 +174,64 @@ export class OrderService {
         0,
       )
 
-      // 7. Persist Order
+      // 7. B2B Credit Limit Verification
+      if (order.paymentMethod === PaymentMethod.ON_ACCOUNT) {
+        if (!user) {
+          throw new BadRequestException('B2B credit checkouts require a valid User account')
+        }
+        if (user.creditHold) {
+          throw new BadRequestException('Checkout blocked: This account is currently on credit hold')
+        }
+        const currentOutstanding = await this.arService.getCustomerOutstandingBalance(user.id, tenantId, manager)
+        const orderTotal = Number(order.totalAmount)
+        const limit = Number(user.creditLimit || 0)
+        if (currentOutstanding + orderTotal > limit) {
+          throw new BadRequestException(
+            `Checkout blocked: Order total ($${orderTotal}) exceeds credit limit ($${limit}) with current outstanding debt ($${currentOutstanding})`
+          )
+        }
+      }
+
+      // 8. Persist Order
       const savedOrder = await manager.save(order)
+
+      // 9. Post Accounts Receivable and General Ledger Entries
+      if (savedOrder.paymentMethod === PaymentMethod.ON_ACCOUNT) {
+        const orderTotal = Number(savedOrder.totalAmount)
+        const dueDate = new Date()
+        dueDate.setDate(dueDate.getDate() + 30) // Default Net 30 Terms
+
+        // Post AR Sub-ledger Invoice Entry
+        await this.arService.postArTransaction(
+          {
+            customerId: user.id,
+            type: ArTransactionType.INVOICE,
+            amount: orderTotal,
+            referenceType: 'ORDER',
+            referenceId: savedOrder.id,
+            dueDate,
+            currency: savedOrder.currency,
+          },
+          ctx,
+          manager,
+        )
+
+        // Post General Ledger Double-Entry
+        await this.accountingService.createJournalEntry(
+          {
+            type: JournalType.SALES,
+            description: `B2B Credit Sale - Net 30 Terms - Order ID: ${savedOrder.id}`,
+            referenceType: 'ORDER',
+            referenceId: savedOrder.id,
+            lines: [
+              { accountCode: '1200', side: LedgerEntrySide.DEBIT, amount: orderTotal }, // Debit AR
+              { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: orderTotal }, // Credit Sales Revenue
+            ],
+          },
+          ctx,
+          manager,
+        )
+      }
 
       // 8. Link Inventory Transactions
       await manager.update(

@@ -470,6 +470,12 @@ export const navGroups = [
         href: "/admin/finance/ledger",
         feature: "/admin/finance/ledger",
       },
+      {
+        icon: CreditCard,
+        label: "Accounts Receivable",
+        href: "/admin/finance/ar",
+        feature: "/admin/finance/ar",
+      },
     ],
   },
   {

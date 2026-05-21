@@ -2,11 +2,18 @@ export interface User {
     id: string;
     name: string;
     email: string;
-    username: string; // added back as seen in create user DTO
+    username: string;
     role: string;
     phone?: string;
     status: string;
     createdAt: string;
+    // B2B Credit Fields
+    companyName?: string;
+    customerCode?: string;
+    taxId?: string;
+    creditLimit?: number;
+    creditHold?: boolean;
+    preferredBranchId?: string;
 }
 
 export interface Pagination {
@@ -33,4 +40,21 @@ export interface CustomerFormProps {
     onClose: () => void;
     onSubmit: (data: any) => Promise<void>;
     initialData?: User | null;
+}
+
+export interface ArAgingRow {
+    customerId: string;
+    customerName: string;
+    customerEmail: string;
+    companyName: string;
+    creditLimit: number;
+    creditHold: boolean;
+    totalOutstanding: number;
+    aging: {
+        current: number;
+        '1-30': number;
+        '31-60': number;
+        '61-90': number;
+        '90+': number;
+    };
 }
