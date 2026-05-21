@@ -80,9 +80,10 @@ export class InventoryLedgerController {
   @RequirePermissions(SystemPermissions.INVENTORY_READ)
   async getStockSummary(
     @RequestContext() ctx: RequestContextDto,
+    @Query('warehouseId') warehouseId?: string,
   ): Promise<BaseApiSuccessResponse<any[]>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getStockSummary.`)
-    const data = await this.service.getStockSummary(ctx)
+    const data = await this.service.getStockSummary(ctx, warehouseId)
     return {
       success: true,
       statusCode: 200,

@@ -56,6 +56,38 @@ export class PermissionResolutionService {
   // Main Resolution Method
   // ─────────────────────────────────────────────────────────────────
 
+  private isFeatureEnabled(featuresEnabled: string[], featureSlug: string): boolean {
+    const mapping: Record<string, string[]> = {
+      finance: ['/admin/finance'],
+      hrm: ['/admin/hrm'],
+      orders: ['/admin/orders'],
+      pos: ['/admin/pos'],
+      catalog: ['/admin/products'],
+      inventory: ['/admin/inventory', '/admin/warehouses'],
+      purchasing: ['/admin/purchases', '/admin/suppliers'],
+      settings: ['/admin/settings'],
+      content: ['/admin/content'],
+      marketing: ['/admin/campaigns', '/admin/coupons', '/admin/promotions'],
+      invoices: ['/admin/invoices'],
+      returns: ['/admin/returns'],
+      payments: ['/admin/payments'],
+      reports: ['/admin/reports'],
+      logistics: ['/admin/logistics'],
+      fulfillment: ['/admin/fulfillment'],
+    }
+
+    if (featuresEnabled.includes(featureSlug)) return true
+
+    const mappedPaths = mapping[featureSlug] || []
+    for (const path of mappedPaths) {
+      if (featuresEnabled.includes(path)) return true
+    }
+
+    return featuresEnabled.some(
+      (f) => f === featureSlug || f.endsWith('/' + featureSlug),
+    )
+  }
+
   /**
    * Resolve whether a user can perform a given permission in a tenant context.
    *
@@ -74,12 +106,12 @@ export class PermissionResolutionService {
     const feature = permSlug.split(':')[0]
 
     // ── Step 1: Feature subscription check ───────────────────────────
-    const tenantFeature = await this.tenantFeatureRepo.findOne({
-      where: { tenantId, featureSlug: feature },
+    const tenantFeatures = await this.tenantFeatureRepo.find({
+      where: { tenantId, isEnabled: true },
     })
-    // If we have a TenantFeature record and it's disabled → deny
-    // If no record exists at all, it means tenant was onboarded before this system → allow (permissive fallback)
-    if (tenantFeature && !tenantFeature.isEnabled) {
+    const featuresEnabled = tenantFeatures.map((f) => f.featureSlug)
+    // If we have features enabled and the requested permission feature is not among them → deny
+    if (tenantFeatures.length > 0 && !this.isFeatureEnabled(featuresEnabled, feature)) {
       this.logger.debug(`[DENY] Feature "${feature}" disabled for tenant ${tenantId}`)
       return false
     }
@@ -166,7 +198,7 @@ export class PermissionResolutionService {
       .filter((p) => {
         // Only include permissions whose feature is enabled (or no feature record = fallback allow)
         const feat = p.split(':')[0]
-        return featuresEnabled.includes(feat) || tenantFeatures.length === 0
+        return this.isFeatureEnabled(featuresEnabled, feat) || tenantFeatures.length === 0
       })
 
     const manifest: PermissionManifest = {

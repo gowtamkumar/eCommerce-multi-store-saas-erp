@@ -45,6 +45,16 @@ export class CacheService {
     }
   }
 
+  async delCacheByPattern(pattern: string, tenantId?: string) {
+    this.logger.log(`${this.delCacheByPattern.name} Service Called`)
+    try {
+      const fullPattern = tenantId ? `${CACHE_PREFIX}:tenant:${tenantId}:${pattern}` : `${CACHE_PREFIX}:${pattern}`
+      await this.cacheRepository.delByPattern(fullPattern)
+    } catch (error) {
+      this.logger.error(`[CACHE] DELETE pattern error for ${pattern}:`, error.message)
+    }
+  }
+
   async resetCache() {
     this.logger.log(`${this.resetCache.name} Service Called`)
     try {

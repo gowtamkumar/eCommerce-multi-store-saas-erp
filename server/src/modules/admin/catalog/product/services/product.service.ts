@@ -413,6 +413,10 @@ export class ProductService {
       return product
     })
 
+    await this.cache.delCacheByPattern('products:list:*', tenantId)
+    await this.cache.delCacheByPattern('products:latest:*', tenantId)
+    await this.cache.delCacheByPattern('products:filter-options:*', tenantId)
+
     return await this.findOneProduct(savedProduct.id, ctx)
   }
 
@@ -560,6 +564,10 @@ export class ProductService {
       await this.cache.delCache(`product:${id}`, tenantId)
     })
 
+    await this.cache.delCacheByPattern('products:list:*', tenantId)
+    await this.cache.delCacheByPattern('products:latest:*', tenantId)
+    await this.cache.delCacheByPattern('products:filter-options:*', tenantId)
+
     return await this.findOneProduct(id, ctx)
   }
 
@@ -573,6 +581,9 @@ export class ProductService {
     await this.productRepository.removeProduct(product as any as ProductEntity)
 
     await this.cache.delCache(`product:${id}`, tenantId)
+    await this.cache.delCacheByPattern('products:list:*', tenantId)
+    await this.cache.delCacheByPattern('products:latest:*', tenantId)
+    await this.cache.delCacheByPattern('products:filter-options:*', tenantId)
 
     return { success: true, message: 'Product deleted successfully' }
   }

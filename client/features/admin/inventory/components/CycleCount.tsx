@@ -67,7 +67,8 @@ export default function CycleCount() {
 
     const getProductStockSummary = async (productId: string, variantId?: string): Promise<number> => {
         try {
-            const res = await fetchAPI(`/inventory-ledger/stock-summary`);
+            const query = warehouseId ? `?warehouseId=${warehouseId}` : '';
+            const res = await fetchAPI(`/inventory-ledger/stock-summary${query}`);
             if (res.success) {
                 const summaryItem = (res.data || []).find((s: any) => {
                     if (variantId) {
@@ -237,7 +238,10 @@ export default function CycleCount() {
                                 <Warehouse className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                 <select
                                     value={warehouseId}
-                                    onChange={e => setWarehouseId(e.target.value)}
+                                    onChange={e => {
+                                        setWarehouseId(e.target.value);
+                                        setLines([]);
+                                    }}
                                     required
                                     className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500 transition-all text-sm outline-none font-bold appearance-none"
                                 >

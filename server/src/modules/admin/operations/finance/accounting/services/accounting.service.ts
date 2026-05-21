@@ -119,16 +119,11 @@ export class AccountingService {
         // Update Account Balance (standard double-entry rules)
         const amount = Number(line.amount)
         if (line.side === LedgerEntrySide.DEBIT) {
-          // Debit INCREASES: Assets (all categories) and Expenses
+          // Debit INCREASES: Assets and Expenses
           // Debit DECREASES: Liabilities, Equity, Revenue
           const isDebitIncrease =
-            account.category === AccountCategory.CASH_BANK ||
-            account.category === AccountCategory.INVENTORY ||
-            account.category === AccountCategory.RECEIVABLE ||
-            account.category === AccountCategory.FIXED_ASSET ||
-            account.category === AccountCategory.COGS ||
-            account.category === AccountCategory.OPERATING_EXPENSE ||
-            account.category === AccountCategory.OTHER
+            account.type === AccountType.ASSET ||
+            account.type === AccountType.EXPENSE
 
           account.balance = isDebitIncrease
             ? Number(account.balance) + amount
@@ -137,9 +132,9 @@ export class AccountingService {
           // Credit INCREASES: Liabilities, Equity, Revenue
           // Credit DECREASES: Assets and Expenses
           const isCreditIncrease =
-            account.category === AccountCategory.SALES ||
-            account.category === AccountCategory.PAYABLE ||
-            account.category === AccountCategory.EQUITY
+            account.type === AccountType.LIABILITY ||
+            account.type === AccountType.EQUITY ||
+            account.type === AccountType.REVENUE
 
           account.balance = isCreditIncrease
             ? Number(account.balance) + amount

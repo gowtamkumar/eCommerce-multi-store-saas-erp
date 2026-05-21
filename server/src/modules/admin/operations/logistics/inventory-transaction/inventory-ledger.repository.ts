@@ -80,21 +80,28 @@ export class InventoryLedgerRepository {
     const transaction = repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId })
     return await (repo.save(transaction) as unknown as Promise<InventoryLedgerEntity>)
   }
-  async getStockSums(tenantId: string): Promise<any[]> {
-    return await this.repo
+  async getStockSums(tenantId: string, warehouseId?: string): Promise<any[]> {
+    const qb = this.repo
       .createQueryBuilder('ledger')
       .select('ledger.productId', 'productId')
       .addSelect('ledger.variantId', 'variantId')
       .addSelect('SUM(ledger.quantity)', 'sum')
       .where('ledger.tenantId = :tenantId', { tenantId })
+
+    if (warehouseId) {
+      qb.andWhere('ledger.warehouseId = :warehouseId', { warehouseId })
+    }
+
+    return await qb
       .groupBy('ledger.productId')
       .addGroupBy('ledger.variantId')
       .getRawMany()
   }
-  async getGlobalLiveStock(
+  async getLiveStock(
     productId: string,
     variantId: string | null,
     tenantId: string,
+    warehouseId?: string | null,
     manager?: any,
   ): Promise<number> {
     const repo = manager ? manager.getRepository(InventoryLedgerEntity) : this.repo
@@ -109,6 +116,10 @@ export class InventoryLedgerRepository {
       query.andWhere('ledger.variantId = :variantId', { variantId })
     } else {
       query.andWhere('ledger.variantId IS NULL')
+    }
+
+    if (warehouseId) {
+      query.andWhere('ledger.warehouseId = :warehouseId', { warehouseId })
     }
 
     const result = await query.getRawOne()

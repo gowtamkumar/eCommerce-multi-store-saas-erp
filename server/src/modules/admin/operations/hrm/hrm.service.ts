@@ -494,7 +494,8 @@ export class HrmService {
     let batchNetTotal = 0
     let totalGrossSalaries = 0
     let totalTaxesWithheld = 0
-    let totalDeductionsSum = 0
+    let totalBaseDeductions = 0
+    let totalLateDeductions = 0
     const slips = []
 
     for (const employee of employees) {
@@ -561,7 +562,8 @@ export class HrmService {
       batchNetTotal += netSalary
       totalGrossSalaries += grossSalary
       totalTaxesWithheld += incomeTax
-      totalDeductionsSum += baseDeductions + lateDeductions
+      totalBaseDeductions += baseDeductions
+      totalLateDeductions += lateDeductions
     }
 
     // Update batch total
@@ -573,10 +575,10 @@ export class HrmService {
     // Accounting Journal Posting (Salary Accrual Entry)
     try {
       if (this.accountingService) {
-        // Debit: Salaries & Wages Expense (6000) -> Gross Salaries
-        // Credit: Salaries Payable (2100) -> Net Payable
+        // Debit: Salaries & Wages Expense (6000) -> Gross Salaries minus late penalties
+        // Credit: Salaries Payable (2100) -> Net Payable to employees
         // Credit: Payroll Tax Liabilities (2200) -> Taxes withheld
-        // Credit: Miscellaneous Deductions Recovery (2150) -> Cumulative employee deductions
+        // Credit: Accounts Payable (2100) -> Benefits / general employee deductions
         await this.accountingService.createJournalEntry(
           {
             type: JournalType.GENERAL,
@@ -587,7 +589,7 @@ export class HrmService {
               {
                 accountCode: '6000',
                 side: LedgerEntrySide.DEBIT,
-                amount: parseFloat(totalGrossSalaries.toFixed(2)),
+                amount: parseFloat((totalGrossSalaries - totalLateDeductions).toFixed(2)),
               },
               {
                 accountCode: '2100',
@@ -602,7 +604,7 @@ export class HrmService {
               {
                 accountCode: '2100', // Offset remainder to keep COA simple if recovery accounts aren't initialized
                 side: LedgerEntrySide.CREDIT,
-                amount: parseFloat(totalDeductionsSum.toFixed(2)),
+                amount: parseFloat(totalBaseDeductions.toFixed(2)),
               },
             ].filter((line) => line.amount > 0),
           },

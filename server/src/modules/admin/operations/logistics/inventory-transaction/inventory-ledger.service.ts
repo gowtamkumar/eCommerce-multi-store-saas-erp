@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logistics/inventory-transaction/dto/create-inventory-transaction.dto'
 import { InventoryLedgerRepository } from './inventory-ledger.repository'
@@ -152,7 +152,7 @@ export class InventoryLedgerService {
 
     // Trigger Low Stock / Out of Stock Warnings
     try {
-      const newGlobalStock = await this.repository.getGlobalLiveStock(dto.productId, dto.variantId || null, tenantId)
+      const newGlobalStock = await this.repository.getLiveStock(dto.productId, dto.variantId || null, tenantId)
       const currentGlobalStock = newGlobalStock - signedQty
 
       let threshold = product.lowStockThreshold ?? 5
@@ -244,19 +244,21 @@ export class InventoryLedgerService {
    * Returns stock summary across all products.
    * Still uses product.stock as source of truth for Phase 2.
    */
-  async getStockSummary(ctx: RequestContextDto): Promise<any[]> {
+  async getStockSummary(ctx: RequestContextDto, warehouseId?: string): Promise<any[]> {
     this.logger.log(`${this.getStockSummary.name} Service Called`)
     const tenantId = ctx.tenantId
 
+    const cacheKey = `inventory:summary:${warehouseId || 'global'}`
+
     return this.cacheService.rememberCache(
-      `inventory:summary`,
+      cacheKey,
       async () => {
         const [products] = await this.productRepository.findAllWithFilters(
           { limit: 1000 },
           tenantId,
         )
 
-        const sums = await this.repository.getStockSums(tenantId)
+        const sums = await this.repository.getStockSums(tenantId, warehouseId)
         const stockMap = new Map<string, number>()
         sums.forEach((item: any) => {
           const key = item.variantId ? `${item.productId}:${item.variantId}` : item.productId
@@ -347,6 +349,19 @@ export class InventoryLedgerService {
   ): Promise<{ outEntry: InventoryLedgerEntity; inEntry: InventoryLedgerEntity }> {
     this.logger.log(`${this.createStockTransfer.name} Service Called`)
 
+    const sourceStock = await this.repository.getLiveStock(
+      dto.productId,
+      dto.variantId || null,
+      ctx.tenantId,
+      dto.sourceWarehouseId,
+    )
+
+    if (sourceStock < dto.quantity) {
+      throw new BadRequestException(
+        `Insufficient stock in source warehouse. Only ${sourceStock} items available.`,
+      )
+    }
+
     const transferRef = `XFER-${Date.now()}`
 
     const outEntry = await this.createLedgerEntry(
@@ -406,10 +421,11 @@ export class InventoryLedgerService {
     const adjustments: InventoryLedgerEntity[] = []
 
     for (const line of dto.lines) {
-      const liveStock = await this.repository.getGlobalLiveStock(
+      const liveStock = await this.repository.getLiveStock(
         line.productId,
         line.variantId || null,
         ctx.tenantId,
+        dto.warehouseId,
       )
 
       const delta = Number(line.countedQty) - Number(liveStock)
@@ -441,10 +457,20 @@ export class InventoryLedgerService {
     tenantId: string,
     manager?: any,
   ): Promise<number> {
-    return await this.repository.getGlobalLiveStock(productId, variantId, tenantId, manager)
+    return await this.repository.getLiveStock(productId, variantId, tenantId, null, manager)
   }
 
-  async getStockSums(tenantId: string): Promise<any[]> {
-    return await this.repository.getStockSums(tenantId)
+  async getLiveStock(
+    productId: string,
+    variantId: string | null,
+    tenantId: string,
+    warehouseId?: string | null,
+    manager?: any,
+  ): Promise<number> {
+    return await this.repository.getLiveStock(productId, variantId, tenantId, warehouseId, manager)
+  }
+
+  async getStockSums(tenantId: string, warehouseId?: string): Promise<any[]> {
+    return await this.repository.getStockSums(tenantId, warehouseId)
   }
 }

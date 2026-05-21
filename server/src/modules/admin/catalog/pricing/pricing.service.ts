@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, IsNull } from 'typeorm'
 import { PriceBookEntity } from './entities/price-book.entity'
 import { ProductPriceEntity } from './entities/product-price.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -57,18 +57,35 @@ export class PricingService {
 
     if (!pb) return null
 
-    const prices = await this.productPriceRepo.find({
-      where: {
-        priceBookId: pb.id,
-        productId,
-        variantId: variantId || undefined,
-        tenantId,
-      },
-      order: { minQuantity: 'DESC' }, // Get highest minQuantity first
-    })
+    let applicablePrice = null
 
-    // Find the first price where quantity >= minQuantity
-    const applicablePrice = prices.find((p) => quantity >= p.minQuantity)
+    // 1. Try to find variant-specific price first if variantId is provided
+    if (variantId) {
+      const variantPrices = await this.productPriceRepo.find({
+        where: {
+          priceBookId: pb.id,
+          productId,
+          variantId,
+          tenantId,
+        },
+        order: { minQuantity: 'DESC' },
+      })
+      applicablePrice = variantPrices.find((p) => quantity >= p.minQuantity)
+    }
+
+    // 2. Fall back to base product price if no variant price found
+    if (!applicablePrice) {
+      const basePrices = await this.productPriceRepo.find({
+        where: {
+          priceBookId: pb.id,
+          productId,
+          variantId: IsNull(),
+          tenantId,
+        },
+        order: { minQuantity: 'DESC' },
+      })
+      applicablePrice = basePrices.find((p) => quantity >= p.minQuantity)
+    }
 
     return applicablePrice ? Number(applicablePrice.price) : null
   }

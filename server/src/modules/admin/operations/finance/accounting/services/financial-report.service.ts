@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { DataSource } from 'typeorm'
 import { AccountEntity } from '../entities/account.entity'
 import { LedgerEntryEntity } from '../entities/ledger-entry.entity'
-import { AccountCategory } from '@/common/enums/account-type.enum'
+import { AccountCategory, AccountType } from '@/common/enums/account-type.enum'
 import { LedgerEntrySide, JournalType } from '@/common/enums/journal-type.enum'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
@@ -17,7 +17,7 @@ export class FinancialReportService {
     const accounts = await repo.find({ where: { tenantId } })
 
     const sales = accounts
-      .filter((a) => a.category === AccountCategory.SALES)
+      .filter((a) => a.type === AccountType.REVENUE)
       .reduce((sum, a) => sum + Number(a.balance), 0)
 
     const cogs = accounts
@@ -25,7 +25,7 @@ export class FinancialReportService {
       .reduce((sum, a) => sum + Number(a.balance), 0)
 
     const expenses = accounts
-      .filter((a) => a.category === AccountCategory.OPERATING_EXPENSE)
+      .filter((a) => a.type === AccountType.EXPENSE && a.category !== AccountCategory.COGS)
       .reduce((sum, a) => sum + Number(a.balance), 0)
 
     const grossProfit = sales - cogs
@@ -47,19 +47,15 @@ export class FinancialReportService {
     const accounts = await repo.find({ where: { tenantId } })
 
     const assets = accounts
-      .filter((a) =>
-        [AccountCategory.CASH_BANK, AccountCategory.INVENTORY, AccountCategory.RECEIVABLE].includes(
-          a.category,
-        ),
-      )
+      .filter((a) => a.type === AccountType.ASSET)
       .map((a) => ({ name: a.name, balance: Number(a.balance) }))
 
     const liabilities = accounts
-      .filter((a) => a.category === AccountCategory.PAYABLE)
+      .filter((a) => a.type === AccountType.LIABILITY)
       .map((a) => ({ name: a.name, balance: Number(a.balance) }))
 
     const equity = accounts
-      .filter((a) => a.category === AccountCategory.EQUITY)
+      .filter((a) => a.type === AccountType.EQUITY)
       .map((a) => ({ name: a.name, balance: Number(a.balance) }))
 
     return {

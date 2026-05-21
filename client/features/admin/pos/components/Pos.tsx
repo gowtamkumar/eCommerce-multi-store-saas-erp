@@ -94,7 +94,7 @@ export default function Pos() {
 
   // Checkout modal
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'MOBILE'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'MOBILE' | 'ON_ACCOUNT'>('CASH');
   const [amountTendered, setAmountTendered] = useState<number | ''>('');
   const [processingPayment, setProcessingPayment] = useState(false);
   
@@ -117,6 +117,12 @@ export default function Pos() {
   // Premium POS Delivery Zones & Custom Shipping Address State
   const [deliveryZone, setDeliveryZone] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
+
+  // Wallet and credit states
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [outstandingBalance, setOutstandingBalance] = useState<number>(0);
+  const [useWalletBalance, setUseWalletBalance] = useState(false);
+  const [walletAmountToUse, setWalletAmountToUse] = useState<number | ''>('');
 
   // Close shift modal
   const [isCloseShiftOpen, setIsCloseShiftOpen] = useState(false);
@@ -318,6 +324,37 @@ export default function Pos() {
     }
   }, [activeShift]);
 
+  useEffect(() => {
+    if (selectedCustomer) {
+      // 1. Fetch wallet balance
+      fetchAPI(`/finance/wallet/${selectedCustomer.id}`)
+        .then((res) => {
+          if (res.success && res.data) {
+            setWalletBalance(Number(res.data.balance || 0));
+          }
+        })
+        .catch(() => setWalletBalance(0));
+
+      // 2. Fetch outstanding balance
+      fetchAPI(`/finance/ar/customer/${selectedCustomer.id}`)
+        .then((res) => {
+          if (res.success && Array.isArray(res.data)) {
+            const outstanding = res.data.reduce((sum: number, e: any) => sum + Number(e.amount), 0);
+            setOutstandingBalance(outstanding);
+          }
+        })
+        .catch(() => setOutstandingBalance(0));
+    } else {
+      setWalletBalance(0);
+      setOutstandingBalance(0);
+      setUseWalletBalance(false);
+      setWalletAmountToUse('');
+      if (paymentMethod === 'ON_ACCOUNT') {
+        setPaymentMethod('CASH');
+      }
+    }
+  }, [selectedCustomer]);
+
   const calculateSubtotal = () => {
     return cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   };
@@ -398,6 +435,10 @@ export default function Pos() {
 
   // 4. Sales Sync Processing
   const handleConfirmCheckout = async () => {
+    if (paymentMethod === 'ON_ACCOUNT' && !selectedCustomer) {
+      toast.error('Customer profile selection required for on-account checkout');
+      return;
+    }
     if (paymentMethod === 'CASH' && amountTendered !== '' && Number(amountTendered) < calculateGrandTotal()) {
       toast.error('Tendered cash must equal or exceed total payable amount');
       return;
@@ -425,6 +466,8 @@ export default function Pos() {
           deliveryZone: deliveryZone || undefined,
           shippingFee: calculateShippingFee(),
           shippingAddress: shippingAddress || undefined,
+          useWalletBalance: useWalletBalance || undefined,
+          walletAmountToUse: useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : undefined,
         }),
       });
 
@@ -447,6 +490,7 @@ export default function Pos() {
           paymentMethod,
           amountTendered: amountTendered === '' ? calculateGrandTotal() : Number(amountTendered),
           changeDue: changeDue > 0 ? changeDue : 0,
+          walletDeduction: useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : 0,
           customer: selectedCustomer,
         });
 
@@ -458,6 +502,10 @@ export default function Pos() {
         setCouponCode('');
         setDeliveryZone('');
         setShippingAddress('');
+        setUseWalletBalance(false);
+        setWalletAmountToUse('');
+        setWalletBalance(0);
+        setOutstandingBalance(0);
         setSelectedCustomer(null);
         setIsReceiptOpen(true); // Open premium receipt modal
 
@@ -1028,36 +1076,112 @@ export default function Pos() {
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
                     Payment Method
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-4 gap-1.5">
                     <button
+                      type="button"
                       onClick={() => setPaymentMethod('CASH')}
-                      className={`flex flex-col items-center justify-center p-3 rounded-2xl border gap-1.5 transition-all font-bold text-xs ${paymentMethod === 'CASH'
+                      className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'CASH'
                         ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
                         : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
                         }`}
                     >
-                      <Banknote className="w-4 h-4" /> Cash
+                      <Banknote className="w-3.5 h-3.5" /> Cash
                     </button>
                     <button
+                      type="button"
                       onClick={() => setPaymentMethod('CARD')}
-                      className={`flex flex-col items-center justify-center p-3 rounded-2xl border gap-1.5 transition-all font-bold text-xs ${paymentMethod === 'CARD'
+                      className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'CARD'
                         ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
                         : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
                         }`}
                     >
-                      <CreditCard className="w-4 h-4" /> Card
+                      <CreditCard className="w-3.5 h-3.5" /> Card
                     </button>
                     <button
+                      type="button"
                       onClick={() => setPaymentMethod('MOBILE')}
-                      className={`flex flex-col items-center justify-center p-3 rounded-2xl border gap-1.5 transition-all font-bold text-xs ${paymentMethod === 'MOBILE'
+                      className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'MOBILE'
                         ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
                         : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
                         }`}
                     >
-                      <QrCode className="w-4 h-4" /> Mobile
+                      <QrCode className="w-3.5 h-3.5" /> Mobile
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!selectedCustomer}
+                      onClick={() => setPaymentMethod('ON_ACCOUNT')}
+                      className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'ON_ACCOUNT'
+                        ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
+                        : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
+                        } disabled:opacity-40 disabled:cursor-not-allowed`}
+                    >
+                      <Coins className="w-3.5 h-3.5" /> Account
                     </button>
                   </div>
                 </div>
+
+                {/* Customer Financial / B2B Credit Profile & Wallet Payments */}
+                {selectedCustomer && (
+                  <div className="space-y-3 p-4 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-850">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-slate-700 dark:text-slate-350">Customer Profile</span>
+                      {selectedCustomer.creditHold && (
+                        <span className="px-2 py-0.5 bg-red-100 dark:bg-red-950/30 text-red-650 text-[9px] font-black rounded-full uppercase tracking-wider">
+                          Credit Hold
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
+                      <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <p className="text-slate-400 font-bold uppercase tracking-wider">Wallet Balance</p>
+                        <p className="text-sm font-black text-slate-800 dark:text-white">${walletBalance.toFixed(2)}</p>
+                      </div>
+                      <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <p className="text-slate-400 font-bold uppercase tracking-wider">Credit Limit / Debt</p>
+                        <p className="text-sm font-black text-slate-800 dark:text-white">
+                          ${Number(selectedCustomer.creditLimit || 0).toFixed(2)} / ${outstandingBalance.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {walletBalance > 0 && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-350">
+                          <input
+                            type="checkbox"
+                            checked={useWalletBalance}
+                            onChange={(e) => {
+                              setUseWalletBalance(e.target.checked);
+                              if (e.target.checked) {
+                                setWalletAmountToUse(Math.min(walletBalance, calculateGrandTotal()));
+                              } else {
+                                setWalletAmountToUse('');
+                              }
+                            }}
+                            className="rounded border-slate-300 text-brand-650 focus:ring-brand-500"
+                          />
+                          Pay with Store Credit / Wallet
+                        </label>
+                        {useWalletBalance && (
+                          <div className="flex justify-between items-center pt-1.5">
+                            <span className="text-[10px] text-slate-400 font-bold">Apply Amount ($)</span>
+                            <input
+                              type="number"
+                              min="0.01"
+                              max={walletBalance}
+                              value={walletAmountToUse}
+                              onChange={(e) =>
+                                setWalletAmountToUse(e.target.value === '' ? '' : Number(e.target.value))
+                              }
+                              className="w-28 text-right px-2 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg outline-none font-bold text-xs"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Delivery Zone and Shipping Address Selector */}
                 <div className="space-y-3 p-4 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-850">
@@ -1479,6 +1603,12 @@ export default function Pos() {
                       <div className="flex justify-between text-emerald-500 font-bold">
                         <span>Shipping ({lastTransaction.deliveryZone})</span>
                         <span>+${lastTransaction.shippingFee.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {lastTransaction.walletDeduction > 0 && (
+                      <div className="flex justify-between text-emerald-500 font-bold">
+                        <span>Store Credit / Wallet</span>
+                        <span>-${lastTransaction.walletDeduction.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm font-black text-slate-900 dark:text-white pt-1.5 border-t border-slate-100 dark:border-slate-800">

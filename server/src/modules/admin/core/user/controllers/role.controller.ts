@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { In, Repository } from 'typeorm'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -102,6 +102,10 @@ export class RoleController {
       throw new Error('Role not found')
     }
 
+    if (role.isSystemRole || role.isSystemDefault) {
+      throw new ForbiddenException('System roles cannot be modified.')
+    }
+
     if (name) role.name = name
     if (description !== undefined) role.description = description
 
@@ -133,6 +137,10 @@ export class RoleController {
 
     if (!role) {
       throw new Error('Role not found')
+    }
+
+    if (role.isSystemRole || role.isSystemDefault) {
+      throw new ForbiddenException('System roles cannot be deleted.')
     }
 
     await this.roleRepo.remove(role)
