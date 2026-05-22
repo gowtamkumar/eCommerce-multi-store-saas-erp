@@ -8,6 +8,7 @@ import { PushService } from '@/modules/admin/operations/infra/push/push.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderService } from '../services/order.service'
+import { StockReservationService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.service'
 
 @Processor('order')
 export class OrderProcessor extends WorkerHost {
@@ -20,6 +21,7 @@ export class OrderProcessor extends WorkerHost {
     private readonly pushService: PushService,
     private readonly notificationService: NotificationService,
     private readonly orderService: OrderService,
+    private readonly stockReservationService: StockReservationService,
   ) {
     super()
   }
@@ -32,6 +34,10 @@ export class OrderProcessor extends WorkerHost {
           return await this.handleCreateInvoice(job.data)
         case 'send-order-notification':
           return await this.handleSendOrderNotification(job.data)
+        case 'sweep-expired-reservations':
+          this.logger.log('Starting automated sweep of expired active reservations...')
+          const count = await this.stockReservationService.expireStale()
+          return { expiredCount: count }
         default:
           this.logger.warn(`Unknown job name: ${job.name}`)
       }

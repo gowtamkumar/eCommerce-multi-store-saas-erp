@@ -12,6 +12,9 @@ import { InventoryTransactionType } from '@/common/enums/inventory-transaction-t
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
 import { OrderStatus } from '@/common/enums/order-status.enum'
+import { StockReservationService } from '../inventory-transaction/stock-reservation.service'
+import { StockReservationEntity } from '../inventory-transaction/entities/stock-reservation.entity'
+import { ReservationStatus } from '@/common/enums/reservation-status.enum'
 
 @Injectable()
 export class FulfillmentService {
@@ -23,6 +26,7 @@ export class FulfillmentService {
     private readonly dataSource: DataSource,
     @InjectRepository(OrderEntity)
     private readonly orderRepository: Repository<OrderEntity>,
+    private readonly reservationService: StockReservationService,
   ) {}
 
   async createFromOrder(
@@ -147,9 +151,46 @@ export class FulfillmentService {
     }
 
     return await this.dataSource.transaction(async (manager) => {
-      // 1. Record Inventory Movement (SALE)
-      // This is where physical stock is actually deducted in the ledger
+      // 1. Record Inventory Movement (SALE) and Reconcile active Stock Reservations
       for (const item of task.items) {
+        // Find corresponding reservation for this order / product / variant
+        const reservation = await manager.findOne(StockReservationEntity, {
+          where: {
+            orderId: task.orderId,
+            productId: item.productId,
+            variantId: item.variantId ?? null,
+            tenantId: ctx.tenantId,
+          },
+        })
+
+        if (reservation && reservation.status === ReservationStatus.ACTIVE) {
+          // Consume the reservation (fulfill it)
+          await this.reservationService.fulfill(
+            reservation.id,
+            item.quantity,
+            ctx,
+            manager,
+            task.warehouseId,
+          )
+
+          // Reconcile ledger: Write RESERVATION_CANCEL to reverse the reservation decrement,
+          // so that the SALE decrement doesn't double-deduct.
+          await this.inventoryService.createLedgerEntry(
+            {
+              productId: item.productId,
+              variantId: item.variantId,
+              quantity: item.quantity,
+              type: InventoryTransactionType.RESERVATION_CANCEL,
+              referenceType: InventoryTransactionReferenceType.ORDER,
+              referenceId: task.orderId,
+              warehouseId: task.warehouseId,
+            },
+            ctx,
+            manager,
+          )
+        }
+
+        // Record the actual sale decrement
         await this.inventoryService.createLedgerEntry(
           {
             productId: item.productId,

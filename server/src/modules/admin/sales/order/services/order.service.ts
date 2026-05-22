@@ -9,7 +9,9 @@ import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
+import { StockReservationEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/stock-reservation.entity'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
+import { StockReservationService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.service'
 import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.service'
 import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
 import { FilterOrderDto } from '@/modules/admin/sales/order/dto/filter-order.dto'
@@ -55,6 +57,7 @@ export class OrderService {
     private paymentRepository: PaymentRepository,
     private cartService: CartService,
     private readonly inventoryService: InventoryLedgerService,
+    private readonly reservationService: StockReservationService,
     private readonly dataSource: DataSource,
     private readonly couponService: CouponService,
     private readonly invoiceService: InvoiceService,
@@ -127,19 +130,20 @@ export class OrderService {
       }
 
       // 4. Transform & Deduct Stock
-      // Collect ledger entry IDs as they are created so we can link them to the
-      // order ID precisely after save — avoiding the race-prone "referenceId IS NULL"
-      // tenant-wide UPDATE that the old code used.
+      // Collect ledger entry IDs and reservation IDs as they are created so we can
+      // link them to the order ID precisely after save — avoiding race conditions.
       const processedItems: OrderItemEntity[] = []
       const pendingLedgerIds: string[] = []
+      const pendingReservationIds: string[] = []
       for (const item of rawItems) {
-        const { orderItem, ledgerEntryId } = await this.orderProcessHelper.processItem(
+        const { orderItem, ledgerEntryId, reservationId } = await this.orderProcessHelper.processItem(
           item,
           ctx,
           manager,
         )
         processedItems.push(orderItem)
         if (ledgerEntryId) pendingLedgerIds.push(ledgerEntryId)
+        if (reservationId) pendingReservationIds.push(reservationId)
       }
 
       // Determine Subtotal if not already set by Cart
@@ -294,6 +298,16 @@ export class OrderService {
           .update(InventoryLedgerEntity)
           .set({ referenceId: savedOrder.id })
           .whereInIds(pendingLedgerIds)
+          .execute()
+      }
+
+      // Backfill orderId on the stock_reservations rows now that the order ID is known.
+      if (pendingReservationIds.length > 0) {
+        await manager
+          .createQueryBuilder()
+          .update(StockReservationEntity)
+          .set({ orderId: savedOrder.id })
+          .whereInIds(pendingReservationIds)
           .execute()
       }
 
@@ -467,6 +481,8 @@ export class OrderService {
       ) {
         for (const item of order.items) {
           if (item.product?.productType === 'SERVICE') continue
+
+          // 1. Immutable RESERVATION_CANCEL ledger entry (keeps audit stream intact)
           await this.inventoryService.createLedgerEntry(
             {
               productId: item.productId,
@@ -479,6 +495,25 @@ export class OrderService {
             ctx,
             queryRunner.manager,
           )
+
+          // 2. Transition the stock_reservations row to RELEASED for clean lifecycle state.
+          //    Look up by orderId + productId + variantId — the unique key for a reservation.
+          const existingReservation = await queryRunner.manager.findOne(StockReservationEntity, {
+            where: {
+              orderId: order.id,
+              productId: item.productId,
+              variantId: item.variantId ?? null,
+              tenantId,
+            },
+          })
+          if (existingReservation) {
+            await this.reservationService.release(
+              existingReservation.id,
+              null, // release all remaining
+              ctx,
+              queryRunner.manager,
+            )
+          }
         }
       }
 

@@ -11,6 +11,7 @@ import { InventoryTransactionType } from '@/common/enums/inventory-transaction-t
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { ShippingStrategyFactory } from '@/common/strategies/shipping/shipping-strategy.factory'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
+import { StockReservationService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.service'
 import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.service'
 import { EntityManager } from 'typeorm'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
@@ -23,21 +24,22 @@ export class OrderProcessHelper {
 
   constructor(
     private readonly inventoryService: InventoryLedgerService,
+    private readonly reservationService: StockReservationService,
     private readonly couponService: CouponService,
     private readonly pricingService: PricingService,
   ) {}
 
   /**
    * Processes a single item: validates product/variant, checks stock, and deducts inventory.
-   * Returns the built OrderItemEntity AND the ID of the inventory ledger entry created
-   * for the RESERVATION movement (null for SERVICE products that skip inventory).
+   * Returns the built OrderItemEntity, the inventory ledger entry ID, and the
+   * stock reservation ID (null for SERVICE products that skip inventory).
    * The caller must link the ledger entry to the final order ID after the order is saved.
    */
   async processItem(
     itemDto: any,
     ctx: RequestContextDto,
     manager: EntityManager,
-  ): Promise<{ orderItem: OrderItemEntity; ledgerEntryId: string | null }> {
+  ): Promise<{ orderItem: OrderItemEntity; ledgerEntryId: string | null; reservationId: string | null }> {
     const { productId, variantId, quantity, pricing: itemPricingDto } = itemDto
     const tenantId = ctx.tenantId
 
@@ -119,10 +121,10 @@ export class OrderProcessHelper {
       return orderItem
     }
 
-    // ── Inventory ──────────────────────────────────────────────────────────
+    // ── Inventory ──────────────────────────────────────────────────────────────
     if (isService) {
       // Service products have no stock; skip inventory entirely.
-      return { orderItem: buildOrderItem(), ledgerEntryId: null }
+      return { orderItem: buildOrderItem(), ledgerEntryId: null, reservationId: null }
     }
 
     const currentStock = await this.inventoryService.getGlobalLiveStock(
@@ -137,10 +139,8 @@ export class OrderProcessHelper {
       )
     }
 
-    // Reserve stock immediately (RESERVATION ledger row). referenceId is left
-    // null here because the order ID does not exist yet. The caller backfills
-    // it by primary key after the order is saved — avoiding the race-prone
-    // tenant-wide "WHERE referenceId IS NULL" update pattern.
+    // 1. Immutable ledger entry (RESERVATION type) — keeps the audit stream intact.
+    //    referenceId left null here; backfilled by order.service after the order is saved.
     const ledgerEntry = await this.inventoryService.createLedgerEntry(
       {
         productId: product.id,
@@ -154,7 +154,21 @@ export class OrderProcessHelper {
       manager,
     )
 
-    return { orderItem: buildOrderItem(), ledgerEntryId: ledgerEntry.id }
+    // 2. Lifecycle reservation row — enables ATP queries, expiry, release, and fulfill.
+    //    orderId is also left null here and backfilled by order.service after the order is saved.
+    const reservation = await this.reservationService.reserve(
+      {
+        productId: product.id,
+        variantId: variant?.id ?? null,
+        warehouseId: null, // warehouseId not yet known at order creation; set during fulfillment
+        orderId: null,     // backfilled after order.save() — same pattern as ledgerEntry
+        reservedQty: quantity,
+      },
+      ctx,
+      manager,
+    )
+
+    return { orderItem: buildOrderItem(), ledgerEntryId: ledgerEntry.id, reservationId: reservation.id }
   }
 
   /**

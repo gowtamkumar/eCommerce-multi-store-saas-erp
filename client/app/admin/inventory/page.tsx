@@ -2,11 +2,12 @@
 
 import InventoryDashboard from '@/features/admin/inventory/components/InventoryDashboard';
 import InventoryList from '@/features/admin/inventory/components/InventoryList';
-import { BarChart3, History } from 'lucide-react';
+import StockReservationList from '@/features/admin/inventory/components/StockReservationList';
+import { BarChart3, History, BookmarkCheck } from 'lucide-react';
 import { useState } from 'react';
 
 export default function InventoryPage() {
-    const [tab, setTab] = useState<'dashboard' | 'history'>('dashboard');
+    const [tab, setTab] = useState<'dashboard' | 'history' | 'reservations'>('dashboard');
 
     return (
         <div className="space-y-6">
@@ -32,9 +33,26 @@ export default function InventoryPage() {
                     <History className="w-4 h-4" />
                     Transaction History
                 </button>
+                <button
+                    onClick={() => setTab('reservations')}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all ${tab === 'reservations'
+                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                        }`}
+                >
+                    <BookmarkCheck className="w-4 h-4" />
+                    Stock Reservations
+                </button>
             </div>
 
-            {tab === 'dashboard' ? <InventoryDashboard /> : <InventoryList />}
+            {tab === 'dashboard' ? (
+                <InventoryDashboard />
+            ) : tab === 'history' ? (
+                <InventoryList />
+            ) : (
+                <StockReservationList />
+            )}
         </div>
     );
 }
+

@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
+import { StockReservationEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/stock-reservation.entity'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { InventoryLedgerController } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.controller'
+import { StockReservationService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.service'
+import { StockReservationController } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.controller'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { CategoryEntity } from '@/modules/admin/catalog/category/entities/category.entity'
@@ -14,11 +17,14 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { AccountingModule } from '@/modules/admin/operations/finance/accounting/accounting.module'
 import { CacheModule } from '@/modules/admin/operations/infra/cache/cache.module'
 import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
+import { BullModule } from '@nestjs/bullmq'
+import { StockReservationSchedulerService } from './stock-reservation-scheduler.service'
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       InventoryLedgerEntity,
+      StockReservationEntity,
       ProductEntity,
       ProductVariantEntity,
       CategoryEntity,
@@ -28,14 +34,19 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
     AccountingModule,
     CacheModule,
     NotificationModule,
+    BullModule.registerQueue({
+      name: 'order',
+    }),
   ],
-  controllers: [InventoryLedgerController],
+  controllers: [InventoryLedgerController, StockReservationController],
   providers: [
     InventoryLedgerService,
     InventoryLedgerRepository,
     ProductRepository,
     ProductVariantRepository,
+    StockReservationService,
+    StockReservationSchedulerService,
   ],
-  exports: [InventoryLedgerService, InventoryLedgerRepository],
+  exports: [InventoryLedgerService, InventoryLedgerRepository, StockReservationService],
 })
 export class InventoryLedgerModule {}
