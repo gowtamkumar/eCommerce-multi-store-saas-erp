@@ -113,3 +113,67 @@ export async function manualDebitPoints(customerId: string, points: number, note
   }
   return res.data;
 }
+
+export interface LoyaltyRule {
+  id?: string;
+  name: string;
+  type: "CATEGORY_MULTIPLIER" | "MIN_SPEND_BONUS" | "WEEKEND_MULTIPLIER";
+  value: number;
+  conditions: Record<string, any>;
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+}
+
+/**
+ * Admin: Fetch all loyalty rules for the current tenant.
+ */
+export async function getLoyaltyRules(): Promise<LoyaltyRule[]> {
+  const res = await fetchAPI(`/marketing/loyalty/rules`);
+  if (!res.success) {
+    throw new Error(res.message || "Failed to fetch loyalty rules");
+  }
+  return res.data;
+}
+
+/**
+ * Admin: Create a new loyalty rule.
+ */
+export async function createLoyaltyRule(dto: Partial<LoyaltyRule>): Promise<LoyaltyRule> {
+  const res = await fetchAPI(`/marketing/loyalty/rules`, {
+    method: "POST",
+    body: JSON.stringify(dto),
+  });
+  if (!res.success) {
+    throw new Error(res.message || "Failed to create loyalty rule");
+  }
+  return res.data;
+}
+
+/**
+ * Admin: Update an existing loyalty rule.
+ */
+export async function updateLoyaltyRule(id: string, dto: Partial<LoyaltyRule>): Promise<LoyaltyRule> {
+  const res = await fetchAPI(`/marketing/loyalty/rules/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(dto),
+  });
+  if (!res.success) {
+    throw new Error(res.message || "Failed to update loyalty rule");
+  }
+  return res.data;
+}
+
+/**
+ * Admin: Delete a loyalty rule.
+ */
+export async function deleteLoyaltyRule(id: string): Promise<any> {
+  const res = await fetchAPI(`/marketing/loyalty/rules/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.success) {
+    throw new Error(res.message || "Failed to delete loyalty rule");
+  }
+  return res.data;
+}
+

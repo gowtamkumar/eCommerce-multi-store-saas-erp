@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Put, Delete, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
@@ -181,4 +181,69 @@ export class LoyaltyController {
       },
     }
   }
+
+  // --- Loyalty Rules Dynamic CRUD ---
+
+  @Get('marketing/loyalty/rules')
+  @UseGuards(SubscriptionGuard)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  async getLoyaltyRules(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any[]>> {
+    const data = await this.loyaltyService.findAllRules(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Loyalty rules retrieved successfully',
+      data,
+    }
+  }
+
+  @Post('marketing/loyalty/rules')
+  @UseGuards(SubscriptionGuard)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  async createLoyaltyRule(
+    @Body() body: any,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.loyaltyService.createRule(body, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Loyalty rule created successfully',
+      data,
+    }
+  }
+
+  @Put('marketing/loyalty/rules/:id')
+  @UseGuards(SubscriptionGuard)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  async updateLoyaltyRule(
+    @Param('id') id: string,
+    @Body() body: any,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.loyaltyService.updateRule(id, body, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Loyalty rule updated successfully',
+      data,
+    }
+  }
+
+  @Delete('marketing/loyalty/rules/:id')
+  @UseGuards(SubscriptionGuard)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  async deleteLoyaltyRule(
+    @Param('id') id: string,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    await this.loyaltyService.deleteRule(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Loyalty rule deleted successfully',
+      data: null,
+    }
+  }
 }
+

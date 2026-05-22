@@ -2,7 +2,9 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { DataSource, EntityManager } from 'typeorm'
 import { LoyaltyLedgerEntity } from '../entities/loyalty-ledger.entity'
 import { LoyaltyConfigEntity } from '../entities/loyalty-config.entity'
+import { LoyaltyRuleEntity } from '../entities/loyalty-rule.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { LoyaltyTransactionType } from '@/common/enums/loyalty-transaction-type.enum'
 
@@ -177,34 +179,103 @@ export class LoyaltyService {
       return
     }
 
-    let multiplier = 1.0
+    let membershipMultiplier = 1.0
     switch (user.membershipTier) {
       case 'SILVER':
-        multiplier = Number(config.silverMultiplier)
+        membershipMultiplier = Number(config.silverMultiplier)
         break
       case 'GOLD':
-        multiplier = Number(config.goldMultiplier)
+        membershipMultiplier = Number(config.goldMultiplier)
         break
       case 'PLATINUM':
-        multiplier = Number(config.platinumMultiplier)
+        membershipMultiplier = Number(config.platinumMultiplier)
         break
       default:
-        multiplier = 1.0
+        membershipMultiplier = 1.0
     }
 
-    const baseAmount = Number(order.totalAmount || 0)
-    // Exclude shipping and tax from point calculation if needed, but totalAmount is simpler & standard
-    const pointsToEarn = Math.floor(baseAmount * Number(config.pointsPerCurrencySpent) * multiplier)
+    // Load full order details with items and product categories
+    const resolvedOrder = await em.findOne(OrderEntity, {
+      where: { id: order.id, tenantId: ctx.tenantId },
+      relations: ['items', 'items.product'],
+    }) || order
+
+    const now = new Date()
+
+    // Load active and valid dynamic rules
+    const activeRules = await em.find(LoyaltyRuleEntity, {
+      where: { tenantId: ctx.tenantId, isActive: true },
+    })
+
+    const validRules = activeRules.filter((rule) => {
+      if (rule.startDate && new Date(rule.startDate) > now) return false
+      if (rule.endDate && new Date(rule.endDate) < now) return false
+      return true
+    })
+
+    const pointsPerCurrencySpent = Number(config.pointsPerCurrencySpent)
+    let totalItemPoints = 0
+
+    // Evaluate Category Multiplier rules
+    for (const item of resolvedOrder.items || []) {
+      const itemAmt = Number(item.totalAmount || 0)
+      const categoryId = item.product?.categoryId
+
+      // Find matching category rules
+      const catRules = validRules.filter((r) => {
+        if (r.type !== 'CATEGORY_MULTIPLIER') return false
+        const catIds = r.conditions?.categoryIds || (r.conditions?.categoryId ? [r.conditions.categoryId] : [])
+        return categoryId && catIds.includes(categoryId)
+      })
+
+      const catMultiplier = catRules.reduce((max, r) => Math.max(max, Number(r.value)), 1.0)
+      const baseItemPoints = itemAmt * pointsPerCurrencySpent * membershipMultiplier
+      const finalItemPoints = baseItemPoints * catMultiplier
+
+      totalItemPoints += finalItemPoints
+    }
+
+    // Evaluate Weekend Multiplier rules
+    const orderDate = new Date(resolvedOrder.createdAt || now)
+    const dayOfWeek = orderDate.getDay() // 0 is Sunday, 6 is Saturday
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+
+    let weekendMultiplier = 1.0
+    if (isWeekend) {
+      const wkndRules = validRules.filter((r) => r.type === 'WEEKEND_MULTIPLIER')
+      weekendMultiplier = wkndRules.reduce((max, r) => Math.max(max, Number(r.value)), 1.0)
+    }
+
+    let pointsToEarn = Math.floor(totalItemPoints * weekendMultiplier)
+
+    // Evaluate Min Spend Bonus rules
+    const orderTotal = Number(resolvedOrder.totalAmount || 0)
+    const minSpendRules = validRules.filter((r) => {
+      if (r.type !== 'MIN_SPEND_BONUS') return false
+      const minSpend = Number(r.conditions?.minSpend || r.conditions?.threshold || 0)
+      return orderTotal >= minSpend
+    })
+
+    const bonusPoints = minSpendRules.reduce((sum, r) => sum + Math.round(Number(r.value)), 0)
+    pointsToEarn += bonusPoints
 
     if (pointsToEarn > 0) {
+      let note = `Earned points from Order #${resolvedOrder.id.substring(0, 8)} (${user.membershipTier} tier ${membershipMultiplier}x)`
+      if (isWeekend && weekendMultiplier > 1) {
+        note += ` + Weekend multiplier ${weekendMultiplier}x`
+      }
+      if (bonusPoints > 0) {
+        note += ` + Spend bonus of ${bonusPoints} pts`
+      }
+
       await this.creditPoints(
         {
           customerId,
           points: pointsToEarn,
           type: LoyaltyTransactionType.EARNED,
           referenceType: 'ORDER',
-          referenceId: order.id,
-          note: `Earned points from Order #${order.id.substring(0, 8)} (${user.membershipTier} tier ${multiplier}x multiplier)`,
+          referenceId: resolvedOrder.id,
+          note,
         },
         ctx,
         em,
@@ -220,5 +291,46 @@ export class LoyaltyService {
       where: { customerId, tenantId },
       order: { createdAt: 'DESC' },
     })
+  }
+
+  // --- Loyalty Rules CRUD ---
+
+  async findAllRules(tenantId: string): Promise<LoyaltyRuleEntity[]> {
+    return this.dataSource.manager.find(LoyaltyRuleEntity, {
+      where: { tenantId },
+      order: { createdAt: 'DESC' },
+    })
+  }
+
+  async findRuleById(id: string, tenantId: string): Promise<LoyaltyRuleEntity> {
+    const rule = await this.dataSource.manager.findOne(LoyaltyRuleEntity, {
+      where: { id, tenantId },
+    })
+    if (!rule) {
+      throw new BadRequestException(`Loyalty rule with ID ${id} not found`)
+    }
+    return rule
+  }
+
+  async createRule(data: Partial<LoyaltyRuleEntity>, tenantId: string): Promise<LoyaltyRuleEntity> {
+    const em = this.dataSource.manager
+    const rule = em.create(LoyaltyRuleEntity, {
+      ...data,
+      tenantId,
+    })
+    return em.save(LoyaltyRuleEntity, rule)
+  }
+
+  async updateRule(id: string, data: Partial<LoyaltyRuleEntity>, tenantId: string): Promise<LoyaltyRuleEntity> {
+    const em = this.dataSource.manager
+    const rule = await this.findRuleById(id, tenantId)
+    Object.assign(rule, data)
+    return em.save(LoyaltyRuleEntity, rule)
+  }
+
+  async deleteRule(id: string, tenantId: string): Promise<void> {
+    const em = this.dataSource.manager
+    const rule = await this.findRuleById(id, tenantId)
+    await em.remove(LoyaltyRuleEntity, rule)
   }
 }

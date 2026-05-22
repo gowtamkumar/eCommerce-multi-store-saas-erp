@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { LoyaltyLedgerEntity } from './entities/loyalty-ledger.entity'
 import { LoyaltyConfigEntity } from './entities/loyalty-config.entity'
+import { LoyaltyRuleEntity } from './entities/loyalty-rule.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { LoyaltyService } from './services/loyalty.service'
@@ -18,6 +19,7 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
     TypeOrmModule.forFeature([
       LoyaltyLedgerEntity,
       LoyaltyConfigEntity,
+      LoyaltyRuleEntity,
       UserEntity,
       OrderEntity,
     ]),
@@ -32,3 +34,4 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
   exports: [LoyaltyService, ReferralService, BullModule],
 })
 export class LoyaltyModule {}
+

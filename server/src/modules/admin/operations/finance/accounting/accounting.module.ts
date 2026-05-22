@@ -19,9 +19,14 @@ import { ArController } from './controllers/ar.controller'
 import { WalletController } from './controllers/wallet.controller'
 
 import { FiscalPeriodEntity } from './entities/fiscal-period.entity'
+import { DunningRuleEntity } from './entities/dunning-rule.entity'
+import { DunningLogEntity } from './entities/dunning-log.entity'
+import { DunningService } from './services/dunning.service'
+import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
 
 @Module({
   imports: [
+    MailModule,
     TypeOrmModule.forFeature([
       AccountEntity,
       JournalEntryEntity,
@@ -30,6 +35,8 @@ import { FiscalPeriodEntity } from './entities/fiscal-period.entity'
       WalletLedgerEntity,
       FiscalPeriodEntity,
       AccountingOutboxEntity,
+      DunningRuleEntity,
+      DunningLogEntity,
     ]),
   ],
   controllers: [AccountingController, ArController, WalletController],
@@ -41,6 +48,7 @@ import { FiscalPeriodEntity } from './entities/fiscal-period.entity'
     ArService,
     WalletService,
     AccountingOutboxService,
+    DunningService,
   ],
   exports: [
     AccountingService,
@@ -50,6 +58,8 @@ import { FiscalPeriodEntity } from './entities/fiscal-period.entity'
     ArService,
     WalletService,
     AccountingOutboxService,
+    DunningService,
   ],
 })
 export class AccountingModule {}
+

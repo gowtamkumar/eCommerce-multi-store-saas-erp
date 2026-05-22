@@ -1,15 +1,46 @@
 "use client";
 
-import { getCustomerLoyaltyHistory, getLoyaltyConfig, LoyaltyConfig, LoyaltyLedgerEntry, manualCreditPoints, manualDebitPoints, updateLoyaltyConfig } from "@/services/loyalty";
-import { ArrowDownRight, ArrowUpRight, RefreshCw, Save, Users } from "lucide-react";
+import {
+  getCustomerLoyaltyHistory,
+  getLoyaltyConfig,
+  LoyaltyConfig,
+  LoyaltyLedgerEntry,
+  manualCreditPoints,
+  manualDebitPoints,
+  updateLoyaltyConfig,
+  getLoyaltyRules,
+  createLoyaltyRule,
+  updateLoyaltyRule,
+  deleteLoyaltyRule,
+  LoyaltyRule
+} from "@/services/loyalty";
+import { ArrowDownRight, ArrowUpRight, RefreshCw, Save, Users, Plus, Trash2, Edit2, Calendar, X, AlertTriangle, Award } from "lucide-react";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function AdminLoyaltyPage() {
-  const [activeSubTab, setActiveSubTab] = useState<"rules" | "adjust">("rules");
+  const [activeSubTab, setActiveSubTab] = useState<"rules" | "adjust" | "dynamic">("rules");
   const [config, setConfig] = useState<LoyaltyConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
+
+  // Dynamic rules states
+  const [rules, setRules] = useState<LoyaltyRule[]>([]);
+  const [loadingRules, setLoadingRules] = useState(false);
+  const [showRuleModal, setShowRuleModal] = useState(false);
+  const [editingRule, setEditingRule] = useState<Partial<LoyaltyRule> | null>(null);
+
+  // Form states for rule
+  const [ruleName, setRuleName] = useState("");
+  const [ruleType, setRuleType] = useState<"CATEGORY_MULTIPLIER" | "MIN_SPEND_BONUS" | "WEEKEND_MULTIPLIER">("CATEGORY_MULTIPLIER");
+  const [ruleValue, setRuleValue] = useState<number>(2);
+  const [ruleCategoryId, setRuleCategoryId] = useState("");
+  const [ruleMinSpend, setRuleMinSpend] = useState<number>(100);
+  const [ruleIsActive, setRuleIsActive] = useState(true);
+  const [ruleStartDate, setRuleStartDate] = useState("");
+  const [ruleEndDate, setRuleEndDate] = useState("");
+  const [submittingRule, setSubmittingRule] = useState(false);
 
   // Adjustment tool states
   const [customerId, setCustomerId] = useState("");
@@ -19,9 +50,109 @@ export default function AdminLoyaltyPage() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [adjustMessage, setAdjustMessage] = useState({ text: "", type: "" });
 
+
   useEffect(() => {
     loadConfig();
   }, []);
+
+  useEffect(() => {
+    if (activeSubTab === "dynamic") {
+      loadRules();
+    }
+  }, [activeSubTab]);
+
+  const loadRules = async () => {
+    setLoadingRules(true);
+    try {
+      const data = await getLoyaltyRules();
+      setRules(data);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to load dynamic rules");
+    } finally {
+      setLoadingRules(false);
+    }
+  };
+
+  const handleDeleteRule = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this rule?")) return;
+    try {
+      await deleteLoyaltyRule(id);
+      toast.success("Loyalty rule deleted successfully");
+      loadRules();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to delete rule");
+    }
+  };
+
+  const handleOpenRuleModal = (rule: Partial<LoyaltyRule> | null = null) => {
+    setEditingRule(rule);
+    if (rule) {
+      setRuleName(rule.name || "");
+      setRuleType(rule.type || "CATEGORY_MULTIPLIER");
+      setRuleValue(rule.value || 2);
+      setRuleCategoryId(rule.conditions?.categoryId || "");
+      setRuleMinSpend(rule.conditions?.minSpend || rule.conditions?.threshold || 100);
+      setRuleIsActive(rule.isActive !== false);
+      setRuleStartDate(rule.startDate ? new Date(rule.startDate).toISOString().slice(0, 16) : "");
+      setRuleEndDate(rule.endDate ? new Date(rule.endDate).toISOString().slice(0, 16) : "");
+    } else {
+      setRuleName("");
+      setRuleType("CATEGORY_MULTIPLIER");
+      setRuleValue(2);
+      setRuleCategoryId("");
+      setRuleMinSpend(100);
+      setRuleIsActive(true);
+      setRuleStartDate("");
+      setRuleEndDate("");
+    }
+    setShowRuleModal(true);
+  };
+
+  const handleSaveRule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ruleName.trim()) {
+      toast.error("Rule name is required");
+      return;
+    }
+    setSubmittingRule(true);
+
+    const conditions: Record<string, any> = {};
+    if (ruleType === "CATEGORY_MULTIPLIER") {
+      conditions.categoryId = ruleCategoryId.trim();
+    } else if (ruleType === "MIN_SPEND_BONUS") {
+      conditions.minSpend = Number(ruleMinSpend);
+    }
+
+    const payload: Partial<LoyaltyRule> = {
+      name: ruleName.trim(),
+      type: ruleType,
+      value: Number(ruleValue),
+      conditions,
+      isActive: ruleIsActive,
+      startDate: ruleStartDate ? new Date(ruleStartDate).toISOString() : undefined,
+      endDate: ruleEndDate ? new Date(ruleEndDate).toISOString() : undefined,
+    };
+
+    try {
+      if (editingRule && editingRule.id) {
+        await updateLoyaltyRule(editingRule.id, payload);
+        toast.success("Loyalty rule updated successfully");
+      } else {
+        await createLoyaltyRule(payload);
+        toast.success("Loyalty rule created successfully");
+      }
+      setShowRuleModal(false);
+      loadRules();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to save loyalty rule");
+    } finally {
+      setSubmittingRule(false);
+    }
+  };
+
 
   const loadConfig = async () => {
     setLoading(true);
@@ -135,6 +266,15 @@ export default function AdminLoyaltyPage() {
               }`}
           >
             Points Adjustment
+          </button>
+          <button
+            onClick={() => setActiveSubTab("dynamic")}
+            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${activeSubTab === "dynamic"
+              ? "bg-brand-600 text-white shadow-md shadow-brand-500/10"
+              : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+          >
+            Dynamic Rules
           </button>
         </div>
       </div>
@@ -506,7 +646,306 @@ export default function AdminLoyaltyPage() {
               </div>
             </div>
           )}
+          {/* Dynamic Rules Tab */}
+          {activeSubTab === "dynamic" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">Dynamic Rules & Multipliers</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Create dynamic points rules based on item categories, minimum order spends, or weekend triggers.
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleOpenRuleModal(null)}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white transition-all text-sm font-bold shadow-md shadow-brand-500/10 active:scale-95 animate-in fade-in"
+                >
+                  <Plus className="w-4 h-4" /> Add Rule
+                </button>
+              </div>
+
+              {loadingRules && rules.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-24 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200/50 dark:border-slate-850">
+                  <RefreshCw className="w-8 h-8 text-brand-600 animate-spin" />
+                  <p className="text-sm font-bold text-slate-500 mt-4 uppercase tracking-widest animate-pulse">Loading rules...</p>
+                </div>
+              ) : rules.length === 0 ? (
+                <div className="p-16 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-[2.5rem] bg-white dark:bg-slate-900 space-y-3">
+                  <Award className="w-12 h-12 text-slate-400 mx-auto animate-pulse" />
+                  <h4 className="text-sm font-black text-slate-700 dark:text-slate-350">No Dynamic Rules Defined</h4>
+                  <p className="text-xs text-slate-450 max-w-sm mx-auto leading-relaxed">
+                    Set up category points multipliers, weekend multipliers, or minimum spend points bonuses to drive customer behavior.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {rules.map((rule) => {
+                    const isCategory = rule.type === "CATEGORY_MULTIPLIER";
+                    const isSpend = rule.type === "MIN_SPEND_BONUS";
+                    const isWeekend = rule.type === "WEEKEND_MULTIPLIER";
+
+                    let badgeColor = "";
+                    let typeLabel = "";
+                    let valueDisplay = "";
+
+                    if (isCategory) {
+                      badgeColor = "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400";
+                      typeLabel = "Category Multiplier";
+                      valueDisplay = `${Number(rule.value)}x Points`;
+                    } else if (isSpend) {
+                      badgeColor = "bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400";
+                      typeLabel = "Min Spend Bonus";
+                      valueDisplay = `+${Number(rule.value).toLocaleString()} Points`;
+                    } else if (isWeekend) {
+                      badgeColor = "bg-purple-50 text-purple-600 dark:bg-purple-950/20 dark:text-purple-400";
+                      typeLabel = "Weekend Multiplier";
+                      valueDisplay = `${Number(rule.value)}x Points`;
+                    }
+
+                    return (
+                      <div
+                        key={rule.id}
+                        className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-200/50 dark:border-slate-850 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
+                      >
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-start">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${badgeColor}`}>
+                              {typeLabel}
+                            </span>
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                rule.isActive
+                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400"
+                                  : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                              }`}
+                            >
+                              {rule.isActive ? "Active" : "Inactive"}
+                            </span>
+                          </div>
+
+                          <div>
+                            <h4 className="text-base font-black text-slate-900 dark:text-white line-clamp-1">{rule.name}</h4>
+                            <p className="text-2xl font-black text-brand-600 dark:text-brand-400 font-mono mt-1">{valueDisplay}</p>
+                          </div>
+
+                          <div className="space-y-2 text-xs border-t border-slate-150 dark:border-slate-800 pt-3">
+                            {isCategory && (
+                              <p className="text-slate-500 dark:text-slate-400 flex items-start gap-1.5 font-mono text-[11px] break-all">
+                                <span className="font-bold text-slate-700 dark:text-slate-350">Category ID:</span>
+                                {rule.conditions?.categoryId || "Any"}
+                              </p>
+                            )}
+                            {isSpend && (
+                              <p className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                <span className="font-bold text-slate-700 dark:text-slate-350">Min Spend Required:</span>
+                                <strong className="text-slate-800 dark:text-white font-mono">${(rule.conditions?.minSpend || rule.conditions?.threshold || 0).toLocaleString()}</strong>
+                              </p>
+                            )}
+                            {isWeekend && (
+                              <p className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                <span className="font-bold text-slate-700 dark:text-slate-350">Weekend Days:</span>
+                                Saturday & Sunday
+                              </p>
+                            )}
+
+                            {(rule.startDate || rule.endDate) && (
+                              <div className="space-y-1 text-[11px] text-slate-400 dark:text-slate-500">
+                                {rule.startDate && (
+                                  <p className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" /> Start: {new Date(rule.startDate).toLocaleString()}
+                                  </p>
+                                )}
+                                {rule.endDate && (
+                                  <p className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" /> End: {new Date(rule.endDate).toLocaleString()}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 justify-end mt-6 border-t border-slate-150 dark:border-slate-800 pt-3.5">
+                          <button
+                            onClick={() => handleOpenRuleModal(rule)}
+                            className="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all"
+                            title="Edit Rule"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRule(rule.id!)}
+                            className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-all"
+                            title="Delete Rule"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </>
+      )}
+
+      {/* Rule CRUD Modal */}
+      {showRuleModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowRuleModal(false)} />
+          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950/20 flex items-center justify-center text-brand-600">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white">
+                    {editingRule ? "Edit Loyalty Rule" : "Create Loyalty Rule"}
+                  </h3>
+                  <p className="text-xs text-slate-500">Configure parameters for custom point evaluations</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowRuleModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveRule} className="flex-1 overflow-y-auto p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Rule Name</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="E.g., Double Points for Electronics"
+                  value={ruleName}
+                  onChange={(e) => setRuleName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Rule Type</label>
+                <select
+                  value={ruleType}
+                  onChange={(e) => setRuleType(e.target.value as any)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm font-semibold"
+                >
+                  <option value="CATEGORY_MULTIPLIER">Category Multiplier</option>
+                  <option value="MIN_SPEND_BONUS">Min Spend Bonus</option>
+                  <option value="WEEKEND_MULTIPLIER">Weekend Multiplier</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                  {ruleType === "MIN_SPEND_BONUS" ? "Bonus Points Amount" : "Multiplier Value (e.g. 1.5, 2.0)"}
+                </label>
+                <input
+                  required
+                  type="number"
+                  step={ruleType === "MIN_SPEND_BONUS" ? "1" : "0.05"}
+                  min="0.1"
+                  value={ruleValue}
+                  onChange={(e) => setRuleValue(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm font-mono font-semibold"
+                />
+              </div>
+
+              {ruleType === "CATEGORY_MULTIPLIER" && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Category ID (UUID)</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Enter category UUID..."
+                    value={ruleCategoryId}
+                    onChange={(e) => setRuleCategoryId(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm font-mono"
+                  />
+                </div>
+              )}
+
+              {ruleType === "MIN_SPEND_BONUS" && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Min Spend Threshold ($)</label>
+                  <input
+                    required
+                    type="number"
+                    min="1"
+                    value={ruleMinSpend}
+                    onChange={(e) => setRuleMinSpend(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm font-mono font-semibold"
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Start Date (Optional)</label>
+                  <input
+                    type="datetime-local"
+                    value={ruleStartDate}
+                    onChange={(e) => setRuleStartDate(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm font-medium"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">End Date (Optional)</label>
+                  <input
+                    type="datetime-local"
+                    value={ruleEndDate}
+                    onChange={(e) => setRuleEndDate(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="space-y-0.5">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-950 dark:text-white">Active Status</label>
+                  <p className="text-[10px] text-slate-450">Active rules will apply during checkout.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRuleIsActive(!ruleIsActive)}
+                  className={`w-12 h-7 rounded-full transition-colors relative flex items-center p-1 ${
+                    ruleIsActive ? "bg-brand-600" : "bg-slate-300 dark:bg-slate-700"
+                  }`}
+                >
+                  <span
+                    className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform ${
+                      ruleIsActive ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowRuleModal(false)}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all uppercase tracking-wider"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingRule}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black bg-brand-600 hover:bg-brand-700 text-white disabled:opacity-50 transition-all shadow-lg shadow-brand-500/10 uppercase tracking-wider"
+                >
+                  {submittingRule && <RefreshCw className="w-4 h-4 animate-spin" />}
+                  {editingRule ? "Save Changes" : "Create Rule"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

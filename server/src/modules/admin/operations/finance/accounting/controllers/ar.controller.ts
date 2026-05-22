@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Query } from '@nestjs/common'
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query } from '@nestjs/common'
 import { ArService } from '../services/ar.service'
+import { DunningService } from '../services/dunning.service'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
@@ -13,7 +14,10 @@ import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 @RequireFeature('/admin/finance')
 @Controller('finance/ar')
 export class ArController {
-  constructor(private readonly arService: ArService) {}
+  constructor(
+    private readonly arService: ArService,
+    private readonly dunningService: DunningService,
+  ) {}
 
   @Get('aging')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
@@ -65,4 +69,99 @@ export class ArController {
       data,
     }
   }
+
+  // --- Dunning Rules Endpoints ---
+
+  @Get('dunning/rules')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
+  async getDunningRules(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
+    const data = await this.dunningService.findAllRules(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Dunning rules retrieved successfully',
+      data,
+    }
+  }
+
+  @Post('dunning/rules')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  async createDunningRule(
+    @Body() body: any,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.dunningService.createRule(body, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Dunning rule created successfully',
+      data,
+    }
+  }
+
+  @Put('dunning/rules/:id')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  async updateDunningRule(
+    @Param('id') id: string,
+    @Body() body: any,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.dunningService.updateRule(id, body, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Dunning rule updated successfully',
+      data,
+    }
+  }
+
+  @Delete('dunning/rules/:id')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  async deleteDunningRule(
+    @Param('id') id: string,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    await this.dunningService.deleteRule(id, ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Dunning rule deleted successfully',
+      data: null,
+    }
+  }
+
+  // --- Dunning Logs Endpoints ---
+
+  @Get('dunning/logs')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
+  async getDunningLogs(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
+    const data = await this.dunningService.findAllLogs(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Dunning logs retrieved successfully',
+      data,
+    }
+  }
+
+  // --- Run Dunning Sweep ---
+
+  @Post('dunning/run-audit')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  async runDunningAudit(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.dunningService.runDunningAudit(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Dunning audit completed successfully',
+      data,
+    }
+  }
 }
+
