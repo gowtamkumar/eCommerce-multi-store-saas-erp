@@ -13,6 +13,7 @@ import { LoyaltyLedgerEntity } from '@/modules/admin/marketing/loyalty/entities/
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
+import { CategoryEntity } from '@/modules/admin/catalog/category/entities/category.entity'
 import { DunningService } from '@/modules/admin/operations/finance/accounting/services/dunning.service'
 import { LoyaltyService } from '@/modules/admin/marketing/loyalty/services/loyalty.service'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -87,6 +88,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         'order_items',
         'orders',
         'products',
+        'categories',
         'users',
       ]
       for (const table of tables) {
@@ -183,7 +185,23 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
 
     beforeAll(async () => {
       const productRepo = dataSource.getRepository(ProductEntity)
-      categoryId = uuidv4()
+      const categoryRepo = dataSource.getRepository(CategoryEntity)
+
+      // Create categories
+      const matchedCat = categoryRepo.create({
+        name: 'Matched Promo Category',
+        slug: `promo-cat-${Date.now()}`,
+        tenantId: tenant.id,
+      })
+      await categoryRepo.save(matchedCat)
+      categoryId = matchedCat.id
+
+      const unmatchedCat = categoryRepo.create({
+        name: 'Normal Category',
+        slug: `norm-cat-${Date.now()}`,
+        tenantId: tenant.id,
+      })
+      await categoryRepo.save(unmatchedCat)
 
       // Create products
       matchedProduct = productRepo.create({
@@ -195,7 +213,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         status: ProductStatus.ACTIVE,
         taxRate: 0,
         tenantId: tenant.id,
-        categoryId: categoryId,
+        categoryId: matchedCat.id,
       })
       await productRepo.save(matchedProduct)
 
@@ -208,7 +226,7 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
         status: ProductStatus.ACTIVE,
         taxRate: 0,
         tenantId: tenant.id,
-        categoryId: uuidv4(), // Different category
+        categoryId: unmatchedCat.id, // Different category
       })
       await productRepo.save(unmatchedProduct)
 
