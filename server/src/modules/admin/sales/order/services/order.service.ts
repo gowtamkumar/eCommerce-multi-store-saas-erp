@@ -127,10 +127,19 @@ export class OrderService {
       }
 
       // 4. Transform & Deduct Stock
+      // Collect ledger entry IDs as they are created so we can link them to the
+      // order ID precisely after save — avoiding the race-prone "referenceId IS NULL"
+      // tenant-wide UPDATE that the old code used.
       const processedItems: OrderItemEntity[] = []
+      const pendingLedgerIds: string[] = []
       for (const item of rawItems) {
-        const orderItem = await this.orderProcessHelper.processItem(item, ctx, manager)
+        const { orderItem, ledgerEntryId } = await this.orderProcessHelper.processItem(
+          item,
+          ctx,
+          manager,
+        )
         processedItems.push(orderItem)
+        if (ledgerEntryId) pendingLedgerIds.push(ledgerEntryId)
       }
 
       // Determine Subtotal if not already set by Cart
@@ -276,11 +285,17 @@ export class OrderService {
       }
 
       // 8. Link Inventory Transactions
-      await manager.update(
-        InventoryLedgerEntity,
-        { referenceType: InventoryTransactionReferenceType.ORDER, referenceId: null, tenantId },
-        { referenceId: savedOrder.id },
-      )
+      // Update ONLY the ledger rows that belong to this order (identified by
+      // their primary keys collected above). This is safe under concurrent
+      // order creation — no row from another in-flight order can be matched.
+      if (pendingLedgerIds.length > 0) {
+        await manager
+          .createQueryBuilder()
+          .update(InventoryLedgerEntity)
+          .set({ referenceId: savedOrder.id })
+          .whereInIds(pendingLedgerIds)
+          .execute()
+      }
 
       // 9. Cleanup
       if (cartId && user?.id) {

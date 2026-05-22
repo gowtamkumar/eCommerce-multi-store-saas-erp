@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common'
-import { AccountingService } from './accounting.service'
-import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
+import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
+import { Injectable, Logger } from '@nestjs/common'
 import { EntityManager } from 'typeorm'
+import { AccountingService } from './accounting.service'
 
 @Injectable()
 export class AccountingIntegrationService {
@@ -14,14 +14,18 @@ export class AccountingIntegrationService {
 
   /**
    * Translates an inventory ledger entry into a financial journal entry.
+   *
+   * IMPORTANT: This method intentionally does NOT catch errors. Any failure
+   * during journal posting is logged and then re-thrown so the caller's
+   * database transaction rolls back atomically — preventing a split-brain state
+   * where the inventory ledger row is persisted but the accounting journal is not.
    */
   async postInventoryMovement(
     ledgerEntry: InventoryLedgerEntity,
     ctx: RequestContextDto,
     manager?: EntityManager,
-  ) {
-    const { type, quantity, unitCost, cogsAmount, referenceType, referenceId, remarks } =
-      ledgerEntry
+  ): Promise<void> {
+    const { type, quantity, unitCost, cogsAmount } = ledgerEntry
     const absQty = Math.abs(quantity)
     const totalCost = absQty * Number(unitCost || 0)
 
@@ -39,11 +43,20 @@ export class AccountingIntegrationService {
         case InventoryTransactionType.RETURN:
           await this.postSaleReturn(ledgerEntry, Number(cogsAmount || 0), ctx, manager)
           break
+        default:
+          // Transaction types without accounting coverage (TRANSFER, DAMAGE, RESERVATION, etc.)
+          // are intentionally skipped here — not an error condition.
+          break
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Log with full context for monitoring/alerting before re-throwing.
+      // The parent transaction will roll back, keeping inventory and accounting in sync.
       this.logger.error(
-        `Failed to post financial entry for ledger ${ledgerEntry.id}: ${error.message}`,
+        `Accounting post failed for ledger ${ledgerEntry.id} ` +
+          `(type=${type}, tenantId=${ledgerEntry.tenantId}): ${error.message}`,
+        error.stack,
       )
+      throw error
     }
   }
 
@@ -176,7 +189,13 @@ export class AccountingIntegrationService {
   }
 
   async postPayrollRun(
-    data: { payrollId: string; grossSalary: number; taxWithheld: number; netSalary: number; employeeName?: string },
+    data: {
+      payrollId: string
+      grossSalary: number
+      taxWithheld: number
+      netSalary: number
+      employeeName?: string
+    },
     ctx: RequestContextDto,
     manager?: EntityManager,
   ) {

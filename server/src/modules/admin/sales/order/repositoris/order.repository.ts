@@ -7,9 +7,6 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class OrderRepository {
-  findOne(arg0: { where: any; relations: string[] }) {
-    throw new Error('Method not implemented.')
-  }
   constructor(
     @InjectRepository(OrderEntity)
     private readonly repo: Repository<OrderEntity>,

@@ -29,12 +29,15 @@ export class OrderProcessHelper {
 
   /**
    * Processes a single item: validates product/variant, checks stock, and deducts inventory.
+   * Returns the built OrderItemEntity AND the ID of the inventory ledger entry created
+   * for the RESERVATION movement (null for SERVICE products that skip inventory).
+   * The caller must link the ledger entry to the final order ID after the order is saved.
    */
   async processItem(
     itemDto: any,
     ctx: RequestContextDto,
     manager: EntityManager,
-  ): Promise<OrderItemEntity> {
+  ): Promise<{ orderItem: OrderItemEntity; ledgerEntryId: string | null }> {
     const { productId, variantId, quantity, pricing: itemPricingDto } = itemDto
     const tenantId = ctx.tenantId
 
@@ -62,33 +65,7 @@ export class OrderProcessHelper {
 
     const isService = product.productType === 'SERVICE'
 
-    if (!isService) {
-      const currentStock = await this.inventoryService.getGlobalLiveStock(
-        product.id,
-        variant?.id || null,
-        tenantId,
-        manager,
-      )
-      if (currentStock < quantity) {
-        throw new BadRequestException(
-          `Insufficient stock for ${product.name}${variant ? ' (Variant)' : ''}. Only ${currentStock} items available.`,
-        )
-      }
-
-      // Reserve stock immediately (Soft-deduct from product.stock, but no physical movement)
-      await this.inventoryService.createLedgerEntry(
-        {
-          productId: product.id,
-          variantId: variant?.id,
-          quantity: quantity,
-          type: InventoryTransactionType.RESERVATION,
-          referenceType: InventoryTransactionReferenceType.ORDER,
-        },
-        ctx,
-        manager,
-      )
-    }
-
+    // ── Pricing ────────────────────────────────────────────────────────────
     const tierPrice = await this.pricingService.getApplicablePrice(
       product.id,
       variant?.id || null,
@@ -119,26 +96,65 @@ export class OrderProcessHelper {
     const pricing = pricingStrategy.calculate(unitPrice, discountAmount, taxRate)
     const itemTotal = pricing.finalPrice * quantity
 
-    const orderItem = new OrderItemEntity()
-    orderItem.product = product
-    orderItem.variant = variant
-    orderItem.quantity = quantity
-    orderItem.unitPrice = pricing.basePrice
-    orderItem.discountAmount = pricing.discountAmount
-    orderItem.taxAmount = pricing.taxAmount
-    orderItem.totalAmount = itemTotal
-    orderItem.tenantId = tenantId
-    orderItem.snapshot = {
-      productId: product.id,
-      productName: product.name,
-      productImage: product.images?.[0],
-      variantId: variant?.id,
-      variantSku: variant?.sku,
-      variantOptions: variant?.combination,
-      price: unitPrice,
+    // ── Build order item ───────────────────────────────────────────────────
+    const buildOrderItem = (): OrderItemEntity => {
+      const orderItem = new OrderItemEntity()
+      orderItem.product = product
+      orderItem.variant = variant
+      orderItem.quantity = quantity
+      orderItem.unitPrice = pricing.basePrice
+      orderItem.discountAmount = pricing.discountAmount
+      orderItem.taxAmount = pricing.taxAmount
+      orderItem.totalAmount = itemTotal
+      orderItem.tenantId = tenantId
+      orderItem.snapshot = {
+        productId: product.id,
+        productName: product.name,
+        productImage: product.images?.[0],
+        variantId: variant?.id,
+        variantSku: variant?.sku,
+        variantOptions: variant?.combination,
+        price: unitPrice,
+      }
+      return orderItem
     }
 
-    return orderItem
+    // ── Inventory ──────────────────────────────────────────────────────────
+    if (isService) {
+      // Service products have no stock; skip inventory entirely.
+      return { orderItem: buildOrderItem(), ledgerEntryId: null }
+    }
+
+    const currentStock = await this.inventoryService.getGlobalLiveStock(
+      product.id,
+      variant?.id || null,
+      tenantId,
+      manager,
+    )
+    if (currentStock < quantity) {
+      throw new BadRequestException(
+        `Insufficient stock for ${product.name}${variant ? ' (Variant)' : ''}. Only ${currentStock} items available.`,
+      )
+    }
+
+    // Reserve stock immediately (RESERVATION ledger row). referenceId is left
+    // null here because the order ID does not exist yet. The caller backfills
+    // it by primary key after the order is saved — avoiding the race-prone
+    // tenant-wide "WHERE referenceId IS NULL" update pattern.
+    const ledgerEntry = await this.inventoryService.createLedgerEntry(
+      {
+        productId: product.id,
+        variantId: variant?.id,
+        quantity: quantity,
+        type: InventoryTransactionType.RESERVATION,
+        referenceType: InventoryTransactionReferenceType.ORDER,
+        // referenceId intentionally omitted — backfilled by order.service after save
+      },
+      ctx,
+      manager,
+    )
+
+    return { orderItem: buildOrderItem(), ledgerEntryId: ledgerEntry.id }
   }
 
   /**

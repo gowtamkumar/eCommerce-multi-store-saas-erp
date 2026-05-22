@@ -2,9 +2,97 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
-import { Facebook, Heart, Instagram, Linkedin, Twitter, Mail, ArrowRight } from 'lucide-react';
+import { Facebook, Heart, Instagram, Linkedin, Twitter, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+
+// ─── Newsletter ──────────────────────────────────────────────────────────────
+// Extracted to a top-level component so that hook calls are never
+// placed after a conditional early return (rules-of-hooks).
+interface NewsletterProps {
+  show: boolean;
+  textColor?: string;
+  brandBgStyle: React.CSSProperties;
+  brandColor?: string;
+}
+
+const Newsletter = ({ show, textColor, brandBgStyle, brandColor }: NewsletterProps) => {
+  // ✅ All hooks are declared unconditionally at the top
+  const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+  const [message, setMessage] = useState({ text: '', type: '' });
+
+  // Conditional render AFTER all hooks
+  if (!show) return null;
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setSubscribing(true);
+    setMessage({ text: '', type: '' });
+
+    try {
+      const res = await fetchAPI('/subscribers', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.success) {
+        setMessage({ text: 'Successfully subscribed!', type: 'success' });
+        setEmail('');
+      } else {
+        setMessage({ text: res.message || 'Failed to subscribe.', type: 'error' });
+      }
+    } catch {
+      setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
+  return (
+    <div className="mb-20 p-8 sm:p-12 rounded-[2.5rem] bg-white/5 dark:bg-slate-800/30 border border-white/10 dark:border-slate-700/50 relative overflow-hidden group">
+      <div className="absolute -top-24 -right-24 w-64 h-64 bg-brand-500/10 blur-[80px] rounded-full group-hover:bg-brand-500/20 transition-all duration-700 pointer-events-none" />
+
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
+        <div className="max-w-xl space-y-4">
+          <h4 className="text-3xl font-black tracking-tight" style={{ color: textColor || undefined }}>Stay in the Loop</h4>
+          <p className="text-base opacity-60 leading-relaxed font-medium">
+            Join our community and get exclusive early access to new arrivals, limited editions, and curated audio experiences.
+          </p>
+        </div>
+        <div className="flex-1 max-w-lg flex flex-col gap-2">
+          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="email"
+              required
+              placeholder="Your email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-white/10 dark:bg-slate-900/50 border border-white/10 dark:border-slate-700 focus:ring-2 focus:ring-brand-500 rounded-2xl text-sm flex-1 px-6 py-4 outline-none transition-all placeholder:text-slate-500 text-slate-900 dark:text-white"
+            />
+            <button
+              type="submit"
+              disabled={subscribing}
+              style={brandBgStyle}
+              className={`px-8 py-4 ${!brandColor ? 'bg-brand-600 hover:bg-brand-500' : ''} text-white font-bold rounded-2xl transition-all active:scale-95 shadow-xl shadow-brand-500/20 flex items-center justify-center gap-2 group/btn whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed`}
+            >
+              {subscribing ? 'Subscribing...' : 'Subscribe'}
+              {!subscribing && <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />}
+            </button>
+          </form>
+          {message.text && (
+            <p className={`text-sm font-medium pl-2 ${message.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
+              {message.text}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 const Footer = ({ settings: propSettings }: { settings?: any }) => {
   const { settings: contextSettings } = useSettings();
@@ -21,7 +109,6 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
 
 
   const [pages, setPages] = useState<any[]>([]);
-  const [email, setEmail] = useState("");
 
   useEffect(() => {
     fetchPages();
@@ -157,81 +244,7 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
   const brandColorStyle = { color: footerSettings?.brandColor || footerSettings?.textColor || undefined };
   const brandBgStyle = { backgroundColor: footerSettings?.brandColor || undefined };
 
-  const Newsletter = () => {
-    if (footerSettings?.showNewsletter === false) return null;
-    const [subscribing, setSubscribing] = useState(false);
-    const [message, setMessage] = useState({ text: '', type: '' });
 
-    const handleSubscribe = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!email) return;
-
-      setSubscribing(true);
-      setMessage({ text: '', type: '' });
-
-      try {
-        const res = await fetchAPI('/subscribers', {
-          method: 'POST',
-          body: JSON.stringify({ email }),
-        });
-
-        if (res.success) {
-          setMessage({ text: 'Successfully subscribed!', type: 'success' });
-          setEmail('');
-        } else {
-          setMessage({ text: res.message || 'Failed to subscribe.', type: 'error' });
-        }
-      } catch (error) {
-        setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
-      } finally {
-        setSubscribing(false);
-      }
-    };
-
-    return (
-      <div className="mb-20 p-8 sm:p-12 rounded-[2.5rem] bg-white/5 dark:bg-slate-800/30 border border-white/10 dark:border-slate-700/50 relative overflow-hidden group">
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-brand-500/10 blur-[80px] rounded-full group-hover:bg-brand-500/20 transition-all duration-700 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-10">
-          <div className="max-w-xl space-y-4">
-            <h4 className="text-3xl font-black tracking-tight" style={{ color: footerSettings?.textColor || undefined }}>Stay in the Loop</h4>
-            <p className="text-base opacity-60 leading-relaxed font-medium">
-              Join our community and get exclusive early access to new arrivals, limited editions, and curated audio experiences.
-            </p>
-          </div>
-          <div className="flex-1 max-w-lg flex flex-col gap-2">
-            <form
-              onSubmit={handleSubscribe}
-              className="flex flex-col sm:flex-row gap-3"
-            >
-              <input
-                type="email"
-                required
-                placeholder="Your email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-white/10 dark:bg-slate-900/50 border border-white/10 dark:border-slate-700 focus:ring-2 focus:ring-brand-500 rounded-2xl text-sm flex-1 px-6 py-4 outline-none transition-all placeholder:text-slate-500 text-slate-900 dark:text-white"
-              />
-              <button
-                type="submit"
-                disabled={subscribing}
-                style={brandBgStyle}
-                className={`px-8 py-4 ${!footerSettings?.brandColor ? 'bg-brand-600 hover:bg-brand-500' : ''} text-white font-bold rounded-2xl transition-all active:scale-95 shadow-xl shadow-brand-500/20 flex items-center justify-center gap-2 group/btn whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed`}
-              >
-                {subscribing ? 'Subscribing...' : 'Subscribe'}
-                {!subscribing && <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />}
-              </button>
-            </form>
-            {message.text && (
-              <p className={`text-sm font-medium pl-2 ${message.type === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {message.text}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
 
   const colCount = parseInt(footerSettings?.columns || '4') || 4;
@@ -254,7 +267,12 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
       {TopShape()}
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {Newsletter()}
+        <Newsletter
+          show={footerSettings?.showNewsletter !== false}
+          textColor={footerSettings?.textColor}
+          brandBgStyle={brandBgStyle}
+          brandColor={footerSettings?.brandColor}
+        />
 
         <div className={`grid ${gridColsClass} gap-12 lg:gap-16 mb-20`}>
           <div className="space-y-8">
