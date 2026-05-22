@@ -2,10 +2,14 @@ import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
 import { StockReservationEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/stock-reservation.entity'
+import { StockTransferEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/stock-transfer.entity'
+import { StockTransferItemEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/stock-transfer-item.entity'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { InventoryLedgerController } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.controller'
 import { StockReservationService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.service'
 import { StockReservationController } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.controller'
+import { StockTransferService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-transfer.service'
+import { StockTransferController } from '@/modules/admin/operations/logistics/inventory-transaction/stock-transfer.controller'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { CategoryEntity } from '@/modules/admin/catalog/category/entities/category.entity'
@@ -25,6 +29,8 @@ import { StockReservationSchedulerService } from './stock-reservation-scheduler.
     TypeOrmModule.forFeature([
       InventoryLedgerEntity,
       StockReservationEntity,
+      StockTransferEntity,
+      StockTransferItemEntity,
       ProductEntity,
       ProductVariantEntity,
       CategoryEntity,
@@ -38,7 +44,7 @@ import { StockReservationSchedulerService } from './stock-reservation-scheduler.
       name: 'order',
     }),
   ],
-  controllers: [InventoryLedgerController, StockReservationController],
+  controllers: [InventoryLedgerController, StockReservationController, StockTransferController],
   providers: [
     InventoryLedgerService,
     InventoryLedgerRepository,
@@ -46,7 +52,8 @@ import { StockReservationSchedulerService } from './stock-reservation-scheduler.
     ProductVariantRepository,
     StockReservationService,
     StockReservationSchedulerService,
+    StockTransferService,
   ],
-  exports: [InventoryLedgerService, InventoryLedgerRepository, StockReservationService],
+  exports: [InventoryLedgerService, InventoryLedgerRepository, StockReservationService, StockTransferService],
 })
 export class InventoryLedgerModule {}

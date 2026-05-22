@@ -1,0 +1,7 @@
+export enum StockTransferStatus {
+  DRAFT = 'DRAFT',
+  APPROVED = 'APPROVED',
+  IN_TRANSIT = 'IN_TRANSIT',
+  RECEIVED = 'RECEIVED',
+  CANCELLED = 'CANCELLED',
+}

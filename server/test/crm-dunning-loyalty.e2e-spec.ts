@@ -16,6 +16,7 @@ import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.
 import { CategoryEntity } from '@/modules/admin/catalog/category/entities/category.entity'
 import { DunningService } from '@/modules/admin/operations/finance/accounting/services/dunning.service'
 import { LoyaltyService } from '@/modules/admin/marketing/loyalty/services/loyalty.service'
+import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
@@ -43,6 +44,10 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
     dataSource = app.get(DataSource)
     dunningService = app.get(DunningService)
     loyaltyService = app.get(LoyaltyService)
+
+    // Mock MailService to prevent DNS lookups or socket connections from hanging the test
+    const mailService = app.get(MailService)
+    jest.spyOn(mailService, 'sendGenericEmail').mockResolvedValue(undefined as any)
 
     // Create a mock tenant for testing
     const tenantRepo = dataSource.getRepository(TenantEntity)
@@ -324,8 +329,10 @@ describe('CRM: Dunning & Loyalty (e2e)', () => {
       // Attach items to order for processOrderEarning
       order.items = [item1, item2]
 
-      // Process loyalty earning
-      await loyaltyService.processOrderEarning(order, ctx)
+      // Process loyalty earning inside transaction due to pessimistic lock
+      await dataSource.transaction(async (manager) => {
+        await loyaltyService.processOrderEarning(order, ctx, manager)
+      })
 
       // Expected Points calculation:
       // Points per currency: 1.0, Silver tier multiplier: 1.5x

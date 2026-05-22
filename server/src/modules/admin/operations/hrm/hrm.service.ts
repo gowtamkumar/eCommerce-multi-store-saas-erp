@@ -1,5 +1,10 @@
+import * as crypto from 'crypto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { ApplicantStatus, LeaveStatus } from '@/common/enums/hrm/hrm-enums'
+import { ApplicantStatus, LeaveStatus, LeaveType } from '@/common/enums/hrm/hrm-enums'
+import { LeaveRequestEntity } from './entities/leave.entity'
+import { EmployeeEntity } from './entities/employee.entity'
+import { AttendanceSessionEntity } from './entities/attendance.entity'
+import { PayrollBatchEntity, PayrollSlipEntity } from './entities/payroll.entity'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
@@ -16,6 +21,7 @@ import {
   UpdateEmployeeDto,
 } from './dto/hrm.dto'
 import { HrmRepository } from './hrm.repository'
+import { Between } from 'typeorm'
 
 @Injectable()
 export class HrmService {
@@ -475,7 +481,14 @@ export class HrmService {
   // --- Payroll Engine ---
   async processPayroll(period: string, name: string, ctx: RequestContextDto) {
     this.logger.log(`Starting payroll process for period ${period}`)
-    const employees = await this.hrmRepo.findAllEmployees(ctx.tenantId)
+
+    const toDateString = (date: Date | string) => {
+      const d = new Date(date)
+      const yyyy = d.getFullYear()
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      return `${yyyy}-${mm}-${dd}`
+    }
 
     // Month and Year parsing from period string "YYYY-MM"
     const [yearStr, monthStr] = period.split('-')
@@ -483,198 +496,306 @@ export class HrmService {
     const month = parseInt(monthStr, 10)
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0, 23, 59, 59, 999)
+    const totalDaysInMonth = new Date(year, month, 0).getDate()
 
-    const batch = await this.hrmRepo.createPayrollBatch({
-      name,
-      period,
-      tenantId: ctx.tenantId,
-      status: 'DRAFT',
-    })
+    return await this.hrmRepo.personalDetailsRepo.manager.transaction(async (em) => {
+      const employeeRepo = em.getRepository(EmployeeEntity)
+      const leaveRequestRepo = em.getRepository(LeaveRequestEntity)
+      const attendanceSessionRepo = em.getRepository(AttendanceSessionEntity)
+      const payrollBatchRepo = em.getRepository(PayrollBatchEntity)
+      const payrollSlipRepo = em.getRepository(PayrollSlipEntity)
 
-    let batchNetTotal = 0
-    let totalGrossSalaries = 0
-    let totalTaxesWithheld = 0
-    let totalBaseDeductions = 0
-    let totalLateDeductions = 0
-    const slips = []
+      const employees = await employeeRepo.find({
+        where: { tenantId: ctx.tenantId },
+        relations: ['user', 'department', 'designation', 'branch', 'manager', 'personalDetails'],
+      })
 
-    for (const employee of employees) {
-      if (employee.status !== 'ACTIVE' && employee.status !== 'PROBATION') continue
-
-      const salary = employee.salaryConfig?.basicSalary || 0
-      const allowances =
-        employee.salaryConfig?.allowances?.reduce((sum, a) => sum + Number(a.amount), 0) || 0
-      const baseDeductions =
-        employee.salaryConfig?.deductions?.reduce((sum, d) => sum + Number(d.amount), 0) || 0
-
-      // Fetch verified attendance sessions in billing period for late & overtime
-      const sessions = await this.hrmRepo.findAttendanceSessionsForEmployee(
-        employee.id,
-        startDate,
-        endDate,
-        ctx.tenantId,
-      )
-
-      const overtimeHours = sessions.reduce((sum, s) => sum + Number(s.overtimeHours || 0), 0)
-      const lateMinutes = sessions.reduce((sum, s) => sum + Number(s.lateMinutes || 0), 0)
-
-      // Rates Calculations
-      const hourlyRate = salary / 160
-      const overtimePay = parseFloat((overtimeHours * (hourlyRate * 1.5)).toFixed(2))
-      const lateDeductions = parseFloat((Math.floor(lateMinutes / 30) * (hourlyRate * 0.5)).toFixed(2))
-
-      // Progressive Income Tax Calculations
-      const grossSalary = salary + allowances + overtimePay
-      let incomeTax = 0
-      if (grossSalary > 3000) {
-        incomeTax = 75 + (grossSalary - 3000) * 0.10
-      } else if (grossSalary > 1500) {
-        incomeTax = (grossSalary - 1500) * 0.05
-      }
-      incomeTax = parseFloat(incomeTax.toFixed(2))
-
-      // Net Salary formula
-      const netSalary = parseFloat(
-        (grossSalary - (baseDeductions + lateDeductions + incomeTax)).toFixed(2),
-      )
-
-      const slip = await this.hrmRepo.createPayrollSlip({
-        batchId: batch.id,
-        employeeId: employee.id,
-        tenantId: ctx.tenantId,
-        basicSalary: salary,
-        totalAllowances: allowances,
-        totalDeductions: baseDeductions + lateDeductions + incomeTax,
-        netSalary,
-        details: {
-          allowances: employee.salaryConfig?.allowances || [],
-          deductions: employee.salaryConfig?.deductions || [],
-          overtimePay,
-          leaveDeductions: lateDeductions, // map lateDeductions to leaveDeductions for backward compatibility
-          lateDeductions,
-          incomeTax,
-          overtimeHours,
-          lateMinutes,
+      const approvedLeaves = await leaveRequestRepo.find({
+        where: {
+          tenantId: ctx.tenantId,
+          status: LeaveStatus.APPROVED,
         },
       })
 
-      slips.push(slip)
-      batchNetTotal += netSalary
-      totalGrossSalaries += grossSalary
-      totalTaxesWithheld += incomeTax
-      totalBaseDeductions += baseDeductions
-      totalLateDeductions += lateDeductions
-    }
-
-    // Update batch total
-    await (this.hrmRepo as any).payrollBatchRepo.update(batch.id, {
-      totalAmount: batchNetTotal,
-      status: 'APPROVED',
-    })
-
-    // Accounting Journal Posting (Salary Accrual Entry)
-    try {
-      if (this.accountingService) {
-        // Debit: Salaries & Wages Expense (6000) -> Gross Salaries minus late penalties
-        // Credit: Salaries Payable (2100) -> Net Payable to employees
-        // Credit: Payroll Tax Liabilities (2200) -> Taxes withheld
-        // Credit: Accounts Payable (2100) -> Benefits / general employee deductions
-        await this.accountingService.createJournalEntry(
-          {
-            type: JournalType.GENERAL,
-            description: `Salary Accrual for Period ${period}: ${name}`,
-            referenceType: 'PAYROLL_BATCH',
-            referenceId: batch.id,
-            lines: [
-              {
-                accountCode: '6000',
-                side: LedgerEntrySide.DEBIT,
-                amount: parseFloat((totalGrossSalaries - totalLateDeductions).toFixed(2)),
-              },
-              {
-                accountCode: '2100',
-                side: LedgerEntrySide.CREDIT,
-                amount: parseFloat(batchNetTotal.toFixed(2)),
-              },
-              {
-                accountCode: '2200',
-                side: LedgerEntrySide.CREDIT,
-                amount: parseFloat(totalTaxesWithheld.toFixed(2)),
-              },
-              {
-                accountCode: '2100', // Offset remainder to keep COA simple if recovery accounts aren't initialized
-                side: LedgerEntrySide.CREDIT,
-                amount: parseFloat(totalBaseDeductions.toFixed(2)),
-              },
-            ].filter((line) => line.amount > 0),
-          },
-          ctx,
-        )
-      }
-    } catch (error: any) {
-      this.logger.error(
-        `Failed to create accrual accounting entries for payroll batch ${batch.id}: ${error.message}`,
+      const batch = await payrollBatchRepo.save(
+        payrollBatchRepo.create({
+          name,
+          period,
+          tenantId: ctx.tenantId,
+          status: 'DRAFT',
+        }),
       )
-    }
 
-    const updatedBatch = await this.hrmRepo.findPayrollBatchById(batch.id, ctx.tenantId)
+      let batchNetTotal = 0
+      let totalGrossSalaries = 0
+      let totalTaxesWithheld = 0
+      let totalBaseDeductions = 0
+      let totalLateDeductions = 0
+      let totalUnpaidLeaveDeductions = 0
+      let totalUnpaidAbsenceDeductions = 0
+      let totalInactiveDeductions = 0
+      const slips = []
 
-    await this.auditLogService.log(ctx, {
-      action: 'PROCESS',
-      entity: 'PayrollBatch',
-      entityId: batch.id,
-      newValue: updatedBatch,
+      for (const employee of employees) {
+        if (employee.status !== 'ACTIVE' && employee.status !== 'PROBATION') continue
+
+        const salary = employee.salaryConfig?.basicSalary || 0
+        const allowances =
+          employee.salaryConfig?.allowances?.reduce((sum, a) => sum + Number(a.amount), 0) || 0
+        const baseDeductions =
+          employee.salaryConfig?.deductions?.reduce((sum, d) => sum + Number(d.amount), 0) || 0
+
+        // Fetch verified attendance sessions in billing period for late & overtime
+        const sessions = await attendanceSessionRepo.find({
+          where: {
+            employeeId: employee.id,
+            tenantId: ctx.tenantId,
+            clockIn: Between(startDate, endDate),
+          },
+          order: { clockIn: 'ASC' },
+        })
+
+        const overtimeHours = sessions.reduce((sum, s) => sum + Number(s.overtimeHours || 0), 0)
+        const lateMinutes = sessions.reduce((sum, s) => sum + Number(s.lateMinutes || 0), 0)
+
+        // Rates Calculations
+        const hourlyRate = salary / 160
+        const overtimePay = parseFloat((overtimeHours * (hourlyRate * 1.5)).toFixed(2))
+        const lateDeductions = parseFloat((Math.floor(lateMinutes / 30) * (hourlyRate * 0.5)).toFixed(2))
+
+        // Day-by-day cursor check from 1st to last day of month for pro-rating leaves/absences
+        const joiningDateStr = toDateString(employee.joiningDate)
+        const exitDateStr = employee.exitDate ? toDateString(employee.exitDate) : null
+
+        let activeDays = 0
+        let unpaidLeaveDays = 0
+        let unpaidAbsenceDays = 0
+
+        for (let dayNum = 1; dayNum <= totalDaysInMonth; dayNum++) {
+          const currentDate = new Date(year, month - 1, dayNum)
+          const currentStr = toDateString(currentDate)
+
+          // Check if within active employment
+          const isActive = currentStr >= joiningDateStr && (!exitDateStr || currentStr <= exitDateStr)
+          if (!isActive) {
+            continue
+          }
+          activeDays++
+
+          // Check for approved leaves
+          const employeeLeaves = approvedLeaves.filter((l) => l.employeeId === employee.id)
+          const leaveOnDay = employeeLeaves.find((l) => {
+            const startStr = toDateString(l.startDate)
+            const endStr = toDateString(l.endDate)
+            return currentStr >= startStr && currentStr <= endStr
+          })
+
+          if (leaveOnDay) {
+            if (leaveOnDay.leaveType === LeaveType.UNPAID) {
+              unpaidLeaveDays++
+            }
+          } else {
+            // Check for unexcused absence (weekdays, no clock-in)
+            const dayOfWeek = currentDate.getDay() // 0 = Sun, 6 = Sat
+            const isWeekday = dayOfWeek !== 0 && dayOfWeek !== 6
+            if (isWeekday) {
+              const hasClockIn = sessions.some((s) => toDateString(s.clockIn) === currentStr)
+              if (!hasClockIn) {
+                unpaidAbsenceDays++
+              }
+            }
+          }
+        }
+
+        const inactiveDays = totalDaysInMonth - activeDays
+        const dailyRate = salary / totalDaysInMonth
+
+        const unpaidLeaveDeductions = parseFloat((unpaidLeaveDays * dailyRate).toFixed(2))
+        const unpaidAbsenceDeductions = parseFloat((unpaidAbsenceDays * dailyRate).toFixed(2))
+        const inactiveDeductions = parseFloat((inactiveDays * dailyRate).toFixed(2))
+
+        const totalUnpaidDeductions = parseFloat(
+          (unpaidLeaveDeductions + unpaidAbsenceDeductions + inactiveDeductions).toFixed(2),
+        )
+
+        // Progressive Income Tax Calculations
+        const grossSalary = salary + allowances + overtimePay
+        let incomeTax = 0
+        if (grossSalary > 3000) {
+          incomeTax = 75 + (grossSalary - 3000) * 0.10
+        } else if (grossSalary > 1500) {
+          incomeTax = (grossSalary - 1500) * 0.05
+        }
+        incomeTax = parseFloat(incomeTax.toFixed(2))
+
+        // Net Salary formula
+        const netSalary = parseFloat(
+          (grossSalary - (baseDeductions + lateDeductions + incomeTax + totalUnpaidDeductions)).toFixed(2),
+        )
+
+        const slip = em.create(PayrollSlipEntity, {
+          batchId: batch.id,
+          employeeId: employee.id,
+          tenantId: ctx.tenantId,
+          basicSalary: salary,
+          totalAllowances: allowances,
+          totalDeductions: parseFloat(
+            (baseDeductions + lateDeductions + incomeTax + totalUnpaidDeductions).toFixed(2),
+          ),
+          netSalary,
+          details: {
+            allowances: employee.salaryConfig?.allowances || [],
+            deductions: employee.salaryConfig?.deductions || [],
+            overtimePay,
+            leaveDeductions: totalUnpaidDeductions,
+            lateDeductions,
+            incomeTax,
+            overtimeHours,
+            lateMinutes,
+            // New breakdown fields
+            unpaidLeaveDays,
+            unpaidAbsenceDays,
+            inactiveDays,
+            unpaidLeaveDeductions,
+            unpaidAbsenceDeductions,
+            inactiveDeductions,
+          } as any,
+        })
+
+        await em.save(PayrollSlipEntity, slip)
+        slips.push(slip)
+
+        batchNetTotal += netSalary
+        totalGrossSalaries += grossSalary
+        totalTaxesWithheld += incomeTax
+        totalBaseDeductions += baseDeductions
+        totalLateDeductions += lateDeductions
+        totalUnpaidLeaveDeductions += unpaidLeaveDeductions
+        totalUnpaidAbsenceDeductions += unpaidAbsenceDeductions
+        totalInactiveDeductions += inactiveDeductions
+      }
+
+      // Update batch total
+      await payrollBatchRepo.update(batch.id, {
+        totalAmount: batchNetTotal,
+        status: 'APPROVED',
+      })
+
+      // Accounting Journal Posting (Salary Accrual Entry)
+      try {
+        if (this.accountingService) {
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.GENERAL,
+              description: `Salary Accrual for Period ${period}: ${name}`,
+              referenceType: 'PAYROLL_BATCH',
+              referenceId: batch.id,
+              lines: [
+                {
+                  accountCode: '6000',
+                  side: LedgerEntrySide.DEBIT,
+                  amount: parseFloat(
+                    (
+                      totalGrossSalaries -
+                      totalLateDeductions -
+                      totalUnpaidLeaveDeductions -
+                      totalUnpaidAbsenceDeductions -
+                      totalInactiveDeductions
+                    ).toFixed(2),
+                  ),
+                },
+                {
+                  accountCode: '2100',
+                  side: LedgerEntrySide.CREDIT,
+                  amount: parseFloat(batchNetTotal.toFixed(2)),
+                },
+                {
+                  accountCode: '2200',
+                  side: LedgerEntrySide.CREDIT,
+                  amount: parseFloat(totalTaxesWithheld.toFixed(2)),
+                },
+                {
+                  accountCode: '2100',
+                  side: LedgerEntrySide.CREDIT,
+                  amount: parseFloat(totalBaseDeductions.toFixed(2)),
+                },
+              ].filter((line) => line.amount > 0),
+            },
+            ctx,
+            em,
+          )
+        }
+      } catch (error: any) {
+        this.logger.error(
+          `Failed to create accrual accounting entries for payroll batch ${batch.id}: ${error.message}`,
+        )
+        throw error // Throw to trigger rollback of payroll generation!
+      }
+
+      const updatedBatch = await payrollBatchRepo.findOne({ where: { id: batch.id } })
+
+      await this.auditLogService.log(ctx, {
+        action: 'PROCESS',
+        entity: 'PayrollBatch',
+        entityId: batch.id,
+        newValue: updatedBatch,
+      })
+
+      return { batch: updatedBatch, slipCount: slips.length }
     })
-    return { batch: updatedBatch, slipCount: slips.length }
   }
 
   async payPayrollBatch(batchId: string, ctx: RequestContextDto) {
     this.logger.log(`Starting payroll release run for batch ${batchId}`)
-    const batch = await this.hrmRepo.findPayrollBatchById(batchId, ctx.tenantId)
-    if (!batch) throw new NotFoundException('Payroll batch not found')
-    if (batch.status === 'PAID') throw new BadRequestException('Payroll batch already paid')
+    return await this.hrmRepo.personalDetailsRepo.manager.transaction(async (em) => {
+      const payrollBatchRepo = em.getRepository(PayrollBatchEntity)
+      const batch = await payrollBatchRepo.findOne({ where: { id: batchId, tenantId: ctx.tenantId } })
+      if (!batch) throw new NotFoundException('Payroll batch not found')
+      if (batch.status === 'PAID') throw new BadRequestException('Payroll batch already paid')
 
-    // Accounting Journal Posting (Salary Payment Settlement)
-    try {
-      if (this.accountingService) {
-        const amountToPay = Number(batch.totalAmount)
-        // Debit: Salaries Payable (2100) -> Net wages cleared
-        // Credit: Cash & Bank Account (1000) -> Cash outlay
-        await this.accountingService.createJournalEntry(
-          {
-            type: JournalType.GENERAL,
-            description: `Payment Settlement for Payroll Batch: ${batch.name}`,
-            referenceType: 'PAYROLL_PAYMENT',
-            referenceId: batch.id,
-            lines: [
-              { accountCode: '2100', side: LedgerEntrySide.DEBIT, amount: amountToPay },
-              { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: amountToPay },
-            ],
-          },
-          ctx,
+      // Accounting Journal Posting (Salary Payment Settlement)
+      try {
+        if (this.accountingService) {
+          const amountToPay = Number(batch.totalAmount)
+          // Debit: Salaries Payable (2100) -> Net wages cleared
+          // Credit: Cash & Bank Account (1000) -> Cash outlay
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.GENERAL,
+              description: `Payment Settlement for Payroll Batch: ${batch.name}`,
+              referenceType: 'PAYROLL_PAYMENT',
+              referenceId: batch.id,
+              lines: [
+                { accountCode: '2100', side: LedgerEntrySide.DEBIT, amount: amountToPay },
+                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: amountToPay },
+              ],
+            },
+            ctx,
+            em,
+          )
+        }
+      } catch (error: any) {
+        this.logger.error(
+          `Failed to post payment journal entries for batch ${batchId}: ${error.message}`,
         )
+        throw new Error(`Accounting GL post failed: ${error.message}`)
       }
-    } catch (error: any) {
-      this.logger.error(
-        `Failed to post payment journal entries for batch ${batchId}: ${error.message}`,
-      )
-      throw new Error(`Accounting GL post failed: ${error.message}`)
-    }
 
-    await (this.hrmRepo as any).payrollBatchRepo.update(batch.id, {
-      status: 'PAID',
+      await payrollBatchRepo.update(batch.id, {
+        status: 'PAID',
+      })
+
+      const updatedBatch = await payrollBatchRepo.findOne({ where: { id: batchId, tenantId: ctx.tenantId } })
+
+      await this.auditLogService.log(ctx, {
+        action: 'PAY',
+        entity: 'PayrollBatch',
+        entityId: batchId,
+        newValue: updatedBatch,
+      })
+
+      return updatedBatch
     })
-
-    const updatedBatch = await this.hrmRepo.findPayrollBatchById(batchId, ctx.tenantId)
-
-    await this.auditLogService.log(ctx, {
-      action: 'PAY',
-      entity: 'PayrollBatch',
-      entityId: batchId,
-      newValue: updatedBatch,
-    })
-
-    return updatedBatch
   }
 
   async rejectLeave(
@@ -811,6 +932,7 @@ export class HrmService {
     // 1. Create or Find User Account
     let user = await this.userService.findUserByEmail(applicant.email, ctx.tenantId)
     if (!user) {
+      const secureRandomPassword = crypto.randomBytes(16).toString('hex') + 'A1!'
       this.logger.log(`Creating new user account for applicant: ${applicant.email}`)
       user = await this.userService.createUser(
         {
@@ -818,7 +940,7 @@ export class HrmService {
           username: applicant.email,
           name: `${applicant.firstName} ${applicant.lastName}`,
           role: UserRole.EMPLOYEE,
-          password: 'WelcomeEmployee123!', // In production, send a password reset link
+          password: secureRandomPassword,
           tenantId: ctx.tenantId,
         } as any,
         ctx,
