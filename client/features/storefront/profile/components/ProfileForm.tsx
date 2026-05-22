@@ -48,20 +48,35 @@ export default function ProfileForm({ variant, formData, setFormData }: { varian
         if (!e.target.files || e.target.files.length === 0) return;
 
         const file = e.target.files[0];
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', file);
-
         setImageUploading(true);
         try {
-            const data = await fetchAPI('/admin/media', {
+            // Step 1: Request presigned URL from backend
+            const presignedRes = await fetchAPI('/admin/media/presigned-url', {
                 method: 'POST',
-                body: uploadFormData,
+                body: JSON.stringify({
+                    filename: file.name,
+                    mimetype: file.type,
+                    size: file.size,
+                }),
             });
 
-            if (data.success && data.data?.filename) {
-                const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3900';
-                const imageUrl = `${backendUrl}/uploads/${data.data.filename}`;
-                setFormData((prev: any) => ({ ...prev, image: imageUrl }));
+            if (presignedRes.success && presignedRes.data?.uploadUrl) {
+                const { uploadUrl, downloadUrl } = presignedRes.data;
+
+                // Step 2: Upload raw file binary to MinIO via PUT
+                const uploadRes = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    body: file,
+                    headers: {
+                        'Content-Type': file.type,
+                    },
+                });
+
+                if (!uploadRes.ok) {
+                    throw new Error('Failed to upload file directly to MinIO');
+                }
+
+                setFormData((prev: any) => ({ ...prev, image: downloadUrl }));
                 toast.success('Avatar updated');
             } else {
                 toast.error('Upload failed');

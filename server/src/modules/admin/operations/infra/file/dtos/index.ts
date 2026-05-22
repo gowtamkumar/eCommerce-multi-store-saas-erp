@@ -3,3 +3,5 @@ export * from './file-response.dto'
 export * from './filter-file.dto'
 export * from './response.dto'
 export * from './update-file.dto'
+export * from './get-presigned-url.dto'
+

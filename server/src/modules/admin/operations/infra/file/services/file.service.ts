@@ -2,15 +2,54 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import * as fs from 'fs'
 import PDFDocument from 'pdfkit'
 import { FileEntity } from '../entities/file.entity'
-import { CreateFileDto, FilterFileDto, UpdateFileDto } from '../dtos'
+import { CreateFileDto, FilterFileDto, UpdateFileDto, GetPresignedUrlDto } from '../dtos'
 import { FileRepository } from '../file.repository'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { MinioService } from './minio.service'
+import { randomUUID } from 'crypto'
 
 @Injectable()
 export class FilesService {
   private readonly logger = new Logger(FilesService.name)
 
-  constructor(private readonly fileRepository: FileRepository) {}
+  constructor(
+    private readonly fileRepository: FileRepository,
+    private readonly minioService: MinioService,
+  ) {}
+
+  async generatePresignedUpload(dto: GetPresignedUrlDto, ctx: RequestContextDto) {
+    this.logger.log(`${this.generatePresignedUpload.name} Service Called`)
+    const { filename, mimetype, size } = dto
+    const tenantId = ctx.tenantId || 'system'
+
+    // Generate a unique object key inside MinIO
+    const uniqueId = randomUUID()
+    const objectKey = `${tenantId}/uploads/${uniqueId}_${filename}`
+
+    // Get the presigned URL and download URL from MinioService
+    const uploadUrl = await this.minioService.getPresignedPutUrl(objectKey)
+    const downloadUrl = this.minioService.getPublicUrl(objectKey)
+
+    // Save metadata in database
+    const fileEntity = await this.fileRepository.createAndSave(
+      {
+        fieldname: 'file',
+        originalname: filename,
+        filename: `${uniqueId}_${filename}`,
+        mimetype,
+        size,
+        path: downloadUrl,
+        destination: `${tenantId}/uploads`,
+      },
+      ctx
+    )
+
+    return {
+      uploadUrl,
+      downloadUrl,
+      file: fileEntity,
+    }
+  }
 
   async getFiles(filterFile: FilterFileDto, tenantId: string): Promise<any> {
     this.logger.log(`${this.getFiles.name} Service Called`)

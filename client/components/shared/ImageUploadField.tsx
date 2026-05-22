@@ -45,29 +45,45 @@ export default function ImageUploadField({
     setUploading(true);
     const loadingToast = toast.loading(loadingMsg);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
       if (!uploadApi) {
-        // Fallback to a default if not provided, but ideally it should be passed
         throw new Error("Upload API function not provided");
       }
 
-      const res = await uploadApi(endpoint, {
+      const presignedEndpoint = endpoint === '/admin/media' ? '/admin/media/presigned-url' : `${endpoint}/presigned-url`;
+
+      // Step 1: Request presigned URL from the backend
+      const presignedRes = await uploadApi(presignedEndpoint, {
         method: 'POST',
-        body: formData,
+        body: JSON.stringify({
+          filename: file.name,
+          mimetype: file.type,
+          size: file.size,
+        }),
       });
 
-      if (res.success) {
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3900';
-        const fileUrl = res.data?.url || `${backendUrl}/uploads/${res.data?.filename}`;
+      if (presignedRes.success && presignedRes.data?.uploadUrl) {
+        const { uploadUrl, downloadUrl, file: fileEntity } = presignedRes.data;
 
+        // Step 2: Upload raw file binary to MinIO via PUT
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload file directly to MinIO');
+        }
+
+        // Success - update state/trigger callbacks
         if (variant === 'field') {
-          onChange(fileUrl);
+          onChange(downloadUrl);
         }
 
         if (onUploadSuccess) {
-          onUploadSuccess(res.data);
+          onUploadSuccess(fileEntity);
         }
 
         toast.success(successMsg);

@@ -69,6 +69,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - multi_tenant_main_network
 
   mailhog:
     image: mailhog/mailhog:latest

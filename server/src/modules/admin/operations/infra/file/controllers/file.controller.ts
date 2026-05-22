@@ -7,25 +7,18 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
+  Body,
   Controller,
   Delete,
-  FileTypeValidator,
   Get,
   Logger,
-  MaxFileSizeValidator,
   Param,
-  ParseFilePipe,
   ParseUUIDPipe,
   Post,
   Query,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common'
-import { FileInterceptor } from '@nestjs/platform-express'
-import { diskStorage } from 'multer'
-import { FilterFileDto } from '../dtos'
-import { FileResponseDto } from '../dtos/file-response.dto'
+import { FilterFileDto, GetPresignedUrlDto } from '../dtos'
 import { FilesService } from '../services/file.service'
 
 @Controller('admin/media')
@@ -53,42 +46,18 @@ export class AdminMediaController {
     }
   }
 
-  @Post()
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: 'public/uploads',
-        filename: (req, file, cb) => {
-          const fileNameSplit = file.originalname.split('.')
-          const fileExt = fileNameSplit[fileNameSplit.length - 1]
-          const justFileName = fileNameSplit[0]
-          cb(null, `${Date.now()}_${justFileName}.${fileExt}`)
-        },
-      }),
-    }),
-  )
-  async uploadFile(
+  @Post('presigned-url')
+  async getPresignedUrl(
     @RequestContext() ctx: RequestContextDto,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new FileTypeValidator({
-            fileType: 'image/(png|jpeg|jpg|gif|svg|webp)',
-            fallbackToMimetype: true,
-          }),
-          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5MB
-        ],
-      }),
-    )
-    file: Express.Multer.File,
-  ): Promise<BaseApiSuccessResponse<FileResponseDto>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called uploadFile.`)
-    const newFile = await this.filesService.createFile(file, ctx)
+    @Body() dto: GetPresignedUrlDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getPresignedUrl.`)
+    const result = await this.filesService.generatePresignedUpload(dto, ctx)
     return {
       success: true,
       statusCode: 201,
-      message: 'File uploaded successfully',
-      data: newFile,
+      message: 'Presigned upload URL generated successfully',
+      data: result,
     }
   }
 
