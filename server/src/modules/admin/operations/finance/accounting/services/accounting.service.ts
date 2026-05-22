@@ -106,6 +106,9 @@ export class AccountingService {
         isReversal: data.isReversal || false,
         reversedJournalEntryId: data.reversedJournalEntryId || null,
       })
+      if (data.date) {
+        journal.createdAt = new Date(data.date)
+      }
       const savedJournal = (await em.save(JournalEntryEntity, journal)) as JournalEntryEntity
 
       // 3. Process Ledger Lines

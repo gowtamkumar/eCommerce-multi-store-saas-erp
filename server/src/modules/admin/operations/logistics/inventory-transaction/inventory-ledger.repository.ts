@@ -78,6 +78,9 @@ export class InventoryLedgerRepository {
   ): Promise<InventoryLedgerEntity> {
     const repo = manager ? manager.getRepository(InventoryLedgerEntity) : this.repo
     const transaction = repo.create({ ...dto, tenantId: ctx.tenantId, userId: ctx.userId })
+    if (dto.createdAt) {
+      transaction.createdAt = new Date(dto.createdAt)
+    }
     return await (repo.save(transaction) as unknown as Promise<InventoryLedgerEntity>)
   }
   async getStockSums(tenantId: string, warehouseId?: string): Promise<any[]> {

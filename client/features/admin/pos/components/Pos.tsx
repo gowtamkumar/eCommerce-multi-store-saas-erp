@@ -22,7 +22,10 @@ import {
   Trash2,
   User,
   X,
-  ChevronDown
+  ChevronDown,
+  RefreshCw,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -41,6 +44,8 @@ interface PosShift {
   cashSales: number;
   cardSales: number;
   mobileSales: number;
+  cashIn?: number;
+  cashOut?: number;
   expectedClosingBalance: number;
   closingBalance?: number;
   status: 'OPEN' | 'CLOSED';
@@ -97,6 +102,27 @@ export default function Pos() {
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'MOBILE' | 'ON_ACCOUNT'>('CASH');
   const [amountTendered, setAmountTendered] = useState<number | ''>('');
   const [processingPayment, setProcessingPayment] = useState(false);
+
+  // Offline state
+  const [isOnline, setIsOnline] = useState(true);
+  const [offlineQueue, setOfflineQueue] = useState<any[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Split payment state
+  const [splitPayment, setSplitPayment] = useState(false);
+  const [splitPayments, setSplitPayments] = useState<{ CASH: number | ''; CARD: number | ''; MOBILE: number | ''; ON_ACCOUNT: number | '' }>({
+    CASH: '',
+    CARD: '',
+    MOBILE: '',
+    ON_ACCOUNT: '',
+  });
+
+  // Cash drawer state
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerTxType, setDrawerTxType] = useState<'CASH_IN' | 'CASH_OUT'>('CASH_IN');
+  const [drawerAmount, setDrawerAmount] = useState<number | ''>('');
+  const [drawerReason, setDrawerReason] = useState('');
+  const [submittingDrawerTx, setSubmittingDrawerTx] = useState(false);
   
   // Advanced features: Customer, discount and receipt
   const [discount, setDiscount] = useState<number>(0);
@@ -129,11 +155,141 @@ export default function Pos() {
   const [closingBalance, setClosingBalance] = useState<number | ''>('');
   const [closingRemarks, setClosingRemarks] = useState('');
 
+  // Helper to generate local transaction UUIDs
+  const generateUUID = () => {
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  };
+
+  const getRemainingPayableAmount = () => {
+    const walletDeduction = useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : 0;
+    return Math.max(0, calculateGrandTotal() - walletDeduction);
+  };
+
+  const getSplitPaymentsSum = () => {
+    return (
+      Number(splitPayments.CASH || 0) +
+      Number(splitPayments.CARD || 0) +
+      Number(splitPayments.MOBILE || 0) +
+      (selectedCustomer ? Number(splitPayments.ON_ACCOUNT || 0) : 0)
+    );
+  };
+
   // 1. Initial mounting checks
   useEffect(() => {
     checkActiveShift();
+    if (typeof window !== 'undefined') {
+      setIsOnline(window.navigator.onLine);
+      const savedQueue = localStorage.getItem('pos_offline_queue');
+      if (savedQueue) {
+        try {
+          setOfflineQueue(JSON.parse(savedQueue));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      const handleOnline = () => {
+        setIsOnline(true);
+        toast.success('Internet connection restored!');
+      };
+      const handleOffline = () => {
+        setIsOnline(false);
+        toast.error('Working offline mode activated.');
+      };
+
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Persist offline queue
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pos_offline_queue', JSON.stringify(offlineQueue));
+    }
+  }, [offlineQueue]);
+
+  // Sync offline queue helper
+  const syncOfflineQueue = async (forceQueue?: any[]) => {
+    const queueToProcess = forceQueue || offlineQueue;
+    if (queueToProcess.length === 0) return;
+
+    setIsSyncing(true);
+    const updatedQueue = [...queueToProcess];
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const sale of queueToProcess) {
+      try {
+        const res = await fetchAPI('/pos/sync', {
+          method: 'POST',
+          body: JSON.stringify({
+            shiftId: sale.shiftId,
+            items: sale.items,
+            paymentMethod: sale.paymentMethod,
+            paymentAmount: sale.paymentAmount,
+            customerId: sale.customerId,
+            appliedCoupon: sale.appliedCoupon,
+            couponDiscountAmount: sale.couponDiscountAmount,
+            deliveryZone: sale.deliveryZone,
+            shippingFee: sale.shippingFee,
+            shippingAddress: sale.shippingAddress,
+            useWalletBalance: sale.useWalletBalance,
+            walletAmountToUse: sale.walletAmountToUse,
+            offlineSaleId: sale.offlineSaleId,
+            createdAt: sale.createdAt,
+            payments: sale.payments,
+          }),
+        });
+
+        if (res.success) {
+          successCount++;
+          const idx = updatedQueue.findIndex((q) => q.offlineSaleId === sale.offlineSaleId);
+          if (idx > -1) updatedQueue.splice(idx, 1);
+        } else {
+          failedCount++;
+          console.error('Failed syncing offline sale:', res.message);
+        }
+      } catch (err) {
+        console.error('Network error during offline sync:', err);
+        toast.error('Sync failed due to network connection issues.');
+        break;
+      }
+    }
+
+    setOfflineQueue(updatedQueue);
+    if (successCount > 0) {
+      toast.success(`Successfully synced ${successCount} offline sale(s)!`);
+      try {
+        const activeRes = await fetchAPI('/pos/shift/active');
+        if (activeRes.success) setActiveShift(activeRes.data);
+      } catch (e) {}
+    }
+    if (failedCount > 0) {
+      toast.error(`Failed to sync ${failedCount} sale(s) due to validation errors.`);
+    }
+    setIsSyncing(false);
+  };
+
+  // Trigger sync when coming back online
+  useEffect(() => {
+    if (isOnline && offlineQueue.length > 0 && !isSyncing) {
+      syncOfflineQueue();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOnline]);
 
   const checkActiveShift = async () => {
     setLoadingShift(true);
@@ -435,49 +591,87 @@ export default function Pos() {
 
   // 4. Sales Sync Processing
   const handleConfirmCheckout = async () => {
-    if (paymentMethod === 'ON_ACCOUNT' && !selectedCustomer) {
-      toast.error('Customer profile selection required for on-account checkout');
-      return;
+    // 1. Validation
+    const remainingAmount = getRemainingPayableAmount();
+    
+    let payments: { method: 'CASH' | 'CARD' | 'MOBILE' | 'ON_ACCOUNT'; amount: number }[] | undefined = undefined;
+
+    if (splitPayment) {
+      const sum = getSplitPaymentsSum();
+      if (Math.abs(sum - remainingAmount) > 0.01) {
+        toast.error(`Split payments total ($${sum.toFixed(2)}) must equal remaining payable amount ($${remainingAmount.toFixed(2)})`);
+        return;
+      }
+      if (Number(splitPayments.ON_ACCOUNT || 0) > 0 && !selectedCustomer) {
+        toast.error('Customer profile selection required for on-account split checkout');
+        return;
+      }
+      
+      payments = [];
+      if (Number(splitPayments.CASH || 0) > 0) payments.push({ method: 'CASH', amount: Number(splitPayments.CASH) });
+      if (Number(splitPayments.CARD || 0) > 0) payments.push({ method: 'CARD', amount: Number(splitPayments.CARD) });
+      if (Number(splitPayments.MOBILE || 0) > 0) payments.push({ method: 'MOBILE', amount: Number(splitPayments.MOBILE) });
+      if (selectedCustomer && Number(splitPayments.ON_ACCOUNT || 0) > 0) {
+        payments.push({ method: 'ON_ACCOUNT', amount: Number(splitPayments.ON_ACCOUNT) });
+      }
+    } else {
+      if (paymentMethod === 'ON_ACCOUNT' && !selectedCustomer) {
+        toast.error('Customer profile selection required for on-account checkout');
+        return;
+      }
+      if (paymentMethod === 'CASH' && amountTendered !== '' && Number(amountTendered) < remainingAmount) {
+        toast.error('Tendered cash must equal or exceed remaining payable amount');
+        return;
+      }
     }
-    if (paymentMethod === 'CASH' && amountTendered !== '' && Number(amountTendered) < calculateGrandTotal()) {
-      toast.error('Tendered cash must equal or exceed total payable amount');
-      return;
-    }
+
+    const offlineSaleId = generateUUID();
+    const createdAt = new Date().toISOString();
+    const itemsPayload = cart.map((item) => ({
+      productId: item.product.id,
+      variantId: item.variant?.id || undefined,
+      quantity: item.quantity,
+      price: item.price,
+    }));
+
+    const salePayload = {
+      shiftId: activeShift?.id || '',
+      items: itemsPayload,
+      paymentMethod: splitPayment ? 'CASH' : paymentMethod, // main default method
+      paymentAmount: calculateGrandTotal(),
+      customerId: selectedCustomer?.id || undefined,
+      appliedCoupon: couponApplied?.code || undefined,
+      couponDiscountAmount: calculateCouponDiscount(),
+      deliveryZone: deliveryZone || undefined,
+      shippingFee: calculateShippingFee(),
+      shippingAddress: shippingAddress || undefined,
+      useWalletBalance: useWalletBalance || undefined,
+      walletAmountToUse: useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : undefined,
+      offlineSaleId,
+      createdAt,
+      payments,
+    };
 
     setProcessingPayment(true);
-    try {
-      const itemsPayload = cart.map((item) => ({
-        productId: item.product.id,
-        variantId: item.variant?.id || undefined,
-        quantity: item.quantity,
-        price: item.price,
-      }));
 
-      const res = await fetchAPI('/pos/sync', {
-        method: 'POST',
-        body: JSON.stringify({
-          shiftId: activeShift?.id || '',
-          items: itemsPayload,
-          paymentMethod,
-          paymentAmount: calculateGrandTotal(),
-          customerId: selectedCustomer?.id || undefined,
-          appliedCoupon: couponApplied?.code || undefined,
-          couponDiscountAmount: calculateCouponDiscount(),
-          deliveryZone: deliveryZone || undefined,
-          shippingFee: calculateShippingFee(),
-          shippingAddress: shippingAddress || undefined,
-          useWalletBalance: useWalletBalance || undefined,
-          walletAmountToUse: useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : undefined,
-        }),
-      });
-
-      if (res.success) {
-        toast.success('Sale synced successfully & General Ledger journaled! 🧾');
+    if (!isOnline) {
+      // offline flow
+      try {
+        const queuedSale = {
+          ...salePayload,
+          _metadata: {
+            customerName: selectedCustomer?.name || 'Walk-in Customer',
+            grandTotal: calculateGrandTotal(),
+            itemsCount: cart.reduce((sum, i) => sum + i.quantity, 0),
+          }
+        };
+        setOfflineQueue((prev) => [...prev, queuedSale]);
+        toast.success('Offline mode: Sale queued for synchronization!');
         
-        // Save transaction details for receipt modal
+        // Show success receipt
         setLastTransaction({
-          receiptNo: `REC-${Date.now().toString().slice(-6)}`,
-          date: new Date().toLocaleString(),
+          receiptNo: `OFF-${offlineSaleId.slice(-6).toUpperCase()}`,
+          date: new Date(createdAt).toLocaleString(),
           items: [...cart],
           subtotal: calculateSubtotal(),
           discount: calculateDiscountValue(),
@@ -487,37 +681,144 @@ export default function Pos() {
           deliveryZone: deliveryZone || null,
           tax: calculateTax(),
           grandTotal: calculateGrandTotal(),
-          paymentMethod,
-          amountTendered: amountTendered === '' ? calculateGrandTotal() : Number(amountTendered),
-          changeDue: changeDue > 0 ? changeDue : 0,
+          paymentMethod: splitPayment ? 'SPLIT' : paymentMethod,
+          amountTendered: splitPayment
+            ? Number(splitPayments.CASH || 0)
+            : (amountTendered === '' ? remainingAmount : Number(amountTendered)),
+          changeDue: splitPayment
+            ? 0
+            : (paymentMethod === 'CASH' && amountTendered !== '' ? Number(amountTendered) - remainingAmount : 0),
           walletDeduction: useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : 0,
           customer: selectedCustomer,
+          isOffline: true,
+          splitPayments: payments,
         });
 
-        setCart([]);
-        setIsCheckoutOpen(false);
-        setAmountTendered('');
-        setDiscount(0);
-        setCouponApplied(null);
-        setCouponCode('');
-        setDeliveryZone('');
-        setShippingAddress('');
-        setUseWalletBalance(false);
-        setWalletAmountToUse('');
-        setWalletBalance(0);
-        setOutstandingBalance(0);
-        setSelectedCustomer(null);
-        setIsReceiptOpen(true); // Open premium receipt modal
+        // Reset state
+        resetCheckoutState();
+        setIsReceiptOpen(true);
+      } catch (err: any) {
+        toast.error(err?.message || 'Failed to save offline sale');
+      } finally {
+        setProcessingPayment(false);
+      }
+      return;
+    }
+
+    // online flow
+    try {
+      const res = await fetchAPI('/pos/sync', {
+        method: 'POST',
+        body: JSON.stringify(salePayload),
+      });
+
+      if (res.success) {
+        toast.success('Sale synced successfully & General Ledger journaled! 🧾');
+        
+        // Save transaction details for receipt modal
+        setLastTransaction({
+          receiptNo: `REC-${Date.now().toString().slice(-6)}`,
+          date: new Date(createdAt).toLocaleString(),
+          items: [...cart],
+          subtotal: calculateSubtotal(),
+          discount: calculateDiscountValue(),
+          couponDiscount: calculateCouponDiscount(),
+          couponCode: couponApplied?.code || null,
+          shippingFee: calculateShippingFee(),
+          deliveryZone: deliveryZone || null,
+          tax: calculateTax(),
+          grandTotal: calculateGrandTotal(),
+          paymentMethod: splitPayment ? 'SPLIT' : paymentMethod,
+          amountTendered: splitPayment
+            ? Number(splitPayments.CASH || 0)
+            : (amountTendered === '' ? remainingAmount : Number(amountTendered)),
+          changeDue: splitPayment
+            ? 0
+            : (paymentMethod === 'CASH' && amountTendered !== '' ? Number(amountTendered) - remainingAmount : 0),
+          walletDeduction: useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : 0,
+          customer: selectedCustomer,
+          splitPayments: payments,
+        });
+
+        // Reset state
+        resetCheckoutState();
+        setIsReceiptOpen(true); // Open receipt modal
 
         // Reload shift stats
         const activeRes = await fetchAPI('/pos/shift/active');
         if (activeRes.success) setActiveShift(activeRes.data);
       }
-    } catch {
-      toast.error('Failed to sync POS transaction');
+    } catch (err: any) {
+      // If network failure, offer to queue offline
+      console.error('Online checkout failed:', err);
+      if (err.message && err.message.includes('fetch')) {
+        // Network connection error - queue it
+        const queuedSale = {
+          ...salePayload,
+          _metadata: {
+            customerName: selectedCustomer?.name || 'Walk-in Customer',
+            grandTotal: calculateGrandTotal(),
+            itemsCount: cart.reduce((sum, i) => sum + i.quantity, 0),
+          }
+        };
+        setOfflineQueue((prev) => [...prev, queuedSale]);
+        toast.success('Network issue detected: Sale queued for synchronization!');
+        
+        setLastTransaction({
+          receiptNo: `OFF-${offlineSaleId.slice(-6).toUpperCase()}`,
+          date: new Date(createdAt).toLocaleString(),
+          items: [...cart],
+          subtotal: calculateSubtotal(),
+          discount: calculateDiscountValue(),
+          couponDiscount: calculateCouponDiscount(),
+          couponCode: couponApplied?.code || null,
+          shippingFee: calculateShippingFee(),
+          deliveryZone: deliveryZone || null,
+          tax: calculateTax(),
+          grandTotal: calculateGrandTotal(),
+          paymentMethod: splitPayment ? 'SPLIT' : paymentMethod,
+          amountTendered: splitPayment
+            ? Number(splitPayments.CASH || 0)
+            : (amountTendered === '' ? remainingAmount : Number(amountTendered)),
+          changeDue: splitPayment
+            ? 0
+            : (paymentMethod === 'CASH' && amountTendered !== '' ? Number(amountTendered) - remainingAmount : 0),
+          walletDeduction: useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : 0,
+          customer: selectedCustomer,
+          isOffline: true,
+          splitPayments: payments,
+        });
+        resetCheckoutState();
+        setIsReceiptOpen(true);
+      } else {
+        toast.error(err?.message || 'Failed to sync POS transaction');
+      }
     } finally {
       setProcessingPayment(false);
     }
+  };
+
+  const resetCheckoutState = () => {
+    setCart([]);
+    setIsCheckoutOpen(false);
+    setAmountTendered('');
+    setDiscount(0);
+    setCouponApplied(null);
+    setCouponCode('');
+    setDeliveryZone('');
+    setShippingAddress('');
+    setUseWalletBalance(false);
+    setWalletAmountToUse('');
+    setWalletBalance(0);
+    setOutstandingBalance(0);
+    setSelectedCustomer(null);
+    setSplitPayment(false);
+    setSplitPayments({
+      CASH: '',
+      CARD: '',
+      MOBILE: '',
+      ON_ACCOUNT: '',
+    });
   };
 
   const filteredProducts = products.filter((p: any) => {
@@ -626,13 +927,31 @@ export default function Pos() {
   return (
     <div className="flex flex-col gap-6 -mt-4">
       {/* Header Stat Panel */}
-      <div className="bg-slate-900 text-white rounded-3xl p-6 flex flex-col md:flex-row gap-6 md:items-center justify-between shadow-2xl">
+      <div className="bg-slate-900 text-white rounded-3xl p-6 flex flex-col xl:flex-row gap-6 xl:items-center justify-between shadow-2xl">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-emerald-500/20 rounded-2xl border border-emerald-500/30">
             <Coins className="w-6 h-6 text-emerald-400" />
           </div>
           <div>
-            <h3 className="font-black text-lg">Active Terminal Shift</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-black text-lg">Active Terminal Shift</h3>
+              {isOnline ? (
+                <span className="flex items-center gap-1 px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[9px] font-black uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping mr-1" />
+                  Cloud Online
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 px-2.5 py-0.5 bg-amber-500/20 text-amber-450 border border-amber-500/30 rounded-full text-[9px] font-black uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse mr-1" />
+                  Offline Mode
+                </span>
+              )}
+              {offlineQueue.length > 0 && (
+                <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full text-[9px] font-black uppercase tracking-wider">
+                  {offlineQueue.length} Queued
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-400 font-medium">
               Terminal: <span className="font-bold text-white">{activeShift.register?.name}</span> | Cashier ID:{' '}
               <span className="font-bold text-white">{activeShift.userId?.substring(0, 8)}...</span>
@@ -641,29 +960,76 @@ export default function Pos() {
         </div>
 
         <div className="flex flex-wrap items-center gap-6">
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-4 md:gap-6">
             <div className="text-center md:text-left">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Drawer Base</p>
-              <p className="font-black text-sm">${activeShift.openingBalance}</p>
+              <p className="font-black text-sm">${Number(activeShift.openingBalance).toFixed(2)}</p>
             </div>
             <div className="w-px h-8 bg-slate-800" />
             <div className="text-center md:text-left">
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cash Intake</p>
-              <p className="font-black text-sm text-emerald-400">+${activeShift.cashSales}</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cash Sales</p>
+              <p className="font-black text-sm text-emerald-400">+${Number(activeShift.cashSales).toFixed(2)}</p>
             </div>
+            {Number(activeShift.cashIn || 0) > 0 && (
+              <>
+                <div className="w-px h-8 bg-slate-800" />
+                <div className="text-center md:text-left">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cash In</p>
+                  <p className="font-black text-sm text-emerald-400">+${Number(activeShift.cashIn).toFixed(2)}</p>
+                </div>
+              </>
+            )}
+            {Number(activeShift.cashOut || 0) > 0 && (
+              <>
+                <div className="w-px h-8 bg-slate-800" />
+                <div className="text-center md:text-left">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cash Out</p>
+                  <p className="font-black text-sm text-red-400">-${Number(activeShift.cashOut).toFixed(2)}</p>
+                </div>
+              </>
+            )}
             <div className="w-px h-8 bg-slate-800" />
             <div className="text-center md:text-left">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Expected Balance</p>
-              <p className="font-black text-sm text-brand-400">${activeShift.expectedClosingBalance}</p>
+              <p className="font-black text-sm text-brand-400">${Number(activeShift.expectedClosingBalance).toFixed(2)}</p>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsCloseShiftOpen(true)}
-            className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-xl shadow-lg transition-all"
-          >
-            Audit & Close Till
-          </button>
+          <div className="flex items-center gap-2">
+            {isOnline && offlineQueue.length > 0 && (
+              <button
+                onClick={() => syncOfflineQueue()}
+                disabled={isSyncing}
+                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl shadow-lg transition-all flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {isSyncing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3.5 h-3.5" />
+                )}
+                Sync Queue
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                setDrawerTxType('CASH_IN');
+                setDrawerAmount('');
+                setDrawerReason('');
+                setIsDrawerOpen(true);
+              }}
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black rounded-xl border border-slate-750 transition-all"
+            >
+              Cash In/Out
+            </button>
+
+            <button
+              onClick={() => setIsCloseShiftOpen(true)}
+              className="px-4 py-2.5 bg-red-650 hover:bg-red-750 text-white text-xs font-black rounded-xl shadow-lg transition-all"
+            >
+              Audit & Close Till
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1072,53 +1438,168 @@ export default function Pos() {
 
               <div className="p-6 space-y-6">
                 {/* Method selector */}
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    Payment Method
-                  </label>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('CASH')}
-                      className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'CASH'
-                        ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
-                        : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
-                        }`}
-                    >
-                      <Banknote className="w-3.5 h-3.5" /> Cash
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('CARD')}
-                      className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'CARD'
-                        ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
-                        : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
-                        }`}
-                    >
-                      <CreditCard className="w-3.5 h-3.5" /> Card
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('MOBILE')}
-                      className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'MOBILE'
-                        ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
-                        : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
-                        }`}
-                    >
-                      <QrCode className="w-3.5 h-3.5" /> Mobile
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!selectedCustomer}
-                      onClick={() => setPaymentMethod('ON_ACCOUNT')}
-                      className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'ON_ACCOUNT'
-                        ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
-                        : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
-                        } disabled:opacity-40 disabled:cursor-not-allowed`}
-                    >
-                      <Coins className="w-3.5 h-3.5" /> Account
-                    </button>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Payment Method
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      <input
+                        type="checkbox"
+                        checked={splitPayment}
+                        onChange={(e) => {
+                          setSplitPayment(e.target.checked);
+                          setSplitPayments({
+                            CASH: '',
+                            CARD: '',
+                            MOBILE: '',
+                            ON_ACCOUNT: '',
+                          });
+                        }}
+                        className="rounded border-slate-350 text-brand-600 focus:ring-brand-500 h-3 w-3"
+                      />
+                      Split Payment
+                    </label>
                   </div>
+
+                  {!splitPayment ? (
+                    <div className="grid grid-cols-4 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('CASH')}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'CASH'
+                          ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
+                          : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
+                          }`}
+                      >
+                        <Banknote className="w-3.5 h-3.5" /> Cash
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('CARD')}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'CARD'
+                          ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
+                          : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
+                          }`}
+                      >
+                        <CreditCard className="w-3.5 h-3.5" /> Card
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('MOBILE')}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'MOBILE'
+                          ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
+                          : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
+                          }`}
+                      >
+                        <QrCode className="w-3.5 h-3.5" /> Mobile
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!selectedCustomer}
+                        onClick={() => setPaymentMethod('ON_ACCOUNT')}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'ON_ACCOUNT'
+                          ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
+                          : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
+                          } disabled:opacity-40 disabled:cursor-not-allowed`}
+                      >
+                        <Coins className="w-3.5 h-3.5" /> Account
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 p-3 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-850">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-bold text-slate-650 flex items-center gap-1">
+                          <Banknote className="w-3.5 h-3.5 text-slate-400" /> Cash ($)
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={splitPayments.CASH}
+                          onChange={(e) =>
+                            setSplitPayments((prev) => ({
+                              ...prev,
+                              CASH: e.target.value === '' ? '' : Number(e.target.value),
+                            }))
+                          }
+                          className="w-24 text-right px-2.5 py-1 border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl outline-none font-bold text-xs"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-bold text-slate-650 flex items-center gap-1">
+                          <CreditCard className="w-3.5 h-3.5 text-slate-400" /> Card ($)
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={splitPayments.CARD}
+                          onChange={(e) =>
+                            setSplitPayments((prev) => ({
+                              ...prev,
+                              CARD: e.target.value === '' ? '' : Number(e.target.value),
+                            }))
+                          }
+                          className="w-24 text-right px-2.5 py-1 border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl outline-none font-bold text-xs"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-bold text-slate-650 flex items-center gap-1">
+                          <QrCode className="w-3.5 h-3.5 text-slate-400" /> Mobile ($)
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={splitPayments.MOBILE}
+                          onChange={(e) =>
+                            setSplitPayments((prev) => ({
+                              ...prev,
+                              MOBILE: e.target.value === '' ? '' : Number(e.target.value),
+                            }))
+                          }
+                          className="w-24 text-right px-2.5 py-1 border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl outline-none font-bold text-xs"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-bold text-slate-650 flex items-center gap-1">
+                          <Coins className="w-3.5 h-3.5 text-slate-400" /> Account ($)
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          disabled={!selectedCustomer}
+                          value={splitPayments.ON_ACCOUNT}
+                          onChange={(e) =>
+                            setSplitPayments((prev) => ({
+                              ...prev,
+                              ON_ACCOUNT: e.target.value === '' ? '' : Number(e.target.value),
+                            }))
+                          }
+                          className="w-24 text-right px-2.5 py-1 border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl outline-none font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between text-[10px] font-black">
+                        <span className="text-slate-400">Total Applied:</span>
+                        <span
+                          className={
+                            Math.abs(getSplitPaymentsSum() - getRemainingPayableAmount()) < 0.01
+                              ? 'text-emerald-500'
+                              : 'text-red-500'
+                          }
+                        >
+                          ${getSplitPaymentsSum().toFixed(2)} / ${getRemainingPayableAmount().toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Customer Financial / B2B Credit Profile & Wallet Payments */}

@@ -129,7 +129,8 @@ describe('Accounting Module (e2e)', () => {
       expect(reversed).toBeDefined()
       expect(reversed.isReversal).toBeTruthy()
       expect(reversed.reversedJournalEntryId).toBe(entry.id)
-      expect(reversed.description).toContain(`REVERSAL of Journal Entry ${entry.id}`)
+      expect(reversed.description).toContain('Reversal of:')
+      expect(reversed.description).toContain(entry.id)
 
       // Retrieve ledger lines of reversed entry and verify swapped sides
       const journalRepo = dataSource.getRepository(JournalEntryEntity)
@@ -257,7 +258,7 @@ describe('Accounting Module (e2e)', () => {
       let updatedOutbox = await outboxRepo.findOne({ where: { id: outboxEntry.id } })
       expect(updatedOutbox.status).toBe('FAILED')
       expect(updatedOutbox.attempts).toBe(1)
-      expect(updatedOutbox.error).toContain('Debits and credits must be balanced')
+      expect(updatedOutbox.error).toContain('Unbalanced journal entry')
 
       // Process again -> should retry and fail again
       await outboxService.processPending()

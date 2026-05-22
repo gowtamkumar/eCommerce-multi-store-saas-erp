@@ -1,9 +1,10 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { PosRegisterEntity } from './pos-register.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
+import { PosDrawerTransactionEntity } from './pos-drawer-transaction.entity'
 
 export enum PosShiftStatus {
   OPEN = 'OPEN',
@@ -85,4 +86,13 @@ export class PosShiftEntity extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   remarks: string
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, name: 'cash_in' })
+  cashIn: number
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, name: 'cash_out' })
+  cashOut: number
+
+  @OneToMany(() => PosDrawerTransactionEntity, (tx) => tx.shift)
+  drawerTransactions: PosDrawerTransactionEntity[]
 }

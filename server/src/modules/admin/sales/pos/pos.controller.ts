@@ -11,8 +11,10 @@ import { ClosePosShiftDto } from './dtos/close-pos-shift.dto'
 import { CreatePosRegisterDto } from './dtos/create-pos-register.dto'
 import { OpenPosShiftDto } from './dtos/open-pos-shift.dto'
 import { SyncPosSaleDto } from './dtos/sync-pos-sale.dto'
+import { CreateDrawerTransactionDto } from './dtos/create-drawer-transaction.dto'
 import { PosRegisterEntity } from './entities/pos-register.entity'
 import { PosShiftEntity } from './entities/pos-shift.entity'
+import { PosDrawerTransactionEntity } from './entities/pos-drawer-transaction.entity'
 import { PosService } from './pos.service'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
@@ -185,6 +187,39 @@ export class PosController {
       statusCode: 200,
       message: 'POS offline sale transaction processed and synced successfully',
       data: null,
+    }
+  }
+
+  @Post('shift/:id/drawer-transaction')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
+  async createDrawerTransaction(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body() dto: CreateDrawerTransactionDto,
+  ): Promise<BaseApiSuccessResponse<PosDrawerTransactionEntity>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createDrawerTransaction for shift ${id}.`)
+    const tx = await this.service.createDrawerTransaction(id, dto, ctx)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Drawer transaction recorded successfully',
+      data: tx,
+    }
+  }
+
+  @Get('shift/:id/drawer-transactions')
+  @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
+  async getDrawerTransactions(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<PosDrawerTransactionEntity[]>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getDrawerTransactions for shift ${id}.`)
+    const txs = await this.service.getDrawerTransactionsForShift(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Drawer transactions retrieved successfully',
+      data: txs,
     }
   }
 }

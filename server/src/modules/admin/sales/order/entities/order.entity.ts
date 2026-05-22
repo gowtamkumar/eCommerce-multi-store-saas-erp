@@ -110,4 +110,10 @@ export class OrderEntity extends BaseEntity {
   /** Amount deducted from the customer's wallet balance at checkout. */
   @Column({ type: 'decimal', name: 'wallet_deduction_amount', precision: 10, scale: 2, default: 0 })
   walletDeductionAmount: number
+
+  @Column({ type: 'uuid', name: 'offline_sale_id', nullable: true, unique: true })
+  offlineSaleId: string | null
+
+  @Column({ type: 'jsonb', name: 'payments', nullable: true })
+  payments: Array<{ method: string; amount: number; transactionId?: string }> | null
 }

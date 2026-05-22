@@ -2,11 +2,14 @@ import { Injectable, Logger, BadRequestException, NotFoundException } from '@nes
 import { DataSource } from 'typeorm'
 import { PosRegisterRepository } from './repositories/pos-register.repository'
 import { PosShiftRepository } from './repositories/pos-shift.repository'
+import { PosDrawerTransactionRepository } from './repositories/pos-drawer-transaction.repository'
 import { PosRegisterEntity } from './entities/pos-register.entity'
 import { PosShiftEntity, PosShiftStatus } from './entities/pos-shift.entity'
+import { PosDrawerTransactionEntity, PosDrawerTransactionType } from './entities/pos-drawer-transaction.entity'
 import { CreatePosRegisterDto } from './dtos/create-pos-register.dto'
 import { OpenPosShiftDto } from './dtos/open-pos-shift.dto'
 import { ClosePosShiftDto } from './dtos/close-pos-shift.dto'
+import { CreateDrawerTransactionDto } from './dtos/create-drawer-transaction.dto'
 import { SyncPosSaleDto, PosPaymentMethod } from './dtos/sync-pos-sale.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
@@ -34,6 +37,7 @@ export class PosService {
   constructor(
     private readonly registerRepository: PosRegisterRepository,
     private readonly shiftRepository: PosShiftRepository,
+    private readonly drawerTransactionRepository: PosDrawerTransactionRepository,
     private readonly inventoryService: InventoryLedgerService,
     private readonly accountingService: AccountingService,
     private readonly arService: ArService,
@@ -158,7 +162,9 @@ export class PosService {
 
     const cashSales = Number(shift.cashSales || 0)
     const openingBalance = Number(shift.openingBalance || 0)
-    const expectedClosingBalance = openingBalance + cashSales
+    const cashIn = Number(shift.cashIn || 0)
+    const cashOut = Number(shift.cashOut || 0)
+    const expectedClosingBalance = openingBalance + cashSales + cashIn - cashOut
     const closingBalance = Number(dto.closingBalance)
     const difference = closingBalance - expectedClosingBalance
 
@@ -195,6 +201,18 @@ export class PosService {
 
     // 2. Process transactions within a database runner to ensure transactional atomicity
     await this.dataSource.transaction(async (manager) => {
+      // 1. Idempotency Check using offlineSaleId
+      if (dto.offlineSaleId) {
+        const orderRepo = manager.getRepository(OrderEntity)
+        const existingOrder = await orderRepo.findOne({
+          where: { offlineSaleId: dto.offlineSaleId, tenantId },
+        })
+        if (existingOrder) {
+          // Transaction already processed, return success immediately
+          return
+        }
+      }
+
       // Resolve Customer profile if provided
       let customerName = 'Walk-in Customer'
       let customerEmail = 'guest@store.com'
@@ -236,7 +254,13 @@ export class PosService {
         userId: dto.customerId || undefined,
         appliedCoupon: dto.appliedCoupon || undefined,
         couponDiscountAmount: dto.couponDiscountAmount || 0,
+        offlineSaleId: dto.offlineSaleId || null,
+        payments: null,
       })
+
+      if (dto.createdAt) {
+        order.createdAt = new Date(dto.createdAt)
+      }
 
       const savedOrder = await orderRepo.save(order)
       let totalSaleAmount = 0
@@ -279,7 +303,8 @@ export class PosService {
             warehouseId: (ctx.user as any)?.warehouseId || undefined, // Scope to cashier's warehouse
             branchId: shift.register?.branchId || undefined,
             remarks: `POS Sale - Order ID: ${savedOrder.id}`,
-          },
+            createdAt: dto.createdAt ? new Date(dto.createdAt) : undefined,
+          } as any,
           ctx,
           manager,
         )
@@ -327,11 +352,39 @@ export class PosService {
         }
       }
 
+      const remainingAmount = netSaleAmount - walletDeductionAmount
+
+      // Build and validate payment breakdown
+      let paymentBreakdown = dto.payments
+      if (!paymentBreakdown || paymentBreakdown.length === 0) {
+        paymentBreakdown = [
+          {
+            method: dto.paymentMethod,
+            amount: remainingAmount,
+          },
+        ]
+      } else {
+        const paymentsTotal = paymentBreakdown.reduce((sum, p) => sum + Number(p.amount), 0)
+        if (Math.abs(paymentsTotal - remainingAmount) > 0.01) {
+          throw new BadRequestException(
+            `Total payments amount (${paymentsTotal}) does not match remaining order net amount (${remainingAmount})`,
+          )
+        }
+      }
+
+      savedOrder.payments = paymentBreakdown as any
+
+      if (dto.createdAt) {
+        savedOrder.createdAt = new Date(dto.createdAt)
+      }
       await orderRepo.save(savedOrder)
 
       // Verify B2B Credit Limits & Post AR Ledger if ON_ACCOUNT
-      const remainingAmount = netSaleAmount - walletDeductionAmount
-      if (dto.paymentMethod === PosPaymentMethod.ON_ACCOUNT) {
+      const onAccountAmount = paymentBreakdown
+        .filter((p) => p.method === PosPaymentMethod.ON_ACCOUNT)
+        .reduce((sum, p) => sum + Number(p.amount), 0)
+
+      if (onAccountAmount > 0) {
         if (!customer) {
           throw new BadRequestException('Customer user profile is required for credit/on-account checkout')
         }
@@ -340,20 +393,20 @@ export class PosService {
         }
         const currentOutstanding = await this.arService.getCustomerOutstandingBalance(customer.id, tenantId, manager)
         const limit = Number(customer.creditLimit || 0)
-        if (currentOutstanding + remainingAmount > limit) {
+        if (currentOutstanding + onAccountAmount > limit) {
           throw new BadRequestException(
-            `Checkout blocked: POS sale remaining total ($${remainingAmount}) exceeds customer credit limit ($${limit}) with current debt ($${currentOutstanding})`
+            `Checkout blocked: POS sale remaining total ($${onAccountAmount}) exceeds customer credit limit ($${limit}) with current debt ($${currentOutstanding})`
           )
         }
 
-        const dueDate = new Date()
+        const dueDate = new Date(dto.createdAt || new Date())
         dueDate.setDate(dueDate.getDate() + 30) // Net 30 Terms
 
         await this.arService.postArTransaction(
           {
             customerId: customer.id,
             type: ArTransactionType.INVOICE,
-            amount: remainingAmount,
+            amount: onAccountAmount,
             referenceType: 'ORDER',
             referenceId: savedOrder.id,
             dueDate,
@@ -366,16 +419,28 @@ export class PosService {
 
       // B. Update Cashier shift sales aggregates using net collected amount
       const updatedFields: Partial<PosShiftEntity> = {}
-      if (dto.paymentMethod === PosPaymentMethod.CASH) {
-        updatedFields.cashSales = Number(shift.cashSales || 0) + remainingAmount
-      } else if (dto.paymentMethod === PosPaymentMethod.CARD) {
-        updatedFields.cardSales = Number(shift.cardSales || 0) + remainingAmount
-      } else if (dto.paymentMethod === PosPaymentMethod.MOBILE) {
-        updatedFields.mobileSales = Number(shift.mobileSales || 0) + remainingAmount
+      let newCashSales = Number(shift.cashSales || 0)
+      let newCardSales = Number(shift.cardSales || 0)
+      let newMobileSales = Number(shift.mobileSales || 0)
+
+      for (const p of paymentBreakdown) {
+        if (p.method === PosPaymentMethod.CASH) {
+          newCashSales += Number(p.amount)
+        } else if (p.method === PosPaymentMethod.CARD) {
+          newCardSales += Number(p.amount)
+        } else if (p.method === PosPaymentMethod.MOBILE) {
+          newMobileSales += Number(p.amount)
+        }
       }
 
+      updatedFields.cashSales = newCashSales
+      updatedFields.cardSales = newCardSales
+      updatedFields.mobileSales = newMobileSales
       updatedFields.expectedClosingBalance =
-        Number(shift.openingBalance || 0) + Number(updatedFields.cashSales || shift.cashSales || 0)
+        Number(shift.openingBalance || 0) +
+        Number(newCashSales) +
+        Number(shift.cashIn || 0) -
+        Number(shift.cashOut || 0)
 
       await this.shiftRepository.update(shift, updatedFields, manager)
 
@@ -383,28 +448,44 @@ export class PosService {
       const taxAmount = Number(savedOrder.taxAmount || 0)
       const netRevenue = netSaleAmount - taxAmount
 
-      const lines = []
+      const linesMap = new Map<string, { accountCode: string; side: LedgerEntrySide; amount: number }>()
+      const addLine = (accountCode: string, side: LedgerEntrySide, amount: number) => {
+        const key = `${accountCode}_${side}`
+        if (linesMap.has(key)) {
+          linesMap.get(key).amount += amount
+        } else {
+          linesMap.set(key, { accountCode, side, amount })
+        }
+      }
+
       if (walletDeductionAmount > 0) {
-        lines.push({ accountCode: '2300', side: LedgerEntrySide.DEBIT, amount: walletDeductionAmount })
+        addLine('2300', LedgerEntrySide.DEBIT, walletDeductionAmount)
       }
-      if (remainingAmount > 0) {
-        const debitAccount = dto.paymentMethod === PosPaymentMethod.ON_ACCOUNT ? '1200' : '1000'
-        lines.push({ accountCode: debitAccount, side: LedgerEntrySide.DEBIT, amount: remainingAmount })
+
+      for (const p of paymentBreakdown) {
+        if (p.amount > 0) {
+          const debitAccount = p.method === PosPaymentMethod.ON_ACCOUNT ? '1200' : '1000'
+          addLine(debitAccount, LedgerEntrySide.DEBIT, Number(p.amount))
+        }
       }
+
       if (netRevenue > 0) {
-        lines.push({ accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: netRevenue })
+        addLine('4000', LedgerEntrySide.CREDIT, netRevenue)
       }
       if (taxAmount > 0) {
-        lines.push({ accountCode: '2200', side: LedgerEntrySide.CREDIT, amount: taxAmount })
+        addLine('2200', LedgerEntrySide.CREDIT, taxAmount)
       }
+
+      const lines = Array.from(linesMap.values())
 
       await this.accountingService.createJournalEntry(
         {
           type: JournalType.SALES,
-          description: `POS Sale Synced - Order ID: ${savedOrder.id} - Payment Method: ${dto.paymentMethod}${dto.appliedCoupon ? ` - Coupon Applied: ${dto.appliedCoupon}` : ''}`,
+          description: `POS Sale Synced - Order ID: ${savedOrder.id} - Payments: ${JSON.stringify(paymentBreakdown)}${dto.appliedCoupon ? ` - Coupon Applied: ${dto.appliedCoupon}` : ''}`,
           referenceType: 'POS_SHIFT',
           referenceId: shift.id,
           lines,
+          date: dto.createdAt ? new Date(dto.createdAt) : undefined,
         },
         ctx,
         manager,
@@ -432,5 +513,67 @@ export class PosService {
   async getShifts(ctx: RequestContextDto): Promise<PosShiftEntity[]> {
     this.logger.log(`${this.getShifts.name} Service Called`)
     return this.shiftRepository.findAll(ctx.tenantId)
+  }
+
+  // =========================================================================
+  // CASH DRAWER TRACKING METHODS
+  // =========================================================================
+
+  async createDrawerTransaction(
+    shiftId: string,
+    dto: CreateDrawerTransactionDto,
+    ctx: RequestContextDto,
+  ): Promise<PosDrawerTransactionEntity> {
+    this.logger.log(`${this.createDrawerTransaction.name} Service Called`)
+    const tenantId = ctx.tenantId
+
+    const shift = await this.shiftRepository.findOne(shiftId, tenantId)
+    if (!shift) {
+      throw new NotFoundException(`Shift with ID ${shiftId} not found`)
+    }
+
+    if (shift.status === PosShiftStatus.CLOSED) {
+      throw new BadRequestException('Cannot perform drawer transactions on a closed cashier shift.')
+    }
+
+    return this.dataSource.transaction(async (manager) => {
+      const tx = await this.drawerTransactionRepository.create(
+        {
+          shiftId,
+          type: dto.type,
+          amount: Number(dto.amount),
+          reason: dto.reason || null,
+          userId: ctx.userId || null,
+        },
+        ctx,
+        manager,
+      )
+
+      // Update cashier shift expected closing balance
+      const updatedFields: Partial<PosShiftEntity> = {}
+      if (dto.type === PosDrawerTransactionType.CASH_IN) {
+        updatedFields.cashIn = Number(shift.cashIn || 0) + Number(dto.amount)
+      } else {
+        updatedFields.cashOut = Number(shift.cashOut || 0) + Number(dto.amount)
+      }
+
+      updatedFields.expectedClosingBalance =
+        Number(shift.openingBalance || 0) +
+        Number(shift.cashSales || 0) +
+        Number(updatedFields.cashIn ?? shift.cashIn ?? 0) -
+        Number(updatedFields.cashOut ?? shift.cashOut ?? 0)
+
+      await this.shiftRepository.update(shift, updatedFields, manager)
+
+      return tx
+    })
+  }
+
+  async getDrawerTransactionsForShift(
+    shiftId: string,
+    ctx: RequestContextDto,
+  ): Promise<PosDrawerTransactionEntity[]> {
+    this.logger.log(`${this.getDrawerTransactionsForShift.name} Service Called`)
+    return this.drawerTransactionRepository.findAllForShift(shiftId, ctx.tenantId)
   }
 }

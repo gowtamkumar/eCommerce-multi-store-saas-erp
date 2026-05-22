@@ -97,5 +97,30 @@ export class SyncPosSaleDto {
   @Min(0.01)
   @IsOptional()
   walletAmountToUse?: number
+
+  @IsUUID()
+  @IsOptional()
+  offlineSaleId?: string
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => PosPaymentBreakdownDto)
+  payments?: PosPaymentBreakdownDto[]
+}
+
+export class PosPaymentBreakdownDto {
+  @IsEnum(PosPaymentMethod)
+  @IsNotEmpty()
+  method: PosPaymentMethod
+
+  @IsNumber()
+  @Min(0)
+  @IsNotEmpty()
+  amount: number
+
+  @IsString()
+  @IsOptional()
+  transactionId?: string
 }
 
