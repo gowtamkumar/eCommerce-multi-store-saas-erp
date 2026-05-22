@@ -1,5 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, Index, BeforeUpdate, BeforeRemove } from 'typeorm'
 import { LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { AccountEntity } from './account.entity'
 import { JournalEntryEntity } from './journal-entry.entity'
@@ -40,4 +40,11 @@ export class LedgerEntryEntity extends BaseEntity {
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
+
+  @BeforeUpdate()
+  @BeforeRemove()
+  preventChanges() {
+    throw new Error('Ledger entries are immutable and cannot be updated or deleted.')
+  }
 }
+

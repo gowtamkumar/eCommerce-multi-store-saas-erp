@@ -23,8 +23,21 @@ export class StockReservationSchedulerService implements OnModuleInit {
         },
       )
       this.logger.log('Successfully registered repeatable job "sweep-expired-reservations" (* * * * *)')
+
+      // Setup repeatable cron job to process accounting outbox every minute
+      await this.orderQueue.add(
+        'process-accounting-outbox',
+        {},
+        {
+          repeat: {
+            pattern: '* * * * *', // Run every minute
+          },
+          jobId: 'process-accounting-outbox-repeatable',
+        },
+      )
+      this.logger.log('Successfully registered repeatable job "process-accounting-outbox" (* * * * *)')
     } catch (err) {
-      this.logger.error('Failed to schedule repeatable job "sweep-expired-reservations":', err)
+      this.logger.error('Failed to schedule repeatable jobs:', err)
     }
   }
 }

@@ -5,20 +5,20 @@ import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inve
 import { Injectable, Logger } from '@nestjs/common'
 import { EntityManager } from 'typeorm'
 import { AccountingService } from './accounting.service'
+import { AccountingOutboxService } from './accounting-outbox.service'
 
 @Injectable()
 export class AccountingIntegrationService {
   private readonly logger = new Logger(AccountingIntegrationService.name)
 
-  constructor(private readonly accountingService: AccountingService) {}
+  constructor(
+    private readonly accountingService: AccountingService,
+    private readonly accountingOutboxService: AccountingOutboxService,
+  ) {}
 
   /**
    * Translates an inventory ledger entry into a financial journal entry.
-   *
-   * IMPORTANT: This method intentionally does NOT catch errors. Any failure
-   * during journal posting is logged and then re-thrown so the caller's
-   * database transaction rolls back atomically — preventing a split-brain state
-   * where the inventory ledger row is persisted but the accounting journal is not.
+   * Enqueues the request to the outbox for asynchronous execution.
    */
   async postInventoryMovement(
     ledgerEntry: InventoryLedgerEntity,
@@ -49,10 +49,8 @@ export class AccountingIntegrationService {
           break
       }
     } catch (error: any) {
-      // Log with full context for monitoring/alerting before re-throwing.
-      // The parent transaction will roll back, keeping inventory and accounting in sync.
       this.logger.error(
-        `Accounting post failed for ledger ${ledgerEntry.id} ` +
+        `Failed to enqueue accounting outbox for ledger ${ledgerEntry.id} ` +
           `(type=${type}, tenantId=${ledgerEntry.tenantId}): ${error.message}`,
         error.stack,
       )
@@ -68,7 +66,7 @@ export class AccountingIntegrationService {
   ) {
     if (totalCost <= 0) return
 
-    await this.accountingService.createJournalEntry(
+    await this.accountingOutboxService.enqueueJournalEntry(
       {
         type: JournalType.PURCHASE,
         description: `Inventory Purchase: ${ledgerEntry.remarks || 'Stock intake'}`,
@@ -92,7 +90,7 @@ export class AccountingIntegrationService {
   ) {
     if (cogsAmount <= 0) return
 
-    await this.accountingService.createJournalEntry(
+    await this.accountingOutboxService.enqueueJournalEntry(
       {
         type: JournalType.SALES,
         description: `COGS for Sale: ${ledgerEntry.referenceId || ''}`,
@@ -118,7 +116,7 @@ export class AccountingIntegrationService {
     const isIncrease = (ledgerEntry.quantity || 0) > 0
     const absCost = Math.abs(totalCost)
 
-    await this.accountingService.createJournalEntry(
+    await this.accountingOutboxService.enqueueJournalEntry(
       {
         type: JournalType.INVENTORY_ADJUSTMENT,
         description: `Inventory Adjustment (${isIncrease ? 'Gain' : 'Loss'}): ${ledgerEntry.remarks || ''}`,
@@ -148,7 +146,7 @@ export class AccountingIntegrationService {
     if (cogsAmount <= 0) return
 
     // Put item back into Inventory, reduce COGS
-    await this.accountingService.createJournalEntry(
+    await this.accountingOutboxService.enqueueJournalEntry(
       {
         type: JournalType.SALES,
         description: `Sales Return Inventory Restock: ${ledgerEntry.referenceId || ''}`,
@@ -172,7 +170,7 @@ export class AccountingIntegrationService {
     const amount = Number(data.amount)
     if (amount <= 0) return
 
-    await this.accountingService.createJournalEntry(
+    await this.accountingOutboxService.enqueueJournalEntry(
       {
         type: JournalType.CASH_PAYMENT,
         description: `Supplier Payment to ${data.supplierName || 'Supplier'}`,
@@ -217,7 +215,7 @@ export class AccountingIntegrationService {
       lines.push({ accountCode: '2200', side: LedgerEntrySide.CREDIT, amount: tax }) // Credit Tax Liability Account
     }
 
-    await this.accountingService.createJournalEntry(
+    await this.accountingOutboxService.enqueueJournalEntry(
       {
         type: JournalType.GENERAL,
         description: `Payroll Run for ${data.employeeName || 'Staff'}`,

@@ -9,6 +9,7 @@ import { NotificationService } from '@/modules/admin/operations/infra/notificati
 import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderService } from '../services/order.service'
 import { StockReservationService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.service'
+import { AccountingOutboxService } from '@/modules/admin/operations/finance/accounting/services/accounting-outbox.service'
 
 @Processor('order')
 export class OrderProcessor extends WorkerHost {
@@ -22,6 +23,7 @@ export class OrderProcessor extends WorkerHost {
     private readonly notificationService: NotificationService,
     private readonly orderService: OrderService,
     private readonly stockReservationService: StockReservationService,
+    private readonly accountingOutboxService: AccountingOutboxService,
   ) {
     super()
   }
@@ -38,6 +40,10 @@ export class OrderProcessor extends WorkerHost {
           this.logger.log('Starting automated sweep of expired active reservations...')
           const count = await this.stockReservationService.expireStale()
           return { expiredCount: count }
+        case 'process-accounting-outbox':
+          this.logger.log('Starting execution of accounting outbox pending transactions sweep...')
+          await this.accountingOutboxService.processPending()
+          return { success: true }
         default:
           this.logger.warn(`Unknown job name: ${job.name}`)
       }

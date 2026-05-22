@@ -11,6 +11,8 @@ import { CogsService } from './services/cogs.service'
 import { FinancialReportService } from './services/financial-report.service'
 import { ArService } from './services/ar.service'
 import { WalletService } from './services/wallet.service'
+import { AccountingOutboxService } from './services/accounting-outbox.service'
+import { AccountingOutboxEntity } from './entities/accounting-outbox.entity'
 
 import { AccountingController } from './controllers/accounting.controller'
 import { ArController } from './controllers/ar.controller'
@@ -27,6 +29,7 @@ import { FiscalPeriodEntity } from './entities/fiscal-period.entity'
       ArLedgerEntity,
       WalletLedgerEntity,
       FiscalPeriodEntity,
+      AccountingOutboxEntity,
     ]),
   ],
   controllers: [AccountingController, ArController, WalletController],
@@ -37,6 +40,7 @@ import { FiscalPeriodEntity } from './entities/fiscal-period.entity'
     FinancialReportService,
     ArService,
     WalletService,
+    AccountingOutboxService,
   ],
   exports: [
     AccountingService,
@@ -45,6 +49,7 @@ import { FiscalPeriodEntity } from './entities/fiscal-period.entity'
     FinancialReportService,
     ArService,
     WalletService,
+    AccountingOutboxService,
   ],
 })
 export class AccountingModule {}

@@ -1,5 +1,5 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Index } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Index, BeforeUpdate, BeforeRemove } from 'typeorm'
 import { JournalType } from '@/common/enums/journal-type.enum'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { LedgerEntryEntity } from './ledger-entry.entity'
@@ -37,4 +37,21 @@ export class JournalEntryEntity extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   totalAmount: number // Sum of debits
+
+  @Column({ type: 'boolean', name: 'is_reversal', default: false })
+  isReversal: boolean
+
+  @Column({ type: 'uuid', name: 'reversed_journal_entry_id', nullable: true })
+  reversedJournalEntryId: string
+
+  @ManyToOne(() => JournalEntryEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'reversed_journal_entry_id' })
+  reversedJournalEntry: JournalEntryEntity
+
+  @BeforeUpdate()
+  @BeforeRemove()
+  preventChanges() {
+    throw new Error('Journal entries are immutable and cannot be updated or deleted.')
+  }
 }
+

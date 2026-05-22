@@ -236,6 +236,7 @@ export class OrderService {
                 referenceType: 'ORDER',
                 referenceId: savedOrder.id,
                 note: `Wallet payment for Order #${savedOrder.id.substring(0, 8)}`,
+                skipGlPost: true,
               },
               ctx,
               manager,
@@ -256,12 +257,17 @@ export class OrderService {
         const dueDate = new Date()
         dueDate.setDate(dueDate.getDate() + 30) // Default Net 30 Terms
 
+        const walletDeduction = Number(savedOrder.walletDeductionAmount || 0)
+        const remainingAmount = orderTotal - walletDeduction
+        const taxAmount = Number(savedOrder.taxAmount || 0)
+        const netRevenue = orderTotal - taxAmount
+
         // Post AR Sub-ledger Invoice Entry
         await this.arService.postArTransaction(
           {
             customerId: user.id,
             type: ArTransactionType.INVOICE,
-            amount: orderTotal,
+            amount: remainingAmount,
             referenceType: 'ORDER',
             referenceId: savedOrder.id,
             dueDate,
@@ -271,6 +277,20 @@ export class OrderService {
           manager,
         )
 
+        const lines = []
+        if (walletDeduction > 0) {
+          lines.push({ accountCode: '2300', side: LedgerEntrySide.DEBIT, amount: walletDeduction })
+        }
+        if (remainingAmount > 0) {
+          lines.push({ accountCode: '1200', side: LedgerEntrySide.DEBIT, amount: remainingAmount })
+        }
+        if (netRevenue > 0) {
+          lines.push({ accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: netRevenue })
+        }
+        if (taxAmount > 0) {
+          lines.push({ accountCode: '2200', side: LedgerEntrySide.CREDIT, amount: taxAmount })
+        }
+
         // Post General Ledger Double-Entry
         await this.accountingService.createJournalEntry(
           {
@@ -278,10 +298,7 @@ export class OrderService {
             description: `B2B Credit Sale - Net 30 Terms - Order ID: ${savedOrder.id}`,
             referenceType: 'ORDER',
             referenceId: savedOrder.id,
-            lines: [
-              { accountCode: '1200', side: LedgerEntrySide.DEBIT, amount: orderTotal }, // Debit AR
-              { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: orderTotal }, // Credit Sales Revenue
-            ],
+            lines,
           },
           ctx,
           manager,
@@ -538,16 +555,32 @@ export class OrderService {
         // Recognition of Cash/Payment and Sales Revenue for standard sales
         if (savedOrder.paymentMethod !== PaymentMethod.ON_ACCOUNT) {
           const orderTotal = Number(savedOrder.totalAmount)
+          const walletDeduction = Number(savedOrder.walletDeductionAmount || 0)
+          const remainingAmount = orderTotal - walletDeduction
+          const taxAmount = Number(savedOrder.taxAmount || 0)
+          const netRevenue = orderTotal - taxAmount
+
+          const lines = []
+          if (walletDeduction > 0) {
+            lines.push({ accountCode: '2300', side: LedgerEntrySide.DEBIT, amount: walletDeduction })
+          }
+          if (remainingAmount > 0) {
+            lines.push({ accountCode: '1000', side: LedgerEntrySide.DEBIT, amount: remainingAmount })
+          }
+          if (netRevenue > 0) {
+            lines.push({ accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: netRevenue })
+          }
+          if (taxAmount > 0) {
+            lines.push({ accountCode: '2200', side: LedgerEntrySide.CREDIT, amount: taxAmount })
+          }
+
           await this.accountingService.createJournalEntry(
             {
               type: JournalType.SALES,
               description: `Sales Revenue & Cash Recognition - Order ID: ${savedOrder.id}`,
               referenceType: 'ORDER',
               referenceId: savedOrder.id,
-              lines: [
-                { accountCode: '1000', side: LedgerEntrySide.DEBIT, amount: orderTotal }, // Debit Cash
-                { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: orderTotal }, // Credit Sales Revenue
-              ],
+              lines,
             },
             ctx,
             queryRunner.manager,

@@ -118,6 +118,7 @@ export class WalletService {
       referenceType?: string
       referenceId?: string
       note?: string
+      skipGlPost?: boolean
     },
     ctx: RequestContextDto,
     manager?: EntityManager,
@@ -153,21 +154,23 @@ export class WalletService {
 
     const saved = await em.save(WalletLedgerEntity, entry)
 
-    // GL double-entry: Debit Wallet Liabilities (2300) / Credit Sales Revenue (4000)
-    await this.accountingService.createJournalEntry(
-      {
-        type: JournalType.GENERAL,
-        description: `Wallet Balance Used at Checkout — Ref: ${data.referenceId || 'N/A'}`,
-        referenceType: 'WALLET_LEDGER',
-        referenceId: saved.id,
-        lines: [
-          { accountCode: '2300', side: LedgerEntrySide.DEBIT, amount },  // Wallet Liabilities
-          { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount }, // Sales Revenue
-        ],
-      },
-      ctx,
-      em,
-    )
+    if (!data.skipGlPost) {
+      // GL double-entry: Debit Wallet Liabilities (2300) / Credit Sales Revenue (4000)
+      await this.accountingService.createJournalEntry(
+        {
+          type: JournalType.GENERAL,
+          description: `Wallet Balance Used at Checkout — Ref: ${data.referenceId || 'N/A'}`,
+          referenceType: 'WALLET_LEDGER',
+          referenceId: saved.id,
+          lines: [
+            { accountCode: '2300', side: LedgerEntrySide.DEBIT, amount },  // Wallet Liabilities
+            { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount }, // Sales Revenue
+          ],
+        },
+        ctx,
+        em,
+      )
+    }
 
     this.logger.log(
       `Wallet debited: customerId=${data.customerId}, amount=${amount}, ref=${data.referenceId}`,

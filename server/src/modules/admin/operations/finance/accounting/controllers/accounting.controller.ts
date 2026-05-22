@@ -186,4 +186,21 @@ export class AccountingController {
       data,
     }
   }
+
+  @Post('journal-entries/:id/reverse')
+  @RequireFeature('/admin/finance')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  async reverseJournalEntry(
+    @Param('id') id: string,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.accountingService.reverseJournalEntry(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Journal entry reversed successfully',
+      data,
+    }
+  }
 }
+

@@ -25,6 +25,7 @@ import { ArService } from '@/modules/admin/operations/finance/accounting/service
 import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
 import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
 import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 
 @Injectable()
 export class PosService {
@@ -239,11 +240,19 @@ export class PosService {
 
       const savedOrder = await orderRepo.save(order)
       let totalSaleAmount = 0
+      let totalTaxAmount = 0
 
       // A. Process each sold item
       for (const item of dto.items) {
         const itemTotal = Number(item.price) * Number(item.quantity)
         totalSaleAmount += itemTotal
+
+        const product = await manager.findOne(ProductEntity, {
+          where: { id: item.productId, tenantId },
+        })
+        const taxRate = product ? Number(product.taxRate || 0) : 0
+        const itemTax = taxRate > 0 ? itemTotal - (itemTotal / (1 + taxRate / 100)) : 0
+        totalTaxAmount += itemTax
 
         // Create Order Item record
         const orderItem = orderItemRepo.create({
@@ -253,6 +262,7 @@ export class PosService {
           quantity: Number(item.quantity),
           unitPrice: Number(item.price),
           totalAmount: itemTotal,
+          taxAmount: itemTax,
           tenantId,
         })
         await orderItemRepo.save(orderItem)
@@ -282,6 +292,8 @@ export class PosService {
 
       // Update Order total sum
       savedOrder.totalAmount = netSaleAmount
+      const discountFactor = totalSaleAmount > 0 ? Math.max(0, 1 - discount / totalSaleAmount) : 1
+      savedOrder.taxAmount = totalTaxAmount * discountFactor
 
       // Wallet Balance Deduction (within same transaction, before GL posting)
       let walletDeductionAmount = 0
@@ -304,6 +316,7 @@ export class PosService {
                 referenceType: 'POS_SALE',
                 referenceId: savedOrder.id,
                 note: `POS wallet payment — Order #${savedOrder.id.substring(0, 8)}`,
+                skipGlPost: true,
               },
               ctx,
               manager,
@@ -317,6 +330,7 @@ export class PosService {
       await orderRepo.save(savedOrder)
 
       // Verify B2B Credit Limits & Post AR Ledger if ON_ACCOUNT
+      const remainingAmount = netSaleAmount - walletDeductionAmount
       if (dto.paymentMethod === PosPaymentMethod.ON_ACCOUNT) {
         if (!customer) {
           throw new BadRequestException('Customer user profile is required for credit/on-account checkout')
@@ -326,9 +340,9 @@ export class PosService {
         }
         const currentOutstanding = await this.arService.getCustomerOutstandingBalance(customer.id, tenantId, manager)
         const limit = Number(customer.creditLimit || 0)
-        if (currentOutstanding + netSaleAmount > limit) {
+        if (currentOutstanding + remainingAmount > limit) {
           throw new BadRequestException(
-            `Checkout blocked: POS sale total ($${netSaleAmount}) exceeds customer credit limit ($${limit}) with current debt ($${currentOutstanding})`
+            `Checkout blocked: POS sale remaining total ($${remainingAmount}) exceeds customer credit limit ($${limit}) with current debt ($${currentOutstanding})`
           )
         }
 
@@ -339,7 +353,7 @@ export class PosService {
           {
             customerId: customer.id,
             type: ArTransactionType.INVOICE,
-            amount: netSaleAmount,
+            amount: remainingAmount,
             referenceType: 'ORDER',
             referenceId: savedOrder.id,
             dueDate,
@@ -353,11 +367,11 @@ export class PosService {
       // B. Update Cashier shift sales aggregates using net collected amount
       const updatedFields: Partial<PosShiftEntity> = {}
       if (dto.paymentMethod === PosPaymentMethod.CASH) {
-        updatedFields.cashSales = Number(shift.cashSales || 0) + netSaleAmount
+        updatedFields.cashSales = Number(shift.cashSales || 0) + remainingAmount
       } else if (dto.paymentMethod === PosPaymentMethod.CARD) {
-        updatedFields.cardSales = Number(shift.cardSales || 0) + netSaleAmount
+        updatedFields.cardSales = Number(shift.cardSales || 0) + remainingAmount
       } else if (dto.paymentMethod === PosPaymentMethod.MOBILE) {
-        updatedFields.mobileSales = Number(shift.mobileSales || 0) + netSaleAmount
+        updatedFields.mobileSales = Number(shift.mobileSales || 0) + remainingAmount
       }
 
       updatedFields.expectedClosingBalance =
@@ -366,17 +380,31 @@ export class PosService {
       await this.shiftRepository.update(shift, updatedFields, manager)
 
       // C. Post general ledger financial entry for Sales Revenue (Debit Cash/AR & Credit Revenue)
-      const debitAccount = dto.paymentMethod === PosPaymentMethod.ON_ACCOUNT ? '1200' : '1000'
+      const taxAmount = Number(savedOrder.taxAmount || 0)
+      const netRevenue = netSaleAmount - taxAmount
+
+      const lines = []
+      if (walletDeductionAmount > 0) {
+        lines.push({ accountCode: '2300', side: LedgerEntrySide.DEBIT, amount: walletDeductionAmount })
+      }
+      if (remainingAmount > 0) {
+        const debitAccount = dto.paymentMethod === PosPaymentMethod.ON_ACCOUNT ? '1200' : '1000'
+        lines.push({ accountCode: debitAccount, side: LedgerEntrySide.DEBIT, amount: remainingAmount })
+      }
+      if (netRevenue > 0) {
+        lines.push({ accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: netRevenue })
+      }
+      if (taxAmount > 0) {
+        lines.push({ accountCode: '2200', side: LedgerEntrySide.CREDIT, amount: taxAmount })
+      }
+
       await this.accountingService.createJournalEntry(
         {
           type: JournalType.SALES,
           description: `POS Sale Synced - Order ID: ${savedOrder.id} - Payment Method: ${dto.paymentMethod}${dto.appliedCoupon ? ` - Coupon Applied: ${dto.appliedCoupon}` : ''}`,
           referenceType: 'POS_SHIFT',
           referenceId: shift.id,
-          lines: [
-            { accountCode: debitAccount, side: LedgerEntrySide.DEBIT, amount: netSaleAmount }, // Debit Cash (1000) or AR (1200)
-            { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: netSaleAmount }, // Credit Sales Revenue
-          ],
+          lines,
         },
         ctx,
         manager,

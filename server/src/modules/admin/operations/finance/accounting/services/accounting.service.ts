@@ -51,6 +51,8 @@ export class AccountingService {
       description: string
       referenceType?: string
       referenceId?: string
+      isReversal?: boolean
+      reversedJournalEntryId?: string
       lines: { accountCode: string; side: LedgerEntrySide; amount: number }[]
     },
     ctx: RequestContextDto,
@@ -101,6 +103,8 @@ export class AccountingService {
         ...header,
         totalAmount: debitTotal,
         tenantId,
+        isReversal: data.isReversal || false,
+        reversedJournalEntryId: data.reversedJournalEntryId || null,
       })
       const savedJournal = (await em.save(JournalEntryEntity, journal)) as JournalEntryEntity
 
@@ -261,5 +265,79 @@ export class AccountingService {
     }
     period.status = status
     return repo.save(period)
+  }
+
+  async reverseJournalEntry(
+    id: string,
+    ctx: RequestContextDto,
+    manager?: EntityManager,
+  ): Promise<JournalEntryEntity> {
+    const tenantId = ctx.tenantId
+    const queryRunner = manager ? null : this.dataSource.createQueryRunner()
+    const em = manager || queryRunner.manager
+
+    if (queryRunner) {
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
+    }
+
+    try {
+      // 1. Fetch original entry with lines and account relation
+      const original = await em.findOne(JournalEntryEntity, {
+        where: { id, tenantId },
+        relations: ['lines', 'lines.account'],
+      })
+
+      if (!original) {
+        throw new NotFoundException(`Journal entry with ID ${id} not found`)
+      }
+
+      if (original.isReversal) {
+        throw new BadRequestException('Cannot reverse a journal entry that is already a reversal')
+      }
+
+      // Check if this journal entry has already been reversed
+      const alreadyReversed = await em.findOne(JournalEntryEntity, {
+        where: { reversedJournalEntryId: id, tenantId },
+      })
+      if (alreadyReversed) {
+        throw new BadRequestException('This journal entry has already been reversed')
+      }
+
+      // 2. Swapping debits and credits
+      const reversingLines = original.lines.map((line) => {
+        const reversedSide =
+          line.side === LedgerEntrySide.DEBIT ? LedgerEntrySide.CREDIT : LedgerEntrySide.DEBIT
+        return {
+          accountCode: line.account.code,
+          side: reversedSide,
+          amount: Number(line.amount),
+        }
+      })
+
+      // 3. Create the new reversing journal entry
+      const reversingEntry = await this.createJournalEntry(
+        {
+          date: new Date(),
+          type: original.type,
+          description: `Reversal of: ${original.description} (Ref ID: ${original.id})`,
+          referenceType: 'REVERSAL',
+          referenceId: original.id,
+          isReversal: true,
+          reversedJournalEntryId: original.id,
+          lines: reversingLines,
+        },
+        ctx,
+        em,
+      )
+
+      if (queryRunner) await queryRunner.commitTransaction()
+      return reversingEntry
+    } catch (err) {
+      if (queryRunner) await queryRunner.rollbackTransaction()
+      throw err
+    } finally {
+      if (queryRunner) await queryRunner.release()
+    }
   }
 }
