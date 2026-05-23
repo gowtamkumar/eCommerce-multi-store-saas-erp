@@ -77,7 +77,7 @@ export default function AdminTopBar({
 
     const fetchNotifications = async () => {
         try {
-            const data = await fetchAPI('/infra/notifications?limit=10');
+            const data = await fetchAPI('/infra/notifications?limit=5');
             if (data.success && data.data) {
                 setNotifications(data.data.notifications || []);
                 setUnreadNotificationsCount(data.data.unreadCount || 0);
@@ -118,7 +118,7 @@ export default function AdminTopBar({
             </div>
         ), { duration: 6000 });
 
-        setNotifications((prev) => [newNotif, ...prev.slice(0, 9)]);
+        setNotifications((prev) => [newNotif, ...prev.slice(0, 4)]);
         setUnreadNotificationsCount((prev) => prev + 1);
     });
 
@@ -500,6 +500,16 @@ export default function AdminTopBar({
                                             ))
                                         )}
                                     </div>
+                                    {/* Footer */}
+                                    <div className="p-3 border-t border-slate-100 dark:border-slate-700 text-center bg-slate-50/50 dark:bg-slate-900/10">
+                                        <a
+                                            href="/admin/notifications"
+                                            onClick={() => setIsNotificationOpen(false)}
+                                            className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+                                        >
+                                            View All Notifications
+                                        </a>
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -517,8 +527,13 @@ export default function AdminTopBar({
                             }}
                             className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-800"
                         >
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs font-black shadow-md flex items-center justify-center">
-                                {getInitials(userName)}
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs font-black shadow-md flex items-center justify-center">
+                                {session?.user?.image ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={session.user.image} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                    getInitials(userName)
+                                )}
                             </div>
                             <div className="hidden sm:flex flex-col text-left">
                                 <span className="font-bold text-xs text-slate-800 dark:text-white capitalize leading-none mb-0.5">{userName}</span>

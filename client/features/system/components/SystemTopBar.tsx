@@ -22,7 +22,7 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
 
     const fetchNotifications = async () => {
         try {
-            const data = await fetchAPI('/infra/notifications?limit=10');
+            const data = await fetchAPI('/infra/notifications?limit=5');
             if (data.success && data.data) {
                 setNotifications(data.data.notifications || []);
                 setUnreadCount(data.data.unreadCount || 0);
@@ -66,7 +66,7 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
         ), { duration: 6000 });
 
         // Update notifications list and count
-        setNotifications((prev) => [newNotif, ...prev.slice(0, 9)]);
+        setNotifications((prev) => [newNotif, ...prev.slice(0, 4)]);
         setUnreadCount((prev) => prev + 1);
     });
 
@@ -227,6 +227,16 @@ export default function SystemTopBar({ session, onMenuClick }: SystemTopBarProps
                                             );
                                         })
                                     )}
+                                </div>
+                                {/* Footer */}
+                                <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center bg-slate-50/50 dark:bg-slate-950/10">
+                                    <a
+                                        href="/system/notifications"
+                                        onClick={() => setIsNotificationOpen(false)}
+                                        className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+                                    >
+                                        View All Notifications
+                                    </a>
                                 </div>
                             </motion.div>
                         )}

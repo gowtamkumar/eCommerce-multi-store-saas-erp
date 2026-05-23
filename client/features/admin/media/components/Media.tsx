@@ -5,8 +5,8 @@ import { fetchAPI } from '@/services/api';
 import { Check, ChevronLeft, ChevronRight, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { MediaItem } from '../type';
 import { Pagination } from '../../customer/type';
+import { MediaItem } from '../type';
 
 
 
@@ -51,11 +51,9 @@ export default function Media() {
                 page: page.toString(),
                 limit: '20'
             });
-            
-            const res = await fetchAPI(`/admin/media?${params}`);
 
+            const res = await fetchAPI(`/admin/media?${params}`);
             if (res.data && res.data.items) {
-                const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3900';
                 const mappedMedia: MediaItem[] = res.data.items.map((f: any) => {
                     // Extract timestamp from filename (timestamp_name.ext)
                     let createdAt = new Date().toISOString();
@@ -63,11 +61,10 @@ export default function Media() {
                     if (parts && parts.length > 1 && !isNaN(Number(parts[0]))) {
                         createdAt = new Date(Number(parts[0])).toISOString();
                     }
-
                     return {
                         _id: f.id,
                         filename: f.originalname || f.filename,
-                        url: f.path || `${backendUrl}/uploads/${f.filename}`,
+                        url: f.path || '',
                         mimetype: f.mimetype,
                         size: f.size,
                         createdAt: f.createdAt || createdAt
@@ -222,10 +219,11 @@ export default function Media() {
                             className="group relative bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300"
                         >
                             <div className="aspect-square relative bg-slate-100 dark:bg-slate-900 overflow-hidden">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                     src={item.url}
                                     alt={item.filename}
-                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
                                 />
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-3">

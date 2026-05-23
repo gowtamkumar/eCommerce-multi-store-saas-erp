@@ -40,8 +40,13 @@ const UserDetailsModal = ({
           <div className="p-8">
             <div className="flex justify-between items-start mb-8">
               <div className="flex items-center gap-5">
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/20">
-                  <UserIcon className="w-8 h-8" />
+                <div className="w-16 h-16 overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/20">
+                  {user.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={user.image} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon className="w-8 h-8" />
+                  )}
                 </div>
                 <div>
                   <h2 className="text-2xl font-black text-slate-900 dark:text-white capitalize leading-none mb-2">{user.name}</h2>

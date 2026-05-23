@@ -1,11 +1,11 @@
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
-import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import {
   Body,
   Controller,
@@ -30,7 +30,6 @@ export class AdminMediaController {
   constructor(private readonly filesService: FilesService) {}
 
   @Get()
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async findAllFiles(
     @RequestContext() ctx: RequestContextDto,
@@ -62,7 +61,6 @@ export class AdminMediaController {
   }
 
   @Delete(':id')
-  @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   @RequirePermissions(SystemPermissions.CONTENT_MANAGE)
   async removeFile(
     @RequestContext() ctx: RequestContextDto,

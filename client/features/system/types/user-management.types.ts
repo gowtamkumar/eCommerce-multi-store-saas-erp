@@ -9,6 +9,7 @@ export interface User {
   status: UserStatus;
   createdAt: string;
   username: string;
+  image?: string;
   phone?: string;
   address?: string;
   tenantId?: {

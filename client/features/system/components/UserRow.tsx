@@ -30,8 +30,13 @@ const UserRow = ({
     >
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 transition-transform group-hover:scale-110">
-            <UserIcon className="w-5 h-5" />
+          <div className="w-10 h-10 overflow-hidden bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 transition-transform group-hover:scale-110">
+            {user.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.image} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <UserIcon className="w-5 h-5" />
+            )}
           </div>
           <div>
             <p className="font-bold text-slate-900 dark:text-white capitalize leading-tight">{user.name}</p>

@@ -27,8 +27,6 @@ import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
-import { ServeStaticModule } from '@nestjs/serve-static'
-import { join } from 'path'
 import { CacheModule } from './modules/admin/operations/infra/cache/cache.module'
 import { QueueModule } from './modules/admin/operations/infra/queue/queue.module'
 
@@ -37,10 +35,6 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.development.local', '.env.development'],
-    }),
-    ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), 'public/uploads'),
-      serveRoot: '/uploads',
     }),
     DatabaseModule,
     PersistenceModule,
@@ -145,8 +139,6 @@ export class AppModule implements NestModule {
         'purchase-orders/*path',
         'admin/media',
         'admin/media/*path',
-        'uploads',
-        'uploads/*path',
         'subscribers',
         'subscribers/*path',
         'infra/notifications',

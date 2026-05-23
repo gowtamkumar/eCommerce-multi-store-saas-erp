@@ -1,8 +1,6 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { randomUUID } from 'crypto'
-import * as fs from 'fs'
-import PDFDocument from 'pdfkit'
 import { CreateFileDto, FilterFileDto, GetPresignedUrlDto, UpdateFileDto } from '../dtos'
 import { FileEntity } from '../entities/file.entity'
 import { FileRepository } from '../file.repository'
@@ -89,26 +87,6 @@ export class FilesService {
     return this.fileRepository.createAndSave(createFile, ctx)
   }
 
-  async createPdf(createFile: CreateFileDto): Promise<FileEntity> {
-    this.logger.log(`${this.createPdf.name} Service Called`)
-
-    const pdf = new PDFDocument()
-    const filename = `example_${Date.now()}.pdf`
-    const filePath = `public/uploads/${filename}`
-
-    // Create and save the PDF
-    pdf.pipe(fs.createWriteStream(filePath))
-    pdf.text('Hello, World! kkkd dkjasdklfa sd kljlkj lk j kljlkjkl')
-    pdf.end()
-
-    return this.fileRepository.createAndSave(
-      {
-        pdfFile: filename,
-        fieldname: filename,
-      } as any,
-      { tenantId: 'system' } as RequestContextDto,
-    )
-  }
 
   async updateFile(id: string, updateFile: UpdateFileDto): Promise<FileEntity> {
     this.logger.log(`${this.updateFile.name} Service Called`)
