@@ -1,5 +1,7 @@
 import { ChevronDown, ChevronRight, Monitor, Smartphone } from 'lucide-react';
 import { useState } from 'react';
+import ImageUploadField from '@/components/shared/ImageUploadField';
+import { fetchAPI } from '@/services/api';
 
 interface StylesEditorProps {
     styles: Record<string, any>;
@@ -580,9 +582,17 @@ export default function StylesEditor({ styles, onChange, onBatchChange, nodeType
                 <InputRow label="Background Color">
                     <ColorInput value={s.backgroundColor || ''} onChange={v => onChange('backgroundColor', v)} />
                 </InputRow>
-                <InputRow label="Background Image URL">
-                    <TextInput value={s.backgroundImage} onChange={v => onChange('backgroundImage', v ? `url(${v})` : '')} placeholder="https://..." />
-                </InputRow>
+                <div>
+                    <ImageUploadField
+                        label="Background Image"
+                        value={s.backgroundImage ? s.backgroundImage.replace(/^url\(["']?/, '').replace(/["']?\)$/, '') : ''}
+                        onChange={v => onChange('backgroundImage', v ? `url(${v})` : '')}
+                        uploadApi={fetchAPI}
+                        aspectRatio="wide"
+                        showUrlInput={true}
+                        description="Upload background image or paste URL"
+                    />
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                     <InputRow label="Size">
                         <Select value={s.backgroundSize} onChange={v => onChange('backgroundSize', v)} options={[

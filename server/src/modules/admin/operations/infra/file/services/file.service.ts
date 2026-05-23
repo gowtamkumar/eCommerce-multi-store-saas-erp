@@ -1,12 +1,12 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { randomUUID } from 'crypto'
 import * as fs from 'fs'
 import PDFDocument from 'pdfkit'
+import { CreateFileDto, FilterFileDto, GetPresignedUrlDto, UpdateFileDto } from '../dtos'
 import { FileEntity } from '../entities/file.entity'
-import { CreateFileDto, FilterFileDto, UpdateFileDto, GetPresignedUrlDto } from '../dtos'
 import { FileRepository } from '../file.repository'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { MinioService } from './minio.service'
-import { randomUUID } from 'crypto'
 
 @Injectable()
 export class FilesService {
@@ -41,7 +41,7 @@ export class FilesService {
         path: downloadUrl,
         destination: `${tenantId}/uploads`,
       },
-      ctx
+      ctx,
     )
 
     return {

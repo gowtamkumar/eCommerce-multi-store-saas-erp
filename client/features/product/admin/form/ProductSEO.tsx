@@ -3,6 +3,8 @@
 import React, { memo } from 'react';
 import { Search } from 'lucide-react';
 import DebouncedInput from '@/components/shared/DebouncedInput';
+import ImageUploadField from '@/components/shared/ImageUploadField';
+import { fetchAPI } from '@/services/api';
 
 interface ProductSEOProps {
   metaTitle: string;
@@ -45,15 +47,15 @@ export const ProductSEO = memo(({
           />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Custom OG Image URL</label>
-          <DebouncedInput
-            type="text"
-            placeholder="https://example.com/image.jpg"
+          <ImageUploadField
+            label="Custom OG Image"
             value={ogImage}
             onChange={(val) => onUpdate({ ogImage: val })}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+            uploadApi={fetchAPI}
+            aspectRatio="wide"
+            description="Social sharing open-graph image"
+            showUrlInput={true}
           />
-          <p className="mt-1 text-[10px] text-slate-400 italic">* If left empty, the first product image will be used.</p>
         </div>
       </div>
     </div>

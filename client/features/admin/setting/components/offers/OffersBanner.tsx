@@ -3,6 +3,8 @@
 import React, { memo } from 'react';
 import { Type, Layout, ToggleLeft, ToggleRight } from 'lucide-react';
 import DebouncedInput from '@/components/shared/DebouncedInput';
+import ImageUploadField from '@/components/shared/ImageUploadField';
+import { fetchAPI } from '@/services/api';
 
 interface OffersBannerProps {
   bannerShow: boolean;
@@ -67,17 +69,15 @@ export const OffersBanner = memo(({
         {/* Image & Background */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-              Banner Image URL
-            </label>
-            <DebouncedInput
-              type="text"
-              value={bannerImage || ""}
+            <ImageUploadField
+              label="Banner Image"
+              value={bannerImage || ''}
               onChange={(val) => onUpdate('bannerImage', val)}
-              placeholder="https://example.com/image.jpg"
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+              uploadApi={fetchAPI}
+              aspectRatio="wide"
+              showUrlInput={true}
+              description="Upload banner background image or paste URL"
             />
-            <p className="text-[10px] text-slate-400 mt-1 italic">Leave empty to use default gradient background.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

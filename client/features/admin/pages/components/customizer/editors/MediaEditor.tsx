@@ -2,6 +2,8 @@
 
 import React from 'react';
 import DebouncedInput from '../DebouncedInput';
+import ImageUploadField from '@/components/shared/ImageUploadField';
+import { fetchAPI } from '@/services/api';
 
 interface MediaEditorProps {
   section: any;
@@ -66,14 +68,15 @@ const MediaEditor = React.memo(({ section, onUpdate }: MediaEditorProps) => {
         </>
       ) : (
         <>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 uppercase">Image URL</label>
-            <DebouncedInput
-              type="text"
+          <div>
+            <ImageUploadField
+              label="Image"
               value={settings?.imageUrl || ''}
               onChange={(val) => onUpdate('imageUrl', val)}
-              className="w-full px-3 py-2 text-sm rounded-lg border"
-              placeholder="https://..."
+              uploadApi={fetchAPI}
+              aspectRatio="square"
+              showUrlInput={true}
+              description="Upload block image or paste URL"
             />
           </div>
           <div className="space-y-1.5">

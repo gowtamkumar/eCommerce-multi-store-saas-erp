@@ -6,6 +6,8 @@ import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Campaign, CampaignType } from '../types';
+import ImageUploadField from '@/components/shared/ImageUploadField';
+import { fetchAPI } from '@/services/api';
 
 // Dynamically import RichEditor as it's quite heavy
 const RichEditor = dynamic(() => import('@/components/shared/RichEditor'), { ssr: false });
@@ -260,18 +262,16 @@ export default function CampaignForm({ campaign, onClose, onSuccess }: CampaignF
                                                     className="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-transparent focus:border-brand-500 outline-none transition-all font-bold text-slate-900 dark:text-white resize-none"
                                                 />
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Image URL (Optional)</label>
-                                                <div className="relative">
-                                                    <Image className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                                    <input
-                                                        type="text"
-                                                        value={formData.imageUrl}
-                                                        onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                                                        placeholder="https://example.com/banner.png"
-                                                        className="w-full pl-14 pr-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-transparent focus:border-brand-500 outline-none transition-all font-bold text-slate-900 dark:text-white"
-                                                    />
-                                                </div>
+                                            <div>
+                                                <ImageUploadField
+                                                    label="Notification Image"
+                                                    value={formData.imageUrl || ''}
+                                                    onChange={(val) => setFormData({ ...formData, imageUrl: val })}
+                                                    uploadApi={fetchAPI}
+                                                    aspectRatio="wide"
+                                                    showUrlInput={true}
+                                                    description="Upload campaign image or paste URL"
+                                                />
                                             </div>
                                         </motion.div>
                                     )}

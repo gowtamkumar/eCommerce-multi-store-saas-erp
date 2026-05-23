@@ -69,6 +69,9 @@ export default function ProfileForm({ variant, formData, setFormData }: { varian
                 }),
             });
 
+            console.log("presignedRes", presignedRes);
+
+
             if (presignedRes.success && presignedRes.data?.uploadUrl) {
                 const { uploadUrl, downloadUrl } = presignedRes.data;
 

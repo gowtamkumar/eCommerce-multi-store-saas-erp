@@ -4,6 +4,8 @@ import { CustomizerSection } from '@/types/customizer';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import DebouncedInput from '../DebouncedInput';
+import ImageUploadField from '@/components/shared/ImageUploadField';
+import { fetchAPI } from '@/services/api';
 
 interface BannerEditorProps {
   settings: any;
@@ -89,14 +91,15 @@ const BannerEditor = React.memo(({ settings, onUpdate, updateArrayItem, addArray
                   placeholder="Subtext description..."
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Image URL</label>
-                <DebouncedInput
-                  type="text"
+              <div>
+                <ImageUploadField
+                  label="Slide Background"
                   value={slide.backgroundImage || ''}
                   onChange={(val) => updateArrayItem('slides', slide.id, { backgroundImage: val })}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                  placeholder="https://..."
+                  uploadApi={fetchAPI}
+                  aspectRatio="wide"
+                  showUrlInput={true}
+                  description="Upload slide background or paste URL"
                 />
               </div>
 

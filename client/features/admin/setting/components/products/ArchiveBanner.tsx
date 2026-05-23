@@ -1,6 +1,8 @@
 import React from "react";
 import { ImageIcon, Eye, EyeOff } from "lucide-react";
 import DebouncedInput from "../../../pages/components/customizer/DebouncedInput";
+import ImageUploadField from "@/components/shared/ImageUploadField";
+import { fetchAPI } from "@/services/api";
 
 interface ArchiveBannerProps {
     productsPage: any;
@@ -97,13 +99,14 @@ const ArchiveBanner = React.memo(({ productsPage, onUpdate }: ArchiveBannerProps
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Background Image URL</label>
-                                <DebouncedInput
-                                    type="text"
+                                <ImageUploadField
+                                    label="Background Image"
                                     value={productsPage.bannerImage || ''}
                                     onChange={(val) => onUpdate('bannerImage', val)}
-                                    placeholder="Paste image URL here"
-                                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-transparent focus:bg-white dark:focus:bg-slate-900 border-2 focus:border-brand-500 outline-none transition-all text-xs font-bold"
+                                    uploadApi={fetchAPI}
+                                    aspectRatio="wide"
+                                    showUrlInput={true}
+                                    description="Upload banner background image or paste URL"
                                 />
                             </div>
                             <div className="space-y-2">

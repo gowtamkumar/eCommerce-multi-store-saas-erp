@@ -3,6 +3,8 @@
 import { Globe, Mail, MapPin, Phone } from "lucide-react";
 import React, { useEffect, useState } from 'react';
 import { SectionProps } from '../types';
+import ImageUploadField from "@/components/shared/ImageUploadField";
+import { fetchAPI } from "@/services/api";
 
 export const BrandIdentitySection: React.FC<SectionProps> = React.memo(({ formData, setFormData }) => (
     <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-500">
@@ -12,25 +14,15 @@ export const BrandIdentitySection: React.FC<SectionProps> = React.memo(({ formDa
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-1.5 md:col-span-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Logo URL</label>
-                <div className="flex gap-4 items-center">
-                    {formData.logo && (
-                        <div className="relative group">
-                            <img
-                                src={formData.logo}
-                                alt="Logo"
-                                className="w-16 h-16 object-contain rounded-xl border border-slate-200 dark:border-slate-700 bg-white transition-transform group-hover:scale-110"
-                            />
-                        </div>
-                    )}
-                    <input
-                        type="text"
-                        value={formData.logo || ''}
-                        onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                        className="flex-1 px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 hover:border-brand-500/50 outline-none transition-all duration-200 font-display"
-                        placeholder="https://example.com/logo.png"
-                    />
-                </div>
+                <ImageUploadField
+                    label="Store Logo"
+                    value={formData.logo || ''}
+                    onChange={(val) => setFormData({ ...formData, logo: val })}
+                    uploadApi={fetchAPI}
+                    aspectRatio="square"
+                    showUrlInput={true}
+                    description="Upload store logo or paste URL"
+                />
             </div>
             <div className="space-y-1.5 md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Brand Name</label>

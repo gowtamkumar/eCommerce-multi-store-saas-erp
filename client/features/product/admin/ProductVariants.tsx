@@ -4,6 +4,7 @@ import { ProductAttribute, ProductVariant } from '@/types/product';
 import { ChevronDown, ChevronUp, DollarSign, Layers, Package, Plus, Star, Tag, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { fetchAPI } from '@/services/api';
 
 interface ProductVariantsProps {
   attributes: ProductAttribute[];
@@ -312,15 +313,85 @@ export default function ProductVariants({ attributes, variants, basePrice, stock
                     </div>
 
                     {/* Images */}
-                    <div className="flex-1 min-w-[150px]">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Images (CSV)</label>
-                      <input
-                        type="text"
-                        placeholder="Image URL"
-                        value={variant.images?.join(', ') || ''}
-                        onChange={(e) => updateVariant(idx, { images: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                        className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                      />
+                    <div className="flex-1 min-w-[200px]">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Images</label>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Preview existing images */}
+                        {variant.images?.map((url, imgIdx) => (
+                          <div key={imgIdx} className="relative w-8 h-8 rounded border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-50 dark:bg-slate-900">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updatedImages = variant.images?.filter((_, i) => i !== imgIdx) || [];
+                                updateVariant(idx, { images: updatedImages });
+                              }}
+                              className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        ))}
+                        
+                        {/* Upload button */}
+                        <label className="flex items-center justify-center w-8 h-8 rounded border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                          <Plus className="w-4 h-4 text-slate-400" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={async (e) => {
+                              if (!e.target.files) return;
+                              const files = Array.from(e.target.files);
+                              const newUrls: string[] = [];
+                              
+                              for (const file of files) {
+                                const loadingToast = toast.loading(`Uploading ${file.name}...`);
+                                try {
+                                  const presignedRes = await fetchAPI('/admin/media/presigned-url', {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                      filename: file.name,
+                                      mimetype: file.type,
+                                      size: file.size,
+                                    }),
+                                  });
+                                  
+                                  if (presignedRes.success && presignedRes.data?.uploadUrl) {
+                                    const { uploadUrl, downloadUrl } = presignedRes.data;
+                                    const uploadRes = await fetch(uploadUrl, {
+                                      method: 'PUT',
+                                      body: file,
+                                      headers: {
+                                        'Content-Type': file.type,
+                                      },
+                                    });
+                                    
+                                    if (uploadRes.ok) {
+                                      newUrls.push(downloadUrl);
+                                      toast.success(`${file.name} uploaded`);
+                                    } else {
+                                      toast.error(`Failed to upload ${file.name}`);
+                                    }
+                                  }
+                                } catch (err) {
+                                  console.error(err);
+                                  toast.error(`Error uploading ${file.name}`);
+                                } finally {
+                                  toast.dismiss(loadingToast);
+                                }
+                              }
+                              
+                              if (newUrls.length > 0) {
+                                const updatedImages = [...(variant.images || []), ...newUrls];
+                                updateVariant(idx, { images: updatedImages });
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
                     </div>
 
                     <button

@@ -4,6 +4,8 @@ import { ChevronRight, ToggleLeft, ToggleRight, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Category, CategoryFormProps } from '../type';
 import { generateSlug } from '@/lib/generate-slug';
+import ImageUploadField from '@/components/shared/ImageUploadField';
+import { fetchAPI } from '@/services/api';
 
 export default function CategoryForm({ isOpen, onClose, onSubmit, initialData, allCategories = [] }: CategoryFormProps) {
     const [formData, setFormData] = useState<Category>({ name: '', slug: '', description: '', isActive: true });
@@ -118,15 +120,16 @@ export default function CategoryForm({ isOpen, onClose, onSubmit, initialData, a
                         />
                     </div>
 
-                    {/* Image URL */}
+                    {/* Category Image */}
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Image URL</label>
-                        <input
-                            type="text"
-                            placeholder="https://example.com/category-image.png"
+                        <ImageUploadField
+                            label="Category Image"
                             value={formData.image || ''}
-                            onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500"
+                            onChange={(val) => setFormData({ ...formData, image: val })}
+                            uploadApi={fetchAPI}
+                            aspectRatio="square"
+                            showUrlInput={true}
+                            description="Upload category image or paste URL"
                         />
                     </div>
 

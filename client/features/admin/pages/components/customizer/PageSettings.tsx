@@ -2,6 +2,8 @@ import { PageData } from '@/types/customizer';
 import { ChevronDown, ChevronUp, Globe, Layout, Search, Type } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 import DebouncedInput from './DebouncedInput';
+import ImageUploadField from '@/components/shared/ImageUploadField';
+import { fetchAPI } from '@/services/api';
 
 interface PageSettingsProps {
   data: PageData;
@@ -124,14 +126,15 @@ const PageSettings = React.memo(({ data, onUpdate }: PageSettingsProps) => {
             <p className="text-[9px] text-slate-400">Optimal: 150-160 characters. Current: {data.metaDescription?.length || 0}</p>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 uppercase">OG Image URL</label>
-            <DebouncedInput
-              type="text"
+          <div>
+            <ImageUploadField
+              label="OG Image"
               value={data.ogImage || ''}
               onChange={(val) => handleChange('ogImage', val)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-              placeholder="https://example.com/og-image.jpg"
+              uploadApi={fetchAPI}
+              aspectRatio="wide"
+              showUrlInput={true}
+              description="Upload page social image or paste URL"
             />
           </div>
         </div>

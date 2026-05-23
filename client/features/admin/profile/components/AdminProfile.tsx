@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { User, Mail, Phone, MapPin, Shield, Key, Save, Loader2, Camera, Laptop, Smartphone, Trash2, ShieldAlert } from 'lucide-react';
 import { fetchAPI } from '@/services/api';
+import { Camera, Key, Laptop, Loader2, Mail, MapPin, Phone, Save, Shield, ShieldAlert, Smartphone, Trash2, User } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 export default function AdminProfile() {
@@ -26,6 +26,55 @@ export default function AdminProfile() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>('');
   const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    const file = e.target.files[0];
+    setImageUploading(true);
+    const loadingToast = toast.loading('Uploading avatar...');
+    try {
+      // Step 1: Request presigned URL from backend
+      const presignedRes = await fetchAPI('/admin/media/presigned-url', {
+        method: 'POST',
+        body: JSON.stringify({
+          filename: file.name,
+          mimetype: file.type,
+          size: file.size,
+        }),
+      });
+
+      if (presignedRes.success && presignedRes.data?.uploadUrl) {
+        const { uploadUrl, downloadUrl } = presignedRes.data;
+
+        // Step 2: Upload raw file binary to MinIO via PUT
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload file directly to MinIO');
+        }
+
+        setProfile((prev) => ({ ...prev, image: downloadUrl }));
+        toast.success('Avatar uploaded successfully');
+      } else {
+        toast.error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Error uploading image');
+    } finally {
+      toast.dismiss(loadingToast);
+      setImageUploading(false);
+    }
+  };
 
   const fetchSessions = async () => {
     try {
@@ -135,7 +184,7 @@ export default function AdminProfile() {
 
   const getDeviceDetails = (userAgent: string) => {
     if (!userAgent) return { os: 'Unknown OS', browser: 'Unknown Browser', device: 'desktop' };
-    
+
     let os = 'Unknown OS';
     let browser = 'Unknown Browser';
     let device = 'desktop';
@@ -193,21 +242,39 @@ export default function AdminProfile() {
                   {profile.name.charAt(0).toUpperCase()}
                 </div>
               )}
-              <button className="absolute bottom-1 right-1 p-2 bg-white dark:bg-slate-700 rounded-full shadow-lg border border-slate-100 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors">
+              {imageUploading && (
+                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center text-white">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                </div>
+              )}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                className="hidden"
+                disabled={imageUploading}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={imageUploading}
+                className="absolute bottom-1 right-1 p-2 bg-white dark:bg-slate-700 rounded-full shadow-lg border border-slate-100 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:text-brand-500 transition-colors disabled:opacity-50"
+              >
                 <Camera className="w-4 h-4" />
               </button>
             </div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">{profile.name}</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">@{profile.username}</p>
             <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-700/50 space-y-3">
-               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 justify-center">
-                  <Mail className="w-4 h-4 text-brand-500" /> {profile.email}
-               </div>
-               {profile.phone && (
-                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 justify-center">
-                    <Phone className="w-4 h-4 text-brand-500" /> {profile.phone}
-                 </div>
-               )}
+              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 justify-center">
+                <Mail className="w-4 h-4 text-brand-500" /> {profile.email}
+              </div>
+              {profile.phone && (
+                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 justify-center">
+                  <Phone className="w-4 h-4 text-brand-500" /> {profile.phone}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -219,7 +286,7 @@ export default function AdminProfile() {
             <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Shield className="w-5 h-5 text-brand-500" /> Personal Information
             </h3>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Full Name</label>
@@ -259,19 +326,7 @@ export default function AdminProfile() {
                   />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Profile Image URL</label>
-                <div className="relative">
-                  <Camera className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={profile.image}
-                    onChange={(e) => setProfile({ ...profile, image: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                    placeholder="https://..."
-                  />
-                </div>
-              </div>
+
               <div className="sm:col-span-2 space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Address</label>
                 <div className="relative">
@@ -303,7 +358,7 @@ export default function AdminProfile() {
             <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Key className="w-5 h-5 text-amber-500" /> Change Password
             </h3>
-            
+
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Current Password</label>
@@ -386,7 +441,7 @@ export default function AdminProfile() {
                 {sessions.map((session) => {
                   const dev = getDeviceDetails(session.userAgent);
                   const isCurrent = session.id === currentSessionId;
-                  
+
                   return (
                     <div key={session.id} className="py-4 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
                       <div className="flex items-center gap-3.5">
