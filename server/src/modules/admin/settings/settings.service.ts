@@ -55,10 +55,18 @@ export class SettingsService {
     ctx: RequestContextDto,
     dto: UpdateSiteSettingsDto,
   ): Promise<SiteSettingsEntity> {
-    this.logger.log(`${this.updateSettings.name} Service Called for tenant: ${ctx.tenantId}`)
     const tenantId = ctx.tenantId
     const settings = await this.settingsRepository.findByTenantId(tenantId)
     if (!settings) throw new NotFoundException('Settings not found')
+
+    if (dto.removeBranding === true) {
+      const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
+      const features = tenant?.subscriptionPlan?.features || []
+      const hasRemoveBranding = features.includes('remove_branding')
+      if (!hasRemoveBranding) {
+        dto.removeBranding = false // Force off if plan doesn't support it
+      }
+    }
 
     const updated = await this.settingsRepository.updateAndSave(settings, dto)
 

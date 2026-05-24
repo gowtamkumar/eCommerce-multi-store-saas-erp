@@ -52,6 +52,9 @@ export class SiteSettingsEntity extends BaseEntity {
   @Column({ type: 'jsonb', name: 'supported_currencies', nullable: true })
   supportedCurrencies?: CurrenciesDto[]
 
+  @Column({ name: 'remove_branding', type: 'boolean', default: false })
+  removeBranding: boolean
+
   @Column({ type: 'jsonb', name: 'social_links', nullable: true })
   socialLinks?: SocialLinkDto
 

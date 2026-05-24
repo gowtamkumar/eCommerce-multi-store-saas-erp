@@ -72,8 +72,30 @@ export class SubscriptionGuard implements CanActivate {
 
       const features = tenant.subscriptionPlan?.features || []
 
+      // Map marketing plan features to specific backend route capabilities
+      const logicalFeatureMapping: Record<string, string[]> = {
+        advanced_analytics: [
+          '/admin/reports',
+          '/admin/reports/sales',
+          '/admin/reports/profit-loss',
+          '/admin/reports/supplier-ledger',
+          '/admin/reports/customer-ledger',
+          '/admin/reports/cash-flow',
+          '/admin/reports/export',
+          '/admin/reports/finance',
+        ],
+        staff_accounts: ['/admin/hrm'],
+        unlimited_products: ['/admin/products'],
+        remove_branding: ['remove_branding'],
+      }
+
+      const hasAccess = features.includes(requiredFeature) || features.some(planFeature => {
+        const routes = logicalFeatureMapping[planFeature]
+        return routes && routes.includes(requiredFeature)
+      })
+
       // If neither explicitly enabled in DB nor present in plan JSONB array, deny
-      if (!feature && !features.includes(requiredFeature)) {
+      if (!feature && !hasAccess) {
         throw new ForbiddenException({
           success: false,
           message: `Upgrade your plan to access the '${requiredFeature}' feature.`,

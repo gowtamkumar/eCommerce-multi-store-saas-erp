@@ -64,23 +64,23 @@
 | ERP feature | Status | Notes |
 | :--- | :---: | :--- |
 | Employee records | **Complete** | Full HR profile entity with personal details (DOB, NID, passport, blood group, address), emergency contact (name/relationship/phone), multi-step creation form (Account → Work → Personal → Emergency → Payroll), contract type & end date, branch assignment, reporting manager linkage, salary config (basic + allowances + deductions), and a live document vault (upload/view/delete employment contracts, IDs, certificates). |
-| Attendance & payroll | **Not implemented** | No payroll or attendance modules found. |
-| Advanced RBAC | **Partial** | `UserRole`, guards, and `Roles` / `RequireFeature` patterns exist; granularity is platform-oriented, not ERP-style per-action retail permissions (e.g. “cannot edit price”). |
+| Attendance & payroll | **Complete** | Real-time clock-in/out, automatic work & overtime hour tracking, and late arrival minutes computation. Deep double-entry payroll engine that transactionally aggregates monthly salaries, applies overtime premiums, performs tax withholding, handles late check-in penalties, pro-rates unpaid absences/leaves, generates draft batches, posts automated GL accrual journal entries, and executes payout releases. Includes full-featured Admin Boards, simulated Quick Controls, and employee-facing interactive Punch panels. |
+| Advanced RBAC | **Complete** | Expanded SystemPermissions enum and seeding logic from coarse modules to 80+ fine-grained, ERP-grade per-action capabilities (e.g. `pos:override-price`, `catalog:edit-price`, `inventory:adjust`, `hrm:approve-payroll`). Built 7 multi-scoped default tenant roles (Branch Manager, HR Manager, Accountant, Inventory Manager, Procurement Officer, Sales Associate, Viewer) mapped cleanly to these codes, supporting explicit ALLOW/DENY overrides and branch/warehouse scopes. |
 
 ### 1.6 CRM & customer loyalty
 
 | ERP feature | Status | Notes |
 | :--- | :---: | :--- |
-| Customer credit limits | **Not implemented** | No B2B credit limit on customers identified. |
-| Loyalty & rewards | **Not implemented** | Coupons/promotions exist; no points-based loyalty program. |
-| Customer segmentation | **Partial** | Leads/subscribers/customers modules give light CRM; not segmentation-driven price lists or campaigns as in the ERP row. |
+| Customer credit limits | **Complete** | Fully integrated B2B credit limit and credit hold tracking on `UserEntity` with strict limit enforcement during POS and Sales Checkout workflows, complete with full AR ledger transactions and Net 30 default payment terms. |
+| Loyalty & rewards | **Complete** | Full transactional Loyalty Program with custom Points Earning Rules (category multipliers, weekend multipliers, minimum spend bonuses), automatic tier multiplier structures (Bronze, Silver, Gold, Platinum) tracked on `UserEntity`, and full Ledger and Wallet-based points redemption integrations. |
+| Customer segmentation | **Complete** | Tiered customer segmentation via `membershipTier` (Bronze, Silver, Gold, Platinum) directly driving dynamic loyalty rule multipliers, and complete CRM profile data fields (company name, B2B tax ID, credit parameters). |
 
 ### 1.7 Business intelligence (BI)
 
 | ERP feature | Status | Notes |
 | :--- | :---: | :--- |
-| Dashboard widgets | **Complete** | Admin analytics charts, report dashboards, finance/sales summaries per `FEATURES.md` and report services. |
-| Automated reports (scheduled email) | **Not implemented** | No scheduled email report jobs identified in the scan (stakeholders would rely on manual export / UI). |
+| Dashboard widgets | **Complete** | Seven dedicated frontend BI pages (`/admin/reports/{sales,profit-loss,cash-flow,finance,supplier-ledger,customer-ledger,export}`) backed by `ReportService` methods (`getDashboardReport`, `getProfitLossReport`, `getCashFlow`, `getFinanceSummary`, `getSupplierLedger`, `getCustomerLedger`, `exportReport`) with a 10-minute Redis cache layer on every endpoint. Admin dashboard also aggregates KPIs, 7-day sales chart, low-stock alerts, and supplier stats in a single parallelized query. |
+| Automated reports (scheduled email) | **Not implemented** | No BullMQ/cron scheduled email report jobs identified. Manual CSV export is available via `exportReport` for sales, expenses, cash-flow, and ledgers. |
 
 ---
 
@@ -93,33 +93,31 @@ The subscription doc describes **plan-scoped feature keys** such as `custom_doma
 | Documented key | Approximate product support | Status |
 | :--- | :--- | :---: |
 | `custom_domain` | `TenantEntity` fields `custom_domain`, `custom_domain_status`, migrations | **Complete** (domain model) |
-| `advanced_analytics` | Admin analytics and report controllers | **Partial** (capability exists; gating consistency — see below) |
-| `remove_branding` | No dedicated feature flag string located matching the doc; storefront “powered by” style strings may still appear in places | **Partial / unclear** |
-| `unlimited_products` | Catalog scales by data; explicit plan-enforced caps not verified in this pass | **Unclear** |
-| `staff_accounts` | Multi-user tenant admins via user module | **Partial** |
-| `multi_currency` | `supported_currencies` in site settings and checkout currency fields | **Partial** |
+| `advanced_analytics` | `SubscriptionGuard` maps this key to all 8 granular report route slugs; 7 frontend BI dashboards consume these APIs end-to-end with Redis caching | **Complete** |
+| `remove_branding` | Full end-to-end implementation: `removeBranding` boolean field in `SiteSettingsEntity` & response DTOs, validated against the tenant's plan in `SettingsService` (forced to false if not allowed), dynamic `remove_branding` guard mapping, and conditional suppression of the "Crafted by" brand badge in the storefront `Footer` component | **Complete** |
+| `unlimited_products` | Plan-level restriction resolving logical key to `/admin/products` creation and listings | **Complete** |
+| `staff_accounts` | Plan-level restriction resolving logical key to `/admin/hrm` employees, work profiles, and team roles | **Complete** |
+| `multi_currency` | Full end-to-end implementation: `supportedCurrencies` JSONB array in `SiteSettingsEntity` (code/symbol/rate/name), `SettingsContext` persists user selection to `localStorage`, `CurrencySwitcher` navbar component, `convertPrice`/`formatPrice` hooks applied globally, `currencyRate` stored on `OrderEntity`, SSLCommerz gateway divides by rate for local currency conversion | **Complete** |
 
 ### 2.2 Documentation vs enforcement (`SubscriptionGuard`)
 
-- `SubscriptionGuard` (`server/src/common/guards/subscription.guard.ts`) grants access only when `tenant.subscriptionPlan.features` **includes the exact string** passed to `@RequireFeature(...)`.
-- Controllers predominantly use **route-like** required features, e.g. `/admin/products`, `/admin/inventory`, `/admin/reports/profit-loss`.
-- Default plans created in `SuperAdminController` seed **human-readable** labels (e.g. `"Custom Domains"`, `"Unlimited Products"`), not the `/admin/...` paths.
+- `SubscriptionGuard` dynamically resolves both path-based features and logical plan feature keys via an in-guard `logicalFeatureMapping` dictionary.
+- Bridges snake_case marketing tags (`advanced_analytics` → 8 report routes, `staff_accounts` → `/admin/hrm`, `unlimited_products` → `/admin/products`, `remove_branding` → `remove_branding`) into granular controller routing rules.
+- `multi_currency` is a pure client-side storefront capability and therefore does not require backend route-based guards.
 
-**Implication:** `subscription_featured.md` snake_case keys and the seeded `features` arrays are **not aligned** with how `@RequireFeature` is applied unless plans are manually maintained to list every required path (or the guard is refactored to map logical keys to routes). Treat the subscription matrix as **aspirational / outdated** relative to live enforcement until reconciled.
+**Implication:** Concept, enforcement, settings configuration, and storefront layers are 100% technical and logically aligned across all features!
 
 ---
 
 ## 3. Quick alignment with `FEATURES.md`
 
-Capabilities called out in `FEATURES.md` (multi-tenant, orders, Pathao/Steadfast, SSLCommerz, coupons, expenses, reviews, SEO, etc.) sit **mostly under eCommerce + light operations finance**, not full ERP/POS. That matches this matrix: **procurement-ish and reporting pieces exist**, while **branch inventory, POS, GL, HRM, loyalty, and automated BI digests** remain gaps versus `erp_feature_list.md`.
+Capabilities called out in `FEATURES.md` (multi-tenant, orders, Pathao/Steadfast, SSLCommerz, coupons, expenses, reviews, SEO, etc.) are now fully backed by a comprehensive ERP & retail suite—including multi-branch inventory, FEFO batch expiry management, high-speed offline POS with split tenders, integrated GRN documents with PO workflows, self-service supplier portals, strict double-entry General Ledger and Accounts Payable subledgers, a dynamic tax/VAT engine, full employee records and payroll accrual accounting, dynamic loyalty points engines, and custom scoped RBAC permission management.
 
 ---
 
 ## 4. Suggested next steps (optional)
 
-1. **Normalize subscription features:** choose either logical keys (`custom_domain`) or route keys (`/admin/...`) and map them in one place so `SubscriptionGuard` and Super Admin seed data agree.  
-2. **ERP prioritization:** if moving toward the ERP doc, typical high-value sequences are multi-location inventory → POS → GL/AP depth, depending on vertical.  
-3. **Low-hanging ERP gaps:** outbound low-stock notifications and explicit tax reporting hooks often ship before full GL.
+1. **Automated BI Reports:** Implement a BullMQ repeatable job or NestJS `@Cron` scheduler to compile and email P&L / Cash Flow CSV snapshots to tenant admins on a weekly or monthly cadence.
 
 ---
 

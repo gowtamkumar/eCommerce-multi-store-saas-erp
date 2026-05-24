@@ -147,6 +147,7 @@ interface SiteSettings {
   status?: string;
   isSaaS?: boolean;
   tenantId?: string;
+  removeBranding?: boolean;
 }
 
 interface SettingsContextType {

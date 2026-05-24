@@ -354,7 +354,11 @@ const Footer = ({ settings: propSettings }: { settings?: any }) => {
 
         <div className="border-t border-white/10 dark:border-slate-800 pt-12 flex flex-col md:flex-row justify-between items-center opacity-40 text-[10px] font-black gap-8 uppercase tracking-[0.2em]">
           <div className="flex items-center gap-2">
-            {footerCopyright.includes('Heart') ? (
+            {settings?.removeBranding ? (
+              <span>
+                &copy; {new Date().getFullYear()} {brandName}. All rights reserved.
+              </span>
+            ) : footerCopyright.includes('Heart') ? (
               <span className="flex items-center gap-2">
                 &copy; {new Date().getFullYear()} {brandName}. Crafted with <Heart className="w-4 h-4 text-red-500 fill-current animate-pulse" /> by Gowtam Kumar.
               </span>

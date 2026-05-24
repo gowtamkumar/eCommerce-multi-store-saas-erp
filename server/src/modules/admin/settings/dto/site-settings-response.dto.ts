@@ -41,6 +41,9 @@ export class SiteSettingsResponseDto {
   supportedCurrencies: any[]
 
   @Expose()
+  removeBranding: boolean
+
+  @Expose()
   socialLinks: any
 
   @Expose()

@@ -81,6 +81,11 @@ export class UpdateSiteSettingsDto {
   supportedCurrencies?: CurrenciesDto[]
 
   @ApiProperty({ required: false })
+  @IsBoolean()
+  @IsOptional()
+  removeBranding?: boolean
+
+  @ApiProperty({ required: false })
   @IsObject()
   @IsOptional()
   socialLinks?: SocialLinkDto
