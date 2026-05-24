@@ -1,66 +1,150 @@
 # Codebase Understanding — Sales & Point-of-Sale (POS) Modules
 
-This document details the codebase architecture, database entities, and workflows for online orders, cashier registers, cashier shifts, payment allocations, and promotional discount strategies.
+This document details the codebase with **verified field-level accuracy** from the actual TypeScript source code.
 
 ---
 
-## 1. Sales Order Domain
+## Module Locations
 
-Located at: `server/src/modules/admin/sales/order/`.
-
-### 1.1 Database Entities
-*   **`OrderEntity` (`entities/order.entity.ts`):**
-    Represents customer purchase transactions (storefront or admin-created). Contains columns like `orderNumber`, `status` (PENDING, PAID, SHIPPED, COMPLETED, CANCELLED), `paymentStatus` (UNPAID, PARTIAL, PAID), `totalAmount`, `subtotal`, `taxAmount`, and relationships to user/customer.
-*   **`OrderItemEntity` (`entities/order-item.entity.ts`):**
-    Individual line items. Stores `variantId`, `qty`, `unitPrice` snapshot, `taxRate` snapshot, `discountAmount` snapshot, and fulfillment status.
-*   **`OrderReturnEntity` (`entities/order-return.entity.ts`):**
-    Manages stock reversals and refund distributions. Tracks `status` (PENDING, APPROVED, REFUNDED).
-
-### 1.2 Services & Controllers
-*   **`OrderService` (`services/order.service.ts`):**
-    Drives order creation, applies discount coupon validation rules, places temporary stock holds, maps payments, and emits `order.paid` when transactions complete.
-
-### 1.3 Key API Endpoints
-*   `POST /api/admin/sales/orders` — Create a draft or standard sales order.
-*   `POST /api/admin/sales/orders/:id/return` — Initiate a purchase return request.
-
----
-
-## 2. Point-of-Sale (POS) Domain
-
-Located at: `server/src/modules/admin/sales/pos/`.
-
-### 2.1 Database Entities
-*   **`PosRegisterEntity` (`entities/pos-register.entity.ts`):**
-    Represents a physical checkout counter machine mapped to a specific branch. Holds columns like `registerCode`, `name`, `status` (ACTIVE, INACTIVE).
-*   **`PosShiftEntity` (`entities/pos-shift.entity.ts`):**
-    Cashier session. Tracks shift boundaries (`openedAt`, `closedAt`), cashier `userId`, expected cash drawer totals, actual counted drawer totals, cash variance, and shift status (OPEN, CLOSED).
-*   **`PosDrawerTransactionEntity` (`entities/pos-drawer-transaction.entity.ts`):**
-    Tracks cash inflows and outflows from the drawer (e.g. cash drops, payouts, opening cash floats).
-
-### 2.2 Core Logic & Services
-*   **`PosService` (`pos.service.ts`):**
-    Implements POS register assignments, shift open/close reconciliation math, and parses the offline sales queue payload. The sync logic validates the transaction UUID (`clientSaleId`), posts stock deductions, and hooks ledger postings.
-*   **`PosController` (`pos.controller.ts`):**
-    Provides API paths for registers, opening cashier shifts, logging cash transactions, and synchronizing offline checkout queues.
-
-### 2.3 Key API Endpoints
-*   `POST /api/admin/sales/pos/shifts/open` — Open a cashier shift and log the opening cash float.
-*   `POST /api/admin/sales/pos/sync` — Synchronize a batch of offline checkouts from a local IndexedDB buffer.
-*   `POST /api/admin/sales/pos/shifts/:id/close` — Close shift and record cashier's actual counted cash.
+```
+server/src/modules/admin/sales/
+├── order/
+│   ├── entities/
+│   │   ├── order.entity.ts           # Customer purchase transaction
+│   │   ├── order-item.entity.ts      # Line items per order
+│   │   └── order-return.entity.ts    # Return requests
+│   ├── services/                     # Order lifecycle, stock holds, coupon validation
+│   ├── repositoris/                  # DB access layer (note: typo in codebase)
+│   ├── queue/                        # BullMQ job handlers
+│   └── order.module.ts
+├── pos/
+│   ├── entities/
+│   │   ├── pos-register.entity.ts    # Physical checkout terminal
+│   │   ├── pos-shift.entity.ts       # Cashier session (open/close)
+│   │   └── pos-drawer-transaction.entity.ts  # Cash in/out events
+│   ├── pos.service.ts                # Core POS logic (~24KB)
+│   ├── pos.controller.ts             # All POS API endpoints (~8KB)
+│   └── pos.module.ts
+├── coupon/                           # Coupon CRUD and validation
+├── promotion/                        # Campaign strategy pattern
+├── payment/                          # Payment record tracking
+└── cart/                             # (Storefront-facing — see doc 10)
+```
 
 ---
 
-## 3. Pricing, Coupons & Promotions Domain
+## 1. `OrderEntity` (`order/entities/order.entity.ts`)
 
-Located at: `server/src/modules/admin/sales/coupon/` and `server/src/modules/admin/sales/promotion/`.
+> **Verified from source**
 
-### 3.1 Code Architecture
-*   **Strategy Pattern Integration:**
-    Promotions rely on a strategy pattern factory to isolate calculations. 
-    `DiscountStrategyFactory` instantiates discount calculators:
-    *   `PercentageDiscountStrategy`
-    *   `FixedAmountDiscountStrategy`
-    *   `FreeShippingDiscountStrategy`
-*   **`CouponService`:**
-    Validates coupon validity (expiry dates, minimum cart totals, branch rules, and tenant allocation limits).
+| Field | Type | Notes |
+| :--- | :--- | :--- |
+| `customerName` | VARCHAR(255) | Snapshot name at order time |
+| `customerEmail` | VARCHAR(255) | Snapshot email |
+| `customerPhone` | VARCHAR(50) | Snapshot phone |
+| `address` | TEXT | Delivery address text snapshot |
+| `shippingAddressId` | UUID FK (nullable) | Links to saved `ShippingAddressEntity` |
+| `totalAmount` | DECIMAL(10,2) | Grand total including tax and shipping |
+| `shippingFee` | DECIMAL(10,2) | Courier charge |
+| `currency` | VARCHAR(10) | Default `BDT` |
+| `currencyRate` | DECIMAL(10,4) | Exchange rate at order time |
+| `status` | ENUM `OrderStatus` | PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED |
+| `orderSource` | ENUM `OrderSource` | WEBSITE, POS, ADMIN, API |
+| `paymentMethod` | ENUM `PaymentMethod` | CASH, CARD, MOBILE_BANKING, COD, WALLET |
+| `paymentStatus` | ENUM `PaymentStatus` | PENDING, PARTIAL, PAID, REFUNDED |
+| `transactionId` | VARCHAR(255, nullable) | Payment gateway reference |
+| `appliedCoupon` | VARCHAR(50, nullable) | Coupon code used at checkout |
+| `couponDiscountAmount` | DECIMAL(10,2) | Discount deducted from total |
+| `taxAmount` | DECIMAL(10,2) | Tax applied |
+| `walletDeductionAmount` | DECIMAL(10,2) | Store credit used at checkout |
+| `offlineSaleId` | UUID (nullable, UNIQUE) | POS offline sync idempotency key (`clientSaleId`) |
+| `payments` | JSONB (nullable) | Array of `{method, amount, transactionId}` — supports split payment |
+| `trackingId` | VARCHAR (nullable) | Courier tracking number |
+| `courierStatus` | VARCHAR (nullable) | Latest courier webhook status |
+| `deliveryZone` | VARCHAR (nullable) | Delivery zone label |
+| `orderNotes` | TEXT (nullable) | Customer/admin notes |
+| `tenantId` | UUID FK | Strict tenant isolation |
+
+> **Key Design:** `offlineSaleId` maps to the POS terminal's `clientSaleId`. The UNIQUE constraint ensures a POS sale synced multiple times is processed exactly once (idempotency).
+
+> **Key Design:** `payments` JSONB allows a single order to record multiple payment methods (e.g. BDT 500 cash + BDT 300 wallet) without a separate payment table per order.
+
+---
+
+## 2. `PosShiftEntity` (`pos/entities/pos-shift.entity.ts`)
+
+> **Verified from source**
+
+| Field | Type | Notes |
+| :--- | :--- | :--- |
+| `branchId` | UUID FK (nullable) | Branch this shift belongs to |
+| `registerId` | UUID FK | The POS register terminal |
+| `userId` | UUID FK | The cashier who opened the shift |
+| `status` | ENUM `PosShiftStatus` | OPEN, CLOSED |
+| `openingTime` | TIMESTAMPTZ | When shift started |
+| `closingTime` | TIMESTAMPTZ (nullable) | When shift was closed |
+| `openingBalance` | DECIMAL(12,2) | Cash float at shift start |
+| `closingBalance` | DECIMAL(12,2, nullable) | Cash counted at shift end |
+| `cashSales` | DECIMAL(12,2) | Accumulated cash sales total |
+| `cardSales` | DECIMAL(12,2) | Accumulated card/POS machine sales |
+| `mobileSales` | DECIMAL(12,2) | Accumulated mobile banking payments |
+| `cashIn` | DECIMAL(12,2) | Additional cash added to drawer mid-shift |
+| `cashOut` | DECIMAL(12,2) | Cash removed from drawer mid-shift |
+| `expectedClosingBalance` | DECIMAL(12,2) | System-computed expected cash |
+| `difference` | DECIMAL(12,2, nullable) | `closingBalance - expectedClosingBalance` (variance) |
+| `remarks` | TEXT (nullable) | Cashier notes on variance |
+| `tenantId` | UUID FK | Strict tenant isolation |
+
+> **Reconciliation Formula:** `expectedClosingBalance = openingBalance + cashSales + cashIn - cashOut`
+
+---
+
+## 3. `StockReservationEntity` (`inventory-transaction/entities/stock-reservation.entity.ts`)
+
+> **Verified from source** — This is significantly more detailed than previously documented.
+
+| Field | Type | Notes |
+| :--- | :--- | :--- |
+| `productId` | UUID FK | Product reserved |
+| `variantId` | UUID FK (nullable) | Specific variant if applicable |
+| `warehouseId` | UUID FK (nullable) | Which warehouse holds the reservation |
+| `orderId` | UUID FK (nullable) | Source order driving the reservation |
+| `reservedQty` | DECIMAL(12,2) | **Immutable** — original qty locked, never mutated |
+| `fulfilledQty` | DECIMAL(12,2) | Grows as shipments consume the reservation |
+| `releasedQty` | DECIMAL(12,2) | Quantity explicitly cancelled/released |
+| `status` | ENUM `ReservationStatus` | ACTIVE, FULFILLED, RELEASED, EXPIRED |
+| `expiresAt` | TIMESTAMPTZ (nullable) | Null = never auto-expires; set for cart checkouts |
+| `reservedAt` | TIMESTAMPTZ | When reservation was created |
+| `releasedAt` | TIMESTAMPTZ (nullable) | When stock was returned to available |
+| `notes` | TEXT (nullable) | Reason or context |
+| `tenantId` | UUID FK | Strict tenant isolation |
+
+> **Available-to-Promise (ATP) formula:**
+> ```
+> availableStock = stockOnHand - SUM(reservedQty - fulfilledQty - releasedQty)
+>                                WHERE status = 'ACTIVE'
+> ```
+
+**Unique Constraint:** `(tenantId, orderId, productId, variantId)` — prevents duplicate reservations for the same order line.
+
+---
+
+## 4. Key API Endpoints
+
+### Orders
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/admin/sales/orders` | Create a new sales order |
+| `GET` | `/api/admin/sales/orders` | List orders with filters (status, date, source) |
+| `GET` | `/api/admin/sales/orders/:id` | Get order details with items |
+| `PATCH` | `/api/admin/sales/orders/:id/status` | Update order status |
+| `POST` | `/api/admin/sales/orders/:id/return` | Initiate a return request |
+
+### POS
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/admin/sales/pos/shifts/open` | Open a cashier shift with opening cash float |
+| `POST` | `/api/admin/sales/pos/shifts/:id/close` | Close shift with counted cash |
+| `POST` | `/api/admin/sales/pos/sync` | Sync a batch of offline POS sales |
+| `GET` | `/api/admin/sales/pos/shifts` | List shifts (filter by branch, date, cashier) |
+| `POST` | `/api/admin/sales/pos/drawer` | Record a mid-shift cash-in or cash-out |
