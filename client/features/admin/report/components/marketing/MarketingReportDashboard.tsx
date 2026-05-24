@@ -7,7 +7,7 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { 
     Megaphone, Search, Download, Mail, MessageSquare, Bell,
     CheckCircle2, XCircle, AlertCircle, Calendar, Users, BarChart3,
-    Tag, Percent, Activity, Sparkles, RefreshCcw
+    Tag, Percent, Activity, Sparkles, RefreshCcw, Coins, ShieldAlert, Award
 } from 'lucide-react';
 
 // Memoized KPI Metric Card
@@ -29,6 +29,10 @@ export default function MarketingReportDashboard() {
     const { formatPrice } = useSettings();
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [coupons, setCoupons] = useState<any[]>([]);
+    const [orders, setOrders] = useState<any[]>([]);
+    const [loyaltyConfig, setLoyaltyConfig] = useState<any | null>(null);
+    const [loyaltyRules, setLoyaltyRules] = useState<any[]>([]);
+    const [customers, setCustomers] = useState<any[]>([]);
     const [subscribersCount, setSubscribersCount] = useState<number>(0);
     const [loading, setLoading] = useState(true);
 
@@ -39,10 +43,22 @@ export default function MarketingReportDashboard() {
     const loadMarketingData = async () => {
         setLoading(true);
         try {
-            const [campaignsRes, couponsRes, subscribersRes] = await Promise.all([
+            const [
+                campaignsRes, 
+                couponsRes, 
+                subscribersRes, 
+                ordersRes,
+                loyaltyConfigRes,
+                loyaltyRulesRes,
+                customersRes
+            ] = await Promise.all([
                 fetchAPI('/campaigns').catch(() => ({ success: false, data: [] })),
                 fetchAPI('/coupons').catch(() => ({ success: false, data: { coupons: [] } })),
-                fetchAPI('/subscribers?limit=1').catch(() => ({ success: false, meta: { total: 0 } }))
+                fetchAPI('/subscribers?limit=1').catch(() => ({ success: false, meta: { total: 0 } })),
+                fetchAPI('/orders?limit=1000').catch(() => ({ success: false, data: { orders: [] } })),
+                fetchAPI('/marketing/loyalty/config').catch(() => ({ success: false, data: null })),
+                fetchAPI('/marketing/loyalty/rules').catch(() => ({ success: false, data: [] })),
+                fetchAPI('/customer?limit=100').catch(() => ({ success: false, data: { items: [] } }))
             ]);
 
             if (campaignsRes.success) {
@@ -53,6 +69,18 @@ export default function MarketingReportDashboard() {
             }
             if (subscribersRes.success) {
                 setSubscribersCount(subscribersRes.meta?.total || subscribersRes.total || 0);
+            }
+            if (ordersRes.success) {
+                setOrders(ordersRes.data?.orders || ordersRes.data || []);
+            }
+            if (loyaltyConfigRes.success) {
+                setLoyaltyConfig(loyaltyConfigRes.data);
+            }
+            if (loyaltyRulesRes.success) {
+                setLoyaltyRules(loyaltyRulesRes.data || []);
+            }
+            if (customersRes.success) {
+                setCustomers(customersRes.data?.items || []);
             }
         } catch (error) {
             console.error('Failed to load marketing dashboard details', error);
@@ -66,17 +94,42 @@ export default function MarketingReportDashboard() {
         loadMarketingData();
     }, []);
 
-    // Campaign filters
+    // Filter and search logic
     const filteredCampaigns = useMemo(() => {
         const query = campaignSearch.toLowerCase();
         return campaigns.filter(c => c.name.toLowerCase().includes(query));
     }, [campaigns, campaignSearch]);
 
-    // Coupon filters
     const filteredCoupons = useMemo(() => {
         const query = couponSearch.toLowerCase();
         return coupons.filter(c => c.code.toLowerCase().includes(query));
     }, [coupons, couponSearch]);
+
+    // Financial calculations (Discounts given)
+    const financialDiscounts = useMemo(() => {
+        let couponDiscountTotal = 0;
+        let promoDiscountTotal = 0;
+
+        orders.forEach(order => {
+            // 1. Coupon Discount (Sum of couponDiscountAmount on the order)
+            const couponVal = parseFloat(order.couponDiscountAmount) || 0;
+            couponDiscountTotal += couponVal;
+
+            // 2. Promotion/Offer Discount (Sum of discountAmount on order items)
+            if (order.items && Array.isArray(order.items)) {
+                order.items.forEach((item: any) => {
+                    const itemPromoDiscount = parseFloat(item.discountAmount) || 0;
+                    promoDiscountTotal += itemPromoDiscount * (item.quantity || 1);
+                });
+            }
+        });
+
+        return {
+            couponDiscountTotal,
+            promoDiscountTotal,
+            totalSaved: couponDiscountTotal + promoDiscountTotal
+        };
+    }, [orders]);
 
     // KPI Metrics calculation
     const metrics = useMemo(() => {
@@ -93,15 +146,26 @@ export default function MarketingReportDashboard() {
         const activeCoupons = coupons.filter(c => c.isActive).length;
         const totalRedemptions = coupons.reduce((sum, c) => sum + (c.usedCount || 0), 0);
 
+        // Loyalty
+        const totalPointsHeld = customers.reduce((sum, cust) => sum + (cust.loyaltyPointsBalance || 0), 0);
+
         return {
             totalCampaigns,
             totalReach,
             deliverySuccessRate,
             totalCoupons,
             activeCoupons,
-            totalRedemptions
+            totalRedemptions,
+            totalPointsHeld
         };
-    }, [campaigns, coupons]);
+    }, [campaigns, coupons, customers]);
+
+    // Top Loyalty point holders list
+    const topLoyalCustomers = useMemo(() => {
+        return [...customers]
+            .sort((a, b) => (b.loyaltyPointsBalance || 0) - (a.loyaltyPointsBalance || 0))
+            .slice(0, 5);
+    }, [customers]);
 
     const getChannelIcon = (type: string) => {
         switch (type) {
@@ -166,10 +230,10 @@ export default function MarketingReportDashboard() {
                 <div>
                     <h1 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
                         <Sparkles className="w-6 h-6 text-brand-600" />
-                        Marketing Performance Dashboard
+                        Marketing & Loyalty Dashboard
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-1">
-                        Unified marketing overview including campaign dispatch rates, coupon conversions, and subscriber audience growth.
+                        Unified marketing overview including campaign dispatch rates, coupon conversions, promotion discounts, and customer loyalty.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -187,6 +251,34 @@ export default function MarketingReportDashboard() {
                         <Download className="w-4 h-4" />
                         Export Master Report
                     </button>
+                </div>
+            </div>
+
+            {/* Overall Discount Performance Cards */}
+            <div className="bg-slate-900 dark:bg-slate-950 p-6 rounded-[2rem] text-white">
+                <div className="flex items-center gap-3 mb-6 border-b border-slate-800 pb-4">
+                    <Percent className="w-6 h-6 text-brand-500" />
+                    <div>
+                        <h2 className="text-lg font-black uppercase tracking-wider font-display">Discount Sales Analysis</h2>
+                        <p className="text-xs text-slate-400">Total overall money saved by customers via coupons and promotion campaigns</p>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-5 rounded-2xl bg-slate-800/50 border border-slate-800">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Total Discount Savings Given</span>
+                        <p className="text-3xl font-black text-brand-500">{formatPrice(financialDiscounts.totalSaved)}</p>
+                        <p className="text-[10px] text-slate-400 mt-2 font-semibold">Total deductions applied to checkout subtotals</p>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-slate-800/50 border border-slate-800">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Coupon Discounts Given</span>
+                        <p className="text-3xl font-black text-blue-400">{formatPrice(financialDiscounts.couponDiscountTotal)}</p>
+                        <p className="text-[10px] text-slate-400 mt-2 font-semibold">Saved using unique coupon code redemptions</p>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-slate-800/50 border border-slate-800">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Promotion / Offer Discounts Given</span>
+                        <p className="text-3xl font-black text-purple-400">{formatPrice(financialDiscounts.promoDiscountTotal)}</p>
+                        <p className="text-[10px] text-slate-400 mt-2 font-semibold">Savings applied via line item campaign discounts</p>
+                    </div>
                 </div>
             </div>
 
@@ -214,12 +306,95 @@ export default function MarketingReportDashboard() {
                     colorClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
                 />
                 <MetricCard
-                    title="Coupon Redemption"
-                    value={metrics.totalRedemptions}
-                    subtext={`${metrics.activeCoupons} active coupons`}
-                    icon={Tag}
-                    colorClass="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
+                    title="Loyalty Points Balance"
+                    value={metrics.totalPointsHeld}
+                    subtext={`${metrics.totalRedemptions} redemptions`}
+                    icon={Coins}
+                    colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-500 dark:text-amber-400"
                 />
+            </div>
+
+            {/* Loyalty Report Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Loyalty Rules & Configuration */}
+                <div className="lg:col-span-1 bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
+                            <Award className="w-4.5 h-4.5 text-brand-600" />
+                            Loyalty Point Rules
+                        </h3>
+                        <div className="space-y-4">
+                            {loyaltyConfig && (
+                                <div className="p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl space-y-1">
+                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Base Exchange Rules</p>
+                                    <p className="text-[11px] text-slate-500">
+                                        Earn: {loyaltyConfig.pointsPerCurrencySpent || 1} pt per {formatPrice(1)} spent
+                                    </p>
+                                    <p className="text-[11px] text-slate-500">
+                                        Redeem: {loyaltyConfig.pointsRequiredPerCurrencyDiscount || 100} pts for {formatPrice(1)} off
+                                    </p>
+                                </div>
+                            )}
+                            <div className="space-y-2">
+                                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Special Rules</p>
+                                {loyaltyRules.length === 0 ? (
+                                    <p className="text-xs text-slate-500 font-semibold italic">No custom rules active</p>
+                                ) : (
+                                    loyaltyRules.map((rule, idx) => (
+                                        <div key={idx} className="flex justify-between items-center text-xs p-2 bg-slate-50 dark:bg-slate-900/20 rounded-lg">
+                                            <span className="font-semibold text-slate-700 dark:text-slate-300 capitalize">{rule.name || rule.ruleType}</span>
+                                            <span className="font-mono font-bold text-brand-600">+{rule.pointsAwarded || rule.rewardPoints} pts</span>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Loyalty Tier Rankings Leaderboard */}
+                <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <Users className="w-4.5 h-4.5 text-blue-500" />
+                        Top Customer Loyalty Rankings
+                    </h3>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead className="bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700">
+                                <tr>
+                                    <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Customer Name</th>
+                                    <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Email</th>
+                                    <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Membership Tier</th>
+                                    <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Points Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-xs">
+                                {loading ? (
+                                    Array.from({ length: 3 }).map((_, i) => (
+                                        <tr key={i}><td colSpan={4} className="px-4 py-4"><div className="h-5 bg-slate-100 dark:bg-slate-700/50 rounded animate-pulse" /></td></tr>
+                                    ))
+                                ) : topLoyalCustomers.length === 0 ? (
+                                    <tr><td colSpan={4} className="py-8 text-center text-slate-400">No customer point balance records found</td></tr>
+                                ) : (
+                                    topLoyalCustomers.map((cust, idx) => (
+                                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/20">
+                                            <td className="px-4 py-3 font-bold text-slate-800 dark:text-slate-200">{cust.customerName || cust.name}</td>
+                                            <td className="px-4 py-3 text-slate-500">{cust.customerEmail || cust.email}</td>
+                                            <td className="px-4 py-3">
+                                                <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 font-bold uppercase text-[9px] tracking-wider rounded">
+                                                    {cust.membershipTier || 'BRONZE'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 font-mono font-bold text-slate-900 dark:text-white">
+                                                {cust.loyaltyPointsBalance || 0} pts
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             {/* Two Column Layout: Campaigns (Left) & Coupons (Right) */}

@@ -582,6 +582,12 @@ export const navGroups = [
     ],
     items: [
       {
+        icon: BarChart3,
+        label: "Marketing Dashboard",
+        href: "/admin/reports/marketing",
+        feature: "/admin/campaigns",
+      },
+      {
         icon: Tag,
         label: "Coupons",
         href: "/admin/coupons",
@@ -617,12 +623,7 @@ export const navGroups = [
         href: "/admin/marketing/loyalty",
         feature: "/admin/campaigns", // Protected under same feature permission for simplicity
       },
-      {
-        icon: BarChart3,
-        label: "Marketing Dashboard",
-        href: "/admin/reports/marketing",
-        feature: "/admin/campaigns",
-      },
+      
     ],
   },
   {
