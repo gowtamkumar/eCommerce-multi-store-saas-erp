@@ -617,6 +617,12 @@ export const navGroups = [
         href: "/admin/marketing/loyalty",
         feature: "/admin/campaigns", // Protected under same feature permission for simplicity
       },
+      {
+        icon: BarChart3,
+        label: "Marketing Dashboard",
+        href: "/admin/reports/marketing",
+        feature: "/admin/campaigns",
+      },
     ],
   },
   {
