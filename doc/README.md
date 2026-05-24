@@ -13,7 +13,8 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 
 | I am a... | Start here |
 | :--- | :--- |
-| **New Developer** | [`developer/DEVELOPER_GUIDE.md`](developer/DEVELOPER_GUIDE.md) |
+| **New Developer** (reading code) | [`codebase-understanding/README.md`](codebase-understanding/README.md) |
+| **New Developer** (coding standards) | [`developer/DEVELOPER_GUIDE.md`](developer/DEVELOPER_GUIDE.md) |
 | **System Architect / reviewer** | [`system-design/erp_master_system_design.md`](system-design/erp_master_system_design.md) |
 | **Platform Super-Admin** (SaaS Owner) | [`manuals/01_SUPER_ADMIN_MANUAL.md`](manuals/01_SUPER_ADMIN_MANUAL.md) |
 | **Tenant Owner / Business CFO** | [`manuals/02_TENANT_OWNER_MANUAL.md`](manuals/02_TENANT_OWNER_MANUAL.md) |
@@ -32,20 +33,18 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 ### 1.1 Core Design Foundations
 *   [`erp_master_system_design.md`](system-design/erp_master_system_design.md) — **The Core System Blueprint**: Covers modular monolith contexts, guard middleware scopes, eventual consistency, reliability, and deployment strategy.
 *   [`erp_low_level_system_design.md`](system-design/erp_low_level_system_design.md) — **Low-Level Code Contracts**: Details the NestJS request processing guard chain, typed BullMQ payloads, ledger boundaries, transaction handling, and migration rules.
-*   [`erp_master_database_design.md`](system-design/erp_master_database_design.md) — **Master DB Schema**: Contains the unified database ERD (Mermaid) and field schemas for 8 operational domains.
-*   [`erp_current_and_recommended_features.md`](system-design/erp_current_and_recommended_features.md) — **Feature Gaps & Roadmap**: Maps 42+ active features and prioritizes enterprise additions (e.g. MRP, e-Invoicing).
+*   [`erp_master_database_design.md`](system-design/erp_master_database_design.md) — **Master DB Schema**: Contains the unified database ERDs (Mermaid), 107-table inventory, schema definitions, indexes, and tenant-isolation rules.
 *   [`erp_documentation_and_user_manual_plan.md`](system-design/erp_documentation_and_user_manual_plan.md) — Documentation strategy and writing phases.
-*   [`developer_architecture_onboarding.md`](system-design/developer_architecture_onboarding.md) — **Developer Architectural Onboarding & System Flow Map**: Explains modular monolitic layouts, request guards pipelines, double-entry verification flowchart, and offline POS sync strategies.
+*   [`developer_architecture_onboarding.md`](system-design/developer_architecture_onboarding.md) — **Developer Architectural Onboarding & System Flow Map**: Explains modular monolith layouts, request guard pipelines, double-entry verification flowchart, and offline POS sync strategies.
+*   [`erp_remaining_roadmap.md`](system-design/erp_remaining_roadmap.md) — Implementation roadmap and task tracking.
+*   [`erp_subscription_feature_completion_matrix.md`](system-design/erp_subscription_feature_completion_matrix.md) — Feature completion matrix compared against the codebase and subscription gates.
 
-### 1.2 Specialized Module Architecture Specs
-*   [`erp_architecture.md`](system-design/erp_architecture.md) — Monolith layer decoupling rules.
-*   [`finance_accounting_design.md`](system-design/finance_accounting_design.md) — General ledger, double-entry subledgers, and balanced verification.
-*   [`pos_retail_design.md`](system-design/pos_retail_design.md) — Offline PWA POS registers, shifts, and drawer operations.
-*   [`procurement_supply_chain_design.md`](system-design/procurement_supply_chain_design.md) — Purchase Orders, RFQ pipelines, and supplier ledgers.
-*   [`erp_inventory_stock_flow_guideline.md`](system-design/erp_inventory_stock_flow_guideline.md) — FIFO/FEFO rules and immutable transaction logs.
+### 1.2 Supporting Module & Product Specs
 *   [`crm_loyalty_requirements.md`](system-design/crm_loyalty_requirements.md) — Wallets, loyalty points, customer credit holds, and AR aging tracking.
 *   [`live_chat_system_design.md`](system-design/live_chat_system_design.md) — Real-time support via WebSockets and Socket.io.
+*   [`live_chat_support_requirements.md`](system-design/live_chat_support_requirements.md) — Support-agent and merchant-facing live chat requirements.
 *   [`phase5_courier_analysis.md`](system-design/phase5_courier_analysis.md) — Integration analysis for local third-party couriers (Pathao/Steadfast).
+*   [`campaign_requirements.md`](system-design/campaign_requirements.md) — Messaging campaign and audience-targeting requirements.
 
 ### 1.3 Subscriptions, Custom Domains & Platform Design
 *   [`subscription_plan_entitlements.md`](system-design/subscription_plan_entitlements.md) — Subscription tier matrices, gating, and usage caps.
@@ -53,7 +52,6 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 *   [`custom_domains_feature.md`](system-design/custom_domains_feature.md) — SSL, DNS CNAME verification, and reverse proxy routing setup.
 *   [`page_builder_architecture.md`](system-design/page_builder_architecture.md) — Landing page grid block model renderer.
 *   [`ecommerce_builder_feature.md`](system-design/ecommerce_builder_feature.md) — Gated landing page options for basic subscription tiers.
-*   [`audit_log.md`](system-design/audit_log.md) — Global tenant-scoped append-only mutation logger.
 *   [`admin_sidebar_proposal.md`](system-design/admin_sidebar_proposal.md) — Dynamic sidebar rendering based on subscription and RBAC roles.
 *   [`multi_warehouse_stock_documents_analysis.md`](system-design/multi_warehouse_stock_documents_analysis.md) — Warehouse routing rules and split-shipment strategies.
 
@@ -77,7 +75,26 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 
 ---
 
-## 3. User Manuals Directory (`manuals/`)
+## 3. Codebase Understanding Directory (`codebase-understanding/`)
+
+> Module-by-module technical breakdown of every feature implemented in `server/src/`. The definitive resource for developers who need to understand how any part of the system works before writing or reviewing code.
+
+| Document | Domains Covered |
+| :--- | :--- |
+| [`01_system_infrastructure.md`](codebase-understanding/01_system_infrastructure.md) | Tenant, Subscription, Organization (Branch/Warehouse), Audit Log |
+| [`02_catalog_and_marketing.md`](codebase-understanding/02_catalog_and_marketing.md) | Products, Variants, Categories, Price Books, Loyalty, Campaigns, Site Settings |
+| [`03_sales_and_pos.md`](codebase-understanding/03_sales_and_pos.md) | Orders, Returns, POS Registers, Cashier Shifts, Cash Drawer, Coupons, Promotions |
+| [`04_logistics_and_inventory.md`](codebase-understanding/04_logistics_and_inventory.md) | Inventory Ledger, Batch/Expiry Lots, Reservations, Transfers, GRN, Fulfillment, Courier |
+| [`05_finance_and_procurement.md`](codebase-understanding/05_finance_and_procurement.md) | COA, GL Journals, AP (POs, Supplier Invoices, Payments, 3-Way Match) |
+| [`06_hrm_module.md`](codebase-understanding/06_hrm_module.md) | Employees, Attendance, Leave, Payroll Batches, Payslips, GL Integration, Recruitment |
+| [`07_auth_and_rbac.md`](codebase-understanding/07_auth_and_rbac.md) | JWT Auth, Roles, Permissions, Scope Assignments, Permission Overrides, Guard Chain |
+| [`08_finance_reporting_and_tax.md`](codebase-understanding/08_finance_reporting_and_tax.md) | P&L, Balance Sheet, Cash Flow, VAT/Tax Engine, AR Dunning, Operational Reports |
+| [`09_infrastructure_services.md`](codebase-understanding/09_infrastructure_services.md) | Redis Cache, BullMQ Queues, File Uploads, Mail, Chat (Socket.IO), Push (FCM), SMS |
+| [`10_customer_crm_and_storefront.md`](codebase-understanding/10_customer_crm_and_storefront.md) | Customer Profiles, Wallet/AR/Loyalty Ledgers, Lead Pipeline, Cart, Wishlist |
+
+---
+
+## 4. User Manuals Directory (`manuals/`)
 
 > Persona-based operation manuals and compliance guidelines.
 

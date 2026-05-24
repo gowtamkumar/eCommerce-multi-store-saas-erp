@@ -55,7 +55,7 @@ The group mixes Sales (Orders, POS, Returns, Payments, Invoices, Carts) and CRM 
 POS is an operational mode used by cashiers all day. It is buried under Sales. Most ERPs surface POS either at the top level (quick action) or in a dedicated **Retail / POS** group with Shifts, Registers, Cash Movements, Returns.
 
 ### 3.3 No first-class CRM / Loyalty / Wallet / AR menu
-These are required to deliver the CRM/Loyalty plan in `doc/erp/CRM-LOYALTY-REQUIREMENTS.md` and they cannot live inside a single "Customers" page.
+These are required to deliver the CRM/Loyalty plan in `doc/system-design/crm_loyalty_requirements.md` and they cannot live inside a single "Customers" page.
 
 ### 3.4 Inventory operations are too thin
 Operations only shows Warehouses, Inventory, Fulfillment, Couriers, Expenses. Real WMS daily work also needs Stock Transfers, Stock Adjustments, Cycle Counts, Low-Stock Alerts.

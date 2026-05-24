@@ -353,4 +353,4 @@ If you are tasked with completing or expanding this SaaS ERP system, always foll
 6.  **Protect Raw Audit Logs**: Raw punches, financial ledgers, and audit logs are legally sensitive. Never provide APIs to delete or directly modify these tables. Implement adjustment/reversal operations instead.
 
 ---
-*For any questions during feature development, refer to specific design files located in the [doc/erp/](file:///media/gowtam/ec12c572-6d78-4d1a-87a8-f5267d2ec86612/gp/eCommerce-multi-tenant-saas/doc/erp/) folder.*
+*For any questions during feature development, refer to specific design files located in the [doc/](file:///media/gowtam/ec12c572-6d78-4d1a-87a8-f5267d2ec86612/gp/eCommerce-multi-tenant-saas/doc/) folder.*
