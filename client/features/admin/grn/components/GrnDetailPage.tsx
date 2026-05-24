@@ -32,7 +32,7 @@ export default function GrnDetailPage({ grn, onVerify, onReject, isProcessing }:
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <Link
-                        href="/admin/grn"
+                        href="/admin/procurement/grn"
                         className="p-2.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
                     >
                         <ArrowLeft className="w-5 h-5 text-slate-500" />

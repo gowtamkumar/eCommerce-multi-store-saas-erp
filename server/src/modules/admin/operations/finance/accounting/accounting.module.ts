@@ -23,6 +23,9 @@ import { DunningRuleEntity } from './entities/dunning-rule.entity'
 import { DunningLogEntity } from './entities/dunning-log.entity'
 import { DunningService } from './services/dunning.service'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
+import { TaxRuleEntity } from './entities/tax-rule.entity'
+import { TaxService } from './services/tax.service'
+import { TaxController } from './controllers/tax.controller'
 
 @Module({
   imports: [
@@ -37,9 +40,10 @@ import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
       AccountingOutboxEntity,
       DunningRuleEntity,
       DunningLogEntity,
+      TaxRuleEntity,
     ]),
   ],
-  controllers: [AccountingController, ArController, WalletController],
+  controllers: [AccountingController, ArController, WalletController, TaxController],
   providers: [
     AccountingService,
     AccountingIntegrationService,
@@ -49,6 +53,7 @@ import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
     WalletService,
     AccountingOutboxService,
     DunningService,
+    TaxService,
   ],
   exports: [
     AccountingService,
@@ -59,6 +64,7 @@ import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
     WalletService,
     AccountingOutboxService,
     DunningService,
+    TaxService,
   ],
 })
 export class AccountingModule {}

@@ -18,7 +18,7 @@ export class GrnRepository {
   ) {}
 
   async createAndSave(
-    dto: CreateGrnDto,
+    dto: CreateGrnDto & { status?: GrnStatus },
     grnNumber: string,
     ctx: RequestContextDto,
     manager?: EntityManager,
@@ -33,7 +33,7 @@ export class GrnRepository {
       branchId: dto.branchId,
       receivedDate: new Date(),
       receivedByUserId: ctx.userId,
-      status: GrnStatus.DRAFT,
+      status: dto.status || GrnStatus.DRAFT,
       notes: dto.notes,
       tenantId: ctx.tenantId,
       items: dto.items.map((item) => ({

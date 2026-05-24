@@ -79,7 +79,7 @@ const GrnRow = memo(({ grn, formatPrice }: {
             </td>
             <td className="px-6 py-4 text-right">
                 <Link
-                    href={`/admin/grn/${grn.id}`}
+                    href={`/admin/procurement/grn/${grn.id}`}
                     className="inline-flex p-2 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-colors md:opacity-0 md:group-hover:opacity-100"
                     title="View Details"
                 >

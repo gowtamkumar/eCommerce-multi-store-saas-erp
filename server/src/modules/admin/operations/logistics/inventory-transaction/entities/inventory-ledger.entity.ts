@@ -7,6 +7,7 @@ import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { ProductBatchEntity } from './product-batch.entity'
 
 import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
 import { WarehouseEntity } from '@/modules/system/organization/entities/warehouse.entity'
@@ -104,6 +105,14 @@ export class InventoryLedgerEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
+
+  @Column({ type: 'uuid', name: 'batch_id', nullable: true })
+  @Index()
+  batchId: string | null
+
+  @ManyToOne(() => ProductBatchEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'batch_id' })
+  batch: ProductBatchEntity | null
 
   @Column({ type: 'text', nullable: true })
   remarks: string

@@ -233,6 +233,14 @@ export class AccountingService {
     await repo.remove(account)
   }
 
+  async getJournalEntries(ctx: RequestContextDto): Promise<JournalEntryEntity[]> {
+    return this.dataSource.getRepository(JournalEntryEntity).find({
+      where: { tenantId: ctx.tenantId },
+      relations: ['lines', 'lines.account'],
+      order: { createdAt: 'DESC', date: 'DESC' },
+    })
+  }
+
   // Fiscal Period Management
   async getFiscalPeriods(ctx: RequestContextDto): Promise<FiscalPeriodEntity[]> {
     return this.dataSource.getRepository(FiscalPeriodEntity).find({

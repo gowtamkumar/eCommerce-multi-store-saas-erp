@@ -24,46 +24,46 @@
 
 | ERP feature | Status | Notes |
 | :--- | :---: | :--- |
-| Multi-branch support | **Not implemented** | Stock is per product/variant within a tenant; no warehouse/branch entities or per-location stock. |
-| Stock transfers (in-transit between locations) | **Not implemented** | Inventory transactions attach to product/variant (and optional supplier reference), not inter-location transfers. |
-| Batch & expiry management | **Not implemented** | No product batch/lot or expiry fields in the catalog model (distinct from coupon/promotion expiry). |
-| Barcode / QR integration | **Partial** | SKUs are first-class on variants (`sku`, uniqueness per tenant) suitable for scanning; no dedicated barcode label generation or scanner-first POS flows. |
+| Multi-branch support | **Complete** | Branch selection on the frontend automatically scopes transaction listings, expenses, HRM/employees, and reporting KPIs dynamically via request headers and guards. |
+| Stock transfers (in-transit between locations) | **Complete** | Document-based stock transfer system (`DRAFT` -> `APPROVED` -> `IN_TRANSIT` -> `RECEIVED` / `CANCELLED`) with state tracking, available stock verification, and double-entry ledger integration. |
+| Batch & expiry management | **Complete** | Tracking of manufactured batches/lots with custom expiry timelines. Auto-allocates stock using FEFO (First Expired, First Out) rules during order fulfillment and POS checkout. |
+| Barcode / QR integration | **Complete** | Dedicated label generator supporting customizable sizes (rolls/sheets) and dual barcode/QR code rendering. Scanner-first POS checkout integrates global keyboard-emulation inputs and Web Audio API beep sound feedback. |
 | Stock adjustments | **Complete** | Inventory transaction service and admin inventory UI (e.g. stock adjustment modal, transaction history). |
-| Low stock alerts | **Partial** | `low_stock_threshold` on products/variants; low-stock counts and listings in reporting/inventory summary. **Automatic outbound alerts** (email/SMS) were not identified. |
+| Low stock alerts | **Partial** | `low_stock_threshold` on products/variants; low-stock counts and listings in reporting/inventory summary. **Automatic outbound alerts** (email/SMS) are not implemented. |
 
 ### 1.2 Point of sale (POS) & retail
 
 | ERP feature | Status | Notes |
 | :--- | :---: | :--- |
-| Retail POS interface | **Not implemented** | Checkout is eCommerce-oriented (cart/checkout), not a dedicated counter POS. |
-| Offline-first sales | **Not implemented** | No offline queue/sync pattern for sales identified. |
-| Shift / register management | **Not implemented** | No cashier shift or register open/close workflow. |
-| Multi-payment support (split tender) | **Partial** | Multiple payment methods exist at checkout level (e.g. COD vs gateway); **splitting one order across multiple tenders** is not treated as a first-class POS feature. |
-| Return & exchange | **Partial** | Admin return flow with inventory integration (`ReturnService`, `return.controller.ts`). Scope is order-linked returns, not full retail exchange policies at POS. |
+| Retail POS interface | **Complete** | Full-fledged counter cashier screen with dynamic catalog searching, quick customer assignment, discount/coupon adjustments, and instant receipts. |
+| Offline-first sales | **Complete** | Supported via local browser storage queue, network state window event listeners, and `/pos/sync` batch endpoint synchronization. |
+| Shift / register management | **Complete** | Shift management with opening till balance validation, drawer operations (cash-in/out), and closing till audit reconciliation. |
+| Multi-payment support (split tender) | **Complete** | First-class split tender flow allowing cashiers to partition payment amounts among Cash, Card, Mobile banking, and Customer Account balance. |
+| Return & exchange | **Complete** | Full retail exchange policies integrated directly at the counter POS. Supports order/receipt search, line-item selector, auto-approval restocking, instant customer wallet store credit refunds, and split-order exchanges. |
 
 ### 1.3 Procurement & supply chain
 
 | ERP feature | Status | Notes |
 | :--- | :---: | :--- |
-| Supplier portal | **Partial** | Supplier CRUD and supplier linkage on products / inventory context (`supplier.controller.ts`, entities). Not a separate vendor self-service portal. |
+| Supplier portal | **Complete** | Fully implemented self-service portal (authenticated under `/supplier-portal`). Vendors can log in, view live stats, retrieve assigned purchase orders, and fulfill shipments into destination branches/warehouses. |
 | Purchase orders (PO) | **Complete** | PO module (create, status including received path, `purchase-order.controller.ts`, queue processor updating stock). |
-| Goods received note (GRN) | **Partial** | Receiving is expressed via PO status / receiving flow rather than a distinct GRN document as in classic ERP. |
-| Accounts payable | **Partial** | Supplier ledger and purchase payment status support AP-style visibility; not a full AP subledger with invoice matching and payment runs. |
+| Goods received note (GRN) | **Complete** | Formalized as a distinct first-class document (`GoodsReceivedNoteEntity`) generated upon PO intake, tracking received vs. ordered quantities, branch/warehouse destination mapping, and triggering inventory ledger/accounts payable ledger postings. |
+| Accounts payable | **Complete** | Full AP subledger with 3-way invoice matching (PO vs. GRN vs. Invoice), accounts payable aging reports, and bulk payment runs with balanced GL ledger entries. |
 
 ### 1.4 Finance & accounting
 
 | ERP feature | Status | Notes |
 | :--- | :---: | :--- |
-| General ledger (double-entry) | **Not implemented** | No chart of accounts or double-entry journal model identified. |
-| Profit & loss | **Partial** | P&L style reporting exists under admin reports (`/admin/reports/profit-loss`); methodology is reporting-layer, not full GL-backed. |
+| General ledger (double-entry) | **Complete** | Standard Chart of Accounts (COA) initialization, strict double-entry validation engine (Debits = Credits), immutable journal audit trail, and reversing transactions. |
+| Profit & loss | **Complete** | Full GL-backed multi-step income statement with dynamic date range scoping, quick presets, and detailed itemized account-by-account breakdowns. |
 | Expense tracking | **Complete** | Dedicated expense module (`expense.controller.ts`) aligned with `FEATURES.md`. |
-| Tax / VAT engine | **Partial** | `tax_rate` on products and currency handling in orders; not a regional multi-jurisdiction tax engine with filing outputs. |
+| Tax / VAT engine | **Complete** | Automated multi-jurisdiction VAT/GST calculation lookup engine, interactive configuration portal, dynamic sandbox simulation playground, and structured tax return filing audits. |
 
 ### 1.5 Human resources (HRM)
 
 | ERP feature | Status | Notes |
 | :--- | :---: | :--- |
-| Employee records | **Partial** | Tenant-scoped users/staff for the store; not HR profiles, contracts, or branch assignment as described in the ERP doc. |
+| Employee records | **Complete** | Full HR profile entity with personal details (DOB, NID, passport, blood group, address), emergency contact (name/relationship/phone), multi-step creation form (Account → Work → Personal → Emergency → Payroll), contract type & end date, branch assignment, reporting manager linkage, salary config (basic + allowances + deductions), and a live document vault (upload/view/delete employment contracts, IDs, certificates). |
 | Attendance & payroll | **Not implemented** | No payroll or attendance modules found. |
 | Advanced RBAC | **Partial** | `UserRole`, guards, and `Roles` / `RequireFeature` patterns exist; granularity is platform-oriented, not ERP-style per-action retail permissions (e.g. “cannot edit price”). |
 

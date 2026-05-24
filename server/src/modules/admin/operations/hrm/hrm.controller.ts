@@ -7,6 +7,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ApplicantStatus } from '@/common/enums/hrm/hrm-enums'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { BranchScopeGuard } from '@/common/guards/branch-scope.guard'
 import {
   Body,
   Controller,
@@ -29,7 +30,7 @@ import {
 } from './dto/hrm.dto'
 import { HrmService } from './hrm.service'
 
-@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard, BranchScopeGuard)
 @RequireFeature('/admin/hrm')
 @Controller('operations/hrm')
 export class HrmController {
@@ -733,4 +734,53 @@ export class HrmController {
       data: res,
     }
   }
+
+  // --- Employee Document Management ---
+  @Get('employees/:id/documents')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
+  async getEmployeeDocuments(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
+    const res = await this.hrmService.getEmployeeDocuments(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Employee documents retrieved',
+      data: res,
+    }
+  }
+
+  @Post('employees/:id/documents')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
+  async addEmployeeDocument(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body() body: { documentType: string; fileUrl: string; expiryDate?: string },
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const res = await this.hrmService.addEmployeeDocument(id, body, ctx)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Employee document attached successfully',
+      data: res,
+    }
+  }
+
+  @Delete('employees/:id/documents/:docId')
+  @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
+  async deleteEmployeeDocument(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Param('docId') docId: string,
+  ): Promise<BaseApiSuccessResponse<void>> {
+    await this.hrmService.deleteEmployeeDocument(docId, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Document removed successfully',
+      data: null,
+    }
+  }
 }
+

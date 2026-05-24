@@ -3,11 +3,12 @@
 import { useSettings } from '@/hooks/SettingsContext';
 import {
   Edit, Eye, LayoutTemplate, Plus, Search, Trash2,
-  Tag, Package, TrendingUp, AlertTriangle, CheckCircle, XCircle, ChevronDown
+  Tag, Package, TrendingUp, AlertTriangle, CheckCircle, XCircle, ChevronDown, Printer
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ProductListProps } from './types';
+import { ProductListProps, Product } from './types';
+import BarcodeLabelModal from './BarcodeLabelModal';
 
 function StockBadge({ stock, threshold }: { stock: number; threshold: number }) {
   if (stock === 0) return (
@@ -79,6 +80,8 @@ export default function ProductList({
   const { formatPrice } = useSettings();
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterLowStock, setFilterLowStock] = useState(false);
+  const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
+  const [selectedProductForBarcode, setSelectedProductForBarcode] = useState<Product | null>(null);
 
   const filtered = products.filter(p => {
     if (filterStatus !== 'all' && p.status !== filterStatus) return false;
@@ -94,12 +97,23 @@ export default function ProductList({
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Product Catalog</h1>
           <p className="text-slate-500 text-sm mt-1">{products.length} total products</p>
         </div>
-        <Link
-          href="/admin/products/new"
-          className="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-brand-500/20"
-        >
-          <Plus className="w-4 h-4" /> New Product
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setSelectedProductForBarcode(null);
+              setIsBarcodeModalOpen(true);
+            }}
+            className="px-5 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white rounded-xl font-bold flex items-center gap-2 transition-all"
+          >
+            <Printer className="w-4 h-4" /> Print Barcodes
+          </button>
+          <Link
+            href="/admin/products/new"
+            className="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-brand-500/20"
+          >
+            <Plus className="w-4 h-4" /> New Product
+          </Link>
+        </div>
       </div>
 
       {/* Search + Filters */}
@@ -260,6 +274,16 @@ export default function ProductList({
                     {/* Actions */}
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => {
+                            setSelectedProductForBarcode(product);
+                            setIsBarcodeModalOpen(true);
+                          }}
+                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title="Print Labels"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </button>
                         <Link
                           href={`/admin/products/${product.id}/review`}
                           className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
@@ -306,6 +330,13 @@ export default function ProductList({
           </div>
         )}
       </div>
+
+      <BarcodeLabelModal
+        isOpen={isBarcodeModalOpen}
+        onClose={() => setIsBarcodeModalOpen(false)}
+        products={products}
+        initialProduct={selectedProductForBarcode}
+      />
     </div>
   );
 }

@@ -4,13 +4,14 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { BranchScopeGuard } from '@/common/guards/branch-scope.guard'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Controller, Get, Logger, Param, Query, UseGuards } from '@nestjs/common'
 import { ReportService } from './report.service'
 
 @Controller('report')
-@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard, BranchScopeGuard)
 @RequireFeature('/admin/reports')
 export class ReportController {
   private readonly logger = new Logger(ReportController.name)

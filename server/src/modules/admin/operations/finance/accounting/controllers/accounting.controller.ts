@@ -1,6 +1,6 @@
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
-import { Controller, Get, Post, Put, Delete, UseGuards, Body, Param } from '@nestjs/common'
+import { Controller, Get, Post, Put, Delete, UseGuards, Body, Param, Query } from '@nestjs/common'
 import { AccountingService } from '../services/accounting.service'
 import { FinancialReportService } from '../services/financial-report.service'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -11,6 +11,7 @@ import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { AccountType, AccountCategory } from '@/common/enums/account-type.enum'
 import { FiscalPeriodStatus } from '../entities/fiscal-period.entity'
+import { LedgerEntrySide, JournalType } from '@/common/enums/journal-type.enum'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
 @Controller('finance/accounting')
@@ -149,8 +150,11 @@ export class AccountingController {
   @Get('reports/profit-loss')
   @RequireFeature('/admin/finance/profit-loss')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
-  async getPL(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.reportService.getProfitAndLoss(ctx)
+  async getPL(
+    @RequestContext() ctx: RequestContextDto,
+    @Query() query: { startDate?: string; endDate?: string },
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.reportService.getProfitAndLoss(ctx, query)
     return {
       success: true,
       statusCode: 200,
@@ -164,8 +168,9 @@ export class AccountingController {
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async getBalanceSheet(
     @RequestContext() ctx: RequestContextDto,
+    @Query() query: { asOfDate?: string },
   ): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.reportService.getBalanceSheet(ctx)
+    const data = await this.reportService.getBalanceSheet(ctx, query)
     return {
       success: true,
       statusCode: 200,
@@ -177,8 +182,11 @@ export class AccountingController {
   @Get('reports/cash-flow')
   @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
-  async getCashFlow(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.reportService.getCashFlowStatement(ctx)
+  async getCashFlow(
+    @RequestContext() ctx: RequestContextDto,
+    @Query() query: { startDate?: string; endDate?: string },
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.reportService.getCashFlowStatement(ctx, query)
     return {
       success: true,
       statusCode: 200,
@@ -199,6 +207,42 @@ export class AccountingController {
       success: true,
       statusCode: 200,
       message: 'Journal entry reversed successfully',
+      data,
+    }
+  }
+
+  @Get('journal-entries')
+  @RequireFeature('/admin/finance')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
+  async getJournalEntries(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any[]>> {
+    const data = await this.accountingService.getJournalEntries(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Journal entries retrieved successfully',
+      data,
+    }
+  }
+
+  @Post('journal-entries')
+  @RequireFeature('/admin/finance')
+  @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
+  async createJournalEntry(
+    @RequestContext() ctx: RequestContextDto,
+    @Body() body: {
+      date?: Date
+      type: JournalType
+      description: string
+      referenceType?: string
+      referenceId?: string
+      lines: { accountCode: string; side: LedgerEntrySide; amount: number }[]
+    },
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const data = await this.accountingService.createJournalEntry(body, ctx)
+    return {
+      success: true,
+      statusCode: 201,
+      message: 'Journal entry posted successfully',
       data,
     }
   }

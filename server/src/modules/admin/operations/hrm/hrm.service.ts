@@ -1,17 +1,14 @@
-import * as crypto from 'crypto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ApplicantStatus, LeaveStatus, LeaveType } from '@/common/enums/hrm/hrm-enums'
-import { LeaveRequestEntity } from './entities/leave.entity'
-import { EmployeeEntity } from './entities/employee.entity'
-import { AttendanceSessionEntity } from './entities/attendance.entity'
-import { PayrollBatchEntity, PayrollSlipEntity } from './entities/payroll.entity'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
-import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
-import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
+import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
-import { Injectable, Logger, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common'
+import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException, forwardRef } from '@nestjs/common'
+import * as crypto from 'crypto'
+import { Between } from 'typeorm'
 import {
   AssignShiftDto,
   CreateDepartmentDto,
@@ -20,8 +17,11 @@ import {
   CreateShiftDto,
   UpdateEmployeeDto,
 } from './dto/hrm.dto'
+import { AttendanceSessionEntity } from './entities/attendance.entity'
+import { EmployeeEntity } from './entities/employee.entity'
+import { LeaveRequestEntity } from './entities/leave.entity'
+import { PayrollBatchEntity, PayrollSlipEntity } from './entities/payroll.entity'
 import { HrmRepository } from './hrm.repository'
-import { Between } from 'typeorm'
 
 @Injectable()
 export class HrmService {
@@ -37,7 +37,7 @@ export class HrmService {
   ) {}
 
   async getDashboardStats(ctx: RequestContextDto) {
-    return this.hrmRepo.getStats(ctx.tenantId)
+    return this.hrmRepo.getStats(ctx.tenantId, ctx.branchId)
   }
 
   // --- Department CRUD ---
@@ -137,11 +137,12 @@ export class HrmService {
   // --- Employee CRUD ---
   async createEmployee(data: CreateEmployeeDto, ctx: RequestContextDto) {
     this.logger.log(`Creating employee profile for user ${data.userId} in tenant ${ctx.tenantId}`)
-    const { personalDetails, ...employeeData } = data
+    const { personalDetails, documents, ...employeeData } = data
 
     const employee = await this.hrmRepo.createEmployee({
       ...employeeData,
       tenantId: ctx.tenantId,
+      branchId: employeeData.branchId || ctx.branchId || null,
       joiningDate: new Date(data.joiningDate),
     })
 
@@ -154,6 +155,17 @@ export class HrmService {
       })
     }
 
+    if (documents && documents.length > 0) {
+      for (const doc of documents) {
+        await this.hrmRepo.documentRepo.save({
+          ...doc,
+          employeeId: employee.id,
+          tenantId: ctx.tenantId,
+          expiryDate: doc.expiryDate ? new Date(doc.expiryDate) : null,
+        })
+      }
+    }
+
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
       entity: 'Employee',
@@ -164,7 +176,7 @@ export class HrmService {
   }
 
   async findAllEmployees(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllEmployees(ctx.tenantId)
+    return this.hrmRepo.findAllEmployees(ctx.tenantId, ctx.branchId)
   }
 
   async findOneEmployee(id: string, ctx: RequestContextDto) {
@@ -177,7 +189,7 @@ export class HrmService {
     this.logger.log(`Updating employee ${id} for tenant ${ctx.tenantId}`)
     const oldEmployee = await this.findOneEmployee(id, ctx)
 
-    const { personalDetails, ...updateData } = data
+    const { personalDetails, documents, ...updateData } = data
     const formattedUpdate: any = { ...updateData }
     if (data.exitDate) formattedUpdate.exitDate = new Date(data.exitDate)
 
@@ -200,6 +212,20 @@ export class HrmService {
           employeeId: id,
           tenantId: ctx.tenantId,
         })
+      }
+    }
+
+    if (documents) {
+      await this.hrmRepo.documentRepo.delete({ employeeId: id, tenantId: ctx.tenantId })
+      if (documents.length > 0) {
+        for (const doc of documents) {
+          await this.hrmRepo.documentRepo.save({
+            ...doc,
+            employeeId: id,
+            tenantId: ctx.tenantId,
+            expiryDate: doc.expiryDate ? new Date(doc.expiryDate) : null,
+          })
+        }
       }
     }
 
@@ -372,7 +398,7 @@ export class HrmService {
   }
 
   async findAllAttendanceSessions(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllAttendanceSessions(ctx.tenantId)
+    return this.hrmRepo.findAllAttendanceSessions(ctx.tenantId, ctx.branchId)
   }
 
   // --- Leave Management ---
@@ -1180,5 +1206,55 @@ export class HrmService {
     })
 
     return { success: true, message: 'Demo data seeded successfully' }
+  }
+
+  // --- Employee Document Management ---
+  async getEmployeeDocuments(employeeId: string, ctx: RequestContextDto) {
+    await this.findOneEmployee(employeeId, ctx)
+    return this.hrmRepo.documentRepo.find({
+      where: { employeeId, tenantId: ctx.tenantId },
+      order: { createdAt: 'DESC' },
+    })
+  }
+
+  async addEmployeeDocument(
+    employeeId: string,
+    data: { documentType: string; fileUrl: string; expiryDate?: string },
+    ctx: RequestContextDto,
+  ) {
+    await this.findOneEmployee(employeeId, ctx)
+
+    const doc = this.hrmRepo.documentRepo.create({
+      employeeId,
+      tenantId: ctx.tenantId,
+      documentType: data.documentType,
+      fileUrl: data.fileUrl,
+      expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
+    })
+    const saved = await this.hrmRepo.documentRepo.save(doc)
+
+    await this.auditLogService.log(ctx, {
+      action: 'CREATE',
+      entity: 'EmployeeDocument',
+      entityId: saved.id,
+      newValue: saved,
+    })
+
+    return saved
+  }
+
+  async deleteEmployeeDocument(docId: string, ctx: RequestContextDto) {
+    const doc = await this.hrmRepo.documentRepo.findOne({
+      where: { id: docId, tenantId: ctx.tenantId },
+    })
+    if (!doc) throw new NotFoundException('Document not found')
+    await this.hrmRepo.documentRepo.delete(docId)
+
+    await this.auditLogService.log(ctx, {
+      action: 'DELETE',
+      entity: 'EmployeeDocument',
+      entityId: docId,
+      oldValue: doc,
+    })
   }
 }

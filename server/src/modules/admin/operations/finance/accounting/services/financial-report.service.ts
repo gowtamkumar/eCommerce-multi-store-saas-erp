@@ -10,53 +10,201 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 export class FinancialReportService {
   constructor(private readonly dataSource: DataSource) {}
 
-  async getProfitAndLoss(ctx: RequestContextDto) {
+  /**
+   * Generates a fully GL-backed Profit & Loss statement based on
+   * dynamic historical ledger entries within a specified date range.
+   */
+  async getProfitAndLoss(ctx: RequestContextDto, query?: { startDate?: string; endDate?: string }) {
     const tenantId = ctx.tenantId
-    const repo = this.dataSource.getRepository(AccountEntity)
+    const accountsRepo = this.dataSource.getRepository(AccountEntity)
 
-    const accounts = await repo.find({ where: { tenantId } })
+    // Retrieve all Revenue and Expense accounts
+    const accounts = await accountsRepo.find({
+      where: { tenantId },
+    })
 
-    const sales = accounts
-      .filter((a) => a.type === AccountType.REVENUE)
-      .reduce((sum, a) => sum + Number(a.balance), 0)
+    const revenueAccounts = accounts.filter((a) => a.type === AccountType.REVENUE)
+    const expenseAccounts = accounts.filter((a) => a.type === AccountType.EXPENSE)
 
-    const cogs = accounts
+    const revenueAccountIds = revenueAccounts.map((a) => a.id)
+    const expenseAccountIds = expenseAccounts.map((a) => a.id)
+    const allPlAccountIds = [...revenueAccountIds, ...expenseAccountIds]
+
+    // Initialize account periods balances map
+    const periodicBalances: Record<string, number> = {}
+    accounts.forEach((a) => {
+      periodicBalances[a.id] = 0
+    })
+
+    if (allPlAccountIds.length > 0) {
+      // Query ledger entry lines scoped inside target dates
+      const qb = this.dataSource
+        .getRepository(LedgerEntryEntity)
+        .createQueryBuilder('le')
+        .leftJoinAndSelect('le.journalEntry', 'je')
+        .where('le.tenantId = :tenantId', { tenantId })
+        .andWhere('le.accountId IN (:...allPlAccountIds)', { allPlAccountIds })
+
+      if (query?.startDate) {
+        qb.andWhere('je.date >= :startDate', { startDate: new Date(query.startDate) })
+      }
+      if (query?.endDate) {
+        // Enforce full end of day limit
+        const end = new Date(query.endDate)
+        end.setHours(23, 59, 59, 999)
+        qb.andWhere('je.date <= :endDate', { endDate: end })
+      }
+
+      const entries = await qb.getMany()
+
+      // Calculate net balances based on double-entry side impacts
+      for (const entry of entries) {
+        const account = accounts.find((a) => a.id === entry.accountId)
+        if (!account) continue
+
+        const amount = Number(entry.amount)
+        if (account.type === AccountType.REVENUE) {
+          // Credits increase revenue, debits decrease
+          if (entry.side === LedgerEntrySide.CREDIT) {
+            periodicBalances[account.id] += amount
+          } else {
+            periodicBalances[account.id] -= amount
+          }
+        } else if (account.type === AccountType.EXPENSE) {
+          // Debits increase expense, credits decrease
+          if (entry.side === LedgerEntrySide.DEBIT) {
+            periodicBalances[account.id] += amount
+          } else {
+            periodicBalances[account.id] -= amount
+          }
+        }
+      }
+    }
+
+    // Assemble P&L items & dynamic categories
+    let salesTotal = 0
+    let cogsTotal = 0
+    let operatingExpTotal = 0
+
+    const revenueBreakdown = revenueAccounts.map((a) => {
+      const balance = periodicBalances[a.id]
+      salesTotal += balance
+      return {
+        code: a.code,
+        name: a.name,
+        category: a.category,
+        balance,
+      }
+    })
+
+    const cogsBreakdown = expenseAccounts
       .filter((a) => a.category === AccountCategory.COGS)
-      .reduce((sum, a) => sum + Number(a.balance), 0)
+      .map((a) => {
+        const balance = periodicBalances[a.id]
+        cogsTotal += balance
+        return {
+          code: a.code,
+          name: a.name,
+          category: a.category,
+          balance,
+        }
+      })
 
-    const expenses = accounts
-      .filter((a) => a.type === AccountType.EXPENSE && a.category !== AccountCategory.COGS)
-      .reduce((sum, a) => sum + Number(a.balance), 0)
+    const operatingExpBreakdown = expenseAccounts
+      .filter((a) => a.category !== AccountCategory.COGS)
+      .map((a) => {
+        const balance = periodicBalances[a.id]
+        operatingExpTotal += balance
+        return {
+          code: a.code,
+          name: a.name,
+          category: a.category,
+          balance,
+        }
+      })
 
-    const grossProfit = sales - cogs
-    const netProfit = grossProfit - expenses
+    const grossProfit = salesTotal - cogsTotal
+    const netProfit = grossProfit - operatingExpTotal
 
     return {
-      revenue: sales,
-      costOfGoodsSold: cogs,
+      revenue: salesTotal,
+      costOfGoodsSold: cogsTotal,
       grossProfit,
-      operatingExpenses: expenses,
+      operatingExpenses: operatingExpTotal,
       netProfit,
+      revenueBreakdown,
+      cogsBreakdown,
+      operatingExpBreakdown,
     }
   }
 
-  async getBalanceSheet(ctx: RequestContextDto) {
+  /**
+   * Generates a fully GL-backed Balance Sheet report supporting historical date (asOfDate) scoping.
+   */
+  async getBalanceSheet(ctx: RequestContextDto, query?: { asOfDate?: string }) {
     const tenantId = ctx.tenantId
-    const repo = this.dataSource.getRepository(AccountEntity)
+    const accountsRepo = this.dataSource.getRepository(AccountEntity)
 
-    const accounts = await repo.find({ where: { tenantId } })
+    // Load all Accounts
+    const accounts = await accountsRepo.find({ where: { tenantId } })
+    const allAccountIds = accounts.map((a) => a.id)
+
+    // Map cumulative ledger balance from the beginning up to selected date
+    const historicalBalances: Record<string, number> = {}
+    accounts.forEach((a) => {
+      historicalBalances[a.id] = 0
+    })
+
+    if (allAccountIds.length > 0) {
+      const qb = this.dataSource
+        .getRepository(LedgerEntryEntity)
+        .createQueryBuilder('le')
+        .leftJoinAndSelect('le.journalEntry', 'je')
+        .where('le.tenantId = :tenantId', { tenantId })
+        .andWhere('le.accountId IN (:...allAccountIds)', { allAccountIds })
+
+      if (query?.asOfDate) {
+        const limitDate = new Date(query.asOfDate)
+        limitDate.setHours(23, 59, 59, 999)
+        qb.andWhere('je.date <= :limitDate', { limitDate })
+      }
+
+      const entries = await qb.getMany()
+
+      for (const entry of entries) {
+        const account = accounts.find((a) => a.id === entry.accountId)
+        if (!account) continue
+
+        const amount = Number(entry.amount)
+        if (account.type === AccountType.ASSET) {
+          // Debits increase, Credits decrease
+          if (entry.side === LedgerEntrySide.DEBIT) {
+            historicalBalances[account.id] += amount
+          } else {
+            historicalBalances[account.id] -= amount
+          }
+        } else if (account.type === AccountType.LIABILITY || account.type === AccountType.EQUITY) {
+          // Credits increase, Debits decrease
+          if (entry.side === LedgerEntrySide.CREDIT) {
+            historicalBalances[account.id] += amount
+          } else {
+            historicalBalances[account.id] -= amount
+          }
+        }
+      }
+    }
 
     const assets = accounts
       .filter((a) => a.type === AccountType.ASSET)
-      .map((a) => ({ name: a.name, balance: Number(a.balance) }))
+      .map((a) => ({ code: a.code, name: a.name, category: a.category, balance: historicalBalances[a.id] }))
 
     const liabilities = accounts
       .filter((a) => a.type === AccountType.LIABILITY)
-      .map((a) => ({ name: a.name, balance: Number(a.balance) }))
+      .map((a) => ({ code: a.code, name: a.name, category: a.category, balance: historicalBalances[a.id] }))
 
     const equity = accounts
       .filter((a) => a.type === AccountType.EQUITY)
-      .map((a) => ({ name: a.name, balance: Number(a.balance) }))
+      .map((a) => ({ code: a.code, name: a.name, category: a.category, balance: historicalBalances[a.id] }))
 
     return {
       assets,
@@ -68,7 +216,10 @@ export class FinancialReportService {
     }
   }
 
-  async getCashFlowStatement(ctx: RequestContextDto) {
+  /**
+   * Generates Cash Flow based on ledger transactions scoped inside date ranges.
+   */
+  async getCashFlowStatement(ctx: RequestContextDto, query?: { startDate?: string; endDate?: string }) {
     const tenantId = ctx.tenantId
     const repo = this.dataSource.getRepository(AccountEntity)
 
@@ -89,14 +240,24 @@ export class FinancialReportService {
       }
     }
 
-    // Load ledger entries that impacted cash/bank accounts
-    const ledgerEntries = await this.dataSource
+    // Load ledger entries that impacted cash/bank accounts inside dates
+    const qb = this.dataSource
       .getRepository(LedgerEntryEntity)
       .createQueryBuilder('le')
       .leftJoinAndSelect('le.journalEntry', 'je')
       .where('le.accountId IN (:...cashAccountIds)', { cashAccountIds })
       .andWhere('le.tenantId = :tenantId', { tenantId })
-      .getMany()
+
+    if (query?.startDate) {
+      qb.andWhere('je.date >= :startDate', { startDate: new Date(query.startDate) })
+    }
+    if (query?.endDate) {
+      const end = new Date(query.endDate)
+      end.setHours(23, 59, 59, 999)
+      qb.andWhere('je.date <= :endDate', { endDate: end })
+    }
+
+    const ledgerEntries = await qb.getMany()
 
     let operatingIn = 0
     let operatingOut = 0
@@ -152,7 +313,7 @@ export class FinancialReportService {
     const netFinancing = financingIn - financingOut
     const netChange = netOperating + netInvesting + netFinancing
 
-    // Find starting balance of cash accounts
+    // Find current ending balances of cash accounts
     const endingBalance = cashAccounts.reduce((sum, a) => sum + Number(a.balance), 0)
     const startingBalance = endingBalance - netChange
 

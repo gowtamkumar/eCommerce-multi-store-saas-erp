@@ -90,6 +90,18 @@ export class CreateEmployeePersonalDetailsDto {
   address?: string
 }
 
+export class CreateEmployeeDocumentDto {
+  @IsString()
+  documentType: string
+
+  @IsString()
+  fileUrl: string
+
+  @IsDateString()
+  @IsOptional()
+  expiryDate?: string
+}
+
 export class CreateEmployeeDto {
   @IsUUID()
   userId: string
@@ -132,6 +144,12 @@ export class CreateEmployeeDto {
   @ValidateNested()
   @Type(() => CreateEmployeePersonalDetailsDto)
   personalDetails?: CreateEmployeePersonalDetailsDto
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateEmployeeDocumentDto)
+  documents?: CreateEmployeeDocumentDto[]
 }
 
 export class UpdateEmployeeDto {
@@ -172,6 +190,12 @@ export class UpdateEmployeeDto {
   @ValidateNested()
   @Type(() => CreateEmployeePersonalDetailsDto)
   personalDetails?: CreateEmployeePersonalDetailsDto
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateEmployeeDocumentDto)
+  documents?: CreateEmployeeDocumentDto[]
 }
 
 export class CreateShiftDto {

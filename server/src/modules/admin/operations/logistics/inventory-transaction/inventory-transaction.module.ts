@@ -4,6 +4,7 @@ import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inve
 import { StockReservationEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/stock-reservation.entity'
 import { StockTransferEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/stock-transfer.entity'
 import { StockTransferItemEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/stock-transfer-item.entity'
+import { ProductBatchEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/product-batch.entity'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { InventoryLedgerController } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.controller'
 import { StockReservationService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.service'
@@ -24,6 +25,9 @@ import { NotificationModule } from '@/modules/admin/operations/infra/notificatio
 import { BullModule } from '@nestjs/bullmq'
 import { StockReservationSchedulerService } from './stock-reservation-scheduler.service'
 
+import { ProductBatchService } from './product-batch.service'
+import { ProductBatchController } from './product-batch.controller'
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -31,6 +35,7 @@ import { StockReservationSchedulerService } from './stock-reservation-scheduler.
       StockReservationEntity,
       StockTransferEntity,
       StockTransferItemEntity,
+      ProductBatchEntity,
       ProductEntity,
       ProductVariantEntity,
       CategoryEntity,
@@ -44,7 +49,7 @@ import { StockReservationSchedulerService } from './stock-reservation-scheduler.
       name: 'order',
     }),
   ],
-  controllers: [InventoryLedgerController, StockReservationController, StockTransferController],
+  controllers: [InventoryLedgerController, StockReservationController, StockTransferController, ProductBatchController],
   providers: [
     InventoryLedgerService,
     InventoryLedgerRepository,
@@ -53,7 +58,8 @@ import { StockReservationSchedulerService } from './stock-reservation-scheduler.
     StockReservationService,
     StockReservationSchedulerService,
     StockTransferService,
+    ProductBatchService,
   ],
-  exports: [InventoryLedgerService, InventoryLedgerRepository, StockReservationService, StockTransferService],
+  exports: [InventoryLedgerService, InventoryLedgerRepository, StockReservationService, StockTransferService, ProductBatchService],
 })
 export class InventoryLedgerModule {}

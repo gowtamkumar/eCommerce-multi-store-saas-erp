@@ -101,9 +101,13 @@ export class HrmRepository {
     return this.employeeRepo.save(this.employeeRepo.create(data))
   }
 
-  async findAllEmployees(tenantId: string): Promise<EmployeeEntity[]> {
+  async findAllEmployees(tenantId: string, branchId?: string): Promise<EmployeeEntity[]> {
+    const whereClause: any = { tenantId }
+    if (branchId) {
+      whereClause.branchId = branchId
+    }
     return this.employeeRepo.find({
-      where: { tenantId },
+      where: whereClause,
       relations: ['user', 'department', 'designation', 'branch', 'manager', 'personalDetails'],
     })
   }
@@ -198,9 +202,13 @@ export class HrmRepository {
     })
   }
 
-  async findAllAttendanceSessions(tenantId: string): Promise<AttendanceSessionEntity[]> {
+  async findAllAttendanceSessions(tenantId: string, branchId?: string): Promise<AttendanceSessionEntity[]> {
+    const whereClause: any = { tenantId }
+    if (branchId) {
+      whereClause.branchId = branchId
+    }
     return this.attendanceSessionRepo.find({
-      where: { tenantId },
+      where: whereClause,
       relations: ['employee', 'employee.user', 'employee.department', 'employee.designation'],
       order: { clockIn: 'DESC' },
     })
@@ -354,27 +362,28 @@ export class HrmRepository {
     })
   }
 
-  async getStats(tenantId: string) {
+  async getStats(tenantId: string, branchId?: string) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
+    const employeeWhere: any = { tenantId }
+    const attendanceWhere: any = { tenantId, clockIn: Between(today, new Date()) }
+    const jobWhere: any = { tenantId, status: 'PUBLISHED' as any }
+    const applicantWhere: any = { tenantId }
+    const leaveWhere: any = { tenantId, status: 'PENDING' as any }
+
+    if (branchId) {
+      employeeWhere.branchId = branchId
+      attendanceWhere.branchId = branchId
+    }
+
     const [employeeCount, jobCount, applicantCount, attendanceCount, leaveCount] =
       await Promise.all([
-        this.employeeRepo.count({ where: { tenantId } }),
-        this.jobPostingRepo.count({ where: { tenantId, status: 'PUBLISHED' as any } }),
-        this.applicantRepo.count({ where: { tenantId } }),
-        this.attendanceSessionRepo.count({
-          where: {
-            tenantId,
-            clockIn: Between(today, new Date()),
-          },
-        }),
-        this.leaveRequestRepo.count({
-          where: {
-            tenantId,
-            status: 'PENDING' as any,
-          },
-        }),
+        this.employeeRepo.count({ where: employeeWhere }),
+        this.jobPostingRepo.count({ where: jobWhere }),
+        this.applicantRepo.count({ where: applicantWhere }),
+        this.attendanceSessionRepo.count({ where: attendanceWhere }),
+        this.leaveRequestRepo.count({ where: leaveWhere }),
       ])
 
     return {

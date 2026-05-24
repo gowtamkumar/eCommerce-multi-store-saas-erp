@@ -25,4 +25,8 @@ export class CreateExpenseDto {
   @IsString()
   @IsOptional()
   referenceNumber?: string
+
+  @IsString()
+  @IsOptional()
+  branchId?: string
 }

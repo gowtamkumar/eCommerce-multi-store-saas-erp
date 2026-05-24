@@ -15,6 +15,7 @@ import { OrderStatus } from '@/common/enums/order-status.enum'
 import { StockReservationService } from '../inventory-transaction/stock-reservation.service'
 import { StockReservationEntity } from '../inventory-transaction/entities/stock-reservation.entity'
 import { ReservationStatus } from '@/common/enums/reservation-status.enum'
+import { ProductBatchService } from '../inventory-transaction/product-batch.service'
 
 @Injectable()
 export class FulfillmentService {
@@ -27,6 +28,7 @@ export class FulfillmentService {
     @InjectRepository(OrderEntity)
     private readonly orderRepository: Repository<OrderEntity>,
     private readonly reservationService: StockReservationService,
+    private readonly batchService: ProductBatchService,
   ) {}
 
   async createFromOrder(
@@ -190,20 +192,53 @@ export class FulfillmentService {
           )
         }
 
-        // Record the actual sale decrement
-        await this.inventoryService.createLedgerEntry(
-          {
-            productId: item.productId,
-            variantId: item.variantId,
-            quantity: item.quantity,
-            type: InventoryTransactionType.SALE,
-            referenceType: InventoryTransactionReferenceType.ORDER,
-            referenceId: task.orderId,
-            warehouseId: task.warehouseId,
-          },
-          ctx,
-          manager,
-        )
+        // Record the actual sale decrement using FEFO allocation
+        let allocations: { batchId: string; quantity: number }[] = []
+        try {
+          allocations = await this.batchService.allocateFEFOStock(
+            ctx.tenantId,
+            item.productId,
+            item.variantId ?? null,
+            item.quantity,
+            manager,
+          )
+        } catch (batchErr) {
+          this.logger.warn(`FEFO Batch allocation failed for item ${item.productId}: ${batchErr.message}. Falling back to default inventory deduction.`)
+        }
+
+        if (allocations.length > 0) {
+          for (const alloc of allocations) {
+            await this.inventoryService.createLedgerEntry(
+              {
+                productId: item.productId,
+                variantId: item.variantId,
+                quantity: alloc.quantity,
+                type: InventoryTransactionType.SALE,
+                referenceType: InventoryTransactionReferenceType.ORDER,
+                referenceId: task.orderId,
+                warehouseId: task.warehouseId,
+                batchId: alloc.batchId,
+              },
+              ctx,
+              manager,
+            )
+          }
+        } else {
+          // Fallback to non-batch ledger entry if no active batches are configured
+          await this.inventoryService.createLedgerEntry(
+            {
+              productId: item.productId,
+              variantId: item.variantId,
+              quantity: item.quantity,
+              type: InventoryTransactionType.SALE,
+              referenceType: InventoryTransactionReferenceType.ORDER,
+              referenceId: task.orderId,
+              warehouseId: task.warehouseId,
+            },
+            ctx,
+            manager,
+          )
+        }
       }
 
       // 2. Update Task Status

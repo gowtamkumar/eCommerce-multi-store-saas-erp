@@ -53,6 +53,12 @@ export class SupplierRepository {
     })
   }
 
+  async findByUserIdAndTenant(userId: string, tenantId: string): Promise<SupplierEntity | null> {
+    return await this.repo.findOne({
+      where: { userId, tenantId },
+    })
+  }
+
   async updateAndSave(supplier: SupplierEntity, dto: any): Promise<SupplierEntity> {
     Object.assign(supplier, dto)
     return await this.repo.save(supplier)

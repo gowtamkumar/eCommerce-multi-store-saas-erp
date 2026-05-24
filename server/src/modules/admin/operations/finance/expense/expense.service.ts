@@ -73,12 +73,13 @@ export class ExpenseService {
     this.logger.log(`${this.findAllExpenses.name} Service Called`)
     const tenantId = ctx.tenantId
     const { page = 1, limit = 20, category, q, startDate, endDate } = options
-    const cacheKey = `expenses:list:p${page}:l${limit}:cat${category || 'all'}:q${q || ''}:s${startDate?.getTime()}:e${endDate?.getTime()}`
+    const branchId = ctx.branchId
+    const cacheKey = `expenses:list:p${page}:l${limit}:cat${category || 'all'}:q${q || ''}:s${startDate?.getTime()}:e${endDate?.getTime()}:b${branchId || 'global'}`
 
     return this.cacheService.rememberCache(
       cacheKey,
       async () => {
-        const [items, total] = await this.expenseRepository.findAllPaginated(tenantId, options)
+        const [items, total] = await this.expenseRepository.findAllPaginated(tenantId, { ...options, branchId })
         return {
           items,
           total,
@@ -103,10 +104,11 @@ export class ExpenseService {
   ): Promise<ExpenseEntity[]> {
     this.logger.log(`${this.findAllExpensesRaw.name} Service Called`)
     const tenantId = ctx.tenantId
-    const cacheKey = `expenses:raw:${startDate?.getTime()}:${endDate?.getTime()}`
+    const branchId = ctx.branchId
+    const cacheKey = `expenses:raw:${startDate?.getTime()}:${endDate?.getTime()}:b${branchId || 'global'}`
     return this.cacheService.rememberCache(
       cacheKey,
-      () => this.expenseRepository.findAllRaw(tenantId, startDate, endDate),
+      () => this.expenseRepository.findAllRaw(tenantId, startDate, endDate, branchId),
       300,
       tenantId,
     )

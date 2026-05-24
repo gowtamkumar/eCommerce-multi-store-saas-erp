@@ -1,0 +1,807 @@
+'use client';
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Package, Search, AlertTriangle, XCircle, CheckCircle, Calendar, Plus, X,
+  Edit2, Loader2, Sparkles, Clock, ArrowRight, Save, ClipboardList, ShieldAlert
+} from 'lucide-react';
+import { fetchAPI } from '@/services/api';
+import { useSettings } from '@/hooks/SettingsContext';
+
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  images?: string[];
+  stock: number;
+  price: number;
+  variants?: any[];
+}
+
+interface ProductBatch {
+  id: string;
+  batchNumber: string;
+  manufactureDate: string | null;
+  expiryDate: string;
+  initialQuantity: number;
+  currentQuantity: number;
+  status: 'ACTIVE' | 'EXPIRED' | 'HOLD' | 'DELETED';
+  productId: string;
+  variantId: string | null;
+  product: {
+    name: string;
+    images?: string[];
+  };
+  variant?: {
+    combination?: Record<string, string>;
+    sku?: string;
+  } | null;
+  createdAt: string;
+}
+
+export default function BatchRegistry() {
+  const [batches, setBatches] = useState<ProductBatch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [expiringSoonFilter, setExpiringSoonFilter] = useState(false);
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // Modal states
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<ProductBatch | null>(null);
+
+  // Sweep loading state
+  const [sweeping, setSweeping] = useState(false);
+
+  const fetchBatches = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '15',
+        q: searchQuery,
+      });
+      if (statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+      if (expiringSoonFilter) {
+        params.append('expiringSoon', 'true');
+      }
+
+      const res = await fetchAPI(`/product-batches?${params.toString()}`);
+      if (res.success) {
+        setBatches(res.data.items || []);
+        setTotalPages(res.data.totalPages || 1);
+        setTotalItems(res.data.total || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch batches', error);
+      toast.error('Failed to load product batches.');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, searchQuery, statusFilter, expiringSoonFilter]);
+
+  useEffect(() => {
+    fetchBatches();
+  }, [fetchBatches]);
+
+  const handleSweepExpired = async () => {
+    setSweeping(true);
+    try {
+      const res = await fetchAPI('/product-batches/sweep-expired', { method: 'POST' });
+      if (res.success) {
+        toast.success(`Sweep complete. ${res.data.affected} batches marked as expired.`);
+        fetchBatches();
+      }
+    } catch (error) {
+      toast.error('Failed to perform expired batch sweep.');
+    } finally {
+      setSweeping(false);
+    }
+  };
+
+  // Memoized stats computed client-side for immediate user feedback
+  const stats = useMemo(() => {
+    const total = totalItems;
+    const active = batches.filter(b => b.status === 'ACTIVE').length;
+    const expired = batches.filter(b => b.status === 'EXPIRED').length;
+
+    // Check expiring soon within 30 days
+    const now = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(now.getDate() + 30);
+
+    const nearExpiry = batches.filter(b => {
+      const expDate = new Date(b.expiryDate);
+      return b.status === 'ACTIVE' && expDate <= thirtyDaysFromNow && expDate > now;
+    }).length;
+
+    return { total, active, expired, nearExpiry };
+  }, [batches, totalItems]);
+
+  const getDaysRemaining = (expiryDateStr: string) => {
+    const diffTime = new Date(expiryDateStr).getTime() - new Date().getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Upper header action bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Batch & Expiry Management</h2>
+          <p className="text-xs text-slate-500 font-medium mt-1">Track product batches, manufacture/expiration dates, and FEFO stock allocations.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSweepExpired}
+            disabled={sweeping}
+            className="px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:border-red-500 hover:text-red-500 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+          >
+            {sweeping ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4 text-red-500" />}
+            Sweep Expired
+          </button>
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-6 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Register Batch
+          </button>
+        </div>
+      </div>
+
+      {/* Summary Widgets */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm transition-all hover:shadow-md group">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 rounded-xl transition-transform group-hover:scale-110">
+              <ClipboardList className="w-5 h-5" />
+            </div>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Batches</p>
+          </div>
+          <p className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight font-mono">{stats.total}</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm transition-all hover:shadow-md group">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl transition-transform group-hover:scale-110">
+              <CheckCircle className="w-5 h-5" />
+            </div>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Batches</p>
+          </div>
+          <p className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight font-mono">{stats.active}</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm transition-all hover:shadow-md group border-orange-100 dark:border-orange-900/30">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-xl transition-transform group-hover:scale-110">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Expiring Soon</p>
+          </div>
+          <p className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight font-mono">{stats.nearExpiry}</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm transition-all hover:shadow-md group border-red-100 dark:border-red-900/30">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl transition-transform group-hover:scale-110">
+              <XCircle className="w-5 h-5" />
+            </div>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Expired Batches</p>
+          </div>
+          <p className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight font-mono">{stats.expired}</p>
+        </div>
+      </div>
+
+      {/* Filter and Search Section */}
+      <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+        <div className="flex flex-wrap gap-2.5">
+          {['all', 'ACTIVE', 'EXPIRED', 'HOLD'].map(status => (
+            <button
+              key={status}
+              onClick={() => {
+                setStatusFilter(status);
+                setPage(1);
+              }}
+              className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${statusFilter === status && !expiringSoonFilter
+                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xl scale-105'
+                : 'bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-brand-500'
+                }`}
+            >
+              {status === 'all' ? 'All Status' : status}
+            </button>
+          ))}
+          <button
+            onClick={() => {
+              setExpiringSoonFilter(!expiringSoonFilter);
+              setPage(1);
+            }}
+            className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 ${expiringSoonFilter
+              ? 'bg-orange-500 text-white shadow-xl scale-105'
+              : 'bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-orange-500 hover:border-orange-500'
+              }`}
+          >
+            <Clock className="w-3 h-3" />
+            Expiring in 30 Days
+          </button>
+        </div>
+
+        <div className="relative w-full lg:w-96 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400 group-focus-within:text-brand-500 transition-colors" />
+          <input
+            type="text"
+            placeholder="Search batch number, product name..."
+            value={searchQuery}
+            onChange={e => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            className="w-full pl-12 pr-6 py-4 rounded-2xl border-2 border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all shadow-sm font-medium"
+          />
+        </div>
+      </div>
+
+      {/* Main Table */}
+      <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden transition-all hover:shadow-md">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
+              <tr>
+                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Product / Item Details</th>
+                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Batch Number</th>
+                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Manufactured</th>
+                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Expiration Date</th>
+                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Initial Qty</th>
+                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Current Qty</th>
+                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
+                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+              {loading && batches.length === 0 ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    <td colSpan={8} className="px-6 py-10">
+                      <div className="h-12 bg-slate-100 dark:bg-slate-700/30 animate-pulse rounded-2xl" />
+                    </td>
+                  </tr>
+                ))
+              ) : batches.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-24 text-center">
+                    <div className="flex flex-col items-center gap-4 max-w-xs mx-auto">
+                      <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-2">
+                        <Calendar className="w-8 h-8 text-slate-200" strokeWidth={1} />
+                      </div>
+                      <div>
+                        <p className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">No Batches Registered</p>
+                        <p className="text-xs text-slate-500 font-medium">Create a product batch to track manufacture and expiry schedules.</p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                batches.map(batch => {
+                  const daysLeft = getDaysRemaining(batch.expiryDate);
+                  const isSoon = daysLeft > 0 && daysLeft <= 30;
+                  const isPast = daysLeft <= 0;
+
+                  return (
+                    <tr key={batch.id} className="group hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0 border border-slate-200 dark:border-slate-600 flex items-center justify-center">
+                            {batch.product.images?.[0] ? (
+                              <img src={batch.product.images[0]} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <Package className="w-5 h-5 text-slate-400" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{batch.product.name}</p>
+                            {batch.variant && (
+                              <p className="text-[10px] text-slate-400 font-mono mt-0.5 uppercase tracking-tighter">
+                                {Object.values(batch.variant.combination || {}).join(' / ')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-mono font-black text-xs text-slate-700 dark:text-slate-300">
+                        {batch.batchNumber}
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                        {batch.manufactureDate ? new Date(batch.manufactureDate).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="px-6 py-4 text-xs font-bold">
+                        <div className="flex flex-col">
+                          <span>{new Date(batch.expiryDate).toLocaleDateString()}</span>
+                          {batch.status === 'ACTIVE' && isSoon && (
+                            <span className="text-[9px] text-orange-500 font-bold mt-0.5">Expiring in {daysLeft} days</span>
+                          )}
+                          {batch.status === 'ACTIVE' && isPast && (
+                            <span className="text-[9px] text-red-500 font-bold mt-0.5">Expired</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-400 font-mono">
+                        {batch.initialQuantity}
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs font-bold text-slate-900 dark:text-white">
+                        {batch.currentQuantity}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${batch.status === 'ACTIVE'
+                          ? isSoon
+                            ? 'bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-950/30'
+                            : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30'
+                          : batch.status === 'EXPIRED'
+                            ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-950/30'
+                            : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800'
+                          }`}>
+                          {batch.status === 'ACTIVE' && isSoon ? 'Expiring Soon' : batch.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => {
+                            setSelectedBatch(batch);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl text-slate-400 hover:text-brand-500 transition-all active:scale-90"
+                          title="Edit Batch"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer / Pagination */}
+        {!loading && totalItems > 0 && (
+          <div className="px-8 py-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-wider">
+              Showing {batches.length} of {totalItems} registered batches
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage(page + 1)}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* CREATE MODAL */}
+      <CreateBatchModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          setIsCreateModalOpen(false);
+          fetchBatches();
+        }}
+      />
+
+      {/* EDIT MODAL */}
+      <EditBatchModal
+        isOpen={isEditModalOpen}
+        batch={selectedBatch}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedBatch(null);
+        }}
+        onSuccess={() => {
+          setIsEditModalOpen(false);
+          setSelectedBatch(null);
+          fetchBatches();
+        }}
+      />
+    </div>
+  );
+}
+
+function CreateBatchModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
+
+  // Form Fields
+  const [batchNumber, setBatchNumber] = useState('');
+  const [manufactureDate, setManufactureDate] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [initialQuantity, setInitialQuantity] = useState<number>(0);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchProducts();
+    }
+  }, [isOpen]);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetchAPI('/products?limit=50');
+      if (res.success) {
+        setProducts(res.data.products || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products', error);
+    }
+  };
+
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.slug.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProduct) return toast.error('Select a product first.');
+    if (!batchNumber) return toast.error('Batch number is required.');
+    if (!expiryDate) return toast.error('Expiry date is required.');
+    if (initialQuantity < 0) return toast.error('Initial quantity cannot be negative.');
+
+    setLoading(true);
+    try {
+      const res = await fetchAPI('/product-batches', {
+        method: 'POST',
+        body: JSON.stringify({
+          productId: selectedProduct.id,
+          variantId: selectedVariant?.id || null,
+          batchNumber,
+          manufactureDate: manufactureDate || undefined,
+          expiryDate,
+          initialQuantity: Number(initialQuantity),
+        }),
+      });
+
+      if (res.success) {
+        toast.success('Batch registered successfully');
+        resetForm();
+        onSuccess();
+      }
+    } catch (error) {
+      toast.error('Failed to register batch.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedProduct(null);
+    setSelectedVariant(null);
+    setBatchNumber('');
+    setManufactureDate('');
+    setExpiryDate('');
+    setInitialQuantity(0);
+    setSearchQuery('');
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-brand-100 dark:bg-brand-900/30 rounded-xl">
+              <Calendar className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Register Product Batch</h3>
+              <p className="text-xs text-slate-500 font-medium">Record a new manufacturing run & expiry</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg">
+            <X className="w-5 h-5 text-slate-400" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {!selectedProduct ? (
+            <div className="space-y-4">
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Select Product</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 font-medium"
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2">
+                {filteredProducts.map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setSelectedProduct(p)}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-brand-500 hover:bg-brand-50/10 transition-all text-left"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0">
+                      {p.images?.[0] && <img src={p.images[0]} alt="" className="w-full h-full object-cover" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-slate-900 dark:text-white truncate">{p.name}</p>
+                      <p className="text-[10px] text-slate-500">Current Stock: {p.stock}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Product Info */}
+              <div className="p-4 bg-brand-50/20 dark:bg-brand-900/10 rounded-2xl border border-brand-100/50 dark:border-brand-900/30 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 overflow-hidden flex-shrink-0 border border-slate-100 dark:border-slate-700">
+                    {selectedProduct.images?.[0] && <img src={selectedProduct.images[0]} alt="" className="w-full h-full object-cover" />}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white">{selectedProduct.name}</h4>
+                    <span className="text-xs text-brand-600 dark:text-brand-400 font-bold">In-Stock: {selectedProduct.stock}</span>
+                  </div>
+                </div>
+                <button type="button" onClick={() => { setSelectedProduct(null); setSelectedVariant(null); }} className="text-xs font-bold text-red-500 hover:underline">
+                  Change
+                </button>
+              </div>
+
+              {/* Variant Selector */}
+              {selectedProduct.variants && selectedProduct.variants.length > 0 && (
+                <div className="space-y-2">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Select Variant</label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProduct.variants.map(v => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setSelectedVariant(v)}
+                        className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all ${selectedVariant?.id === v.id
+                          ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900'
+                          : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                          }`}
+                      >
+                        {Object.values(v.combination || {}).join(' / ')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Batch Inputs */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Batch Number *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. BATCH-2026-A1"
+                    value={batchNumber}
+                    onChange={e => setBatchNumber(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm font-mono"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Initial Quantity</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={initialQuantity}
+                    onChange={e => setInitialQuantity(Math.max(0, Number(e.target.value)))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Manufacture Date</label>
+                  <input
+                    type="date"
+                    value={manufactureDate}
+                    onChange={e => setManufactureDate(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Expiry Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={expiryDate}
+                    onChange={e => setExpiryDate(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+                  />
+                </div>
+              </div>
+            </form>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+          <button onClick={onClose} className="px-5 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-all border border-slate-200 dark:border-slate-700">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading || !selectedProduct || !batchNumber || !expiryDate}
+            onClick={handleSubmit}
+            className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl disabled:opacity-50 flex items-center gap-2 transition-all shadow-md hover:scale-105 active:scale-95"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save Batch
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditBatchModal({ isOpen, batch, onClose, onSuccess }: { isOpen: boolean; batch: ProductBatch | null; onClose: () => void; onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [batchNumber, setBatchNumber] = useState('');
+  const [manufactureDate, setManufactureDate] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [status, setStatus] = useState<'ACTIVE' | 'EXPIRED' | 'HOLD' | 'DELETED'>('ACTIVE');
+
+  useEffect(() => {
+    if (batch) {
+      setBatchNumber(batch.batchNumber);
+      setManufactureDate(batch.manufactureDate ? batch.manufactureDate.split('T')[0] : '');
+      setExpiryDate(batch.expiryDate.split('T')[0]);
+      setStatus(batch.status);
+    }
+  }, [batch]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!batch) return;
+
+    setLoading(true);
+    try {
+      const res = await fetchAPI(`/product-batches/${batch.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          batchNumber,
+          manufactureDate: manufactureDate || null,
+          expiryDate,
+          status,
+        }),
+      });
+
+      if (res.success) {
+        toast.success('Batch updated successfully');
+        onSuccess();
+      }
+    } catch (error) {
+      toast.error('Failed to update batch.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen || !batch) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-brand-100 dark:bg-brand-900/30 rounded-xl">
+              <Edit2 className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Edit Batch: {batch.batchNumber}</h3>
+              <p className="text-xs text-slate-500 font-medium">Update batch attributes and status</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg">
+            <X className="w-5 h-5 text-slate-400" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Batch Number</label>
+              <input
+                type="text"
+                required
+                value={batchNumber}
+                onChange={e => setBatchNumber(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm font-mono"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Manufacture Date</label>
+                <input
+                  type="date"
+                  value={manufactureDate}
+                  onChange={e => setManufactureDate(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Expiry Date</label>
+                <input
+                  type="date"
+                  required
+                  value={expiryDate}
+                  onChange={e => setExpiryDate(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-500">Status</label>
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value as any)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 text-sm font-bold"
+              >
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="EXPIRED">EXPIRED</option>
+                <option value="HOLD">HOLD</option>
+                <option value="DELETED">DELETED</option>
+              </select>
+            </div>
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
+          <button onClick={onClose} className="px-5 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-all border border-slate-200 dark:border-slate-700">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            onClick={handleSubmit}
+            className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl disabled:opacity-50 flex items-center gap-2 transition-all shadow-md hover:scale-105 active:scale-95"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

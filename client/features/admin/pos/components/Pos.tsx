@@ -58,6 +58,8 @@ interface ProductVariant {
   id: string;
   price?: number;
   combination: Record<string, string>;
+  sku?: string;
+  barcode?: string;
 }
 
 interface Product {
@@ -66,6 +68,8 @@ interface Product {
   slug: string;
   stock: number;
   price: number;
+  sku?: string;
+  barcode?: string;
   images?: string[];
   variants?: ProductVariant[];
 }
@@ -154,6 +158,15 @@ export default function Pos() {
   const [isCloseShiftOpen, setIsCloseShiftOpen] = useState(false);
   const [closingBalance, setClosingBalance] = useState<number | ''>('');
   const [closingRemarks, setClosingRemarks] = useState('');
+
+  // POS Return/Exchange states
+  const [isReturnOpen, setIsReturnOpen] = useState(false);
+  const [returnOrderId, setReturnOrderId] = useState('');
+  const [searchingOrder, setSearchingOrder] = useState(false);
+  const [returnOrder, setReturnOrder] = useState<any | null>(null);
+  const [returnQuantities, setReturnQuantities] = useState<Record<string, number>>({});
+  const [returnReason, setReturnReason] = useState('Customer exchange');
+  const [submittingReturn, setSubmittingReturn] = useState(false);
 
   // Helper to generate local transaction UUIDs
   const generateUUID = () => {
@@ -350,6 +363,115 @@ export default function Pos() {
     }
   };
 
+  // POS Return & Exchange Handlers
+  const handleSearchReturnOrder = async () => {
+    if (!returnOrderId.trim()) {
+      toast.error('Please enter an Order ID or Invoice Code');
+      return;
+    }
+    setSearchingOrder(true);
+    setReturnOrder(null);
+    setReturnQuantities({});
+    try {
+      // First try by ID
+      const res = await fetchAPI(`/orders/${returnOrderId.trim()}`);
+      if (res.success && res.data) {
+        setReturnOrder(res.data);
+        return;
+      }
+    } catch {
+      // ignore & fallback to list search
+    }
+
+    try {
+      const res = await fetchAPI(`/orders?limit=5&page=1&search=${encodeURIComponent(returnOrderId.trim())}`);
+      if (res.success && res.data && res.data.orders && res.data.orders.length > 0) {
+        setReturnOrder(res.data.orders[0]);
+      } else {
+        toast.error('No order found matching this reference');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to search order');
+    } finally {
+      setSearchingOrder(false);
+    }
+  };
+
+  const handleSubmitPOSReturn = async (isExchange: boolean) => {
+    if (!returnOrder) return;
+    const itemsToReturn = Object.entries(returnQuantities)
+      .map(([itemId, qty]) => {
+        const orderItem = returnOrder.items.find((item: any) => item.id === itemId);
+        return {
+          productId: orderItem.productId,
+          variantId: orderItem.variantId || undefined,
+          quantity: qty,
+        };
+      })
+      .filter((item) => item.quantity > 0);
+
+    if (itemsToReturn.length === 0) {
+      toast.error('Please select at least one item to return');
+      return;
+    }
+
+    setSubmittingReturn(true);
+    try {
+      const res = await fetchAPI('/returns', {
+        method: 'POST',
+        body: JSON.stringify({
+          orderId: returnOrder.id,
+          reason: returnReason,
+          items: itemsToReturn,
+        }),
+      });
+
+      if (res.success && res.data) {
+        const returnId = res.data.id;
+        
+        // Auto-approve the return & issue refund to register customer's wallet
+        await fetchAPI(`/returns/${returnId}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'APPROVED', comment: 'Approved automatically at POS register' }),
+        });
+
+        await fetchAPI(`/returns/${returnId}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'REFUNDED', comment: 'Refunded automatically at POS register' }),
+        });
+
+        toast.success('Return processed. Refund credited to store credit.');
+
+        if (isExchange) {
+          const refundAmount = Number(res.data.refundAmount || 0);
+          
+          if (returnOrder.user) {
+            setSelectedCustomer(returnOrder.user);
+            fetchAPI(`/finance/wallet/${returnOrder.user.id}`)
+              .then((walletRes) => {
+                if (walletRes.success && walletRes.data) {
+                  setWalletBalance(Number(walletRes.data.balance || 0));
+                  setUseWalletBalance(true);
+                  setWalletAmountToUse(refundAmount);
+                  toast.success(`Exchange Mode: Applied $${refundAmount} credit from returned order.`);
+                }
+              });
+          }
+        }
+
+        setIsReturnOpen(false);
+        setReturnOrder(null);
+        setReturnQuantities({});
+      } else {
+        toast.error(res.message || 'Failed to submit return');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Error processing return');
+    } finally {
+      setSubmittingReturn(false);
+    }
+  };
+
   // 2. Shift Management Actions
   const handleOpenShift = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -519,6 +641,140 @@ export default function Pos() {
       fetchCustomers();
     }
   }, [activeShift]);
+
+  const playBeepSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // 880Hz beep
+      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.12);
+    } catch (e) {
+      console.warn('AudioContext beep blocked or not supported:', e);
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const query = searchQuery.trim().toLowerCase();
+      if (!query) return;
+
+      let matchedProduct: Product | null = null;
+      let matchedVariant: ProductVariant | null = null;
+
+      for (const p of products) {
+        if (
+          (p.sku && p.sku.toLowerCase() === query) ||
+          (p.barcode && p.barcode.toLowerCase() === query)
+        ) {
+          matchedProduct = p;
+          break;
+        }
+
+        if (p.variants && p.variants.length > 0) {
+          const v = p.variants.find(
+            (varItem) =>
+              (varItem.sku && varItem.sku.toLowerCase() === query) ||
+              (varItem.barcode && varItem.barcode.toLowerCase() === query)
+          );
+          if (v) {
+            matchedProduct = p;
+            matchedVariant = v;
+            break;
+          }
+        }
+      }
+
+      if (matchedProduct) {
+        executeAddToCart(matchedProduct, matchedVariant || undefined);
+        setSearchQuery('');
+        e.preventDefault();
+        playBeepSound();
+      } else {
+        toast.error(`No product found matching code: "${searchQuery}"`);
+      }
+    }
+  };
+
+  useEffect(() => {
+    let buffer = '';
+    let lastKeyTime = Date.now();
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT') &&
+        activeEl.id !== 'pos-product-search'
+      ) {
+        return;
+      }
+
+      const currentTime = Date.now();
+      
+      if (currentTime - lastKeyTime > 50) {
+        buffer = '';
+      }
+      lastKeyTime = currentTime;
+
+      if (e.key === 'Enter') {
+        if (buffer.length > 2) {
+          const query = buffer.trim().toLowerCase();
+          
+          let matchedProduct: Product | null = null;
+          let matchedVariant: ProductVariant | null = null;
+
+          for (const p of products) {
+            if (
+              (p.sku && p.sku.toLowerCase() === query) ||
+              (p.barcode && p.barcode.toLowerCase() === query)
+            ) {
+              matchedProduct = p;
+              break;
+            }
+
+            if (p.variants && p.variants.length > 0) {
+              const v = p.variants.find(
+                (varItem) =>
+                  (varItem.sku && varItem.sku.toLowerCase() === query) ||
+                  (varItem.barcode && varItem.barcode.toLowerCase() === query)
+              );
+              if (v) {
+                matchedProduct = p;
+                matchedVariant = v;
+                break;
+              }
+            }
+          }
+
+          if (matchedProduct) {
+            executeAddToCart(matchedProduct, matchedVariant || undefined);
+            playBeepSound();
+            buffer = '';
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+        buffer = '';
+      } else if (e.key.length === 1) {
+        buffer += e.key;
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [products]);
 
   useEffect(() => {
     if (selectedCustomer) {
@@ -986,6 +1242,10 @@ export default function Pos() {
                   Offline Mode
                 </span>
               )}
+              <span className="flex items-center gap-1 px-2.5 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full text-[9px] font-black uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse mr-1" />
+                Scanner Live
+              </span>
               {offlineQueue.length > 0 && (
                 <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full text-[9px] font-black uppercase tracking-wider">
                   {offlineQueue.length} Queued
@@ -1061,6 +1321,19 @@ export default function Pos() {
               className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black rounded-xl border border-slate-750 transition-all"
             >
               Cash In/Out
+            </button>
+
+            <button
+              onClick={() => {
+                setReturnOrderId('');
+                setReturnOrder(null);
+                setReturnQuantities({});
+                setIsReturnOpen(true);
+              }}
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black rounded-xl border border-slate-750 transition-all flex items-center gap-1.5"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Return/Exchange
             </button>
 
             <button
@@ -1355,10 +1628,13 @@ export default function Pos() {
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
+              id="pos-product-search"
+              autoFocus
               type="text"
               placeholder="Quick search products by name, code, SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
               className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all font-bold text-sm shadow-sm"
             />
           </div>
@@ -1948,6 +2224,188 @@ export default function Pos() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 5. POS RETAIL RETURN & EXCHANGE MODAL */}
+      <AnimatePresence>
+        {isReturnOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col h-[80vh]"
+            >
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5 text-brand-500" />
+                    Process POS Return & Exchange
+                  </h3>
+                  <p className="text-xs text-slate-400 font-medium">Issue customer store credit or perform straight exchanges at the counter</p>
+                </div>
+                <button
+                  onClick={() => setIsReturnOpen(false)}
+                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                >
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Search Order Section */}
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Enter Order ID or Invoice Code..."
+                      value={returnOrderId}
+                      onChange={(e) => setReturnOrderId(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-950 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500 transition-all font-bold text-sm shadow-sm"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSearchReturnOrder}
+                    disabled={searchingOrder}
+                    className="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-black text-sm rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {searchingOrder ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Search Order'
+                    )}
+                  </button>
+                </div>
+
+                {returnOrder ? (
+                  <div className="space-y-6">
+                    {/* Order summary info */}
+                    <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-850">
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Customer Reference</p>
+                        <p className="text-sm font-black text-slate-850 dark:text-white">{returnOrder.customerName || returnOrder.user?.username || 'Guest Customer'}</p>
+                        <p className="text-xs text-slate-400 font-medium">{returnOrder.customerPhone || 'No phone set'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Order Value & Date</p>
+                        <p className="text-sm font-black text-brand-500">${Number(returnOrder.totalAmount).toFixed(2)}</p>
+                        <p className="text-xs text-slate-400 font-medium">{new Date(returnOrder.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+
+                    {/* Order items lists */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Order Items (Select return quantities)</h4>
+                      <div className="space-y-2">
+                        {returnOrder.items.map((item: any) => {
+                          const maxQty = item.quantity;
+                          const currentQty = returnQuantities[item.id] || 0;
+                          return (
+                            <div key={item.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-955 rounded-2xl border border-slate-100 dark:border-slate-850 hover:border-slate-200 dark:hover:border-slate-800 transition-all shadow-sm">
+                              <div>
+                                <p className="text-sm font-black text-slate-900 dark:text-white">{item.product?.name || 'Product'}</p>
+                                {item.variant && (
+                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                                    Variant: {Object.entries(item.variant.combination).map(([k, v]) => `${k}:${v}`).join(', ')}
+                                  </p>
+                                )}
+                                <p className="text-xs text-brand-500 font-bold mt-1">${Number(item.unitPrice).toFixed(2)} each</p>
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setReturnQuantities({
+                                      ...returnQuantities,
+                                      [item.id]: Math.max(0, currentQty - 1),
+                                    });
+                                  }}
+                                  className="p-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-250 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-all"
+                                >
+                                  <Minus className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="text-sm font-black text-slate-900 dark:text-white w-6 text-center">
+                                  {currentQty} / {maxQty}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setReturnQuantities({
+                                      ...returnQuantities,
+                                      [item.id]: Math.min(maxQty, currentQty + 1),
+                                    });
+                                  }}
+                                  className="p-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-250 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-all"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Return details inputs */}
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Return Reason Remarks</label>
+                      <input
+                        type="text"
+                        placeholder="Why is the customer returning these items?"
+                        value={returnReason}
+                        onChange={(e) => setReturnReason(e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-855 bg-white dark:bg-slate-950 rounded-2xl outline-none text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 transition-all font-bold"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <History className="w-12 h-12 mb-3 text-slate-350 dark:text-slate-750" />
+                    <p className="text-xs font-bold uppercase tracking-wider">No order selected</p>
+                    <p className="text-xs text-slate-400 mt-1">Search for an order above using ID or receipt invoice reference.</p>
+                  </div>
+                )}
+              </div>
+
+              {returnOrder && (
+                <div className="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-400">
+                    Refund Total:{' '}
+                    <span className="text-brand-500 font-black text-sm">
+                      $
+                      {Object.entries(returnQuantities)
+                        .reduce((total, [itemId, qty]) => {
+                          const orderItem = returnOrder.items.find((item: any) => item.id === itemId);
+                          return total + (orderItem ? Number(orderItem.unitPrice) * qty : 0);
+                        }, 0)
+                        .toFixed(2)}
+                    </span>
+                  </span>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      disabled={submittingReturn}
+                      onClick={() => handleSubmitPOSReturn(false)}
+                      className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-black text-xs rounded-2xl transition-all shadow-md disabled:opacity-50"
+                    >
+                      Straight Return & Refund
+                    </button>
+                    <button
+                      type="button"
+                      disabled={submittingReturn}
+                      onClick={() => handleSubmitPOSReturn(true)}
+                      className="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-black text-xs rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      Process Return & Start Exchange
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </div>
         )}

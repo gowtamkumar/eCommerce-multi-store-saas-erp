@@ -32,6 +32,7 @@ export interface Product {
   name: string;
   slug: string;
   sku: string;
+  barcode?: string;
   tags?: string[];
   description: string;
   shortDescription?: string;

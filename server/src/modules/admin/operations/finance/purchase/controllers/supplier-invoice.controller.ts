@@ -52,6 +52,41 @@ export class SupplierInvoiceController {
     }
   }
 
+  @Get('aging')
+  @RequirePermissions(SystemPermissions.PURCHASING_READ)
+  async getAgingReport(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any[]>> {
+    const result = await this.service.getApAgingReport(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Accounts Payable aging report retrieved successfully',
+      data: result,
+    }
+  }
+
+  @Post('batch-payment')
+  @RequirePermissions(SystemPermissions.PURCHASING_WRITE)
+  async runBatchPayment(
+    @RequestContext() ctx: RequestContextDto,
+    @Body()
+    dto: {
+      invoiceIds: string[]
+      paymentMethod: string
+      transactionId?: string
+      note?: string
+    },
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const result = await this.service.batchPayInvoices(dto, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Batch payment run executed successfully',
+      data: result,
+    }
+  }
+
   @Get(':id')
   @RequirePermissions(SystemPermissions.PURCHASING_READ)
   async findOne(

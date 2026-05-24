@@ -334,3 +334,30 @@ export async function seedDemoData() {
   });
   return res.data;
 }
+
+// ─────────────────────────────────────────────────
+// Employee Documents (HR Document Vault)
+// ─────────────────────────────────────────────────
+export async function getEmployeeDocuments(employeeId: string) {
+  const res = await fetchAPI(`/operations/hrm/employees/${employeeId}/documents`);
+  return res.data;
+}
+
+export async function addEmployeeDocument(
+  employeeId: string,
+  data: { documentType: string; fileUrl: string; expiryDate?: string },
+) {
+  const res = await fetchAPI(`/operations/hrm/employees/${employeeId}/documents`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return res;
+}
+
+export async function deleteEmployeeDocument(employeeId: string, docId: string) {
+  const res = await fetchAPI(`/operations/hrm/employees/${employeeId}/documents/${docId}`, {
+    method: "DELETE",
+  });
+  return res;
+}
+

@@ -15,6 +15,7 @@ import { SupplierAPReferenceType } from '@/modules/admin/operations/finance/supp
 import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { LedgerEntrySide, JournalType } from '@/common/enums/journal-type.enum'
 import { RecordSupplierPaymentDto } from '../dto/record-payment.dto'
+import { SupplierEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier.entity'
 
 @Injectable()
 export class SupplierInvoiceService {
@@ -307,5 +308,136 @@ export class SupplierInvoiceService {
     await this.cacheService.delCache(`si:list`, tenantId)
     await this.cacheService.delCache(`si:id:${id}`, tenantId)
     return saved
+  }
+
+  async getApAgingReport(ctx: RequestContextDto): Promise<any[]> {
+    this.logger.log('Generating Accounts Payable (AP) aging report')
+    const tenantId = ctx.tenantId
+    const em = this.dataSource.manager
+
+    const suppliers = await em.getRepository(SupplierEntity).find({
+      where: { tenantId },
+      order: { name: 'ASC' },
+    })
+
+    const report: any[] = []
+    const now = new Date()
+
+    for (const supplier of suppliers) {
+      const invoices = await em.find(SupplierInvoiceEntity, {
+        where: {
+          supplierId: supplier.id,
+          tenantId,
+        },
+      })
+
+      const unpaidInvoices = invoices.filter(
+        (inv) =>
+          inv.status !== SupplierInvoiceStatus.PAID &&
+          inv.status !== SupplierInvoiceStatus.CANCELLED,
+      )
+
+      if (unpaidInvoices.length === 0) continue
+
+      let current = 0
+      let d1to30 = 0
+      let d31to60 = 0
+      let d61to90 = 0
+      let d90plus = 0
+      let totalOutstanding = 0
+
+      for (const invoice of unpaidInvoices) {
+        const outstanding = Number(invoice.totalAmount) - Number(invoice.paidAmount || 0)
+        if (outstanding <= 0) continue
+
+        totalOutstanding += outstanding
+
+        const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : new Date(invoice.invoiceDate)
+        const diffTime = now.getTime() - dueDate.getTime()
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+        if (diffDays <= 0) {
+          current += outstanding
+        } else if (diffDays <= 30) {
+          d1to30 += outstanding
+        } else if (diffDays <= 60) {
+          d31to60 += outstanding
+        } else if (diffDays <= 90) {
+          d61to90 += outstanding
+        } else {
+          d90plus += outstanding
+        }
+      }
+
+      if (totalOutstanding > 0) {
+        report.push({
+          supplierId: supplier.id,
+          supplierName: supplier.name,
+          email: supplier.email,
+          phone: supplier.phone,
+          totalOutstanding,
+          aging: {
+            current,
+            '1-30': d1to30,
+            '31-60': d31to60,
+            '61-90': d61to90,
+            '90+': d90plus,
+          },
+        })
+      }
+    }
+
+    return report
+  }
+
+  async batchPayInvoices(
+    dto: {
+      invoiceIds: string[]
+      paymentMethod: string
+      transactionId?: string
+      note?: string
+    },
+    ctx: RequestContextDto,
+  ): Promise<any> {
+    this.logger.log(`Executing batch payment run for ${dto.invoiceIds.length} invoices`)
+    const results: any[] = []
+    const errors: any[] = []
+
+    for (const invoiceId of dto.invoiceIds) {
+      try {
+        const invoice = await this.findOneInvoice(invoiceId, ctx)
+        const balance = Number(invoice.totalAmount) - Number(invoice.paidAmount || 0)
+
+        if (balance <= 0) {
+          errors.push({ invoiceId, error: 'Invoice is already fully paid' })
+          continue
+        }
+
+        const payDto: RecordSupplierPaymentDto = {
+          amount: balance,
+          paymentDate: new Date().toISOString(),
+          paymentMethod: dto.paymentMethod,
+          transactionId: dto.transactionId || null,
+          note: dto.note || `Batch Payment Run - Invoice #${invoice.invoiceNumber}`,
+        }
+
+        const updatedInvoice = await this.payInvoice(invoiceId, payDto, ctx)
+        results.push({
+          invoiceId,
+          status: 'PAID',
+          amountPaid: balance,
+          invoiceNumber: updatedInvoice.invoiceNumber,
+        })
+      } catch (err: any) {
+        errors.push({ invoiceId, error: err.message || 'Payment execution failed' })
+      }
+    }
+
+    return {
+      processedCount: results.length,
+      failedCount: errors.length,
+      payments: results,
+      failures: errors,
+    }
   }
 }

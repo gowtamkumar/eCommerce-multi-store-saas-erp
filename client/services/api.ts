@@ -16,6 +16,14 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     }
   }
 
+  // Automatically inject active branch ID from localStorage on client-side
+  if (typeof window !== "undefined" && !headers["x-branch-id"]) {
+    const activeBranchId = localStorage.getItem("activeBranchId");
+    if (activeBranchId) {
+      headers["x-branch-id"] = activeBranchId;
+    }
+  }
+
   if (!(options.body instanceof FormData)) {
     (headers as any)["Content-Type"] = "application/json";
   }

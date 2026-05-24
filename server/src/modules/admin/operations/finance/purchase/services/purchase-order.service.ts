@@ -212,6 +212,7 @@ export class PurchaseOrderService {
             branchId,
             notes: `Auto GRN from PO ${orderWithItems.referenceNumber}`,
             items: itemDtos,
+            status: GrnStatus.RECEIVED,
           },
           grnNumber,
           ctx,

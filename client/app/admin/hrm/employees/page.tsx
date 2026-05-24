@@ -112,12 +112,18 @@ export default function EmployeesPage() {
         branches={branches}
         warehouses={warehouses}
         users={users}
+        employees={employees}
       />
 
       <EmployeeDetails
         employee={selectedEmployee}
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
+        onEdit={(emp) => {
+          setSelectedEmployee(emp);
+          setIsDetailsOpen(false);
+          setIsFormOpen(true);
+        }}
       />
     </div>
   );

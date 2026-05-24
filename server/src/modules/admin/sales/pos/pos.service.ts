@@ -30,6 +30,8 @@ import { WalletService } from '@/modules/admin/operations/finance/accounting/ser
 import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
 import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 
+import { ProductBatchService } from '@/modules/admin/operations/logistics/inventory-transaction/product-batch.service'
+
 @Injectable()
 export class PosService {
   private readonly logger = new Logger(PosService.name)
@@ -43,6 +45,7 @@ export class PosService {
     private readonly arService: ArService,
     private readonly walletService: WalletService,
     private readonly dataSource: DataSource,
+    private readonly batchService: ProductBatchService,
   ) { }
 
   // =========================================================================
@@ -291,23 +294,59 @@ export class PosService {
         })
         await orderItemRepo.save(orderItem)
 
-        // Deduct inventory stock directly through the Ledger Service
-        await this.inventoryService.createLedgerEntry(
-          {
-            productId: item.productId,
-            variantId: item.variantId || undefined,
-            quantity: Number(item.quantity), // Passed as positive; Ledger Service automatically handles negation for SALE
-            type: InventoryTransactionType.SALE,
-            referenceType: 'ORDER' as any, // POS orders are categorized under ORDER reference
-            referenceId: savedOrder.id, // Linked to the brand new Sales Order
-            warehouseId: (ctx.user as any)?.warehouseId || undefined, // Scope to cashier's warehouse
-            branchId: shift.register?.branchId || undefined,
-            remarks: `POS Sale - Order ID: ${savedOrder.id}`,
-            createdAt: dto.createdAt ? new Date(dto.createdAt) : undefined,
-          } as any,
-          ctx,
-          manager,
-        )
+        // Deduct inventory stock directly through the Ledger Service using FEFO allocation
+        let allocations: { batchId: string; quantity: number }[] = []
+        try {
+          allocations = await this.batchService.allocateFEFOStock(
+            tenantId,
+            item.productId,
+            item.variantId || null,
+            Number(item.quantity),
+            manager,
+          )
+        } catch (batchErr) {
+          this.logger.warn(`FEFO Batch allocation failed for POS sale item ${item.productId}: ${batchErr.message}. Falling back to default inventory deduction.`)
+        }
+
+        if (allocations.length > 0) {
+          for (const alloc of allocations) {
+            await this.inventoryService.createLedgerEntry(
+              {
+                productId: item.productId,
+                variantId: item.variantId || undefined,
+                quantity: Number(alloc.quantity),
+                type: InventoryTransactionType.SALE,
+                referenceType: 'ORDER' as any,
+                referenceId: savedOrder.id,
+                warehouseId: (ctx.user as any)?.warehouseId || undefined,
+                branchId: shift.register?.branchId || undefined,
+                batchId: alloc.batchId,
+                remarks: `POS Sale (Batch Allocated) - Order ID: ${savedOrder.id}`,
+                createdAt: dto.createdAt ? new Date(dto.createdAt) : undefined,
+              } as any,
+              ctx,
+              manager,
+            )
+          }
+        } else {
+          // Fallback to simple inventory deduction if no active batches are configured
+          await this.inventoryService.createLedgerEntry(
+            {
+              productId: item.productId,
+              variantId: item.variantId || undefined,
+              quantity: Number(item.quantity),
+              type: InventoryTransactionType.SALE,
+              referenceType: 'ORDER' as any,
+              referenceId: savedOrder.id,
+              warehouseId: (ctx.user as any)?.warehouseId || undefined,
+              branchId: shift.register?.branchId || undefined,
+              remarks: `POS Sale - Order ID: ${savedOrder.id}`,
+              createdAt: dto.createdAt ? new Date(dto.createdAt) : undefined,
+            } as any,
+            ctx,
+            manager,
+          )
+        }
       }
 
       // Calculate net amounts accounting for coupon discount and shipping fees

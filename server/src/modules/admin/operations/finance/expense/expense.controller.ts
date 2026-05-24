@@ -1,6 +1,7 @@
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
+import { BranchScopeGuard } from '@/common/guards/branch-scope.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
@@ -25,7 +26,7 @@ import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Controller('expenses')
-@UseGuards(JwtAuthGuard, SubscriptionGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard, BranchScopeGuard)
 @RequireFeature('/admin/expenses')
 export class ExpenseController {
   private readonly logger = new Logger(ExpenseController.name)

@@ -43,6 +43,10 @@ export class CreateInventoryTransactionDto {
   @IsOptional()
   binId?: string
 
+  @IsUUID()
+  @IsOptional()
+  batchId?: string
+
   @IsString()
   @IsOptional()
   remarks?: string

@@ -470,6 +470,12 @@ export const navGroups = [
       },
       {
         icon: ClipboardList,
+        label: "Batch & Expiry",
+        href: "/admin/batches",
+        feature: "/admin/inventory",
+      },
+      {
+        icon: ClipboardList,
         label: "Cycle Count",
         href: "/admin/cycle-count",
         feature: "/admin/inventory",
@@ -529,6 +535,12 @@ export const navGroups = [
         feature: "/admin/finance/ar",
       },
       {
+        icon: CreditCard,
+        label: "Accounts Payable",
+        href: "/admin/finance/ap",
+        feature: "/admin/finance",
+      },
+      {
         icon: Wallet,
         label: "Customer Wallets",
         href: "/admin/finance/wallet",
@@ -550,6 +562,12 @@ export const navGroups = [
         icon: Calendar,
         label: "Fiscal Periods",
         href: "/admin/finance/fiscal-periods",
+        feature: "/admin/finance",
+      },
+      {
+        icon: Scale,
+        label: "Tax & VAT Engine",
+        href: "/admin/finance/tax",
         feature: "/admin/finance",
       },
     ],

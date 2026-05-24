@@ -11,6 +11,7 @@ interface FindAllOptions {
   q?: string
   startDate?: Date
   endDate?: Date
+  branchId?: string
 }
 
 @Injectable()
@@ -23,6 +24,7 @@ export class ExpenseRepository {
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<ExpenseEntity> {
     const expense = this.repo.create({
       ...dto,
+      branchId: dto.branchId || ctx.branchId || null,
       tenantId: ctx.tenantId,
       userId: ctx.userId,
     } as ExpenseEntity)
@@ -37,7 +39,7 @@ export class ExpenseRepository {
     tenantId: string,
     options: FindAllOptions = {},
   ): Promise<[ExpenseEntity[], number]> {
-    const { page = 1, limit = 20, category, q, startDate, endDate } = options
+    const { page = 1, limit = 20, category, q, startDate, endDate, branchId } = options
 
     const qb = this.repo
       .createQueryBuilder('expense')
@@ -46,6 +48,10 @@ export class ExpenseRepository {
       .addOrderBy('expense.createdAt', 'DESC')
       .take(limit)
       .skip((page - 1) * limit)
+
+    if (branchId) {
+      qb.andWhere('expense.branchId = :branchId', { branchId })
+    }
 
     if (category) {
       qb.andWhere('expense.category = :category', { category })
@@ -72,11 +78,20 @@ export class ExpenseRepository {
    * Raw (unpaginated) fetch for internal reporting use only.
    * NOT exposed via the public API.
    */
-  async findAllRaw(tenantId: string, startDate?: Date, endDate?: Date): Promise<ExpenseEntity[]> {
+  async findAllRaw(
+    tenantId: string,
+    startDate?: Date,
+    endDate?: Date,
+    branchId?: string,
+  ): Promise<ExpenseEntity[]> {
     const qb = this.repo
       .createQueryBuilder('expense')
       .where('expense.tenantId = :tenantId', { tenantId })
       .orderBy('expense.expenseDate', 'DESC')
+
+    if (branchId) {
+      qb.andWhere('expense.branchId = :branchId', { branchId })
+    }
 
     if (startDate) {
       qb.andWhere('expense.expenseDate >= :startDate', { startDate })
