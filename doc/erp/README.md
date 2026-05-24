@@ -3,92 +3,100 @@
 **Platform:** eCommerce Multi-Tenant SaaS ERP  
 **Stack:** NestJS · TypeORM · PostgreSQL · Redis · BullMQ · Next.js  
 **Architecture:** Modular Monolith · Event-Driven · Ledger-Based · GAAP-Compliant  
-**Last Updated:** May 2026  
+**Last Updated:** May 24, 2026  
 
 ---
 
 ## How to Use This Documentation
 
-This folder is the single source of truth for the entire ERP platform. Documentation is organized into four areas. Start with the area that matches your role:
+This folder is the single source of truth for the entire ERP platform. Documentation is organized into three main directories. Start with the guide that matches your role:
 
 | I am a... | Start here |
 | :--- | :--- |
-| **New developer** joining the team | [`developer/DEVELOPER_GUIDE.md`](developer/DEVELOPER_GUIDE.md) |
-| **Architect** reviewing system design | [`system-design/`](system-design/) |
-| **Store Owner / Manager** | [`manuals/02_TENANT_OWNER_MANUAL.md`](manuals/02_TENANT_OWNER_MANUAL.md) |
-| **Cashier / POS staff** | [`manuals/03_POS_CASHIER_MANUAL.md`](manuals/03_POS_CASHIER_MANUAL.md) |
-| **Accountant / CFO** | [`manuals/04_ACCOUNTANT_MANUAL.md`](manuals/04_ACCOUNTANT_MANUAL.md) |
-| **HR / Payroll Officer** | [`manuals/05_HR_PAYROLL_MANUAL.md`](manuals/05_HR_PAYROLL_MANUAL.md) |
-| **Inventory / Warehouse Manager** | [`manuals/06_INVENTORY_MANAGER_MANUAL.md`](manuals/06_INVENTORY_MANAGER_MANUAL.md) |
+| **New Developer** | [`developer/DEVELOPER_GUIDE.md`](developer/DEVELOPER_GUIDE.md) |
+| **System Architect / reviewer** | [`system-design/erp_master_system_design.md`](system-design/erp_master_system_design.md) |
+| **Platform Super-Admin** (SaaS Owner) | [`manuals/01_SUPER_ADMIN_MANUAL.md`](manuals/01_SUPER_ADMIN_MANUAL.md) |
+| **Tenant Owner / Business CFO** | [`manuals/02_TENANT_OWNER_MANUAL.md`](manuals/02_TENANT_OWNER_MANUAL.md) |
+| **Store Cashier / POS staff** | [`manuals/03_POS_CASHIER_MANUAL.md`](manuals/03_POS_CASHIER_MANUAL.md) |
+| **Accountant / Bookkeeper** | [`manuals/04_ACCOUNTANT_MANUAL.md`](manuals/04_ACCOUNTANT_MANUAL.md) |
+| **HR Specialist / Payroll Manager** | [`manuals/05_HR_PAYROLL_MANUAL.md`](manuals/05_HR_PAYROLL_MANUAL.md) |
+| **Warehouse / Inventory Supervisor** | [`manuals/06_INVENTORY_MANAGER_MANUAL.md`](manuals/06_INVENTORY_MANAGER_MANUAL.md) |
 | **Procurement Officer** | [`manuals/07_PROCUREMENT_OFFICER_MANUAL.md`](manuals/07_PROCUREMENT_OFFICER_MANUAL.md) |
-| **Platform Super-Admin** (SaaS owner) | [`manuals/01_SUPER_ADMIN_MANUAL.md`](manuals/01_SUPER_ADMIN_MANUAL.md) |
 
 ---
 
-## 1. System Design Documents
+## 1. System Design Directory (`system-design/`)
 
-> Architecture, database diagrams, and engineering decisions for the entire platform.
+> Deep architectural specifications, boundary rules, database designs, and feature roadmaps.
 
-| File | Purpose |
-| :--- | :--- |
-| [`system-design/erp_master_system_design.md`](system-design/erp_master_system_design.md) | **The definitive high-level system design** — boundaries, guard chain, technology stack, all 15 module contexts, domain invariants, reliability, deployment, and phased roadmap. 1,500+ lines. |
-| [`system-design/erp_low_level_system_design.md`](system-design/erp_low_level_system_design.md) | **Low-level design** — guard chain with ASCII diagram, RequestContextDto contract, typed BullMQ job schemas, event-driven accounting outbox, cross-domain transaction patterns, TypeORM migration safety rules, Redis cache key conventions. |
-| [`system-design/erp_master_database_design.md`](system-design/erp_master_database_design.md) | **Master database design** — 4 design principles, full Mermaid ERD, field-level schemas for all 8 domains, composite index strategy, UUIDv7 clustering guidance. |
-| [`system-design/erp_current_and_recommended_features.md`](system-design/erp_current_and_recommended_features.md) | Feature audit — all 42+ implemented features listed by domain, plus 8 missing enterprise features (Manufacturing/MRP, Fixed Assets, E-Invoicing, SCM/RFQ, CRM Pipeline, Open API, Scheduled Reports, DMS) with priority matrix. |
-| [`system-design/erp_documentation_and_user_manual_plan.md`](system-design/erp_documentation_and_user_manual_plan.md) | Strategic plan for all coding documentation and user manuals — goals, audience breakdown, execution timeline. |
+### 1.1 Core Design Foundations
+*   [`erp_master_system_design.md`](system-design/erp_master_system_design.md) — **The Core System Blueprint**: Covers modular monolith contexts, guard middleware scopes, eventual consistency, reliability, and deployment strategy.
+*   [`erp_low_level_system_design.md`](system-design/erp_low_level_system_design.md) — **Low-Level Code Contracts**: Details the NestJS request processing guard chain, typed BullMQ payloads, ledger boundaries, transaction handling, and migration rules.
+*   [`erp_master_database_design.md`](system-design/erp_master_database_design.md) — **Master DB Schema**: Contains the unified database ERD (Mermaid) and field schemas for 8 operational domains.
+*   [`erp_current_and_recommended_features.md`](system-design/erp_current_and_recommended_features.md) — **Feature Gaps & Roadmap**: Maps 42+ active features and prioritizes enterprise additions (e.g. MRP, e-Invoicing).
+*   [`erp_documentation_and_user_manual_plan.md`](system-design/erp_documentation_and_user_manual_plan.md) — Documentation strategy and writing phases.
 
----
+### 1.2 Specialized Module Architecture Specs
+*   [`erp_architecture.md`](system-design/erp_architecture.md) — Monolith layer decoupling rules.
+*   [`finance_accounting_design.md`](system-design/finance_accounting_design.md) — General ledger, double-entry subledgers, and balanced verification.
+*   [`pos_retail_design.md`](system-design/pos_retail_design.md) — Offline PWA POS registers, shifts, and drawer operations.
+*   [`procurement_supply_chain_design.md`](system-design/procurement_supply_chain_design.md) — Purchase Orders, RFQ pipelines, and supplier ledgers.
+*   [`erp_inventory_stock_flow_guideline.md`](system-design/erp_inventory_stock_flow_guideline.md) — FIFO/FEFO rules and immutable transaction logs.
+*   [`crm_loyalty_requirements.md`](system-design/crm_loyalty_requirements.md) — Wallets, loyalty points, customer credit holds, and AR aging tracking.
+*   [`live_chat_system_design.md`](system-design/live_chat_system_design.md) — Real-time support via WebSockets and Socket.io.
+*   [`phase5_courier_analysis.md`](system-design/phase5_courier_analysis.md) — Integration analysis for local third-party couriers (Pathao/Steadfast).
 
-## 2. Developer Documentation
-
-> Engineering guides, code patterns, and standards for the development team.
-
-| File | Purpose |
-| :--- | :--- |
-| [`developer/DEVELOPER_GUIDE.md`](developer/DEVELOPER_GUIDE.md) | **Core developer guide** — request pipeline, 5-step module creation pattern (Entity → Repository → Service → Controller → Module), multi-tenant DB security rules, S3 scoping, BullMQ ledger integration, balanced double-entry validation, Redis cache-aside pattern. |
-
----
-
-## 3. User Manuals
-
-> Role-based operation guides for each persona using the ERP system.
-
-| Manual | Audience | Key Topics |
-| :--- | :--- | :--- |
-| [`manuals/01_SUPER_ADMIN_MANUAL.md`](manuals/01_SUPER_ADMIN_MANUAL.md) | Platform Owner / DevOps | Platform dashboard, subscription plan management, custom domain approval, tenant data management (GDPR), queue monitoring |
-| [`manuals/02_TENANT_OWNER_MANUAL.md`](manuals/02_TENANT_OWNER_MANUAL.md) | Business Owner / CEO / CFO | Company setup, branches & warehouses, staff onboarding, role management, catalog, P&L reports |
-| [`manuals/03_POS_CASHIER_MANUAL.md`](manuals/03_POS_CASHIER_MANUAL.md) | Cashier / Counter Staff | Shift opening/closing, barcode checkout, split payments, offline mode, returns & exchanges, cash drawer operations |
-| [`manuals/04_ACCOUNTANT_MANUAL.md`](manuals/04_ACCOUNTANT_MANUAL.md) | Accountant / CFO | Chart of Accounts, journal entries, reversal entries, 3-way AP matching, supplier payments, AR management, credit holds, VAT engine, financial reports |
-| [`manuals/05_HR_PAYROLL_MANUAL.md`](manuals/05_HR_PAYROLL_MANUAL.md) | HR Manager / Payroll Officer | Employee onboarding, attendance management, leave quotas & approvals, payroll batch generation → GL posting, payslip download, recruitment pipeline |
-| [`manuals/06_INVENTORY_MANAGER_MANUAL.md`](manuals/06_INVENTORY_MANAGER_MANUAL.md) | Inventory / Warehouse Manager | Stock levels, GRN receiving, inter-warehouse transfers, stock adjustments, cycle counts, FEFO batch/expiry management, inventory reports |
-| [`manuals/07_PROCUREMENT_OFFICER_MANUAL.md`](manuals/07_PROCUREMENT_OFFICER_MANUAL.md) | Procurement Officer | Supplier management, supplier portal, PO lifecycle, GRN verification, 3-way match, debit notes, supplier payments, AP aging |
+### 1.3 Subscriptions, Custom Domains & Platform Design
+*   [`subscription_plan_entitlements.md`](system-design/subscription_plan_entitlements.md) — Subscription tier matrices, gating, and usage caps.
+*   [`subscription_ui_suggestions.md`](system-design/subscription_ui_suggestions.md) — Front-end billing and plan tier checkout layouts.
+*   [`custom_domains_feature.md`](system-design/custom_domains_feature.md) — SSL, DNS CNAME verification, and reverse proxy routing setup.
+*   [`page_builder_architecture.md`](system-design/page_builder_architecture.md) — Landing page grid block model renderer.
+*   [`ecommerce_builder_feature.md`](system-design/ecommerce_builder_feature.md) — Gated landing page options for basic subscription tiers.
+*   [`audit_log.md`](system-design/audit_log.md) — Global tenant-scoped append-only mutation logger.
+*   [`admin_sidebar_proposal.md`](system-design/admin_sidebar_proposal.md) — Dynamic sidebar rendering based on subscription and RBAC roles.
+*   [`multi_warehouse_stock_documents_analysis.md`](system-design/multi_warehouse_stock_documents_analysis.md) — Warehouse routing rules and split-shipment strategies.
 
 ---
 
-## 4. Reference & Feature Documentation
+## 2. Developer Documentation Directory (`developer/`)
 
-> Original design blueprints, module guidelines, and feature specifications.
+> Implementation templates, coding standards, database scripts, and strategy guides.
 
-| File | Purpose |
-| :--- | :--- |
-| [`ERP-Deeper-Understand-Guide.md`](ERP-Deeper-Understand-Guide.md) | Plain-English explanation of all ERP business concepts for developers new to enterprise systems |
-| [`2.ERP-Module-Architecture.md`](2.ERP-Module-Architecture.md) | Domain module architecture, event flows, and bounded context definitions |
-| [`ERP-Architecture.md`](ERP-Architecture.md) | Core architectural decisions and domain boundaries |
-| [`erp_feature_list.md`](erp_feature_list.md) | Original ERP feature roadmap requirements document |
-| [`ERP-Remaining-Roadmap.md`](ERP-Remaining-Roadmap.md) | Phased implementation roadmap with completion status |
-| [`dynamic_role_feature_permission.md`](dynamic_role_feature_permission.md) | RBAC permission codes, role definitions, and assignment rules |
-| [`CRM-LOYALTY-REQUIREMENTS.md`](CRM-LOYALTY-REQUIREMENTS.md) | CRM, loyalty points, and wallet system requirements |
-| [`CATALOG-MODULE-IMPLEMENTATION-GUIDE.md`](CATALOG-MODULE-IMPLEMENTATION-GUIDE.md) | Catalog module implementation guide |
-| [`ERP-HRM-Module-Guideline.md`](ERP-HRM-Module-Guideline.md) | HRM module design guidelines |
-| [`ERP-Procurement-Module-Guideline.md`](ERP-Procurement-Module-Guideline.md) | Procurement module design |
-| [`Finance-Accounting-Design.md`](Finance-Accounting-Design.md) | Finance and accounting domain design |
-| [`POS-Retail-Design.md`](POS-Retail-Design.md) | POS and retail module design |
-| [`ERP-Multi-Branch-Scoping.md`](ERP-Multi-Branch-Scoping.md) | Multi-branch and warehouse boundary rules |
-| [`subscription_plan_entitlements.md`](subscription_plan_entitlements.md) | Subscription plan feature entitlement matrix |
+*   [`DEVELOPER_GUIDE.md`](developer/DEVELOPER_GUIDE.md) — **Core Developer Manual**: Request processing pipeline, 5-step module creation pattern with TS templates, DB unique constraints, S3 bucket partitioning, BullMQ stock updates, and Redis caching.
+*   [`discount_and_promotion_strategy.md`](developer/discount_and_promotion_strategy.md) — **Campaign Engine**: Rules-based coupon engine using the Strategy Pattern with factory implementations (fixed, percentage, free shipping).
+*   [`database_migration_guide.md`](developer/database_migration_guide.md) — Safe TypeORM migration templates to prevent write locks on high-volume tables.
+*   [`event_driven_architecture.md`](developer/event_driven_architecture.md) — EventEmitter schema registers and subscriber patterns.
+*   [`api_caching_strategy.md`](developer/api_caching_strategy.md) — Cache invalidation rules and Redis keyspaces.
+*   [`erp_module_architecture.md`](developer/erp_module_architecture.md) — Modular monolith interface contracts.
+*   [`catalog_module_implementation_guide.md`](developer/catalog_module_implementation_guide.md) — Catalog details (attributes, pricing lists, multi-currency).
+*   [`erp_hrm_module_guideline.md`](developer/erp_hrm_module_guideline.md) — HRM payroll calculations and attendance punches.
+*   [`erp_stock_transfer_implementation_steps.md`](developer/erp_stock_transfer_implementation_steps.md) — Multi-step inter-warehouse stock transfer steps.
+*   [`dynamic_role_feature_permission.md`](developer/dynamic_role_feature_permission.md) — RBAC DB permissions seeding script.
+*   [`erp_deeper_understand_guide.md`](developer/erp_deeper_understand_guide.md) — Conceptual guide explaining business rules of accounting/money to developers.
 
 ---
 
-## 5. Architecture at a Glance
+## 3. User Manuals Directory (`manuals/`)
+
+> Persona-based operation manuals and compliance guidelines.
+
+### 3.1 Role-Based End-User Manuals
+*   [`01_SUPER_ADMIN_MANUAL.md`](manuals/01_SUPER_ADMIN_MANUAL.md) — Super-admin operations, subscription billing upgrades/suspensions, domain audits, GDPR data dumps, and queue monitoring.
+*   [`02_TENANT_OWNER_MANUAL.md`](manuals/02_TENANT_OWNER_MANUAL.md) — Multi-company configuration, branch/warehouse definitions, staff invitations, and profit/loss reports.
+*   [`03_POS_CASHIER_MANUAL.md`](manuals/03_POS_CASHIER_MANUAL.md) — Opening/closing shifts, scanner checkouts, split payments, offline mode sync, cash drawer adjustments, Z-reports.
+*   [`04_ACCOUNTANT_MANUAL.md`](manuals/04_ACCOUNTANT_MANUAL.md) — Chart of Accounts, manual journal entries, reversals, 3-way invoice matching, supplier ledger, AP/AR aging statements, tax sandbox filing.
+*   [`05_HR_PAYROLL_MANUAL.md`](manuals/05_HR_PAYROLL_MANUAL.md) — Employee personal dossiers, GPS geofenced punch attendance checks, leave quotas, monthly payroll auto-runs.
+*   [`06_INVENTORY_MANAGER_MANUAL.md`](manuals/06_INVENTORY_MANAGER_MANUAL.md) — GRN verification, cycle counting, variance adjustments, FEFO batch sorting.
+*   [`07_PROCUREMENT_OFFICER_MANUAL.md`](manuals/07_PROCUREMENT_OFFICER_MANUAL.md) — Purchase Orders, supplier records, portal access permissions, debit notes.
+
+### 3.2 Reference Operational Guidelines
+*   [`00_SUPER_ADMIN_GUIDELINES.md`](manuals/00_SUPER_ADMIN_GUIDELINES.md) — Platform support checklists.
+*   [`08_HRM_TEAM_MANAGEMENT_GUIDELINE.md`](manuals/08_HRM_TEAM_MANAGEMENT_GUIDELINE.md) — HRM employee onboarding setup instructions.
+*   [`09_TENANT_OWNER_ONBOARDING_GUIDE.md`](manuals/09_TENANT_OWNER_ONBOARDING_GUIDE.md) — Setup guidelines for new business stores.
+
+---
+
+## 4. Architecture at a Glance
 
 ```
                     ┌──────────────────────────────────────────┐
@@ -124,13 +132,13 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 
 ---
 
-## 6. Domain Event Map
+## 5. Domain Event Map
 
 All financial and inventory side-effects flow through asynchronous events:
 
 | Event | Emitted By | Side Effect |
 | :--- | :--- | :--- |
-| `order.paid` | Sales / POS | Journal: DR Cash / CR Revenue + DR COGS / CR Inventory |
+| `order.paid` | Sales / POS | Journal: DR Cash or AR / CR Revenue + DR COGS / CR Inventory |
 | `grn.verified` | Logistics | Inventory ledger IN + Journal: DR Inventory / CR AP |
 | `supplier.payment.released` | Procurement | Journal: DR AP / CR Cash at Bank |
 | `payroll.batch.approved` | HRM | Journal: DR Salary Expense / CR Salary Payable |
