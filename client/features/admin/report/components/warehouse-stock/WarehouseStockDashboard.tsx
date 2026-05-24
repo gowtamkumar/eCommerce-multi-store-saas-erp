@@ -6,7 +6,7 @@ import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
 import { 
     Warehouse, Search, Download, Package, AlertTriangle, 
-    XCircle, CheckCircle, ChevronDown, ChevronRight, Loader2, DollarSign
+    XCircle, CheckCircle, ChevronDown, ChevronRight, Loader2, DollarSign, Building2
 } from 'lucide-react';
 
 // Memoized Summary Card component
@@ -117,53 +117,166 @@ ProductRow.displayName = 'ProductRow';
 
 export default function WarehouseStockDashboard() {
     const { formatPrice } = useSettings();
+    const [branches, setBranches] = useState<any[]>([]);
+    const [selectedBranchId, setSelectedBranchId] = useState<string>('');
     const [warehouses, setWarehouses] = useState<any[]>([]);
-    const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
+    const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('all');
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filter, setFilter] = useState<'all' | 'inStock' | 'lowStock' | 'outOfStock'>('all');
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-    // Fetch warehouses
+    // Fetch filters metadata (warehouses and branches)
     useEffect(() => {
-        const fetchWarehouses = async () => {
+        const initFilterData = async () => {
             try {
-                const res = await fetchAPI('/system/warehouses');
-                if (res.success) {
-                    setWarehouses(res.data || []);
-                    if (res.data?.length > 0) {
-                        setSelectedWarehouseId(res.data[0].id);
-                    }
-                }
+                setLoading(true);
+                // Fetch warehouses
+                const whRes = await fetchAPI('/system/warehouses');
+                const whs = whRes.success ? (whRes.data || []) : [];
+                setWarehouses(whs);
+
+                // Fetch branches
+                const brRes = await fetchAPI('/system/branches');
+                const brs = brRes.success ? (brRes.data || []) : [];
+                setBranches(brs);
+
+                setSelectedWarehouseId('all');
             } catch (error) {
-                console.error('Failed to load warehouses', error);
-                toast.error('Failed to load warehouses list');
+                console.error('Failed to load initial filters data', error);
+                toast.error('Failed to load branch or warehouse filters');
+            } finally {
+                setLoading(false);
             }
         };
-        fetchWarehouses();
+        initFilterData();
     }, []);
 
-    // Fetch stock summary based on selected warehouse
-    const fetchStockSummary = useCallback(async () => {
-        if (!selectedWarehouseId) return;
+    // Filter warehouses by selected branch
+    const filteredWarehouses = useMemo(() => {
+        if (!selectedBranchId) return warehouses;
+        return warehouses.filter(w => w.branchId === selectedBranchId || w.branch?.id === selectedBranchId);
+    }, [warehouses, selectedBranchId]);
+
+    // Handle branch change: reset warehouse filter
+    const handleBranchChange = (branchId: string) => {
+        setSelectedBranchId(branchId);
+        setSelectedWarehouseId('all');
+    };
+
+    // Load data and handle aggregation
+    const fetchStockReport = useCallback(async () => {
+        if (warehouses.length === 0) return;
         setLoading(true);
         try {
-            const res = await fetchAPI(`/inventory-ledger/stock-summary?warehouseId=${selectedWarehouseId}`);
-            if (res.success) {
-                setProducts(res.data || []);
+            // Determine target warehouses to query
+            let targetWarehouses: any[] = [];
+            if (selectedWarehouseId && selectedWarehouseId !== 'all') {
+                targetWarehouses = warehouses.filter(w => w.id === selectedWarehouseId);
+            } else if (selectedBranchId) {
+                targetWarehouses = warehouses.filter(w => w.branchId === selectedBranchId || w.branch?.id === selectedBranchId);
+            } else {
+                targetWarehouses = warehouses;
             }
+
+            if (targetWarehouses.length === 0) {
+                setProducts([]);
+                setLoading(false);
+                return;
+            }
+
+            // Fetch stock summaries in parallel
+            const fetchPromises = targetWarehouses.map(w => 
+                fetchAPI(`/inventory-ledger/stock-summary?warehouseId=${w.id}`)
+                    .then(res => ({ warehouseId: w.id, data: res.success ? (res.data || []) : [] }))
+                    .catch(() => ({ warehouseId: w.id, data: [] }))
+            );
+
+            const results = await Promise.all(fetchPromises);
+
+            // Single warehouse optimization (no merging needed)
+            if (targetWarehouses.length === 1) {
+                setProducts(results[0].data);
+                setLoading(false);
+                return;
+            }
+
+            // Aggregation across multiple warehouses
+            const productMap = new Map<string, any>();
+
+            results.forEach(({ data }) => {
+                data.forEach((p: any) => {
+                    if (!productMap.has(p.id)) {
+                        productMap.set(p.id, {
+                            ...p,
+                            stock: 0,
+                            stockValue: 0,
+                            reservedStock: 0,
+                            variants: p.variants ? p.variants.map((v: any) => ({
+                                ...v,
+                                stock: 0,
+                                reservedStock: 0
+                            })) : []
+                        });
+                    }
+
+                    const existing = productMap.get(p.id);
+                    existing.stock += p.stock || 0;
+                    existing.stockValue += p.stockValue || 0;
+                    existing.reservedStock += p.reservedStock || 0;
+
+                    if (p.variants && p.variants.length > 0) {
+                        p.variants.forEach((v: any) => {
+                            const match = existing.variants.find((ev: any) => ev.id === v.id);
+                            if (match) {
+                                match.stock += v.stock || 0;
+                                match.reservedStock += v.reservedStock || 0;
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Convert aggregate Map to Array and recalculate thresholds
+            const aggregated = Array.from(productMap.values()).map(p => {
+                const hasVariants = p.variants && p.variants.length > 0;
+                let isOutOfStock = false;
+                let isLowStock = false;
+
+                if (hasVariants) {
+                    p.variants.forEach((v: any) => {
+                        const available = v.stock - (v.reservedStock || 0);
+                        v.outOfStock = v.stock === 0;
+                        v.lowStock = available <= (v.lowStockThreshold || 5);
+                    });
+                    isOutOfStock = p.variants.every((v: any) => v.stock === 0);
+                    isLowStock = p.variants.some((v: any) => v.lowStock);
+                } else {
+                    const available = p.stock - (p.reservedStock || 0);
+                    isOutOfStock = p.stock === 0;
+                    isLowStock = available <= (p.lowStockThreshold || 5);
+                }
+
+                return {
+                    ...p,
+                    lowStock: isLowStock,
+                    outOfStock: isOutOfStock
+                };
+            });
+
+            setProducts(aggregated);
         } catch (error) {
-            console.error('Failed to load stock summary', error);
-            toast.error('Failed to load stock summary report');
+            console.error('Failed to load stock reports data', error);
+            toast.error('Failed to load stock reports data');
         } finally {
             setLoading(false);
         }
-    }, [selectedWarehouseId]);
+    }, [selectedBranchId, selectedWarehouseId, warehouses]);
 
     useEffect(() => {
-        fetchStockSummary();
-    }, [fetchStockSummary]);
+        fetchStockReport();
+    }, [fetchStockReport]);
 
     const toggleExpand = useCallback((id: string) => {
         setExpandedIds(prev => {
@@ -211,7 +324,9 @@ export default function WarehouseStockDashboard() {
     // Export to CSV functionality
     const handleExportCSV = () => {
         try {
-            const warehouseName = warehouses.find(w => w.id === selectedWarehouseId)?.name || 'Warehouse';
+            const branchName = selectedBranchId ? (branches.find(b => b.id === selectedBranchId)?.name || 'Branch') : 'Global';
+            const warehouseName = selectedWarehouseId === 'all' ? 'All-Warehouses' : (warehouses.find(w => w.id === selectedWarehouseId)?.name || 'Warehouse');
+            
             let csvContent = 'Product,Category,Supplier,SKU,Variant,Stock,Reserved,Available,Unit Price,Asset Value,Status\n';
 
             filteredProducts.forEach(p => {
@@ -232,7 +347,7 @@ export default function WarehouseStockDashboard() {
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
-            link.setAttribute('download', `${warehouseName.toLowerCase().replace(/\s+/g, '-')}-stock-report.csv`);
+            link.setAttribute('download', `${branchName.toLowerCase().replace(/\s+/g, '-')}-${warehouseName.toLowerCase().replace(/\s+/g, '-')}-stock-report.csv`);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
@@ -246,27 +361,46 @@ export default function WarehouseStockDashboard() {
 
     return (
         <div className="space-y-6">
-            {/* Header & Warehouse Selector */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+            {/* Header & Branch/Warehouse Selectors */}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
                 <div>
                     <h1 className="text-2xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
                         <Warehouse className="w-6 h-6 text-brand-600" />
-                        Warehouse Stock Report
+                        Warehouse & Branch Stock Report
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-1">
-                        Track stock levels, valuations, and availability per warehouse location.
+                        Track stock levels, valuations, and availability grouped by branch location and warehouse.
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-4">
+                    {/* Branch Selector */}
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Select Location:</span>
+                        <Building2 className="w-4 h-4 text-slate-400" />
+                        <select
+                            value={selectedBranchId}
+                            onChange={(e) => handleBranchChange(e.target.value)}
+                            className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all cursor-pointer font-semibold text-slate-800 dark:text-slate-200"
+                        >
+                            <option value="">All Branches</option>
+                            {branches.map(b => (
+                                <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Warehouse Selector */}
+                    <div className="flex items-center gap-2">
+                        <Warehouse className="w-4 h-4 text-slate-400" />
                         <select
                             value={selectedWarehouseId}
                             onChange={(e) => setSelectedWarehouseId(e.target.value)}
                             className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 outline-none transition-all cursor-pointer font-semibold text-slate-800 dark:text-slate-200"
                         >
-                            {warehouses.map(w => (
+                            <option value="all">
+                                {selectedBranchId ? 'All Branch Warehouses' : 'All Warehouses (Global)'}
+                            </option>
+                            {filteredWarehouses.map(w => (
                                 <option key={w.id} value={w.id}>{w.name}</option>
                             ))}
                         </select>
@@ -459,7 +593,7 @@ export default function WarehouseStockDashboard() {
                 {!loading && filteredProducts.length > 0 && (
                     <div className="px-8 py-6 bg-slate-50/50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
                         <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.15em]">
-                            Warehouse assets reconciled: <span className="text-slate-900 dark:text-white underline decoration-brand-500 decoration-2 underline-offset-4">{filteredProducts.length} items</span>
+                            Branch/Warehouse assets reconciled: <span className="text-slate-900 dark:text-white underline decoration-brand-500 decoration-2 underline-offset-4">{filteredProducts.length} items</span>
                         </p>
                         <div className="flex items-center gap-4">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Live data active</span>
