@@ -630,6 +630,12 @@ export const navGroups = [
         feature: "/admin/reports/sales",
       },
       {
+        icon: Warehouse,
+        label: "Warehouse Stock",
+        href: "/admin/reports/warehouse-stock",
+        feature: "/admin/reports/sales",
+      },
+      {
         icon: TrendingUp,
         label: "Finance Summary",
         href: "/admin/reports/finance",
