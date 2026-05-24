@@ -160,10 +160,10 @@ const LiveChatWidget = () => {
   if (settings?.isSaaS) return null; // Hide on global SaaS portal
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-20 md:bottom-6 right-6 z-50 flex flex-col items-end">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-4 w-80 sm:w-96 h-[480px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300">
+        <div className="mb-4 w-80 sm:w-96 h-[400px] sm:h-[480px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300">
           {/* Header */}
           <div className="bg-indigo-600 dark:bg-indigo-700 px-4 py-3 flex items-center justify-between text-white">
             <div className="flex items-center space-x-3">
