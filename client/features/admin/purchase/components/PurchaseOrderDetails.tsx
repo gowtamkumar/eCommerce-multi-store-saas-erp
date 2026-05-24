@@ -123,7 +123,7 @@ export default function PurchaseOrderDetails() {
         );
     }
 
-    const balance = order.totalAmount - (order.paidAmount || 0);
+    const balance = Number(order.totalAmount || 0) - Number(order.paidAmount || 0);
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-32 px-4">
@@ -196,10 +196,10 @@ export default function PurchaseOrderDetails() {
                                                 {item.quantity}
                                             </td>
                                             <td className="px-8 py-6 text-right font-mono text-slate-500 dark:text-slate-400 font-bold">
-                                                {formatPrice(item.unitPrice)}
+                                                {formatPrice(Number(item.unitPrice) || 0)}
                                             </td>
                                             <td className="px-8 py-6 text-right font-black text-slate-900 dark:text-white font-mono text-lg">
-                                                {formatPrice(item.quantity * item.unitPrice)}
+                                                {formatPrice(Number(item.quantity || 0) * Number(item.unitPrice || 0))}
                                             </td>
                                         </tr>
                                     ))}
@@ -210,7 +210,7 @@ export default function PurchaseOrderDetails() {
                             <div className="flex flex-col md:flex-row justify-end items-end gap-12">
                                 <div className="text-right">
                                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Total Amount Payable</p>
-                                    <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter font-mono">{formatPrice(order.totalAmount)}</p>
+                                    <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter font-mono">{formatPrice(Number(order.totalAmount) || 0)}</p>
                                 </div>
                             </div>
                         </div>
@@ -230,7 +230,7 @@ export default function PurchaseOrderDetails() {
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Already Paid</p>
-                                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{formatPrice(order.paidAmount || 0)}</p>
+                                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{formatPrice(Number(order.paidAmount) || 0)}</p>
                                 </div>
                                 <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Balance Due</p>
@@ -262,7 +262,7 @@ export default function PurchaseOrderDetails() {
                                     order.payments.map((payment: any) => (
                                         <div key={payment.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800 space-y-2 group">
                                             <div className="flex justify-between items-center">
-                                                <span className="font-black text-slate-900 dark:text-white font-mono">{formatPrice(payment.amount)}</span>
+                                                <span className="font-black text-slate-900 dark:text-white font-mono">{formatPrice(Number(payment.amount) || 0)}</span>
                                                 <span className="text-[10px] font-bold text-slate-400">{new Date(payment.paymentDate).toLocaleDateString()}</span>
                                             </div>
                                             <div className="flex items-center gap-2 text-[10px]">

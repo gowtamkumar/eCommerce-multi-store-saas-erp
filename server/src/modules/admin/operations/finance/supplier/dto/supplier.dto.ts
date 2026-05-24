@@ -46,6 +46,18 @@ export class CreateSupplierDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean
+
+  @IsString()
+  @IsOptional()
+  code?: string
+
+  @IsString()
+  @IsOptional()
+  contactPerson?: string
+
+  @IsString()
+  @IsOptional()
+  taxId?: string
 }
 
 export class UpdateSupplierDto {
@@ -84,4 +96,16 @@ export class UpdateSupplierDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean
+
+  @IsString()
+  @IsOptional()
+  code?: string
+
+  @IsString()
+  @IsOptional()
+  contactPerson?: string
+
+  @IsString()
+  @IsOptional()
+  taxId?: string
 }

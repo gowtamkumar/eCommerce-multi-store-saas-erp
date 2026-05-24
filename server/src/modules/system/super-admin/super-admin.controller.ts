@@ -67,7 +67,7 @@ export class SuperAdminController {
         role: UserRole.SUPER_ADMIN,
         isAdmin: true,
       } as any,
-      { tenantId: 'system', userId: 'system' } as RequestContextDto,
+      { tenantId: null, userId: null } as RequestContextDto,
     )
 
     // Create or Update Initial Subscription Plans
@@ -197,7 +197,7 @@ export class SuperAdminController {
       } else {
         await this.planService.createSubscriptionPlan(
           planData,
-          { tenantId: 'system', userId: 'system' } as RequestContextDto,
+          { tenantId: null, userId: null } as RequestContextDto,
         )
       }
     }

@@ -333,12 +333,12 @@ export class StockReservationService {
       .leftJoinAndSelect('sr.product', 'product')
       .leftJoinAndSelect('sr.variant', 'variant')
       .leftJoinAndSelect('sr.warehouse', 'warehouse')
-      .where('sr.tenant_id = :tenantId', { tenantId })
-      .orderBy('sr.reserved_at', 'DESC')
+      .where('sr.tenantId = :tenantId', { tenantId })
+      .orderBy('sr.reservedAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
 
-    if (productId) qb.andWhere('sr.product_id = :productId', { productId })
+    if (productId) qb.andWhere('sr.productId = :productId', { productId })
     if (status) qb.andWhere('sr.status = :status', { status })
 
     const [items, total] = await qb.getManyAndCount()

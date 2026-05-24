@@ -51,7 +51,7 @@ export class PurchaseOrderService {
       { ...dto, totalAmount, tenantId } as any,
       ctx,
     )
-    await this.cacheService.delCache(`po:list`, tenantId)
+    await this.cacheService.delCacheByPattern(`po:list*`, tenantId)
     return result
   }
 
@@ -147,7 +147,7 @@ export class PurchaseOrderService {
       result = await this.repository.savePurchaseOrder(order)
     }
 
-    await this.cacheService.delCache(`po:list`, tenantId)
+    await this.cacheService.delCacheByPattern(`po:list*`, tenantId)
     await this.cacheService.delCache(`po:id:${id}`, tenantId)
     return result
   }
@@ -336,7 +336,7 @@ export class PurchaseOrderService {
       const savedOrder = await this.repository.savePurchaseOrder(order, queryRunner.manager)
       await queryRunner.commitTransaction()
 
-      await this.cacheService.delCache(`po:list`, tenantId)
+      await this.cacheService.delCacheByPattern(`po:list*`, tenantId)
       await this.cacheService.delCache(`po:id:${id}`, tenantId)
 
       return savedOrder

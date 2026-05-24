@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm'
 
-export class AddStockReservationsTable1748000000000 implements MigrationInterface {
-  name = 'AddStockReservationsTable1748000000000'
+export class AddStockReservationsTable1774867892751 implements MigrationInterface {
+  name = 'AddStockReservationsTable1774867892751'
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // 1. Create the status enum (idempotent)

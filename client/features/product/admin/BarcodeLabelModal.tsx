@@ -180,7 +180,7 @@ export default function BarcodeLabelModal({
   selectedItems.forEach((item) => {
     const codeVal = item.variant?.barcode || item.variant?.sku || item.product.barcode || item.product.sku;
     const nameVal = item.product.name;
-    const priceVal = item.variant?.price || item.product.price;
+    const priceVal = Number(item.variant?.price ?? item.product.price ?? 0) || 0;
     const variantVal = item.variant
       ? Object.entries(item.variant.combination)
           .map(([k, v]) => `${v}`)

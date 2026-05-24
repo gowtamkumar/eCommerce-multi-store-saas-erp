@@ -43,7 +43,7 @@ const PurchaseOrderRow = memo(({ order, onReceive, formatPrice }: {
                 <span className="text-slate-700 dark:text-slate-300 font-semibold">{order.supplier?.name}</span>
             </td>
             <td className="px-6 py-4 font-black text-slate-900 dark:text-white font-mono">
-                {formatPrice(order.totalAmount)}
+                {formatPrice(Number(order.totalAmount) || 0)}
             </td>
             <td className="px-6 py-4">
                 {getPaymentStatusBadge(order.paymentStatus)}
@@ -185,7 +185,7 @@ export default function PurchaseOrderList({
                 </div>
 
                 {/* Pagination Footer */}
-                {!loading && pagination.totalPages > 1 && (
+                {!loading && pagination.totalPages > 0 && (
                     <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                             Index <span className="text-slate-900 dark:text-white px-1">{pagination.page}</span> of <span className="text-slate-900 dark:text-white px-1">{pagination.totalPages}</span>

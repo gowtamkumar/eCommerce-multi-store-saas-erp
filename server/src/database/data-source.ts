@@ -17,7 +17,7 @@ export const dataSourceOptions: DataSourceOptions = {
   migrations: [join(__dirname, '/migrations/*{.ts,.js}')],
   synchronize: true,
   logging: false,
-  migrationsRun: true,
+  migrationsRun: false,
 }
 
 export const AppDataSource = new DataSource(dataSourceOptions)
