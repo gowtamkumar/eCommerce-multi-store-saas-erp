@@ -13,8 +13,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 
 | I am a... | Start here |
 | :--- | :--- |
-| **New Developer** (reading code) | [`codebase-understanding/README.md`](codebase-understanding/README.md) |
-| **New Developer** (coding standards) | [`developer/DEVELOPER_GUIDE.md`](developer/DEVELOPER_GUIDE.md) |
+| **New Developer** | [`developer/DEVELOPER_GUIDE.md`](developer/DEVELOPER_GUIDE.md) |
 | **System Architect / reviewer** | [`system-design/erp_master_system_design.md`](system-design/erp_master_system_design.md) |
 | **Platform Super-Admin** (SaaS Owner) | [`manuals/01_SUPER_ADMIN_MANUAL.md`](manuals/01_SUPER_ADMIN_MANUAL.md) |
 | **Tenant Owner / Business CFO** | [`manuals/02_TENANT_OWNER_MANUAL.md`](manuals/02_TENANT_OWNER_MANUAL.md) |
@@ -78,26 +77,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 
 ---
 
-## 3. Codebase Understanding Directory (`codebase-understanding/`)
-
-> Module-by-module technical breakdown of every feature implemented in `server/src/`. The definitive resource for developers who need to understand how any part of the system works before writing or reviewing code.
-
-| Document | Domains Covered |
-| :--- | :--- |
-| [`01_system_infrastructure.md`](codebase-understanding/01_system_infrastructure.md) | Tenant, Subscription, Organization (Branch/Warehouse), Audit Log |
-| [`02_catalog_and_marketing.md`](codebase-understanding/02_catalog_and_marketing.md) | Products, Variants, Categories, Price Books, Loyalty, Campaigns, Site Settings |
-| [`03_sales_and_pos.md`](codebase-understanding/03_sales_and_pos.md) | Orders, Returns, POS Registers, Cashier Shifts, Cash Drawer, Coupons, Promotions |
-| [`04_logistics_and_inventory.md`](codebase-understanding/04_logistics_and_inventory.md) | Inventory Ledger, Batch/Expiry Lots, Reservations, Transfers, GRN, Fulfillment, Courier |
-| [`05_finance_and_procurement.md`](codebase-understanding/05_finance_and_procurement.md) | COA, GL Journals, AP (POs, Supplier Invoices, Payments, 3-Way Match) |
-| [`06_hrm_module.md`](codebase-understanding/06_hrm_module.md) | Employees, Attendance, Leave, Payroll Batches, Payslips, GL Integration, Recruitment |
-| [`07_auth_and_rbac.md`](codebase-understanding/07_auth_and_rbac.md) | JWT Auth, Roles, Permissions, Scope Assignments, Permission Overrides, Guard Chain |
-| [`08_finance_reporting_and_tax.md`](codebase-understanding/08_finance_reporting_and_tax.md) | P&L, Balance Sheet, Cash Flow, VAT/Tax Engine, AR Dunning, Operational Reports |
-| [`09_infrastructure_services.md`](codebase-understanding/09_infrastructure_services.md) | Redis Cache, BullMQ Queues, File Uploads, Mail, Chat (Socket.IO), Push (FCM), SMS |
-| [`10_customer_crm_and_storefront.md`](codebase-understanding/10_customer_crm_and_storefront.md) | Customer Profiles, Wallet/AR/Loyalty Ledgers, Lead Pipeline, Cart, Wishlist |
-
----
-
-## 4. User Manuals Directory (`manuals/`)
+## 3. User Manuals Directory (`manuals/`)
 
 > Persona-based operation manuals and compliance guidelines.
 
