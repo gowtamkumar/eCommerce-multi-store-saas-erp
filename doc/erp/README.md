@@ -35,6 +35,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 *   [`erp_master_database_design.md`](system-design/erp_master_database_design.md) — **Master DB Schema**: Contains the unified database ERD (Mermaid) and field schemas for 8 operational domains.
 *   [`erp_current_and_recommended_features.md`](system-design/erp_current_and_recommended_features.md) — **Feature Gaps & Roadmap**: Maps 42+ active features and prioritizes enterprise additions (e.g. MRP, e-Invoicing).
 *   [`erp_documentation_and_user_manual_plan.md`](system-design/erp_documentation_and_user_manual_plan.md) — Documentation strategy and writing phases.
+*   [`developer_architecture_onboarding.md`](system-design/developer_architecture_onboarding.md) — **Developer Architectural Onboarding & System Flow Map**: Explains modular monolitic layouts, request guards pipelines, double-entry verification flowchart, and offline POS sync strategies.
 
 ### 1.2 Specialized Module Architecture Specs
 *   [`erp_architecture.md`](system-design/erp_architecture.md) — Monolith layer decoupling rules.
