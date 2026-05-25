@@ -33,6 +33,39 @@ export class SubscriptionPlanResponseDto {
   isPopular: boolean
 
   @Expose()
+  trialPeriodDays: number
+
+  @Expose()
+  code: string
+
+  @Expose()
+  currency: string
+
+  @Expose()
+  maxBranches: number
+
+  @Expose()
+  maxWarehouses: number
+
+  @Expose()
+  maxStaffUsers: number
+
+  @Expose()
+  maxProducts: number
+
+  @Expose()
+  maxMonthlyOrders: number
+
+  @Expose()
+  maxStorageMb: number
+
+  @Expose()
+  stripePriceIdMonthly: string | null
+
+  @Expose()
+  stripePriceIdYearly: string | null
+
+  @Expose()
   createdAt: Date
 
   @Expose()

@@ -38,6 +38,39 @@ export class SubscriptionPlanEntity extends BaseEntity {
   @Column({ name: 'is_popular', default: false })
   isPopular: boolean
 
+  @Column({ name: 'trial_period_days', type: 'int', default: 14 })
+  trialPeriodDays: number
+
+  @Column({ type: 'varchar', unique: true, nullable: true })
+  code: string
+
+  @Column({ type: 'varchar', length: 3, default: 'USD' })
+  currency: string
+
+  @Column({ name: 'max_branches', type: 'int', default: 1 })
+  maxBranches: number
+
+  @Column({ name: 'max_warehouses', type: 'int', default: 1 })
+  maxWarehouses: number
+
+  @Column({ name: 'max_staff_users', type: 'int', default: 3 })
+  maxStaffUsers: number
+
+  @Column({ name: 'max_products', type: 'int', default: 100 })
+  maxProducts: number
+
+  @Column({ name: 'max_monthly_orders', type: 'int', default: 500 })
+  maxMonthlyOrders: number
+
+  @Column({ name: 'max_storage_mb', type: 'int', default: 1024 })
+  maxStorageMb: number
+
+  @Column({ name: 'stripe_price_id_monthly', type: 'varchar', nullable: true })
+  stripePriceIdMonthly: string
+
+  @Column({ name: 'stripe_price_id_yearly', type: 'varchar', nullable: true })
+  stripePriceIdYearly: string
+
   @OneToMany(() => TenantEntity, (tenant) => tenant.subscriptionPlan)
   tenants: TenantEntity[]
 

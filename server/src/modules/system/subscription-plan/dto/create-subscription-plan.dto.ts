@@ -2,6 +2,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsInt,
   IsNumber,
   IsObject,
   IsOptional,
@@ -48,4 +49,55 @@ export class CreateSubscriptionPlanDto {
   @IsBoolean()
   @IsOptional()
   isPopular?: boolean
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  trialPeriodDays?: number
+
+  @IsString()
+  @IsOptional()
+  code?: string
+
+  @IsString()
+  @IsOptional()
+  currency?: string
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  maxBranches?: number
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  maxWarehouses?: number
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  maxStaffUsers?: number
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  maxProducts?: number
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  maxMonthlyOrders?: number
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  maxStorageMb?: number
+
+  @IsString()
+  @IsOptional()
+  stripePriceIdMonthly?: string
+
+  @IsString()
+  @IsOptional()
+  stripePriceIdYearly?: string
 }

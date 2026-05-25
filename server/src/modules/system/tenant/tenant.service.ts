@@ -82,9 +82,6 @@ export class TenantService {
 
     // 2. Prepare subscription details
     const now = new Date()
-    const trialEndsAt = new Date()
-    trialEndsAt.setDate(now.getDate() + 14)
-
     let subscriptionPlan = null
     let billingCycle = subscriptionBillingCycle || SubscriptionBillingCycle.MONTHLY
 
@@ -94,6 +91,10 @@ export class TenantService {
         billingCycle = subscriptionPlan.billingCycle
       }
     }
+
+    const trialEndsAt = new Date()
+    const trialDays = subscriptionPlan ? (subscriptionPlan.trialPeriodDays ?? 14) : 14
+    trialEndsAt.setDate(now.getDate() + trialDays)
 
     // 3. Execute creation in a transaction
     const result = await this.dataSource.transaction(async (manager) => {
