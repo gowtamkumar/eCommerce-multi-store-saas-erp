@@ -1,84 +1,202 @@
-# Subscription Plan Setup & Seeding Guide
+# Senior Engineering Guide: Subscription Plan Setup & Entitlements Engine
 
-This guide describes how to initialize, run setup, and seed/synchronize subscription plan tiers (Starter, Pro Seller, Enterprise) for the eCommerce Multi-Tenant SaaS platform.
-
----
-
-## 1. Local Infrastructure Startup
-
-The application environment runs inside Docker. Start the database, cache, mailhog, and backend server containers:
-
-```bash
-# From the project root directory
-docker-compose -f docker-compose.dev.yml up -d
-```
-
-Confirm that the backend server is running and healthy:
-```bash
-docker ps | grep multi_tenant_server_dev
-```
-The server will be reachable locally at `http://localhost:3900`.
+This guide details the technical specifications, architectural flow, and database setup instructions for the **Decoupled Abstract Keys (Entitlements)** subscription engine implemented in our multi-tenant SaaS ERP.
 
 ---
 
-## 2. Super Admin Initial Setup & Seeding
+## 1. Architectural Philosophy
 
-The platform uses a unified `/setup` routine to create the initial Super Admin account and seed/synchronize the core subscription plans with their definitive route-based feature slugs.
+In a large-scale ERP, coupling plan subscriptions directly to URL paths is a critical anti-pattern. Instead, our design separates the **Business Entitlements** (stored in the database) from the **Access Mechanics** (handled dynamically in code).
 
-### Setup Request
-Send a `POST` request to initialize the super admin and plans:
-
-- **Endpoint:** `POST http://localhost:3900/super-admin/setup`
-- **Headers:** `Content-Type: application/json`
-- **Payload:**
-```json
-{
-  "name": "Super Admin",
-  "username": "superadmin",
-  "email": "superadmin@example.com",
-  "password": "SecurePassword123!"
-}
+```mermaid
+graph TD
+    A[Stripe Plan / DB Subscription] -->|Abstract Key: pos| B(Backend Mapping Engine)
+    B -->|Resolves to Paths| C[/admin/pos]
+    B -->|Resolves to Paths| D[/admin/pos-registers]
+    E[HTTP Request: GET /admin/pos-registers] -->|SubscriptionGuard| F{Reverse Mapping Lookup}
+    F -->|Maps back to pos| G{Does Tenant have 'pos' entitlement?}
+    G -->|Yes| H[Allow Access]
+    G -->|No| I[403 Forbidden]
 ```
 
-### Seeding Behavior
-When this endpoint is triggered:
-1. It creates the **Super Admin** user record in the database.
-2. It seeds/updates the **three dynamic subscription tiers** with their precise route paths:
+### Key Advantages of This Philosophy:
+* **Zero DB Drift**: If the URL for POS Registers changes from `/admin/pos-registers` to `/admin/registers`, you only update the code mapping. Existing plans in the database remain completely untouched.
+* **Metadata Limits**: Easily fits within Stripe/PayPal plan metadata character limits (which fail if raw route paths are passed).
+* **Bundle Scaling**: Adding a new page to the HRM module (e.g. `/admin/hrm/shifts`) automatically grants access to all merchants on that plan without executing database migration scripts.
 
-| Tier | Price (Monthly / Yearly) | Feature Slugs (Entitlements) |
+---
+
+## 2. Database Schema Configuration
+
+The core model `SubscriptionPlanEntity` holds the system tier records, billing details, Stripe identifiers, and quantitative quotas.
+
+### Entity Attributes
+
+| Field Name | Type | Purpose / Sample Values |
 | :--- | :--- | :--- |
-| **Starter** | `$0.00` / `$0.00` | `['/admin', '/admin/products', '/admin/categories', '/admin/brands', '/admin/media', '/admin/profile', '/admin/faqs']` |
-| **Pro Seller** | `$29.00` / `$290.00` | All Starter features + `['/admin/pos', '/admin/orders', '/admin/returns', '/admin/fulfillment', '/admin/couriers', '/admin/coupons', '/admin/promotions', '/admin/pages', '/admin/reviews', '/admin/expenses', '/admin/settings', '/admin/customers', '/admin/subscribers', '/admin/leads', '/admin/carts', '/admin/payments', '/admin/campaigns']` |
-| **Enterprise** | `$99.00` / `$990.00` | All Pro Seller features + `['/admin/warehouses', '/admin/hrm', '/admin/inventory', '/admin/finance', '/admin/finance/profit-loss', '/admin/finance/balance-sheet', '/admin/finance/ledger', '/admin/invoices', '/admin/purchases', '/admin/grn', '/admin/suppliers', '/admin/reports', '/admin/reports/sales', '/admin/reports/profit-loss', '/admin/reports/supplier-ledger', '/admin/reports/customer-ledger', '/admin/reports/cash-flow', '/admin/reports/export', '/admin/reports/finance']` |
-
-*Note: If the plans already exist in the database, calling setup will safely **synchronize** and update their pricing, descriptions, and feature lists to prevent drift.*
+| **code** | `string` | Unique URL-safe identifier (e.g. `'starter'`, `'pro_seller'`) |
+| **name** | `string` | Public display name of the tier (e.g. `'Pro Seller'`) |
+| **price** | `decimal` | Base plan price |
+| **monthlyPrice** | `decimal` | Monthly payment threshold |
+| **yearlyPrice** | `decimal` | Annual payment threshold (discounted) |
+| **trialPeriodDays** | `int` | Length of trial period in days (e.g., `14` or `30`) |
+| **features** | `jsonb (string[])` | **Abstract Entitlement Keys** (e.g. `["pos", "catalog", "marketing", "header"]`) |
+| **maxBranches** | `int` | Branch location threshold limit |
+| **maxWarehouses** | `int` | Warehouse storage location limit |
+| **maxStaffUsers** | `int` | Maximum active team member user accounts allowed |
+| **maxProducts** | `int` | Catalog SKU listing threshold |
+| **maxMonthlyOrders** | `int` | Maximum transactional checkout logs per month |
+| **maxStorageMb** | `int` | Merchant asset storage limit |
+| **stripePriceIdMonthly** | `string` | Stripe Price API lookup token for monthly billing |
+| **stripePriceIdYearly** | `string` | Stripe Price API lookup token for yearly billing |
 
 ---
 
-## 3. Upgrading / Downgrading Tenant Plans
+## 3. Translation Engine (`feature-mapping.ts`)
 
-To upgrade or downgrade a merchant tenant's plan:
+Located at [feature-mapping.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/common/constants/feature-mapping.ts), the translation engine registers all ERP sub-routes and translates between route paths and abstract keys.
 
-1. **Log in as Super Admin** (`POST /auth/login` using your setup credentials) to retrieve a JWT Bearer token.
-2. **Execute the Plan Update:**
+> [!NOTE]
+> All nested sub-routes must be mapped to their parent feature to prevent route guards from raising unauthorized access errors when users visit child views.
 
-- **Endpoint:** `PATCH http://localhost:3900/super-admin/tenants/:id/plan`
-- **Headers:** 
-  - `Authorization: Bearer <your_jwt_token>`
-  - `Content-Type: application/json`
-- **Payload:**
-```json
-{
-  "planId": "<target_subscription_plan_uuid>"
+```typescript
+export const FEATURE_TO_ROUTES_MAPPING: Record<string, string[]> = {
+  pos: ['/admin/pos', '/admin/pos-registers'],
+  finance: [
+    '/admin/finance',
+    '/admin/finance/profit-loss',
+    '/admin/finance/balance-sheet',
+    '/admin/finance/ledger',
+    '/admin/finance/ar',
+    '/admin/finance/ap',
+    '/admin/finance/wallet',
+    '/admin/finance/accounts',
+    '/admin/finance/cash-flow',
+    '/admin/finance/fiscal-periods',
+    '/admin/finance/tax',
+    '/admin/expenses',
+  ],
+  hrm: [
+    '/admin/hrm',
+    '/admin/hrm/dashboard',
+    '/admin/hrm/employees',
+    '/admin/hrm/departments',
+    '/admin/hrm/designations',
+    '/admin/hrm/attendance',
+    '/admin/hrm/leaves',
+    '/admin/hrm/shifts',
+    '/admin/hrm/payroll',
+    '/admin/hrm/recruitment',
+    '/admin/hrm/performance',
+  ],
+  orders: [
+    '/admin/orders',
+    '/admin/carts',
+    '/admin/returns',
+    '/admin/payments',
+    '/admin/invoices',
+    '/admin/customers',
+  ],
+  catalog: [
+    '/admin/products',
+    '/admin/categories',
+    '/admin/brands',
+    '/admin/price-books',
+    '/admin/media',
+    '/admin/reviews',
+  ],
+  inventory: [
+    '/admin/inventory',
+    '/admin/warehouses',
+    '/admin/stock-transfers',
+    '/admin/batches',
+    '/admin/cycle-count',
+  ],
+  purchasing: [
+    '/admin/purchases',
+    '/admin/suppliers',
+    '/admin/grn',
+    '/admin/procurement/dashboard',
+    '/admin/procurement/suppliers',
+    '/admin/procurement/requisitions',
+    '/admin/procurement/rfqs',
+    '/admin/procurement/purchases',
+    '/admin/procurement/grn',
+    '/admin/procurement/invoices',
+    '/admin/procurement/debit-notes',
+  ],
+  marketing: [
+    '/admin/campaigns',
+    '/admin/coupons',
+    '/admin/promotions',
+    '/admin/subscribers',
+    '/admin/leads',
+    '/admin/reports/marketing',
+    '/admin/marketing/loyalty',
+  ],
+  settings: [
+    '/admin/settings',
+    '/admin/team',
+    '/admin/roles',
+    '/admin/audit-logs',
+  ],
+  header: ['/admin/settings/navbar'],
+  footer: ['/admin/settings/footer'],
+  
+  // Legacy Marketing Aliases (for 100% backward-compatibility)
+  staff_accounts: ['/admin/hrm'],
+  unlimited_products: ['/admin/products'],
+  navbar: ['/admin/settings/navbar'],
 }
 ```
 
-### Background Execution Flow
-When the plan is updated:
-- The backend changes the tenant's `subscriptionPlanId` to the new plan.
-- The `TenantFeatureEntity` records are synchronized inside a database transaction:
-  - Features belonging to the new plan are toggled (`isEnabled = true`) or created.
-  - Legacy features not present in the new plan are soft-disabled (`isEnabled = false`) to preserve user RBAC role-permission configuration for future upgrades.
-- Caches are automatically flushed:
-  - Tenant structure cache (`tenant:id:${id}`) is cleared.
-  - User permissions manifest cache (`rbac:manifest:${tenantId}:${userId}`) is invalidated for all organization members immediately.
+---
+
+## 4. Backend Request Authentication (`SubscriptionGuard`)
+
+Every controller endpoint maps back to a specific capability gate using `@RequireFeature('route')`. The [SubscriptionGuard](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/common/guards/subscription.guard.ts) interceptor evaluates access dynamically:
+
+> [!TIP]
+> Super Admin accounts automatically bypass all guards.
+
+```typescript
+// 1. Resolve required path to abstract feature key
+const featureSlug = ROUTE_TO_FEATURE_MAPPING[requiredFeature] || requiredFeature;
+
+// 2. Check if the capability is enabled at database-level (tenant_features overrides)
+const feature = await this.tenantFeatureRepo.findOne({
+  where: { tenantId, featureSlug },
+});
+if (feature && !feature.isEnabled) {
+  throw new ForbiddenException("Feature is disabled for your store");
+}
+
+// 3. Fallback: check plan-level abstract features
+const tenant = await this.tenantService.findOneTenants(tenantId);
+const planFeatures = tenant.subscriptionPlan?.features || [];
+const hasAccess = planFeatures.includes(featureSlug) || expandFeatures(planFeatures).includes(requiredFeature);
+
+if (!feature && !hasAccess) {
+  throw new ForbiddenException("Upgrade your plan to access this feature.");
+}
+```
+
+---
+
+## 5. Frontend Session & UI Gating (`routes.ts`)
+
+To avoid querying the Postgres database on every single page load or link hover, we use a hybrid token authentication strategy:
+
+1. **Pre-Compiled Session JWT**: During login, `auth.service.ts` expands abstract keys to their respective route lists via `expandFeatures(...)` and signs them into the user JWT payload.
+2. **Instant Local Sidebar Checks**: The [AdminLayout.tsx](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/features/admin/dashboard/components/AdminLayout.tsx) navigation filters items on the fly:
+   ```typescript
+   if (item.feature) {
+       return features.includes(item.feature);
+   }
+   ```
+3. **Menu Key Alignments**:
+   All features inside [routes.ts](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/client/routes.ts) utilize abstract entitlement keys instead of route strings:
+   * Navbar Menu -> `feature: "header"`
+   * Footer Menu -> `feature: "footer"`
+   * Point of Sale -> `feature: "pos"`
+   * Products / Brands -> `feature: "catalog"`
