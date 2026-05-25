@@ -67,10 +67,14 @@ export class CacheService {
   async clearTenantCache(tenantId: string) {
     this.logger.log(`${this.clearTenantCache.name} Service Called for tenant: ${tenantId}`)
     try {
-      // Construction: prefix:tenant:tenantId:*
-      // We need to fetch the prefix securely if possible, otherwise use constant
-      const pattern = `${CACHE_PREFIX}:tenant:${tenantId}:*`
-      await this.cacheRepository.delByPattern(pattern)
+      // 1. Clear standard tenant-scoped data cache (pages, catalogs, settings)
+      const dataPattern = `${CACHE_PREFIX}:tenant:${tenantId}:*`
+      await this.cacheRepository.delByPattern(dataPattern)
+
+      // 2. Clear tenant-scoped user permissions manifest cache
+      const manifestPattern = `${CACHE_PREFIX}:rbac:manifest:${tenantId}:*`
+      await this.cacheRepository.delByPattern(manifestPattern)
+
       this.logger.log(`[CACHE] Successfully cleared cache for tenant: ${tenantId}`)
     } catch (error) {
       this.logger.error(`[CACHE] CLEAR_TENANT error for tenant ${tenantId}:`, error.message)
