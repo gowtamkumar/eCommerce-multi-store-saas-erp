@@ -8,6 +8,49 @@ export class CacheService {
 
   constructor(private readonly cacheRepository: CacheRepository) {}
 
+  private isExcluded(key: string): boolean {
+    const lowerKey = key.toLowerCase()
+    const excludedKeywords = [
+      // POS Checkout Tenders
+      'pos',
+      'shift',
+      'drawer',
+      'tender',
+      'z-report',
+      'zreport',
+      
+      // Customer Carts
+      'cart',
+      'checkout',
+      
+      // Real-time Stock Checks
+      'atp',
+      'stock-check',
+      'stockcheck',
+      'stock-level',
+      
+      // Auth Routes
+      'otp',
+      'verification',
+      'email-token',
+      'email_token',
+      'reset-password',
+      'forgot-password',
+      'auth-route',
+    ]
+
+    return excludedKeywords.some((keyword) => {
+      if (keyword === 'token') {
+        return (
+          lowerKey.includes('verification') ||
+          lowerKey.includes('email') ||
+          lowerKey.includes('auth')
+        )
+      }
+      return lowerKey.includes(keyword)
+    })
+  }
+
   private buildKey(key: string, tenantId?: string) {
     this.logger.log(`${this.buildKey.name} Service Called`)
     return tenantId ? `${CACHE_PREFIX}:tenant:${tenantId}:${key}` : `${CACHE_PREFIX}:${key}`
@@ -15,6 +58,10 @@ export class CacheService {
 
   async getCache<T>(key: string, tenantId?: string): Promise<T | null> {
     this.logger.log(`${this.getCache.name} Service Called`)
+    if (this.isExcluded(key)) {
+      this.logger.warn(`[CACHE] GET blocked for strictly excluded real-time key: ${key}`)
+      return null
+    }
     try {
       const fullKey = this.buildKey(key, tenantId)
       return await this.cacheRepository.get<T>(fullKey)
@@ -26,6 +73,10 @@ export class CacheService {
 
   async setCache(key: string, value: any, ttl?: number, tenantId?: string) {
     this.logger.log(`${this.setCache.name} Service Called`)
+    if (this.isExcluded(key)) {
+      this.logger.warn(`[CACHE] SET blocked for strictly excluded real-time key: ${key}`)
+      return
+    }
     try {
       const fullKey = this.buildKey(key, tenantId)
       const targetTtl = ttl !== undefined ? ttl : Number(process.env.CACHE_TTL) || 300
@@ -103,6 +154,10 @@ export class CacheService {
     tenantId?: string,
   ): Promise<T> {
     this.logger.log(`${this.rememberCache.name} Service Called`)
+    if (this.isExcluded(key)) {
+      this.logger.warn(`[CACHE] REMEMBER bypassed for strictly excluded real-time key: ${key}`)
+      return await fetcher()
+    }
     const cached = await this.getCache<T>(key, tenantId)
     if (cached) return cached
 

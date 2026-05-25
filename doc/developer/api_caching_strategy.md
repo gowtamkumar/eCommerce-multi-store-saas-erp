@@ -32,15 +32,14 @@ These endpoints are critical for the initial page load and browsing experience. 
 
 ---
 
-## Excluded from Caching (Real-time / User Specific)
+## Excluded from Caching (Always Real-Time)
 
-The following endpoints SHOULD NOT be cached at the API level (or require user-specific cache keys):
+To prevent data leaks, inventory errors, or race conditions, the following categories are strictly excluded from API-level caching (enforced programmatically in `CacheService`):
 
-*   **Cart & Checkout**: `GET /cart`, `GET /checkout` (Highly dynamic, per user)
-*   **Orders**: `GET /orders`, `GET /orders/:id` (Real-time status is critical)
-*   **Profile**: `GET /profile` (Personal data)
-*   **Auth**: `GET /auth/*` (Security sensitive)
-*   **Inventory Checks**: Specific stock level checks during checkout.
+*   **POS Checkout Tenders**: Cash drawer openings, shifts closing (Z-reports), and split cash/card balances.
+*   **Customer Carts**: Shopping carts (`/cart`) and checkout calculations (`/checkout`).
+*   **Real-time Stock Checks**: Available-to-promise (ATP) inventory levels checks during checkout.
+*   **Auth Routes**: OTP delivery checks, verification email tokens.
 
 ## Implementation Guidelines
 
