@@ -4,7 +4,7 @@
 > **This document answers the third question:** _how does data actually move through the system, end-to-end, on every important request?_
 >
 > Every flow below is **traced from the source code in `server/src/` and `client/`** (see citations).
-> Where the older READMEs or design docs claim a behaviour that does not match the code, this document follows the **code** and the discrepancy is logged in §32.
+> Where the older READMEs or design docs claim a behaviour that does not match the code, this document follows the **code** and the discrepancy is logged in §33.
 
 **Stack:** NestJS 11 · TypeORM (PostgreSQL) · Redis · BullMQ · Next.js 15 (App Router) · NextAuth
 **Architecture:** Modular monolith · Tenant-scoped · Append-only ledgers · Transactional outbox · BullMQ side-effects
@@ -18,6 +18,10 @@
 - [0.1 One-page picture of every request](#01-one-page-picture-of-every-request)
 - [0.2 Twelve dataflow primitives that govern everything](#02-twelve-dataflow-primitives-that-govern-everything)
 - [0.3 How to read this document](#03-how-to-read-this-document)
+- [0.4 Data movement legend](#04-data-movement-legend)
+- [0.5 Master module connection diagram](#05-master-module-connection-diagram)
+- [0.6 Module connection matrix](#06-module-connection-matrix)
+- [0.7 Core business-cycle diagrams](#07-core-business-cycle-diagrams)
 
 **Part I — Cross-cutting dataflow**
 1. [Request lifecycle (browser → DB → response)](#1-request-lifecycle-browser--db--response)
@@ -54,11 +58,12 @@
 30. [Audit Log](#30-audit-log)
 
 **Part III — Database write maps (row-level)**
-31. [Per-flow "tables touched + example row" map](#31-per-flow-tables-touched--example-row-map)
+31. [Module ownership + data mutation map](#31-module-ownership--data-mutation-map)
+32. [Per-flow "tables touched + example row" map](#32-per-flow-tables-touched--example-row-map)
 
 **Part IV — Operational concerns**
-32. [Code-vs-docs discrepancy log](#32-code-vs-docs-discrepancy-log)
-33. [Cross-reference index](#33-cross-reference-index)
+33. [Code-vs-docs discrepancy log](#33-code-vs-docs-discrepancy-log)
+34. [Cross-reference index](#34-cross-reference-index)
 
 ---
 
@@ -187,6 +192,303 @@
 - **Part III** is a one-glance "row map" — for each major flow, the literal sample rows the system inserts across affected tables. This is the **row-field-table** view requested by stakeholders.
 - **Part IV** lists where the code disagrees with the older docs so they can be reconciled.
 
+## 0.4 Data movement legend
+
+Use this legend when reading every diagram and table below. It separates **data ownership** from **data usage**.
+
+| Symbol | Meaning | Example |
+| ------ | ------- | ------- |
+| `A` | **Add / insert** a new row. | `OrderService.createOrder()` adds `orders`, `order_items`, `stock_reservations`. |
+| `U` | **Update** an existing row. | `PaymentService.handleSuccessPayment()` updates `orders.payment_status`. |
+| `D` | **Delete or remove** data. | `CartService.removeItem()` removes `cart_items`; many admin deletes should be soft-delete through `deleted_at`. |
+| `R` | **Read only**. | Reporting reads `journal_entries`, `ledger_entries`, `accounts`; it does not write. |
+| `L` | **Append-only ledger insert**. | `inventory_ledger`, `wallet_ledger`, `ar_ledger`, `journal_entries`, `ledger_entries`. Never update/delete ledger truth. |
+| `O` | **Outbox insert** for later async posting. | `accounting_outbox` row with `event='CREATE_JOURNAL_ENTRY'`. |
+| `Q` | **BullMQ job enqueue / consume**. | `product:update-stock`, `order:process-accounting-outbox`. |
+| `S` | **State transition**. | `payroll_batches: DRAFT → APPROVED → PAID`. |
+| `X` | **External integration**. | Pathao, Steadfast, payment gateway, SMS, SMTP, FCM. |
+
+### Add vs update vs remove rules
+
+| Data category | Add allowed? | Update allowed? | Remove allowed? | Rule |
+| ------------- | ------------ | --------------- | --------------- | ---- |
+| Master data (`products`, `categories`, `branches`, `warehouses`, `suppliers`) | Yes | Yes, with tenant scope | Prefer soft-delete (`deleted_at`) | Master rows are editable, but historical documents keep snapshots. |
+| Business documents (`orders`, `purchase_orders`, `grn`, `payroll_batches`) | Yes | Only state/status and controlled fields | Usually no hard delete | Move through state machines; do not erase history after approval/posting. |
+| Ledgers (`journal_entries`, `ledger_entries`, `inventory_ledger`, `wallet_ledger`, `ar_ledger`, `supplier_ap_ledger`) | Yes, append-only | No | No | Corrections use reversing rows, never mutation. |
+| Temporary user data (`carts`, `cart_items`, sessions) | Yes | Yes | Yes | Cart/session data can be removed because it is not accounting truth. |
+| Infra data (`notifications`, `campaign_logs`, `audit_logs`, `files`) | Yes | Limited | Retention policy only | Keep enough history for support/audit. |
+
+## 0.5 Master module connection diagram
+
+This diagram is the fastest way to understand **which module talks to which module**. Read arrows as: "left module calls, writes, enqueues, or depends on right module".
+
+```mermaid
+flowchart LR
+  subgraph Client["Next.js client"]
+    AdminUI["Admin UI<br/>client/app/admin"]
+    Storefront["Storefront<br/>client/app/(user)"]
+    SystemUI["System UI<br/>client/app/system"]
+    SupplierPortal["Supplier Portal"]
+  end
+
+  subgraph Security["Request security"]
+    TenantCtx["TenantContextMiddleware"]
+    Guards["TenantStatusGuard<br/>BranchScopeGuard<br/>PermissionsGuard<br/>JwtAuthGuard<br/>SubscriptionGuard"]
+  end
+
+  subgraph Platform["System modules"]
+    Tenant["Tenant"]
+    Subscription["Subscription + Plans"]
+    Org["Organization<br/>Branch/Warehouse/Bin"]
+    RBAC["RBAC + Users"]
+    Audit["Audit Log"]
+  end
+
+  subgraph Commercial["Commercial modules"]
+    Catalog["Catalog<br/>Products/Variants/Pricing"]
+    Cart["Cart"]
+    Order["Sales Order"]
+    POS["POS"]
+    Payment["Payment"]
+    Promotion["Coupon/Promotion"]
+    CRM["CRM<br/>Customer/Lead/Subscriber"]
+    Loyalty["Loyalty"]
+    Wallet["Wallet"]
+  end
+
+  subgraph Operations["Operations modules"]
+    Inventory["Inventory Ledger<br/>Reservations/Transfers"]
+    Fulfillment["Fulfillment"]
+    Courier["Courier<br/>Pathao/Steadfast"]
+    Procurement["Procurement<br/>PR/RFQ/PO"]
+    GRN["GRN"]
+    Supplier["Supplier + AP"]
+    HRM["HRM + Payroll"]
+  end
+
+  subgraph Finance["Finance truth"]
+    Accounting["Accounting Service"]
+    Outbox["accounting_outbox"]
+    GL["journal_entries<br/>ledger_entries"]
+    AR["ar_ledger"]
+    AP["supplier_ap_ledger"]
+    Reports["Reports"]
+  end
+
+  subgraph Infra["Async + infra"]
+    Redis["Redis"]
+    BullMQ["BullMQ<br/>order/product/campaign/loyalty"]
+    Mail["Mail/SMS/Push"]
+    File["File/S3"]
+    Chat["Chat/Notification"]
+  end
+
+  AdminUI --> TenantCtx --> Guards
+  Storefront --> TenantCtx
+  SystemUI --> TenantCtx
+  SupplierPortal --> TenantCtx
+
+  Guards --> Tenant
+  Guards --> Subscription
+  Guards --> RBAC
+  Guards --> Org
+
+  AdminUI --> Catalog
+  Storefront --> Catalog
+  Storefront --> Cart
+  Cart --> Order
+  Order --> Payment
+  Order --> Promotion
+  Order --> Wallet
+  Order --> AR
+  Order --> Inventory
+  Order --> Fulfillment
+  Fulfillment --> Courier
+  POS --> Order
+  POS --> Inventory
+  POS --> Wallet
+  POS --> AR
+
+  Catalog --> Inventory
+  Procurement --> Supplier
+  Procurement --> GRN
+  GRN --> AP
+  GRN --> BullMQ
+  BullMQ --> Inventory
+
+  HRM --> Accounting
+  Supplier --> Accounting
+  Order --> Outbox
+  Inventory --> Outbox
+  Wallet --> Outbox
+  GRN --> Outbox
+  Outbox --> BullMQ
+  BullMQ --> Accounting
+  Accounting --> GL
+  Reports --> GL
+  Reports --> AR
+  Reports --> AP
+
+  Promotion --> BullMQ
+  Loyalty --> BullMQ
+  BullMQ --> Mail
+  Catalog --> File
+  HRM --> File
+  Order --> Audit
+  POS --> Audit
+  HRM --> Audit
+  Procurement --> Audit
+  Redis --- Catalog
+  Redis --- Cart
+  Redis --- Subscription
+  Chat --- CRM
+```
+
+## 0.6 Module connection matrix
+
+This is the same diagram in table form. Use it when you need to answer: **"If I change module X, which modules can break?"**
+
+| Module | Owns / source-of-truth tables | Reads from | Writes to / calls | Downstream side-effects |
+| ------ | ----------------------------- | ---------- | ----------------- | ----------------------- |
+| Auth/User | `users`, `sessions` | `tenants`, `roles` | `sessions`, `users.refresh_token` | JWT identity for every secured module. |
+| RBAC | `roles`, `permissions`, `role_permissions`, `user_role_assignments`, `permission_overrides` | `users`, `branches`, `warehouses` | permission checks in guards | Blocks or allows all admin writes. |
+| Tenant/Subscription | `tenants`, `tenant_features`, `subscription_plans`, `subscription_invoices` | `users`, `feature_definitions` | `tenant_features`, `subscription_invoices` | `SubscriptionGuard` gates modules such as POS, HRM, Campaigns. |
+| Organization | `branches`, `warehouses`, `warehouse_bins` | `tenants`, `users` | branch/warehouse master data | Branch/warehouse scope for orders, stock, payroll, reports. |
+| Catalog | `products`, `product_variants`, `categories`, `brands`, `price_books`, `reviews` | `warehouses`, `suppliers` | product master, variants, batches | Inventory, Cart, Order, POS, Campaign audience. |
+| Cart | `carts`, `cart_items` | `products`, `product_variants`, `coupons`, `wallet_ledger` | `carts`, `cart_items` | Feeds checkout/order creation. |
+| Order | `orders`, `order_items`, `order_returns` | Catalog, Coupon, Wallet, Inventory ATP, Customer | `orders`, `order_items`, `stock_reservations`, `inventory_ledger`, `wallet_ledger`, `ar_ledger`, `accounting_outbox` | Invoice job, notification job, fulfillment, GL posting. |
+| POS | `pos_registers`, `pos_shifts`, `pos_drawer_transactions` | Catalog, Inventory, Wallet, Customer, Coupons | POS shifts/drawer rows, `orders`, `inventory_ledger`, `wallet_ledger`, `ar_ledger`, `accounting_outbox` | GL posting, shift reconciliation, offline idempotency. |
+| Payment | `payments` | `orders`, gateway response | `payments`, `orders.payment_status`, `orders.transaction_id` | Does not post revenue journal; order completion does. |
+| Inventory | `inventory_ledger`, `stock_reservations`, `stock_transfers`, `product_batches` | Catalog, Warehouse, Order, GRN, POS | append stock ledger rows, reservation status, transfer state | COGS outbox, ATP read model. |
+| GRN | `goods_received_notes`, `goods_received_note_items` | PO, Supplier, Warehouse | GRN status, AP ledger, product queue `update-stock` | Inventory purchase rows, average cost, AP journal outbox. |
+| Procurement | `purchase_requisitions`, `rfqs`, `purchase_orders`, `supplier_invoices`, `debit_notes` | Supplier, Catalog, GRN | procurement documents, supplier AP/payment rows | AP journal outbox, supplier portal visibility. |
+| Supplier/AP | `suppliers`, `supplier_ap_ledger` | GRN, Supplier Invoice, Supplier Payment | AP ledger rows | AP aging, balance sheet liabilities. |
+| Accounting | `accounts`, `journal_entries`, `ledger_entries`, `accounting_outbox` | outbox payloads, source refs | immutable GL journals and account balances | Reports, compliance, audit trail. |
+| AR/Dunning | `ar_ledger`, customer credit fields on `users` | Orders, Payments | AR ledger rows, `users.credit_hold` | AR aging, customer credit blocks. |
+| Wallet | `wallet_ledger` | Customer, Orders, POS | wallet ledger rows, accounting outbox unless `skipGlPost` | Storefront wallet balance, order/POS discount liability. |
+| HRM/Payroll | employees, attendance, leave, payroll batches/slips | Users, Branches, Accounts | HRM rows, payroll journals, audit logs | Payroll liability, salary expense, payslips. |
+| Marketing/Campaign | `campaigns`, `campaign_logs`, `coupons`, `promotions` | Customers, Subscribers, Products, Orders | campaign rows, coupon usage, campaign queue jobs | Mail/SMS/Push dispatch, coupon impact on orders. |
+| Loyalty | `loyalty_ledger`, `loyalty_tier_rules`, `users.membership_tier` | Orders, Customers | loyalty ledger, user tier cache | Loyalty balance in storefront and customer profile. |
+| CRM | `leads`, `subscribers`, customer fields on `users` | Orders, Wallet, AR, Loyalty | lead/subscriber/customer rows | Campaign audience, support context, B2B credit rules. |
+| Fulfillment/Courier | `fulfillment_tasks`, `fulfillment_items`, courier fields on `orders` | Orders, Reservations, Warehouses | fulfillment rows, order tracking/status fields | Courier API call, webhook updates. |
+| Reporting | no source-of-truth writes | GL, AR, AP, Inventory, Orders, Payroll | read-only projections | Tenant owner, accountant, manager dashboards. |
+| Infra | `audit_logs`, `notifications`, `files`, `campaign_logs`, queue state | All modules | cache, files, messages, notifications, audit rows | Operational reliability and support traceability. |
+
+## 0.7 Core business-cycle diagrams
+
+The master module diagram is broad. These cycle diagrams show the main ERP business loops that developers usually need to trace.
+
+### 0.7.1 Order-to-cash
+
+```mermaid
+flowchart LR
+  Cart["Cart<br/>A/U: carts, cart_items"]
+  Checkout["Checkout / OrderService"]
+  Coupon["Coupon/Promotion<br/>R/U: coupons.used_count"]
+  Wallet["Wallet<br/>L: wallet_ledger"]
+  AR["AR<br/>L: ar_ledger"]
+  Order["Order<br/>A/U: orders, order_items"]
+  Reserve["Inventory Reservation<br/>A/U: stock_reservations<br/>L: inventory_ledger RESERVATION"]
+  Payment["Payment<br/>A: payments<br/>U: orders.payment_status"]
+  Fulfillment["Fulfillment<br/>A/U: fulfillment_tasks/items"]
+  SaleStock["Stock Sale<br/>L: inventory_ledger SALE<br/>COGS calculated"]
+  Outbox["Accounting Outbox<br/>O: CREATE_JOURNAL_ENTRY"]
+  GL["General Ledger<br/>L: journal_entries + ledger_entries"]
+  Reports["Reports<br/>R only"]
+
+  Cart --> Checkout
+  Checkout --> Coupon
+  Checkout --> Wallet
+  Checkout --> AR
+  Checkout --> Order
+  Checkout --> Reserve
+  Order --> Payment
+  Order --> Fulfillment
+  Fulfillment --> SaleStock
+  SaleStock --> Outbox
+  Wallet --> Outbox
+  AR --> Outbox
+  Outbox --> GL
+  GL --> Reports
+```
+
+Important: payment success updates payment status, but revenue/COGS journal posting happens when the order becomes `COMPLETED`.
+
+### 0.7.2 Procure-to-pay
+
+```mermaid
+flowchart LR
+  Supplier["Supplier<br/>A/U: suppliers"]
+  PR["Purchase Requisition<br/>A/U/S"]
+  RFQ["RFQ<br/>A/U/S"]
+  PO["Purchase Order<br/>A/U/S"]
+  GRN["GRN<br/>A/U/S: DRAFT→RECEIVED"]
+  AP["Supplier AP<br/>L: supplier_ap_ledger"]
+  ProductQueue["BullMQ product queue<br/>Q: update-stock"]
+  Inventory["Inventory<br/>L: inventory_ledger PURCHASE<br/>U: products.average_cost"]
+  Outbox["Accounting Outbox<br/>O: Purchase/AP journal"]
+  GL["General Ledger<br/>L: journal_entries + ledger_entries"]
+  Payment["Supplier Payment<br/>L: supplier_ap_ledger PAYMENT"]
+
+  Supplier --> PR --> RFQ --> PO --> GRN
+  GRN --> AP
+  GRN --> ProductQueue --> Inventory
+  Inventory --> Outbox --> GL
+  AP --> Payment --> Outbox
+```
+
+Key rule: GRN verification is the moment stock and AP become business truth. PO approval alone does not increase stock.
+
+### 0.7.3 Payroll-to-GL
+
+```mermaid
+flowchart LR
+  Employee["Employee Master<br/>A/U"]
+  Attendance["Attendance / Leave<br/>A/U/S approvals"]
+  PayrollBatch["Payroll Batch<br/>A/U/S: DRAFT→APPROVED"]
+  Payslip["Payslips<br/>A: payroll_slips"]
+  Accrual["Accrual Journal<br/>L: DR Salary Expense<br/>CR Payables/Tax"]
+  Pay["Pay Payroll<br/>S: APPROVED→PAID"]
+  Settlement["Settlement Journal<br/>L: DR Payable<br/>CR Cash"]
+  Reports["Finance + HR Reports<br/>R only"]
+  Audit["Audit Log<br/>A"]
+
+  Employee --> Attendance --> PayrollBatch --> Payslip
+  PayrollBatch --> Accrual
+  PayrollBatch --> Audit
+  PayrollBatch --> Pay --> Settlement
+  Pay --> Audit
+  Accrual --> Reports
+  Settlement --> Reports
+```
+
+Key rule: approved payroll should not be deleted. Corrections are adjustment batches or reversal journals.
+
+### 0.7.4 Stock lifecycle
+
+```mermaid
+flowchart LR
+  Catalog["Catalog<br/>Product/Variant"]
+  Purchase["Purchase / GRN<br/>stock IN"]
+  Reservation["Reservation<br/>stock locked for order"]
+  Sale["Sale / Fulfillment<br/>stock OUT + COGS"]
+  Transfer["Stock Transfer<br/>TRANSFER_OUT/TRANSFER_IN"]
+  Return["Return<br/>stock IN + reversal"]
+  InventoryLedger["Inventory Ledger<br/>append-only truth"]
+  ATP["Available-to-Promise<br/>R: stock - reservations"]
+  Reports["Inventory Reports<br/>R only"]
+
+  Catalog --> Purchase --> InventoryLedger
+  Catalog --> Reservation --> InventoryLedger
+  Reservation --> Sale --> InventoryLedger
+  InventoryLedger --> ATP
+  Catalog --> Transfer --> InventoryLedger
+  Sale --> Return --> InventoryLedger
+  InventoryLedger --> Reports
+```
+
+Key rule: stock number is never trusted from a direct mutable field alone. Ledger rows plus reservations explain how the number was reached.
+
 ---
 
 # Part I — Cross-cutting dataflow
@@ -218,7 +520,7 @@ The system has **eleven** observable stages on every HTTP request. The stages an
 | C | BullMQ `campaign` consumer | `marketing/campaign/queue/campaign.processor.ts` | `start-campaign`, `send-message` | Walks audience, dispatches mail/SMS/push. |
 | D | BullMQ `loyalty` consumer | `marketing/loyalty/queue/tier-scheduler.processor.ts` | `assess-tiers` | Re-evaluates `users.membership_tier` from rolling 12-month spend. |
 
-> **The architecture has no `EventEmitter2`**. Where the codebase-understanding docs and the top-level `doc/README.md` list domain events (`order.paid`, `grn.verified`, `payroll.batch.approved`, …), the **actual mechanism is the `accounting_outbox` table + the BullMQ `order` queue**. See §32 for the discrepancy.
+> **The architecture has no `EventEmitter2`**. Where the codebase-understanding docs and the top-level `doc/README.md` list domain events (`order.paid`, `grn.verified`, `payroll.batch.approved`, …), the **actual mechanism is the `accounting_outbox` table + the BullMQ `order` queue**. See §33 for the discrepancy.
 
 ## 2. Tenant, Branch & Permission resolution
 
@@ -918,7 +1220,7 @@ Each POS terminal generates an `offlineSaleId` (UUID) per sale **locally** while
 2. If found → return existing order (idempotent no-op).
 3. Otherwise process as below.
 
-> Column is **`offline_sale_id` (UNIQUE)** on `orders`, not `client_sale_id` as some older docs say. See §32.
+> Column is **`offline_sale_id` (UNIQUE)** on `orders`, not `client_sale_id` as some older docs say. See §33.
 
 ### 15.3 Sequence — sync sale
 
@@ -1438,9 +1740,84 @@ Triggered only by `@Audit({entity, action})` on routes. The interceptor (`audit-
 
 For the most critical flows, this is the **literal row inventory** the system writes. Combine this with the schema reference in [`erp_master_database_design.md`](erp_master_database_design.md) §6 for full column definitions.
 
-## 31. Per-flow "tables touched + example row" map
+## 31. Module ownership + data mutation map
 
-### 31.1 Online order → completion → COGS
+This section answers: **where does each module add data, update data, remove data, or only read data?**
+
+Legend: `A` = add row, `U` = update row, `D` = delete/remove row, `R` = read only, `L` = append-only ledger row, `O` = accounting outbox row, `Q` = queue job, `X` = external integration.
+
+### 31.1 CRUD/data-movement matrix by module
+
+| Module | A — adds data | U — updates data | D — removes data | R — reads data | Cross-module connection |
+| ------ | ------------- | ---------------- | ---------------- | -------------- | ----------------------- |
+| Auth/User | `sessions`; sometimes `users` during signup | `users.refresh_token`, verification/reset fields, `sessions.revoked_at` | Session revoke only; do not hard-delete users with history | `tenants`, `roles`, `permissions` | Auth feeds `request.user` to every secured module. |
+| RBAC | `roles`, `permissions`, `role_permissions`, `user_role_assignments`, `permission_overrides` | role names/scopes, permission assignments | Soft-delete/revoke assignments; do not remove seeded permissions casually | `users`, `branches`, `warehouses` | Guard-level dependency for all admin modules. |
+| Tenant/Subscription | `tenants`, `tenant_features`, `subscription_invoices` | `tenants.status`, `subscription_status`, `tenant_features.is_enabled` | Tenant cancellation is status transition; physical delete requires retention workflow | `subscription_plans`, `feature_definitions`, `users` | SubscriptionGuard gates POS, HRM, Campaigns, builder, etc. |
+| Organization | `branches`, `warehouses`, `warehouse_bins` | branch/warehouse status, address, capacity | Prefer soft-delete; blocked if stock/orders reference the row | `tenants`, `users` | Used by Orders, POS, Inventory, Payroll, Reports. |
+| Catalog | `products`, `product_variants`, `categories`, `brands`, pricing rows, reviews | product status, pricing, average cost, category tree | Soft-delete product/category; historical orders keep snapshots | `warehouses`, `suppliers`, reviews | Feeds Cart, Order, POS, GRN, Inventory, Campaigns. |
+| Cart | `carts`, `cart_items` | cart quantities, applied coupon | Hard-remove `cart_items`; delete/clear cart after checkout | Catalog, coupons, wallet balance | Feeds Order; does not reserve stock. |
+| Order | `orders`, `order_items`, `order_returns` | status, payment status, tracking fields | Cancel/return through state; do not hard-delete posted orders | Catalog, Customer, Wallet, Coupon, Inventory ATP | Writes Inventory, Wallet, AR, Fulfillment, Outbox, Payment. |
+| POS | `pos_shifts`, `pos_drawer_transactions`, POS-origin `orders` | shift totals, close reconciliation, order status | Drawer rows should not be deleted; shift corrections via adjustment | Catalog, Inventory, Wallet, Customer, Coupons | Writes Order, Inventory, Wallet, AR, Outbox. |
+| Payment | `payments` | `orders.payment_status`, transaction refs | Do not delete captured payments; refund via negative/reversal flow | Gateway callback, `orders` | Payment is status/data capture; Order completion posts revenue. |
+| Inventory | `inventory_ledger`, `stock_reservations`, `stock_transfers`, `stock_transfer_items`, batches | reservation fulfilled/released quantities, transfer status | Never delete ledger rows; cancel via reverse ledger rows | Catalog, Warehouses, Orders, GRN, POS | Feeds ATP, COGS, Reports, Fulfillment. |
+| GRN | `goods_received_notes`, `goods_received_note_items` | GRN status (`DRAFT`→`RECEIVED`/`REJECTED`) | Reject rather than delete once supplier/inventory involved | PO, Supplier, Warehouse | Writes AP ledger, queues product stock update, creates purchase outbox. |
+| Procurement | PR/RFQ/PO/supplier invoice/debit note rows | document statuses and approvals | Void/cancel document; avoid delete after approval | Supplier, Catalog, GRN, Accounts | Feeds GRN, AP ledger, Accounting. |
+| Supplier/AP | `suppliers`, `supplier_ap_ledger` | supplier master, payment status | Supplier soft-delete if no open AP; ledger never delete | GRN, Supplier Invoice, Payment | Feeds Balance Sheet, AP Aging, Procurement. |
+| Accounting | `accounts`, `journal_entries`, `ledger_entries`, `accounting_outbox` | `accounts.balance`, outbox status | Never delete journal/ledger; reverse through new journal | Outbox payloads, source docs | Feeds all finance reports and audit/compliance. |
+| AR/Dunning | `ar_ledger` | `users.credit_hold`, dunning status | Never delete AR ledger; write payment/write-off rows | Orders, Payments, Customers | Blocks B2B orders and feeds AR aging. |
+| Wallet | `wallet_ledger` | none on ledger; possibly customer cached balance if present | Never delete wallet ledger; correction via debit/credit row | Customer, Orders, POS | Feeds Storefront wallet and sale journals. |
+| HRM/Payroll | employees, attendance, leave, payroll batches/slips | attendance approvals, leave status, payroll status | Do not delete approved payroll; correct with adjustment batch | Users, Branches, Accounts | Writes payroll journals and audit logs. |
+| Marketing/Campaign | `campaigns`, `campaign_logs`, `coupons`, promotions | campaign status, coupon usage | Archive campaigns/coupons; logs retained | Customers, Subscribers, Products, Orders | Queues Mail/SMS/Push; discount impacts Orders. |
+| Loyalty | `loyalty_ledger`, tier rules | `users.membership_tier`, cached points | Ledger never delete; correction with adjustment row | Orders, Customers | Feeds CRM and Storefront profile. |
+| CRM | `leads`, `subscribers`, customer fields on `users` | lead stage, subscriber status, credit metadata | Subscriber unsubscribe; lead lost/archive | Orders, Wallet, AR, Loyalty | Feeds Campaign audience, B2B credit, support. |
+| Fulfillment/Courier | `fulfillment_tasks`, `fulfillment_items`, courier refs on `orders` | pick/pack/ship status, tracking status | Cancel task only before ship; no delete after dispatch | Orders, Reservations, Warehouses | Writes stock consumption through Inventory and courier tracking. |
+| Reporting | no source-of-truth writes | no source-of-truth updates | no deletes | GL, AR, AP, Inventory, Orders, Payroll | Dashboards and exports only. |
+| Infra/Audit | `audit_logs`, `notifications`, `files`, chat rows, queue state | notification read status, file metadata | Retention cleanup only; audit is append-only | Every decorated route/module | Cross-cutting traceability and delivery. |
+
+### 31.2 Relationship diagram: add/update/remove paths
+
+```mermaid
+flowchart TD
+  MasterData["Master data<br/>products, customers, suppliers,<br/>branches, warehouses, accounts"]
+  WorkDocs["Work documents<br/>cart, order, PO, GRN,<br/>payroll batch, fulfillment"]
+  Ledgers["Append-only ledgers<br/>GL, Inventory, AR, AP,<br/>Wallet, Loyalty"]
+  Outbox["accounting_outbox"]
+  Queues["BullMQ jobs"]
+  Reports["Reports + dashboards"]
+  Archive["Soft-delete / archive / status close"]
+
+  MasterData -->|"A/U/D soft-delete only"| WorkDocs
+  WorkDocs -->|"A/U state machine"| Ledgers
+  WorkDocs -->|"O: side-effect row"| Outbox
+  Outbox -->|"Q: process-accounting-outbox"| Queues
+  Queues -->|"A: journal rows"| Ledgers
+  Ledgers -->|"R only"| Reports
+  WorkDocs -->|"Cancel/close/return"| Archive
+  MasterData -->|"Archive when unused"| Archive
+
+  Ledgers -. "No UPDATE/DELETE" .-> Ledgers
+```
+
+### 31.3 Where data is removed
+
+Most ERP data is **not physically removed** after it becomes business truth. The remove pattern depends on the table type:
+
+| Remove case | Correct pattern | Examples |
+| ----------- | --------------- | -------- |
+| User removes cart item | Hard delete or clear temporary row | `cart_items`, abandoned `carts`. |
+| User logs out | Revoke, not delete history | `sessions.revoked_at`. |
+| Admin disables product/category/branch/warehouse | Soft-delete or status change | `deleted_at`, `status='INACTIVE'`. |
+| Order cancelled | Status transition | `orders.status='CANCELLED'`, release stock reservation, no hard delete. |
+| Order returned | Return document + reversal rows | `order_returns`, `inventory_ledger RETURN_IN`, reversing GL journal/outbox. |
+| Stock transfer cancelled | Reverse movement rows if needed | `stock_transfers.status='CANCELLED'`, inventory reversal rows. |
+| Journal mistake | New reversal journal | `journal_entries.is_reversal=true`, `reversed_journal_entry_id`. |
+| Wallet/AR/AP mistake | Adjustment ledger row | New opposite signed row; never delete ledger row. |
+| Payroll mistake | Adjustment/reversal payroll batch | Do not delete approved payroll batch. |
+| Audit/log retention | Retention job only | Delete/archive by policy, never manual business delete. |
+
+## 32. Per-flow "tables touched + example row" map
+
+### 32.1 Online order → completion → COGS
 
 | # | Step | Table | Sample row (abbreviated to relevant fields) |
 | - | ---- | ----- | ------------------------------------------- |
@@ -1464,7 +1841,7 @@ For the most critical flows, this is the **literal row inventory** the system wr
 |18 | | `accounts` | UPDATE balance per touched account. |
 |19 | | `accounting_outbox` | UPDATE `status='COMPLETED', processed_at=now()` |
 
-### 31.2 GRN verify → AP
+### 32.2 GRN verify → AP
 
 | # | Table | Sample row |
 | - | ----- | ---------- |
@@ -1476,7 +1853,7 @@ For the most critical flows, this is the **literal row inventory** the system wr
 | 6 | `accounting_outbox` | `{event:'CREATE_JOURNAL_ENTRY', payload:{journalType:'PURCHASE', referenceType:'GRN', referenceId, lines:[{accountCode:'1100',side:'DEBIT',amount:6000},{accountCode:'2100',side:'CREDIT',amount:6000}]}}` |
 | 7 | `journal_entries` + `ledger_entries` | two-line journal. |
 
-### 31.3 Payroll approve + pay
+### 32.3 Payroll approve + pay
 
 | # | Table | Sample row |
 | - | ----- | ---------- |
@@ -1490,7 +1867,7 @@ For the most critical flows, this is the **literal row inventory** the system wr
 | 7 | `journal_entries` + `ledger_entries` | Settlement: `DR 2100 Salary Payable / CR 1000 Cash at Bank`. |
 | 8 | `audit_logs` | pay event |
 
-### 31.4 Stock transfer (ship + receive)
+### 32.4 Stock transfer (ship + receive)
 
 | # | Table | Sample row |
 | - | ----- | ---------- |
@@ -1502,7 +1879,7 @@ For the most critical flows, this is the **literal row inventory** the system wr
 | 6 | `stock_transfer_items` (UPDATE) | `quantity_received=10` |
 | 7 | `stock_transfers` (UPDATE) | `status='RECEIVED'` |
 
-### 31.5 POS offline sync
+### 32.5 POS offline sync
 
 | # | Table | Sample row |
 | - | ----- | ---------- |
@@ -1514,7 +1891,7 @@ For the most critical flows, this is the **literal row inventory** the system wr
 | 6 | `pos_shifts` (UPDATE) | `cash_sales += 600, card_sales += 400, expected_closing_balance = opening + cash_sales + cash_in − cash_out` |
 | 7 | `accounting_outbox` | sale journal payload |
 
-### 31.6 Wallet credit (manual)
+### 32.6 Wallet credit (manual)
 
 | # | Table | Sample row |
 | - | ----- | ---------- |
@@ -1525,7 +1902,7 @@ For the most critical flows, this is the **literal row inventory** the system wr
 
 # Part IV — Operational concerns
 
-## 32. Code-vs-docs discrepancy log
+## 33. Code-vs-docs discrepancy log
 
 These were found during this dataflow audit. They should be reconciled by either updating the code to match the older docs or updating the older docs to match the code. The list is short.
 
@@ -1539,7 +1916,7 @@ These were found during this dataflow audit. They should be reconciled by either
 | 6 | Throttler is mentioned in `erp_low_level_system_design.md`. | Throttler import is **commented out** in `AppModule`. | Either re-enable rate limiting or remove the claim. |
 | 7 | README mentions `helmet`. | Not used. | Add helmet middleware in `main.ts` or remove the claim. |
 
-## 33. Cross-reference index
+## 34. Cross-reference index
 
 | New section (this doc) | System design ref | DB design ref | Codebase-understanding ref |
 | ---------------------- | ----------------- | ------------- | -------------------------- |
@@ -1573,6 +1950,8 @@ These were found during this dataflow audit. They should be reconciled by either
 | §28 Reporting | — | [§6.9](erp_master_database_design.md#69-finance--accounting-tables) | [08_finance_reporting_and_tax.md](../codebase-understanding/08_finance_reporting_and_tax.md) |
 | §29 Infra | — | [§6.13](erp_master_database_design.md#613-infra-tables-audit--notifications--files--chat--device--outbox) | [09_infrastructure_services.md](../codebase-understanding/09_infrastructure_services.md) |
 | §30 Audit | — | [§6.13](erp_master_database_design.md#613-infra-tables-audit--notifications--files--chat--device--outbox) | [01_system_infrastructure.md](../codebase-understanding/01_system_infrastructure.md) |
+| §31 Data mutation map | [§12 Data Ownership Matrix](erp_master_system_design.md#12-data-ownership-matrix) | [§6 Schema Definitions](erp_master_database_design.md#6-schema-definitions-per-domain) | All module docs |
+| §32 Flow row maps | [§0.6 Money & stock truth](erp_master_system_design.md#06-where-the-money--stock-truth-lives) | [§6 Schema Definitions](erp_master_database_design.md#6-schema-definitions-per-domain) | Sales, Logistics, Finance, HRM docs |
 
 ---
 
