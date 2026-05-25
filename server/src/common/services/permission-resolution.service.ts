@@ -8,6 +8,7 @@ import { CacheService } from '@/modules/admin/operations/infra/cache/cache.servi
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, In } from 'typeorm'
+import { expandFeatures } from '@/common/constants/feature-mapping'
 
 export interface PermissionManifest {
   featuresEnabled: string[]
@@ -57,33 +58,10 @@ export class PermissionResolutionService {
   // ─────────────────────────────────────────────────────────────────
 
   private isFeatureEnabled(featuresEnabled: string[], featureSlug: string): boolean {
-    const mapping: Record<string, string[]> = {
-      finance: ['/admin/finance'],
-      hrm: ['/admin/hrm'],
-      orders: ['/admin/orders'],
-      pos: ['/admin/pos'],
-      catalog: ['/admin/products'],
-      inventory: ['/admin/inventory', '/admin/warehouses'],
-      purchasing: ['/admin/purchases', '/admin/suppliers'],
-      settings: ['/admin/settings'],
-      content: ['/admin/content'],
-      marketing: ['/admin/campaigns', '/admin/coupons', '/admin/promotions'],
-      invoices: ['/admin/invoices'],
-      returns: ['/admin/returns'],
-      payments: ['/admin/payments'],
-      reports: ['/admin/reports'],
-      logistics: ['/admin/logistics'],
-      fulfillment: ['/admin/fulfillment'],
-    }
+    const expanded = expandFeatures(featuresEnabled)
+    if (expanded.includes(featureSlug)) return true
 
-    if (featuresEnabled.includes(featureSlug)) return true
-
-    const mappedPaths = mapping[featureSlug] || []
-    for (const path of mappedPaths) {
-      if (featuresEnabled.includes(path)) return true
-    }
-
-    return featuresEnabled.some(
+    return expanded.some(
       (f) => f === featureSlug || f.endsWith('/' + featureSlug),
     )
   }
@@ -165,7 +143,8 @@ export class PermissionResolutionService {
     const tenantFeatures = await this.tenantFeatureRepo.find({
       where: { tenantId, isEnabled: true },
     })
-    const featuresEnabled = tenantFeatures.map((f) => f.featureSlug)
+    const rawFeatures = tenantFeatures.map((f) => f.featureSlug)
+    const featuresEnabled = expandFeatures(rawFeatures)
 
     // Get all permissions the user holds (via roles)
     const effectivePermissions = await this.getEffectivePermissions(userId, tenantId)

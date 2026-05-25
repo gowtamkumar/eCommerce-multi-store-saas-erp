@@ -3,6 +3,7 @@ import { FulfillmentService } from './fulfillment.service'
 import { FulfillmentRepository } from './fulfillment.repository'
 import { InventoryLedgerService } from '../inventory-transaction/inventory-ledger.service'
 import { StockReservationService } from '../inventory-transaction/stock-reservation.service'
+import { ProductBatchService } from '../inventory-transaction/product-batch.service'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { DataSource } from 'typeorm'
@@ -18,8 +19,10 @@ describe('FulfillmentService', () => {
   let reservationServiceMock: any
   let orderRepoMock: any
   let dataSourceMock: any
+  let batchServiceMock: any
 
   beforeEach(async () => {
+    batchServiceMock = {}
     repoMock = {
       findTaskById: jest.fn(),
       updateTask: jest.fn(),
@@ -63,6 +66,10 @@ describe('FulfillmentService', () => {
         {
           provide: StockReservationService,
           useValue: reservationServiceMock,
+        },
+        {
+          provide: ProductBatchService,
+          useValue: batchServiceMock,
         },
         {
           provide: getRepositoryToken(OrderEntity),

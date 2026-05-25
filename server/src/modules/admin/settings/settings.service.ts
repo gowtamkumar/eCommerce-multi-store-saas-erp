@@ -6,6 +6,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SiteSettingsEntity } from './entities/site-settings.entity'
 import { SiteSettingsRepository } from './site-settings.repository'
+import { expandFeatures } from '@/common/constants/feature-mapping'
 
 @Injectable()
 export class SettingsService {
@@ -62,7 +63,7 @@ export class SettingsService {
     if (dto.removeBranding === true) {
       const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
       const features = tenant?.subscriptionPlan?.features || []
-      const hasRemoveBranding = features.includes('remove_branding')
+      const hasRemoveBranding = expandFeatures(features).includes('remove_branding')
       if (!hasRemoveBranding) {
         dto.removeBranding = false // Force off if plan doesn't support it
       }

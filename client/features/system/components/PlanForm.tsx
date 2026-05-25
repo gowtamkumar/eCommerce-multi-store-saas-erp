@@ -27,6 +27,17 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
         billingCycle: initialData?.billingCycle || 'monthly',
         isActive: initialData?.isActive ?? true,
         isPopular: initialData?.isPopular ?? false,
+        trialPeriodDays: initialData?.trialPeriodDays ?? 14,
+        code: initialData?.code || '',
+        currency: initialData?.currency || 'USD',
+        maxBranches: initialData?.maxBranches ?? 1,
+        maxWarehouses: initialData?.maxWarehouses ?? 1,
+        maxStaffUsers: initialData?.maxStaffUsers ?? 3,
+        maxProducts: initialData?.maxProducts ?? 100,
+        maxMonthlyOrders: initialData?.maxMonthlyOrders ?? 500,
+        maxStorageMb: initialData?.maxStorageMb ?? 1024,
+        stripePriceIdMonthly: initialData?.stripePriceIdMonthly || '',
+        stripePriceIdYearly: initialData?.stripePriceIdYearly || '',
     });
 
     const toggleFeature = (key: string) => {
@@ -57,6 +68,16 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                 price: Number(formData.price),
                 monthlyPrice: Number(formData.monthlyPrice),
                 yearlyPrice: Number(formData.yearlyPrice),
+                trialPeriodDays: Number(formData.trialPeriodDays),
+                maxBranches: Number(formData.maxBranches),
+                maxWarehouses: Number(formData.maxWarehouses),
+                maxStaffUsers: Number(formData.maxStaffUsers),
+                maxProducts: Number(formData.maxProducts),
+                maxMonthlyOrders: Number(formData.maxMonthlyOrders),
+                maxStorageMb: Number(formData.maxStorageMb),
+                stripePriceIdMonthly: formData.stripePriceIdMonthly.trim() || null,
+                stripePriceIdYearly: formData.stripePriceIdYearly.trim() || null,
+                code: formData.code.trim() || null,
             };
 
             const endpoint = isEditing ? `/super-admin/plans/${initialData.id}` : '/super-admin/plans';
@@ -118,9 +139,31 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                                 />
                             </div>
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Monthly Price ($)</label>
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Plan Code</label>
+                                <input
+                                    type="text"
+                                    value={formData.code}
+                                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                                    placeholder="e.g. enterprise-elite"
+                                    className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                />
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Currency</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formData.currency}
+                                    onChange={(e) => setFormData({ ...formData, currency: e.target.value.toUpperCase() })}
+                                    placeholder="e.g. USD"
+                                    maxLength={3}
+                                    className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                />
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Monthly Price</label>
                                 <div className="relative group">
-                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black group-focus-within:text-brand-500 transition-colors">$</span>
+                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black group-focus-within:text-brand-500 transition-colors">{formData.currency}</span>
                                     <input
                                         type="number"
                                         required
@@ -128,14 +171,14 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                                         step="0.01"
                                         value={formData.monthlyPrice}
                                         onChange={(e) => setFormData({ ...formData, monthlyPrice: Number(e.target.value) })}
-                                        className="w-full pl-12 pr-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-black text-slate-900 dark:text-white"
+                                        className="w-full pl-16 pr-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-black text-slate-900 dark:text-white"
                                     />
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Yearly Price ($)</label>
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Yearly Price</label>
                                 <div className="relative group">
-                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black group-focus-within:text-brand-500 transition-colors">$</span>
+                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 font-black group-focus-within:text-brand-500 transition-colors">{formData.currency}</span>
                                     <input
                                         type="number"
                                         required
@@ -143,9 +186,20 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                                         step="0.01"
                                         value={formData.yearlyPrice}
                                         onChange={(e) => setFormData({ ...formData, yearlyPrice: Number(e.target.value) })}
-                                        className="w-full pl-12 pr-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-black text-slate-900 dark:text-white"
+                                        className="w-full pl-16 pr-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-black text-slate-900 dark:text-white"
                                     />
                                 </div>
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Trial Period (Days)</label>
+                                <input
+                                    type="number"
+                                    required
+                                    min="0"
+                                    value={formData.trialPeriodDays}
+                                    onChange={(e) => setFormData({ ...formData, trialPeriodDays: Number(e.target.value) })}
+                                    className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                />
                             </div>
                         </div>
                         <div className="space-y-3">
@@ -157,6 +211,112 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                                 placeholder="Describe the ideal user for this tier and the value it provides..."
                                 className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400 resize-none leading-relaxed"
                             />
+                        </div>
+
+                        {/* Stripe Integration */}
+                        <div className="space-y-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                            <div className="space-y-1">
+                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Stripe Integration</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Link this plan with Stripe price identifiers for automated customer billing.</p>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Stripe Monthly Price ID</label>
+                                    <input
+                                        type="text"
+                                        value={formData.stripePriceIdMonthly}
+                                        onChange={(e) => setFormData({ ...formData, stripePriceIdMonthly: e.target.value })}
+                                        placeholder="e.g. price_1Q..."
+                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Stripe Yearly Price ID</label>
+                                    <input
+                                        type="text"
+                                        value={formData.stripePriceIdYearly}
+                                        onChange={(e) => setFormData({ ...formData, stripePriceIdYearly: e.target.value })}
+                                        placeholder="e.g. price_1Q..."
+                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Resource Quotas */}
+                        <div className="space-y-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                            <div className="space-y-1">
+                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Resource Quotas</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Define maximum limits for core database records and assets on this plan tier.</p>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Branches</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        value={formData.maxBranches}
+                                        onChange={(e) => setFormData({ ...formData, maxBranches: Number(e.target.value) })}
+                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Warehouses</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        value={formData.maxWarehouses}
+                                        onChange={(e) => setFormData({ ...formData, maxWarehouses: Number(e.target.value) })}
+                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Staff Users</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        value={formData.maxStaffUsers}
+                                        onChange={(e) => setFormData({ ...formData, maxStaffUsers: Number(e.target.value) })}
+                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Products</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        value={formData.maxProducts}
+                                        onChange={(e) => setFormData({ ...formData, maxProducts: Number(e.target.value) })}
+                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Monthly Orders</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        value={formData.maxMonthlyOrders}
+                                        onChange={(e) => setFormData({ ...formData, maxMonthlyOrders: Number(e.target.value) })}
+                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Storage (MB)</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0"
+                                        value={formData.maxStorageMb}
+                                        onChange={(e) => setFormData({ ...formData, maxStorageMb: Number(e.target.value) })}
+                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         <div className="space-y-8">

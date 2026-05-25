@@ -4,6 +4,7 @@ import { CreateSubscriptionPlanDto } from './dto/create-subscription-plan.dto'
 import { UpdateSubscriptionPlanDto } from './dto/update-subscription-plan.dto'
 import { SubscriptionPlanEntity } from './entities/subscription-plan.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { normalizeFeatures } from '@/common/constants/feature-mapping'
 
 @Injectable()
 export class SubscriptionPlanService {
@@ -16,12 +17,17 @@ export class SubscriptionPlanService {
     ctx: RequestContextDto,
   ): Promise<SubscriptionPlanEntity> {
     this.logger.log(`${this.createSubscriptionPlan.name} Service Called`)
-    return await this.planRepository.createAndSave(createDto, ctx)
+    if (createDto.features) {
+      createDto.features = normalizeFeatures(createDto.features)
+    }
+    const plan = await this.planRepository.createAndSave(createDto, ctx)
+    return plan
   }
 
   async findAllSubscriptionPlans(): Promise<SubscriptionPlanEntity[]> {
     this.logger.log(`${this.findAllSubscriptionPlans.name} Service Called`)
-    return await this.planRepository.findAllSortedByPrice()
+    const plans = await this.planRepository.findAllSortedByPrice()
+    return plans
   }
 
   async findOneSubscriptionPlan(id: string): Promise<SubscriptionPlanEntity> {
@@ -38,19 +44,27 @@ export class SubscriptionPlanService {
     updateDto: UpdateSubscriptionPlanDto,
   ): Promise<SubscriptionPlanEntity> {
     this.logger.log(`${this.updateSubscriptionPlan.name} Service Called`)
-    const plan = await this.findOneSubscriptionPlan(id)
-    return await this.planRepository.updateAndSave(plan, updateDto)
+    const plan = await this.planRepository.findById(id)
+    if (updateDto.features) {
+      updateDto.features = normalizeFeatures(updateDto.features)
+    }
+    const updated = await this.planRepository.updateAndSave(plan, updateDto)
+    return updated
   }
 
   async removeSubscriptionPlan(id: string): Promise<{ success: boolean; message: string }> {
     this.logger.log(`${this.removeSubscriptionPlan.name} Service Called`)
-    const plan = await this.findOneSubscriptionPlan(id)
+    const plan = await this.planRepository.findById(id)
+    if (!plan) {
+      throw new NotFoundException(`Subscription plan with ID "${id}" not found`)
+    }
     await this.planRepository.removePlan(plan)
     return { success: true, message: 'Subscription plan deleted successfully' }
   }
 
   async findActiveSubscriptionPlans(): Promise<SubscriptionPlanEntity[]> {
     this.logger.log(`${this.findActiveSubscriptionPlans.name} Service Called`)
-    return await this.planRepository.findActiveSortedByPrice()
+    const plans = await this.planRepository.findActiveSortedByPrice()
+    return plans
   }
 }

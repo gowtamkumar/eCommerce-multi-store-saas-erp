@@ -26,6 +26,7 @@ import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { ReferralService } from '@/modules/admin/marketing/loyalty/services/referral.service'
+import { expandFeatures } from '@/common/constants/feature-mapping'
 
 @Injectable()
 export class AuthService {
@@ -138,7 +139,7 @@ export class AuthService {
       features = ['*'] // Super admin has access to everything
     } else if (tenantId) {
       const tenant = await this.tenantService.findOneTenants(tenantId)
-      features = tenant?.subscriptionPlan?.features || []
+      features = expandFeatures(tenant?.subscriptionPlan?.features || [])
     }
 
     const tokens = await this.getTokens(user, features, ipAddress, userAgent)
@@ -270,7 +271,7 @@ export class AuthService {
       features = ['*']
     } else if (user.tenantId) {
       const tenant = await this.tenantService.findOneTenants(user.tenantId)
-      features = tenant?.subscriptionPlan?.features || []
+      features = expandFeatures(tenant?.subscriptionPlan?.features || [])
     }
 
     // Invalidate old session from rotated token

@@ -7,6 +7,7 @@ import { Repository } from 'typeorm'
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
 import { REQUIRED_FEATURE_KEY } from '../decorators/require-feature.decorator'
 import { UserRole } from '../enums/user/user-role.enum'
+import { expandFeatures, ROUTE_TO_FEATURE_MAPPING } from '@/common/constants/feature-mapping'
 
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
@@ -50,10 +51,12 @@ export class SubscriptionGuard implements CanActivate {
       return true // No specific feature required
     }
 
+    const featureSlug = ROUTE_TO_FEATURE_MAPPING[requiredFeature] || requiredFeature
+
     try {
       // 3. Verify if feature is explicitly enabled in tenant_features
       const feature = await this.tenantFeatureRepo.findOne({
-        where: { tenantId, featureSlug: requiredFeature },
+        where: { tenantId, featureSlug },
       })
 
       if (feature && !feature.isEnabled) {
@@ -71,28 +74,7 @@ export class SubscriptionGuard implements CanActivate {
       }
 
       const features = tenant.subscriptionPlan?.features || []
-
-      // Map marketing plan features to specific backend route capabilities
-      const logicalFeatureMapping: Record<string, string[]> = {
-        advanced_analytics: [
-          '/admin/reports',
-          '/admin/reports/sales',
-          '/admin/reports/profit-loss',
-          '/admin/reports/supplier-ledger',
-          '/admin/reports/customer-ledger',
-          '/admin/reports/cash-flow',
-          '/admin/reports/export',
-          '/admin/reports/finance',
-        ],
-        staff_accounts: ['/admin/hrm'],
-        unlimited_products: ['/admin/products'],
-        remove_branding: ['remove_branding'],
-      }
-
-      const hasAccess = features.includes(requiredFeature) || features.some(planFeature => {
-        const routes = logicalFeatureMapping[planFeature]
-        return routes && routes.includes(requiredFeature)
-      })
+      const hasAccess = features.includes(featureSlug) || expandFeatures(features).includes(requiredFeature)
 
       // If neither explicitly enabled in DB nor present in plan JSONB array, deny
       if (!feature && !hasAccess) {
