@@ -15,7 +15,7 @@ import { redisStore } from 'cache-manager-redis-yet'
             port: Number(process.env.REDIS_PORT) || 6379,
           },
         }),
-        ttl: 300 * 1000, // default 5 min (in milliseconds for cache-manager-redis-yet)
+        ttl: (Number(process.env.CACHE_TTL) || 300) * 1000, // default to CACHE_TTL env var or fallback to 5 min
       }),
     }),
   ],

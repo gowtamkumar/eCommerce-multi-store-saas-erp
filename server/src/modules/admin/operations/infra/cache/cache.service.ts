@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common'
 import { CACHE_PREFIX } from '@/common/constants/cache'
+import { Injectable, Logger } from '@nestjs/common'
 import { CacheRepository } from './cache.repository'
 
 @Injectable()
@@ -18,19 +18,20 @@ export class CacheService {
     try {
       const fullKey = this.buildKey(key, tenantId)
       return await this.cacheRepository.get<T>(fullKey)
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`[CACHE] GET error for key ${key}:`, error.message)
       return null
     }
   }
 
-  async setCache(key: string, value: any, ttl: number = 300, tenantId?: string) {
+  async setCache(key: string, value: any, ttl?: number, tenantId?: string) {
     this.logger.log(`${this.setCache.name} Service Called`)
     try {
       const fullKey = this.buildKey(key, tenantId)
-      const ttlMs = ttl * 1000 // Convert seconds to milliseconds for cache-manager-redis-yet
+      const targetTtl = ttl !== undefined ? ttl : Number(process.env.CACHE_TTL) || 300
+      const ttlMs = targetTtl * 1000 // Convert seconds to milliseconds for cache-manager-redis-yet
       await this.cacheRepository.set(fullKey, value, ttlMs)
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`[CACHE] SET error for key ${key}:`, error.message)
     }
   }
@@ -40,7 +41,7 @@ export class CacheService {
     try {
       const fullKey = this.buildKey(key, tenantId)
       await this.cacheRepository.del(fullKey)
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`[CACHE] DELETE error for key ${key}:`, error.message)
     }
   }
@@ -48,9 +49,11 @@ export class CacheService {
   async delCacheByPattern(pattern: string, tenantId?: string) {
     this.logger.log(`${this.delCacheByPattern.name} Service Called`)
     try {
-      const fullPattern = tenantId ? `${CACHE_PREFIX}:tenant:${tenantId}:${pattern}` : `${CACHE_PREFIX}:${pattern}`
+      const fullPattern = tenantId
+        ? `${CACHE_PREFIX}:tenant:${tenantId}:${pattern}`
+        : `${CACHE_PREFIX}:${pattern}`
       await this.cacheRepository.delByPattern(fullPattern)
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`[CACHE] DELETE pattern error for ${pattern}:`, error.message)
     }
   }
@@ -59,7 +62,7 @@ export class CacheService {
     this.logger.log(`${this.resetCache.name} Service Called`)
     try {
       await this.cacheRepository.clear()
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('[CACHE] RESET error:', error.message)
     }
   }
@@ -76,7 +79,7 @@ export class CacheService {
       await this.cacheRepository.delByPattern(manifestPattern)
 
       this.logger.log(`[CACHE] Successfully cleared cache for tenant: ${tenantId}`)
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`[CACHE] CLEAR_TENANT error for tenant ${tenantId}:`, error.message)
       throw error
     }
@@ -86,7 +89,7 @@ export class CacheService {
     this.logger.log(`${this.clearFullCache.name} Service Called`)
     try {
       await this.cacheRepository.clear()
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('[CACHE] CLEAR_FULL error:', error.message)
       throw error
     }
@@ -96,7 +99,7 @@ export class CacheService {
   async rememberCache<T>(
     key: string,
     fetcher: () => Promise<T>,
-    ttl: number = 300,
+    ttl?: number,
     tenantId?: string,
   ): Promise<T> {
     this.logger.log(`${this.rememberCache.name} Service Called`)
