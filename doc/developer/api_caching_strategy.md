@@ -45,16 +45,21 @@ To prevent data leaks, inventory errors, or race conditions, the following categ
 
 1.  **Cache Key Strategy**:
     *   Must include `TenantId` to prevent data leaking between tenants.
-    *   Example: `cache:tenant:{tenantId}:products:latest`
+    *   Example: `multi-tenant-saas:tenant:{tenantId}:products:latest`
 2.  **Invalidation**:
     *   Implement **automated cache invalidation** on `POST`, `PUT`, `DELETE` events.
     *   *Example*: When a Product is updated (`PUT /products/:id`), clear specific product cache keys or the whole product list cache for that tenant.
 3.  **Technology**:
-    *   Use NestJS `CacheModule` with **Redis Store**.
-    *   Decorate controllers with `@UseInterceptors(CacheInterceptor)` and `@CacheTTL()`.
+    *   Use NestJS `@nestjs/cache-manager` with **Redis Store** (`cache-manager-redis-yet`).
+    *   Use `CacheService` for manual/atomic get, set, and remember patterns.
 
-## Next Steps
+## Cache Clearing Controls
 
-1.  Configure Redis in `app.module.ts`.
-2.  Apply `CacheInterceptor` to the identified P0 endpoints first.
-3.  Test performance improvements.
+To maintain database stability and security, manual cache clearing controls are restricted to the **Super Admin panel**:
+
+1.  **Global Cache Clear**: Clears the system cache for all tenants globally (invokes `/super-admin/cache/clear-all`).
+2.  **Tenant Cache Clear**: Clears the cache for a selected tenant store (invokes `/super-admin/cache/clear-all?tenantId={tenantId}`). This evicts:
+    *   Standard tenant data cache (pages, catalogs, settings).
+    *   Tenant user permission manifests (`rbac:manifest`).
+
+These controls are backed by spring-animated custom confirmation modals in the Super Admin platform settings to prevent accidental triggers.

@@ -2,15 +2,24 @@
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
 import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
-import { Globe, Layout, Plus, Save, Shield, Trash2, Zap } from 'lucide-react';
+import { Globe, Layout, Plus, Save, Shield, Trash2, Zap, Database, AlertTriangle, Loader2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function GlobalSetting() {
     const [settings, setSettings] = useState<any>(null);
     const [activeTab, setActiveTab] = useState('identity');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    // Cache clearing states for Super Admin
+    const [clearing, setClearing] = useState(false);
+    const [clearingAll, setClearingAll] = useState(false);
+    const [selectedTenantId, setSelectedTenantId] = useState('');
+    const [tenantsList, setTenantsList] = useState<any[]>([]);
+    const [showGlobalConfirm, setShowGlobalConfirm] = useState(false);
+    const [showTenantConfirm, setShowTenantConfirm] = useState(false);
 
     useEffect(() => {
         async function loadSettings() {
@@ -26,6 +35,58 @@ export default function GlobalSetting() {
         }
         loadSettings();
     }, []);
+
+    useEffect(() => {
+        if (activeTab === 'system') {
+            async function loadTenants() {
+                try {
+                    const res = await fetchSuperAdminAPI('/super-admin/tenants');
+                    setTenantsList(res.data || []);
+                } catch (error) {
+                    console.error('Failed to load tenants:', error);
+                    toast.error('Failed to load tenants list');
+                }
+            }
+            loadTenants();
+        }
+    }, [activeTab]);
+
+    const handleClearGlobalCache = async () => {
+        setClearingAll(true);
+        try {
+            await fetchSuperAdminAPI("/super-admin/cache/clear-all", {
+                method: "POST",
+            });
+            toast.success("Global system cache cleared successfully!");
+            setShowGlobalConfirm(false);
+        } catch (error: any) {
+            console.error("Failed to clear global cache", error);
+            toast.error(error.message || "Failed to clear global cache");
+        } finally {
+            setClearingAll(false);
+        }
+    };
+
+    const handleClearTenantCache = async () => {
+        if (!selectedTenantId) return;
+
+        const tenant = tenantsList.find(t => t.id === selectedTenantId);
+        const tenantName = tenant ? `${tenant.name} (${tenant.subdomain})` : 'selected tenant';
+
+        setClearing(true);
+        try {
+            await fetchSuperAdminAPI(`/super-admin/cache/clear-all?tenantId=${selectedTenantId}`, {
+                method: "POST",
+            });
+            toast.success(`Cache for ${tenantName} cleared successfully!`);
+            setShowTenantConfirm(false);
+        } catch (error: any) {
+            console.error("Failed to clear tenant cache", error);
+            toast.error(error.message || "Failed to clear tenant cache");
+        } finally {
+            setClearing(false);
+        }
+    };
 
     const handleSave = async () => {
         setSaving(true);
@@ -57,14 +118,16 @@ export default function GlobalSetting() {
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Platform Settings</h1>
                     <p className="text-slate-500 dark:text-slate-400">Configure global behavior and guest landing page content.</p>
                 </div>
-                <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-70"
-                >
-                    {saving ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Save className="w-4 h-4" />}
-                    Save Changes
-                </button>
+                {activeTab !== 'system' && (
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-70"
+                    >
+                        {saving ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Save className="w-4 h-4" />}
+                        Save Changes
+                    </button>
+                )}
             </div>
 
             {/* Tabs */}
@@ -74,6 +137,7 @@ export default function GlobalSetting() {
                     { id: 'hero', label: 'Hero Section', icon: Layout },
                     { id: 'features', label: 'Features', icon: Zap },
                     { id: 'footer', label: 'Footer', icon: Shield },
+                    { id: 'system', label: 'System & Cache', icon: Database },
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -346,7 +410,220 @@ export default function GlobalSetting() {
                         </div>
                     </div>
                 )}
+
+                {/* System & Cache Tab */}
+                {activeTab === 'system' && (
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden animate-in fade-in duration-300">
+                        <div className="p-8 space-y-6">
+                            <div>
+                                <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2 font-display">
+                                    <Database className="w-5 h-5 text-indigo-600" />
+                                    Redis Cache Management
+                                </h4>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                                    Clearing the cache evicts temporary entries stored in Redis. You can clear the entire global system cache or specify a single tenant store.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                {/* Clear Global Cache Card */}
+                                <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+                                    <div>
+                                        <h5 className="text-base font-bold text-slate-900 dark:text-white mb-2">Global System Cache</h5>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+                                            Clears all cached data across all tenants (categories, products, settings, plans).
+                                            This should be done during system updates or global changes.
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowGlobalConfirm(true)}
+                                        disabled={clearingAll}
+                                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 text-rose-600 border border-rose-100 dark:border-rose-900/30 hover:bg-rose-50 dark:hover:bg-rose-900/20 font-bold rounded-xl transition-all disabled:opacity-50"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                        <span>Clear Global Cache</span>
+                                    </button>
+                                </div>
+
+                                {/* Clear Tenant Cache Card */}
+                                <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+                                    <div>
+                                        <h5 className="text-base font-bold text-slate-900 dark:text-white mb-2">Tenant Store Cache</h5>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+                                            Clears only the cached files, static content, and permission manifests for the selected tenant's store.
+                                        </p>
+                                        <div className="mb-6">
+                                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Select Tenant</label>
+                                            <select
+                                                value={selectedTenantId}
+                                                onChange={(e) => setSelectedTenantId(e.target.value)}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition-all"
+                                            >
+                                                <option value="">-- Choose a Store / Tenant --</option>
+                                                {tenantsList.map((tenant: any) => (
+                                                    <option key={tenant.id} value={tenant.id}>
+                                                        {tenant.name} ({tenant.subdomain || 'no-subdomain'})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowTenantConfirm(true)}
+                                        disabled={clearing || !selectedTenantId}
+                                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 text-indigo-600 border border-indigo-100 dark:border-indigo-900/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 font-bold rounded-xl transition-all disabled:opacity-40"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                        <span>Clear Tenant Cache</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {/* Global Cache Confirmation Modal */}
+            <AnimatePresence>
+                {showGlobalConfirm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => !clearingAll && setShowGlobalConfirm(false)}
+                            className="absolute inset-0 bg-slate-955/40 dark:bg-slate-955/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            transition={{ type: "spring", duration: 0.3 }}
+                            className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl relative z-10 space-y-6"
+                        >
+                            <button
+                                type="button"
+                                disabled={clearingAll}
+                                onClick={() => setShowGlobalConfirm(false)}
+                                className="absolute right-4 top-4 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors disabled:opacity-50"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-2xl shrink-0">
+                                    <AlertTriangle className="w-6 h-6" />
+                                </div>
+                                <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                                    Clear Global Cache?
+                                </h4>
+                            </div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                Are you sure you want to clear the entire system cache across ALL tenants? Performance may temporarily degrade globally.
+                            </div>
+                            <div className="flex items-center justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    disabled={clearingAll}
+                                    onClick={() => setShowGlobalConfirm(false)}
+                                    className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-800 rounded-2xl transition-all disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={clearingAll}
+                                    onClick={handleClearGlobalCache}
+                                    className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-2xl shadow-lg shadow-rose-600/20 hover:shadow-rose-700/30 transition-all disabled:opacity-50"
+                                >
+                                    {clearingAll ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <span>Clearing...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="w-4 h-4" />
+                                            <span>Clear Global Cache</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Tenant Cache Confirmation Modal */}
+            <AnimatePresence>
+                {showTenantConfirm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => !clearing && setShowTenantConfirm(false)}
+                            className="absolute inset-0 bg-slate-955/40 dark:bg-slate-955/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            transition={{ type: "spring", duration: 0.3 }}
+                            className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl relative z-10 space-y-6"
+                        >
+                            <button
+                                type="button"
+                                disabled={clearing}
+                                onClick={() => setShowTenantConfirm(false)}
+                                className="absolute right-4 top-4 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors disabled:opacity-50"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 rounded-2xl shrink-0">
+                                    <AlertTriangle className="w-6 h-6" />
+                                </div>
+                                <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                                    Clear Store Cache?
+                                </h4>
+                            </div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                Are you sure you want to clear the store cache for the selected tenant? Performance may be temporarily affected while the store's cache is rebuilt.
+                            </div>
+                            <div className="flex items-center justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    disabled={clearing}
+                                    onClick={() => setShowTenantConfirm(false)}
+                                    className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-800 rounded-2xl transition-all disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={clearing}
+                                    onClick={handleClearTenantCache}
+                                    className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-2xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-700/30 transition-all disabled:opacity-50"
+                                >
+                                    {clearing ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <span>Clearing...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="w-4 h-4" />
+                                            <span>Clear Tenant Cache</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

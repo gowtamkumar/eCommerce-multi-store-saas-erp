@@ -125,12 +125,13 @@ export const storeSettings = [
     href: "/admin/settings/courier",
     feature: "/admin/settings/courier",
   },
-  {
-    icon: Zap,
-    label: "System & Performance",
-    href: "/admin/settings/system",
-    feature: "/admin/settings/system",
-  },
+  // Caching controls have been moved strictly to the Super Admin platform settings
+  // {
+  //   icon: Zap,
+  //   label: "System & Performance",
+  //   href: "/admin/settings/system",
+  //   feature: "/admin/settings/system",
+  // },
 ];
 
 export const uiSettings = [
