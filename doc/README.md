@@ -33,6 +33,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 
 ### 1.1 Core Design Foundations
 *   [`erp_master_system_design.md`](system-design/erp_master_system_design.md) — **The Core System Blueprint**: Covers modular monolith contexts, guard middleware scopes, eventual consistency, reliability, and deployment strategy.
+*   [`erp_business_logic_deep_dive.md`](system-design/erp_business_logic_deep_dive.md) — **Business Logic Deep Dive**: Real-world business examples, module-by-module business rules, add/update/remove behaviour, module connections, edge cases, and end-to-end scenarios. Read this when you need to understand why the ERP behaves a certain way.
 *   [`erp_master_dataflow.md`](system-design/erp_master_dataflow.md) — **Master Dataflow Map**: End-to-end module-by-module data flow (UI → guards → controller → service → ledgers → outbox → BullMQ), row-level write maps, and code-vs-docs discrepancy log. Read after the master system design.
 *   [`erp_low_level_system_design.md`](system-design/erp_low_level_system_design.md) — **Low-Level Code Contracts**: Details the NestJS request processing guard chain, typed BullMQ payloads, ledger boundaries, transaction handling, and migration rules.
 *   [`erp_master_database_design.md`](system-design/erp_master_database_design.md) — **Master DB Schema**: Contains the unified database ERDs (Mermaid), 107-table inventory, schema definitions, indexes, and tenant-isolation rules.

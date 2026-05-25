@@ -1,6 +1,6 @@
 # ERP Master Dataflow
 
-> **Companion to** [`erp_master_system_design.md`](erp_master_system_design.md) (the "what & why") and [`erp_master_database_design.md`](erp_master_database_design.md) (the "where it is stored").
+> **Companion to** [`erp_master_system_design.md`](erp_master_system_design.md) (the "what & why"), [`erp_business_logic_deep_dive.md`](erp_business_logic_deep_dive.md) (real-world module business logic), and [`erp_master_database_design.md`](erp_master_database_design.md) (the "where it is stored").
 > **This document answers the third question:** _how does data actually move through the system, end-to-end, on every important request?_
 >
 > Every flow below is **traced from the source code in `server/src/` and `client/`** (see citations).

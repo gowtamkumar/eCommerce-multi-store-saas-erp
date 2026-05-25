@@ -4,7 +4,7 @@
 > AI is intentionally excluded. AI/API features will sit on top of this ERP core later as a separate extension layer.
 > Date: 2026-05-20
 
-> **Companion docs:** [Master Dataflow](erp_master_dataflow.md) (request → service → DB → outbox → BullMQ per module) · [Low-Level Design](erp_low_level_system_design.md) · [Master Database Design](erp_master_database_design.md).
+> **Companion docs:** [Business Logic Deep Dive](erp_business_logic_deep_dive.md) (real-world module rules and examples) · [Master Dataflow](erp_master_dataflow.md) (request → service → DB → outbox → BullMQ per module) · [Low-Level Design](erp_low_level_system_design.md) · [Master Database Design](erp_master_database_design.md).
 
 ---
 
