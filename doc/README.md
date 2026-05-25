@@ -16,6 +16,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 | **New Developer** (reading code) | [`codebase-understanding/README.md`](codebase-understanding/README.md) |
 | **New Developer** (coding standards) | [`developer/DEVELOPER_GUIDE.md`](developer/DEVELOPER_GUIDE.md) |
 | **System Architect / reviewer** | [`system-design/erp_master_system_design.md`](system-design/erp_master_system_design.md) |
+| **Engineer tracing a feature end-to-end** | [`system-design/erp_master_dataflow.md`](system-design/erp_master_dataflow.md) |
 | **Platform Super-Admin** (SaaS Owner) | [`manuals/01_SUPER_ADMIN_MANUAL.md`](manuals/01_SUPER_ADMIN_MANUAL.md) |
 | **Tenant Owner / Business CFO** | [`manuals/02_TENANT_OWNER_MANUAL.md`](manuals/02_TENANT_OWNER_MANUAL.md) |
 | **Store Cashier / POS staff** | [`manuals/03_POS_CASHIER_MANUAL.md`](manuals/03_POS_CASHIER_MANUAL.md) |
@@ -32,6 +33,7 @@ This folder is the single source of truth for the entire ERP platform. Documenta
 
 ### 1.1 Core Design Foundations
 *   [`erp_master_system_design.md`](system-design/erp_master_system_design.md) — **The Core System Blueprint**: Covers modular monolith contexts, guard middleware scopes, eventual consistency, reliability, and deployment strategy.
+*   [`erp_master_dataflow.md`](system-design/erp_master_dataflow.md) — **Master Dataflow Map**: End-to-end module-by-module data flow (UI → guards → controller → service → ledgers → outbox → BullMQ), row-level write maps, and code-vs-docs discrepancy log. Read after the master system design.
 *   [`erp_low_level_system_design.md`](system-design/erp_low_level_system_design.md) — **Low-Level Code Contracts**: Details the NestJS request processing guard chain, typed BullMQ payloads, ledger boundaries, transaction handling, and migration rules.
 *   [`erp_master_database_design.md`](system-design/erp_master_database_design.md) — **Master DB Schema**: Contains the unified database ERDs (Mermaid), 107-table inventory, schema definitions, indexes, and tenant-isolation rules.
 *   [`erp_documentation_and_user_manual_plan.md`](system-design/erp_documentation_and_user_manual_plan.md) — Documentation strategy and writing phases.

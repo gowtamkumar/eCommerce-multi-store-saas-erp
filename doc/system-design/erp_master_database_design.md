@@ -5,7 +5,7 @@
 **Last Updated:** May 24, 2026
 **Scope:** Authoritative schema reference for the entire multi-tenant ERP. Every table that exists in `server/src/modules/**/entities/*.entity.ts` is documented here. The diagrams are layered — start with §3 (Master ERD) then drill into the per-domain ERDs in §5.
 
-> Cross-references: [HLD](erp_master_system_design.md) · [LLD](erp_low_level_system_design.md)
+> Cross-references: [HLD](erp_master_system_design.md) · [LLD](erp_low_level_system_design.md) · [Dataflow](erp_master_dataflow.md) (which tables each module writes, with row-level examples).
 
 ---
 
