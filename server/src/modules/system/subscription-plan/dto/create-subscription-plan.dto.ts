@@ -64,32 +64,32 @@ export class CreateSubscriptionPlanDto {
   currency?: string
 
   @IsInt()
-  @Min(0)
+  @Min(-1)
   @IsOptional()
   maxBranches?: number
 
   @IsInt()
-  @Min(0)
+  @Min(-1)
   @IsOptional()
   maxWarehouses?: number
 
   @IsInt()
-  @Min(0)
+  @Min(-1)
   @IsOptional()
   maxStaffUsers?: number
 
   @IsInt()
-  @Min(0)
+  @Min(-1)
   @IsOptional()
   maxProducts?: number
 
   @IsInt()
-  @Min(0)
+  @Min(-1)
   @IsOptional()
   maxMonthlyOrders?: number
 
   @IsInt()
-  @Min(0)
+  @Min(-1)
   @IsOptional()
   maxStorageMb?: number
 

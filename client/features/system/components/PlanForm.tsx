@@ -3,7 +3,7 @@
 import { fetchAPI } from '@/services/api';
 import { navGroups } from '@/routes';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, Layers, Loader2, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Infinity, Layers, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
@@ -17,6 +17,24 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [features, setFeatures] = useState<string[]>(initialData?.features || []);
+
+    // Track which quotas are set to unlimited (-1)
+    const QUOTA_KEYS = ['maxBranches', 'maxWarehouses', 'maxStaffUsers', 'maxProducts', 'maxMonthlyOrders', 'maxStorageMb'] as const;
+    type QuotaKey = typeof QUOTA_KEYS[number];
+    const [unlimitedQuotas, setUnlimitedQuotas] = useState<Record<QuotaKey, boolean>>(() => ({
+        maxBranches:      (initialData?.maxBranches      ?? 1)   === -1,
+        maxWarehouses:    (initialData?.maxWarehouses    ?? 1)   === -1,
+        maxStaffUsers:    (initialData?.maxStaffUsers    ?? 3)   === -1,
+        maxProducts:      (initialData?.maxProducts      ?? 100) === -1,
+        maxMonthlyOrders: (initialData?.maxMonthlyOrders ?? 500) === -1,
+        maxStorageMb:     (initialData?.maxStorageMb     ?? 1024)=== -1,
+    }));
+
+    const toggleUnlimited = (key: QuotaKey) => {
+        const next = !unlimitedQuotas[key];
+        setUnlimitedQuotas(prev => ({ ...prev, [key]: next }));
+        setFormData(prev => ({ ...prev, [key]: next ? -1 : 0 }));
+    };
 
     const [formData, setFormData] = useState({
         name: initialData?.name || '',
@@ -69,12 +87,12 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                 monthlyPrice: Number(formData.monthlyPrice),
                 yearlyPrice: Number(formData.yearlyPrice),
                 trialPeriodDays: Number(formData.trialPeriodDays),
-                maxBranches: Number(formData.maxBranches),
-                maxWarehouses: Number(formData.maxWarehouses),
-                maxStaffUsers: Number(formData.maxStaffUsers),
-                maxProducts: Number(formData.maxProducts),
-                maxMonthlyOrders: Number(formData.maxMonthlyOrders),
-                maxStorageMb: Number(formData.maxStorageMb),
+                maxBranches:      unlimitedQuotas.maxBranches      ? -1 : Number(formData.maxBranches),
+                maxWarehouses:    unlimitedQuotas.maxWarehouses    ? -1 : Number(formData.maxWarehouses),
+                maxStaffUsers:    unlimitedQuotas.maxStaffUsers    ? -1 : Number(formData.maxStaffUsers),
+                maxProducts:      unlimitedQuotas.maxProducts      ? -1 : Number(formData.maxProducts),
+                maxMonthlyOrders: unlimitedQuotas.maxMonthlyOrders ? -1 : Number(formData.maxMonthlyOrders),
+                maxStorageMb:     unlimitedQuotas.maxStorageMb     ? -1 : Number(formData.maxStorageMb),
                 stripePriceIdMonthly: formData.stripePriceIdMonthly.trim() || null,
                 stripePriceIdYearly: formData.stripePriceIdYearly.trim() || null,
                 code: formData.code.trim() || null,
@@ -247,75 +265,69 @@ export default function PlanForm({ initialData, isEditing = false }: PlanFormPro
                         <div className="space-y-6 pt-6 border-t border-slate-100 dark:border-slate-800">
                             <div className="space-y-1">
                                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Resource Quotas</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Define maximum limits for core database records and assets on this plan tier.</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                                    Define maximum limits for core resources. Toggle <span className="inline-flex items-center gap-1 text-violet-600 dark:text-violet-400 font-black"><Infinity className="w-3 h-3" /> Unlimited</span> to remove a cap entirely (stored as <code className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1 rounded">-1</code>).
+                                </p>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Branches</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        value={formData.maxBranches}
-                                        onChange={(e) => setFormData({ ...formData, maxBranches: Number(e.target.value) })}
-                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
-                                    />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Warehouses</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        value={formData.maxWarehouses}
-                                        onChange={(e) => setFormData({ ...formData, maxWarehouses: Number(e.target.value) })}
-                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
-                                    />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Staff Users</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        value={formData.maxStaffUsers}
-                                        onChange={(e) => setFormData({ ...formData, maxStaffUsers: Number(e.target.value) })}
-                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
-                                    />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Products</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        value={formData.maxProducts}
-                                        onChange={(e) => setFormData({ ...formData, maxProducts: Number(e.target.value) })}
-                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
-                                    />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Monthly Orders</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        value={formData.maxMonthlyOrders}
-                                        onChange={(e) => setFormData({ ...formData, maxMonthlyOrders: Number(e.target.value) })}
-                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
-                                    />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Max Storage (MB)</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        value={formData.maxStorageMb}
-                                        onChange={(e) => setFormData({ ...formData, maxStorageMb: Number(e.target.value) })}
-                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
-                                    />
-                                </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+                                {([
+                                    { key: 'maxBranches'      as QuotaKey, label: 'Max Branches',       unit: ''    },
+                                    { key: 'maxWarehouses'    as QuotaKey, label: 'Max Warehouses',     unit: ''    },
+                                    { key: 'maxStaffUsers'    as QuotaKey, label: 'Max Staff Users',    unit: ''    },
+                                    { key: 'maxProducts'      as QuotaKey, label: 'Max Products',       unit: ''    },
+                                    { key: 'maxMonthlyOrders' as QuotaKey, label: 'Max Monthly Orders', unit: ''    },
+                                    { key: 'maxStorageMb'     as QuotaKey, label: 'Max Storage',        unit: 'MB'  },
+                                ] as const).map(({ key, label, unit }) => {
+                                    const isUnlimited = unlimitedQuotas[key];
+                                    return (
+                                        <div key={key} className="space-y-2">
+                                            {/* Header row: label + unlimited toggle */}
+                                            <div className="flex items-center justify-between px-1">
+                                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                                    {label}{unit ? ` (${unit})` : ''}
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleUnlimited(key)}
+                                                    className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border transition-all ${
+                                                        isUnlimited
+                                                            ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-400/50 text-violet-600 dark:text-violet-400 shadow-sm shadow-violet-500/10'
+                                                            : 'bg-slate-100/80 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-violet-600 hover:border-violet-400/50 hover:bg-violet-50 dark:hover:bg-violet-950/20'
+                                                    }`}
+                                                >
+                                                    <Infinity className="w-3 h-3" />
+                                                    {isUnlimited ? 'Unlimited' : 'Set Limit'}
+                                                </button>
+                                            </div>
+
+                                            {/* Input area */}
+                                            <div className="relative">
+                                                {isUnlimited ? (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, scale: 0.96 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        className="w-full px-6 py-4 rounded-2xl border border-violet-400/40 bg-violet-50/60 dark:bg-violet-950/20 flex items-center gap-3"
+                                                    >
+                                                        <Infinity className="w-5 h-5 text-violet-500 dark:text-violet-400 shrink-0" />
+                                                        <span className="font-black text-violet-600 dark:text-violet-400 text-sm">No Limit</span>
+                                                        <span className="ml-auto text-[10px] font-mono text-violet-400/60">−1</span>
+                                                    </motion.div>
+                                                ) : (
+                                                    <input
+                                                        type="number"
+                                                        required
+                                                        min="0"
+                                                        value={formData[key]}
+                                                        onChange={(e) => setFormData({ ...formData, [key]: Number(e.target.value) })}
+                                                        className="w-full px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-400"
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
                             </div>
                         </div>
 

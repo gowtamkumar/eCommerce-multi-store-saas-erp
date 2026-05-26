@@ -729,7 +729,34 @@ export const navGroups = [
   },
 ];
 
+const FEATURE_DISPLAY_MAP: Record<string, { label: string; icon: any }> = {
+  pos: { label: "Point of Sale (POS)", icon: ShoppingBag },
+  catalog: { label: "Product Catalog", icon: Package },
+  orders: { label: "Order Management", icon: ClipboardList },
+  marketing: { label: "Marketing Campaigns", icon: Megaphone },
+  finance: { label: "Finance & Accounts", icon: Wallet },
+  hrm: { label: "HRM & Payroll", icon: Users },
+  inventory: { label: "Inventory Control", icon: Warehouse },
+  purchasing: { label: "Purchases & Suppliers", icon: Truck },
+  settings: { label: "Store Settings", icon: LayoutDashboard },
+  header: { label: "Custom Navbar/Header", icon: Menu },
+  footer: { label: "Custom Footer", icon: Layout },
+  reports: { label: "Advanced Reports", icon: BarChart3 },
+  logistics: { label: "Shipping & Logistics", icon: Truck },
+  branding: { label: "Whitelabel Branding", icon: Award },
+  content: { label: "CMS Content Manager", icon: BookOpen },
+  // Legacy & specific aliases
+  staff_accounts: { label: "Staff Accounts", icon: Users },
+  unlimited_products: { label: "Unlimited Products", icon: Package },
+  navbar: { label: "Custom Navbar", icon: Menu },
+  custom_domain: { label: "Custom Domain", icon: Globe },
+};
+
 export function getFeatureDisplay(href: string) {
+  const normalizedKey = href.toLowerCase().trim();
+  if (FEATURE_DISPLAY_MAP[normalizedKey]) {
+    return FEATURE_DISPLAY_MAP[normalizedKey];
+  }
   for (const group of navGroups) {
     const found = group.items.find((item) => item.href === href);
     if (found) {
@@ -739,8 +766,11 @@ export function getFeatureDisplay(href: string) {
       };
     }
   }
+  const fallbackLabel = href
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
   return {
-    label: href,
+    label: fallbackLabel,
     icon: CheckCircle2, // default fallback icon
   };
 }
