@@ -9,6 +9,8 @@ import { motion } from 'framer-motion';
 import MarketingFooter from './MarketingFooter';
 import MarketingHero from './MarketingHero';
 import MarketingNavbar from './MarketingNavbar';
+import FeatureExplorer from './FeatureExplorer';
+import StatCounters from './StatCounters';
 
 export default function SaaSLanding() {
   const [settings, setSettings] = useState<any>(null);
@@ -77,8 +79,33 @@ export default function SaaSLanding() {
       <MarketingNavbar brandName={settings?.brandName} brandLogo={settings?.brandLogo} />
       <MarketingHero data={settings?.hero} />
 
+      {/* Brand Logo Ticker */}
+      <section className="py-12 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800/60 overflow-hidden relative">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-6">
+            Trusted by fast-growing brands worldwide
+          </p>
+          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 opacity-60 dark:opacity-40">
+            {[
+              'Gowtam Retail', 'Aura Boutique', 'NextGen Electra', 'Urban Wear', 
+              'Peak Outdoors', 'Nordic Home', 'Luxe Cosmetics', 'Velo Sports'
+            ].map((brand, i) => (
+              <span key={i} className="text-sm sm:text-base font-black tracking-widest uppercase font-display text-slate-800 dark:text-slate-200">
+                {brand}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Explorer Section */}
+      <FeatureExplorer />
+
+      {/* Stats Section */}
+      <StatCounters />
+
       {/* Feature Section */}
-      <section id="features" className="py-24 bg-slate-50 dark:bg-slate-800/50">
+      <section id="features" className="py-24 bg-slate-50 dark:bg-slate-850/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold font-display text-slate-900 dark:text-white mb-4">
