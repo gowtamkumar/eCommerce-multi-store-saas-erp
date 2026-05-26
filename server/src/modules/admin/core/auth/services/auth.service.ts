@@ -320,4 +320,22 @@ export class AuthService {
       { isActive: false },
     )
   }
+
+  async createImpersonateToken(userId: string): Promise<string> {
+    const payload = { userId, purpose: 'impersonation' }
+    return this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_SECRET_KEY'),
+      expiresIn: '5m',
+    })
+  }
+
+  async verifyImpersonateToken(token: string): Promise<any> {
+    return this.jwtService.verifyAsync(token, {
+      secret: this.configService.get<string>('JWT_SECRET_KEY'),
+    })
+  }
+
+  async getUserForImpersonation(userId: string): Promise<UserEntity | null> {
+    return this.userService.getUser(userId)
+  }
 }

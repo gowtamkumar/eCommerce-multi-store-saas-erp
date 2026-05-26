@@ -23,6 +23,7 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
   const [isLoading, setIsLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
 
   // Debounce search term
   useEffect(() => {
@@ -62,6 +63,26 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
       fetchUsers(newPage, debouncedSearch);
     }
   };
+
+  const handleImpersonate = useCallback(async (userId: string) => {
+    setImpersonatingId(userId);
+    try {
+      const res = await fetchSuperAdminAPI(`/super-admin/impersonate/${userId}`, {
+        method: 'POST',
+      });
+
+      if (res.success && res.data?.redirectUrl) {
+        toast.success(res.message || 'Impersonation successful, redirecting...');
+        window.location.href = res.data.redirectUrl;
+      } else {
+        toast.error('Failed to get redirect URL for impersonation');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to initiate impersonation');
+    } finally {
+      setImpersonatingId(null);
+    }
+  }, []);
 
   const handleStatusChange = useCallback(async (userId: string, newStatus: UserStatus) => {
     setUpdatingId(userId);
@@ -156,6 +177,8 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
                       updatingId={updatingId}
                       onStatusChange={handleStatusChange}
                       onSelectUser={setSelectedUser}
+                      onImpersonate={handleImpersonate}
+                      impersonatingId={impersonatingId}
                     />
                   ))}
                 </AnimatePresence>

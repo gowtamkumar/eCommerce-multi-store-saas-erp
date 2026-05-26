@@ -29,6 +29,8 @@ import {
 import si from 'systeminformation'
 import { SubscriptionPlanService } from '../subscription-plan/subscription-plan.service'
 import { TrafficService } from './traffic.service'
+import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
+import { expandFeatures } from '@/common/constants/feature-mapping'
 
 @Controller('super-admin')
 export class SuperAdminController {
@@ -43,6 +45,7 @@ export class SuperAdminController {
     private readonly pageService: PageService,
     private readonly planService: SubscriptionPlanService,
     private readonly cacheService: CacheService,
+    private readonly authService: AuthService,
   ) { }
 
   @Post('/setup')
@@ -462,4 +465,40 @@ export class SuperAdminController {
       data: null,
     }
   }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Post('/impersonate/:userId')
+  @HttpCode(200)
+  async impersonate(
+    @Param('userId') userId: string,
+  ): Promise<BaseApiSuccessResponse<{ impersonateToken: string; redirectUrl: string }>> {
+    this.logger.log(`Super Admin initiating impersonation for user ${userId}`)
+    
+    // 1. Find user
+    const user = await this.userService.getUser(userId)
+    if (!user) {
+      throw new UnauthorizedException('User not found')
+    }
+
+    // 2. Generate impersonation token
+    const impersonateToken = await this.authService.createImpersonateToken(user.id)
+
+    // 3. Construct redirect URL
+    let redirectUrl = `http://localhost:3000/login?impersonateToken=${impersonateToken}`
+    if (user.tenant?.subdomain) {
+      redirectUrl = `http://${user.tenant.subdomain}.localhost:3000/login?impersonateToken=${impersonateToken}`
+    }
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: `Impersonation token generated for user ${user.username}`,
+      data: {
+        impersonateToken,
+        redirectUrl,
+      },
+    }
+  }
 }
+

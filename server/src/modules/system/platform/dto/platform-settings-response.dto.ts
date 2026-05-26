@@ -45,6 +45,12 @@ export class PlatformSettingsResponseDto {
   }
 
   @Expose()
+  isMaintenanceMode: boolean
+
+  @Expose()
+  maintenanceMessage: string
+
+  @Expose()
   createdAt: Date
 
   @Expose()

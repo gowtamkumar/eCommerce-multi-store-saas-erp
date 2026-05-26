@@ -44,6 +44,12 @@ export class PlatformSettingsEntity extends BaseEntity {
     }
   }
 
+  @Column({ name: 'is_maintenance_mode', type: 'boolean', default: false })
+  isMaintenanceMode: boolean
+
+  @Column({ name: 'maintenance_message', type: 'text', nullable: true })
+  maintenanceMessage: string
+
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity

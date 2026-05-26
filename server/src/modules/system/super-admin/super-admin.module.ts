@@ -2,6 +2,7 @@ import { TrafficInterceptor } from '@/common/interceptors/traffic.interceptor'
 import { ProductModule } from '@/modules/admin/catalog/product/product.module'
 import { PageModule } from '@/modules/admin/content/page/page.module'
 import { UserModule } from '@/modules/admin/core/user/user.module'
+import { AuthModule } from '@/modules/admin/core/auth/auth.module'
 import { OrderModule } from '@/modules/admin/sales/order/order.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { Module } from '@nestjs/common'
@@ -18,6 +19,7 @@ import { TrafficService } from './traffic.service'
     ProductModule,
     PageModule,
     SubscriptionPlanModule,
+    AuthModule,
   ],
   controllers: [SuperAdminController],
   providers: [

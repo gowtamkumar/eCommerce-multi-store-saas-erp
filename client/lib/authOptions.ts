@@ -10,10 +10,11 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
+        impersonateToken: { label: "Impersonate Token", type: "text" },
       },
       async authorize(credentials, req) {
-        if (!credentials?.username || !credentials?.password) {
-          throw new Error("Please enter an username and password");
+        if (!credentials?.impersonateToken && (!credentials?.username || !credentials?.password)) {
+          throw new Error("Please enter a username and password");
         }
 
         const headers: Record<string, string> = {
@@ -78,6 +79,30 @@ export const authOptions: NextAuthOptions = {
               } catch (e: any) { }
             } else {
             }
+          }
+        }
+
+        if (credentials?.impersonateToken) {
+          try {
+            const data = await fetchAPI("/admin/login-impersonated", {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                impersonateToken: credentials.impersonateToken,
+              }),
+            });
+
+            if (data.success && data.data && data.data.user) {
+              const user = data.data.user;
+              user.accessToken = data.data.accessToken;
+              user.refreshToken = data.data.refreshToken;
+              user.accessTokenExpires = Math.floor(Date.now() / 1000) + 900;
+              return user;
+            }
+            throw new Error(data.message || "Impersonation login failed");
+          } catch (error: any) {
+            console.error("Authorize impersonation error:", error.message);
+            throw new Error(error.message || "Impersonation failed");
           }
         }
 

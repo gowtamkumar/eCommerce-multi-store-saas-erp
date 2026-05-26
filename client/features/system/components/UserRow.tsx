@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Store, User as UserIcon, Info, Loader2 } from 'lucide-react';
+import { Shield, Store, User as UserIcon, Info, Loader2, UserCheck } from 'lucide-react';
 import { UserRole } from '@/lib/enums/user-role.enum';
 import { UserStatus } from '@/lib/enums/user-status.enum';
 import { User } from '../types/user-management.types';
@@ -12,6 +12,8 @@ interface UserRowProps {
   updatingId: string | null;
   onStatusChange: (userId: string, newStatus: UserStatus) => void;
   onSelectUser: (user: User) => void;
+  onImpersonate?: (userId: string) => void;
+  impersonatingId?: string | null;
 }
 
 const UserRow = ({
@@ -19,6 +21,8 @@ const UserRow = ({
   updatingId,
   onStatusChange,
   onSelectUser,
+  onImpersonate,
+  impersonatingId,
 }: UserRowProps) => {
   return (
     <motion.tr
@@ -78,6 +82,21 @@ const UserRow = ({
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center justify-end gap-3">
+          {onImpersonate && (
+            <button
+              onClick={() => onImpersonate(user.id)}
+              disabled={updatingId !== null || (impersonatingId !== undefined && impersonatingId !== null)}
+              className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg transition-all disabled:opacity-30"
+              title="Impersonate User"
+            >
+              {impersonatingId === user.id ? (
+                <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
+              ) : (
+                <UserCheck className="w-5 h-5" />
+              )}
+            </button>
+          )}
+
           <button
             onClick={() => onSelectUser(user)}
             className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all"

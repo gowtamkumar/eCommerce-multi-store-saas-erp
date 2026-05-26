@@ -1,8 +1,8 @@
 'use client';
 import { Loader2, Lock } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { getSession, signIn } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { UserRole } from '@/lib/enums/user-role.enum';
@@ -13,6 +13,8 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const impersonateToken = searchParams.get('impersonateToken');
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,6 +55,66 @@ export default function Login() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (impersonateToken) {
+            const autoLogin = async () => {
+                setLoading(true);
+                setError('');
+                try {
+                    const res = await signIn('credentials', {
+                        impersonateToken,
+                        redirect: false,
+                    });
+
+                    if (res?.error) {
+                        setError(res.error);
+                        toast.error(res.error || 'Impersonation failed');
+                        return;
+                    }
+
+                    const session = await getSession();
+                    if (session?.user) {
+                        const userRole = session.user.role;
+                        toast.success(`Impersonated successfully as ${userRole || UserRole.USER}`);
+                        if (userRole === UserRole.SUPER_ADMIN) {
+                            router.push('/system');
+                        } else if ([UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.OPERATOR, UserRole.SUPPORT, UserRole.MARKETING].includes(userRole)) {
+                            router.push('/admin');
+                        } else {
+                            router.push('/');
+                        }
+                    } else {
+                        setError('Impersonation failed: Session missing user context');
+                    }
+                } catch (err) {
+                    setError('Something went wrong during impersonation');
+                } finally {
+                    setLoading(false);
+                }
+            };
+            autoLogin();
+        }
+    }, [impersonateToken, router]);
+
+    if (impersonateToken && loading) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
+                <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-8 text-center space-y-6">
+                    <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400 animate-pulse">
+                        <Lock className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-display">Establishing Secure Link</h2>
+                        <p className="text-slate-500 dark:text-slate-400">Verifying administrative credentials and synchronizing session...</p>
+                    </div>
+                    <div className="flex justify-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">

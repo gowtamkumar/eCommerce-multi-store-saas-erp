@@ -2,14 +2,14 @@
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
 import { fetchSuperAdminAPI } from '@/services/supperAdminApi';
-import { Globe, Layout, Plus, Save, Shield, Trash2, Zap, Database, AlertTriangle, Loader2, X } from 'lucide-react';
+import { Globe, Layout, Plus, Save, Shield, Trash2, Zap, Database, AlertTriangle, Loader2, X, LayoutDashboard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function GlobalSetting() {
     const [settings, setSettings] = useState<any>(null);
-    const [activeTab, setActiveTab] = useState('identity');
+    const [activeTab, setActiveTab] = useState('dashboard');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -118,21 +118,20 @@ export default function GlobalSetting() {
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Platform Settings</h1>
                     <p className="text-slate-500 dark:text-slate-400">Configure global behavior and guest landing page content.</p>
                 </div>
-                {activeTab !== 'system' && (
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-70"
-                    >
-                        {saving ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Save className="w-4 h-4" />}
-                        Save Changes
-                    </button>
-                )}
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-70"
+                >
+                    {saving ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Save className="w-4 h-4" />}
+                    Save Changes
+                </button>
             </div>
 
             {/* Tabs */}
             <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl w-fit">
                 {[
+                    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
                     { id: 'identity', label: 'Identity', icon: Globe },
                     { id: 'hero', label: 'Hero Section', icon: Layout },
                     { id: 'features', label: 'Features', icon: Zap },
@@ -153,7 +152,130 @@ export default function GlobalSetting() {
                 ))}
             </div>
 
-            <div className="max-w-5xl space-y-6">
+             <div className="max-w-5xl space-y-6">
+                {/* Dashboard Tab */}
+                {activeTab === 'dashboard' && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                        {/* Grid of status cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Card 1: Platform Status */}
+                            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-sm font-black uppercase tracking-wider text-slate-400">Platform Status</h4>
+                                    <span className={`w-3 h-3 rounded-full ${settings.isMaintenanceMode ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                                        {settings.isMaintenanceMode ? 'Maintenance Mode' : 'Operational / Live'}
+                                    </p>
+                                    <p className="text-xs text-slate-505 dark:text-slate-405">
+                                        {settings.isMaintenanceMode ? 'External traffic is blocked.' : 'All services are fully active.'}
+                                    </p>
+                                </div>
+                                <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Quick Toggle</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSettings({ ...settings, isMaintenanceMode: !settings.isMaintenanceMode })}
+                                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${
+                                            settings.isMaintenanceMode ? 'bg-amber-500' : 'bg-slate-200 dark:bg-slate-700'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                settings.isMaintenanceMode ? 'translate-x-4' : 'translate-x-0'
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Card 2: Branding Overview */}
+                            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-sm font-black uppercase tracking-wider text-slate-400">Identity Details</h4>
+                                    <Globe className="w-4 h-4 text-slate-400" />
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    {settings.brandLogo ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={settings.brandLogo} alt="Logo" className="w-12 h-12 rounded-xl object-contain bg-slate-50 p-1 border border-slate-100" />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center text-indigo-600 font-black text-lg">
+                                            {settings.brandName?.charAt(0) || 'L'}
+                                        </div>
+                                    )}
+                                    <div className="overflow-hidden">
+                                        <p className="text-lg font-black text-slate-900 dark:text-white leading-tight truncate">{settings.brandName}</p>
+                                        <p className="text-xs text-slate-500 truncate">{settings.supportEmail}</p>
+                                    </div>
+                                </div>
+                                <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-xs">
+                                    <span className="text-slate-505 dark:text-slate-405">Navigation links</span>
+                                    <span className="font-bold text-slate-900 dark:text-white">{(settings.navbar?.links || []).length} active</span>
+                                </div>
+                            </div>
+
+                            {/* Card 3: System Overview */}
+                            <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-sm font-black uppercase tracking-wider text-slate-400">Marketing & Content</h4>
+                                    <Zap className="w-4 h-4 text-slate-400" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                                        {(settings.features || []).length} Features
+                                    </p>
+                                    <p className="text-xs text-slate-505 dark:text-slate-405 truncate">
+                                        Hero badge: {settings.hero?.badge || 'None'}
+                                    </p>
+                                </div>
+                                <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-xs">
+                                    <span className="text-slate-550 dark:text-slate-450">Trust badges active</span>
+                                    <span className="font-bold text-slate-900 dark:text-white">{(settings.hero?.trustBadges || []).length} items</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Middle detailed view */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Maintenance Details */}
+                            {settings.isMaintenanceMode && (
+                                <div className="bg-amber-500/5 dark:bg-amber-500/10 border border-amber-500/20 rounded-3xl p-6 space-y-4 animate-in slide-in-from-top-1 duration-200">
+                                    <div className="flex items-center gap-2 text-amber-500">
+                                        <AlertTriangle className="w-5 h-5" />
+                                        <h5 className="font-black text-sm uppercase tracking-wider">Maintenance Message</h5>
+                                    </div>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-205 leading-relaxed italic bg-white dark:bg-slate-950/50 p-4 rounded-2xl border border-amber-500/10">
+                                        "{settings.maintenanceMessage || 'Platform is currently undergoing scheduled upgrades. Please try again shortly.'}"
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Quick Cache Clearing Control */}
+                            <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-6 flex flex-col justify-between space-y-4">
+                                <div className="space-y-2">
+                                    <h5 className="font-black text-sm text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                                        <Database className="w-4 h-4 text-indigo-500" />
+                                        Performance Engine Quick Action
+                                    </h5>
+                                    <p className="text-xs text-slate-500">
+                                        Evict temporary storage caches dynamically across the network partitions.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowGlobalConfirm(true)}
+                                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/20 text-rose-600 border border-rose-100 dark:border-rose-900/10 transition-all font-bold text-xs rounded-2xl"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>Evict Global Cache</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Identity Tab */}
                 {activeTab === 'identity' && (
                     <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -425,7 +547,47 @@ export default function GlobalSetting() {
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+                            <div className="space-y-4 pt-6 border-t border-slate-100 dark:border-slate-700">
+                                <h4 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 font-display">
+                                    <AlertTriangle className="w-5 h-5 text-indigo-600" />
+                                    Platform System Controls
+                                </h4>
+                                <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h5 className="text-sm font-bold text-slate-900 dark:text-white">Maintenance Mode</h5>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Freeze client access across all store partitions except for Super Admins.</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSettings({ ...settings, isMaintenanceMode: !settings.isMaintenanceMode })}
+                                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${
+                                                settings.isMaintenanceMode ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                                            }`}
+                                        >
+                                            <span
+                                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                    settings.isMaintenanceMode ? 'translate-x-5' : 'translate-x-0'
+                                                }`}
+                                            />
+                                        </button>
+                                    </div>
+                                    
+                                    {settings.isMaintenanceMode && (
+                                        <div className="space-y-2 animate-in slide-in-from-top-1 duration-200">
+                                            <label className="block text-xs font-semibold text-slate-750 dark:text-slate-350">Alert Message</label>
+                                            <textarea
+                                                value={settings.maintenanceMessage || ''}
+                                                onChange={(e) => setSettings({ ...settings, maintenanceMessage: e.target.value })}
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-xs font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all h-20"
+                                                placeholder="Platform is currently undergoing scheduled upgrades. Please try again shortly."
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-100 dark:border-slate-700">
                                 {/* Clear Global Cache Card */}
                                 <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
                                     <div>

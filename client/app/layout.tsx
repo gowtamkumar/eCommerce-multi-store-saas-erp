@@ -8,6 +8,7 @@ import "../styles/typography.css";
 import "./globals.css";
 
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+import MaintenanceWrapper from "@/components/shared/MaintenanceWrapper";
 
 // const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 // const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
@@ -70,7 +71,9 @@ export default async function RootLayout({
             <SettingsProvider initialSettings={settings}>
               <ToasterProvider />
               <PushNotificationPrompt />
-              {children}
+              <MaintenanceWrapper>
+                {children}
+              </MaintenanceWrapper>
             </SettingsProvider>
           </SocketProvider>
         </AuthProvider>
