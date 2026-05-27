@@ -1,21 +1,21 @@
-import { RequestContextDto } from '@/common/dto/request-context.dto';
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
-import { NotificationEntity } from './entities/notification.entity';
-import { NotificationGateway } from './notification.gateway';
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { Injectable, Logger } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { IsNull, Repository } from 'typeorm'
+import { NotificationEntity } from './entities/notification.entity'
+import { NotificationGateway } from './notification.gateway'
 
 export interface CreateNotificationDto {
-  userId?: string;
-  title: string;
-  message: string;
-  type?: string;
-  link?: string;
+  userId?: string
+  title: string
+  message: string
+  type?: string
+  link?: string
 }
 
 @Injectable()
 export class NotificationService {
-  private readonly logger = new Logger(NotificationService.name);
+  private readonly logger = new Logger(NotificationService.name)
 
   constructor(
     @InjectRepository(NotificationEntity)
@@ -26,7 +26,10 @@ export class NotificationService {
   /**
    * Create a new in-app system notification
    */
-  async createNotification(dto: CreateNotificationDto, tenantId: string | null): Promise<NotificationEntity> {
+  async createNotification(
+    dto: CreateNotificationDto,
+    tenantId: string | null,
+  ): Promise<NotificationEntity> {
     const notification = this.notificationRepository.create({
       tenantId,
       userId: dto.userId || null,
@@ -35,65 +38,89 @@ export class NotificationService {
       type: dto.type || 'SYSTEM',
       link: dto.link,
       isRead: false,
-    });
+    })
 
-    const savedNotification = await this.notificationRepository.save(notification);
+    const savedNotification = await this.notificationRepository.save(notification)
 
     try {
       if (dto.userId) {
         // Send to specific user
-        this.notificationGateway.sendToUser(dto.userId, 'notification', savedNotification);
+        this.notificationGateway.sendToUser(dto.userId, 'notification', savedNotification)
       } else if (tenantId) {
         // Broadcast to whole tenant
-        this.notificationGateway.sendToTenant(tenantId, 'notification', savedNotification);
+        this.notificationGateway.sendToTenant(tenantId, 'notification', savedNotification)
       } else {
         // Global system notification (Super Admins)
-        this.notificationGateway.sendToRole('SUPER_ADMIN', 'notification', savedNotification);
+        this.notificationGateway.sendToRole('SUPER_ADMIN', 'notification', savedNotification)
       }
-    } catch (wsError) {
-      this.logger.error('Failed to dispatch notification over WebSockets', wsError.stack);
+    } catch (wsError: any) {
+      this.logger.error('Failed to dispatch notification over WebSockets', wsError.stack)
     }
 
-    return savedNotification;
+    return savedNotification
   }
 
   /**
    * Fetch all notifications for a specific user and tenant-wide
    */
-  async getUserNotifications(ctx: RequestContextDto, limit: number = 20, offset: number = 0): Promise<[NotificationEntity[], number]> {
-    const tenantId = ctx.tenantId || IsNull();
-    const userId = ctx.userId || IsNull();
+  async getUserNotifications(
+    ctx: RequestContextDto,
+    limit: number = 20,
+    offset: number = 0,
+    type?: string,
+    search?: string,
+  ): Promise<[NotificationEntity[], number]> {
+    const query = this.notificationRepository.createQueryBuilder('notification')
 
-    return await this.notificationRepository.findAndCount({
-      where: [
-        { tenantId, userId },
-        { tenantId, userId: IsNull() },
-      ],
-      order: {
-        createdAt: 'DESC',
-      },
-      take: limit,
-      skip: offset,
-    });
+    // Filter by tenant and user
+    if (ctx.tenantId) {
+      query.andWhere('notification.tenantId = :tenantId', { tenantId: ctx.tenantId })
+    } else {
+      query.andWhere('notification.tenantId IS NULL')
+    }
+
+    if (ctx.userId) {
+      query.andWhere('(notification.userId = :userId OR notification.userId IS NULL)', {
+        userId: ctx.userId,
+      })
+    } else {
+      query.andWhere('notification.userId IS NULL')
+    }
+
+    // Filter by type if specified and not 'ALL'
+    if (type && type !== 'ALL') {
+      query.andWhere('notification.type = :type', { type })
+    }
+
+    // Filter by search query matching title or message case-insensitively
+    if (search) {
+      query.andWhere('(notification.title ILIKE :search OR notification.message ILIKE :search)', {
+        search: `%${search}%`,
+      })
+    }
+
+    query.orderBy('notification.createdAt', 'DESC').skip(offset).take(limit)
+
+    return await query.getManyAndCount()
   }
 
   /**
    * Mark a specific notification as read
    */
   async markAsRead(id: string, ctx: RequestContextDto): Promise<void> {
-    const tenantId = ctx.tenantId || IsNull();
-    const userId = ctx.userId || IsNull();
+    const tenantId = ctx.tenantId || IsNull()
+    const userId = ctx.userId || IsNull()
 
     const notification = await this.notificationRepository.findOne({
       where: [
         { id, tenantId, userId },
         { id, tenantId, userId: IsNull() },
-      ]
-    });
-    
+      ],
+    })
+
     if (notification) {
-      notification.isRead = true;
-      await this.notificationRepository.save(notification);
+      notification.isRead = true
+      await this.notificationRepository.save(notification)
     }
   }
 
@@ -101,34 +128,34 @@ export class NotificationService {
    * Mark all notifications as read for a user
    */
   async markAllAsRead(ctx: RequestContextDto): Promise<void> {
-    const tenantId = ctx.tenantId || IsNull();
-    const userId = ctx.userId || IsNull();
+    const tenantId = ctx.tenantId || IsNull()
+    const userId = ctx.userId || IsNull()
 
     const notifications = await this.notificationRepository.find({
       where: [
         { tenantId, userId, isRead: false },
         { tenantId, userId: IsNull(), isRead: false },
-      ]
-    });
-    
+      ],
+    })
+
     for (const notif of notifications) {
-      notif.isRead = true;
+      notif.isRead = true
     }
-    await this.notificationRepository.save(notifications);
+    await this.notificationRepository.save(notifications)
   }
 
   /**
    * Get unread count
    */
   async getUnreadCount(ctx: RequestContextDto): Promise<number> {
-    const tenantId = ctx.tenantId || IsNull();
-    const userId = ctx.userId || IsNull();
+    const tenantId = ctx.tenantId || IsNull()
+    const userId = ctx.userId || IsNull()
 
     return await this.notificationRepository.count({
       where: [
         { tenantId, userId, isRead: false },
         { tenantId, userId: IsNull(), isRead: false },
-      ]
-    });
+      ],
+    })
   }
 }

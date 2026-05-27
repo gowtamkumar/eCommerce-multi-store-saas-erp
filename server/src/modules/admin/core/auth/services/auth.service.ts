@@ -156,7 +156,7 @@ export class AuthService {
           title: 'Security Warning: New Login',
           message: `A new device logged into your account (${user.username}). If this wasn't you, please reset your password.`,
           type: 'WARNING',
-          link: `/admin/settings/security`,
+          link: `/admin/profile`,
           userId: user.id, // specifically alert the user
         }, tenantId);
       }

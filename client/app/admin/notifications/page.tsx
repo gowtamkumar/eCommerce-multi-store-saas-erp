@@ -38,15 +38,32 @@ export default function MerchantNotificationsPage() {
   const [total, setTotal] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeTab, setActiveTab] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
 
-  const fetchNotifications = useCallback(async (page: number) => {
+  // Debounce search term changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchNotifications = useCallback(async (page: number, type: string, search: string) => {
     setLoading(true);
     try {
       const offset = (page - 1) * limit;
-      const data = await fetchAPI(`/infra/notifications?limit=${limit}&offset=${offset}`);
+      let url = `/infra/notifications?limit=${limit}&offset=${offset}`;
+      if (type && type !== 'ALL') {
+        url += `&type=${type}`;
+      }
+      if (search) {
+        url += `&search=${encodeURIComponent(search)}`;
+      }
+      const data = await fetchAPI(url);
       if (data.success && data.data) {
         setNotifications(data.data.notifications || []);
         setTotal(data.data.total || 0);
@@ -62,14 +79,21 @@ export default function MerchantNotificationsPage() {
 
   useEffect(() => {
     if (session) {
-      fetchNotifications(currentPage);
+      fetchNotifications(currentPage, activeTab, debouncedSearch);
     }
-  }, [session, currentPage, fetchNotifications]);
+  }, [session, currentPage, activeTab, debouncedSearch, fetchNotifications]);
 
   // Handle incoming real-time notifications
   useSocketEvent('notification', (newNotif: any) => {
-    setNotifications((prev) => [newNotif, ...prev.slice(0, limit - 1)]);
-    setTotal((prev) => prev + 1);
+    const matchesTab = activeTab === 'ALL' || newNotif.type === activeTab;
+    const matchesSearch = !debouncedSearch ||
+      newNotif.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      newNotif.message.toLowerCase().includes(debouncedSearch.toLowerCase());
+
+    if (matchesTab && matchesSearch) {
+      setNotifications((prev) => [newNotif, ...prev.slice(0, limit - 1)]);
+      setTotal((prev) => prev + 1);
+    }
     setUnreadCount((prev) => prev + 1);
   });
 
@@ -103,15 +127,7 @@ export default function MerchantNotificationsPage() {
     }
   };
 
-  // Filtering logic
-  const filteredNotifications = notifications.filter((notif) => {
-    const matchesSearch =
-      notif.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      notif.message.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (activeTab === 'ALL') return matchesSearch;
-    return notif.type === activeTab && matchesSearch;
-  });
+
 
   const totalPages = Math.ceil(total / limit);
 
@@ -218,9 +234,9 @@ export default function MerchantNotificationsPage() {
                 <p className="text-xs font-black uppercase tracking-widest text-slate-400">Loading alerts...</p>
               </div>
             </div>
-          ) : filteredNotifications.length > 0 ? (
+          ) : notifications.length > 0 ? (
             <AnimatePresence mode="popLayout">
-              {filteredNotifications.map((notif) => (
+              {notifications.map((notif) => (
                 <motion.div
                   key={notif.id}
                   initial={{ opacity: 0, y: 10 }}

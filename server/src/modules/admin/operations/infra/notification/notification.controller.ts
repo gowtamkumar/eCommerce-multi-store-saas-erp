@@ -1,11 +1,20 @@
-import { Controller, Get, Patch, Param, Query, UseGuards, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { NotificationService } from './notification.service';
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-import { RequestContext } from '@/common/decorators/request-context.decorator';
-import { RequestContextDto } from '@/common/dto/request-context.dto';
-import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto';
-import { NotificationEntity } from './entities/notification.entity';
+import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
+import { ApiOperation, ApiTags } from '@nestjs/swagger'
+import { NotificationEntity } from './entities/notification.entity'
+import { NotificationService } from './notification.service'
 
 @ApiTags('System Notifications')
 @Controller('infra/notifications')
@@ -19,9 +28,23 @@ export class NotificationController {
     @RequestContext() ctx: RequestContextDto,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
-  ): Promise<BaseApiSuccessResponse<{ notifications: NotificationEntity[], total: number, unreadCount: number }>> {
-    const [notifications, total] = await this.notificationService.getUserNotifications(ctx, limit, offset);
-    const unreadCount = await this.notificationService.getUnreadCount(ctx);
+    @Query('type') type?: string,
+    @Query('search') search?: string,
+  ): Promise<
+    BaseApiSuccessResponse<{
+      notifications: NotificationEntity[]
+      total: number
+      unreadCount: number
+    }>
+  > {
+    const [notifications, total] = await this.notificationService.getUserNotifications(
+      ctx,
+      limit,
+      offset,
+      type,
+      search,
+    )
+    const unreadCount = await this.notificationService.getUnreadCount(ctx)
 
     return {
       success: true,
@@ -32,20 +55,22 @@ export class NotificationController {
         total,
         unreadCount,
       },
-    };
+    }
   }
 
   @Patch('read-all')
   @ApiOperation({ summary: 'Mark all notifications as read' })
-  async markAllAsRead(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<null>> {
-    await this.notificationService.markAllAsRead(ctx);
-    
+  async markAllAsRead(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<null>> {
+    await this.notificationService.markAllAsRead(ctx)
+
     return {
       success: true,
       statusCode: 200,
       message: 'All notifications marked as read',
       data: null,
-    };
+    }
   }
 
   @Patch(':id/read')
@@ -54,13 +79,13 @@ export class NotificationController {
     @Param('id') id: string,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<null>> {
-    await this.notificationService.markAsRead(id, ctx);
-    
+    await this.notificationService.markAsRead(id, ctx)
+
     return {
       success: true,
       statusCode: 200,
       message: 'Notification marked as read',
       data: null,
-    };
+    }
   }
 }

@@ -1,11 +1,11 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
-import { NotificationEntity } from './entities/notification.entity';
-import { NotificationService } from './notification.service';
-import { NotificationController } from './notification.controller';
-import { NotificationGateway } from './notification.gateway';
+import { Module } from '@nestjs/common'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { JwtModule } from '@nestjs/jwt'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { NotificationEntity } from './entities/notification.entity'
+import { NotificationController } from './notification.controller'
+import { NotificationGateway } from './notification.gateway'
+import { NotificationService } from './notification.service'
 
 @Module({
   imports: [
