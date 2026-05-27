@@ -15,7 +15,7 @@ import { DebitNoteStatus } from '../entities/debit-note.entity'
 
 @ApiTags('Debit Notes')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/purchases')
+@RequireFeature('purchasing')
 @Controller('debit-notes')
 export class DebitNoteController {
   constructor(private readonly service: DebitNoteService) {}

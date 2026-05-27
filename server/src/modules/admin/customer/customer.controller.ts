@@ -12,7 +12,7 @@ import { FilterUserDto } from '@/modules/admin/core/user/dtos/filter-user.dto'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/customers')
+@RequireFeature('orders')
 @Controller('customer')
 export class CustomerController {
   private readonly logger = new Logger(CustomerController.name)

@@ -27,7 +27,7 @@ import {
 import { SupplierResponseDto } from './dto/supplier-response.dto'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/suppliers')
+@RequireFeature('purchasing')
 @Controller('suppliers')
 export class SupplierController {
   private readonly logger = new Logger(SupplierController.name)

@@ -24,7 +24,7 @@ import { CreateReviewDto, UpdateReviewDto } from '../dto/review.dto'
 import { ReviewService } from '../services/review.service'
 
 @UseGuards(SubscriptionGuard)
-@RequireFeature('/admin/reviews')
+@RequireFeature('catalog')
 @Controller('reviews')
 export class ReviewController {
   private readonly logger = new Logger(ReviewController.name)

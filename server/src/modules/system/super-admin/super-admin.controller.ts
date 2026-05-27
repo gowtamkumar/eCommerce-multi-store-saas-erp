@@ -8,6 +8,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { RolesGuard } from '@/common/guards/roles.guard'
 import { ProductService } from '@/modules/admin/catalog/product/services/product.service'
 import { PageService } from '@/modules/admin/content/page/page.service'
+import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
 import { FilterUserDto } from '@/modules/admin/core/user/dtos'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
@@ -29,8 +30,6 @@ import {
 import si from 'systeminformation'
 import { SubscriptionPlanService } from '../subscription-plan/subscription-plan.service'
 import { TrafficService } from './traffic.service'
-import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
-import { expandFeatures } from '@/common/constants/feature-mapping'
 
 @Controller('super-admin')
 export class SuperAdminController {
@@ -46,7 +45,7 @@ export class SuperAdminController {
     private readonly planService: SubscriptionPlanService,
     private readonly cacheService: CacheService,
     private readonly authService: AuthService,
-  ) { }
+  ) {}
 
   @Post('/setup')
   async setup(
@@ -81,12 +80,7 @@ export class SuperAdminController {
         price: 0,
         monthlyPrice: 0,
         yearlyPrice: 0,
-        features: [
-          'pos',
-          'catalog',
-          'content',
-          'settings',
-        ],
+        features: ['pos', 'catalog', 'content', 'settings'],
         isActive: true,
         isPopular: false,
         trialPeriodDays: 14,
@@ -105,14 +99,7 @@ export class SuperAdminController {
         price: 29,
         monthlyPrice: 29,
         yearlyPrice: 290,
-        features: [
-          'pos',
-          'catalog',
-          'orders',
-          'marketing',
-          'content',
-          'settings',
-        ],
+        features: ['pos', 'catalog', 'orders', 'marketing', 'content', 'settings'],
         isActive: true,
         isPopular: true,
         trialPeriodDays: 14,
@@ -164,10 +151,10 @@ export class SuperAdminController {
       if (existing) {
         await this.planService.updateSubscriptionPlan(existing.id, planData)
       } else {
-        await this.planService.createSubscriptionPlan(
-          planData,
-          { tenantId: null, userId: null } as RequestContextDto,
-        )
+        await this.planService.createSubscriptionPlan(planData, {
+          tenantId: null,
+          userId: null,
+        } as RequestContextDto)
       }
     }
 
@@ -474,7 +461,7 @@ export class SuperAdminController {
     @Param('userId') userId: string,
   ): Promise<BaseApiSuccessResponse<{ impersonateToken: string; redirectUrl: string }>> {
     this.logger.log(`Super Admin initiating impersonation for user ${userId}`)
-    
+
     // 1. Find user
     const user = await this.userService.getUser(userId)
     if (!user) {
@@ -500,5 +487,37 @@ export class SuperAdminController {
       },
     }
   }
-}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Get('/tenants/:id/features')
+  async getTenantFeatures(@Param('id') id: string): Promise<BaseApiSuccessResponse<any[]>> {
+    const features = await this.tenantService.getTenantFeatures(id)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Tenant features retrieved successfully',
+      data: features,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Patch('/tenants/:id/features')
+  async updateTenantFeatureOverride(
+    @Param('id') id: string,
+    @Body() body: { featureSlug: string; overrideValue: boolean | null },
+  ): Promise<BaseApiSuccessResponse<any>> {
+    const result = await this.tenantService.updateTenantFeatureOverride(
+      id,
+      body.featureSlug,
+      body.overrideValue,
+    )
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Tenant feature override updated successfully',
+      data: result,
+    }
+  }
+}

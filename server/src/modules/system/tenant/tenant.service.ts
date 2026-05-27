@@ -504,6 +504,106 @@ export class TenantService {
     return tenant.isExpired
   }
 
+  async getTenantFeatures(tenantId: string) {
+    const tenant = await this.findOneTenants(tenantId)
+    if (!tenant) throw new NotFoundException('Tenant not found')
+
+    // 1. Get all unique features across all subscription plans
+    const plans = await this.subscriptionPlanService.findAllSubscriptionPlans()
+    const allFeaturesSet = new Set<string>()
+    for (const p of plans) {
+      for (const f of p.features || []) {
+        allFeaturesSet.add(f)
+      }
+    }
+
+    // 2. Get active plan features for this tenant
+    const planFeatures = new Set<string>(tenant.subscriptionPlan?.features || [])
+
+    // 3. Get existing overrides in DB
+    const overrides = await this.dataSource.getRepository(TenantFeatureEntity).find({
+      where: { tenantId },
+    })
+    const overridesMap = new Map(overrides.map((o) => [o.featureSlug, o]))
+
+    // Add any overrides that might not be in the plans features list
+    for (const o of overrides) {
+      allFeaturesSet.add(o.featureSlug)
+    }
+
+    // 4. Build output list
+    return Array.from(allFeaturesSet).map((slug) => {
+      const override = overridesMap.get(slug)
+      const isPlanFeature = planFeatures.has(slug)
+
+      // Calculate effective status
+      let isEnabled = isPlanFeature
+      let isOverridden = false
+
+      if (override) {
+        isOverridden = true
+        isEnabled = override.isEnabled
+      }
+
+      return {
+        slug,
+        isPlanFeature,
+        isOverridden,
+        isEnabled,
+        overrideValue: override ? override.isEnabled : null,
+        updatedAt: override ? override.updatedAt : null,
+      }
+    })
+  }
+
+  async updateTenantFeatureOverride(
+    tenantId: string,
+    featureSlug: string,
+    overrideValue: boolean | null,
+  ) {
+    const tenant = await this.findOneTenants(tenantId)
+    if (!tenant) throw new NotFoundException('Tenant not found')
+
+    const featureRepo = this.dataSource.getRepository(TenantFeatureEntity)
+
+    if (overrideValue === null) {
+      // Reset: delete override record
+      await featureRepo.delete({ tenantId, featureSlug })
+    } else {
+      // Upsert override record
+      let override = await featureRepo.findOne({ where: { tenantId, featureSlug } })
+      if (override) {
+        override.isEnabled = overrideValue
+        override.updatedAt = new Date()
+        await featureRepo.save(override)
+      } else {
+        override = featureRepo.create({
+          tenantId,
+          featureSlug,
+          isEnabled: overrideValue,
+          enabledAt: overrideValue ? new Date() : null,
+        })
+        await featureRepo.save(override)
+      }
+    }
+
+    // Clear tenant cache
+    await this.invalidateTenantCache(tenantId, tenant.subdomain, tenant.customDomain)
+
+    // Invalidate permission manifest caches for all tenant users
+    try {
+      const members = await this.userRepository.findTeamMembers(tenantId)
+      for (const member of members) {
+        const cacheKey = `rbac:manifest:${tenantId}:${member.id}`
+        await this.cacheService.delCache(cacheKey)
+      }
+    } catch (err) {
+      this.logger.error(`Failed to invalidate team member permission caches: ${err.message}`)
+    }
+
+    return { success: true }
+  }
+
   private async invalidateTenantCache(id: string, subdomain?: string, customDomain?: string) {
     const keys = [`${this.CACHE_PREFIX}all`, `${this.CACHE_PREFIX}id:${id}`]
     if (subdomain) keys.push(`${this.CACHE_PREFIX}subdomain:${subdomain}`)

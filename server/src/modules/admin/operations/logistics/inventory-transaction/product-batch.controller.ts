@@ -13,7 +13,7 @@ import { CreateProductBatchDto } from './dto/create-product-batch.dto'
 import { UpdateProductBatchDto } from './dto/update-product-batch.dto'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/inventory')
+@RequireFeature('inventory')
 @Controller('product-batches')
 export class ProductBatchController {
   private readonly logger = new Logger(ProductBatchController.name)

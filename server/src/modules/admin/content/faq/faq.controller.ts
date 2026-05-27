@@ -24,7 +24,7 @@ import { FilterFaqDto } from './dto/filter-faq.dto'
 import { FaqService } from './faq.service'
 
 @UseGuards(SubscriptionGuard)
-@RequireFeature('/admin/faqs')
+@RequireFeature('content')
 @Controller('faqs')
 export class FaqController {
   private readonly logger = new Logger(FaqController.name)

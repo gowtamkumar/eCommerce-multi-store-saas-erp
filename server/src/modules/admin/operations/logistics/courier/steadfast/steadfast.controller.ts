@@ -13,7 +13,7 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 
 @ApiTags('courier/steadfast')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/couriers')
+@RequireFeature('logistics')
 @Controller('courier/steadfast')
 export class SteadfastController {
   private readonly logger = new Logger(SteadfastController.name)

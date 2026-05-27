@@ -13,7 +13,7 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 
 @ApiTags('courier/pathao')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/couriers')
+@RequireFeature('logistics')
 @Controller('courier/pathao')
 export class PathaoController {
   private readonly logger = new Logger(PathaoController.name)

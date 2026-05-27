@@ -5,13 +5,14 @@ import { FulfillmentService } from './fulfillment.service'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { PickItemsDto, UpdateFulfillmentStatusDto } from './dto/fulfillment.dto'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, SubscriptionGuard)
 @Controller('operations/logistics/fulfillment')
-@RequireFeature('/admin/fulfillment')
+@RequireFeature('logistics')
 export class FulfillmentController {
   constructor(private readonly service: FulfillmentService) {}
 

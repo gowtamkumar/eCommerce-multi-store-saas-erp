@@ -25,7 +25,7 @@ import { CreateBrandDto } from './dto/create-brand.dto'
 import { UpdateBrandDto } from './dto/update-brand.dto'
 
 @UseGuards(SubscriptionGuard)
-@RequireFeature('/admin/brands')
+@RequireFeature('catalog')
 @Controller('brands')
 export class BrandController {
   private readonly logger = new Logger(BrandController.name)

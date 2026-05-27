@@ -13,7 +13,7 @@ import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto'
 import { LeadService } from './lead.service'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/leads')
+@RequireFeature('marketing')
 @Controller('leads')
 export class LeadController {
   private readonly logger = new Logger(LeadController.name)

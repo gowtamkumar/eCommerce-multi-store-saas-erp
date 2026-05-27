@@ -11,7 +11,7 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/finance')
+@RequireFeature('finance')
 @Controller('finance/ar')
 export class ArController {
   constructor(

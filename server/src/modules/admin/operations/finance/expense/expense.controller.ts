@@ -27,7 +27,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Controller('expenses')
 @UseGuards(JwtAuthGuard, SubscriptionGuard, BranchScopeGuard)
-@RequireFeature('/admin/expenses')
+@RequireFeature('finance')
 export class ExpenseController {
   private readonly logger = new Logger(ExpenseController.name)
 

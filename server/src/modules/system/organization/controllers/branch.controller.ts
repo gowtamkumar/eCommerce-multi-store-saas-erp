@@ -19,6 +19,7 @@ import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('inventory')
 @Controller('system/branches')
 export class BranchController {
   private readonly logger = new Logger(BranchController.name)
@@ -26,7 +27,6 @@ export class BranchController {
   constructor(private readonly branchService: BranchService) {}
 
   @Post()
-  @RequireFeature('/admin/warehouses')
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() createBranchDto: CreateBranchDto,
@@ -42,7 +42,6 @@ export class BranchController {
   }
 
   @Get()
-  @RequireFeature('/admin/warehouses')
   async findAll(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
     const result = await this.branchService.findAll(ctx)
     return {
@@ -54,7 +53,6 @@ export class BranchController {
   }
 
   @Get(':id')
-  @RequireFeature('/admin/warehouses')
   async findOne(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -69,7 +67,6 @@ export class BranchController {
   }
 
   @Patch(':id')
-  @RequireFeature('/admin/warehouses')
   async update(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -85,7 +82,6 @@ export class BranchController {
   }
 
   @Delete(':id')
-  @RequireFeature('/admin/warehouses')
   async remove(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,

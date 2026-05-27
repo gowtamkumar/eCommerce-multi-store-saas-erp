@@ -12,7 +12,7 @@ import { PaymentService } from '../services/payment.service'
 
 @Controller('payments')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/payments')
+@RequireFeature('orders')
 export class PaymentController {
   private readonly logger = new Logger(PaymentController.name)
 

@@ -12,7 +12,7 @@ import { CreatePriceBookDto } from './dto/create-price-book.dto'
 import { PricingService } from './pricing.service'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/products')
+@RequireFeature('catalog')
 @Controller('pricing')
 export class PricingController {
   constructor(private readonly service: PricingService) { }

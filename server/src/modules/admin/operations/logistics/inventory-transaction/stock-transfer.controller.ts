@@ -14,7 +14,7 @@ import { UpdateStockTransferDocDto } from './dto/update-stock-transfer-doc.dto'
 import { ReceiveStockTransferDto } from './dto/receive-stock-transfer.dto'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/inventory')
+@RequireFeature('inventory')
 @Controller('stock-transfers')
 export class StockTransferController {
   private readonly logger = new Logger(StockTransferController.name)

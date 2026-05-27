@@ -16,7 +16,7 @@ import { RecordSupplierPaymentDto } from '../dto/record-payment.dto'
 
 @ApiTags('Supplier Invoices')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/purchases')
+@RequireFeature('purchasing')
 @Controller('supplier-invoices')
 export class SupplierInvoiceController {
   constructor(private readonly service: SupplierInvoiceService) {}

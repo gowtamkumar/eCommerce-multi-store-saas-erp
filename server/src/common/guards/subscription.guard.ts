@@ -7,7 +7,6 @@ import { Repository } from 'typeorm'
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
 import { REQUIRED_FEATURE_KEY } from '../decorators/require-feature.decorator'
 import { UserRole } from '../enums/user/user-role.enum'
-import { expandFeatures, ROUTE_TO_FEATURE_MAPPING } from '@/common/constants/feature-mapping'
 
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
@@ -51,15 +50,19 @@ export class SubscriptionGuard implements CanActivate {
       return true // No specific feature required
     }
 
-    const featureSlug = ROUTE_TO_FEATURE_MAPPING[requiredFeature] || requiredFeature
+    const featureSlug = requiredFeature
 
     try {
-      // 3. Verify if feature is explicitly enabled in tenant_features
-      const feature = await this.tenantFeatureRepo.findOne({
-        where: { tenantId, featureSlug },
+      // 3. Verify if feature is explicitly enabled/disabled in tenant_features
+      const featureDb = await this.tenantFeatureRepo.findOne({
+        where: {
+          tenantId,
+          featureSlug,
+        },
       })
 
-      if (feature && !feature.isEnabled) {
+      // If explicitly disabled in DB, deny access
+      if (featureDb && !featureDb.isEnabled) {
         throw new ForbiddenException({
           success: false,
           message: `The '${requiredFeature}' feature is currently disabled for your store.`,
@@ -67,17 +70,24 @@ export class SubscriptionGuard implements CanActivate {
         })
       }
 
-      // 4. Fallback check: verify if plan has the feature (for legacy or before migration)
+      // If explicitly enabled in DB, allow access
+      if (featureDb && featureDb.isEnabled) {
+        return true
+      }
+
+      // 4. Fallback check: verify if plan has the feature
       const tenant = await this.tenantService.findOneTenants(tenantId)
       if (!tenant) {
         throw new ForbiddenException('Tenant not found')
       }
 
-      const features = tenant.subscriptionPlan?.features || []
-      const hasAccess = features.includes(featureSlug) || expandFeatures(features).includes(requiredFeature)
+      const planFeatures = tenant.subscriptionPlan?.features || []
 
-      // If neither explicitly enabled in DB nor present in plan JSONB array, deny
-      if (!feature && !hasAccess) {
+      // Check if plan features contains featureSlug or requiredFeature (fallback)
+      const hasPlanAccess =
+        planFeatures.includes(featureSlug) || planFeatures.includes(requiredFeature)
+
+      if (!hasPlanAccess) {
         throw new ForbiddenException({
           success: false,
           message: `Upgrade your plan to access the '${requiredFeature}' feature.`,
@@ -92,4 +102,3 @@ export class SubscriptionGuard implements CanActivate {
     }
   }
 }
-

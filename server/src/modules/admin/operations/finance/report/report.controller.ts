@@ -12,13 +12,12 @@ import { ReportService } from './report.service'
 
 @Controller('report')
 @UseGuards(JwtAuthGuard, SubscriptionGuard, BranchScopeGuard)
-@RequireFeature('/admin/reports')
+@RequireFeature('reports')
 export class ReportController {
   private readonly logger = new Logger(ReportController.name)
   constructor(private readonly reportService: ReportService) {}
 
   @Get('/analytics')
-  @RequireFeature('/admin/reports/sales')
   @RequirePermissions(SystemPermissions.REPORTS_READ)
   async getAnalytics(
     @RequestContext() ctx: RequestContextDto,
@@ -34,7 +33,6 @@ export class ReportController {
   }
 
   @Get('/dashboard')
-  @RequireFeature('/admin/reports/sales')
   @RequirePermissions(SystemPermissions.REPORTS_READ)
   async getDashboardReport(
     @RequestContext() ctx: RequestContextDto,
@@ -51,7 +49,6 @@ export class ReportController {
   }
 
   @Get('/profit-loss')
-  @RequireFeature('/admin/reports/profit-loss')
   @RequirePermissions(SystemPermissions.REPORTS_READ)
   async getProfitLossReport(
     @RequestContext() ctx: RequestContextDto,
@@ -69,7 +66,6 @@ export class ReportController {
   }
 
   @Get('/supplier-ledger/:supplierId')
-  @RequireFeature('/admin/reports/supplier-ledger')
   @RequirePermissions(SystemPermissions.REPORTS_READ)
   async getSupplierLedger(
     @RequestContext() ctx: RequestContextDto,
@@ -86,7 +82,6 @@ export class ReportController {
   }
 
   @Get('/customer-ledger/:customerId')
-  @RequireFeature('/admin/reports/customer-ledger')
   @RequirePermissions(SystemPermissions.REPORTS_READ)
   async getCustomerLedger(
     @RequestContext() ctx: RequestContextDto,
@@ -103,7 +98,6 @@ export class ReportController {
   }
 
   @Get('/cash-flow')
-  @RequireFeature('/admin/reports/cash-flow')
   @RequirePermissions(SystemPermissions.REPORTS_READ)
   async getCashFlow(
     @RequestContext() ctx: RequestContextDto,
@@ -120,7 +114,6 @@ export class ReportController {
   }
 
   @Get('/export/:type')
-  @RequireFeature('/admin/reports/export')
   @RequirePermissions(SystemPermissions.REPORTS_READ)
   async exportReport(
     @RequestContext() ctx: RequestContextDto,
@@ -148,7 +141,6 @@ export class ReportController {
   }
 
   @Get('/finance-summary')
-  @RequireFeature('/admin/reports/finance')
   @RequirePermissions(SystemPermissions.REPORTS_READ)
   async getFinanceSummary(
     @RequestContext() ctx: RequestContextDto,

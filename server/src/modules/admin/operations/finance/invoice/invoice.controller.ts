@@ -27,7 +27,7 @@ import { InvoiceService } from './invoice.service'
 
 @Controller('invoices')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/invoices')
+@RequireFeature('orders')
 export class InvoiceController {
   private readonly logger = new Logger(InvoiceController.name)
 

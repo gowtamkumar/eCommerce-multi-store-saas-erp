@@ -25,7 +25,7 @@ import {
 import { CategoryResponseDto } from './dto/category-response.dto'
 
 @UseGuards(SubscriptionGuard)
-@RequireFeature('/admin/categories')
+@RequireFeature('catalog')
 @Controller('categories')
 export class CategoryController {
   private readonly logger = new Logger(CategoryController.name)

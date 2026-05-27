@@ -12,7 +12,7 @@ import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @UseGuards(SubscriptionGuard)
-@RequireFeature('/admin/subscribers')
+@RequireFeature('marketing')
 @Controller('subscribers')
 export class SubscriberController {
   private readonly logger = new Logger(SubscriberController.name)

@@ -1,8 +1,13 @@
-import { CanActivate, ExecutionContext, Injectable, ServiceUnavailableException } from '@nestjs/common'
-import { Reflector } from '@nestjs/core'
 import { PlatformSettingsService } from '@/modules/system/platform/platform-settings.service'
-import { UserRole } from '../enums/user/user-role.enum'
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common'
+import { Reflector } from '@nestjs/core'
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
+import { UserRole } from '../enums/user/user-role.enum'
 
 @Injectable()
 export class MaintenanceGuard implements CanActivate {
@@ -16,13 +21,15 @@ export class MaintenanceGuard implements CanActivate {
     const path = request.url || ''
 
     // 1. Bypass check for vital system/auth/onboarding routes needed to resolve settings, login, or domains
-    const isSystemOrAuthRoute = 
-      path.includes('/platform/settings') || 
-      path.includes('/auth/') || 
-      path.includes('/login') || 
-      path.includes('/tenants') || 
-      path.includes('/settings/public') || 
-      path.includes('/super-admin/impersonate');
+    const isSystemOrAuthRoute =
+      path.includes('/platform/settings') ||
+      path.includes('/auth/') ||
+      path.includes('/login') ||
+      path.includes('/admin/logout') ||
+      path.includes('/admin/refresh') ||
+      path.includes('/tenants') ||
+      path.includes('/settings/public') ||
+      path.includes('/super-admin/impersonate')
 
     if (isSystemOrAuthRoute) {
       return true
@@ -70,7 +77,9 @@ export class MaintenanceGuard implements CanActivate {
         throw new ServiceUnavailableException({
           success: false,
           statusCode: 503,
-          message: settings.maintenanceMessage || 'Platform is currently undergoing scheduled upgrades. Please try again shortly.',
+          message:
+            settings.maintenanceMessage ||
+            'Platform is currently undergoing scheduled upgrades. Please try again shortly.',
           error: 'Service Unavailable',
         })
       }

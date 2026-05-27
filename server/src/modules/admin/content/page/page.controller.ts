@@ -24,7 +24,7 @@ import { CreatePageDto, UpdatePageDto } from './dto/page.dto'
 import { PageService } from './page.service'
 
 @UseGuards(SubscriptionGuard)
-@RequireFeature('/admin/pages')
+@RequireFeature('content')
 @Controller('pages')
 export class PageController {
   private readonly logger = new Logger(PageController.name)

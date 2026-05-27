@@ -15,7 +15,7 @@ import { RFQStatus } from '../entities/rfq.entity'
 
 @ApiTags('RFQs & Quotations')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/purchases')
+@RequireFeature('purchasing')
 @Controller('rfqs')
 export class RfqController {
   constructor(private readonly service: RfqService) {}

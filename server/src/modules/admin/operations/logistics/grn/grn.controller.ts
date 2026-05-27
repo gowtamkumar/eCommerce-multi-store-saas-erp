@@ -13,7 +13,7 @@ import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/grn')
+@RequireFeature('purchasing')
 @Controller('operations/logistics/grn')
 export class GrnController {
   constructor(private readonly grnService: GrnService) {}

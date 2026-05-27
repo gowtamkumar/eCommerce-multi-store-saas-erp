@@ -18,7 +18,7 @@ import { PurchaseOrderService } from '../services/purchase-order.service'
 
 @ApiTags('Purchase Orders')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/purchases')
+@RequireFeature('purchasing')
 @Controller('purchase-orders')
 export class PurchaseOrderController {
   private readonly logger = new Logger(PurchaseOrderController.name)

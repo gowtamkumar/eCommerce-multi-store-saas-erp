@@ -15,7 +15,7 @@ import { CampaignService } from '../services/campaign.service'
 
 @Controller('campaigns')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/campaigns')
+@RequireFeature('marketing')
 export class CampaignController {
   constructor(private readonly campaignService: CampaignService) {}
 

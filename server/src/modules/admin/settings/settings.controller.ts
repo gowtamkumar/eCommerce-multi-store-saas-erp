@@ -15,7 +15,7 @@ import { CacheService } from '../operations/infra/cache/cache.service'
 import { Post, HttpCode } from '@nestjs/common'
 
 @UseGuards(SubscriptionGuard)
-@RequireFeature('/admin/settings')
+@RequireFeature('settings')
 @Controller('settings')
 export class SettingsController {
   private readonly logger = new Logger(SettingsController.name)
@@ -26,7 +26,6 @@ export class SettingsController {
   ) {}
 
   @Get()
-  @RequireFeature('/admin')
   @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   async findByTenantSettings(
     @RequestContext() ctx: RequestContextDto,

@@ -14,6 +14,7 @@ import { FiscalPeriodStatus } from '../entities/fiscal-period.entity'
 import { LedgerEntrySide, JournalType } from '@/common/enums/journal-type.enum'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('finance')
 @Controller('finance/accounting')
 export class AccountingController {
   constructor(
@@ -22,7 +23,6 @@ export class AccountingController {
   ) { }
 
   @Post('init')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async initialize(
     @RequestContext() ctx: RequestContextDto,
@@ -38,7 +38,6 @@ export class AccountingController {
 
   // Account Endpoints
   @Get('accounts')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async getAccounts(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any[]>> {
     const data = await this.accountingService.getAccounts(ctx)
@@ -51,7 +50,6 @@ export class AccountingController {
   }
 
   @Post('accounts')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async createAccount(
     @RequestContext() ctx: RequestContextDto,
@@ -67,7 +65,6 @@ export class AccountingController {
   }
 
   @Put('accounts/:id')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async updateAccount(
     @Param('id') id: string,
@@ -84,7 +81,6 @@ export class AccountingController {
   }
 
   @Delete('accounts/:id')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async deleteAccount(
     @Param('id') id: string,
@@ -101,7 +97,6 @@ export class AccountingController {
 
   // Fiscal Period Endpoints
   @Get('fiscal-periods')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async getFiscalPeriods(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any[]>> {
     const data = await this.accountingService.getFiscalPeriods(ctx)
@@ -114,7 +109,6 @@ export class AccountingController {
   }
 
   @Post('fiscal-periods')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async createFiscalPeriod(
     @RequestContext() ctx: RequestContextDto,
@@ -130,7 +124,6 @@ export class AccountingController {
   }
 
   @Put('fiscal-periods/:id/status')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async setFiscalPeriodStatus(
     @Param('id') id: string,
@@ -148,7 +141,6 @@ export class AccountingController {
 
   // Reports
   @Get('reports/profit-loss')
-  @RequireFeature('/admin/finance/profit-loss')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async getPL(
     @RequestContext() ctx: RequestContextDto,
@@ -164,7 +156,6 @@ export class AccountingController {
   }
 
   @Get('reports/balance-sheet')
-  @RequireFeature('/admin/finance/balance-sheet')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async getBalanceSheet(
     @RequestContext() ctx: RequestContextDto,
@@ -180,7 +171,6 @@ export class AccountingController {
   }
 
   @Get('reports/cash-flow')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async getCashFlow(
     @RequestContext() ctx: RequestContextDto,
@@ -196,7 +186,6 @@ export class AccountingController {
   }
 
   @Post('journal-entries/:id/reverse')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async reverseJournalEntry(
     @Param('id') id: string,
@@ -212,7 +201,6 @@ export class AccountingController {
   }
 
   @Get('journal-entries')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async getJournalEntries(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any[]>> {
     const data = await this.accountingService.getJournalEntries(ctx)
@@ -225,7 +213,6 @@ export class AccountingController {
   }
 
   @Post('journal-entries')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async createJournalEntry(
     @RequestContext() ctx: RequestContextDto,
@@ -247,4 +234,3 @@ export class AccountingController {
     }
   }
 }
-

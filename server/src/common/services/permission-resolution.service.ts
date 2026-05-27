@@ -1,14 +1,13 @@
 import { OverrideEffect } from '@/common/enums/override-effect.enum'
 import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
+import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
 import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
-import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
-import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, In } from 'typeorm'
-import { expandFeatures } from '@/common/constants/feature-mapping'
+import { In, Repository } from 'typeorm'
 
 export interface PermissionManifest {
   featuresEnabled: string[]
@@ -58,12 +57,7 @@ export class PermissionResolutionService {
   // ─────────────────────────────────────────────────────────────────
 
   private isFeatureEnabled(featuresEnabled: string[], featureSlug: string): boolean {
-    const expanded = expandFeatures(featuresEnabled)
-    if (expanded.includes(featureSlug)) return true
-
-    return expanded.some(
-      (f) => f === featureSlug || f.endsWith('/' + featureSlug),
-    )
+    return featuresEnabled.includes(featureSlug)
   }
 
   /**
@@ -99,9 +93,7 @@ export class PermissionResolutionService {
     const overrides = await this.overrideRepo.find({
       where: { userId, tenantId, permissionSlug: permSlug },
     })
-    const activeOverrides = overrides.filter(
-      (o) => !o.expiresAt || new Date(o.expiresAt) > now,
-    )
+    const activeOverrides = overrides.filter((o) => !o.expiresAt || new Date(o.expiresAt) > now)
 
     // Step 3: Explicit DENY override → always wins
     if (activeOverrides.some((o) => o.effect === OverrideEffect.DENY)) {
@@ -118,7 +110,9 @@ export class PermissionResolutionService {
     // ── Step 5: Role-based check ──────────────────────────────────────
     const effectivePermissions = await this.getEffectivePermissions(userId, tenantId, scopeId)
     const allowed = effectivePermissions.has(permSlug)
-    this.logger.debug(`[${allowed ? 'ALLOW' : 'DENY'}] Role-based check user=${userId} perm=${permSlug}`)
+    this.logger.debug(
+      `[${allowed ? 'ALLOW' : 'DENY'}] Role-based check user=${userId} perm=${permSlug}`,
+    )
     return allowed
   }
 
@@ -131,10 +125,7 @@ export class PermissionResolutionService {
    * Returned at login and cached for 5 minutes.
    * Frontend uses this for UI gating ONLY — backend always re-validates per-request.
    */
-  async resolvePermissionsManifest(
-    userId: string,
-    tenantId: string,
-  ): Promise<PermissionManifest> {
+  async resolvePermissionsManifest(userId: string, tenantId: string): Promise<PermissionManifest> {
     const cacheKey = `rbac:manifest:${tenantId}:${userId}`
     const cached = await this.cacheService.getCache<PermissionManifest>(cacheKey)
     if (cached) return cached
@@ -144,7 +135,7 @@ export class PermissionResolutionService {
       where: { tenantId, isEnabled: true },
     })
     const rawFeatures = tenantFeatures.map((f) => f.featureSlug)
-    const featuresEnabled = expandFeatures(rawFeatures)
+    const featuresEnabled = rawFeatures
 
     // Get all permissions the user holds (via roles)
     const effectivePermissions = await this.getEffectivePermissions(userId, tenantId)
@@ -169,10 +160,7 @@ export class PermissionResolutionService {
     )
 
     // Merge and filter
-    const permissions = [
-      ...Array.from(effectivePermissions),
-      ...activeAllowOverrides,
-    ]
+    const permissions = [...Array.from(effectivePermissions), ...activeAllowOverrides]
       .filter((p) => !activeDenySlugs.has(p)) // Remove denied
       .filter((p) => {
         // Only include permissions whose feature is enabled (or no feature record = fallback allow)
@@ -224,9 +212,7 @@ export class PermissionResolutionService {
       relations: ['role', 'role.permissions'],
     })
 
-    const activeAssignments = assignments.filter(
-      (a) => !a.expiresAt || new Date(a.expiresAt) > now,
-    )
+    const activeAssignments = assignments.filter((a) => !a.expiresAt || new Date(a.expiresAt) > now)
 
     // Filter by scope: include GLOBAL ones + scoped ones matching the requested scopeId
     const relevantAssignments = activeAssignments.filter((a) => {
@@ -264,11 +250,7 @@ export class PermissionResolutionService {
    * Walk the parent role chain recursively and collect all roleIds.
    * Guards against circular references with the visited set.
    */
-  private async collectRoleIdChain(
-    roleId: string,
-    visited: Set<string>,
-    depth = 0,
-  ): Promise<void> {
+  private async collectRoleIdChain(roleId: string, visited: Set<string>, depth = 0): Promise<void> {
     if (visited.has(roleId) || depth > 10) return // Guard against circular refs
     visited.add(roleId)
 

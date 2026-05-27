@@ -15,7 +15,7 @@ import { PRStatus } from '../entities/purchase-requisition.entity'
 
 @ApiTags('Purchase Requisitions')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/purchases')
+@RequireFeature('purchasing')
 @Controller('purchase-requisitions')
 export class PurchaseRequisitionController {
   constructor(private readonly service: PurchaseRequisitionService) {}

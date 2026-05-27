@@ -1,15 +1,24 @@
+
 import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { UserRole } from '@/common/enums/user/user-role.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { LoginCredentialDto } from '@/modules/admin/core/auth/dtos'
 import { AuthService } from '@/modules/admin/core/auth/services/auth.service'
-import { Body, Controller, Delete, Logger, Post, Req, Res, UseGuards, UnauthorizedException } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Logger,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common'
 import { Request, Response } from 'express'
-import { expandFeatures } from '@/common/constants/feature-mapping'
-import { UserRole } from '@/common/enums/user/user-role.enum'
-
 
 @Controller('admin')
 export class AdminAuthController {
@@ -29,7 +38,7 @@ export class AdminAuthController {
     try {
       const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress
       const userAgent = req.headers['user-agent'] || ''
-      const ipStr = typeof ip === 'string' ? ip : (Array.isArray(ip) ? ip[0] : '')
+      const ipStr = typeof ip === 'string' ? ip : Array.isArray(ip) ? ip[0] : ''
 
       const authPayload = await this.authService.login(
         loginCredentialDto,
@@ -63,14 +72,14 @@ export class AdminAuthController {
     try {
       const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress
       const userAgent = req.headers['user-agent'] || ''
-      const ipStr = typeof ip === 'string' ? ip : (Array.isArray(ip) ? ip[0] : '')
+      const ipStr = typeof ip === 'string' ? ip : Array.isArray(ip) ? ip[0] : ''
 
       // 1. Verify impersonateToken using AuthService
       const decoded = await this.authService.verifyImpersonateToken(impersonateToken)
       if (!decoded || decoded.purpose !== 'impersonation') {
         throw new UnauthorizedException('Invalid impersonation token')
       }
-      
+
       // 2. Fetch the target user details
       const user = await this.authService.getUserForImpersonation(decoded.userId)
       if (!user) {
@@ -82,8 +91,10 @@ export class AdminAuthController {
       if (user.role === UserRole.SUPER_ADMIN) {
         features = ['*']
       } else if (user.tenantId) {
-        const tenant = await this.authService.getUserForImpersonation(user.id).then(u => u?.tenant)
-        features = expandFeatures(tenant?.subscriptionPlan?.features || [])
+        const tenant = await this.authService
+          .getUserForImpersonation(user.id)
+          .then((u) => u?.tenant)
+        features = tenant?.subscriptionPlan?.features || []
       }
 
       // 4. Generate user tokens
@@ -139,7 +150,7 @@ export class AdminAuthController {
   ): Promise<BaseApiSuccessResponse<any>> {
     const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress
     const userAgent = req.headers['user-agent'] || ''
-    const ipStr = typeof ip === 'string' ? ip : (Array.isArray(ip) ? ip[0] : '')
+    const ipStr = typeof ip === 'string' ? ip : Array.isArray(ip) ? ip[0] : ''
 
     const tokens = await this.authService.refreshTokens(
       body.userId,

@@ -1,11 +1,11 @@
+import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { Reflector } from '@nestjs/core'
+import * as jwt from 'jsonwebtoken'
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator'
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
 import { UserRole } from '../enums/user/user-role.enum'
-import { UserService } from '@/modules/admin/core/user/services/user.service'
-import { ConfigService } from '@nestjs/config'
-import * as jwt from 'jsonwebtoken'
 import { PermissionResolutionService } from '../services/permission-resolution.service'
 
 @Injectable()
@@ -79,10 +79,15 @@ export class PermissionsGuard implements CanActivate {
 
     // 2. Use the 5-step PermissionResolutionService for each required permission
     for (const perm of requiredPermissions) {
-      const allowed = await this.resolutionService.resolvePermission(user.id, tenantId, perm, scopeId)
+      const allowed = await this.resolutionService.resolvePermission(
+        user.id,
+        tenantId,
+        perm,
+        scopeId,
+      )
       if (!allowed) {
         throw new ForbiddenException(
-          `Access Denied: You do not possess the required permission (${perm}) to execute this operation.`
+          `Access Denied: You do not possess the required permission (${perm}) to execute this operation.`,
         )
       }
     }

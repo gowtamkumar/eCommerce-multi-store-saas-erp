@@ -26,7 +26,7 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { CouponResponseDto } from '../dto/coupon-response.dto'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/coupons')
+@RequireFeature('marketing')
 @Controller('coupons')
 export class CouponController {
   private readonly logger = new Logger(CouponController.name)

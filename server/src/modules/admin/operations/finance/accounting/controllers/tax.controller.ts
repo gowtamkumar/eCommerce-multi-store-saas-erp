@@ -11,12 +11,12 @@ import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { TaxCategory } from '../entities/tax-rule.entity'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('finance')
 @Controller('finance/tax')
 export class TaxController {
   constructor(private readonly taxService: TaxService) {}
 
   @Post('init')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async seedDefaultRules(
     @RequestContext() ctx: RequestContextDto,
@@ -31,7 +31,6 @@ export class TaxController {
   }
 
   @Get('rules')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async getTaxRules(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any[]>> {
     const data = await this.taxService.getTaxRules(ctx)
@@ -44,7 +43,6 @@ export class TaxController {
   }
 
   @Post('rules')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async createTaxRule(
     @RequestContext() ctx: RequestContextDto,
@@ -60,7 +58,6 @@ export class TaxController {
   }
 
   @Put('rules/:id')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async updateTaxRule(
     @Param('id') id: string,
@@ -77,7 +74,6 @@ export class TaxController {
   }
 
   @Delete('rules/:id')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_WRITE)
   async deleteTaxRule(
     @Param('id') id: string,
@@ -93,7 +89,6 @@ export class TaxController {
   }
 
   @Post('calculate')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async calculateTax(
     @RequestContext() ctx: RequestContextDto,
@@ -109,7 +104,6 @@ export class TaxController {
   }
 
   @Get('filing')
-  @RequireFeature('/admin/finance')
   @RequirePermissions(SystemPermissions.ACCOUNTING_READ)
   async getTaxFiling(
     @RequestContext() ctx: RequestContextDto,

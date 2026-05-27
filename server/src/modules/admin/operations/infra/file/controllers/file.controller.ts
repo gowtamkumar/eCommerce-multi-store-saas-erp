@@ -23,7 +23,7 @@ import { FilesService } from '../services/file.service'
 
 @Controller('admin/media')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/media')
+@RequireFeature('catalog')
 export class AdminMediaController {
   private readonly logger = new Logger(AdminMediaController.name)
 

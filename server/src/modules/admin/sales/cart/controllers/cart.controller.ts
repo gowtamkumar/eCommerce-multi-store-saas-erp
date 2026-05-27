@@ -13,7 +13,7 @@ import { CartService } from '@/modules/store/cart/cart.service'
 @ApiTags('Admin Carts')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/carts')
+@RequireFeature('orders')
 @Controller('carts')
 export class AdminCartController {
   private readonly logger = new Logger(AdminCartController.name)

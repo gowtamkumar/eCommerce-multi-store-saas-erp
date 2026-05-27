@@ -38,7 +38,7 @@ class ManualWalletDebitDto {
 }
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/finance')
+@RequireFeature('finance')
 @Controller('finance/wallet')
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}

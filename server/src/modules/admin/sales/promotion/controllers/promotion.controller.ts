@@ -24,7 +24,7 @@ import { UpdatePromotionDto } from '../dto/update-promotion.dto'
 import { PromotionService } from '../services/promotion.service'
 
 @UseGuards(SubscriptionGuard)
-@RequireFeature('/admin/promotions')
+@RequireFeature('marketing')
 @Controller('promotions')
 export class PromotionController {
   private readonly logger = new Logger(PromotionController.name)

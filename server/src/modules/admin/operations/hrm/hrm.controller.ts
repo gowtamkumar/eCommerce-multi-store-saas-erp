@@ -31,7 +31,7 @@ import {
 import { HrmService } from './hrm.service'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard, BranchScopeGuard)
-@RequireFeature('/admin/hrm')
+@RequireFeature('hrm')
 @Controller('operations/hrm')
 export class HrmController {
   private readonly logger = new Logger(HrmController.name)

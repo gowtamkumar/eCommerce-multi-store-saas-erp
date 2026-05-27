@@ -29,7 +29,7 @@ import { UpdateProductDto } from '../dto/update-product.dto'
 import { ProductService } from '../services/product.service'
 
 @UseGuards(SubscriptionGuard)
-@RequireFeature('/admin/products')
+@RequireFeature('catalog')
 @Controller('products')
 export class ProductController {
   private readonly logger = new Logger(ProductController.name)

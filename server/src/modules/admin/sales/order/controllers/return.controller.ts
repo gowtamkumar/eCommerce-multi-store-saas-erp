@@ -15,7 +15,7 @@ import { OrderReturnResponseDto } from '../dto/order-return-response.dto'
 
 @Controller('returns')
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/returns')
+@RequireFeature('orders')
 export class ReturnController {
   private readonly logger = new Logger(ReturnController.name)
 

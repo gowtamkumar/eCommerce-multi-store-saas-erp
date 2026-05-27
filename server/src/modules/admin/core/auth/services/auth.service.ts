@@ -17,16 +17,16 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, Not } from 'typeorm'
 import * as crypto from 'crypto'
+import { Not, Repository } from 'typeorm'
 import { UserEntity } from '../../user/entities/user.entity'
-import { SessionEntity } from '../entities/session.entity'
 import { LoginCredentialDto, RegisterCredentialDto } from '../dtos'
+import { SessionEntity } from '../entities/session.entity'
+
 
 import { PermissionResolutionService } from '@/common/services/permission-resolution.service'
-import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { ReferralService } from '@/modules/admin/marketing/loyalty/services/referral.service'
-import { expandFeatures } from '@/common/constants/feature-mapping'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class AuthService {
@@ -87,7 +87,11 @@ export class AuthService {
     // Link referral if referrer code was supplied
     if (registerCredentialDto.referralCode) {
       try {
-        await this.referralService.linkReferral(user.id, registerCredentialDto.referralCode, tenantId)
+        await this.referralService.linkReferral(
+          user.id,
+          registerCredentialDto.referralCode,
+          tenantId,
+        )
       } catch (e) {
         this.logger.error(`Failed to link referral code: ${e.message}`)
       }
@@ -139,26 +143,32 @@ export class AuthService {
       features = ['*'] // Super admin has access to everything
     } else if (tenantId) {
       const tenant = await this.tenantService.findOneTenants(tenantId)
-      features = expandFeatures(tenant?.subscriptionPlan?.features || [])
+      features = tenant?.subscriptionPlan?.features || []
     }
 
     const tokens = await this.getTokens(user, features, ipAddress, userAgent)
 
     let permissionManifest = null
     if (tenantId) {
-      permissionManifest = await this.permissionResolutionService.resolvePermissionsManifest(user.id, tenantId)
+      permissionManifest = await this.permissionResolutionService.resolvePermissionsManifest(
+        user.id,
+        tenantId,
+      )
     }
 
     // Trigger New Device Login Alert (Simulation)
     try {
       if (tenantId) {
-        await this.notificationService.createNotification({
-          title: 'Security Warning: New Login',
-          message: `A new device logged into your account (${user.username}). If this wasn't you, please reset your password.`,
-          type: 'WARNING',
-          link: `/admin/profile`,
-          userId: user.id, // specifically alert the user
-        }, tenantId);
+        await this.notificationService.createNotification(
+          {
+            title: 'Security Warning: New Login',
+            message: `A new device logged into your account (${user.username}). If this wasn't you, please reset your password.`,
+            type: 'WARNING',
+            link: `/admin/profile`,
+            userId: user.id, // specifically alert the user
+          },
+          tenantId,
+        )
       }
     } catch (e) {
       this.logger.error(`Failed to trigger security notification: ${e.message}`)
@@ -213,10 +223,10 @@ export class AuthService {
     userAgent?: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     this.logger.log(`${this.getTokens.name} Service Called`)
-    
+
     const sessionId = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days matching refresh token default
-    
+
     // Save session in database
     await this.sessionRepository.save({
       id: sessionId,
@@ -271,7 +281,7 @@ export class AuthService {
       features = ['*']
     } else if (user.tenantId) {
       const tenant = await this.tenantService.findOneTenants(user.tenantId)
-      features = expandFeatures(tenant?.subscriptionPlan?.features || [])
+      features = tenant?.subscriptionPlan?.features || []
     }
 
     // Invalidate old session from rotated token
@@ -315,10 +325,7 @@ export class AuthService {
   }
 
   async revokeAllOtherSessions(userId: string, currentSessionId: string): Promise<void> {
-    await this.sessionRepository.update(
-      { userId, id: Not(currentSessionId) },
-      { isActive: false },
-    )
+    await this.sessionRepository.update({ userId, id: Not(currentSessionId) }, { isActive: false })
   }
 
   async createImpersonateToken(userId: string): Promise<string> {

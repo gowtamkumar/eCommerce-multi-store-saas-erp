@@ -14,7 +14,7 @@ import { PaginationDto } from '@/common/dto/pagination.dto'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/inventory')
+@RequireFeature('inventory')
 @Controller('inventory-ledger')
 export class InventoryLedgerController {
   private readonly logger = new Logger(InventoryLedgerController.name)

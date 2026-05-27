@@ -15,7 +15,7 @@ import { RequestContextDto } from 'src/common/dto/request-context.dto'
 import { OrderResponseDto } from '../dto/order-response.dto'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/orders')
+@RequireFeature('orders')
 @Controller('orders')
 export class OrderController {
   private readonly logger = new Logger(OrderController.name)

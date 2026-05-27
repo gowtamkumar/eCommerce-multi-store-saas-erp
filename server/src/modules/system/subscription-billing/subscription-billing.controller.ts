@@ -15,8 +15,6 @@ import { CurrentSubscriptionResponseDto } from './dto/current-subscription-respo
 import { SubscriptionInvoiceResponseDto } from './dto/subscription-invoice-response.dto'
 import { SubscriptionBillingService } from './subscription-billing.service'
 
-@UseGuards(SubscriptionGuard)
-@RequireFeature('/admin')
 @Controller('billing')
 export class SubscriptionBillingController {
   private readonly logger = new Logger(SubscriptionBillingController.name)

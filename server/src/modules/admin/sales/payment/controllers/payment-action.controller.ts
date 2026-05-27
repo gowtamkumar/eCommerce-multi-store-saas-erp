@@ -21,7 +21,7 @@ export class PaymentActionController {
   // @Throttle({ transactional: { limit: 10, ttl: 60000 } })
   @Post('init')
   @UseGuards(JwtAuthGuard, SubscriptionGuard)
-  @RequireFeature('/admin/payments')
+  @RequireFeature('orders')
   async init(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: InitPaymentDto,

@@ -18,7 +18,7 @@ import { PosDrawerTransactionEntity } from './entities/pos-drawer-transaction.en
 import { PosService } from './pos.service'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
-@RequireFeature('/admin/pos')
+@RequireFeature('pos')
 @Controller('pos')
 export class PosController {
   private readonly logger = new Logger(PosController.name)
@@ -42,7 +42,6 @@ export class PosController {
   }
 
   @Get('register')
-  @RequireFeature('/admin/pos')
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async findAllRegisters(
     @RequestContext() ctx: RequestContextDto,
@@ -125,7 +124,6 @@ export class PosController {
   }
 
   @Get('shift/active')
-  @RequireFeature('/admin/pos')
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async findActiveShift(
     @RequestContext() ctx: RequestContextDto,

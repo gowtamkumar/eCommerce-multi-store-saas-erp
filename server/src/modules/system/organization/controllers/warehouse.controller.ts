@@ -24,6 +24,7 @@ import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
+@RequireFeature('inventory')
 @Controller('system/warehouses')
 export class WarehouseController {
   private readonly logger = new Logger(WarehouseController.name)
@@ -31,7 +32,6 @@ export class WarehouseController {
   constructor(private readonly warehouseService: WarehouseService) {}
 
   @Post()
-  @RequireFeature('/admin/warehouses')
   async create(
     @RequestContext() ctx: RequestContextDto,
     @Body() createWarehouseDto: CreateWarehouseDto,
@@ -46,7 +46,6 @@ export class WarehouseController {
   }
 
   @Get()
-  @RequireFeature('/admin/warehouses')
   async findAll(@RequestContext() ctx: RequestContextDto): Promise<BaseApiSuccessResponse<any>> {
     const result = await this.warehouseService.findAll(ctx)
     return {
@@ -58,7 +57,6 @@ export class WarehouseController {
   }
 
   @Get(':id')
-  @RequireFeature('/admin/warehouses')
   async findOne(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -73,7 +71,6 @@ export class WarehouseController {
   }
 
   @Patch(':id')
-  @RequireFeature('/admin/warehouses')
   async update(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -89,7 +86,6 @@ export class WarehouseController {
   }
 
   @Delete(':id')
-  @RequireFeature('/admin/warehouses')
   async remove(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -105,7 +101,6 @@ export class WarehouseController {
 
   // Bin Management
   @Post(':id/bins')
-  @RequireFeature('/admin/warehouses')
   async addBin(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') warehouseId: string,
@@ -121,7 +116,6 @@ export class WarehouseController {
   }
 
   @Patch('bins/:binId')
-  @RequireFeature('/admin/warehouses')
   async updateBin(
     @RequestContext() ctx: RequestContextDto,
     @Param('binId') binId: string,
@@ -137,7 +131,6 @@ export class WarehouseController {
   }
 
   @Delete('bins/:binId')
-  @RequireFeature('/admin/warehouses')
   async removeBin(
     @RequestContext() ctx: RequestContextDto,
     @Param('binId') binId: string,
