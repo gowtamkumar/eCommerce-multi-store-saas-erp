@@ -5,6 +5,7 @@ import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { In, Repository } from 'typeorm'
@@ -49,6 +50,9 @@ export class PermissionResolutionService {
     @InjectRepository(RoleEntity)
     private readonly roleRepo: Repository<RoleEntity>,
 
+    @InjectRepository(TenantEntity)
+    private readonly tenantRepo: Repository<TenantEntity>,
+
     private readonly cacheService: CacheService,
   ) {}
 
@@ -56,8 +60,27 @@ export class PermissionResolutionService {
   // Main Resolution Method
   // ─────────────────────────────────────────────────────────────────
 
-  private isFeatureEnabled(featuresEnabled: string[], featureSlug: string): boolean {
-    return featuresEnabled.includes(featureSlug)
+  private async isFeatureEnabledForTenant(tenantId: string, feature: string): Promise<boolean> {
+    // 1. Check explicit override in DB
+    const override = await this.tenantFeatureRepo.findOne({
+      where: { tenantId, featureSlug: feature },
+    })
+
+    if (override) {
+      return override.isEnabled
+    }
+
+    // 2. Fallback to subscription plan features
+    const tenant = await this.tenantRepo.findOne({
+      where: { id: tenantId },
+      relations: ['subscriptionPlan'],
+    })
+    if (!tenant) {
+      return false
+    }
+
+    const planFeatures = tenant.subscriptionPlan?.features || []
+    return planFeatures.includes(feature)
   }
 
   /**
@@ -78,12 +101,8 @@ export class PermissionResolutionService {
     const feature = permSlug.split(':')[0]
 
     // ── Step 1: Feature subscription check ───────────────────────────
-    const tenantFeatures = await this.tenantFeatureRepo.find({
-      where: { tenantId, isEnabled: true },
-    })
-    const featuresEnabled = tenantFeatures.map((f) => f.featureSlug)
-    // If we have features enabled and the requested permission feature is not among them → deny
-    if (tenantFeatures.length > 0 && !this.isFeatureEnabled(featuresEnabled, feature)) {
+    const isEnabled = await this.isFeatureEnabledForTenant(tenantId, feature)
+    if (!isEnabled) {
       this.logger.debug(`[DENY] Feature "${feature}" disabled for tenant ${tenantId}`)
       return false
     }
@@ -130,12 +149,33 @@ export class PermissionResolutionService {
     const cached = await this.cacheService.getCache<PermissionManifest>(cacheKey)
     if (cached) return cached
 
-    // Get enabled features for this tenant
-    const tenantFeatures = await this.tenantFeatureRepo.find({
-      where: { tenantId, isEnabled: true },
+    // Get the tenant and subscription plan
+    const tenant = await this.tenantRepo.findOne({
+      where: { id: tenantId },
+      relations: ['subscriptionPlan'],
     })
-    const rawFeatures = tenantFeatures.map((f) => f.featureSlug)
-    const featuresEnabled = rawFeatures
+    const planFeatures = tenant?.subscriptionPlan?.features || []
+
+    // Get existing overrides for this tenant
+    const overrides = await this.tenantFeatureRepo.find({
+      where: { tenantId },
+    })
+    const overridesMap = new Map(overrides.map((o) => [o.featureSlug, o.isEnabled]))
+
+    // Build the set of effective enabled features
+    const featuresEnabledSet = new Set<string>()
+    for (const f of planFeatures) {
+      if (overridesMap.get(f) !== false) {
+        featuresEnabledSet.add(f)
+      }
+    }
+    for (const [f, isEnabled] of overridesMap.entries()) {
+      if (isEnabled) {
+        featuresEnabledSet.add(f)
+      }
+    }
+
+    const featuresEnabled = Array.from(featuresEnabledSet)
 
     // Get all permissions the user holds (via roles)
     const effectivePermissions = await this.getEffectivePermissions(userId, tenantId)
@@ -163,9 +203,8 @@ export class PermissionResolutionService {
     const permissions = [...Array.from(effectivePermissions), ...activeAllowOverrides]
       .filter((p) => !activeDenySlugs.has(p)) // Remove denied
       .filter((p) => {
-        // Only include permissions whose feature is enabled (or no feature record = fallback allow)
         const feat = p.split(':')[0]
-        return this.isFeatureEnabled(featuresEnabled, feat) || tenantFeatures.length === 0
+        return featuresEnabledSet.has(feat)
       })
 
     const manifest: PermissionManifest = {

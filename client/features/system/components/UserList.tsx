@@ -88,7 +88,7 @@ export default function UserList({ initialUsers, initialPagination }: UserListPr
     setUpdatingId(userId);
     try {
       // Note: Endpoint might need to be adjusted based on actual API design
-      const res = await fetchAPI(`/tenant-traffic/users/${userId}/status`, {
+      const res = await fetchSuperAdminAPI(`/super-admin/users/${userId}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus }),
       });

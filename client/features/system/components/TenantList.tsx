@@ -1,19 +1,14 @@
 'use client';
 
-import { fetchAPI } from '@/services/api';
 import { AnimatePresence } from 'framer-motion';
 import { Filter, Search, Terminal } from 'lucide-react';
-import { useState, useMemo, useCallback } from 'react';
-import { toast } from 'react-hot-toast';
+import { useCallback, useMemo, useState } from 'react';
+import { StatusStyles, TenantListProps } from '../types/tenant.types';
 import TenantRow from './TenantRow';
-import TenantDetailsModal from './TenantDetailsModal';
-import { Tenant, TenantListProps, StatusStyles } from '../types/tenant.types';
 
 export default function TenantList({ initialTenants }: TenantListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [tenants, setTenants] = useState(initialTenants);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 
   /**
    * Memoized filtered tenants to prevent recalculation on every render
@@ -61,38 +56,6 @@ export default function TenantList({ initialTenants }: TenantListProps) {
           icon: 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400',
           gradient: 'bg-slate-300 shadow-slate-300/20'
         };
-    }
-  }, []);
-
-  const handleUpdateStatus = useCallback(async (id: string, newStatus: string) => {
-    setLoadingId(id);
-    try {
-      const res = await fetchAPI(`/tenant-traffic/tenants/${id}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (res.success) {
-        setTenants(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
-        setSelectedTenant(prev => prev?.id === id ? { ...prev, status: newStatus } : prev);
-        toast.success(`Store ${newStatus === 'active' ? 'activated' : 'suspended'} successfully`);
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update status');
-    } finally {
-      setLoadingId(null);
-    }
-  }, []);
-
-  const handleFetchDetails = useCallback(async (tenant: Tenant) => {
-    setSelectedTenant(tenant);
-    try {
-      const res = await fetchAPI(`/tenant-traffic/tenants/${tenant.id}`);
-      if (res.success) {
-        setSelectedTenant(res.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch full tenant details');
     }
   }, []);
 
@@ -150,9 +113,6 @@ export default function TenantList({ initialTenants }: TenantListProps) {
                       key={tenant.id}
                       tenant={tenant}
                       styles={getStatusStyles(tenant.status)}
-                      loadingId={loadingId}
-                      onUpdateStatus={handleUpdateStatus}
-                      onFetchDetails={handleFetchDetails}
                     />
                   ))}
                 </AnimatePresence>
@@ -161,14 +121,6 @@ export default function TenantList({ initialTenants }: TenantListProps) {
           </table>
         </div>
       </div>
-
-      <TenantDetailsModal
-        selectedTenant={selectedTenant}
-        loadingId={loadingId}
-        onClose={() => setSelectedTenant(null)}
-        onUpdateStatus={handleUpdateStatus}
-        getStatusStyles={getStatusStyles}
-      />
     </div>
   );
 }

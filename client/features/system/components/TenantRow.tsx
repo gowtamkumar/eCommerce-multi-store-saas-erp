@@ -1,25 +1,19 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, CheckCircle2, Ban, ExternalLink, Info, Store, Layers } from 'lucide-react';
+import { BarChart3, ExternalLink, Layers, Store } from 'lucide-react';
 import Link from 'next/link';
-import { Tenant, StatusStyles } from '../types/tenant.types';
+import React from 'react';
+import { StatusStyles, Tenant } from '../types/tenant.types';
 
 interface TenantRowProps {
   tenant: Tenant;
   styles: StatusStyles;
-  loadingId: string | null;
-  onUpdateStatus: (id: string, newStatus: string) => void;
-  onFetchDetails: (tenant: Tenant) => void;
 }
 
 const TenantRow = ({
   tenant,
   styles,
-  loadingId,
-  onUpdateStatus,
-  onFetchDetails,
 }: TenantRowProps) => {
   return (
     <motion.tr
@@ -79,36 +73,10 @@ const TenantRow = ({
       </td>
       <td className="px-6 py-4 text-right">
         <div className="flex justify-end gap-2">
-          <button
-            onClick={() => onFetchDetails(tenant)}
-            className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
-            title="Quick Audit"
-          >
-            <Info className="w-5 h-5" />
-          </button>
-          {tenant.status === 'active' ? (
-            <button
-              onClick={() => onUpdateStatus(tenant.id, 'suspended')}
-              disabled={loadingId === tenant.id}
-              className="p-2 text-slate-400 hover:text-rose-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg disabled:opacity-50"
-              title="Suspend Resource"
-            >
-              <Ban className="w-5 h-5" />
-            </button>
-          ) : (
-            <button
-              onClick={() => onUpdateStatus(tenant.id, 'active')}
-              disabled={loadingId === tenant.id}
-              className="p-2 text-slate-400 hover:text-emerald-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg disabled:opacity-50"
-              title="Restore Resource"
-            >
-              <CheckCircle2 className="w-5 h-5" />
-            </button>
-          )}
           <Link
             href={`/system/tenants/${tenant.id}/analytics`}
             className="p-2 text-slate-400 hover:text-indigo-600 transition-colors bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl hover:shadow-lg"
-            title="Resource Analytics"
+            title="Audit & Analytics"
           >
             <BarChart3 className="w-5 h-5" />
           </Link>

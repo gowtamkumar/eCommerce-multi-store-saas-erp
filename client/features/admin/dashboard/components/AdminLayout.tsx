@@ -4,7 +4,7 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { UserRole } from '@/lib/enums/user-role.enum';
 import { navGroups } from '@/routes';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Menu, X, Shield, Search } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Menu, X, Shield, Search } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -334,26 +334,7 @@ export default function AdminLayout({
                     })}
                 </nav>
 
-                <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-                    {!isSidebarCollapsed && (
-                        <button
-                            onClick={handleLogout}
-                            className="w-full flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all font-medium"
-                        >
-                            <LogOut className="w-5 h-5" />
-                            Sign Out
-                        </button>
-                    )}
-                    {isSidebarCollapsed && (
-                        <button
-                            onClick={handleLogout}
-                            title="Sign Out"
-                            className="w-full flex items-center justify-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all font-medium"
-                        >
-                            <LogOut className="w-5 h-5" />
-                        </button>
-                    )}
-                </div>
+
             </motion.aside>
 
             {/* Main Content */}

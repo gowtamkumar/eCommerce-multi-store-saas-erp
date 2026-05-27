@@ -3,28 +3,31 @@ import { fetchSuperAdminAPI } from "@/services/supperAdminApi";
 import { notFound } from "next/navigation";
 
 
-async function getTenantAnalyticsData(id: string) {
+async function getTenantData(id: string) {
     try {
-        const res = await fetchSuperAdminAPI(`/super-admin/tenants/${id}/analytics`);
+        const [analyticsRes, tenantRes] = await Promise.all([
+            fetchSuperAdminAPI(`/super-admin/tenants/${id}/analytics`),
+            fetchSuperAdminAPI(`/super-admin/tenants/${id}`),
+        ]);
 
-        if (!res.success) {
-            console.error("[SuperAdmin] API error:", res.message);
+        if (!analyticsRes.success || !tenantRes.success) {
+            console.error("[SuperAdmin] API error:", analyticsRes.message || tenantRes.message);
             return null;
         }
 
         return {
-            analytics: res.data,
-            tenantName: res.data.tenantInfo?.storeName || 'Unknown Merchant'
+            analytics: analyticsRes.data,
+            tenant: tenantRes.data,
         };
     } catch (error) {
-        console.error("[SuperAdmin] Fetch error in getTenantAnalyticsData:", error);
+        console.error("[SuperAdmin] Fetch error in getTenantData:", error);
         return null;
     }
 }
 
 export default async function TenantAnalyticsPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = await params;
-    const data = await getTenantAnalyticsData(resolvedParams.id);
+    const data = await getTenantData(resolvedParams.id);
 
     if (!data) {
         notFound();
@@ -34,7 +37,7 @@ export default async function TenantAnalyticsPage({ params }: { params: Promise<
         <TenantAnalytics
             tenantId={resolvedParams.id}
             data={data.analytics}
-            tenantName={data.tenantName}
+            tenant={data.tenant}
         />
     );
 }
