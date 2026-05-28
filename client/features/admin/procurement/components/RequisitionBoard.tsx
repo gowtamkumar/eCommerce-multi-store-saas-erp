@@ -319,11 +319,11 @@ export default function RequisitionBoard() {
         </div>
       ) : (
         /* Kanban Board */
-        <div className="flex-1 flex gap-6 overflow-x-auto pb-4 custom-scrollbar items-stretch">
+        <div className="flex-1 flex flex-col sm:flex-row gap-6 overflow-x-auto pb-4 custom-scrollbar items-stretch">
           {columns.map((col) => (
             <div
               key={col.id}
-              className="w-[310px] shrink-0 flex flex-col bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-slate-700/50"
+              className="w-full sm:w-[310px] shrink-0 flex flex-col bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-slate-700/50"
             >
               {/* Column Header */}
               <div className="p-6 pb-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50">

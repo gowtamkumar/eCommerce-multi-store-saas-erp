@@ -1,11 +1,11 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
 import GrnDetailPage from '@/features/admin/grn/components/GrnDetailPage';
 import { GrnStatus } from '@/lib/enums/grn-status.enum';
-import { toast } from 'react-hot-toast';
 import { fetchAPI } from '@/services/api';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
 
 export default function GrnPage() {
     const { id } = useParams();
@@ -17,7 +17,7 @@ export default function GrnPage() {
     const fetchGrn = async () => {
         setLoading(true);
         try {
-            const response = await fetchAPI(`operations/logistics/grn/${id}`);
+            const response = await fetchAPI(`/operations/logistics/grn/${id}`);
             if (response.success) {
                 setGrn(response.data);
             }
@@ -38,7 +38,7 @@ export default function GrnPage() {
 
         setIsProcessing(true);
         try {
-            const response = await fetchAPI(`operations/logistics/grn/${id}/verify`, {
+            const response = await fetchAPI(`/operations/logistics/grn/${id}/verify`, {
                 method: 'PATCH',
                 body: JSON.stringify({
                     status: GrnStatus.RECEIVED,
@@ -62,7 +62,7 @@ export default function GrnPage() {
 
         setIsProcessing(true);
         try {
-            const response = await fetchAPI(`operations/logistics/grn/${id}/verify`, {
+            const response = await fetchAPI(`/operations/logistics/grn/${id}/verify`, {
                 method: 'PATCH',
                 body: JSON.stringify({
                     status: GrnStatus.REJECTED,

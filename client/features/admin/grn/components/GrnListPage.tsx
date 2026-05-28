@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { memo } from 'react';
+import Pagination from '@/components/shared/Pagination';
 
 export const getGrnStatusBadge = (status: GrnStatus) => {
     switch (status) {
@@ -193,22 +194,12 @@ export default function GrnListPage({
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                             Page <span className="text-slate-900 dark:text-white px-1">{pagination.page}</span> of <span className="text-slate-900 dark:text-white px-1">{pagination.totalPages}</span>
                         </p>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => onPageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1}
-                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl disabled:opacity-40 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => onPageChange(pagination.page + 1)}
-                                disabled={pagination.page === pagination.totalPages}
-                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-xl disabled:opacity-40 hover:bg-white dark:hover:bg-slate-700 transition-all shadow-sm"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
-                        </div>
+                        <Pagination
+                            currentPage={Number(pagination.page) || 1}
+                            totalPages={Number(pagination.totalPages) || 1}
+                            onPageChange={(p) => onPageChange(p)}
+                            loading={loading}
+                        />
                     </div>
                 )}
             </div>

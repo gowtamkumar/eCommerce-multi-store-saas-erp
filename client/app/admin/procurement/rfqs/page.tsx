@@ -1,32 +1,27 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  awardQuotation,
+  createRFQ,
+  getRequisitions,
+  getRFQs,
+  getSuppliers,
+  submitQuotation
+} from '@/services/procurement';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeftRight,
+  Award,
+  Calendar,
+  ChevronRight,
   Plus,
   Search,
-  Calendar,
-  Clock,
-  User,
-  X,
-  FileText,
-  DollarSign,
-  Briefcase,
-  ChevronRight,
-  Award,
   Send,
-  AlertCircle
+  User,
+  X
 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import {
-  getRFQs,
-  createRFQ,
-  submitQuotation,
-  awardQuotation,
-  getSuppliers,
-  getRequisitions
-} from '@/services/procurement';
 
 interface Quotation {
   id: string;
@@ -75,10 +70,15 @@ export default function RFQPage() {
     try {
       setLoading(true);
       const data = await getRFQs();
+      // Debug: show RFQ list payload
+      // eslint-disable-next-line no-console
+      console.debug('Fetched RFQs:', data);
       setRfqs(data);
     } catch (err) {
-      console.error(err);
-      toast.error('Failed to load RFQs');
+      // eslint-disable-next-line no-console
+      console.error('Failed to load RFQs:', err);
+      const msg = (err as any)?.message || 'Failed to load RFQs';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -218,13 +218,12 @@ export default function RFQPage() {
                   <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1 rounded-md">
                     {rfq.rfqNumber}
                   </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                    rfq.status === 'OPEN'
+                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${rfq.status === 'OPEN'
                       ? 'bg-emerald-100 text-emerald-600'
                       : rfq.status === 'AWARDED'
-                      ? 'bg-indigo-100 text-indigo-600'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
+                        ? 'bg-indigo-100 text-indigo-600'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>
                     {rfq.status}
                   </span>
                 </div>
@@ -326,11 +325,10 @@ export default function RFQPage() {
                       {selectedRfq.quotations.map((q) => (
                         <div
                           key={q.id}
-                          className={`p-5 rounded-3xl border flex justify-between items-center ${
-                            q.status === 'ACCEPTED'
+                          className={`p-5 rounded-3xl border flex justify-between items-center ${q.status === 'ACCEPTED'
                               ? 'border-emerald-500 bg-emerald-50/10'
                               : 'border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900'
-                          }`}
+                            }`}
                         >
                           <div>
                             <div className="text-xs font-black text-slate-900 dark:text-white">
