@@ -29,6 +29,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useDebounce } from '@/hooks/useDebounce';
+import Pagination from '@/components/shared/Pagination';
 
 interface Register {
   id: string;
@@ -98,6 +100,16 @@ export default function Pos() {
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedBrandId, setSelectedBrandId] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
+
+  // Pagination & Search States
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [productPagination, setProductPagination] = useState({
+      total: 0,
+      page: 1,
+      limit: 15,
+      totalPages: 1
+  });
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
   const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
@@ -310,7 +322,6 @@ export default function Pos() {
       const res = await fetchAPI('/pos/shift/active');
       if (res.success && res.data) {
         setActiveShift(res.data);
-        fetchProducts();
         fetchCategoriesAndBrands();
       }
     } catch {
@@ -352,16 +363,54 @@ export default function Pos() {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (
+    page = 1,
+    search = searchQuery,
+    categoryId = selectedCategoryId,
+    brandId = selectedBrandId
+  ) => {
+    setLoadingProducts(true);
     try {
-      const res = await fetchAPI('/products?limit=50&status=active');
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: productPagination.limit.toString(),
+        status: 'active',
+      });
+      if (search.trim()) params.append('q', search.trim());
+      if (categoryId) params.append('categoryId', categoryId);
+      if (brandId) params.append('brandId', brandId);
+
+      const res = await fetchAPI(`/products?${params}`);
       if (res.success) {
         setProducts(res.data || []);
+        if (res.pagination) {
+          setProductPagination({
+            total: res.pagination.total,
+            page: res.pagination.page,
+            limit: res.pagination.limit,
+            totalPages: res.pagination.totalPages
+          });
+        }
       }
-    } catch {
+    } catch (error) {
+      console.error('Failed to load store products', error);
       toast.error('Failed to load store products');
+    } finally {
+      setLoadingProducts(false);
     }
   };
+
+  const handleProductPageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= productPagination.totalPages) {
+      fetchProducts(newPage, debouncedSearchQuery, selectedCategoryId, selectedBrandId);
+    }
+  };
+
+  useEffect(() => {
+    if (activeShift) {
+      fetchProducts(1, debouncedSearchQuery, selectedCategoryId, selectedBrandId);
+    }
+  }, [debouncedSearchQuery, selectedCategoryId, selectedBrandId, activeShift]);
 
   // POS Return & Exchange Handlers
   const handleSearchReturnOrder = async () => {
@@ -491,7 +540,6 @@ export default function Pos() {
       if (res.success) {
         toast.success('Drawer register opened successfully!');
         setActiveShift(res.data);
-        fetchProducts();
         fetchCategoriesAndBrands();
       }
     } catch (error) {
@@ -605,6 +653,65 @@ export default function Pos() {
     toast.success(`${product.name} added to cart`, { duration: 1000 });
   };
 
+  const findAndAddProductByCode = async (query: string, rawQuery: string): Promise<boolean> => {
+    // 1. Check local products first
+    let matchedProduct: Product | null = null;
+    let matchedVariant: ProductVariant | null = null;
+
+    for (const p of products) {
+      if (
+        (p.sku && p.sku.toLowerCase() === query) ||
+        (p.barcode && p.barcode.toLowerCase() === query)
+      ) {
+        matchedProduct = p;
+        break;
+      }
+
+      if (p.variants && p.variants.length > 0) {
+        const v = p.variants.find(
+          (varItem) =>
+            (varItem.sku && varItem.sku.toLowerCase() === query) ||
+            (varItem.barcode && varItem.barcode.toLowerCase() === query)
+        );
+        if (v) {
+          matchedProduct = p;
+          matchedVariant = v;
+          break;
+        }
+      }
+    }
+
+    if (matchedProduct) {
+      executeAddToCart(matchedProduct, matchedVariant || undefined);
+      playBeepSound();
+      return true;
+    }
+
+    // 2. Fetch from backend if not found locally
+    try {
+      const res = await fetchAPI(`/products?q=${encodeURIComponent(query)}&limit=1&status=active`);
+      if (res.success && res.data && res.data.length > 0) {
+        const p = res.data[0];
+        let v: ProductVariant | undefined;
+        if (p.variants && p.variants.length > 0) {
+          v = p.variants.find(
+            (varItem: any) =>
+              (varItem.sku && varItem.sku.toLowerCase() === query) ||
+              (varItem.barcode && varItem.barcode.toLowerCase() === query)
+          );
+        }
+        executeAddToCart(p, v);
+        playBeepSound();
+        return true;
+      }
+    } catch (err) {
+      console.error('Error looking up product on backend:', err);
+    }
+
+    toast.error(`No product found matching code: "${rawQuery}"`);
+    return false;
+  };
+
   const updateQuantity = (index: number, delta: number) => {
     const updatedCart = [...cart];
     const newQty = updatedCart[index].quantity + delta;
@@ -663,45 +770,16 @@ export default function Pos() {
     }
   };
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleSearchKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       const query = searchQuery.trim().toLowerCase();
       if (!query) return;
 
-      let matchedProduct: Product | null = null;
-      let matchedVariant: ProductVariant | null = null;
-
-      for (const p of products) {
-        if (
-          (p.sku && p.sku.toLowerCase() === query) ||
-          (p.barcode && p.barcode.toLowerCase() === query)
-        ) {
-          matchedProduct = p;
-          break;
-        }
-
-        if (p.variants && p.variants.length > 0) {
-          const v = p.variants.find(
-            (varItem) =>
-              (varItem.sku && varItem.sku.toLowerCase() === query) ||
-              (varItem.barcode && varItem.barcode.toLowerCase() === query)
-          );
-          if (v) {
-            matchedProduct = p;
-            matchedVariant = v;
-            break;
-          }
-        }
-      }
-
-      if (matchedProduct) {
-        executeAddToCart(matchedProduct, matchedVariant || undefined);
+      const success = await findAndAddProductByCode(query, searchQuery);
+      if (success) {
         setSearchQuery('');
-        e.preventDefault();
-        playBeepSound();
-      } else {
-        toast.error(`No product found matching code: "${searchQuery}"`);
       }
+      e.preventDefault();
     }
   };
 
@@ -729,40 +807,11 @@ export default function Pos() {
       if (e.key === 'Enter') {
         if (buffer.length > 2) {
           const query = buffer.trim().toLowerCase();
-          
-          let matchedProduct: Product | null = null;
-          let matchedVariant: ProductVariant | null = null;
-
-          for (const p of products) {
-            if (
-              (p.sku && p.sku.toLowerCase() === query) ||
-              (p.barcode && p.barcode.toLowerCase() === query)
-            ) {
-              matchedProduct = p;
-              break;
-            }
-
-            if (p.variants && p.variants.length > 0) {
-              const v = p.variants.find(
-                (varItem) =>
-                  (varItem.sku && varItem.sku.toLowerCase() === query) ||
-                  (varItem.barcode && varItem.barcode.toLowerCase() === query)
-              );
-              if (v) {
-                matchedProduct = p;
-                matchedVariant = v;
-                break;
-              }
-            }
-          }
-
-          if (matchedProduct) {
-            executeAddToCart(matchedProduct, matchedVariant || undefined);
-            playBeepSound();
-            buffer = '';
-            e.preventDefault();
-            e.stopPropagation();
-          }
+          const rawQuery = buffer.trim();
+          findAndAddProductByCode(query, rawQuery);
+          buffer = '';
+          e.preventDefault();
+          e.stopPropagation();
         }
         buffer = '';
       } else if (e.key.length === 1) {
@@ -1117,30 +1166,7 @@ export default function Pos() {
     });
   };
 
-  const filteredProducts = products.filter((p: any) => {
-    // 1. Text search query
-    const matchesQuery =
-      !searchQuery ||
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.slug && p.slug.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    // 2. Category filter
-    const matchesCategory =
-      !selectedCategoryId ||
-      p.categoryId === selectedCategoryId ||
-      p.category_id === selectedCategoryId ||
-      p.category?.id === selectedCategoryId;
-
-    // 3. Brand filter
-    const matchesBrand =
-      !selectedBrandId ||
-      p.brandId === selectedBrandId ||
-      p.brand_id === selectedBrandId ||
-      p.brand?.id === selectedBrandId;
-
-    return matchesQuery && matchesCategory && matchesBrand;
-  });
+  const filteredProducts = products;
 
   // loading view
   if (loadingShift) {
@@ -1689,43 +1715,55 @@ export default function Pos() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-2">
-                {filteredProducts.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => addToCart(p)}
-                    className="flex flex-col p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-brand-500 hover:shadow-lg rounded-xl text-left transition-all gap-1.5 group"
-                  >
-                    <div className="w-full aspect-square rounded-lg bg-slate-50 dark:bg-slate-950 overflow-hidden border border-slate-100/60 dark:border-slate-850 flex items-center justify-center relative">
-                      {p.images?.[0] ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={p.images[0]}
-                          alt=""
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="text-slate-300 dark:text-slate-750">
-                          <ShoppingCart className="w-6 h-6" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-0.5 min-w-0 flex-1">
-                      <p className="font-bold text-slate-800 dark:text-slate-200 text-[11px] truncate leading-tight group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                        {p.name}
-                      </p>
-                      <div className="flex justify-between items-center gap-1">
-                        <span className="font-black text-xs text-brand-650 dark:text-brand-400">
-                          ${p.price}
-                        </span>
-                        <span className="text-[8px] font-bold px-1 py-0.5 bg-slate-50 dark:bg-slate-850 rounded text-slate-500">
-                          Qty: {p.stock}
-                        </span>
+              <div className="flex flex-col h-full justify-between gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-2">
+                  {filteredProducts.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => addToCart(p)}
+                      className="flex flex-col p-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-brand-500 hover:shadow-lg rounded-xl text-left transition-all gap-1.5 group"
+                    >
+                      <div className="w-full aspect-square rounded-lg bg-slate-50 dark:bg-slate-955 overflow-hidden border border-slate-100/60 dark:border-slate-850 flex items-center justify-center relative">
+                        {p.images?.[0] ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={p.images[0]}
+                            alt=""
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="text-slate-300 dark:text-slate-750">
+                            <ShoppingCart className="w-6 h-6" />
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </button>
-                ))}
+
+                      <div className="space-y-0.5 min-w-0 flex-1">
+                        <p className="font-bold text-slate-800 dark:text-slate-200 text-[11px] truncate leading-tight group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                          {p.name}
+                        </p>
+                        <div className="flex justify-between items-center gap-1">
+                          <span className="font-black text-xs text-brand-650 dark:text-brand-400">
+                            ${p.price}
+                          </span>
+                          <span className="text-[8px] font-bold px-1 py-0.5 bg-slate-50 dark:bg-slate-850 rounded text-slate-500">
+                            Qty: {p.stock}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                {productPagination.totalPages > 1 && (
+                  <div className="mt-auto py-2 border-t border-slate-100 dark:border-slate-800 flex justify-center bg-white dark:bg-slate-900 rounded-xl shadow-sm">
+                    <Pagination
+                      currentPage={productPagination.page}
+                      totalPages={productPagination.totalPages}
+                      onPageChange={handleProductPageChange}
+                      loading={loadingProducts}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>

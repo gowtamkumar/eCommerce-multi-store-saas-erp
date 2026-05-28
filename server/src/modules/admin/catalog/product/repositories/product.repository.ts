@@ -46,7 +46,10 @@ export class ProductRepository {
       query.andWhere(`${finalPriceExpr} <= :maxPrice`, { maxPrice: Number(filterDto.maxPrice) })
     }
     if (q) {
-      query.andWhere('(product.name ILIKE :q OR product.description ILIKE :q)', { q: `%${q}%` })
+      query.andWhere(
+        '(product.name ILIKE :q OR product.description ILIKE :q OR product.sku ILIKE :q OR product.barcode ILIKE :q OR variants.sku ILIKE :q OR variants.barcode ILIKE :q)',
+        { q: `%${q}%` },
+      )
     }
 
     if (filterDto.attributes) {
