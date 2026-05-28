@@ -1,4 +1,4 @@
-import { IsBoolean, IsDate, IsEnum, IsString } from 'class-validator'
+import { IsBoolean, IsDate, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserStatus } from '@/common/enums/user/user-status.enum'
 
@@ -31,4 +31,28 @@ export class UserDto {
   createdAt: Date
   @IsDate()
   updatedAt: Date
+
+  @IsString()
+  @IsOptional()
+  companyName?: string
+
+  @IsString()
+  @IsOptional()
+  customerCode?: string
+
+  @IsString()
+  @IsOptional()
+  taxId?: string
+
+  @IsNumber()
+  @IsOptional()
+  creditLimit?: number
+
+  @IsBoolean()
+  @IsOptional()
+  creditHold?: boolean
+
+  @IsString()
+  @IsOptional()
+  priceBookCode?: string | null
 }

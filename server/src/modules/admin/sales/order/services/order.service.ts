@@ -86,8 +86,9 @@ export class OrderService {
       // 1. Initial Data Fetching
       const settings = await manager.findOne(SiteSettingsEntity, { where: { tenantId } })
 
-      const user = createOrderDto.userId
-        ? await manager.findOne(UserEntity, { where: { id: createOrderDto.userId, tenantId } })
+      const targetUserId = createOrderDto.userId || ctx.userId
+      const user = targetUserId
+        ? await manager.findOne(UserEntity, { where: { id: targetUserId, tenantId } })
         : null
       // 2. Address Resolution
       let resolvedAddress = createOrderDto.address
@@ -135,12 +136,13 @@ export class OrderService {
       const processedItems: OrderItemEntity[] = []
       const pendingLedgerIds: string[] = []
       const pendingReservationIds: string[] = []
+      const resolvedPriceBookCode = createOrderDto.priceBookCode || user?.priceBookCode || null
       for (const item of rawItems) {
         const { orderItem, ledgerEntryId, reservationId } = await this.orderProcessHelper.processItem(
           item,
           ctx,
           manager,
-          createOrderDto.priceBookCode, // forward caller-specified book; null falls back to oldest active book
+          resolvedPriceBookCode, // forward resolved book
         )
         processedItems.push(orderItem)
         if (ledgerEntryId) pendingLedgerIds.push(ledgerEntryId)

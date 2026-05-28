@@ -12,6 +12,8 @@ import { CreateCartItemDto } from './dto/create-cart-item.dto'
 import { UpdateCartItemDto } from './dto/update-cart-item.dto'
 import { CartEntity } from './entities/cart.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { UserService } from '@/modules/admin/core/user/services/user.service'
+import { PricingService } from '@/modules/admin/catalog/pricing/pricing.service'
 
 @Injectable()
 export class CartService {
@@ -25,6 +27,8 @@ export class CartService {
     private readonly couponService: CouponService,
     private readonly promotionService: PromotionService,
     private readonly pricingEngine: PricingEngineService,
+    private readonly userService: UserService,
+    private readonly pricingService: PricingService,
   ) {}
 
   async createOrGetCart(ctx: RequestContextDto): Promise<CartResponseDto> {
@@ -105,6 +109,31 @@ export class CartService {
     ])
     const currency = settings?.currency || 'BDT'
 
+    // Fetch user and check for price book overrides
+    const user = ctx.userId ? await this.userService.findUserById(ctx.userId) : null
+    const userPriceBookCode = user?.priceBookCode || null
+
+    const resolvedItems = await Promise.all(
+      (cart.items || []).map(async (item) => {
+        const pbPrice = await this.pricingService.getApplicablePrice(
+          item.productId,
+          item.variantId || null,
+          item.quantity,
+          userPriceBookCode,
+          tenantId,
+        )
+        if (pbPrice !== null) {
+          const clonedItem = {
+            ...item,
+            product: item.product ? { ...item.product, price: pbPrice } : null,
+            variant: item.variant ? { ...item.variant, price: pbPrice } : null,
+          }
+          return clonedItem as any
+        }
+        return item
+      }),
+    )
+
     // 2. Delegate all math to the PricingEngineService (Option 1 + 2)
     const {
       transformedItems,
@@ -112,7 +141,7 @@ export class CartService {
       totalDiscount,
       totalTax,
       payable: enginePayable,
-    } = this.pricingEngine.calculateCart(cart.items || [], activePromotions)
+    } = this.pricingEngine.calculateCart(resolvedItems, activePromotions)
 
     // 3. Apply Coupon (async, stays in service layer)
     let couponDiscountAmount = 0

@@ -4,6 +4,7 @@ import {
   IsDefined,
   IsEmail,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -66,4 +67,28 @@ export class CreateUserDto {
   @IsUUID()
   @IsOptional()
   warehouseId?: string
+
+  @IsString()
+  @IsOptional()
+  companyName?: string
+
+  @IsString()
+  @IsOptional()
+  customerCode?: string
+
+  @IsString()
+  @IsOptional()
+  taxId?: string
+
+  @IsNumber()
+  @IsOptional()
+  creditLimit?: number
+
+  @IsBoolean()
+  @IsOptional()
+  creditHold?: boolean
+
+  @IsString()
+  @IsOptional()
+  priceBookCode?: string | null
 }

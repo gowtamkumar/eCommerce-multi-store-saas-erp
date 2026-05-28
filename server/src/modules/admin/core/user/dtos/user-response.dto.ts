@@ -46,4 +46,22 @@ export class UserResponseDto {
 
   @Expose()
   updatedAt: Date
+
+  @Expose()
+  companyName?: string
+
+  @Expose()
+  customerCode?: string
+
+  @Expose()
+  taxId?: string
+
+  @Expose()
+  creditLimit?: number
+
+  @Expose()
+  creditHold?: boolean
+
+  @Expose()
+  priceBookCode?: string | null
 }

@@ -5,15 +5,18 @@ import { UserStatus } from '@/lib/enums/user-status.enum';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     Eye, EyeOff, Loader2, Save, X, User as UserIcon, Mail, Phone,
-    Shield, ShieldCheck, Hash, Lock, Building2, CreditCard, FileText, AlertTriangle, DollarSign
+    Shield, ShieldCheck, Hash, Lock, Building2, CreditCard, FileText, AlertTriangle, DollarSign, Tag, BadgeDollarSign
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { CustomerFormProps } from '../type';
+import { fetchAPI } from '@/services/api';
 
 export default function CustomerForm({ isOpen, onClose, onSubmit, initialData }: CustomerFormProps) {
     const [submitting, setSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [activeTab, setActiveTab] = useState<'basic' | 'b2b'>('basic');
+    const [priceBooks, setPriceBooks] = useState<any[]>([]);
+    const [priceBooksLoading, setPriceBooksLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -28,7 +31,30 @@ export default function CustomerForm({ isOpen, onClose, onSubmit, initialData }:
         taxId: '',
         creditLimit: 0,
         creditHold: false,
+        priceBookCode: '',
     });
+
+    useEffect(() => {
+        if (isOpen) {
+            loadPriceBooks();
+        }
+    }, [isOpen]);
+
+    const loadPriceBooks = async () => {
+        try {
+            setPriceBooksLoading(true);
+            const res = await fetchAPI('/pricing/price-books');
+            if (res.success) {
+                // Filter only active books
+                setPriceBooks(res.data || []);
+            }
+        } catch (err) {
+            console.error('Failed to load price books in CustomerForm', err);
+        } finally {
+            setSubmitting(false);
+            setPriceBooksLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (initialData) {
@@ -45,6 +71,7 @@ export default function CustomerForm({ isOpen, onClose, onSubmit, initialData }:
                 taxId: initialData.taxId || '',
                 creditLimit: Number(initialData.creditLimit || 0),
                 creditHold: initialData.creditHold || false,
+                priceBookCode: (initialData as any).priceBookCode || '',
             });
         } else {
             setFormData({
@@ -60,6 +87,7 @@ export default function CustomerForm({ isOpen, onClose, onSubmit, initialData }:
                 taxId: '',
                 creditLimit: 0,
                 creditHold: false,
+                priceBookCode: '',
             });
         }
         setActiveTab('basic');
@@ -361,6 +389,42 @@ export default function CustomerForm({ isOpen, onClose, onSubmit, initialData }:
                                                 <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${formData.creditHold ? 'translate-x-6' : 'translate-x-0'}`} />
                                             </button>
                                         </div>
+                                    </div>
+
+                                    {/* Assigned Price Book */}
+                                    <div className="md:col-span-2 space-y-2">
+                                        <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                            Assigned Price Book
+                                        </label>
+                                        <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 mb-2">
+                                            <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                                                🏷️ Link a custom price book to give this customer exclusive pricing (WHOLESALE, VIP, contract rates). When assigned, the customer's pricing will automatically override default retail prices at checkout and in their cart.
+                                            </p>
+                                        </div>
+                                        <div className="relative">
+                                            <BadgeDollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <select
+                                                value={formData.priceBookCode}
+                                                onChange={(e) => setFormData({ ...formData, priceBookCode: e.target.value })}
+                                                disabled={priceBooksLoading}
+                                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all appearance-none font-mono disabled:opacity-50"
+                                            >
+                                                <option value="">— No Custom Price Book (use default Retail) —</option>
+                                                {priceBooks.map((pb) => (
+                                                    <option key={pb.id} value={pb.code}>
+                                                        [{pb.type}] {pb.name} · {pb.code} ({pb.currency || 'BDT'})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {formData.priceBookCode && (
+                                            <div className="flex items-center gap-2 mt-1.5">
+                                                <Tag className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+                                                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                                                    Active assignment: <code className="font-mono bg-indigo-100 dark:bg-indigo-900/40 px-1 rounded">{formData.priceBookCode}</code>
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

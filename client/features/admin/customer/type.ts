@@ -14,6 +14,7 @@ export interface User {
     creditLimit?: number;
     creditHold?: boolean;
     preferredBranchId?: string;
+    priceBookCode?: string | null;
 }
 
 export interface Pagination {

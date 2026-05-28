@@ -56,10 +56,10 @@ Because B2B wholesale rates and VIP contract prices must be protected from leaka
 - **Real-World Scenario**: A corporate partner or wholesale reseller wants to purchase bulk inventory. They log in with their corporate account and instantly see lower unit costs.
 - **How it is Assigned & Resolved**:
   
-  #### Method 1: The Customer Role Entity Mapped to a Code
-  We can assign a custom account role/type to the Customer profile in the system database. For example:
+  #### Method 1: Direct Customer Profile Assignment (Implemented)
+  The customer profile contains a direct `priceBookCode` mapping.
   ```typescript
-  // User profile contains a linked pricing code
+  // User entity contains a linked pricing code
   interface User {
       id: string;
       email: string;
@@ -67,9 +67,9 @@ Because B2B wholesale rates and VIP contract prices must be protected from leaka
       priceBookCode: string | null; // e.g. "WHOLESALE"
   }
   ```
-  When the wholesale customer logs in, their session context carries their assigned `priceBookCode`. All API pricing requests automatically pass their custom code.
+  When the wholesale customer logs in, their session context carries their assigned `priceBookCode`. The storefront cart and checkout pricing services automatically resolve and apply their custom catalog prices.
 
-  #### Method 2: Quantity Triggered Checkout
+  #### Method 2: Quantity Triggered Checkout (Future Backlog)
   The shopping cart detects if the total quantity of items meets wholesale thresholds (e.g. 50+ items), and dynamically switches the query code to `WHOLESALE`.
 
 - **Data Resolution Flow**:
@@ -87,12 +87,12 @@ Because B2B wholesale rates and VIP contract prices must be protected from leaka
 - **How it is Assigned & Mapped**:
   Since this targets specific individuals or segments, we configure this mapping via three main developer avenues:
 
-  #### Method 1: Customer Profile Field (Individual Assign)
-  Under the Admin CRM portal, the merchant edits the profile of "John Doe" and sets his exclusive pricing catalog:
-  - **Database level**: `users.price_book_code = 'VIP-GOLD'`.
-  - **Resolution**: When John logs in and browses the site, his session context automatically fetches his `VIP-GOLD` code and forwards it to the checkout calculations.
+  #### Method 1: Customer Profile Field (Implemented)
+  Under the Admin CRM portal, the merchant edits the customer profile (in the B2B tab) and selects their exclusive pricing catalog from the **"Assigned Price Book"** dropdown:
+  - **Database level**: `users.price_book_code` persists the code (e.g., `'VIP-GOLD'`).
+  - **Resolution**: When the user logs in and browses the site, their session context automatically fetches their `priceBookCode` (e.g., `'VIP-GOLD'`) and uses it for storefront cart pricing (`CartService.transformCart()`) and order checkout pricing (`OrderService.create()`).
 
-  #### Method 2: CRM Segment mapping (Group Assign)
+  #### Method 2: CRM Segment mapping (Group Assign - Future Backlog)
   We can link CRM Audience segments or Loyalty Tiers to a specific price book:
   - Create a relational mapping table `customer_segments_price_books`:
     ```sql
@@ -104,8 +104,8 @@ Because B2B wholesale rates and VIP contract prices must be protected from leaka
     ```
   - When a customer is added to the "Platinum Loyalty Tier", the system resolves their group price book code (`VIP-PLATINUM`) dynamically based on their active segment membership.
 
-  #### Method 3: Sales Rep / Cashier Manual Override
-  When a sales representative creates a manual invoice (draft order) for a customer in the admin back-office, they select the contracted price book from a dropdown in the Order Panel. This explicitly passes the contract code to the order processor.
+  #### Method 3: Sales Rep / Cashier Manual Override (Implemented via Checkout)
+  When a sales representative creates an order (or when checkout APIs are invoked), they can explicitly specify a `priceBookCode` in the request payload. In `OrderService`, the explicit request code overrides the customer's default assigned price book code.
 
 - **Data Resolution Flow**:
   ```
@@ -121,7 +121,65 @@ Because B2B wholesale rates and VIP contract prices must be protected from leaka
 
 Each price book can hold **multiple tier rows per product**, sorted by `minQuantity`. The engine always picks the **highest matching tier** for the ordered quantity.
 
-### Example: Cotton Polo Shirt
+### A. Technical Implementation & Database Schema
+
+Under the hood, price tiers are stored in the `product_prices` table. The schema maps a price to a specific product (and optionally, a specific product variant), scoped to a single `priceBook` and a `tenantId`.
+
+#### `ProductPriceEntity` Schema Structure
+- `id`: UUID (Primary Key)
+- `priceBookId`: UUID (Foreign Key to `price_books`)
+- `productId`: UUID (Foreign Key to `products`)
+- `variantId`: UUID | null (Foreign Key to `product_variants`, optional for variant-specific tiers)
+- `minQuantity`: integer (Minimum quantity required to qualify for this price tier, defaults to `1`)
+- `price`: decimal (The unit price for this tier)
+- `tenantId`: UUID (Multi-tenant scoping)
+
+---
+
+### B. Resolution Algorithm (Pricing Engine)
+
+When an item is added to the cart or checkout occurs, the pricing resolution algorithm fetches all matching price rows for that product (or variant) within the active price book, ordered by `minQuantity` in **descending** order. 
+
+It then performs a single-pass scan to find the first tier that satisfies `orderedQuantity >= tier.minQuantity`.
+
+```typescript
+// From server/src/modules/admin/catalog/pricing/pricing.service.ts
+async getApplicablePrice(
+  productId: string,
+  variantId: string | null,
+  quantity: number,
+  priceBookCode: string | null | undefined,
+  tenantId: string,
+) {
+  // ... Price book resolution omitted ...
+  
+  let applicablePrice = null;
+
+  // 1. Try to find variant-specific price first
+  if (variantId) {
+    const variantPrices = await this.productPriceRepo.find({
+      where: { priceBookId: pb.id, productId, variantId, tenantId },
+      order: { minQuantity: 'DESC' },
+    });
+    applicablePrice = variantPrices.find((p) => quantity >= p.minQuantity);
+  }
+
+  // 2. Fall back to base product price if no variant price found
+  if (!applicablePrice) {
+    const basePrices = await this.productPriceRepo.find({
+      where: { priceBookId: pb.id, productId, variantId: IsNull(), tenantId },
+      order: { minQuantity: 'DESC' },
+    });
+    applicablePrice = basePrices.find((p) => quantity >= p.minQuantity);
+  }
+
+  return applicablePrice ? Number(applicablePrice.price) : null;
+}
+```
+
+---
+
+### C. Example Scenarios: Cotton Polo Shirt
 
 #### RETAIL Book (`DEFAULT-BDT`)
 | Min Quantity | Unit Price (BDT) | Buyer Type |
@@ -130,7 +188,10 @@ Each price book can hold **multiple tier rows per product**, sorted by `minQuant
 | 5 | 480 | Small bulk (5–9 units) |
 | 10 | 460 | Medium bulk (10–24 units) |
 
-> If a customer orders **7 units**, engine picks the `minQuantity: 5` tier → **480 BDT each**.
+> **Evaluation**: If a customer orders **7 units**, the engine loads tiers `[10, 5, 1]` sorted descending.
+> - Tier `minQuantity: 10` → `7 >= 10` is **False**.
+> - Tier `minQuantity: 5` → `7 >= 5` is **True** ✅.
+> - **Result**: `480 BDT` each.
 
 #### WHOLESALE Book (`WHOLESALE`)
 | Min Quantity | Unit Price (BDT) | Buyer Type |
@@ -139,7 +200,10 @@ Each price book can hold **multiple tier rows per product**, sorted by `minQuant
 | 50 | 310 | Large corporate (50–99 units) |
 | 100 | 270 | Factory-level bulk (100+ units) |
 
-> If a wholesale buyer orders **60 units**, engine picks the `minQuantity: 50` tier → **310 BDT each**.
+> **Evaluation**: If a wholesale buyer orders **60 units**, the engine loads tiers `[100, 50, 25]` sorted descending.
+> - Tier `minQuantity: 100` → `60 >= 100` is **False**.
+> - Tier `minQuantity: 50` → `60 >= 50` is **True** ✅.
+> - **Result**: `310 BDT` each.
 
 #### PROMOTIONAL Book (`EID-2026`, active May 20–27)
 | Min Quantity | Unit Price (BDT) | Buyer Type |
@@ -147,7 +211,7 @@ Each price book can hold **multiple tier rows per product**, sorted by `minQuant
 | 1 | 400 | All buyers during sale window |
 | 10 | 380 | Bulk buyers during sale window |
 
-> During the Eid window, even a guest buying 1 unit gets the **400 BDT** promotional rate automatically.
+> **Evaluation**: During the Eid window, even a guest buying 1 unit gets the **400 BDT** promotional rate automatically (`1 >= 1` is True).
 
 ---
 
@@ -247,13 +311,19 @@ In the Admin CRM portal → Customer Edit page, set `priceBookCode = 'WHOLESALE'
 
 ---
 
-## 8. Implementation Roadmap for Advanced Mapping (Future Backlog)
+## 8. Implementation Roadmap for Advanced Mapping (Future Backlog & Completed Tasks)
 
-The following features are **not yet implemented** in the backend but are the natural next steps for full-coverage WHOLESALE and CUSTOMER_SPECIFIC assignment automation:
+### Completed Implementations ✅
+- **Customer-Specific Price Book Field**: Added `priceBookCode` to `UserEntity` database table and fully wired up user-creation and update DTOs.
+- **Admin Portal CRM Integration**: Added a premium **"Assigned Price Book"** select dropdown inside the Customer Edit B2B tab, enabling easy assignment of price books (`RETAIL`, `PROMOTIONAL`, `WHOLESALE`, `CUSTOMER_SPECIFIC`) to individual customer accounts.
+- **Storefront Cart Real-time Resolution**: Integrated `PricingService` inside `CartService` so wholesale and VIP customers instantly see their custom catalog prices applied directly in their active storefront cart.
+- **Order Checkout Flow Integration**: Integrated user-level and order-level price book resolution during order processing in `OrderService` (Explicitly provided code > Customer's assigned book > Promotional campaign fallback > Retail fallback).
+
+### Future Backlog 🚀
+The following features are the natural next steps for full-coverage price book assignment automation:
 
 | Feature | Priority | Details |
 | :--- | :--- | :--- |
-| Add `priceBookCode` field to `User` entity | 🔴 High | Persists customer-level book assignment to the DB. Resolved automatically at session login. |
 | Customer segment → Price Book mapping table | 🔴 High | Links CRM audience groups or loyalty tiers to books. Resolves dynamically based on group membership. |
 | Quantity-threshold WHOLESALE auto-trigger | 🟡 Medium | Cart middleware checks if `totalQty` exceeds a merchant-configured threshold, then injects `WHOLESALE` code. |
 | Price Book selector dropdown in Order creation UI | 🟡 Medium | Allows sales reps creating manual back-office orders to explicitly pick the appropriate book. |

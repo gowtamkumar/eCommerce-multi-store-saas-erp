@@ -144,6 +144,9 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 100, nullable: true, name: 'customer_code' })
   customerCode: string
 
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'price_book_code' })
+  priceBookCode: string | null
+
   @Column({ type: 'uuid', name: 'preferred_branch_id', nullable: true })
   preferredBranchId: string
 
