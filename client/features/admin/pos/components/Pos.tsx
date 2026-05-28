@@ -74,6 +74,7 @@ interface Product {
   barcode?: string;
   images?: string[];
   variants?: ProductVariant[];
+  taxRate?: number;
 }
 
 interface CartItem {

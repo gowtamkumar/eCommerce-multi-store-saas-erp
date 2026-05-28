@@ -4,6 +4,7 @@ import { fetchAPI } from '@/services/api';
 import { motion } from 'framer-motion';
 import {
   AlertCircle,
+  CheckCircle,
   DollarSign,
   FileText,
   PackageCheck,
@@ -14,6 +15,25 @@ import {
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { PurchaseOrder } from '@/features/admin/purchase/types';
+import { Product } from '@/features/admin/product/types';
+
+interface StatItem {
+  label: string;
+  value: string;
+  subValue: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  bg: string;
+  border: string;
+}
+
+interface ChartItem {
+  name: string;
+  spend: number;
+}
+
+type ProductWithStock = Product & { stock?: number; lowStockThreshold?: number };
 
 // const MOCK_STATS = [
 //   { label: 'Active Suppliers', value: '48', subValue: '+2 this month', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
@@ -33,13 +53,13 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 
 export default function ProcurementDashboard() {
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any[]>([
+  const [stats, setStats] = useState<StatItem[]>([
     { label: 'Active Suppliers', value: '0', subValue: 'Registered SRM Vendors', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
     { label: 'Pending PRs', value: '0', subValue: 'Requires SCM Approval', icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
     { label: 'Open POs', value: '0', subValue: '$0 committed', icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
     { label: 'YTD Spend', value: '$0', subValue: 'Total committed spend', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
   ]);
-  const [chartData, setChartData] = useState<any[]>([
+  const [chartData, setChartData] = useState<ChartItem[]>([
     { name: 'Jan', spend: 0 },
     { name: 'Feb', spend: 0 },
     { name: 'Mar', spend: 0 },
@@ -47,14 +67,19 @@ export default function ProcurementDashboard() {
     { name: 'May', spend: 0 },
     { name: 'Jun', spend: 0 },
   ]);
+  const [delayedShipments, setDelayedShipments] = useState<PurchaseOrder[]>([]);
+  const [lowStockWarnings, setLowStockWarnings] = useState<ProductWithStock[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [timeframe, setTimeframe] = useState<'YTD' | 'Last 12 Months'>('YTD');
 
   useEffect(() => {
     const fetchSCMData = async () => {
       try {
         setLoading(true);
-        const [suppliersRes, poRes] = await Promise.all([
+        const [suppliersRes, poRes, productsRes] = await Promise.all([
           fetchAPI('/suppliers?limit=100').catch(() => null),
           fetchAPI('/purchase-orders?limit=100').catch(() => null),
+          fetchAPI('/products?limit=100').catch(() => null),
         ]);
 
         let activeSuppliersCount = 0;
@@ -67,9 +92,10 @@ export default function ProcurementDashboard() {
         let pendingRequisitionsCount = 0;
 
         if (poRes && poRes.success) {
-          const poList = poRes.data?.items || poRes.data?.list || poRes.data || [];
-          poList.forEach((po: any) => {
-            const status = po.status || '';
+          const poList: PurchaseOrder[] = poRes.data?.items || poRes.data?.list || poRes.data || [];
+          setPurchaseOrders(poList);
+          poList.forEach((po: PurchaseOrder) => {
+            const status = po.status?.toUpperCase() || '';
             if (status === 'ORDERED' || status === 'PENDING' || status === 'DRAFT') {
               openPOsCount++;
             }
@@ -78,6 +104,16 @@ export default function ProcurementDashboard() {
             }
             ytdSpend += Number(po.totalAmount || 0);
           });
+
+          const activePOs = poList.filter((po: PurchaseOrder) => po.status?.toUpperCase() === 'PENDING');
+          const delayedPOs = activePOs.filter((po: PurchaseOrder) => po.deliveryDate && new Date(po.deliveryDate) < new Date());
+          setDelayedShipments(delayedPOs);
+        }
+
+        if (productsRes && productsRes.success) {
+          const productList: ProductWithStock[] = productsRes.data || [];
+          const lowStockItems = productList.filter((p: ProductWithStock) => Number(p.stock || 0) <= Number(p.lowStockThreshold || 5));
+          setLowStockWarnings(lowStockItems);
         }
 
         setStats([
@@ -118,30 +154,6 @@ export default function ProcurementDashboard() {
             border: 'border-emerald-100'
           },
         ]);
-
-        if (poRes && poRes.success) {
-          const poList = poRes.data?.items || poRes.data?.list || poRes.data || [];
-          const monthlySpend: Record<string, number> = {
-            Jan: 0, Feb: 0, Mar: 0, Apr: 0, May: 0, Jun: 0,
-            Jul: 0, Aug: 0, Sep: 0, Oct: 0, Nov: 0, Dec: 0
-          };
-          poList.forEach((po: any) => {
-            if (po.createdAt) {
-              const date = new Date(po.createdAt);
-              const monthName = date.toLocaleString('default', { month: 'short' });
-              if (monthlySpend[monthName] !== undefined) {
-                monthlySpend[monthName] += Number(po.totalAmount || 0);
-              }
-            }
-          });
-
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-          const updatedChartData = months.map(m => ({
-            name: m,
-            spend: monthlySpend[m] || 0
-          }));
-          setChartData(updatedChartData);
-        }
       } catch (error) {
         console.error('Failed to load dynamic SCM dashboard metrics:', error);
       } finally {
@@ -151,6 +163,62 @@ export default function ProcurementDashboard() {
 
     fetchSCMData();
   }, []);
+
+  useEffect(() => {
+    if (purchaseOrders.length === 0) return;
+
+    const allMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const today = new Date();
+    const monthsList: { label: string; monthIndex: number; year: number }[] = [];
+
+    if (timeframe === 'YTD') {
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth();
+      const numMonths = Math.max(6, currentMonth + 1);
+      for (let i = 0; i < numMonths; i++) {
+        monthsList.push({
+          label: allMonths[i],
+          monthIndex: i,
+          year: currentYear
+        });
+      }
+    } else {
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        monthsList.push({
+          label: d.toLocaleString('default', { month: 'short' }),
+          monthIndex: d.getMonth(),
+          year: d.getFullYear()
+        });
+      }
+    }
+
+    const updatedChartData = monthsList.map(({ label, monthIndex, year }) => {
+      let spend = 0;
+      purchaseOrders.forEach((po: PurchaseOrder) => {
+        if (po.createdAt) {
+          const poDate = new Date(po.createdAt);
+          if (poDate.getMonth() === monthIndex && poDate.getFullYear() === year) {
+            spend += Number(po.totalAmount || 0);
+          }
+        }
+      });
+      return {
+        name: timeframe === 'YTD' ? label : `${label} ${year.toString().slice(-2)}`,
+        spend
+      };
+    });
+
+    setChartData(updatedChartData);
+  }, [purchaseOrders, timeframe]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-24">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto space-y-8">
@@ -211,9 +279,13 @@ export default function ProcurementDashboard() {
                 Spend <span className="text-indigo-600">Analytics</span>
               </h2>
             </div>
-            <select className="bg-slate-50 dark:bg-slate-700 border-none text-xs font-bold rounded-xl px-4 py-2 outline-none cursor-pointer">
-              <option>Year to Date</option>
-              <option>Last 12 Months</option>
+            <select
+              value={timeframe}
+              onChange={(e) => setTimeframe(e.target.value as 'YTD' | 'Last 12 Months')}
+              className="bg-slate-50 dark:bg-slate-700 border-none text-xs font-bold rounded-xl px-4 py-2 outline-none cursor-pointer"
+            >
+              <option value="YTD">Year to Date</option>
+              <option value="Last 12 Months">Last 12 Months</option>
             </select>
           </div>
 
@@ -242,7 +314,7 @@ export default function ProcurementDashboard() {
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '16px', color: '#fff' }}
-                  formatter={(value: any) => [`$${value.toLocaleString()}`, 'Spend']}
+                  formatter={(value: unknown) => [`$${Number(value || 0).toLocaleString()}`, 'Spend']}
                 />
                 <Area
                   type="monotone"
@@ -264,20 +336,37 @@ export default function ProcurementDashboard() {
               Critical <span className="text-rose-500">Alerts</span>
             </h2>
             <div className="space-y-4">
-              <div className="flex items-start gap-4 p-4 bg-rose-50 dark:bg-rose-900/20 rounded-2xl border border-rose-100 dark:border-rose-800/50">
-                <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-black text-rose-900 dark:text-rose-400">Delayed Shipment</p>
-                  <p className="text-[10px] font-bold text-rose-700/70 dark:text-rose-500 uppercase mt-1">PO-9021 • Global Tech Inc.</p>
+              {delayedShipments.length === 0 && lowStockWarnings.length === 0 && (
+                <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-800/20">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-black text-emerald-900 dark:text-emerald-400 uppercase tracking-wider">All Systems Normal</p>
+                    <p className="text-[10px] text-emerald-700/70 dark:text-emerald-500 mt-0.5">No delayed shipments or low stock warnings.</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start gap-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800/50">
-                <PackageCheck className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-black text-amber-900 dark:text-amber-400">Low Stock Warning</p>
-                  <p className="text-[10px] font-bold text-amber-700/70 dark:text-amber-500 uppercase mt-1">Raw Materials • Needs PR</p>
+              )}
+              {delayedShipments.slice(0, 3).map((po) => (
+                <div key={po.id} className="flex items-start gap-4 p-4 bg-rose-50 dark:bg-rose-900/20 rounded-2xl border border-rose-100 dark:border-rose-800/50">
+                  <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-black text-rose-900 dark:text-rose-400">Delayed Shipment</p>
+                    <p className="text-[10px] font-bold text-rose-700/70 dark:text-rose-500 uppercase mt-1">
+                      {po.referenceNumber} • {po.supplier?.name || 'Unknown Supplier'}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ))}
+              {lowStockWarnings.slice(0, 3).map((product) => (
+                <div key={product.id} className="flex items-start gap-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800/50">
+                  <PackageCheck className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-black text-amber-900 dark:text-amber-400">Low Stock Warning</p>
+                    <p className="text-[10px] font-bold text-amber-700/70 dark:text-amber-500 uppercase mt-1">
+                      {product.name} • Stock: {product.stock || 0} (Min: {product.lowStockThreshold || 5})
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

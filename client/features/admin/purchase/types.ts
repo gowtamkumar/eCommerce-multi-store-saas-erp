@@ -3,7 +3,8 @@ export interface PurchaseOrder {
     referenceNumber: string;
     supplierId: string;
     totalAmount: number;
-    status: 'DRAFT' | 'PENDING' | 'RECEIVED' | 'CANCELLED';
+    status: 'DRAFT' | 'PENDING' | 'RECEIVED' | 'CANCELLED' | 'draft' | 'pending' | 'received' | 'cancelled';
+    deliveryDate?: string;
     createdAt: string;
     updatedAt: string;
     supplier?: {
