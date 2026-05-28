@@ -1,16 +1,31 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    BookOpen, Plus, Search, RefreshCw, Trash2, ArrowRightLeft,
-    Loader2, CheckCircle2, AlertTriangle, X, ChevronDown, ChevronUp,
-    Filter, ArrowUpCircle, ArrowDownCircle, ChevronLeft, ChevronRight, FileText, Scale
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-import { getJournalEntries, createJournalEntry, reverseJournalEntry, getAccounts } from '@/services/accounting';
-import { fetchAPI } from '@/services/api';
 import { useSettings } from '@/hooks/SettingsContext';
+import { createJournalEntry, getAccounts, getJournalEntries, reverseJournalEntry } from '@/services/accounting';
+import { fetchAPI } from '@/services/api';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+    AlertTriangle,
+    ArrowDownCircle,
+    ArrowRightLeft,
+    ArrowUpCircle,
+    BookOpen,
+    CheckCircle2,
+    ChevronDown,
+    ChevronLeft, ChevronRight,
+    ChevronUp,
+    FileText,
+    Filter,
+    Loader2,
+    Plus,
+    RefreshCw,
+    Scale,
+    Search,
+    Trash2,
+    X
+} from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface LedgerEntry {
     id: string;
@@ -85,7 +100,7 @@ const INV_TYPE_LABELS: Record<string, string> = {
 export function GeneralLedgerPage() {
     const { formatPrice } = useSettings();
     const [activeTab, setActiveTab] = useState<'double-entry' | 'inventory'>('double-entry');
-    
+
     // Chart of Accounts for combo box
     const [coa, setCoa] = useState<any[]>([]);
 
@@ -94,7 +109,7 @@ export function GeneralLedgerPage() {
     const [glLoading, setGlLoading] = useState(true);
     const [glSearch, setGlSearch] = useState('');
     const [expandedJournals, setExpandedJournals] = useState<string[]>([]);
-    
+
     // Inventory Ledger state (original features)
     const [invEntries, setInvEntries] = useState<LedgerEntry[]>([]);
     const [invTotal, setInvTotal] = useState(0);
@@ -121,7 +136,7 @@ export function GeneralLedgerPage() {
         try {
             const res = await getAccounts();
             if (res.success) setCoa(res.data || []);
-        } catch {}
+        } catch { }
     };
 
     const loadGLEntries = async () => {
@@ -210,7 +225,7 @@ export function GeneralLedgerPage() {
             toast.error('Journal entry is unbalanced or empty');
             return;
         }
-        
+
         // Ensure all lines have account selection
         if (lines.some(l => !l.accountCode)) {
             toast.error('Please select an account for all entry lines');
@@ -377,9 +392,8 @@ export function GeneralLedgerPage() {
                                         filteredGlEntries.map((journal) => {
                                             const isExpanded = expandedJournals.includes(journal.id);
                                             return (
-                                                <>
-                                                    <tr 
-                                                        key={journal.id} 
+                                                <React.Fragment key={journal.id}>
+                                                    <tr
                                                         onClick={() => toggleExpand(journal.id)}
                                                         className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 cursor-pointer transition-colors"
                                                     >
@@ -458,7 +472,7 @@ export function GeneralLedgerPage() {
                                                             </td>
                                                         </tr>
                                                     )}
-                                                </>
+                                                </React.Fragment>
                                             );
                                         })
                                     )}

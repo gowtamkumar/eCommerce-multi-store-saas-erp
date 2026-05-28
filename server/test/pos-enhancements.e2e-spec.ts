@@ -1,24 +1,24 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { INestApplication } from '@nestjs/common'
-import { DataSource } from 'typeorm'
-import { AppModule } from './../src/app.module'
-import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
-import { ProductStatus } from '@/common/enums/product-status.enum'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { JournalEntryEntity } from '@/modules/admin/operations/finance/accounting/entities/journal-entry.entity'
-import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
-import { PosShiftEntity } from '@/modules/admin/sales/pos/entities/pos-shift.entity'
-import { PosRegisterEntity } from '@/modules/admin/sales/pos/entities/pos-register.entity'
-import { PosDrawerTransactionEntity, PosDrawerTransactionType } from '@/modules/admin/sales/pos/entities/pos-drawer-transaction.entity'
-import { PosService } from '@/modules/admin/sales/pos/pos.service'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
-import { PosPaymentMethod } from '@/modules/admin/sales/pos/dtos/sync-pos-sale.dto'
 import { LedgerEntrySide } from '@/common/enums/journal-type.enum'
-import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
+import { PaymentMethod } from '@/common/enums/payment-method.enum'
+import { ProductStatus } from '@/common/enums/product-status.enum'
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { JournalEntryEntity } from '@/modules/admin/operations/finance/accounting/entities/journal-entry.entity'
+import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
+import { InventoryLedgerEntity } from '@/modules/admin/operations/logistics/inventory-transaction/entities/inventory-ledger.entity'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { PosDrawerTransactionType } from '@/modules/admin/sales/pos/entities/pos-drawer-transaction.entity'
+import { PosRegisterEntity } from '@/modules/admin/sales/pos/entities/pos-register.entity'
+import { PosShiftEntity } from '@/modules/admin/sales/pos/entities/pos-shift.entity'
+import { PosService } from '@/modules/admin/sales/pos/pos.service'
+import { BranchEntity } from '@/modules/system/organization/entities/branch.entity'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { INestApplication } from '@nestjs/common'
+import { Test, TestingModule } from '@nestjs/testing'
+import { DataSource } from 'typeorm'
 import { v4 as uuidv4 } from 'uuid'
+import { AppModule } from './../src/app.module'
 
 describe('POS Enhancements (e2e)', () => {
   let app: INestApplication
@@ -155,7 +155,7 @@ describe('POS Enhancements (e2e)', () => {
             price: 100.0,
           },
         ],
-        paymentMethod: PosPaymentMethod.CASH,
+        paymentMethod: PaymentMethod.CASH,
         paymentAmount: 220.0,
         offlineSaleId,
       }
@@ -168,7 +168,7 @@ describe('POS Enhancements (e2e)', () => {
       const initialOrders = await orderRepo.find({ where: { offlineSaleId } })
       expect(initialOrders).toHaveLength(1)
       const order = initialOrders[0]
-      expect(Number(order.totalAmount)).toBe(200.0) // 200 (tax is inclusive)
+      expect(Number(order.totalAmount)).toBe(220.0) // 200 + 20 tax = 220.0
 
       // Save journal entries count for comparison
       const journalRepo = dataSource.getRepository(JournalEntryEntity)
@@ -200,7 +200,7 @@ describe('POS Enhancements (e2e)', () => {
             price: 100.0,
           },
         ],
-        paymentMethod: PosPaymentMethod.CASH,
+        paymentMethod: PaymentMethod.CASH,
         paymentAmount: 100.0,
         offlineSaleId,
         createdAt: pastDate.toISOString(),
@@ -246,12 +246,12 @@ describe('POS Enhancements (e2e)', () => {
             price: 200.0, // 200 total (tax is inclusive)
           },
         ],
-        paymentMethod: PosPaymentMethod.CASH, // backup field
-        paymentAmount: 200.0,
+        paymentMethod: PaymentMethod.CASH, // backup field
+        paymentAmount: 220.0,
         offlineSaleId,
         payments: [
-          { method: PosPaymentMethod.CASH, amount: 100.0 },
-          { method: PosPaymentMethod.CARD, amount: 100.0 },
+          { method: PaymentMethod.CASH, amount: 110.0 },
+          { method: PaymentMethod.CARD, amount: 110.0 },
         ],
       }
 
@@ -268,13 +268,13 @@ describe('POS Enhancements (e2e)', () => {
       const orderRepo = dataSource.getRepository(OrderEntity)
       const order = await orderRepo.findOne({ where: { offlineSaleId } })
       expect(order.payments).toHaveLength(2)
-      expect(order.payments).toContainEqual({ method: 'CASH', amount: 100 })
-      expect(order.payments).toContainEqual({ method: 'CARD', amount: 100 })
+      expect(order.payments).toContainEqual({ method: 'cash', amount: 110 })
+      expect(order.payments).toContainEqual({ method: 'card', amount: 110 })
 
       // Verify shift aggregates updated
       const postShift = await shiftRepo.findOne({ where: { id: shift.id } })
-      expect(Number(postShift.cashSales) - cashBefore).toBe(100.0)
-      expect(Number(postShift.cardSales) - cardBefore).toBe(100.0)
+      expect(Number(postShift.cashSales) - cashBefore).toBe(110.0)
+      expect(Number(postShift.cardSales) - cardBefore).toBe(110.0)
 
       // Verify GL entries debited the correct amount
       const journalRepo = dataSource.getRepository(JournalEntryEntity)
@@ -286,11 +286,11 @@ describe('POS Enhancements (e2e)', () => {
       })
       expect(journal).toBeDefined()
 
-      // The lines should contain 1000 debit of 200 (Cash + Card split is debited to 1000)
+      // The lines should contain 1000 debit of 220 (Cash + Card split is debited to 1000)
       const debitLine = journal.lines.find(
         (l) => l.account?.code === '1000' && l.side === LedgerEntrySide.DEBIT,
       )
-      expect(Number(debitLine.amount)).toBe(200.0)
+      expect(Number(debitLine.amount)).toBe(220.0)
     })
   })
 

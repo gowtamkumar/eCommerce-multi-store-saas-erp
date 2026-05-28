@@ -25,6 +25,7 @@ import {
   ShoppingCart,
   Trash2,
   User,
+  Wallet,
   X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -124,7 +125,7 @@ export default function Pos() {
 
   // Checkout modal
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'MOBILE' | 'ON_ACCOUNT'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mobile' | 'on_account' | 'wallet'>('cash');
   const [amountTendered, setAmountTendered] = useState<number | ''>('');
   const [processingPayment, setProcessingPayment] = useState(false);
 
@@ -135,11 +136,11 @@ export default function Pos() {
 
   // Split payment state
   const [splitPayment, setSplitPayment] = useState(false);
-  const [splitPayments, setSplitPayments] = useState<{ CASH: number | ''; CARD: number | ''; MOBILE: number | ''; ON_ACCOUNT: number | '' }>({
-    CASH: '',
-    CARD: '',
-    MOBILE: '',
-    ON_ACCOUNT: '',
+  const [splitPayments, setSplitPayments] = useState<{ cash: number | ''; card: number | ''; mobile: number | ''; on_account: number | '' }>({
+    cash: '',
+    card: '',
+    mobile: '',
+    on_account: '',
   });
 
   // Cash drawer state
@@ -212,10 +213,10 @@ export default function Pos() {
 
   const getSplitPaymentsSum = () => {
     return (
-      Number(splitPayments.CASH || 0) +
-      Number(splitPayments.CARD || 0) +
-      Number(splitPayments.MOBILE || 0) +
-      (selectedCustomer ? Number(splitPayments.ON_ACCOUNT || 0) : 0)
+      Number(splitPayments.cash || 0) +
+      Number(splitPayments.card || 0) +
+      Number(splitPayments.mobile || 0) +
+      (selectedCustomer ? Number(splitPayments.on_account || 0) : 0)
     );
   };
 
@@ -856,17 +857,20 @@ export default function Pos() {
   }, [products]);
 
   useEffect(() => {
-    if (selectedCustomer) {
-      // 1. Fetch wallet balance
-      fetchAPI(`/finance/wallet/${selectedCustomer.id}`)
-        .then((res) => {
-          if (res.success && res.data) {
-            setWalletBalance(Number(res.data.balance || 0));
-          }
-        })
-        .catch(() => setWalletBalance(0));
+    if (!selectedCustomer) {
+      setWalletBalance(0);
+      setOutstandingBalance(0);
+      setUseWalletBalance(false);
+      setWalletAmountToUse('');
+      if (paymentMethod === 'on_account' || paymentMethod === 'wallet') {
+        setPaymentMethod('cash');
+      }
+    }
+  }, [selectedCustomer]);
 
-      // 2. Fetch outstanding balance
+  // Fetch outstanding AR balance whenever customer changes (wallet is fetched on-demand when WALLET method is selected)
+  useEffect(() => {
+    if (selectedCustomer) {
       fetchAPI(`/finance/ar/customer/${selectedCustomer.id}`)
         .then((res) => {
           if (res.success && Array.isArray(res.data)) {
@@ -875,14 +879,6 @@ export default function Pos() {
           }
         })
         .catch(() => setOutstandingBalance(0));
-    } else {
-      setWalletBalance(0);
-      setOutstandingBalance(0);
-      setUseWalletBalance(false);
-      setWalletAmountToUse('');
-      if (paymentMethod === 'ON_ACCOUNT') {
-        setPaymentMethod('CASH');
-      }
     }
   }, [selectedCustomer]);
 
@@ -999,7 +995,7 @@ export default function Pos() {
     // 1. Validation
     const remainingAmount = getRemainingPayableAmount();
 
-    let payments: { method: 'CASH' | 'CARD' | 'MOBILE' | 'ON_ACCOUNT'; amount: number }[] | undefined = undefined;
+    let payments: { method: 'cash' | 'card' | 'mobile' | 'on_account'; amount: number }[] | undefined = undefined;
 
     if (splitPayment) {
       const sum = getSplitPaymentsSum();
@@ -1007,24 +1003,24 @@ export default function Pos() {
         toast.error(`Split payments total ($${sum.toFixed(2)}) must equal remaining payable amount ($${remainingAmount.toFixed(2)})`);
         return;
       }
-      if (Number(splitPayments.ON_ACCOUNT || 0) > 0 && !selectedCustomer) {
+      if (Number(splitPayments.on_account || 0) > 0 && !selectedCustomer) {
         toast.error('Customer profile selection required for on-account split checkout');
         return;
       }
 
       payments = [];
-      if (Number(splitPayments.CASH || 0) > 0) payments.push({ method: 'CASH', amount: Number(splitPayments.CASH) });
-      if (Number(splitPayments.CARD || 0) > 0) payments.push({ method: 'CARD', amount: Number(splitPayments.CARD) });
-      if (Number(splitPayments.MOBILE || 0) > 0) payments.push({ method: 'MOBILE', amount: Number(splitPayments.MOBILE) });
-      if (selectedCustomer && Number(splitPayments.ON_ACCOUNT || 0) > 0) {
-        payments.push({ method: 'ON_ACCOUNT', amount: Number(splitPayments.ON_ACCOUNT) });
+      if (Number(splitPayments.cash || 0) > 0) payments.push({ method: 'cash', amount: Number(splitPayments.cash) });
+      if (Number(splitPayments.card || 0) > 0) payments.push({ method: 'card', amount: Number(splitPayments.card) });
+      if (Number(splitPayments.mobile || 0) > 0) payments.push({ method: 'mobile', amount: Number(splitPayments.mobile) });
+      if (selectedCustomer && Number(splitPayments.on_account || 0) > 0) {
+        payments.push({ method: 'on_account', amount: Number(splitPayments.on_account) });
       }
     } else {
-      if (paymentMethod === 'ON_ACCOUNT' && !selectedCustomer) {
+      if (paymentMethod === 'on_account' && !selectedCustomer) {
         toast.error('Customer profile selection required for on-account checkout');
         return;
       }
-      if (paymentMethod === 'CASH' && amountTendered !== '' && Number(amountTendered) < remainingAmount) {
+      if (paymentMethod === 'cash' && amountTendered !== '' && Number(amountTendered) < remainingAmount) {
         toast.error('Tendered cash must equal or exceed remaining payable amount');
         return;
       }
@@ -1039,10 +1035,17 @@ export default function Pos() {
       price: item.price,
     }));
 
+    // When WALLET is selected, auto-enable wallet deduction from the amount input
+    const isWalletPayment = !splitPayment && paymentMethod === 'wallet';
+    const resolvedUseWallet = isWalletPayment ? true : useWalletBalance;
+    const resolvedWalletAmount = isWalletPayment
+      ? (walletAmountToUse !== '' ? Number(walletAmountToUse) : undefined)
+      : (useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : undefined);
+
     const salePayload = {
       shiftId: activeShift?.id || '',
       items: itemsPayload,
-      paymentMethod: splitPayment ? 'CASH' : paymentMethod, // main default method
+      paymentMethod: splitPayment ? 'cash' : paymentMethod, // main default method
       paymentAmount: calculateGrandTotal(),
       customerId: selectedCustomer?.id || undefined,
       appliedCoupon: couponApplied?.code || undefined,
@@ -1050,8 +1053,8 @@ export default function Pos() {
       deliveryZone: deliveryZone || undefined,
       shippingFee: calculateShippingFee(),
       shippingAddress: shippingAddress || undefined,
-      useWalletBalance: useWalletBalance || undefined,
-      walletAmountToUse: useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : undefined,
+      useWalletBalance: resolvedUseWallet || undefined,
+      walletAmountToUse: resolvedWalletAmount,
       offlineSaleId,
       createdAt,
       payments,
@@ -1089,11 +1092,11 @@ export default function Pos() {
           grandTotal: calculateGrandTotal(),
           paymentMethod: splitPayment ? 'SPLIT' : paymentMethod,
           amountTendered: splitPayment
-            ? Number(splitPayments.CASH || 0)
+            ? Number(splitPayments.cash || 0)
             : (amountTendered === '' ? remainingAmount : Number(amountTendered)),
           changeDue: splitPayment
             ? 0
-            : (paymentMethod === 'CASH' && amountTendered !== '' ? Number(amountTendered) - remainingAmount : 0),
+            : (paymentMethod === 'cash' && amountTendered !== '' ? Number(amountTendered) - remainingAmount : 0),
           walletDeduction: useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : 0,
           customer: selectedCustomer,
           isOffline: true,
@@ -1137,11 +1140,11 @@ export default function Pos() {
           grandTotal: calculateGrandTotal(),
           paymentMethod: splitPayment ? 'SPLIT' : paymentMethod,
           amountTendered: splitPayment
-            ? Number(splitPayments.CASH || 0)
+            ? Number(splitPayments.cash || 0)
             : (amountTendered === '' ? remainingAmount : Number(amountTendered)),
           changeDue: splitPayment
             ? 0
-            : (paymentMethod === 'CASH' && amountTendered !== '' ? Number(amountTendered) - remainingAmount : 0),
+            : (paymentMethod === 'cash' && amountTendered !== '' ? Number(amountTendered) - remainingAmount : 0),
           walletDeduction: useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : 0,
           customer: selectedCustomer,
           splitPayments: payments,
@@ -1186,11 +1189,11 @@ export default function Pos() {
           grandTotal: calculateGrandTotal(),
           paymentMethod: splitPayment ? 'SPLIT' : paymentMethod,
           amountTendered: splitPayment
-            ? Number(splitPayments.CASH || 0)
+            ? Number(splitPayments.cash || 0)
             : (amountTendered === '' ? remainingAmount : Number(amountTendered)),
           changeDue: splitPayment
             ? 0
-            : (paymentMethod === 'CASH' && amountTendered !== '' ? Number(amountTendered) - remainingAmount : 0),
+            : (paymentMethod === 'cash' && amountTendered !== '' ? Number(amountTendered) - remainingAmount : 0),
           walletDeduction: useWalletBalance && walletAmountToUse !== '' ? Number(walletAmountToUse) : 0,
           customer: selectedCustomer,
           isOffline: true,
@@ -1222,10 +1225,10 @@ export default function Pos() {
     setSelectedCustomer(null);
     setSplitPayment(false);
     setSplitPayments({
-      CASH: '',
-      CARD: '',
-      MOBILE: '',
-      ON_ACCOUNT: '',
+      cash: '',
+      card: '',
+      mobile: '',
+      on_account: '',
     });
   };
 
@@ -1886,10 +1889,10 @@ export default function Pos() {
                         onChange={(e) => {
                           setSplitPayment(e.target.checked);
                           setSplitPayments({
-                            CASH: '',
-                            CARD: '',
-                            MOBILE: '',
-                            ON_ACCOUNT: '',
+                            cash: '',
+                            card: '',
+                            mobile: '',
+                            on_account: '',
                           });
                         }}
                         className="rounded border-slate-350 text-brand-600 focus:ring-brand-500 h-3 w-3"
@@ -1899,11 +1902,11 @@ export default function Pos() {
                   </div>
 
                   {!splitPayment ? (
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="grid grid-cols-5 gap-1.5">
                       <button
                         type="button"
-                        onClick={() => setPaymentMethod('CASH')}
-                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'CASH'
+                        onClick={() => setPaymentMethod('cash')}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'cash'
                           ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
                           : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
                           }`}
@@ -1912,8 +1915,8 @@ export default function Pos() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setPaymentMethod('CARD')}
-                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'CARD'
+                        onClick={() => setPaymentMethod('card')}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'card'
                           ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
                           : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
                           }`}
@@ -1922,8 +1925,8 @@ export default function Pos() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setPaymentMethod('MOBILE')}
-                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'MOBILE'
+                        onClick={() => setPaymentMethod('mobile')}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'mobile'
                           ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
                           : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
                           }`}
@@ -1933,13 +1936,39 @@ export default function Pos() {
                       <button
                         type="button"
                         disabled={!selectedCustomer}
-                        onClick={() => setPaymentMethod('ON_ACCOUNT')}
-                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'ON_ACCOUNT'
+                        onClick={() => setPaymentMethod('on_account')}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'on_account'
                           ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900 shadow-md'
                           : 'border-slate-200 dark:border-slate-850 hover:border-slate-400 text-slate-650'
                           } disabled:opacity-40 disabled:cursor-not-allowed`}
                       >
                         <Coins className="w-3.5 h-3.5" /> Account
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!selectedCustomer}
+                        onClick={() => {
+                          setPaymentMethod('wallet');
+                          setWalletBalance(0);
+                          setWalletAmountToUse('');
+                          if (selectedCustomer) {
+                            fetchAPI(`/finance/wallet/${selectedCustomer.id}`)
+                              .then((res) => {
+                                if (res.success && res.data) {
+                                  const bal = Number(res.data.balance || 0);
+                                  setWalletBalance(bal);
+                                  setWalletAmountToUse(Math.min(bal, calculateGrandTotal()));
+                                }
+                              })
+                              .catch(() => setWalletBalance(0));
+                          }
+                        }}
+                        className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border gap-1 transition-all font-bold text-[10px] ${paymentMethod === 'wallet'
+                          ? 'bg-violet-600 border-violet-600 text-white shadow-md'
+                          : 'border-slate-200 dark:border-slate-850 hover:border-violet-400 text-slate-650'
+                          } disabled:opacity-40 disabled:cursor-not-allowed`}
+                      >
+                        <Wallet className="w-3.5 h-3.5" /> Wallet
                       </button>
                     </div>
                   ) : (
@@ -1953,11 +1982,11 @@ export default function Pos() {
                           min="0"
                           step="0.01"
                           placeholder="0.00"
-                          value={splitPayments.CASH}
+                          value={splitPayments.cash}
                           onChange={(e) =>
                             setSplitPayments((prev) => ({
                               ...prev,
-                              CASH: e.target.value === '' ? '' : Number(e.target.value),
+                              cash: e.target.value === '' ? '' : Number(e.target.value),
                             }))
                           }
                           className="w-24 text-right px-2.5 py-1 border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl outline-none font-bold text-xs"
@@ -1972,11 +2001,11 @@ export default function Pos() {
                           min="0"
                           step="0.01"
                           placeholder="0.00"
-                          value={splitPayments.CARD}
+                          value={splitPayments.card}
                           onChange={(e) =>
                             setSplitPayments((prev) => ({
                               ...prev,
-                              CARD: e.target.value === '' ? '' : Number(e.target.value),
+                              card: e.target.value === '' ? '' : Number(e.target.value),
                             }))
                           }
                           className="w-24 text-right px-2.5 py-1 border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl outline-none font-bold text-xs"
@@ -1991,11 +2020,11 @@ export default function Pos() {
                           min="0"
                           step="0.01"
                           placeholder="0.00"
-                          value={splitPayments.MOBILE}
+                          value={splitPayments.mobile}
                           onChange={(e) =>
                             setSplitPayments((prev) => ({
                               ...prev,
-                              MOBILE: e.target.value === '' ? '' : Number(e.target.value),
+                              mobile: e.target.value === '' ? '' : Number(e.target.value),
                             }))
                           }
                           className="w-24 text-right px-2.5 py-1 border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl outline-none font-bold text-xs"
@@ -2011,11 +2040,11 @@ export default function Pos() {
                           step="0.01"
                           placeholder="0.00"
                           disabled={!selectedCustomer}
-                          value={splitPayments.ON_ACCOUNT}
+                          value={splitPayments.on_account}
                           onChange={(e) =>
                             setSplitPayments((prev) => ({
                               ...prev,
-                              ON_ACCOUNT: e.target.value === '' ? '' : Number(e.target.value),
+                              on_account: e.target.value === '' ? '' : Number(e.target.value),
                             }))
                           }
                           className="w-24 text-right px-2.5 py-1 border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl outline-none font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed"
@@ -2038,9 +2067,9 @@ export default function Pos() {
                   )}
                 </div>
 
-                {/* Customer Financial / B2B Credit Profile & Wallet Payments */}
+                {/* Customer Credit Profile */}
                 {selectedCustomer && (
-                  <div className="space-y-3 p-4 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-850">
+                  <div className="space-y-2 p-3 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-850">
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-bold text-slate-700 dark:text-slate-350">Customer Profile</span>
                       {selectedCustomer.creditHold && (
@@ -2049,53 +2078,48 @@ export default function Pos() {
                         </span>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
-                      <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
-                        <p className="text-slate-400 font-bold uppercase tracking-wider">Wallet Balance</p>
-                        <p className="text-sm font-black text-slate-800 dark:text-white">${walletBalance.toFixed(2)}</p>
-                      </div>
-                      <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
-                        <p className="text-slate-400 font-bold uppercase tracking-wider">Credit Limit / Debt</p>
-                        <p className="text-sm font-black text-slate-800 dark:text-white">
-                          ${Number(selectedCustomer.creditLimit || 0).toFixed(2)} / ${outstandingBalance.toFixed(2)}
-                        </p>
-                      </div>
+                    <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800 text-[10px]">
+                      <p className="text-slate-400 font-bold uppercase tracking-wider">Credit Limit / Debt</p>
+                      <p className="text-sm font-black text-slate-800 dark:text-white">
+                        ${Number(selectedCustomer.creditLimit || 0).toFixed(2)} / ${outstandingBalance.toFixed(2)}
+                      </p>
                     </div>
+                  </div>
+                )}
 
-                    {walletBalance > 0 && (
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-350">
-                          <input
-                            type="checkbox"
-                            checked={useWalletBalance}
-                            onChange={(e) => {
-                              setUseWalletBalance(e.target.checked);
-                              if (e.target.checked) {
-                                setWalletAmountToUse(Math.min(walletBalance, calculateGrandTotal()));
-                              } else {
-                                setWalletAmountToUse('');
-                              }
-                            }}
-                            className="rounded border-slate-300 text-brand-650 focus:ring-brand-500"
-                          />
-                          Pay with Store Credit / Wallet
-                        </label>
-                        {useWalletBalance && (
-                          <div className="flex justify-between items-center pt-1.5">
-                            <span className="text-[10px] text-slate-400 font-bold">Apply Amount ($)</span>
-                            <input
-                              type="number"
-                              min="0.01"
-                              max={walletBalance}
-                              value={walletAmountToUse}
-                              onChange={(e) =>
-                                setWalletAmountToUse(e.target.value === '' ? '' : Number(e.target.value))
-                              }
-                              className="w-28 text-right px-2 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg outline-none font-bold text-xs"
-                            />
-                          </div>
+                {/* Wallet Payment Input — shown only when WALLET method is selected */}
+                {paymentMethod === 'wallet' && selectedCustomer && (
+                  <div className="space-y-2 p-3 bg-violet-50/60 dark:bg-violet-950/20 rounded-2xl border border-violet-200 dark:border-violet-800">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1.5 font-bold text-violet-700 dark:text-violet-300">
+                        <Wallet className="w-3.5 h-3.5" /> Wallet Balance
+                      </span>
+                      <span className="text-sm font-black text-violet-700 dark:text-violet-300">
+                        {walletBalance === 0 ? (
+                          <span className="text-slate-400 text-[10px] font-bold">Loading…</span>
+                        ) : (
+                          `$${walletBalance.toFixed(2)}`
                         )}
+                      </span>
+                    </div>
+                    {walletBalance > 0 ? (
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] text-violet-600 dark:text-violet-400 font-bold">Apply Amount ($)</span>
+                        <input
+                          type="number"
+                          min="0.01"
+                          max={walletBalance}
+                          value={walletAmountToUse}
+                          onChange={(e) =>
+                            setWalletAmountToUse(e.target.value === '' ? '' : Number(e.target.value))
+                          }
+                          className="w-28 text-right px-2 py-1 border border-violet-300 dark:border-violet-700 bg-white dark:bg-slate-900 rounded-lg outline-none font-bold text-xs focus:ring-1 focus:ring-violet-500"
+                        />
                       </div>
+                    ) : (
+                      walletBalance === 0 && (
+                        <p className="text-[10px] text-slate-400 font-bold text-center py-1">No wallet balance available for this customer.</p>
+                      )
                     )}
                   </div>
                 )}
@@ -2156,7 +2180,7 @@ export default function Pos() {
                     </span>
                   </div>
 
-                  {paymentMethod === 'CASH' && (
+                  {paymentMethod === 'cash' && (
                     <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-850">
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-slate-500">Amount Tendered</span>

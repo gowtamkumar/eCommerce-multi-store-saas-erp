@@ -253,7 +253,7 @@ export default function WalletManagement() {
                 ) : (
                   <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                     {selectedCustomerWallet.history.map((tx) => {
-                      const isCredit = tx.amount > 0;
+                      const isCredit = Number(tx.amount) > 0;
                       return (
                         <div key={tx.id} className="py-3.5 flex justify-between items-start gap-4">
                           <div className="min-w-0">
@@ -273,9 +273,9 @@ export default function WalletManagement() {
                           </div>
                           <div className="text-right">
                             <p className={`text-sm font-bold font-mono ${isCredit ? 'text-emerald-600' : 'text-rose-600'}`}>
-                              {isCredit ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
+                              {isCredit ? '+' : '-'}${Math.abs(Number(tx.amount)).toFixed(2)}
                             </p>
-                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">Bal: ${tx.balanceAfter.toFixed(2)}</p>
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">Bal: ${Number(tx.balanceAfter).toFixed(2)}</p>
                           </div>
                         </div>
                       );

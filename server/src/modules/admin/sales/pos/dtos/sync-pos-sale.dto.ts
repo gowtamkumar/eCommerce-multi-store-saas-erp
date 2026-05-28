@@ -1,3 +1,4 @@
+import { PaymentMethod } from '@/common/enums/payment-method.enum'
 import { Type } from 'class-transformer'
 import {
   IsArray,
@@ -11,14 +12,6 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator'
-
-export enum PosPaymentMethod {
-  CASH = 'CASH',
-  CARD = 'CARD',
-  MOBILE = 'MOBILE',
-  ON_ACCOUNT = 'ON_ACCOUNT',
-}
-
 export class PosSaleItemDto {
   @IsUUID()
   @IsNotEmpty()
@@ -49,9 +42,9 @@ export class SyncPosSaleDto {
   @Type(() => PosSaleItemDto)
   items: PosSaleItemDto[]
 
-  @IsEnum(PosPaymentMethod)
+  @IsEnum(PaymentMethod)
   @IsNotEmpty()
-  paymentMethod: PosPaymentMethod
+  paymentMethod: PaymentMethod
 
   @IsNumber()
   @Min(0)
@@ -110,9 +103,9 @@ export class SyncPosSaleDto {
 }
 
 export class PosPaymentBreakdownDto {
-  @IsEnum(PosPaymentMethod)
+  @IsEnum(PaymentMethod)
   @IsNotEmpty()
-  method: PosPaymentMethod
+  method: PaymentMethod
 
   @IsNumber()
   @Min(0)
@@ -123,4 +116,3 @@ export class PosPaymentBreakdownDto {
   @IsOptional()
   transactionId?: string
 }
-

@@ -1,39 +1,37 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
+import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
+import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
+import { OrderSource } from '@/common/enums/order-source.enum'
+import { OrderStatus } from '@/common/enums/order-status.enum'
+import { PaymentMethod } from '@/common/enums/payment-method.enum'
+import { PaymentStatus } from '@/common/enums/payment-status.enum'
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
+import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
+import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
+import { ArService } from '@/modules/admin/operations/finance/accounting/services/ar.service'
+import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
+import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
+import { ProductBatchService } from '@/modules/admin/operations/logistics/inventory-transaction/product-batch.service'
+import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entity'
+import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { DataSource } from 'typeorm'
-import { PosRegisterRepository } from './repositories/pos-register.repository'
-import { PosShiftRepository } from './repositories/pos-shift.repository'
-import { PosDrawerTransactionRepository } from './repositories/pos-drawer-transaction.repository'
-import { PosRegisterEntity } from './entities/pos-register.entity'
-import { PosShiftEntity, PosShiftStatus } from './entities/pos-shift.entity'
+import { ClosePosShiftDto } from './dtos/close-pos-shift.dto'
+import { CreateDrawerTransactionDto } from './dtos/create-drawer-transaction.dto'
+import { CreatePosRegisterDto } from './dtos/create-pos-register.dto'
+import { OpenPosShiftDto } from './dtos/open-pos-shift.dto'
+import { SyncPosSaleDto } from './dtos/sync-pos-sale.dto'
 import {
   PosDrawerTransactionEntity,
   PosDrawerTransactionType,
 } from './entities/pos-drawer-transaction.entity'
-import { CreatePosRegisterDto } from './dtos/create-pos-register.dto'
-import { OpenPosShiftDto } from './dtos/open-pos-shift.dto'
-import { ClosePosShiftDto } from './dtos/close-pos-shift.dto'
-import { CreateDrawerTransactionDto } from './dtos/create-drawer-transaction.dto'
-import { SyncPosSaleDto, PosPaymentMethod } from './dtos/sync-pos-sale.dto'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
-import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
-import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
-import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
-import { OrderStatus } from '@/common/enums/order-status.enum'
-import { OrderSource } from '@/common/enums/order-source.enum'
-import { PaymentStatus } from '@/common/enums/payment-status.enum'
-import { PaymentMethod } from '@/common/enums/payment-method.enum'
-import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { CouponEntity } from '@/modules/admin/sales/coupon/entities/coupon.entity'
-import { ArService } from '@/modules/admin/operations/finance/accounting/services/ar.service'
-import { ArTransactionType } from '@/common/enums/ar-transaction-type.enum'
-import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
-import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
-
-import { ProductBatchService } from '@/modules/admin/operations/logistics/inventory-transaction/product-batch.service'
+import { PosRegisterEntity } from './entities/pos-register.entity'
+import { PosShiftEntity, PosShiftStatus } from './entities/pos-shift.entity'
+import { PosDrawerTransactionRepository } from './repositories/pos-drawer-transaction.repository'
+import { PosRegisterRepository } from './repositories/pos-register.repository'
+import { PosShiftRepository } from './repositories/pos-shift.repository'
 
 @Injectable()
 export class PosService {
@@ -247,9 +245,9 @@ export class PosService {
         currencyRate: 1,
         status: OrderStatus.COMPLETED, // POS sales are immediately fulfilled
         orderSource: OrderSource.POS, // Explicit order type categorization!
-        paymentMethod: dto.paymentMethod.toLowerCase() as unknown as PaymentMethod,
+        paymentMethod: dto.paymentMethod as unknown as PaymentMethod,
         paymentStatus:
-          dto.paymentMethod === PosPaymentMethod.ON_ACCOUNT
+          dto.paymentMethod === PaymentMethod.ON_ACCOUNT
             ? PaymentStatus.PENDING
             : PaymentStatus.PAID,
         tenantId,
@@ -303,7 +301,7 @@ export class PosService {
             Number(item.quantity),
             manager,
           )
-        } catch (batchErr) {
+        } catch (batchErr: any) {
           this.logger.warn(
             `FEFO Batch allocation failed for POS sale item ${item.productId}: ${batchErr.message}. Falling back to default inventory deduction.`,
           )
@@ -423,7 +421,7 @@ export class PosService {
 
       // Verify B2B Credit Limits & Post AR Ledger if ON_ACCOUNT
       const onAccountAmount = paymentBreakdown
-        .filter((p) => p.method === PosPaymentMethod.ON_ACCOUNT)
+        .filter((p) => p.method === PaymentMethod.ON_ACCOUNT)
         .reduce((sum, p) => sum + Number(p.amount), 0)
 
       if (onAccountAmount > 0) {
@@ -472,11 +470,11 @@ export class PosService {
       let newMobileSales = Number(shift.mobileSales || 0)
 
       for (const p of paymentBreakdown) {
-        if (p.method === PosPaymentMethod.CASH) {
+        if (p.method === PaymentMethod.CASH) {
           newCashSales += Number(p.amount)
-        } else if (p.method === PosPaymentMethod.CARD) {
+        } else if (p.method === PaymentMethod.CARD) {
           newCardSales += Number(p.amount)
-        } else if (p.method === PosPaymentMethod.MOBILE) {
+        } else if (p.method === PaymentMethod.MOBILE) {
           newMobileSales += Number(p.amount)
         }
       }
@@ -515,7 +513,7 @@ export class PosService {
 
       for (const p of paymentBreakdown) {
         if (p.amount > 0) {
-          const debitAccount = p.method === PosPaymentMethod.ON_ACCOUNT ? '1200' : '1000'
+          const debitAccount = p.method === PaymentMethod.ON_ACCOUNT ? '1200' : '1000'
           addLine(debitAccount, LedgerEntrySide.DEBIT, Number(p.amount))
         }
       }
