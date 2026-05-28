@@ -30,7 +30,16 @@ export class SettingsService {
         let settings = await this.settingsRepository.findByTenantId(tenantId)
         // Create default settings if not exists
         if (!settings) {
-          settings = await this.settingsRepository.createAndSave({}, ctx)
+          try {
+            settings = await this.settingsRepository.createAndSave({}, ctx)
+          } catch (err: any) {
+            // Handle race condition if another thread created it concurrently
+            if (err.code === '23505' || err.message?.includes('unique') || err.message?.includes('duplicate')) {
+              settings = await this.settingsRepository.findByTenantId(tenantId)
+            } else {
+              throw err
+            }
+          }
         }
 
         const tenant = await this.tenantRepository.findById(tenantId)
@@ -81,6 +90,24 @@ export class SettingsService {
   ): Promise<SiteSettingsEntity> {
     this.logger.log(`${this.createSetting.name} Service Called`)
     const tenantId = ctx.tenantId
-    return await this.settingsRepository.createAndSave(dto, ctx)
+
+    // Check if settings already exist
+    const existing = await this.settingsRepository.findByTenantId(tenantId)
+    if (existing) {
+      this.logger.log(`Site settings already exist for tenant ${tenantId}, updating instead.`)
+      return await this.settingsRepository.updateAndSave(existing, dto)
+    }
+
+    try {
+      return await this.settingsRepository.createAndSave(dto, ctx)
+    } catch (err: any) {
+      if (err.code === '23505' || err.message?.includes('unique') || err.message?.includes('duplicate')) {
+        const latest = await this.settingsRepository.findByTenantId(tenantId)
+        if (latest) {
+          return await this.settingsRepository.updateAndSave(latest, dto)
+        }
+      }
+      throw err
+    }
   }
 }

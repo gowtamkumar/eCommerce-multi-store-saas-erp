@@ -5,7 +5,7 @@ import { CreatePathaoOrderDto } from '@/modules/admin/operations/logistics/couri
 import { OrderService } from '@/modules/admin/sales/order/services/order.service'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { HttpService } from '@nestjs/axios'
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { firstValueFrom } from 'rxjs'
 
@@ -85,9 +85,13 @@ export class PathaoService {
             ),
           )
           return response.data.access_token
-        } catch (error) {
+        } catch (error: any) {
           this.logger.error('Pathao token exchange failed', error.response?.data || error.message)
-          throw new Error('Pathao Authentication failed')
+          const errorMsg = error.response?.data?.message || 
+                           (typeof error.response?.data === 'string' ? error.response.data : null) || 
+                           error.response?.data?.error || 
+                           error.message;
+          throw new BadRequestException(`Pathao Authentication failed: ${errorMsg}`)
         }
       },
       3600,
@@ -158,9 +162,13 @@ export class PathaoService {
       )
 
       return response.data
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to create Pathao order', error.response?.data || error.message)
-      throw error
+      const errorMsg = error.response?.data?.message || 
+                       (typeof error.response?.data === 'string' ? error.response.data : null) || 
+                       error.response?.data?.error || 
+                       error.message;
+      throw new BadRequestException(`Pathao: ${errorMsg}`)
     }
   }
 
@@ -183,9 +191,13 @@ export class PathaoService {
             }),
           )
           return response.data
-        } catch (error) {
+        } catch (error: any) {
           this.logger.error('Failed to fetch Pathao cities', error.response?.data || error.message)
-          throw error
+          const errorMsg = error.response?.data?.message || 
+                           (typeof error.response?.data === 'string' ? error.response.data : null) || 
+                           error.response?.data?.error || 
+                           error.message;
+          throw new BadRequestException(`Pathao: ${errorMsg}`)
         }
       },
       86400, // 24 hours
@@ -212,12 +224,16 @@ export class PathaoService {
             }),
           )
           return response.data
-        } catch (error) {
+        } catch (error: any) {
           this.logger.error(
             `Failed to fetch Pathao zones for city ${cityId}`,
             error.response?.data || error.message,
           )
-          throw error
+          const errorMsg = error.response?.data?.message || 
+                           (typeof error.response?.data === 'string' ? error.response.data : null) || 
+                           error.response?.data?.error || 
+                           error.message;
+          throw new BadRequestException(`Pathao: ${errorMsg}`)
         }
       },
       86400,
@@ -244,12 +260,16 @@ export class PathaoService {
             }),
           )
           return response.data
-        } catch (error) {
+        } catch (error: any) {
           this.logger.error(
             `Failed to fetch Pathao areas for zone ${zoneId}`,
             error.response?.data || error.message,
           )
-          throw error
+          const errorMsg = error.response?.data?.message || 
+                           (typeof error.response?.data === 'string' ? error.response.data : null) || 
+                           error.response?.data?.error || 
+                           error.message;
+          throw new BadRequestException(`Pathao: ${errorMsg}`)
         }
       },
       86400,
@@ -284,9 +304,13 @@ export class PathaoService {
         ),
       )
       return response.data
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to calculate Pathao price', error.response?.data || error.message)
-      throw error
+      const errorMsg = error.response?.data?.message || 
+                       (typeof error.response?.data === 'string' ? error.response.data : null) || 
+                       error.response?.data?.error || 
+                       error.message;
+      throw new BadRequestException(`Pathao: ${errorMsg}`)
     }
   }
 
@@ -305,12 +329,16 @@ export class PathaoService {
         }),
       )
       return response.data
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
         `Failed to fetch Pathao status for trackingCode ${trackingCode}`,
         error.response?.data || error.message,
       )
-      throw error
+      const errorMsg = error.response?.data?.message || 
+                       (typeof error.response?.data === 'string' ? error.response.data : null) || 
+                       error.response?.data?.error || 
+                       error.message;
+      throw new BadRequestException(`Pathao: ${errorMsg}`)
     }
   }
 }

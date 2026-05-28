@@ -5,7 +5,7 @@ import { CreateSteadfastOrderDto } from '@/modules/admin/operations/logistics/co
 import { OrderService } from '@/modules/admin/sales/order/services/order.service'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { HttpService } from '@nestjs/axios'
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { firstValueFrom } from 'rxjs'
 
@@ -116,9 +116,13 @@ export class SteadfastService {
       )
 
       return response.data
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Failed to create Steadfast order', error.response?.data || error.message)
-      throw error
+      const errorMsg = error.response?.data?.message || 
+                       (typeof error.response?.data === 'string' ? error.response.data : null) || 
+                       error.response?.data?.error || 
+                       error.message;
+      throw new BadRequestException(`Steadfast: ${errorMsg}`)
     }
   }
 
@@ -138,12 +142,16 @@ export class SteadfastService {
         }),
       )
       return response.data
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
         `Failed to fetch Steadfast status for trackingCode ${trackingCode}`,
         error.response?.data || error.message,
       )
-      throw error
+      const errorMsg = error.response?.data?.message || 
+                       (typeof error.response?.data === 'string' ? error.response.data : null) || 
+                       error.response?.data?.error || 
+                       error.message;
+      throw new BadRequestException(`Steadfast: ${errorMsg}`)
     }
   }
 

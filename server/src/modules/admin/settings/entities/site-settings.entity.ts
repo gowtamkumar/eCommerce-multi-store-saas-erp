@@ -100,7 +100,7 @@ export class SiteSettingsEntity extends BaseEntity {
   @Column({ type: 'text', name: 'robots_txt', nullable: true })
   robotsTxt?: string
 
-  @Column({ type: 'uuid', name: 'tenant_id' })
+  @Column({ type: 'uuid', name: 'tenant_id', unique: true })
   tenantId: string
 
   @ManyToOne(() => TenantEntity, { onDelete: 'CASCADE' })
