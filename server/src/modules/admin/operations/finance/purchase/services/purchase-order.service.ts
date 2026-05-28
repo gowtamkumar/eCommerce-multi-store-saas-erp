@@ -1,13 +1,18 @@
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { GrnStatus } from '@/common/enums/grn-status.enum'
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { PurchaseOrderStatus } from '@/common/enums/purchase-order-status.enum'
+import { SupplierAPLedgerEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier-ap-ledger.entity'
+import { SupplierAPReferenceType } from '@/modules/admin/operations/finance/supplier/enums/supplier-ap-Refernce-type.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { GrnRepository } from '@/modules/admin/operations/logistics/grn/grn.repository'
 import { InjectQueue } from '@nestjs/bullmq'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Queue } from 'bullmq'
-import { DataSource } from 'typeorm'
+import { DataSource, EntityManager } from 'typeorm'
 import { CreatePurchaseOrderDto, UpdatePurchaseOrderStatusDto } from '../dto/purchase-order.dto'
 import { RecordSupplierPaymentDto } from '../dto/record-payment.dto'
 import { PurchaseOrderEntity } from '../entities/purchase-order.entity'
@@ -15,11 +20,6 @@ import { SupplierPaymentEntity } from '../entities/supplier-payment.entity'
 import { PurchaseOrderPaymentStatus } from '../enums/purchase-order-payment-status.enum'
 import { PurchaseOrderRepository } from '../repositories/purchase-order.repository'
 import { SupplierPaymentRepository } from '../repositories/supplier-payment.repository'
-import { GrnRepository } from '@/modules/admin/operations/logistics/grn/grn.repository'
-import { GrnStatus } from '@/common/enums/grn-status.enum'
-import { SupplierAPLedgerEntity } from '@/modules/admin/operations/finance/supplier/entities/supplier-ap-ledger.entity'
-import { SupplierAPReferenceType } from '@/modules/admin/operations/finance/supplier/enums/supplier-ap-Refernce-type.enum'
-import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class PurchaseOrderService {
@@ -43,13 +43,20 @@ export class PurchaseOrderService {
   async createPurchaseOrder(
     dto: CreatePurchaseOrderDto,
     ctx: RequestContextDto,
+    manager?: EntityManager,
   ): Promise<PurchaseOrderEntity> {
     this.logger.log(`${this.createPurchaseOrder.name} Service Called`)
     const tenantId = ctx.tenantId
-    const totalAmount = dto.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+    // Log incoming items and compute total to validate unitPrice values
+    this.logger.log(`Creating PO - items: ${JSON.stringify(dto.items)}`)
+    const totalAmount = dto.items.reduce(
+      (sum, item) => sum + Number(item.quantity) * Number(item.unitPrice),
+      0,
+    )
     const result = await this.repository.createAndSave(
       { ...dto, totalAmount, tenantId } as any,
       ctx,
+      manager,
     )
     await this.cacheService.delCacheByPattern(`po:list*`, tenantId)
     return result
@@ -270,15 +277,18 @@ export class PurchaseOrderService {
 
       // Trigger Notification for Supplier Invoice Due
       try {
-        await this.notificationService.createNotification({
-          title: 'Supplier Invoice Due soon',
-          message: `Invoice for PO ${savedOrder.referenceNumber} is generated and will be due.`,
-          type: 'WARNING',
-          link: `/admin/finance/purchases/orders/${savedOrder.id}`,
-          userId: null as any,
-        }, tenantId);
+        await this.notificationService.createNotification(
+          {
+            title: 'Supplier Invoice Due soon',
+            message: `Invoice for PO ${savedOrder.referenceNumber} is generated and will be due.`,
+            type: 'WARNING',
+            link: `/admin/finance/purchases/orders/${savedOrder.id}`,
+            userId: null as any,
+          },
+          tenantId,
+        )
       } catch (e) {
-        this.logger.error(`Failed to trigger supplier invoice notification: ${e.message}`);
+        this.logger.error(`Failed to trigger supplier invoice notification: ${e.message}`)
       }
 
       return savedOrder

@@ -1,4 +1,6 @@
+import { Type } from 'class-transformer'
 import {
+  ArrayNotEmpty,
   IsArray,
   IsEnum,
   IsNotEmpty,
@@ -8,7 +10,6 @@ import {
   IsUUID,
   ValidateNested,
 } from 'class-validator'
-import { Type } from 'class-transformer'
 import { PRStatus } from '../entities/purchase-requisition.entity'
 
 export class CreatePurchaseRequisitionItemDto {
@@ -41,6 +42,7 @@ export class CreatePurchaseRequisitionDto {
   warehouseId?: string
 
   @IsArray()
+  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => CreatePurchaseRequisitionItemDto)
   items: CreatePurchaseRequisitionItemDto[]
@@ -53,4 +55,13 @@ export class UpdatePurchaseRequisitionStatusDto {
   @IsString()
   @IsOptional()
   rejectionReason?: string
+}
+
+export class ConvertPRToPoDto {
+  @IsUUID()
+  supplierId: string
+
+  @IsString()
+  @IsNotEmpty()
+  referenceNumber: string
 }

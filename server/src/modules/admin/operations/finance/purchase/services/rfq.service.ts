@@ -4,7 +4,12 @@ import { RfqRepository } from '../repositories/rfq.repository'
 import { QuotationRepository } from '../repositories/quotation.repository'
 import { RfqEntity, RFQStatus } from '../entities/rfq.entity'
 import { QuotationEntity, QuotationStatus } from '../entities/quotation.entity'
-import { CreateRfqDto, CreateQuotationDto, UpdateRfqStatusDto, UpdateQuotationStatusDto } from '../dto/rfq.dto'
+import {
+  CreateRfqDto,
+  CreateQuotationDto,
+  UpdateRfqStatusDto,
+  UpdateQuotationStatusDto,
+} from '../dto/rfq.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PaginationDto } from '@/common/dto/pagination.dto'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
@@ -193,11 +198,13 @@ export class RfqService {
             ? rfq.purchaseRequisition.items?.map((i) => ({
                 productId: i.productId,
                 quantity: i.quantity,
-                unitPrice: Number(quotation.totalAmount) / (rfq.purchaseRequisition.items?.length || 1), // Simplification or estimation
+                unitPrice:
+                  Number(quotation.totalAmount) / (rfq.purchaseRequisition.items?.length || 1), // Simplification or estimation
               })) || []
             : [],
         } as any,
         ctx,
+        queryRunner.manager,
       )
 
       await queryRunner.commitTransaction()

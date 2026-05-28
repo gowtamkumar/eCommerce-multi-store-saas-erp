@@ -1,30 +1,28 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { fetchAPI } from "@/services/api";
 import {
+  convertPRToPO,
+  createRequisition,
+  deleteRequisition,
+  getRequisitions,
+  getSuppliers,
+  updateRequisitionStatus,
+} from "@/services/procurement";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  AlertCircle,
   ArrowRight,
+  Calendar,
   Clock,
+  FileSpreadsheet,
   FileText,
   Plus,
   Save,
   Search,
   Trash2,
-  X,
-  Calendar,
-  Layers,
-  FileSpreadsheet,
-  AlertCircle
-} from 'lucide-react';
-import React, { useMemo, useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
-import { getDepartments } from '@/services/hrm';
-import { fetchAPI } from '@/services/api';
-import {
-  getRequisitions,
-  createRequisition,
-  updateRequisitionStatus,
-  convertPRToPO,
-  deleteRequisition,
-  getSuppliers
-} from '@/services/procurement';
+  X
+} from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 
 interface PRItem {
   id: string;
@@ -50,7 +48,7 @@ interface PR {
 export default function RequisitionBoard() {
   const [prs, setPrs] = useState<PR[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedPr, setSelectedPr] = useState<PR | null>(null);
 
@@ -58,26 +56,31 @@ export default function RequisitionBoard() {
   const [convertModalOpen, setConvertModalOpen] = useState(false);
   const [prToConvert, setPrToConvert] = useState<PR | null>(null);
   const [suppliers, setSuppliers] = useState<any[]>([]);
-  const [selectedSupplierId, setSelectedSupplierId] = useState('');
-  const [poReference, setPoReference] = useState('');
+  const [selectedSupplierId, setSelectedSupplierId] = useState("");
+  const [poReference, setPoReference] = useState("");
 
   // Form states
-  const [justification, setJustification] = useState('');
-  const [requiredDate, setRequiredDate] = useState('');
+  const [justification, setJustification] = useState("");
+  const [requiredDate, setRequiredDate] = useState("");
   const [products, setProducts] = useState<any[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState("");
   const [selectedQty, setSelectedQty] = useState(1);
-  const [selectedNotes, setSelectedNotes] = useState('');
-  const [addedItems, setAddedItems] = useState<{ productId: string; name: string; quantity: number; notes?: string }[]>([]);
+  const [selectedNotes, setSelectedNotes] = useState("");
+  const [addedItems, setAddedItems] = useState<
+    { productId: string; name: string; quantity: number; notes?: string }[]
+  >([]);
 
   const fetchPRs = async () => {
     try {
       setLoading(true);
       const data = await getRequisitions();
+      // Debug: log fetched PRs to inspect items payload
+
+      console.debug('Fetched PRs from API:', data);
       setPrs(data);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to load requisitions');
+      toast.error("Failed to load requisitions");
     } finally {
       setLoading(false);
     }
@@ -87,59 +90,76 @@ export default function RequisitionBoard() {
     fetchPRs();
 
     // Fetch products for creation
-    fetchAPI('/products?limit=100')
+    fetchAPI("/products?limit=100")
       .then((res) => {
         setProducts(res?.data || []);
       })
-      .catch((err) => console.error('Failed to load products:', err));
+      .catch((err) => console.error("Failed to load products:", err));
 
     // Fetch suppliers for PO conversion
     getSuppliers()
       .then((data) => setSuppliers(data))
-      .catch((err) => console.error('Failed to load suppliers:', err));
+      .catch((err) => console.error("Failed to load suppliers:", err));
   }, []);
 
   const columns = [
-    { id: 'DRAFT', title: 'Drafts', color: 'slate', dot: 'bg-slate-500' },
-    { id: 'PENDING_APPROVAL', title: 'Pending Approval', color: 'amber', dot: 'bg-amber-500' },
-    { id: 'APPROVED', title: 'Approved', color: 'emerald', dot: 'bg-emerald-500' },
-    { id: 'PO_CREATED', title: 'PO Generated', color: 'indigo', dot: 'bg-indigo-500' },
-    { id: 'REJECTED', title: 'Rejected', color: 'rose', dot: 'bg-rose-500' },
+    { id: "DRAFT", title: "Drafts", color: "slate", dot: "bg-slate-500" },
+    {
+      id: "PENDING_APPROVAL",
+      title: "Pending Approval",
+      color: "amber",
+      dot: "bg-amber-500",
+    },
+    {
+      id: "APPROVED",
+      title: "Approved",
+      color: "emerald",
+      dot: "bg-emerald-500",
+    },
+    {
+      id: "PO_CREATED",
+      title: "PO Generated",
+      color: "indigo",
+      dot: "bg-indigo-500",
+    },
+    { id: "REJECTED", title: "Rejected", color: "rose", dot: "bg-rose-500" },
   ];
 
   const filteredPRs = useMemo(() => {
-    return prs.filter((pr) =>
-      pr.prNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (pr.justification && pr.justification.toLowerCase().includes(searchQuery.toLowerCase()))
+    return prs.filter(
+      (pr) =>
+        pr.prNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (pr.justification &&
+          pr.justification.toLowerCase().includes(searchQuery.toLowerCase())),
     );
   }, [prs, searchQuery]);
 
   const handleAddItem = () => {
     if (!selectedProductId) {
-      toast.error('Select a product first');
+      toast.error("Select a product first");
       return;
     }
-    const product = products.find((p) => p.id === selectedProductId);
+    const product = products.find((p) => String(p.id) === String(selectedProductId));
     if (!product) return;
 
-    if (addedItems.some((item) => item.productId === selectedProductId)) {
-      toast.error('Product already added');
+    if (addedItems.some((item) => String(item.productId) === String(selectedProductId))) {
+      toast.error("Product already added");
       return;
     }
 
     setAddedItems([
       ...addedItems,
       {
-        productId: selectedProductId,
+        productId: String(selectedProductId),
         name: product.name,
         quantity: selectedQty,
         notes: selectedNotes,
       },
     ]);
 
-    setSelectedProductId('');
+    setSelectedProductId("");
     setSelectedQty(1);
-    setSelectedNotes('');
+    setSelectedNotes("");
   };
 
   const handleRemoveItem = (index: number) => {
@@ -148,12 +168,33 @@ export default function RequisitionBoard() {
 
   const handleCreatePR = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (addedItems.length === 0) {
-      toast.error('Add at least one product');
+
+    const finalItems = [...addedItems];
+
+    // Debug: log current items state to help reproduce empty-items issues
+    // (remove once root cause is validated)
+
+    console.debug('Creating PR - addedItems:', addedItems, 'selectedProductId:', selectedProductId);
+
+    // Automatically add the currently selected product if the user forgot to click "Add"
+    if (selectedProductId) {
+      const product = products.find((p) => String(p.id) === String(selectedProductId));
+      if (product && !addedItems.some((item) => String(item.productId) === String(selectedProductId))) {
+        finalItems.push({
+          productId: String(selectedProductId),
+          name: product.name,
+          quantity: selectedQty,
+          notes: selectedNotes,
+        });
+      }
+    }
+
+    if (finalItems.length === 0) {
+      toast.error("Add at least one product");
       return;
     }
     if (!requiredDate) {
-      toast.error('Please enter a required date');
+      toast.error("Please enter a required date");
       return;
     }
 
@@ -161,28 +202,37 @@ export default function RequisitionBoard() {
       await createRequisition({
         justification,
         requiredDate: new Date(requiredDate).toISOString(),
-        items: addedItems.map((item) => ({
+        items: finalItems.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
           notes: item.notes,
         })),
       });
 
-      toast.success('Requisition submitted as Draft');
+      toast.success("Requisition submitted as Draft");
       setIsCreateOpen(false);
-      setJustification('');
-      setRequiredDate('');
+      setJustification("");
+      setRequiredDate("");
       setAddedItems([]);
+      setSelectedProductId("");
+      setSelectedQty(1);
+      setSelectedNotes("");
       fetchPRs();
     } catch (err) {
       console.error(err);
-      toast.error('Failed to create requisition');
+      toast.error("Failed to create requisition");
     }
   };
 
   const handleMovePR = async (id: string, newStatus: string) => {
     try {
-      await updateRequisitionStatus(id, newStatus);
+      let rejectionReason = undefined;
+      if (newStatus === "REJECTED") {
+        const reason = prompt("Please specify a rejection reason (optional):");
+        if (reason === null) return; // User cancelled the operation
+        rejectionReason = reason || undefined;
+      }
+      await updateRequisitionStatus(id, newStatus, rejectionReason);
       toast.success(`Stage updated successfully`);
       fetchPRs();
       if (selectedPr && selectedPr.id === id) {
@@ -190,7 +240,7 @@ export default function RequisitionBoard() {
       }
     } catch (err) {
       console.error(err);
-      toast.error('Failed to update stage');
+      toast.error("Failed to update stage");
     }
   };
 
@@ -199,27 +249,35 @@ export default function RequisitionBoard() {
     if (!prToConvert || !selectedSupplierId) return;
 
     try {
-      await convertPRToPO(prToConvert.id, selectedSupplierId, poReference || `PO-PR-${prToConvert.prNumber}`);
-      toast.success('Converted to Purchase Order successfully');
+      await convertPRToPO(
+        prToConvert.id,
+        selectedSupplierId,
+        poReference || `PO-PR-${prToConvert.prNumber}`,
+      );
+      toast.success("Converted to Purchase Order successfully");
       setConvertModalOpen(false);
       setPrToConvert(null);
       fetchPRs();
     } catch (err) {
+
       console.error(err);
-      toast.error('Failed to convert to PO');
+      const msg = (err as any)?.message || (err as any)?.response?.message || 'Failed to convert to PO'
+      toast.error(msg);
     }
   };
 
   const handleDeletePR = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this requisition?')) return;
+    if (!confirm("Are you sure you want to delete this requisition?")) return;
     try {
       await deleteRequisition(id);
-      toast.success('Requisition deleted successfully');
+      toast.success("Requisition deleted successfully");
       setSelectedPr(null);
       fetchPRs();
     } catch (err) {
       console.error(err);
-      toast.error('Failed to delete requisition. Requisitions must be in Draft or Rejected status.');
+      toast.error(
+        "Failed to delete requisition. Requisitions must be in Draft or Rejected status.",
+      );
     }
   };
 
@@ -270,7 +328,9 @@ export default function RequisitionBoard() {
               {/* Column Header */}
               <div className="p-6 pb-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50">
                 <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full ${col.dot} shadow-lg shadow-indigo-500/10`} />
+                  <div
+                    className={`w-2.5 h-2.5 rounded-full ${col.dot} shadow-lg shadow-indigo-500/10`}
+                  />
                   <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">
                     {col.title}
                   </h3>
@@ -300,11 +360,11 @@ export default function RequisitionBoard() {
                             {pr.prNumber}
                           </span>
                           <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {col.id === 'DRAFT' && (
+                            {col.id === "DRAFT" && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleMovePR(pr.id, 'PENDING_APPROVAL');
+                                  handleMovePR(pr.id, "PENDING_APPROVAL");
                                 }}
                                 className="p-1 text-slate-400 hover:text-indigo-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                 title="Submit for Approval"
@@ -312,7 +372,7 @@ export default function RequisitionBoard() {
                                 <ArrowRight className="w-3.5 h-3.5" />
                               </button>
                             )}
-                            {col.id === 'APPROVED' && (
+                            {col.id === "APPROVED" && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -326,7 +386,7 @@ export default function RequisitionBoard() {
                                 <FileSpreadsheet className="w-3.5 h-3.5" />
                               </button>
                             )}
-                            {(col.id === 'DRAFT' || col.id === 'REJECTED') && (
+                            {(col.id === "DRAFT" || col.id === "REJECTED") && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -342,12 +402,13 @@ export default function RequisitionBoard() {
                         </div>
 
                         <h4 className="font-black text-slate-900 dark:text-white leading-tight mb-4 group-hover:text-indigo-600 transition-colors">
-                          {pr.justification || 'No justification provided'}
+                          {pr.justification || "No justification provided"}
                         </h4>
 
                         <div className="flex items-center justify-between text-xs mb-4">
                           <div className="flex items-center gap-1.5 text-slate-500 font-bold uppercase text-[10px] tracking-widest">
-                            <Clock className="w-3 h-3" /> Req: {new Date(pr.requiredDate).toLocaleDateString()}
+                            <Clock className="w-3 h-3" /> Req:{" "}
+                            {new Date(pr.requiredDate).toLocaleDateString()}
                           </div>
                           <span className="font-black text-slate-700 dark:text-slate-300 font-mono">
                             {pr.items?.length || 0} Items
@@ -358,11 +419,13 @@ export default function RequisitionBoard() {
 
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            {pr.requestedBy?.name || 'Unknown User'}
+                            {pr.requestedBy?.name || "Unknown User"}
                           </span>
                           <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 border-2 border-white dark:border-slate-800 flex items-center justify-center shadow-sm">
                             <span className="text-[8px] font-black">
-                              {(pr.requestedBy?.name || 'UN').substring(0, 2).toUpperCase()}
+                              {(pr.requestedBy?.name || "UN")
+                                .substring(0, 2)
+                                .toUpperCase()}
                             </span>
                           </div>
                         </div>
@@ -400,10 +463,10 @@ export default function RequisitionBoard() {
               <div className="flex-1 space-y-6 overflow-y-auto pr-1">
                 <div>
                   <h3 className="text-xl font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">
-                    {selectedPr.justification || 'No justification provided'}
+                    {selectedPr.justification || "No justification provided"}
                   </h3>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
-                    Creator: {selectedPr.requestedBy?.name || 'Unknown User'}
+                    Creator: {selectedPr.requestedBy?.name || "Unknown User"}
                   </p>
                 </div>
 
@@ -427,7 +490,9 @@ export default function RequisitionBoard() {
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Items Requested</h4>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Items Requested
+                  </h4>
                   <div className="space-y-2">
                     {selectedPr.items?.map((item) => (
                       <div
@@ -436,9 +501,13 @@ export default function RequisitionBoard() {
                       >
                         <div>
                           <div className="text-xs font-black text-slate-900 dark:text-white">
-                            {item.product?.name || 'Unknown Product'}
+                            {item.product?.name || "Unknown Product"}
                           </div>
-                          {item.notes && <div className="text-[10px] text-slate-400 mt-1 italic">{item.notes}</div>}
+                          {item.notes && (
+                            <div className="text-[10px] text-slate-400 mt-1 italic">
+                              {item.notes}
+                            </div>
+                          )}
                         </div>
                         <div className="text-xs font-black bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 px-3 py-1 rounded-lg">
                           Qty: {item.quantity}
@@ -449,33 +518,41 @@ export default function RequisitionBoard() {
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stage Transitions</h4>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Stage Transitions
+                  </h4>
                   <div className="flex flex-wrap gap-2">
-                    {selectedPr.status === 'PENDING_APPROVAL' && (
+                    {selectedPr.status === "PENDING_APPROVAL" && (
                       <>
                         <button
-                          onClick={() => handleMovePR(selectedPr.id, 'APPROVED')}
+                          onClick={() =>
+                            handleMovePR(selectedPr.id, "APPROVED")
+                          }
                           className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-emerald-700"
                         >
                           Approve
                         </button>
                         <button
-                          onClick={() => handleMovePR(selectedPr.id, 'REJECTED')}
+                          onClick={() =>
+                            handleMovePR(selectedPr.id, "REJECTED")
+                          }
                           className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-rose-700"
                         >
                           Reject
                         </button>
                       </>
                     )}
-                    {selectedPr.status === 'DRAFT' && (
+                    {selectedPr.status === "DRAFT" && (
                       <button
-                        onClick={() => handleMovePR(selectedPr.id, 'PENDING_APPROVAL')}
+                        onClick={() =>
+                          handleMovePR(selectedPr.id, "PENDING_APPROVAL")
+                        }
                         className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-indigo-700"
                       >
                         Submit for Approval
                       </button>
                     )}
-                    {selectedPr.status === 'APPROVED' && (
+                    {selectedPr.status === "APPROVED" && (
                       <button
                         onClick={() => {
                           setPrToConvert(selectedPr);
@@ -491,16 +568,17 @@ export default function RequisitionBoard() {
                 </div>
               </div>
 
-              {(selectedPr.status === 'DRAFT' || selectedPr.status === 'REJECTED') && (
-                <div className="pt-6 border-t border-slate-100 dark:border-slate-700">
-                  <button
-                    onClick={() => handleDeletePR(selectedPr.id)}
-                    className="w-full py-4 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 rounded-2xl font-black text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-rose-100 dark:border-rose-900/30"
-                  >
-                    <Trash2 className="w-4 h-4" /> Delete Requisition
-                  </button>
-                </div>
-              )}
+              {(selectedPr.status === "DRAFT" ||
+                selectedPr.status === "REJECTED") && (
+                  <div className="pt-6 border-t border-slate-100 dark:border-slate-700">
+                    <button
+                      onClick={() => handleDeletePR(selectedPr.id)}
+                      className="w-full py-4 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 rounded-2xl font-black text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-rose-100 dark:border-rose-900/30"
+                    >
+                      <Trash2 className="w-4 h-4" /> Delete Requisition
+                    </button>
+                  </div>
+                )}
             </motion.div>
           </div>
         )}
@@ -562,7 +640,9 @@ export default function RequisitionBoard() {
 
                 {/* Add Item Section */}
                 <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 space-y-4">
-                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Add Product Spec</h4>
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    Add Product Spec
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <select
@@ -584,7 +664,9 @@ export default function RequisitionBoard() {
                         min={1}
                         placeholder="Qty"
                         value={selectedQty}
-                        onChange={(e) => setSelectedQty(parseInt(e.target.value) || 1)}
+                        onChange={(e) =>
+                          setSelectedQty(parseInt(e.target.value) || 1)
+                        }
                         className="w-20 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none font-bold text-xs"
                       />
                       <input
@@ -613,7 +695,10 @@ export default function RequisitionBoard() {
                           className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700"
                         >
                           <div className="text-xs font-bold">
-                            {item.name} <span className="text-slate-400">({item.notes || 'No note'})</span>
+                            {item.name}{" "}
+                            <span className="text-slate-400">
+                              ({item.notes || "No note"})
+                            </span>
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="text-xs font-black font-mono bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded text-indigo-600">
@@ -681,7 +766,8 @@ export default function RequisitionBoard() {
                 <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 p-4 rounded-2xl flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-800 dark:text-amber-400 font-semibold leading-relaxed">
-                    This will convert the approved items of {prToConvert.prNumber} into a new Purchase Order.
+                    This will convert the approved items of{" "}
+                    {prToConvert.prNumber} into a new Purchase Order.
                   </p>
                 </div>
 

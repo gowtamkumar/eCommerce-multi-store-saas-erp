@@ -1,8 +1,8 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { EntityManager, Repository } from 'typeorm'
-import { PurchaseRequisitionEntity, PRStatus } from '../entities/purchase-requisition.entity'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { PRStatus, PurchaseRequisitionEntity } from '../entities/purchase-requisition.entity'
 
 @Injectable()
 export class PurchaseRequisitionRepository {
@@ -50,6 +50,9 @@ export class PurchaseRequisitionRepository {
       .leftJoinAndSelect('pr.approvedBy', 'approvedBy')
       .leftJoinAndSelect('pr.branch', 'branch')
       .leftJoinAndSelect('pr.warehouse', 'warehouse')
+      // include items and product relation so list responses contain item details/counts
+      .leftJoinAndSelect('pr.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
       .where('pr.tenantId = :tenantId', { tenantId })
       .orderBy('pr.createdAt', 'DESC')
       .skip((page - 1) * limit)
@@ -91,7 +94,10 @@ export class PurchaseRequisitionRepository {
     })
   }
 
-  async savePR(pr: PurchaseRequisitionEntity, manager?: EntityManager): Promise<PurchaseRequisitionEntity> {
+  async savePR(
+    pr: PurchaseRequisitionEntity,
+    manager?: EntityManager,
+  ): Promise<PurchaseRequisitionEntity> {
     const repo = this.getRepo(manager)
     return await repo.save(pr)
   }

@@ -1,7 +1,11 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import { PurchaseRequisitionService } from '../services/purchase-requisition.service'
-import { CreatePurchaseRequisitionDto, UpdatePurchaseRequisitionStatusDto } from '../dto/purchase-requisition.dto'
+import {
+  CreatePurchaseRequisitionDto,
+  UpdatePurchaseRequisitionStatusDto,
+  ConvertPRToPoDto,
+} from '../dto/purchase-requisition.dto'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
@@ -87,9 +91,9 @@ export class PurchaseRequisitionController {
   async convert(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
-    @Body() body: { supplierId: string; referenceNumber: string },
+    @Body() dto: ConvertPRToPoDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const result = await this.service.convertToPO(id, body, ctx)
+    const result = await this.service.convertToPO(id, dto, ctx)
     return {
       success: true,
       statusCode: 201,
