@@ -21,6 +21,7 @@ import { ProductVariantEntity } from '../entities/variant.entity'
 import { ProductAttributeRepository } from '../repositories/attribute.repository'
 import { ProductRepository } from '../repositories/product.repository'
 import { ProductVariantRepository } from '../repositories/variant.repository'
+import { generateEAN13, generateProductSku, generateVariantSku } from '../utils/catalog-id.util'
 
 type AugmentedProduct = ProductEntity & { applicablePromotions?: any[] }
 
@@ -190,20 +191,8 @@ export class ProductService {
     }
   }
 
-  private generateSku(productSlug: string, combination: Record<string, string>): string {
-    const values = Object.values(combination)
-      .map((v) =>
-        String(v)
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, ''),
-      )
-      .join('-')
-    const suffix = Math.random().toString(36).substring(2, 6).toUpperCase()
-    const base = values
-      ? `${productSlug.toUpperCase()}-${values.toUpperCase()}`
-      : productSlug.toUpperCase()
-    return `${base}-${suffix}`
-  }
+  // SKU & Barcode generation is handled by the shared utility:
+  // server/src/modules/admin/catalog/product/utils/catalog-id.util.ts
 
   private async populateProductsStock(products: any[], tenantId: string): Promise<any[]> {
     if (!products || products.length === 0) return products
@@ -373,6 +362,14 @@ export class ProductService {
 
       const { faqs, attributes, variants, ...productData } = createProductDto
 
+      // Auto-generate SKU & Barcode if missing/empty
+      if (!productData.sku) {
+        productData.sku = generateProductSku(productData.name || createProductDto.slug)
+      }
+      if (!productData.barcode) {
+        productData.barcode = generateEAN13()
+      }
+
       // ERP FIX: Stock must always start at 0 during creation.
       // Stock should only enter the system via PO/GRN or Stock Adjustment.
       productData.stock = 0
@@ -391,6 +388,14 @@ export class ProductService {
         for (const variantDto of variants) {
           // ERP FIX: Force variant stock to 0 as well
           variantDto.stock = 0
+
+          // Auto-generate variant SKU & Barcode if missing
+          if (!variantDto.sku) {
+            variantDto.sku = generateVariantSku(product.slug, variantDto.combination)
+          }
+          if (!variantDto.barcode) {
+            variantDto.barcode = generateEAN13()
+          }
 
           const savedVariant = await this.variantRepository.saveNewVariant(
             variantDto,
@@ -443,6 +448,14 @@ export class ProductService {
 
       const { faqs, attributes, variants, ...productData } = updateProductDto
 
+      // Auto-generate SKU & Barcode on update if they are explicitly cleared
+      if (productData.hasOwnProperty('sku') && !productData.sku) {
+        productData.sku = generateProductSku(productData.name || product.name)
+      }
+      if (productData.hasOwnProperty('barcode') && !productData.barcode) {
+        productData.barcode = generateEAN13()
+      }
+
       // ERP FIX: Prevent manual stock updates during product edit.
       // Stock can only be changed via Procurement or Inventory Adjustment.
       delete (productData as any).stock
@@ -492,6 +505,14 @@ export class ProductService {
 
         // 7c. Handle Existing Variants
         for (const variantDto of incomingVariantsWithId) {
+          // Auto-generate on update if explicitly cleared
+          if (variantDto.hasOwnProperty('sku') && !variantDto.sku) {
+            variantDto.sku = generateVariantSku(product.slug, variantDto.combination)
+          }
+          if (variantDto.hasOwnProperty('barcode') && !variantDto.barcode) {
+            variantDto.barcode = generateEAN13()
+          }
+
           if (variantDto.sku) {
             const duplicate = await this.variantRepository.findBySku(
               variantDto.sku,
@@ -518,9 +539,12 @@ export class ProductService {
 
         // 7d. Handle New Variants
         for (const variantDto of newVariants) {
-          // Auto-generate SKU if missing
+          // Auto-generate SKU & Barcode if missing
           if (!variantDto.sku) {
-            variantDto.sku = this.generateSku(product.slug, variantDto.combination)
+            variantDto.sku = generateVariantSku(product.slug, variantDto.combination)
+          }
+          if (!variantDto.barcode) {
+            variantDto.barcode = generateEAN13()
           }
 
           // Check for conflicts (including soft-deleted)

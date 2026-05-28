@@ -150,6 +150,25 @@ For `VARIABLE` products, merchants specify **Attributes** (e.g. Name: `"Color"`,
 
 ---
 
+### C. Auto-Generated SKU & Barcode (EAN-13) (Implemented)
+To reduce manual data entry and human error, the system automatically generates SKUs and Barcodes for both products and variants if they are left blank or explicitly cleared during creation/updates:
+
+1. **Base Product SKU Auto-Generation**:
+   - **Format**: `[CLEAN-PREFIX]-[SUFFIX]`
+   - **Generation**: Clean prefix of up to 8 characters derived from the product name (alphanumeric uppercase), appended with a 4-character unique suffix. E.g., `"COFFEE-MUG-E5X9"`.
+2. **Variant SKU Auto-Generation**:
+   - **Format**: `[CLEAN-SLUG]-[VARIANT-VALUES]-[SUFFIX]`
+   - **Generation**: Appends variant-selected values (e.g. Color and Size values) to the capitalized slug, plus a random suffix to secure collision-free multi-variant entries. E.g., `"COFFEE-MUG-RED-XL-J2P1"`.
+3. **UPC/EAN-13 Barcode Auto-Generation**:
+   - **Format**: Structurally valid **EAN-13** digits.
+   - **Generation**:
+     - Uses prefix `'20'` (the international standard prefix reserved for local/internal inventory use, ensuring no collision with retail goods).
+     - Generates 10 unique digits.
+     - Automatically calculates the **13th Checksum Digit** using the standard weighted EAN-13 algorithm (sum of odd indices + sum of even indices multiplied by 3, modulo 10 check digit).
+     - Resulting barcode is fully EAN-13 compliant and compatible with warehouse laser barcode scanners.
+
+---
+
 ## 4. The Inventory Ledger & Stock Movement Flow
 
 The **`InventoryLedger`** table operates as the system's financial "double-entry" ledger for items. Every increase or decrease is logged as a separate immutable row. 
