@@ -5,10 +5,11 @@ import { CourierType } from '@/lib/enums/courier-type.enum';
 import { OrderStatus } from '@/lib/enums/order-status.enum';
 import { PaymentStatus } from '@/lib/enums/payment-status.enum';
 import { getOrderStatusStyles } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Eye, Loader2, Plus, Search } from 'lucide-react';
+import { Eye, Loader2, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { memo } from 'react';
 import type { OrderListProps } from '../type';
+import Pagination from '@/components/shared/Pagination';
 
 const OrderRow = memo(({
     order,
@@ -282,26 +283,16 @@ export default function OrderList({
 
                 {/* Pagination */}
                 {pagination.totalPages > 1 && (
-                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:divide-slate-700 flex items-center justify-between">
+                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:divide-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest hidden sm:block">
                             Page {pagination.page} of {pagination.totalPages}
                         </p>
-                        <div className="flex items-center gap-2 mx-auto sm:mx-0">
-                            <button
-                                onClick={() => onPageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1 || loading}
-                                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-                            >
-                                <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                            </button>
-                            <button
-                                onClick={() => onPageChange(pagination.page + 1)}
-                                disabled={pagination.page === pagination.totalPages || loading}
-                                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-                            >
-                                <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                            </button>
-                        </div>
+                        <Pagination
+                            currentPage={pagination.page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={onPageChange}
+                            loading={loading}
+                        />
                     </div>
                 )}
             </div>

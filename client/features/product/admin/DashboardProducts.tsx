@@ -13,9 +13,9 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { useDebounce } from '@/hooks/useDebounce';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback } from 'react';
 import { LandingPageFactory } from './utils/LandingPageFactory';
+import Pagination from '@/components/shared/Pagination';
 
 export default function DashboardProducts() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -282,26 +282,16 @@ export default function DashboardProducts() {
 
                 {/* Pagination Controls */}
                 {!loading && pagination.totalPages > 1 && (
-                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <p className="text-sm text-slate-500 dark:text-slate-400">
                             Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total products)
                         </p>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => handlePageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1}
-                                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 transition-colors"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => handlePageChange(pagination.page + 1)}
-                                disabled={pagination.page === pagination.totalPages}
-                                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 transition-colors"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
+                        <Pagination
+                            currentPage={pagination.page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={handlePageChange}
+                            loading={loading}
+                        />
                     </div>
                 )}
             </div>

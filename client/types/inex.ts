@@ -1,7 +1,9 @@
 export interface PaginationProps {
     currentPage: number;
     totalPages: number;
-    baseUrl: string;
+    baseUrl?: string;
+    onPageChange?: (page: number) => void;
+    loading?: boolean;
 }
 
 export interface PriceProps {

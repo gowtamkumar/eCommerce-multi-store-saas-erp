@@ -1,9 +1,10 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Loader2, Plus, Search, Trash2, User as UserIcon, Edit2, Building2, AlertTriangle, CreditCard } from 'lucide-react';
+import { Loader2, Plus, Search, Trash2, User as UserIcon, Edit2, Building2, AlertTriangle, CreditCard } from 'lucide-react';
 import type { CustomerListProps } from '../type';
 import { UserRole } from '@/lib/enums/user-role.enum';
 import { UserStatus } from '@/lib/enums/user-status.enum';
+import Pagination from '@/components/shared/Pagination';
 
 export default function CustomerList({
     users,
@@ -184,33 +185,16 @@ export default function CustomerList({
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     <div className="text-sm text-slate-500 dark:text-slate-400 hidden sm:block">
                         Showing <span className="font-bold text-slate-900 dark:text-white">{users.length}</span> of <span className="font-bold text-slate-900 dark:text-white">{pagination.total}</span> customers
                     </div>
-                    <div className="flex items-center gap-2 mx-auto sm:mx-0">
-                        <button
-                            onClick={() => onPageChange(pagination.page - 1)}
-                            disabled={pagination.page === 1 || loading}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold text-slate-600 dark:text-slate-300"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                            Prev
-                        </button>
-                        <div className="flex items-center px-4 py-2 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <span className="text-sm font-bold text-brand-600 dark:text-brand-400 uppercase tracking-widest leading-none">
-                                {pagination.page} / {pagination.totalPages}
-                            </span>
-                        </div>
-                        <button
-                            onClick={() => onPageChange(pagination.page + 1)}
-                            disabled={pagination.page === pagination.totalPages || loading}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold text-slate-600 dark:text-slate-300"
-                        >
-                            Next
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
+                    <Pagination
+                        currentPage={pagination.page}
+                        totalPages={pagination.totalPages}
+                        onPageChange={onPageChange}
+                        loading={loading}
+                    />
                 </div>
             )}
         </div>

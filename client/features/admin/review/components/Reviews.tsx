@@ -3,9 +3,10 @@
 import { fetchAPI } from '@/services/api';
 import { ReviewStatus } from '@/lib/enums/review-status.enum';
 import { Review } from '@/types/product';
-import { ChevronLeft, ChevronRight, Loader2, Star, Trash2, Box } from 'lucide-react';
+import { Star, Trash2, Box, Loader2 } from 'lucide-react';
 import { useEffect, useState, memo } from 'react';
 import toast from 'react-hot-toast';
+import Pagination from '@/components/shared/Pagination';
 
 const ReviewCard = memo(({ 
     review, 
@@ -207,24 +208,15 @@ export default function Reviews() {
             </div>
 
             {pagination.totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-2 mt-6">
-                            <button
-                                onClick={() => handlePageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1}
-                                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 disabled:opacity-50"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <span className="text-sm font-medium">Page {pagination.page} of {pagination.totalPages}</span>
-                            <button
-                                onClick={() => handlePageChange(pagination.page + 1)}
-                                disabled={pagination.page === pagination.totalPages}
-                                className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 disabled:opacity-50"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
-                        </div>
-                    )}
+                <div className="flex items-center justify-center gap-2 mt-6">
+                    <Pagination
+                        currentPage={pagination.page}
+                        totalPages={pagination.totalPages}
+                        onPageChange={handlePageChange}
+                        loading={loading}
+                    />
+                </div>
+            )}
         </div>
     );
 }

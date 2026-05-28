@@ -1,9 +1,10 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Edit, History, Mail, MapPin, Phone, Plus, Search, Trash2, User } from 'lucide-react';
+import { Edit, History, Mail, MapPin, Phone, Plus, Search, Trash2, User } from 'lucide-react';
 import Link from 'next/link';
 import { memo } from 'react';
 import { Supplier, SupplierListProps } from '../types';
+import Pagination from '@/components/shared/Pagination';
 
 // Memoized Supplier Row component to prevent full table re-renders
 const SupplierRow = memo(({ supplier, onEdit, onDelete }: { supplier: Supplier, onEdit: (s: Supplier) => void, onDelete: (id: string) => void }) => {
@@ -207,7 +208,7 @@ const SupplierList = ({
 
                 {/* Pagination Footer */}
                 {!loading && pagination.totalPages > 1 && (
-                    <div className="px-8 py-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-900/10 flex items-center justify-between">
+                    <div className="px-8 py-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-900/10 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Current View</span>
                             <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -216,22 +217,12 @@ const SupplierList = ({
                                 <span className="text-sm font-black text-slate-500 dark:text-slate-400">{pagination.totalPages}</span>
                             </div>
                         </div>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => onPageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1}
-                                className="p-3 border border-slate-200 dark:border-slate-700 rounded-2xl disabled:opacity-30 hover:bg-white dark:hover:bg-slate-700 transition-all hover:border-brand-500 active:scale-90"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => onPageChange(pagination.page + 1)}
-                                disabled={pagination.page === pagination.totalPages}
-                                className="p-3 border border-slate-200 dark:border-slate-700 rounded-2xl disabled:opacity-30 hover:bg-white dark:hover:bg-slate-700 transition-all hover:border-brand-500 active:scale-90"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
-                        </div>
+                        <Pagination
+                            currentPage={pagination.page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={onPageChange}
+                            loading={loading}
+                        />
                     </div>
                 )}
             </div>

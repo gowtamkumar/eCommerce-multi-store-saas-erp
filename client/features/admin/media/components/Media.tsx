@@ -2,11 +2,12 @@
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import ImageUploadField from '@/components/shared/ImageUploadField';
 import { fetchAPI } from '@/services/api';
-import { Check, ChevronLeft, ChevronRight, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2 } from 'lucide-react';
+import { Check, Copy, HardDrive, Image as ImageIcon, Loader2, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Pagination } from '../../customer/type';
+import { Pagination as PaginationType } from '../../customer/type';
 import { MediaItem } from '../type';
+import Pagination from '@/components/shared/Pagination';
 
 
 
@@ -15,7 +16,7 @@ export default function Media() {
     const [loading, setLoading] = useState(true);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [search, setSearch] = useState('');
-    const [pagination, setPagination] = useState<Pagination>({
+    const [pagination, setPagination] = useState<PaginationType>({
         total: 0,
         page: 1,
         limit: 20,
@@ -268,52 +269,12 @@ export default function Media() {
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                    <button
-                        onClick={() => fetchMedia(pagination.page - 1, debouncedSearch)}
-                        disabled={pagination.page === 1 || loading}
-                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    </button>
-
-                    <div className="flex items-center gap-1">
-                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                            // Simple logic to show window of pages around current page
-                            let pageNum = i + 1;
-                            if (pagination.totalPages > 5) {
-                                if (pagination.page > 3) {
-                                    pageNum = pagination.page - 3 + i;
-                                }
-                                if (pageNum > pagination.totalPages) {
-                                    pageNum = pagination.totalPages - (4 - i);
-                                }
-                            }
-
-                            return (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => fetchMedia(pageNum, debouncedSearch)}
-                                    disabled={loading}
-                                    className={`w-9 h-9 rounded-lg text-sm font-semibold transition-colors ${pagination.page === pageNum
-                                        ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    {pageNum}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <button
-                        onClick={() => fetchMedia(pagination.page + 1, debouncedSearch)}
-                        disabled={pagination.page === pagination.totalPages || loading}
-                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    </button>
-                </div>
+                <Pagination
+                    currentPage={pagination.page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(page) => fetchMedia(page, debouncedSearch)}
+                    loading={loading}
+                />
             )}
             {/* Confirmation Modal */}
             <ConfirmModal
