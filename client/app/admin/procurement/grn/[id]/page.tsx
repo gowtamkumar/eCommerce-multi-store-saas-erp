@@ -4,17 +4,19 @@ import GrnDetailPage from '@/features/admin/grn/components/GrnDetailPage';
 import { GrnStatus } from '@/lib/enums/grn-status.enum';
 import { fetchAPI } from '@/services/api';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
+import { GrnData } from '@/features/admin/grn/types';
+
 
 export default function GrnPage() {
     const { id } = useParams();
     const router = useRouter();
-    const [grn, setGrn] = useState<any>(null);
+    const [grn, setGrn] = useState<GrnData | null>(null);
     const [loading, setLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    const fetchGrn = async () => {
+    const fetchGrn = useCallback(async () => {
         setLoading(true);
         try {
             const response = await fetchAPI(`/operations/logistics/grn/${id}`);
@@ -27,11 +29,11 @@ export default function GrnPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [id]);
 
     useEffect(() => {
         if (id) fetchGrn();
-    }, [id]);
+    }, [id, fetchGrn]);
 
     const handleVerify = async () => {
         if (!confirm('Are you sure you want to verify this GRN? This will update stock levels and supplier payables.')) return;

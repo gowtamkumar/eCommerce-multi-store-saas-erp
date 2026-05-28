@@ -7,7 +7,6 @@ import {
     CheckCircle2,
     Clock,
     FileText,
-    MoreVertical,
     Package,
     ShieldCheck,
     Truck,
@@ -18,13 +17,22 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { getGrnStatusBadge } from './GrnListPage';
+import { GrnData, GrnItem } from '@/features/admin/grn/types';
 
-export default function GrnDetailPage({ grn, onVerify, onReject, isProcessing }: any) {
+
+interface GrnDetailPageProps {
+    grn: GrnData;
+    onVerify: () => void;
+    onReject: () => void;
+    isProcessing: boolean;
+}
+
+export default function GrnDetailPage({ grn, onVerify, onReject, isProcessing }: GrnDetailPageProps) {
     const { formatPrice } = useSettings();
 
     if (!grn) return null;
 
-    const totalCost = grn.items?.reduce((sum: number, item: any) => sum + (Number(item.receivedQty) * Number(item.unitCost)), 0) || 0;
+    const totalCost = grn.items?.reduce((sum: number, item: GrnItem) => sum + (Number(item.receivedQty) * Number(item.unitCost)), 0) || 0;
 
     return (
         <div className="space-y-6">
@@ -95,7 +103,7 @@ export default function GrnDetailPage({ grn, onVerify, onReject, isProcessing }:
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                    {grn.items?.map((item: any, idx: number) => (
+                                    {grn.items?.map((item: GrnItem, idx: number) => (
                                         <tr key={idx} className="group hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">

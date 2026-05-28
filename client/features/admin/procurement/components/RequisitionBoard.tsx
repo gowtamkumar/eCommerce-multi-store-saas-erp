@@ -23,27 +23,10 @@ import {
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { Supplier } from '@/features/admin/supplier/types';
+import { Product } from '@/features/admin/product/types';
+import { PR } from '@/features/admin/procurement/types';
 
-interface PRItem {
-  id: string;
-  productId: string;
-  quantity: number;
-  notes?: string;
-  product?: {
-    name: string;
-  };
-}
-
-interface PR {
-  id: string;
-  prNumber: string;
-  status: string;
-  justification?: string;
-  requiredDate: string;
-  createdAt: string;
-  requestedBy?: { name: string };
-  items: PRItem[];
-}
 
 export default function RequisitionBoard() {
   const [prs, setPrs] = useState<PR[]>([]);
@@ -55,14 +38,14 @@ export default function RequisitionBoard() {
   // Convert to PO state
   const [convertModalOpen, setConvertModalOpen] = useState(false);
   const [prToConvert, setPrToConvert] = useState<PR | null>(null);
-  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
   const [poReference, setPoReference] = useState("");
 
   // Form states
   const [justification, setJustification] = useState("");
   const [requiredDate, setRequiredDate] = useState("");
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [selectedQty, setSelectedQty] = useState(1);
   const [selectedNotes, setSelectedNotes] = useState("");
@@ -259,9 +242,8 @@ export default function RequisitionBoard() {
       setPrToConvert(null);
       fetchPRs();
     } catch (err) {
-
       console.error(err);
-      const msg = (err as any)?.message || (err as any)?.response?.message || 'Failed to convert to PO'
+      const msg = err instanceof Error ? (err as Error & { response?: { message?: string } }).response?.message || err.message : 'Failed to convert to PO';
       toast.error(msg);
     }
   };
@@ -408,7 +390,7 @@ export default function RequisitionBoard() {
                         <div className="flex items-center justify-between text-xs mb-4">
                           <div className="flex items-center gap-1.5 text-slate-500 font-bold uppercase text-[10px] tracking-widest">
                             <Clock className="w-3 h-3" /> Req:{" "}
-                            {new Date(pr.requiredDate).toLocaleDateString()}
+                            {pr.requiredDate ? new Date(pr.requiredDate).toLocaleDateString() : 'N/A'}
                           </div>
                           <span className="font-black text-slate-700 dark:text-slate-300 font-mono">
                             {pr.items?.length || 0} Items
@@ -476,7 +458,7 @@ export default function RequisitionBoard() {
                       Required Date
                     </span>
                     <span className="text-sm font-black text-slate-900 dark:text-white">
-                      {new Date(selectedPr.requiredDate).toLocaleDateString()}
+                      {selectedPr.requiredDate ? new Date(selectedPr.requiredDate).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                   <div>

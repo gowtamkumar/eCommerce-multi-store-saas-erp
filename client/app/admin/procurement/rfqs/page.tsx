@@ -22,6 +22,9 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { Supplier } from '@/features/admin/supplier/types';
+import { PR } from '@/features/admin/procurement/types';
+
 
 interface Quotation {
   id: string;
@@ -57,10 +60,10 @@ export default function RFQPage() {
   // Form states - Create RFQ
   const [deadlineDate, setDeadlineDate] = useState('');
   const [prId, setPrId] = useState('');
-  const [requisitions, setRequisitions] = useState<any[]>([]);
+  const [requisitions, setRequisitions] = useState<PR[]>([]);
 
   // Form states - Submit Bid
-  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [bidAmount, setBidAmount] = useState('');
   const [leadTime, setLeadTime] = useState('');
@@ -77,7 +80,7 @@ export default function RFQPage() {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Failed to load RFQs:', err);
-      const msg = (err as any)?.message || 'Failed to load RFQs';
+      const msg = err instanceof Error ? err.message : 'Failed to load RFQs';
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -91,7 +94,7 @@ export default function RFQPage() {
     getSuppliers().then(setSuppliers).catch(console.error);
     getRequisitions().then((data) => {
       // Show only Approved requisitions that can be sourced
-      setRequisitions(data.filter((r: any) => r.status === 'APPROVED'));
+      setRequisitions(data.filter((r: PR) => r.status === 'APPROVED'));
     }).catch(console.error);
   }, []);
 
@@ -145,7 +148,7 @@ export default function RFQPage() {
       // Refresh current detail drawer
       const updatedRfqs = await getRFQs();
       setRfqs(updatedRfqs);
-      const matchingRfq = updatedRfqs.find((r: any) => r.id === selectedRfq.id);
+      const matchingRfq = updatedRfqs.find((r: RFQ) => r.id === selectedRfq.id);
       if (matchingRfq) setSelectedRfq(matchingRfq);
     } catch (err) {
       console.error(err);
@@ -242,7 +245,7 @@ export default function RFQPage() {
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
                     <Calendar className="w-3.5 h-3.5" />
-                    <span>Deadline: {new Date(rfq.deadlineDate).toLocaleDateString()}</span>
+                    <span>Deadline: {rfq.deadlineDate ? new Date(rfq.deadlineDate).toLocaleDateString() : 'N/A'}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
                     <User className="w-3.5 h-3.5" />

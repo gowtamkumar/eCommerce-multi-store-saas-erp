@@ -4,7 +4,6 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { GrnStatus } from '@/lib/enums/grn-status.enum';
 import {
     CheckCircle2,
-    ChevronLeft, ChevronRight,
     Eye,
     FileText,
     Filter,
@@ -16,6 +15,8 @@ import {
 import Link from 'next/link';
 import { memo } from 'react';
 import Pagination from '@/components/shared/Pagination';
+import { GrnData, GrnItem } from '@/features/admin/grn/types';
+
 
 export const getGrnStatusBadge = (status: GrnStatus) => {
     switch (status) {
@@ -44,13 +45,13 @@ export const getGrnStatusBadge = (status: GrnStatus) => {
 };
 
 const GrnRow = memo(({ grn, formatPrice }: {
-    grn: any,
+    grn: GrnData,
     formatPrice: (p: number) => string
 }) => {
     return (
         <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
             <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">
-                {new Date(grn.createdAt).toLocaleDateString()}
+                {grn.createdAt ? new Date(grn.createdAt).toLocaleDateString() : 'N/A'}
             </td>
             <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
@@ -73,7 +74,7 @@ const GrnRow = memo(({ grn, formatPrice }: {
                 </div>
             </td>
             <td className="px-6 py-4 font-black text-slate-900 dark:text-white font-mono text-sm">
-                {formatPrice(grn.items?.reduce((sum: number, item: any) => sum + (Number(item.receivedQty) * Number(item.unitCost)), 0) || 0)}
+                {formatPrice(grn.items?.reduce((sum: number, item: GrnItem) => sum + (Number(item.receivedQty) * Number(item.unitCost)), 0) || 0)}
             </td>
             <td className="px-6 py-4">
                 {getGrnStatusBadge(grn.status)}
@@ -93,6 +94,21 @@ const GrnRow = memo(({ grn, formatPrice }: {
 
 GrnRow.displayName = 'GrnRow';
 
+interface GrnListPageProps {
+    grns?: GrnData[];
+    loading?: boolean;
+    searchQuery?: string;
+    onSearchChange?: (value: string) => void;
+    statusFilter?: string;
+    onStatusFilterChange?: (value: string) => void;
+    pagination?: {
+        page: number;
+        totalPages: number;
+        total: number;
+    };
+    onPageChange?: (page: number) => void;
+}
+
 export default function GrnListPage({
     grns = [],
     loading = false,
@@ -102,7 +118,7 @@ export default function GrnListPage({
     onStatusFilterChange = () => {},
     pagination = { page: 1, totalPages: 1, total: 0 },
     onPageChange = () => {}
-}: any) {
+}: GrnListPageProps) {
     const { formatPrice } = useSettings();
 
     return (
@@ -177,7 +193,7 @@ export default function GrnListPage({
                                     </td>
                                 </tr>
                             ) : (
-                                grns.map((grn: any) => (
+                                grns.map((grn: GrnData) => (
                                     <GrnRow
                                         key={grn.id}
                                         grn={grn}

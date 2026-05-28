@@ -27,6 +27,10 @@ import {
   getPurchaseOrders
 } from '@/services/procurement';
 import { fetchAPI } from '@/services/api';
+import { Supplier } from '@/features/admin/supplier/types';
+import { PurchaseOrder } from '@/features/admin/purchase/types';
+import { Product } from '@/features/admin/product/types';
+
 
 interface InvoiceItem {
   id: string;
@@ -69,11 +73,11 @@ export default function SupplierInvoicePage() {
   const [selectedPoId, setSelectedPoId] = useState('');
   const [invoiceDate, setInvoiceDate] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [suppliers, setSuppliers] = useState<any[]>([]);
-  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
 
   // Item selections in Create
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [qty, setQty] = useState(1);
   const [unitPrice, setUnitPrice] = useState('');
@@ -209,7 +213,7 @@ export default function SupplierInvoicePage() {
       // Refresh current details
       const updatedInvoices = await getSupplierInvoices();
       setInvoices(updatedInvoices);
-      const matchingInvoice = updatedInvoices.find((i: any) => i.id === selectedInvoice.id);
+      const matchingInvoice = updatedInvoices.find((i: Invoice) => i.id === selectedInvoice.id);
       if (matchingInvoice) setSelectedInvoice(matchingInvoice);
     } catch (err) {
       console.error(err);
@@ -396,7 +400,7 @@ export default function SupplierInvoicePage() {
                   <div>
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Due Date</span>
                     <span className="text-sm font-black text-slate-900 dark:text-white">
-                      {new Date(selectedInvoice.dueDate).toLocaleDateString()}
+                      {selectedInvoice.dueDate ? new Date(selectedInvoice.dueDate).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                 </div>

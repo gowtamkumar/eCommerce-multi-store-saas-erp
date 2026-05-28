@@ -25,6 +25,9 @@ import {
   getSuppliers,
   getPurchaseOrders
 } from '@/services/procurement';
+import { Supplier } from '@/features/admin/supplier/types';
+import { PurchaseOrder } from '@/features/admin/purchase/types';
+
 
 interface DebitNote {
   id: string;
@@ -34,7 +37,7 @@ interface DebitNote {
   purchaseOrderId: string;
   purchaseOrder?: { referenceNumber: string };
   amount: number;
-  issueDate: string;
+  createdAt: string;
   reason: string;
   status: string;
 }
@@ -53,8 +56,9 @@ export default function DebitNotePage() {
   const [selectedPoId, setSelectedPoId] = useState('');
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
-  const [suppliers, setSuppliers] = useState<any[]>([]);
-  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+
 
   const fetchDebitNotes = async () => {
     try {
@@ -198,7 +202,7 @@ export default function DebitNotePage() {
                       ${note.amount}
                     </td>
                     <td className="px-8 py-5 text-xs text-slate-500">
-                      {new Date(note.issueDate).toLocaleDateString()}
+                      {note.createdAt ? new Date(note.createdAt).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-8 py-5">
                       <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
@@ -265,7 +269,7 @@ export default function DebitNotePage() {
                   <div>
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Issue Date</span>
                     <span className="text-sm font-black text-slate-900 dark:text-white">
-                      {new Date(selectedNote.issueDate).toLocaleDateString()}
+                      {selectedNote.createdAt ? new Date(selectedNote.createdAt).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                 </div>
