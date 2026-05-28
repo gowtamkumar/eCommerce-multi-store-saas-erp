@@ -19,8 +19,12 @@ import {
 import { fetchAPI } from '@/services/api';
 import toast from 'react-hot-toast';
 import ConfirmModal from '@/components/shared/ConfirmModal';
+import { useSettings } from '@/hooks/SettingsContext';
 
 export default function PriceBooks() {
+    const { settings } = useSettings();
+    const globalCurrency = settings?.currency || 'BDT';
+
     const [priceBooks, setPriceBooks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,6 +52,12 @@ export default function PriceBooks() {
         loadPriceBooks();
     }, []);
 
+    useEffect(() => {
+        if (globalCurrency) {
+            setFormData(prev => ({ ...prev, currency: globalCurrency }));
+        }
+    }, [globalCurrency]);
+
     const loadPriceBooks = async () => {
         try {
             setLoading(true);
@@ -68,7 +78,7 @@ export default function PriceBooks() {
             name: '',
             code: '',
             type: 'RETAIL',
-            currency: 'BDT',
+            currency: globalCurrency,
             isActive: true,
             validFrom: '',
             validTo: ''
@@ -87,7 +97,7 @@ export default function PriceBooks() {
             name: book.name,
             code: book.code,
             type: book.type,
-            currency: book.currency || 'BDT',
+            currency: book.currency || globalCurrency,
             isActive: book.isActive,
             validFrom: book.validFrom ? new Date(book.validFrom).toISOString().slice(0, 16) : '',
             validTo: book.validTo ? new Date(book.validTo).toISOString().slice(0, 16) : ''
@@ -325,14 +335,20 @@ export default function PriceBooks() {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Currency</label>
-                                        <input
-                                            type="text"
-                                            required
+                                        <select
                                             value={formData.currency}
                                             onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500 transition-all text-sm"
-                                            placeholder="BDT"
-                                        />
+                                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500 transition-all text-sm outline-none"
+                                        >
+                                            {settings?.supportedCurrencies?.map((c: any) => (
+                                                <option key={c.code} value={c.code}>
+                                                    {c.code} - {c.name} {c.code === globalCurrency ? '(Primary)' : ''}
+                                                </option>
+                                            ))}
+                                            {(!settings?.supportedCurrencies || settings.supportedCurrencies.length === 0) && (
+                                                <option value={globalCurrency}>{globalCurrency} (Primary)</option>
+                                            )}
+                                        </select>
                                     </div>
                                 </div>
 
