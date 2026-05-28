@@ -23,6 +23,9 @@ export const ProductPriceTiers = memo(({ productId, variants = [], averageCost }
   const [minQty, setMinQty] = useState('1');
   const [price, setPrice] = useState('');
 
+  // Derived: currency of the currently selected price book
+  const selectedBookCurrency = priceBooks.find(pb => pb.id === selectedPriceBook)?.currency || '—';
+
   useEffect(() => {
     if (productId) {
       loadData();
@@ -196,7 +199,9 @@ export const ProductPriceTiers = memo(({ productId, variants = [], averageCost }
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Tier Price ($)</label>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">
+                    Tier Price {selectedBookCurrency !== '—' ? `(${selectedBookCurrency})` : ''}
+                  </label>
                   <input
                     type="number"
                     min="0"
@@ -245,7 +250,9 @@ export const ProductPriceTiers = memo(({ productId, variants = [], averageCost }
                       <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Book</th>
                       <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Target</th>
                       <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Qty Threshold</th>
-                      <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Price</th>
+                      <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">
+                        Price
+                      </th>
                       <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Margin</th>
                       <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Actions</th>
                     </tr>
@@ -273,7 +280,7 @@ export const ProductPriceTiers = memo(({ productId, variants = [], averageCost }
                             Qty &ge; {tier.minQuantity}
                           </td>
                           <td className="py-3 px-4 text-sm text-right font-mono font-bold text-slate-900 dark:text-white">
-                            ${parseFloat(tier.price).toFixed(2)}
+                            {tier.priceBook?.currency || ''} {parseFloat(tier.price).toFixed(2)}
                           </td>
                           <td className="py-3 px-4 text-right">
                             <span className={`inline-block px-2 py-0.5 rounded text-xs font-mono font-bold ${parseFloat(margin) < 20 ? 'text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-950/20' : parseFloat(margin) < 40 ? 'text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/20' : 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/20'}`}>

@@ -88,6 +88,12 @@ export class CreateOrderDto {
   @IsOptional()
   appliedCouponCode?: string
 
+  /** Optional: specify which Price Book to use for pricing resolution (e.g. 'WHOLESALE', 'EID-2026'). */
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  priceBookCode?: string
+
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()

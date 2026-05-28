@@ -1,16 +1,16 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, Unique } from 'typeorm'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { PriceBookType } from '../enums/price-book-type.enum'
 import { ProductPriceEntity } from './product-price.entity'
 
 @Entity('price_books')
+@Unique('UQ_price_books_code_tenant', ['code', 'tenantId'])
 export class PriceBookEntity extends BaseEntity {
   @Column()
   name: string
 
-  @Column({ unique: true })
-  @Index()
+  @Column()
   code: string
 
   @Column({

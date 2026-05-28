@@ -39,6 +39,7 @@ export class OrderProcessHelper {
     itemDto: any,
     ctx: RequestContextDto,
     manager: EntityManager,
+    priceBookCode?: string | null,
   ): Promise<{ orderItem: OrderItemEntity; ledgerEntryId: string | null; reservationId: string | null }> {
     const { productId, variantId, quantity, pricing: itemPricingDto } = itemDto
     const tenantId = ctx.tenantId
@@ -72,7 +73,7 @@ export class OrderProcessHelper {
       product.id,
       variant?.id || null,
       quantity,
-      null, // Falls back to default price book
+      priceBookCode || null, // Use specified book; falls back to default if null
       tenantId,
     )
 

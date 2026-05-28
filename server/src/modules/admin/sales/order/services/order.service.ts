@@ -140,6 +140,7 @@ export class OrderService {
           item,
           ctx,
           manager,
+          createOrderDto.priceBookCode, // forward caller-specified book; null falls back to oldest active book
         )
         processedItems.push(orderItem)
         if (ledgerEntryId) pendingLedgerIds.push(ledgerEntryId)
