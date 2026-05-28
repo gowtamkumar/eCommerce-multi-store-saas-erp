@@ -23,7 +23,7 @@ To fully secure any ERP resource, the system enforces a **two-key validation** p
                               ✅ Resource Access Granted
 ```
 
-1. **Layer 1: Subscription Gate (Tenant-Level):** Checks if the tenant's plan features (`tenant_features` mapped from `subscription_plans`) includes the required feature route decorator (e.g. `@RequireFeature('/admin/hrm')`).
+1. **Layer 1: Subscription Gate (Tenant-Level):** Checks if the tenant's subscription plan features includes the required feature slug (e.g. `@RequireFeature('hrm')`).
 2. **Layer 2: Permission Gate (User-Level):** Resolves the user's dynamic roles and overrides (`@RequirePermissions(SystemPermissions.HRM_VIEW)`) to ensure the logged-in staff member has explicit clearance for that action.
 
 ---
@@ -130,7 +130,7 @@ Optimized for multi-tenant organizations with multi-branch corporate governance,
 ### 4.1 Plan Upgrades
 When a tenant upgrades from **Pro Seller** to **Enterprise**:
 1. The billing integration completes the transaction and updates the tenant's `subscription_plan_id`.
-2. The system triggers a cache-invalidation event: `cacheService.delCache("tenant_features:" + tenantId)`.
+2. The system invalidates the cached tenant details and permission manifests for all tenant users.
 3. Next time the user's browser triggers an action, the refreshed JWT or `user.features` manifest automatically exposes the Enterprise paths.
 
 ### 4.2 Plan Downgrades

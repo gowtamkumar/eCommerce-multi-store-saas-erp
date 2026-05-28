@@ -37,9 +37,6 @@ export class PermissionResolutionService {
   private readonly CACHE_TTL_SECONDS = 300 // 5 minutes
 
   constructor(
-    @InjectRepository(TenantFeatureEntity)
-    private readonly tenantFeatureRepo: Repository<TenantFeatureEntity>,
-
     @InjectRepository(UserRoleAssignmentEntity)
     private readonly assignmentRepo: Repository<UserRoleAssignmentEntity>,
 
@@ -48,6 +45,9 @@ export class PermissionResolutionService {
 
     @InjectRepository(TenantEntity)
     private readonly tenantRepo: Repository<TenantEntity>,
+
+    @InjectRepository(TenantFeatureEntity)
+    private readonly tenantFeatureRepo: Repository<TenantFeatureEntity>,
 
     private readonly cacheService: CacheService,
   ) {}
@@ -58,13 +58,9 @@ export class PermissionResolutionService {
 
   /**
    * Determine whether a feature is active for a given tenant.
-   *
-   * Resolution order:
-   *  1. Explicit row in tenant_features → authoritative (admin can enable features above plan)
-   *  2. No row → check if subscription_plans.features[] includes the slug
+   * Checks overrides first, then plan fallback.
    */
   async isFeatureEnabledForTenant(tenantId: string, featureSlug: string): Promise<boolean> {
-    // Check explicit admin override first
     const override = await this.tenantFeatureRepo.findOne({
       where: { tenantId, featureSlug },
     })
@@ -73,7 +69,6 @@ export class PermissionResolutionService {
       return override.isEnabled
     }
 
-    // Fall back to plan-level feature list
     const tenant = await this.tenantRepo.findOne({
       where: { id: tenantId },
       relations: ['subscriptionPlan'],

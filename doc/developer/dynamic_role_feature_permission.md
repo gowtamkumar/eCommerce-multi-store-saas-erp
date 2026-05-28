@@ -122,45 +122,33 @@ Permissions flow from **top (platform) to bottom (user)**, with each level able 
 
 ```
 Platform
-  └── FeatureDefinition        (e.g., "Payroll Module")
-        └── PermissionDefinition  (e.g., "payroll:approve")
+  └── Permission               (e.g., "payroll:approve", associated with feature slug "payroll")
 
 Tenant
-  ├── SubscriptionPlan         (which features are unlocked)
-  ├── TenantFeature            (features enabled for this tenant)
+  ├── SubscriptionPlan         (which features are unlocked as JSON array of slugs)
   ├── Role                     (custom roles defined by tenant)
   │     └── RolePermission     (which permissions this role grants)
   └── Branch / Department
 
 User
-  ├── UserRole                 (user → role, scoped to branch/global)
-  └── UserPermissionOverride   (optional: direct grant/deny)
+  └── UserRole                 (user → role, scoped to branch/global)
 ```
 
 ### 5.2 Key Tables (Logical Description)
 
-#### `feature_definitions` (Platform-owned)
-- `id`, `name` (e.g., `payroll`), `display_name`, `description`
-- `is_premium` (boolean — is it gated behind a plan?)
-- `plan_tier` (e.g., `starter`, `pro`, `enterprise`)
-
-#### `permission_definitions` (Platform-owned)
-- `id`, `feature_id`, `action` (e.g., `approve`, `view`, `export`)
-- `slug` = `feature:action` (e.g., `payroll:approve`)
-- `description`, `risk_level` (low / medium / high / critical)
-
-#### `tenant_features` (Tenant-owned)
-- `tenant_id`, `feature_id`, `is_enabled`, `enabled_at`, `enabled_by`
-- Controlled by subscription plan OR manual override by SaaS admin
+#### `permissions` (Platform-owned)
+- `id`, `code` (e.g., `payroll:approve`), `name`, `description`
+- `module` (e.g., `Finance`, `HRM`), `feature` (the feature slug, e.g., `payroll`)
+- `action` (e.g., `approve`), `risk_level` (low / medium / high / critical)
 
 #### `roles` (Tenant-owned)
 - `id`, `tenant_id`, `name`, `description`, `is_system_role` (bool)
 - `is_system_role = true` means it's auto-created (e.g., "Super Admin") and cannot be deleted
 
 #### `role_permissions` (Tenant-owned)
-- `role_id`, `permission_slug`, `granted_at`, `granted_by`
+- `role_id`, `permission_id` (references `permissions.id`)
 
-#### `user_roles` (Tenant-owned)
+#### `user_role_assignments` (Tenant-owned)
 - `user_id`, `role_id`, `scope_type` (global/branch/warehouse), `scope_id`
 - `assigned_at`, `assigned_by`, `expires_at` (optional time-bound access)
 
@@ -168,6 +156,7 @@ User
 - `user_id`, `permission_slug`, `effect` (`allow` / `deny`)
 - `reason`, `override_by`, `expires_at`
 - *Note: These are kept for management/future compatibility, but are excluded from the active permission resolution hot path.*
+
 
 ---
 
@@ -237,57 +226,20 @@ For simplicity and performance, roles are flat and do not support inheritance. M
 
 ### Step 1 — Platform Defines the Feature Catalog
 
-The SaaS provider (you) defines all available features in the system:
-
-```
-Feature Catalog:
-├── Core (always on)
-│   ├── User Management
-│   ├── Tenant Settings
-│   └── Audit Logs
-├── Starter Plan
-│   ├── Inventory Management
-│   ├── Basic POS
-│   └── Procurement (basic)
-├── Pro Plan
-│   ├── Payroll & HRM
-│   ├── Advanced Reporting
-│   ├── Multi-Branch Support
-│   └── Accounts Payable
-└── Enterprise Plan
-    ├── Custom Workflows
-    ├── API Access
-    ├── White Labeling
-    └── Advanced Analytics
-```
-
----
+The SaaS provider (you) defines all available features in the system.
 
 ### Step 2 — Subscription Controls Feature Availability
 
 When a tenant upgrades/downgrades:
-1. The system checks which features map to their new plan
-2. Features **not in the plan** are automatically **disabled** in `tenant_features`
-3. Existing role-permissions tied to disabled features become **inert** (not deleted, just non-resolving)
-4. When a tenant downgrades, warn them: "These roles will lose the following permissions..."
-
-> [!WARNING]  
-> Never delete `role_permissions` on downgrade. Only disable the feature flag. This preserves configuration so that if the tenant upgrades again, permissions are restored automatically.
+1. The tenant's `subscription_plan_id` is updated.
+2. Features not in the new plan are automatically unavailable (their slugs are no longer in the plan's feature list).
+3. Existing role-permissions tied to these features become **inert** (not deleted, just non-resolving). If the tenant upgrades again, they automatically work again.
 
 ---
 
-### Step 3 — Tenant Admin Controls Feature-Level Access
+### Step 3 — Role Admin Controls Action-Level Access
 
-Even within an enabled feature, the tenant admin can:
-- **Restrict a feature** to specific roles only (e.g., "Only Branch Managers can access Payroll")
-- **Enable/disable sub-features** (e.g., Payroll is enabled, but "Export Payroll" is disabled for all)
-- This is stored as a **tenant-level feature policy** layer
-
----
-
-### Step 4 — Role Admin Controls Action-Level Access
-
-Within an enabled feature, the role admin defines which **actions** each role can perform:
+Within the enabled features of a plan, the tenant admin defines which **actions** each role can perform by mapping permissions:
 
 | Feature | Action | Sales Role | Manager Role | Accountant Role |
 |---------|--------|:-:|:-:|:-:|
@@ -299,7 +251,7 @@ Within an enabled feature, the role admin defines which **actions** each role ca
 
 ---
 
-### Step 5 — User-Level Overrides (Kept for compatibility, bypassed in resolver)
+### Step 4 — User-Level Overrides (Kept for compatibility, bypassed in resolver)
 
 Direct per-user overrides can be managed via the API but are excluded from the active resolution engine to optimize latency and performance.
 
@@ -307,33 +259,24 @@ Direct per-user overrides can be managed via the API but are excluded from the a
 
 ## 8. Permission Resolution Algorithm
 
-When the system checks "Can user X do action Y on feature Z?", it follows this exact sequence:
+The `PermissionResolutionService` implements this decision tree for every protected API call:
 
 ```
 STEP 1: Is the feature enabled for this tenant?
+   → Check explicit override in the `tenant_features` database table first.
+   → If override exists: use override value (true = enabled, false = disabled).
+   → If no override exists: fall back to checking if the feature slug is in the tenant's subscription plan features list.
    → NO  → DENY (feature not in subscription)
    → YES → continue
 
-STEP 2: Is the feature enabled in tenant_features?
-   → NO  → DENY (tenant admin disabled it)
-   → YES → continue
+STEP 2: Collect all active, non-expired role assignments for the user in this tenant.
+   → Roles are flat (no inheritance chain).
+   → Multiple assigned roles are unioned together.
 
-STEP 3: Does the user have an explicit DENY override for this permission?
-   → YES → DENY (override wins)
-   → NO  → continue
-
-STEP 4: Does the user have an explicit ALLOW override for this permission?
+STEP 3: Does the collected permission set include the required permission slug (feature:action)?
    → YES → ALLOW
-   → NO  → continue
-
-STEP 5: Collect all roles assigned to the user (scoped to current branch + global)
-   → For each role, check if it has this permission_slug in role_permissions
-   → If ANY role grants it → ALLOW
-   → If NONE grant it → DENY
+   → NO  → DENY
 ```
-
-> [!NOTE]  
-> **Deny overrides always win over role-granted permissions.** This is the "explicit deny takes precedence" pattern used by AWS IAM and most enterprise permission systems.
 
 ---
 
@@ -442,15 +385,13 @@ Every permission-related action must be logged for compliance (SOC 2, ISO 27001,
 5. Send onboarding email with role configuration guide
 
 ### When a tenant upgrades their plan:
-1. Detect new features unlocked by the new plan
-2. Enable those features in `tenant_features`
-3. Notify the tenant admin of newly available features
-4. Do NOT auto-grant permissions — let the admin configure roles
+1. Update tenant's subscription plan (which changes the list of dynamic features)
+2. Notify the tenant admin of newly available features
+3. Do NOT auto-grant permissions — let the admin configure roles
 
 ### When a tenant downgrades their plan:
-1. Detect features no longer in the plan
-2. Set `is_enabled = false` in `tenant_features` (do NOT delete)
-3. Notify the tenant admin of affected roles and users
+1. Update tenant's subscription plan
+2. Notify the tenant admin of affected roles and users
 4. Log the event in the audit trail
 
 ### When an employee leaves:

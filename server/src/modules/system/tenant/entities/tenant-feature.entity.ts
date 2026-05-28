@@ -32,7 +32,6 @@ export class TenantFeatureEntity {
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 
-  /** Matches FeatureDefinitionEntity.slug */
   @Column({ type: 'varchar', length: 100, name: 'feature_slug' })
   featureSlug: string
 

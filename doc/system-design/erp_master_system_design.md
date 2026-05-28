@@ -717,7 +717,7 @@ flowchart LR
 
 | Layer | Question | Answered by |
 | :--- | :--- | :--- |
-| Subscription | Is the tenant allowed this feature at all? | `SubscriptionGuard` + `tenant_features` |
+| Subscription | Is the tenant allowed this feature at all? | `SubscriptionGuard` + subscription plan features |
 | Permission | Is the user allowed this action? | `PermissionsGuard` + `user_role_assignments` + `permissions` |
 | Scope | Can the user touch this branch/warehouse? | `BranchScopeGuard` + `WarehouseScopeGuard` + `user.branchId` / role assignment scope |
 

@@ -112,15 +112,15 @@ Another tenant, `ABC Electronics`, uses the same software but must never see Dem
 | ---- | --- |
 | Every tenant has isolated data. | Prevents cross-business data leak. |
 | A suspended tenant cannot operate normal ERP workflows. | Enforces billing/compliance. |
-| Feature access comes from subscription plan + tenant overrides. | Allows pricing tiers. |
+| Feature access comes from subscription plan features. | Allows pricing tiers. |
 | Tenant id must come from trusted request context/header, not request body. | Prevents tenant spoofing. |
 
 ### Data Changes
 
 | Action | Data impact |
 | ------ | ----------- |
-| Tenant signup | `A tenants`, `A users` owner, `A tenant_features`, `A subscription_invoices`. |
-| Plan upgrade | `U tenants.subscription_plan_id`, `U tenant_features`, `A subscription_invoices`. |
+| Tenant signup | `A tenants`, `A users` owner, `A subscription_invoices`. |
+| Plan upgrade | `U tenants.subscription_plan_id`, `A subscription_invoices`. |
 | Tenant suspend | `U tenants.status='SUSPENDED'`. |
 | Custom domain verify | `U tenants.custom_domain_status`, `custom_domain_verified_at`. |
 

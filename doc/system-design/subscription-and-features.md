@@ -13,30 +13,30 @@
 4. [Entity Relationship Diagram](#entity-relationship-diagram)
 5. [The 3-Step Permission Resolution Algorithm](#the-3-step-permission-resolution-algorithm)
 6. [Guard Pipeline — Request Lifecycle](#guard-pipeline--request-lifecycle)
-7. [Feature Catalog (`feature_definitions`)](#feature-catalog-feature_definitions)
+7. [Feature Catalog & Slugs](#feature-catalog--slugs)
 8. [Subscription Plans (`subscription_plans`)](#subscription-plans-subscription_plans)
-9. [Tenant Feature Overrides (`tenant_features`)](#tenant-feature-overrides-tenant_features)
-10. [Role & Permission System (RBAC)](#role--permission-system-rbac)
-11. [User Permission Overrides (Excluded from Resolution)](#user-permission-overrides-excluded-from-resolution)
-12. [Permission Manifest (Login Cache)](#permission-manifest-login-cache)
-13. [Frontend Feature Gating](#frontend-feature-gating)
-14. [Key Invariants & Rules](#key-invariants--rules)
-15. [Common Scenarios — Decision Tree](#common-scenarios--decision-tree)
-16. [File Reference Map](#file-reference-map)
+9. [Role & Permission System (RBAC)](#role--permission-system-rbac)
+10. [User Permission Overrides (Excluded from Resolution)](#user-permission-overrides-excluded-from-resolution)
+11. [Permission Manifest (Login Cache)](#permission-manifest-login-cache)
+12. [Frontend Feature Gating](#frontend-feature-gating)
+13. [Key Invariants & Rules](#key-invariants--rules)
+14. [Common Scenarios — Decision Tree](#common-scenarios--decision-tree)
+15. [File Reference Map](#file-reference-map)
 
 ---
 
 ## Overview
 
-This platform serves multiple independent **tenants** (stores), each on a **subscription plan**. Access to features and fine-grained operations is controlled by a 3-layer model:
+This platform serves multiple independent **tenants** (stores), each on a **subscription plan**. Access to features and fine-grained operations is controlled by a tiered resolution model:
 
 ```
-Layer 1: Subscription Plan  →  Does this tenant's plan include the feature at all?
-Layer 2: Tenant Override     →  Has a platform admin toggled a specific feature on/off for this tenant?
-Layer 3: RBAC               →  Does this user's role grant the specific action within the enabled feature?
+Layer 1a: Subscription Plan   →  Does this tenant's plan include the feature?
+Layer 1b: Tenant Overrides    →  Is there an explicit override in the database (custom add-on or block)?
+Layer 2:  RBAC (Roles)        →  Does this user's role grant the specific action within the enabled feature?
 ```
 
-Every API request passes through this stack in order. A **DENY at any layer is final** — a user cannot access a feature their plan doesn't include, even if their role grants it.
+Every API request passes through this stack in order. A **DENY at any layer is final** — a user cannot access a feature unless it is enabled via their plan or explicitly overridden as enabled, and their role grants it.
+
 
 ---
 
@@ -48,7 +48,6 @@ Every API request passes through this stack in order. A **DENY at any layer is f
 | **Subscription Plan** | A tiered product offering (e.g. Starter, Pro, Enterprise) that defines which **features** are included. |
 | **Feature** | A functional area of the application (e.g. `payroll`, `pos`, `inventory`). Identified by a **slug** string. |
 | **Feature Slug** | A lowercase string like `payroll`, `pos`, `hrm`. Canonical ID for a feature across all layers. |
-| **Feature Override** | A per-tenant database record that enables or disables a single feature, overriding the plan default. |
 | **Permission** | An atomic capability within a feature. Format: `feature:action` (e.g. `payroll:approve`, `pos:refund`). |
 | **Role** | A named collection of permissions. Assigned to users within a tenant scope. |
 | **Permission Manifest** | A cached JSON blob returned at login listing all `featuresEnabled` and `permissions` for a user. |
@@ -123,40 +122,17 @@ CREATE TABLE tenants (
 
 ---
 
-### `feature_definitions`
-
-Platform-owned catalog of **all** possible features. Seeded on bootstrap. Tenants cannot modify this table.
-
-```sql
-CREATE TABLE feature_definitions (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug         VARCHAR(100) UNIQUE NOT NULL,   -- "payroll", "pos", "inventory"
-  display_name VARCHAR(255) NOT NULL,
-  description  TEXT,
-  plan_tier    ENUM('core','starter','pro','enterprise') DEFAULT 'starter',
-  is_core      BOOLEAN DEFAULT false,          -- Core features cannot be disabled
-  is_active    BOOLEAN DEFAULT true,
-  created_at   TIMESTAMPTZ DEFAULT now(),
-  updated_at   TIMESTAMPTZ DEFAULT now()
-);
-```
-
-> **`is_core = true`**: Features like `settings` and `user-management` that are always enabled for every tenant, regardless of plan.  
-> **`plan_tier`**: The minimum subscription tier that unlocks this feature in a plan.
-
----
-
 ### `tenant_features`
 
-Per-tenant on/off switches for individual features. Acts as the **override layer** on top of subscription plan defaults.
+Stores explicit per-tenant feature overrides (add-ons or disabling a plan feature) configured by the platform super-admin.
 
 ```sql
 CREATE TABLE tenant_features (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id    UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  feature_slug VARCHAR(100) NOT NULL,           -- Must match feature_definitions.slug
+  feature_slug VARCHAR(100) NOT NULL,
   is_enabled   BOOLEAN DEFAULT true,
-  enabled_by   UUID,                            -- Who last toggled this feature
+  enabled_by   UUID,
   enabled_at   TIMESTAMPTZ,
   created_at   TIMESTAMPTZ DEFAULT now(),
   updated_at   TIMESTAMPTZ DEFAULT now(),
@@ -164,10 +140,8 @@ CREATE TABLE tenant_features (
 );
 ```
 
-> **⚠️ Critical Rule**: Rows are **NEVER deleted** on plan downgrade. Only `is_enabled` is set to `false`.  
-> This preserves role-permission configurations so that an upgrade automatically restores access without re-configuration.
-
 ---
+
 
 ### `permissions`
 
@@ -286,20 +260,11 @@ erDiagram
         timestamptz subscription_ends_at
     }
 
-    feature_definitions {
-        uuid id PK
-        varchar slug "UNIQUE - canonical slug"
-        varchar display_name
-        enum plan_tier "core|starter|pro|enterprise"
-        boolean is_core
-    }
-
     tenant_features {
         uuid id PK
         uuid tenant_id FK
-        varchar feature_slug "FK → feature_definitions.slug"
+        varchar feature_slug
         boolean is_enabled
-        uuid enabled_by
     }
 
     roles {
@@ -349,9 +314,8 @@ erDiagram
     }
 
     subscription_plans ||--o{ tenants : "subscribed by"
-    tenants ||--o{ tenant_features : "has overrides"
-    feature_definitions ||--o{ tenant_features : "referenced by slug"
     tenants ||--o{ roles : "owns"
+    tenants ||--o{ tenant_features : "has overrides"
     roles ||--o{ role_permissions : "has"
     permissions ||--o{ role_permissions : "assigned to"
     users ||--o{ user_role_assignments : "has"
@@ -372,12 +336,12 @@ flowchart TD
     B -- Yes --> ALLOW([✅ ALLOW])
     B -- No --> C[Extract feature slug from permission\ne.g. 'payroll' from 'payroll:approve']
 
-    C --> D{Step 1: Is feature\nenabled for tenant T?}
-    D -- No override in DB\nCheck subscription plan --> D1{Plan includes\nfeature slug?}
-    D1 -- No --> DENY1([❌ DENY — Upgrade plan])
-    D1 -- Yes --> E
-    D -- DB override exists\n'is_enabled = false' --> DENY2([❌ DENY — Feature disabled])
-    D -- DB override exists\n'is_enabled = true' --> E
+    C --> D{Step 1: Check override in tenant_features}
+    D -- Found Override: enabled --> E
+    D -- Found Override: disabled --> DENY1([❌ DENY — Disabled by Admin])
+    D -- No Override --> D2{Fallback: Is slug in subscription plan?}
+    D2 -- No --> DENY2([❌ DENY — Upgrade plan])
+    D2 -- Yes --> E
 
     E[Step 2: Collect all active\nnon-expired role assignments\nfor user U in tenant T]
     E --> F[Gather permissions\nfrom flat roles]
@@ -391,7 +355,7 @@ flowchart TD
 | Step | Logic | Source |
 |---|---|---|
 | **0** | **Super Admin bypass**: `UserRole.SUPER_ADMIN` skips all checks | `permissions.guard.ts` |
-| **1** | **Feature enabled for tenant?**: First checks `tenant_features` DB. If row exists, use `is_enabled`. If no row, fall back to `subscription_plans.features[]` | `permission-resolution.service.ts → isFeatureEnabledForTenant()` |
+| **1** | **Feature enabled for tenant?**: Checks `tenant_features` database overrides. If no override exists, falls back to checking `subscription_plans.features[]`. | `permission-resolution.service.ts → isFeatureEnabledForTenant()` |
 | **2** | **Role collection (Flat)**: Collect all active, non-expired role assignments for the user in this tenant (no inheritance chain) and union their permissions | `getEffectivePermissions()` |
 | **3** | **Check permission**: Verify if the target permission slug exists in the collected set | `resolvePermission()` |
 
@@ -400,14 +364,19 @@ flowchart TD
 ```
 Super Admin bypass
     ↓
-Feature disabled for tenant (plan or override) → DENY
+Feature explicitly disabled via Tenant Override → DENY
+    ↓
+Feature explicitly enabled via Tenant Override (Add-on) → check RBAC roles
+    ↓
+Feature not in subscription plan (and no override) → DENY
     ↓
 No role assignments grant permission → DENY
     ↓
 Role-granted permission → ALLOW
 ```
 
-> **Note on Direct Permission Overrides**: The direct per-user permission overrides table `user_permission_overrides` is excluded from this evaluation flow to optimize performance and simplify the model.
+> **Note on Direct User Permission Overrides**: The direct per-user permission overrides table `user_permission_overrides` is excluded from this evaluation flow to optimize performance and simplify the model.
+
 
 ---
 
@@ -438,7 +407,7 @@ sequenceDiagram
 
     TenantStatusGuard->>SubscriptionGuard: Tenant is active
     SubscriptionGuard-->>SubscriptionGuard: @RequireFeature('payroll') present?
-    Note over SubscriptionGuard: Checks tenant_features → falls back to plan features
+    Note over SubscriptionGuard: Checks plan features directly
 
     SubscriptionGuard->>PermissionsGuard: Feature is accessible
     PermissionsGuard-->>PermissionsGuard: @Permissions(['payroll:approve']) present?
@@ -460,26 +429,24 @@ sequenceDiagram
 
 ---
 
-## Feature Catalog (`feature_definitions`)
+## Feature Catalog & Slugs
 
-The platform maintains a single source of truth for all features:
+The platform supports the following core and add-on feature slugs, which are assigned to subscription plans and permission codes. There is no `feature_definitions` table in the database anymore; features are identified statically by their string slugs.
 
-| Slug | Display Name | Tier | Is Core |
+| Slug | Display Name | Tier | Description |
 |---|---|---|---|
-| `settings` | Store Settings | core | ✅ |
-| `user-management` | User Management | core | ✅ |
-| `audit-logs` | Audit Logs | core | ✅ |
-| `pos` | Point of Sale | starter | ❌ |
-| `inventory` | Inventory Management | starter | ❌ |
-| `ecommerce` | E-Commerce Store | starter | ❌ |
-| `crm` | CRM & Leads | pro | ❌ |
-| `loyalty` | Loyalty & Rewards | pro | ❌ |
-| `payroll` | Payroll | pro | ❌ |
-| `hrm` | Human Resources | pro | ❌ |
-| `accounting` | Accounting & Finance | enterprise | ❌ |
-| `reports` | Advanced Reports | enterprise | ❌ |
-
-> **Core features** (`is_core = true`) are always enabled for every tenant. They cannot be disabled through `tenant_features` or subscription downgrades.
+| `settings` | Store Settings | core | Configuration, subdomain settings, custom domains |
+| `user-management` | User Management | core | Roles, permissions, and staff management |
+| `audit-logs` | Audit Logs | core | System audit and activity trails |
+| `pos` | Point of Sale | starter | Front-of-house register, daily checkout sessions |
+| `inventory` | Inventory Management | starter | Products, variants, categories, price books |
+| `ecommerce` | E-Commerce Store | starter | Web storefront, checkout integration |
+| `crm` | CRM & Leads | pro | Customers, leads, marketing segmentations |
+| `loyalty` | Loyalty & Rewards | pro | Reward points, tiers, coupon programs |
+| `payroll` | Payroll | pro | Employee pay schedules, salary structures |
+| `hrm` | Human Resources | pro | Department structures, staff assignments |
+| `accounting` | Accounting & Finance | enterprise | Double-entry journals, accounts chart, tax setups |
+| `reports` | Advanced Reports | enterprise | Advanced finance and fulfillment analytics |
 
 ---
 
@@ -538,31 +505,6 @@ Plans define the feature set AND resource limits for a tenant:
 
 ---
 
-## Tenant Feature Overrides (`tenant_features`)
-
-This table gives platform admins **surgical control** over individual features without changing a tenant's plan.
-
-### Use Cases
-
-| Scenario | Action |
-|---|---|
-| Grant a Starter tenant early access to `payroll` for a trial period | Insert row: `{tenantId, featureSlug: 'payroll', isEnabled: true}` |
-| Suspend `pos` for a specific tenant due to compliance review | Upsert row: `{tenantId, featureSlug: 'pos', isEnabled: false}` |
-| Tenant downgrades from Pro → Starter (loses `payroll`) | Update existing rows to `is_enabled = false` — DO NOT DELETE |
-
-### Resolution Logic (from `isFeatureEnabledForTenant`)
-
-```typescript
-// 1. Check explicit DB override first
-const override = await tenantFeatureRepo.findOne({ where: { tenantId, featureSlug } })
-if (override) {
-  return override.isEnabled  // DB override is authoritative
-}
-
-// 2. No override → check if plan includes this feature
-const tenant = await tenantRepo.findOne({ relations: ['subscriptionPlan'] })
-return tenant.subscriptionPlan?.features?.includes(featureSlug) ?? false
-```
 
 ---
 
@@ -631,9 +573,7 @@ interface PermissionManifest {
 ```mermaid
 flowchart LR
     subgraph Feature Resolution
-        P[Plan features] --> M[Merge]
-        O[DB overrides\ntenant_features] --> M
-        M --> FE[featuresEnabled]
+        P[Plan features] --> FE[featuresEnabled]
     end
 
     subgraph Permission Resolution
@@ -692,13 +632,12 @@ if (!featuresEnabled.includes('pos')) {
 
 ## Key Invariants & Rules
 
-1. **Feature first**: If a feature is disabled (plan or override), NO permission within that feature can be granted — regardless of role.
-2. **Never delete override rows on downgrade**: Only set `is_enabled = false` in `tenant_features`. This preserves config for future upgrades.
-3. **Expired items are ignored, not deleted**: `user_role_assignments.expires_at` is checked at runtime. Cleanup is optional.
-4. **Super Admin bypasses everything**: `UserRole.SUPER_ADMIN` skips the entire guard chain.
-5. **Backend always re-validates**: The permission manifest is a hint for the UI. The backend runs the full resolution on every request.
-6. **Permissions are platform-owned**: Tenants cannot invent new permissions. Only platform seeds them.
-7. **Core features are indestructible**: Features with `is_core = true` cannot be disabled via `tenant_features`.
+1. **Feature first**: If a feature is not in the tenant's subscription plan, NO permission within that feature can be granted — regardless of role.
+2. **Expired items are ignored, not deleted**: `user_role_assignments.expires_at` is checked at runtime. Cleanup is optional.
+3. **Super Admin bypasses everything**: `UserRole.SUPER_ADMIN` skips the entire guard chain.
+4. **Backend always re-validates**: The permission manifest is a hint for the UI. The backend runs the full resolution on every request.
+5. **Permissions are platform-owned**: Tenants cannot invent new permissions. Only platform seeds them.
+6. **Core features are indestructible**: Features with `is_core = true` are always enabled.
 
 ---
 
@@ -708,19 +647,9 @@ if (!featuresEnabled.includes('pos')) {
 
 ```
 Step 1: isFeatureEnabledForTenant('payroll')
-  → No row in tenant_features
   → Check plan.features = ['pos', 'inventory', 'ecommerce']
   → 'payroll' NOT in plan features
   → DENY ❌ (403: Upgrade your plan)
-```
-
-### Scenario B: Platform admin enabled 'payroll' override for tenant on Starter plan
-
-```
-Step 1: isFeatureEnabledForTenant('payroll')
-  → Row in tenant_features: { featureSlug: 'payroll', isEnabled: true }
-  → Return true ✅ (override wins over plan)
-  → Continue to Step 2...
 ```
 
 ### Scenario C: User has Store Manager role (grants payroll:approve) but no other assignments
@@ -740,8 +669,7 @@ Step 3: Check permissions → Store Manager grants 'payroll:approve'
 |---|---|
 | [`subscription-plan.entity.ts`](../server/src/modules/system/subscription-plan/entities/subscription-plan.entity.ts) | Plan schema: `features` JSONB, pricing, limits |
 | [`tenant.entity.ts`](../server/src/modules/system/tenant/entities/tenant.entity.ts) | Tenant schema: `subscriptionPlanId` FK, subscription status |
-| [`tenant-feature.entity.ts`](../server/src/modules/system/tenant/entities/tenant-feature.entity.ts) | Per-tenant feature override: `featureSlug`, `isEnabled` |
-| [`feature-definition.entity.ts`](../server/src/modules/system/platform/entities/feature-definition.entity.ts) | Platform feature catalog: `slug`, `planTier`, `isCore` |
+| [`tenant-feature.entity.ts`](../server/src/modules/system/tenant/entities/tenant-feature.entity.ts) | Tenant feature overrides schema: `tenantId`, `featureSlug`, `isEnabled` |
 | [`permission.entity.ts`](../server/src/modules/admin/core/user/entities/permission.entity.ts) | Atomic permission: `code = 'feature:action'` |
 | [`role.entity.ts`](../server/src/modules/admin/core/user/entities/role.entity.ts) | Role schema (flat, no inheritance) |
 | [`user-role-assignment.entity.ts`](../server/src/modules/admin/core/user/entities/user-role-assignment.entity.ts) | User ↔ Role assignment with scope (kept for future use) and expiry |
@@ -760,4 +688,4 @@ Step 3: Check permissions → Store Manager grants 'payroll:approve'
 
 ---
 
-*Last updated: 2026-05-28 — Updated to match simplified 3-step system design.*
+*Last updated: 2026-05-28 — Updated to restore Tenant Feature Overrides.*

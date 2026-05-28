@@ -33,11 +33,11 @@ export class PermissionEntity {
 
   /**
    * The feature this permission belongs to.
-   * Must match a FeatureDefinitionEntity.slug.
    * Example: 'pos', 'payroll', 'inventory'
    */
   @Column({ type: 'varchar', length: 100, nullable: true })
   feature: string
+
 
   /**
    * The specific action this permission authorizes.

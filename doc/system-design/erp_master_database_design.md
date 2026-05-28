@@ -162,8 +162,7 @@ erDiagram
   TENANT ||--o{ ACCOUNT               : "owns"
   TENANT ||--o{ EMPLOYEE              : "owns"
   TENANT ||--o{ AUDIT_LOG             : "owns"
-  TENANT }o--|| SUBSCRIPTION_PLAN     : "subscribes to"
-  TENANT ||--o{ TENANT_FEATURE        : "has"
+
 
   BRANCH ||--o{ WAREHOUSE             : "may host"
   WAREHOUSE ||--o{ WAREHOUSE_BIN      : "contains"
@@ -236,7 +235,7 @@ There are **100 tables** in the system, grouped into **13 domains**.
 
 | # | Domain | Tables | Count |
 | --- | --- | --- | ---: |
-| 1 | **System & Tenant** | `tenants`, `tenant_features`, `feature_definitions`, `platform_settings`, `subscription_plans`, `subscription_invoices`, `tenant_traffic` | 7 |
+| 1 | **System & Tenant** | `tenants`, `platform_settings`, `subscription_plans`, `subscription_invoices`, `tenant_traffic` | 5 |
 | 2 | **Identity & RBAC** | `users`, `sessions`, `roles`, `permissions`, `role_permissions`, `user_role_assignments`, `user_permission_overrides`, `staff_invitations` | 8 |
 | 3 | **Organization** | `branches`, `warehouses`, `warehouse_bins` | 3 |
 | 4 | **Catalog** | `products`, `product_variants`, `product_attributes`, `brands`, `categories`, `price_books`, `product_prices`, `reviews` | 8 |
@@ -249,9 +248,9 @@ There are **100 tables** in the system, grouped into **13 domains**.
 | 11 | **HRM** | `employees`, `employee_personal_details`, `employee_documents`, `departments`, `designations`, `shifts`, `employee_shift_assignments`, `attendance_sessions`, `attendance_events`, `leave_quotas`, `leave_requests`, `payroll_batches`, `payroll_slips`, `performance_reviews`, `job_postings`, `applicants`, `interviews` | 17 |
 | 12 | **CRM & Marketing** | `subscribers`, `leads`, `loyalty_configs`, `loyalty_rules`, `loyalty_ledger`, `campaigns`, `campaign_messages`, `campaign_logs` | 8 |
 | 13 | **Content & Infra** | `pages`, `faqs`, `site_settings`, `audit_logs`, `system_notifications`, `files`, `devices`, `chat_conversations`, `chat_messages` | 9 |
-|  | **TOTAL** |  | **107** |
+|  | **TOTAL** |  | **105** |
 
-Note: `feature_definitions`, `platform_settings`, `tenant_traffic` are platform-level (not tenant-scoped). All others carry `tenant_id`.
+Note: `platform_settings`, `tenant_traffic` are platform-level (not tenant-scoped). All others carry `tenant_id`.
 
 ---
 
@@ -280,18 +279,6 @@ erDiagram
     jsonb features
     bool is_active
   }
-  TENANT_FEATURE {
-    uuid id PK
-    uuid tenant_id FK
-    string feature_slug
-    bool is_enabled
-  }
-  FEATURE_DEFINITION {
-    uuid id PK
-    string slug UK
-    string name
-    string module
-  }
   SUBSCRIPTION_INVOICE {
     uuid id PK
     uuid tenant_id FK
@@ -312,8 +299,6 @@ erDiagram
   }
 
   SUBSCRIPTION_PLAN ||--o{ TENANT             : "subscribed by"
-  TENANT ||--o{ TENANT_FEATURE                : "has"
-  FEATURE_DEFINITION ||--o{ TENANT_FEATURE    : "instantiated as"
   TENANT ||--o{ SUBSCRIPTION_INVOICE          : "billed"
   TENANT ||--o{ TENANT_TRAFFIC                : "metered"
 ```
@@ -1418,27 +1403,6 @@ erDiagram
 | `subscription_ends_at` | timestamptz | NULL | |
 | `user_id` | uuid | FK → `users.id` NULL | Tenant owner (set after first admin signs up) |
 
-#### `tenant_features`
-| Column | Type | Constraint |
-| --- | --- | --- |
-| `id` | uuid | PK |
-| `tenant_id` | uuid | FK → `tenants.id` ON DELETE CASCADE |
-| `feature_slug` | varchar(100) | NOT NULL — matches `feature_definitions.slug` |
-| `is_enabled` | bool | DEFAULT true |
-| `enabled_by` | uuid | NULL |
-| `enabled_at` | timestamptz | NULL |
-
-Indexes: `UQ(tenant_id, feature_slug)`, `IDX(tenant_id)`.
-
-#### `feature_definitions` (platform-level — not tenant-scoped)
-| Column | Type |
-| --- | --- |
-| `id` | uuid PK |
-| `slug` | varchar(100) UNIQUE — e.g. `pos`, `hrm.payroll`, `marketing.campaigns` |
-| `name` | varchar(255) |
-| `description` | text |
-| `module` | varchar(100) |
-| `default_enabled` | bool |
 
 #### `platform_settings` (platform-level)
 | Column | Type |
@@ -1557,7 +1521,7 @@ Indexes: `UQ(name, tenant_id)`.
 | `name` | varchar |
 | `description` | varchar NULL |
 | `module` | varchar |
-| `feature` | varchar(100) NULL — matches `feature_definitions.slug` |
+| `feature` | varchar(100) NULL — the feature slug (e.g., 'pos', 'payroll') |
 | `action` | varchar(100) NULL |
 | `risk_level` | enum DEFAULT 'LOW' (`LOW`/`MEDIUM`/`HIGH`/`CRITICAL`) |
 
@@ -2352,7 +2316,6 @@ This requires a `UNIQUE(id, tenant_id)` on the parent. Track in §13 — large r
 | Table | Index |
 | --- | --- |
 | `users` | `UQ(email, tenant_id)`, `UQ(username, tenant_id)`, `IDX(tenant_id)`, `IDX(branch_id)`, `IDX(warehouse_id)` |
-| `tenant_features` | `UQ(tenant_id, feature_slug)` |
 | `products` | `IDX(tenant_id, status)`, `IDX(tenant_id, created_at)`, `IDX(slug)`, `IDX(brand_id)`, `IDX(category_id)` |
 | `product_variants` | `UQ(sku, tenant_id)`, `IDX(product_id)`, `IDX(tenant_id)` |
 | `orders` | `IDX(tenant_id, created_at)`, `IDX(tenant_id, status)`, `UQ(offline_sale_id)` |

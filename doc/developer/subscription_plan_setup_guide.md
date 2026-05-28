@@ -154,29 +154,21 @@ export const FEATURE_TO_ROUTES_MAPPING: Record<string, string[]> = {
 
 ## 4. Backend Request Authentication (`SubscriptionGuard`)
 
-Every controller endpoint maps back to a specific capability gate using `@RequireFeature('route')`. The [SubscriptionGuard](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/common/guards/subscription.guard.ts) interceptor evaluates access dynamically:
+Every controller endpoint maps back to a specific capability gate using `@RequireFeature('route')`. The [SubscriptionGuard](file:///home/gowtamkumar/projects/eCommerce-multi-tenant-saas/server/src/common/guards/subscription.guard.ts) evaluates access dynamically against the tenant's plan features:
 
 > [!TIP]
 > Super Admin accounts automatically bypass all guards.
 
 ```typescript
-// 1. Resolve required path to abstract feature key
-const featureSlug = ROUTE_TO_FEATURE_MAPPING[requiredFeature] || requiredFeature;
+const featureSlug = requiredFeature;
 
-// 2. Check if the capability is enabled at database-level (tenant_features overrides)
-const feature = await this.tenantFeatureRepo.findOne({
-  where: { tenantId, featureSlug },
-});
-if (feature && !feature.isEnabled) {
-  throw new ForbiddenException("Feature is disabled for your store");
-}
-
-// 3. Fallback: check plan-level abstract features
+// Verify if plan has the feature
 const tenant = await this.tenantService.findOneTenants(tenantId);
 const planFeatures = tenant.subscriptionPlan?.features || [];
-const hasAccess = planFeatures.includes(featureSlug) || expandFeatures(planFeatures).includes(requiredFeature);
 
-if (!feature && !hasAccess) {
+const hasPlanAccess = planFeatures.includes(featureSlug) || planFeatures.includes(requiredFeature);
+
+if (!hasPlanAccess) {
   throw new ForbiddenException("Upgrade your plan to access this feature.");
 }
 ```

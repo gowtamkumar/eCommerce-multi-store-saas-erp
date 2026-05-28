@@ -95,9 +95,8 @@ Every HTTP request passes through a deterministic guard chain before touching an
                   ┌─────────▼─────────┐
                   │ SubscriptionGuard │  (NestJS Guard, order: 2)
                   │  ─────────────────│  - Reads @RequireFeature() decorator
-                  │  Plan feature     │  - Looks up tenant_features
-                  │  entitlement      │  - Fallback to plan.features JSONB
-                  │                   │  - Missing → 403 FEATURE_NOT_ENABLED
+                  │  Plan feature     │  - Fallback to plan.features JSONB
+                  │  entitlement      │  - Missing → 403 FEATURE_NOT_ENABLED
                   └─────────┬─────────┘
                             │
                   ┌─────────▼─────────┐
@@ -513,7 +512,7 @@ CREATE TABLE idempotency_keys (
 | Supplier AP balance | Pessimistic write | `SupplierApLedgerRepository.append()` |
 | POS shift totals | Pessimistic write on `pos_shifts` row | `PosService.recordSale()` |
 | Journal account running balance | Pessimistic write on `accounts` row | `AccountingService.postJournal()` |
-| Tenant entitlement counters (active users, branches) | Pessimistic write on `tenant_features` row | `SubscriptionBillingService.checkCap()` |
+| Tenant entitlement counters (active users, branches) | Checks active subscription limits | `SubscriptionBillingService.checkCap()` |
 
 ### 9.2 Advisory lock key format
 
@@ -723,7 +722,6 @@ modules/system/subscription-billing/
 ### 13.3 Entities owned
 - `subscription_plans` — `id`, `name`, `price_monthly`, `price_yearly`, `features` (JSONB), `caps` (JSONB), `is_active`.
 - `plan_features` (optional normalized table) — feature key → boolean / numeric cap.
-- `tenant_features` — per-tenant override / cache of effective features.
 - `subscription_invoices` — billing invoices issued to tenants.
 - `usage_counters` — `tenant_id`, `feature_key`, `value`, `window_start` — for metered features (orders/month, storage MB).
 

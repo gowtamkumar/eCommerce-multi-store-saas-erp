@@ -352,7 +352,7 @@ This is the same diagram in table form. Use it when you need to answer: **"If I 
 | ------ | ----------------------------- | ---------- | ----------------- | ----------------------- |
 | Auth/User | `users`, `sessions` | `tenants`, `roles` | `sessions`, `users.refresh_token` | JWT identity for every secured module. |
 | RBAC | `roles`, `permissions`, `role_permissions`, `user_role_assignments`, `permission_overrides` | `users`, `branches`, `warehouses` | permission checks in guards | Blocks or allows all admin writes. |
-| Tenant/Subscription | `tenants`, `tenant_features`, `subscription_plans`, `subscription_invoices` | `users`, `feature_definitions` | `tenant_features`, `subscription_invoices` | `SubscriptionGuard` gates modules such as POS, HRM, Campaigns. |
+| Tenant/Subscription | `tenants`, `subscription_plans`, `subscription_invoices` | `users` | `subscription_invoices` | `SubscriptionGuard` gates modules such as POS, HRM, Campaigns. |
 | Organization | `branches`, `warehouses`, `warehouse_bins` | `tenants`, `users` | branch/warehouse master data | Branch/warehouse scope for orders, stock, payroll, reports. |
 | Catalog | `products`, `product_variants`, `categories`, `brands`, `price_books`, `reviews` | `warehouses`, `suppliers` | product master, variants, batches | Inventory, Cart, Order, POS, Campaign audience. |
 | Cart | `carts`, `cart_items` | `products`, `product_variants`, `coupons`, `wallet_ledger` | `carts`, `cart_items` | Feeds checkout/order creation. |
@@ -505,7 +505,7 @@ The system has **eleven** observable stages on every HTTP request. The stages an
 | 4 | **Nest bootstrap pipeline** | `server/src/main.ts` | `ValidationPipe(whitelist+transform)`, CORS, compression, cookieParser, `json({limit:'20mb'})`. | request body | normalises DTO |
 | 5 | **TenantContextMiddleware** | `common/middleware/tenant-context.middleware.ts` | Mandatory `x-tenant-id`; throws `BadRequestException('Tenant context missing')` otherwise. | `req.headers['x-tenant-id']` | `req.tenantId` |
 | 6 | **Global guards** | `TenantStatusGuard → BranchScopeGuard → PermissionsGuard` (registration order in `AppModule`). | See §2. | — |
-| 7 | **Route-level guards** | Controller `@UseGuards(JwtAuthGuard, SubscriptionGuard, RolesGuard?)` | JWT verify, feature gating, role check. | JWT, `tenant_features`, `subscription_plans.features`, `request.user.role` | `request.user` |
+| 7 | **Route-level guards** | Controller `@UseGuards(JwtAuthGuard, SubscriptionGuard, RolesGuard?)` | JWT verify, feature gating, role check. | JWT, `subscription_plans.features`, `request.user.role` | `request.user` |
 | 8 | **Controller** | `*.controller.ts` | Maps HTTP → service method, applies DTO transforms. | DTO | — |
 | 9 | **Service** | `*.service.ts` | Business logic; opens TX with `dataSource.transaction(...)` for multi-row writes; inserts append-only ledger rows; inserts `accounting_outbox` rows; enqueues BullMQ jobs. | repositories | DB rows |
 | 10 | **Interceptors (post-handler)** | `TransformInterceptor → AuditLogInterceptor → LoggingInterceptor` | Wrap response; conditional audit row (only on `@Audit`); log line. | response object | `audit_logs` (if decorated) |
@@ -551,7 +551,7 @@ The system has **eleven** observable stages on every HTTP request. The stages an
 | --------- | ------- | ------ |
 | `@Public()` | `JwtAuthGuard`, `SubscriptionGuard`, `PermissionsGuard` | Skips all three. |
 | `@PublicDuringExpiration()` | `TenantStatusGuard` | Allows access even on `SUSPENDED`/`EXPIRED` tenant (used for billing UI). |
-| `@RequireFeature('hrm.payroll')` | `SubscriptionGuard` | Reads `tenant_features` and `subscription_plans.features` JSON. |
+| `@RequireFeature('hrm.payroll')` | `SubscriptionGuard` | Reads `subscription_plans.features` JSON. |
 | `@RequirePermissions('orders:create')` | `PermissionsGuard` | Resolves dynamic permission via RBAC tables. |
 | `@Roles('ADMIN','MANAGER')` | `RolesGuard` | Static check against `users.role` enum. |
 | `@Audit({entity:'order', action:'create'})` | `AuditLogInterceptor` | Persists `audit_logs` row post-success. |
@@ -956,7 +956,6 @@ TenantService.onboard()  (TX):
    ├─ INSERT users   { tenant_id, role:'ADMIN', is_email_verified:false, … }      ← becomes tenant owner
    ├─ UPDATE tenants.user_id = owner.user.id
    ├─ INSERT subscription_invoices { tenant_id, plan_id, status:'PENDING' }       ← trial period
-   ├─ INSERT tenant_features for the plan defaults
    └─ enqueue mail (verification + welcome)
    COMMIT
    → returns { tenant, owner }; client stores tenant + JWT.
@@ -974,7 +973,6 @@ TenantService.onboard()  (TX):
 | `tenants` | `{ id:'t_8e3a…', store_name:'Demo Shop', subdomain:'demo', status:'TRIAL', subscription_plan_id:'pl_basic', subscription_status:'TRIAL', user_id:null }` |
 | `users` (owner) | `{ tenant_id:'t_8e3a…', role:'ADMIN', username:'demo_owner', password:'<bcrypt>', is_email_verified:false }` |
 | `subscription_invoices` | `{ tenant_id:'t_8e3a…', plan_id:'pl_basic', amount:0, status:'PENDING', due_at:'2026-06-08' }` |
-| `tenant_features` | rows for every default `feature_definitions.slug` of the plan |
 
 ### 10.5 Cross-references
 
@@ -1752,7 +1750,7 @@ Legend: `A` = add row, `U` = update row, `D` = delete/remove row, `R` = read onl
 | ------ | ------------- | ---------------- | ---------------- | -------------- | ----------------------- |
 | Auth/User | `sessions`; sometimes `users` during signup | `users.refresh_token`, verification/reset fields, `sessions.revoked_at` | Session revoke only; do not hard-delete users with history | `tenants`, `roles`, `permissions` | Auth feeds `request.user` to every secured module. |
 | RBAC | `roles`, `permissions`, `role_permissions`, `user_role_assignments`, `permission_overrides` | role names/scopes, permission assignments | Soft-delete/revoke assignments; do not remove seeded permissions casually | `users`, `branches`, `warehouses` | Guard-level dependency for all admin modules. |
-| Tenant/Subscription | `tenants`, `tenant_features`, `subscription_invoices` | `tenants.status`, `subscription_status`, `tenant_features.is_enabled` | Tenant cancellation is status transition; physical delete requires retention workflow | `subscription_plans`, `feature_definitions`, `users` | SubscriptionGuard gates POS, HRM, Campaigns, builder, etc. |
+| Tenant/Subscription | `tenants`, `subscription_invoices` | `tenants.status`, `subscription_status` | Tenant cancellation is status transition; physical delete requires retention workflow | `subscription_plans`, `users` | SubscriptionGuard gates POS, HRM, Campaigns, builder, etc. |
 | Organization | `branches`, `warehouses`, `warehouse_bins` | branch/warehouse status, address, capacity | Prefer soft-delete; blocked if stock/orders reference the row | `tenants`, `users` | Used by Orders, POS, Inventory, Payroll, Reports. |
 | Catalog | `products`, `product_variants`, `categories`, `brands`, pricing rows, reviews | product status, pricing, average cost, category tree | Soft-delete product/category; historical orders keep snapshots | `warehouses`, `suppliers`, reviews | Feeds Cart, Order, POS, GRN, Inventory, Campaigns. |
 | Cart | `carts`, `cart_items` | cart quantities, applied coupon | Hard-remove `cart_items`; delete/clear cart after checkout | Catalog, coupons, wallet balance | Feeds Order; does not reserve stock. |

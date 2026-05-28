@@ -56,7 +56,7 @@ The Super-Admin is the highest privilege user in the system. This role belongs t
 2.  Select the new plan from the dropdown
 3.  Choose **Effective Date**: `Immediately` or `Next Billing Cycle`
 4.  Click **Update Subscription**
-5.  The system auto-seeds the `tenant_features` table with the new plan's feature keys.
+5.  The system resolves feature access dynamically from the new subscription plan's features list.
 
 ### 2.3 Suspending a Tenant (Non-Payment)
 1.  Go to **Tenants → Search Tenant → Actions → Suspend**

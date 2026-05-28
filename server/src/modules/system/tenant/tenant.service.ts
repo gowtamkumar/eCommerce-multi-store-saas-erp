@@ -179,19 +179,7 @@ export class TenantService {
         })
       )
 
-      // Seed tenant features based on subscription plan
-      if (subscriptionPlan?.features?.length) {
-        const featureRepo = manager.getRepository(TenantFeatureEntity)
-        const uniqueFeatures = subscriptionPlan.features.filter((f, i, self) => self.indexOf(f) === i)
-        const featuresToSeed = uniqueFeatures.map(f => featureRepo.create({
-          tenantId: savedTenant.id,
-          featureSlug: f,
-          isEnabled: true,
-          enabledBy: savedUser.id,
-          enabledAt: new Date(),
-        }))
-        await featureRepo.save(featuresToSeed)
-      }
+      // Tenant features are resolved dynamically from the Subscription Plan.
 
       // Initialize default Chart of Accounts (COA) for this new tenant
       const accountRepo = manager.getRepository(AccountEntity)
@@ -434,58 +422,16 @@ export class TenantService {
 
     return await this.dataSource.transaction(async (manager) => {
       const tenantRepo = manager.getRepository(TenantEntity)
-      const featureRepo = manager.getRepository(TenantFeatureEntity)
 
       // 1. Update the tenant's plan relation
       tenant.subscriptionPlanId = planId
       tenant.subscriptionPlan = newPlan
       const updatedTenant = await tenantRepo.save(tenant)
 
-      // 2. Load existing feature flags for this tenant
-      const existingFeatures = await featureRepo.find({ where: { tenantId: id } })
-      const existingMap = new Map(existingFeatures.map((f) => [f.featureSlug, f]))
-
-      const featuresToSave: TenantFeatureEntity[] = []
-
-      // Sync feature flags based on the new plan's features list
-      const newFeaturesList = (newPlan.features || []).filter((f, i, self) => self.indexOf(f) === i)
-      for (const slug of newFeaturesList) {
-        const existing = existingMap.get(slug)
-        if (existing) {
-          if (!existing.isEnabled) {
-            existing.isEnabled = true
-            existing.enabledAt = new Date()
-            featuresToSave.push(existing)
-          }
-        } else {
-          featuresToSave.push(
-            featureRepo.create({
-              tenantId: id,
-              featureSlug: slug,
-              isEnabled: true,
-              enabledAt: new Date(),
-            }),
-          )
-        }
-      }
-
-      // Mark features NOT in the new plan as disabled (soft downgrade)
-      const newFeaturesSet = new Set(newFeaturesList)
-      for (const feat of existingFeatures) {
-        if (!newFeaturesSet.has(feat.featureSlug) && feat.isEnabled) {
-          feat.isEnabled = false
-          featuresToSave.push(feat)
-        }
-      }
-
-      if (featuresToSave.length > 0) {
-        await featureRepo.save(featuresToSave)
-      }
-
-      // 3. Clear tenant cache
+      // 2. Clear tenant cache
       await this.invalidateTenantCache(id, tenant.subdomain, tenant.customDomain)
 
-      // 4. Invalidate permission manifest caches for all tenant users
+      // 3. Invalidate permission manifest caches for all tenant users
       try {
         const members = await this.userRepository.findTeamMembers(id)
         for (const member of members) {

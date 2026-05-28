@@ -88,7 +88,7 @@ import { PermissionEntity } from '@/modules/admin/core/user/entities/permission.
 import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
 import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
-import { FeatureDefinitionEntity } from '@/modules/system/platform/entities/feature-definition.entity'
+
 
 @Global()
 @Module({
@@ -143,7 +143,6 @@ import { FeatureDefinitionEntity } from '@/modules/system/platform/entities/feat
       SupplierInvoiceItemEntity,
       RoleEntity,
       PermissionEntity,
-      FeatureDefinitionEntity,
       TenantFeatureEntity,
       UserRoleAssignmentEntity,
       UserPermissionOverrideEntity,
