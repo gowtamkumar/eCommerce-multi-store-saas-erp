@@ -1,18 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common'
-import { DataSource } from 'typeorm'
-import { RfqRepository } from '../repositories/rfq.repository'
-import { QuotationRepository } from '../repositories/quotation.repository'
-import { RfqEntity, RFQStatus } from '../entities/rfq.entity'
-import { QuotationEntity, QuotationStatus } from '../entities/quotation.entity'
-import {
-  CreateRfqDto,
-  CreateQuotationDto,
-  UpdateRfqStatusDto,
-  UpdateQuotationStatusDto,
-} from '../dto/rfq.dto'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { PaginationDto } from '@/common/dto/pagination.dto'
-import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { DataSource } from 'typeorm'
+import { CreateQuotationDto, CreateRfqDto, UpdateRfqStatusDto } from '../dto/rfq.dto'
+import { QuotationEntity, QuotationStatus } from '../entities/quotation.entity'
+import { RfqEntity, RFQStatus } from '../entities/rfq.entity'
+import { QuotationRepository } from '../repositories/quotation.repository'
+import { RfqRepository } from '../repositories/rfq.repository'
 import { PurchaseOrderService } from './purchase-order.service'
 
 @Injectable()
@@ -23,7 +17,6 @@ export class RfqService {
     private readonly rfqRepository: RfqRepository,
     private readonly quotationRepository: QuotationRepository,
     private readonly purchaseOrderService: PurchaseOrderService,
-    private readonly cacheService: CacheService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -40,7 +33,6 @@ export class RfqService {
       ctx,
     )
 
-    await this.cacheService.delCache(`rfq:list`, tenantId)
     return result
   }
 
@@ -57,29 +49,20 @@ export class RfqService {
   }> {
     const tenantId = ctx.tenantId
     const { page = 1, limit = 20, q: search } = paginationDto
-    const cacheKey = `rfq:list:p${page}:l${limit}:q${search || ''}:s${status || ''}`
-
-    return this.cacheService.rememberCache(
-      cacheKey,
-      async () => {
-        const [items, total] = await this.rfqRepository.findAllByTenant(
-          tenantId,
-          page,
-          limit,
-          search,
-          status,
-        )
-        return {
-          items,
-          total,
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit),
-        }
-      },
-      300,
+    const [items, total] = await this.rfqRepository.findAllByTenant(
       tenantId,
+      page,
+      limit,
+      search,
+      status,
     )
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    }
   }
 
   async findOneRfq(id: string, ctx: RequestContextDto): Promise<RfqEntity> {
@@ -101,8 +84,6 @@ export class RfqService {
 
     rfq.status = dto.status
     const saved = await this.rfqRepository.saveRfq(rfq)
-    await this.cacheService.delCache(`rfq:list`, tenantId)
-    await this.cacheService.delCache(`rfq:id:${id}`, tenantId)
     return saved
   }
 
@@ -135,7 +116,6 @@ export class RfqService {
       ctx,
     )
 
-    await this.cacheService.delCache(`rfq:id:${rfqId}`, tenantId)
     return quotation
   }
 
@@ -208,9 +188,6 @@ export class RfqService {
       )
 
       await queryRunner.commitTransaction()
-
-      await this.cacheService.delCache(`rfq:list`, tenantId)
-      await this.cacheService.delCache(`rfq:id:${rfq.id}`, tenantId)
 
       return po
     } catch (error) {
