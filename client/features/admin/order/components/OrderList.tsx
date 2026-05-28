@@ -175,13 +175,6 @@ export default function OrderList({
                                 Export CSV
                             </button>
                         )}
-                        <Link
-                            href="/admin/orders/create"
-                            className="flex-1 sm:flex-none px-4 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-500/20"
-                        >
-                            <Plus className="w-5 h-5" />
-                            Create Order
-                        </Link>
                         <div className="hidden sm:block text-sm text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
                             Total: <span className="text-slate-900 dark:text-white font-bold">{pagination.total}</span>
                         </div>
