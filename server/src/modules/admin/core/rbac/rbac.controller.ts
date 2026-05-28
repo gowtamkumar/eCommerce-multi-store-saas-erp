@@ -113,7 +113,9 @@ export class RbacController {
     @Body() body: AssignRoleDto,
   ): Promise<BaseApiSuccessResponse<UserRoleAssignmentEntity>> {
     const actorName = req.user?.name || 'Unknown'
-    const assignment = await this.assignmentService.assignRoleToUser(userId, ctx.tenantId, ctx.userId, actorName, body)
+    const assignment = await this.assignmentService.assignRoleToUser(
+      userId, ctx.tenantId, ctx.userId, actorName, body,
+    )
     return { success: true, statusCode: 201, message: 'Role assigned successfully', data: assignment }
   }
 
@@ -131,6 +133,9 @@ export class RbacController {
 
   // ─────────────────────────────────────────────────────────────────
   // User Permission Overrides
+  // Note: These overrides are stored and manageable via API, but are NOT
+  // evaluated in the per-request permission resolution hot path.
+  // They are available for future use (e.g. emergency access, audit purposes).
   // ─────────────────────────────────────────────────────────────────
 
   @Get('users/:userId/overrides')
@@ -152,9 +157,10 @@ export class RbacController {
     @Body() body: CreateOverrideDto,
   ): Promise<BaseApiSuccessResponse<UserPermissionOverrideEntity>> {
     const actorName = req.user?.name || 'Unknown'
-    // Convert string to Date if necessary
     const dto = { ...body, expiresAt: body.expiresAt ? new Date(body.expiresAt) : null }
-    const override = await this.overrideService.addOverride(userId, ctx.tenantId, ctx.userId, actorName, dto as any)
+    const override = await this.overrideService.addOverride(
+      userId, ctx.tenantId, ctx.userId, actorName, dto as any,
+    )
     return { success: true, statusCode: 201, message: 'Override added successfully', data: override }
   }
 
@@ -171,11 +177,11 @@ export class RbacController {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Permission Manifest Check
+  // Permission Manifest
   // ─────────────────────────────────────────────────────────────────
 
   @Get('users/:userId/manifest')
-  @RequirePermissions(SystemPermissions.USERS_READ) // or maybe users themselves can read their own? For now, keep it secure.
+  @RequirePermissions(SystemPermissions.USERS_READ)
   async getUserManifest(
     @RequestContext() ctx: RequestContextDto,
     @Param('userId') userId: string,

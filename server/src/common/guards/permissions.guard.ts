@@ -18,76 +18,63 @@ export class PermissionsGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // 0. Bypass permission check for @Public() routes
+    // 0. Bypass for @Public() routes
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ])
-    if (isPublic) {
-      return true
-    }
+    if (isPublic) return true
 
     const requiredPermissions = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
       context.getHandler(),
       context.getClass(),
     ])
 
-    if (!requiredPermissions || requiredPermissions.length === 0) {
-      return true // No permissions are required for this endpoint
-    }
+    // No permissions declared on this route → open to any authenticated user
+    if (!requiredPermissions || requiredPermissions.length === 0) return true
 
     const request = context.switchToHttp().getRequest()
     let { user } = request
 
+    // Attempt to resolve user from JWT if not already set by JwtAuthGuard
     if (!user) {
       const authHeader = request.headers['authorization']
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      if (authHeader?.startsWith('Bearer ')) {
         const token = authHeader.substring(7)
         try {
           const secret = this.configService.get('JWT_SECRET_KEY')
           const decoded = jwt.verify(token, secret) as any
-          if (decoded && decoded.sub) {
+          if (decoded?.sub) {
             user = await this.userService.getUser(decoded.sub)
             request.user = user
           }
-        } catch (error) {
-          // Ignore token parsing error, let it fall through
+        } catch {
+          // Ignore — fall through to the auth failure below
         }
       }
     }
 
-    if (!user) {
-      return false // Require auth first
-    }
+    if (!user) return false
 
     const userRole = user.role || ''
-    const isGlobalAdmin = [UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(userRole.toLowerCase())
+    const isGlobalAdmin = [UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(
+      userRole.toLowerCase() as UserRole,
+    )
 
-    // 1. Super Admins and Admins bypass all dynamic permissions checks
-    // Step 0: The global bypass (for backward compat)
-    if (isGlobalAdmin) {
-      return true
-    }
+    // 1. Platform admins bypass all dynamic permission checks
+    if (isGlobalAdmin) return true
 
     const tenantId = user.tenantId
     if (!tenantId) {
       throw new ForbiddenException('User is not associated with a tenant.')
     }
 
-    // Extract potential scope from request headers
-    const scopeId = request.headers['x-scope-id'] || undefined
-
-    // 2. Use the 5-step PermissionResolutionService for each required permission
+    // 2. Run the 3-step resolution for each declared permission
     for (const perm of requiredPermissions) {
-      const allowed = await this.resolutionService.resolvePermission(
-        user.id,
-        tenantId,
-        perm,
-        scopeId,
-      )
+      const allowed = await this.resolutionService.resolvePermission(user.id, tenantId, perm)
       if (!allowed) {
         throw new ForbiddenException(
-          `Access Denied: You do not possess the required permission (${perm}) to execute this operation.`,
+          `Access Denied: You do not have the required permission (${perm}) to perform this action.`,
         )
       }
     }

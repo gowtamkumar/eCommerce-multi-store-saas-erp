@@ -25,7 +25,7 @@ import { AuditLogModule } from '@/modules/system/audit-log/audit-log.module'
       TenantFeatureEntity,
       TenantEntity,
     ]),
-    AuditLogModule, // Provides AuditLogService
+    AuditLogModule,
   ],
   controllers: [RbacController],
   providers: [

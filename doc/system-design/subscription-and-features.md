@@ -11,13 +11,13 @@
 2. [Core Concepts & Glossary](#core-concepts--glossary)
 3. [Database Schema](#database-schema)
 4. [Entity Relationship Diagram](#entity-relationship-diagram)
-5. [The 5-Step Permission Resolution Algorithm](#the-5-step-permission-resolution-algorithm)
+5. [The 3-Step Permission Resolution Algorithm](#the-3-step-permission-resolution-algorithm)
 6. [Guard Pipeline — Request Lifecycle](#guard-pipeline--request-lifecycle)
 7. [Feature Catalog (`feature_definitions`)](#feature-catalog-feature_definitions)
 8. [Subscription Plans (`subscription_plans`)](#subscription-plans-subscription_plans)
 9. [Tenant Feature Overrides (`tenant_features`)](#tenant-feature-overrides-tenant_features)
 10. [Role & Permission System (RBAC)](#role--permission-system-rbac)
-11. [User Permission Overrides](#user-permission-overrides)
+11. [User Permission Overrides (Excluded from Resolution)](#user-permission-overrides-excluded-from-resolution)
 12. [Permission Manifest (Login Cache)](#permission-manifest-login-cache)
 13. [Frontend Feature Gating](#frontend-feature-gating)
 14. [Key Invariants & Rules](#key-invariants--rules)
@@ -200,8 +200,6 @@ CREATE TABLE roles (
   tenant_id         UUID REFERENCES tenants(id) ON DELETE CASCADE,
   is_system_role    BOOLEAN DEFAULT false,    -- Immutable platform-provisioned roles
   is_system_default BOOLEAN DEFAULT false,    -- @deprecated use is_system_role
-  parent_role_id    UUID REFERENCES roles(id) ON DELETE SET NULL,  -- For role inheritance
-  scope_type        ENUM('global','branch','warehouse') DEFAULT 'global',
   UNIQUE (name, tenant_id)
 );
 
@@ -213,7 +211,7 @@ CREATE TABLE role_permissions (
 );
 ```
 
-> **Role Inheritance**: If `parent_role_id` is set, the effective permission set = own permissions ∪ all ancestor permissions (recursively, max depth 10 to prevent cycles).
+> **Flat Roles**: Roles are flat with no inheritance (the `parent_role_id` column has been removed). Multiple roles can be assigned to a user, and their permissions are unioned.
 
 ---
 
@@ -237,11 +235,13 @@ CREATE TABLE user_role_assignments (
 );
 ```
 
+> **Note on Scope**: The `scope_type` and `scope_id` columns are kept for future branch/warehouse scoping capabilities. The current permission resolution engine treats all assignments as GLOBAL (tenant-wide).
+
 ---
 
 ### `user_permission_overrides`
 
-Per-user explicit ALLOW or DENY for a specific permission. Bypasses role grants.
+Per-user explicit ALLOW or DENY for a specific permission.
 
 ```sql
 CREATE TABLE user_permission_overrides (
@@ -257,6 +257,8 @@ CREATE TABLE user_permission_overrides (
   updated_at      TIMESTAMPTZ DEFAULT now()
 );
 ```
+
+> **⚠️ Performance/Design Note**: Overrides are kept in the schema and REST API endpoints for user convenience or future use, but are **excluded from the active permission resolution hot path** to optimize performance.
 
 ---
 
@@ -304,9 +306,7 @@ erDiagram
         uuid id PK
         varchar name
         uuid tenant_id FK
-        uuid parent_role_id FK "self-ref"
         boolean is_system_role
-        enum scope_type
     }
 
     permissions {
@@ -354,7 +354,6 @@ erDiagram
     tenants ||--o{ roles : "owns"
     roles ||--o{ role_permissions : "has"
     permissions ||--o{ role_permissions : "assigned to"
-    roles ||--o| roles : "inherits from (parent_role_id)"
     users ||--o{ user_role_assignments : "has"
     roles ||--o{ user_role_assignments : "assigned via"
     users ||--o{ user_permission_overrides : "has"
@@ -363,7 +362,7 @@ erDiagram
 
 ---
 
-## The 5-Step Permission Resolution Algorithm
+## The 3-Step Permission Resolution Algorithm
 
 The `PermissionResolutionService` implements this decision tree for every protected API call:
 
@@ -380,19 +379,11 @@ flowchart TD
     D -- DB override exists\n'is_enabled = false' --> DENY2([❌ DENY — Feature disabled])
     D -- DB override exists\n'is_enabled = true' --> E
 
-    E{Step 2–3: Does user\nhave active DENY\noverride for F:A?}
-    E -- Yes --> DENY3([❌ DENY — Explicit deny wins])
-    E -- No --> F
-
-    F{Step 4: Does user\nhave active ALLOW\noverride for F:A?}
-    F -- Yes --> ALLOW2([✅ ALLOW — Explicit grant])
-    F -- No --> G
-
-    G[Step 5: Collect all active\nnon-expired role assignments\nfor user U in tenant T]
-    G --> H[Walk parent role chain\nfor each role — collect\nunion of all permissions]
-    H --> I{Does permission\nset include F:A?}
-    I -- Yes --> ALLOW3([✅ ALLOW — Role grants it])
-    I -- No --> DENY4([❌ DENY — No role grants it])
+    E[Step 2: Collect all active\nnon-expired role assignments\nfor user U in tenant T]
+    E --> F[Gather permissions\nfrom flat roles]
+    F --> G{Step 3: Does permission\nset include F:A?}
+    G -- Yes --> ALLOW2([✅ ALLOW])
+    G -- No --> DENY3([❌ DENY])
 ```
 
 ### Step-by-Step Breakdown
@@ -401,9 +392,8 @@ flowchart TD
 |---|---|---|
 | **0** | **Super Admin bypass**: `UserRole.SUPER_ADMIN` skips all checks | `permissions.guard.ts` |
 | **1** | **Feature enabled for tenant?**: First checks `tenant_features` DB. If row exists, use `is_enabled`. If no row, fall back to `subscription_plans.features[]` | `permission-resolution.service.ts → isFeatureEnabledForTenant()` |
-| **2–3** | **User DENY override**: Query `user_permission_overrides` for `effect = DENY`. Non-expired DENY wins over everything including roles | `resolvePermission()` |
-| **4** | **User ALLOW override**: Non-expired `effect = ALLOW` grants access without needing a role | `resolvePermission()` |
-| **5** | **Role-based check**: Walk all active non-expired role assignments, collect permission union (with role inheritance), check if `permission_slug` is in the set | `getEffectivePermissions()` |
+| **2** | **Role collection (Flat)**: Collect all active, non-expired role assignments for the user in this tenant (no inheritance chain) and union their permissions | `getEffectivePermissions()` |
+| **3** | **Check permission**: Verify if the target permission slug exists in the collected set | `resolvePermission()` |
 
 ### Resolution Priority (Highest to Lowest)
 
@@ -412,12 +402,12 @@ Super Admin bypass
     ↓
 Feature disabled for tenant (plan or override) → DENY
     ↓
-Active DENY user override → DENY
+No role assignments grant permission → DENY
     ↓
-Active ALLOW user override → ALLOW
-    ↓
-Role-granted permission → ALLOW or DENY
+Role-granted permission → ALLOW
 ```
+
+> **Note on Direct Permission Overrides**: The direct per-user permission overrides table `user_permission_overrides` is excluded from this evaluation flow to optimize performance and simplify the model.
 
 ---
 
@@ -452,7 +442,7 @@ sequenceDiagram
 
     SubscriptionGuard->>PermissionsGuard: Feature is accessible
     PermissionsGuard-->>PermissionsGuard: @Permissions(['payroll:approve']) present?
-    Note over PermissionsGuard: Runs full 5-step resolution via PermissionResolutionService
+    Note over PermissionsGuard: Runs 3-step resolution via PermissionResolutionService
 
     PermissionsGuard->>Controller: ✅ Access granted
     Controller->>Client: 200 Response
@@ -466,7 +456,7 @@ sequenceDiagram
 | `JwtAuthGuard` | `guards/jwt-auth.guard.ts` | Validates Bearer JWT, rejects if invalid or missing |
 | `TenantStatusGuard` | `guards/tenant-status.guard.ts` | Ensures tenant is `active` and subscription is not `expired` |
 | `SubscriptionGuard` | `guards/subscription.guard.ts` | Route-level feature check via `@RequireFeature('slug')` decorator |
-| `PermissionsGuard` | `guards/permissions.guard.ts` | Per-permission check via `@Permissions(['feature:action'])` — runs the 5-step engine |
+| `PermissionsGuard` | `guards/permissions.guard.ts` | Per-permission check via `@Permissions(['feature:action'])` — runs the 3-step engine |
 
 ---
 
@@ -578,29 +568,22 @@ return tenant.subscriptionPlan?.features?.includes(featureSlug) ?? false
 
 ## Role & Permission System (RBAC)
 
-### Role Inheritance
+### Flat Roles
 
-Roles can form an inheritance tree via `parent_role_id`. The resolution engine walks the entire chain:
-
-```
-Store Manager (parent: Staff)
-├── permissions: [payroll:view, payroll:approve, hrm:manage]
-└── inherits from Staff:
-    └── permissions: [pos:view, pos:create, inventory:view]
-
-Effective permissions for Store Manager:
-  [payroll:view, payroll:approve, hrm:manage, pos:view, pos:create, inventory:view]
-```
+Roles do not support inheritance (the `parent_role_id` column has been removed). Permissions are managed by:
+- Creating roles with specific target permissions.
+- Assigning multiple flat roles to a single user.
+- The resolution engine then automatically unions all permissions granted by their active roles.
 
 ### Scope Types
 
-| Scope | When to Use | `scope_id` |
+| Scope | Description | `scope_id` |
 |---|---|---|
 | `GLOBAL` | User acts across the entire tenant | `null` |
 | `BRANCH` | User is restricted to a specific branch | `branchId` (UUID) |
 | `WAREHOUSE` | User is restricted to a specific warehouse | `warehouseId` (UUID) |
 
-A user can hold **multiple role assignments simultaneously** — e.g., `Staff (GLOBAL)` + `Branch Manager (BRANCH: branch-123)`. The permission engine takes the **union** of all active assignments that match the request scope.
+> **Scope Evaluation**: The `scope_type` and `scope_id` columns are preserved on `user_role_assignments` for future multi-branch and multi-warehouse scoping features. Currently, the resolution engine treats all active assignments as GLOBAL (tenant-wide). A user can hold **multiple role assignments simultaneously**, and the resolution engine takes the union of all active roles.
 
 ### System Roles
 
@@ -610,41 +593,23 @@ System roles (`is_system_role = true`) are auto-provisioned when a tenant is cre
 
 ---
 
-## User Permission Overrides
+## User Permission Overrides (Excluded from Resolution)
 
-When a role configuration doesn't fit a specific user, platform admins can create direct overrides:
+Direct per-user permission overrides can be defined and managed via the `/rbac/users/:userId/overrides` REST endpoints. This is saved in the `user_permission_overrides` table.
 
-### DENY Override (Absolute Block)
-
-```typescript
-// Even if a role grants payroll:approve, this override blocks it
+```json
 {
-  userId: 'user-123',
-  tenantId: 'tenant-456',
-  permissionSlug: 'payroll:approve',
-  effect: 'deny',
-  reason: 'User is under HR review pending audit completion',
-  overrideBy: 'admin-789',
-  expiresAt: '2025-09-01T00:00:00Z'
+  "userId": "user-123",
+  "tenantId": "tenant-456",
+  "permissionSlug": "payroll:approve",
+  "effect": "deny",
+  "reason": "Temporary restriction pending compliance check",
+  "overrideBy": "admin-789",
+  "expiresAt": "2026-09-01T00:00:00Z"
 }
 ```
 
-### ALLOW Override (Grant Without Role)
-
-```typescript
-// Grants payroll:export without assigning a role
-{
-  userId: 'user-123',
-  tenantId: 'tenant-456',
-  permissionSlug: 'payroll:export',
-  effect: 'allow',
-  reason: 'Temporary access for Q2 audit',
-  overrideBy: 'admin-789',
-  expiresAt: '2025-07-01T00:00:00Z'
-}
-```
-
-> **Best Practice**: Always set `expiresAt`. Permanent overrides (`null`) should be exceptional and require documentation in the `reason` field.
+> **⚠️ Excluded from Evaluation Hot Path**: Direct user permission overrides are **NOT** read or evaluated by the current `PermissionResolutionService`. The resolver determines permissions strictly based on active user-role assignments to optimize performance.
 
 ---
 
@@ -672,10 +637,8 @@ flowchart LR
     end
 
     subgraph Permission Resolution
-        RA[Role assignments\nwalk parent chain] --> UP[Union permissions]
-        AO[Active ALLOW overrides] --> UP
-        UP --> FP[Filter: remove DENY overrides]
-        FP --> FF[Filter: only include perms\nwhere feature is in featuresEnabled]
+        RA[Role assignments] --> UP[Union permissions]
+        UP --> FF[Filter: only include perms\nwhere feature is in featuresEnabled]
         FF --> PERMS[permissions]
     end
 
@@ -693,7 +656,6 @@ rbac:manifest:{tenantId}:{userId}
 
 **Cache is invalidated whenever**:
 - A role is assigned or revoked
-- A permission override is added or removed
 - A tenant's plan or feature overrides change
 
 > ⚠️ **Security Warning**: The manifest is for UI convenience **only**. The backend always re-validates permissions on every request via `PermissionsGuard`. Never trust the manifest alone for access control decisions.
@@ -730,15 +692,13 @@ if (!featuresEnabled.includes('pos')) {
 
 ## Key Invariants & Rules
 
-1. **DENY always wins**: An active DENY override trumps role grants. This mirrors the AWS IAM model.
-2. **Feature first**: If a feature is disabled (plan or override), NO permission within that feature can be granted — regardless of role.
-3. **Never delete override rows on downgrade**: Only set `is_enabled = false`. This preserves config for future upgrades.
-4. **Expired items are ignored, not deleted**: Both `user_role_assignments.expires_at` and `user_permission_overrides.expires_at` are checked at runtime. Cleanup is optional.
-5. **Super Admin bypasses everything**: `UserRole.SUPER_ADMIN` skips the entire guard chain.
-6. **Backend always re-validates**: The permission manifest is a hint for the UI. The backend runs the full resolution on every request.
-7. **Role inheritance max depth is 10**: Prevents infinite cycles from circular `parent_role_id` references.
-8. **Permissions are platform-owned**: Tenants cannot invent new permissions. Only platform seeds them.
-9. **Core features are indestructible**: Features with `is_core = true` cannot be disabled via `tenant_features`.
+1. **Feature first**: If a feature is disabled (plan or override), NO permission within that feature can be granted — regardless of role.
+2. **Never delete override rows on downgrade**: Only set `is_enabled = false` in `tenant_features`. This preserves config for future upgrades.
+3. **Expired items are ignored, not deleted**: `user_role_assignments.expires_at` is checked at runtime. Cleanup is optional.
+4. **Super Admin bypasses everything**: `UserRole.SUPER_ADMIN` skips the entire guard chain.
+5. **Backend always re-validates**: The permission manifest is a hint for the UI. The backend runs the full resolution on every request.
+6. **Permissions are platform-owned**: Tenants cannot invent new permissions. Only platform seeds them.
+7. **Core features are indestructible**: Features with `is_core = true` cannot be disabled via `tenant_features`.
 
 ---
 
@@ -763,21 +723,13 @@ Step 1: isFeatureEnabledForTenant('payroll')
   → Continue to Step 2...
 ```
 
-### Scenario C: User has Store Manager role (grants payroll:approve) but has a DENY override
+### Scenario C: User has Store Manager role (grants payroll:approve) but no other assignments
 
 ```
 Step 1: Feature enabled ✅
-Step 2: Check DENY overrides for user → Found active DENY for 'payroll:approve'
-  → DENY ❌ (override wins over role)
-```
-
-### Scenario D: New staff user with no roles, but has a temporary ALLOW override for 'pos:view'
-
-```
-Step 1: Feature 'pos' enabled ✅
-Step 3: No DENY override
-Step 4: Found active ALLOW override for 'pos:view'
-  → ALLOW ✅ (override grants without needing a role)
+Step 2: Collect roles → Found Store Manager
+Step 3: Check permissions → Store Manager grants 'payroll:approve'
+  → ALLOW ✅
 ```
 
 ---
@@ -791,10 +743,10 @@ Step 4: Found active ALLOW override for 'pos:view'
 | [`tenant-feature.entity.ts`](../server/src/modules/system/tenant/entities/tenant-feature.entity.ts) | Per-tenant feature override: `featureSlug`, `isEnabled` |
 | [`feature-definition.entity.ts`](../server/src/modules/system/platform/entities/feature-definition.entity.ts) | Platform feature catalog: `slug`, `planTier`, `isCore` |
 | [`permission.entity.ts`](../server/src/modules/admin/core/user/entities/permission.entity.ts) | Atomic permission: `code = 'feature:action'` |
-| [`role.entity.ts`](../server/src/modules/admin/core/user/entities/role.entity.ts) | Role with parent chain for inheritance |
-| [`user-role-assignment.entity.ts`](../server/src/modules/admin/core/user/entities/user-role-assignment.entity.ts) | User ↔ Role assignment with scope and expiry |
-| [`user-permission-override.entity.ts`](../server/src/modules/admin/core/user/entities/user-permission-override.entity.ts) | Direct ALLOW/DENY override per user |
-| [`permission-resolution.service.ts`](../server/src/common/services/permission-resolution.service.ts) | **Core engine**: 5-step resolution + manifest builder |
+| [`role.entity.ts`](../server/src/modules/admin/core/user/entities/role.entity.ts) | Role schema (flat, no inheritance) |
+| [`user-role-assignment.entity.ts`](../server/src/modules/admin/core/user/entities/user-role-assignment.entity.ts) | User ↔ Role assignment with scope (kept for future use) and expiry |
+| [`user-permission-override.entity.ts`](../server/src/modules/admin/core/user/entities/user-permission-override.entity.ts) | Direct ALLOW/DENY override per user (kept but excluded from resolution hot path) |
+| [`permission-resolution.service.ts`](../server/src/common/services/permission-resolution.service.ts) | **Core engine**: 3-step resolution + manifest builder |
 | [`permissions.guard.ts`](../server/src/common/guards/permissions.guard.ts) | Guard that calls resolution service per request |
 | [`subscription.guard.ts`](../server/src/common/guards/subscription.guard.ts) | Route-level feature check via `@RequireFeature` |
 | [`maintenance.guard.ts`](../server/src/common/guards/maintenance.guard.ts) | Platform-wide maintenance mode gate |
@@ -808,4 +760,4 @@ Step 4: Found active ALLOW override for 'pos:view'
 
 ---
 
-*Last updated: 2026-05-27 — Generated from live codebase analysis.*
+*Last updated: 2026-05-28 — Updated to match simplified 3-step system design.*

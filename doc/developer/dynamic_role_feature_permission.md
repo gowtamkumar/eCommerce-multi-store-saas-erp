@@ -104,10 +104,9 @@ Permissions flow from **top (platform) to bottom (user)**, with each level able 
 │  → A user can have different roles in diff branches │
 └─────────────────────┬───────────────────────────────┘
                       │ applies to
-┌─────────────────────▼───────────────────────────────┐
+┌─────────────────────────────────────────────────────┐
 │  USER LEVEL                                         │
 │  → Assigned one or more roles                       │
-│  → Can have direct permission overrides (optional)  │
 │  → Final policy = union of all role permissions     │
 └─────────────────────────────────────────────────────┘
 ```
@@ -168,6 +167,7 @@ User
 #### `user_permission_overrides` (Optional, Tenant-owned)
 - `user_id`, `permission_slug`, `effect` (`allow` / `deny`)
 - `reason`, `override_by`, `expires_at`
+- *Note: These are kept for management/future compatibility, but are excluded from the active permission resolution hot path.*
 
 ---
 
@@ -227,12 +227,9 @@ When assigning roles:
 
 ---
 
-### Step 5 — Role Inheritance (Optional, Advanced)
+### Step 5 — Flat Roles (Inheritance Removed)
 
-For complex org structures, support **role hierarchy**:
-- `Branch Manager` inherits all permissions of `Sales Associate` + adds more
-- Implemented via a `parent_role_id` reference on the `roles` table
-- Resolution: walk up the parent chain and union all permissions
+For simplicity and performance, roles are flat and do not support inheritance. Multiple roles are assigned to a user to combine permissions via union.
 
 ---
 
@@ -302,15 +299,9 @@ Within an enabled feature, the role admin defines which **actions** each role ca
 
 ---
 
-### Step 5 — User-Level Overrides (Use Sparingly)
+### Step 5 — User-Level Overrides (Kept for compatibility, bypassed in resolver)
 
-Sometimes you need to grant a specific user a permission outside their role, or explicitly deny them one:
-
-- **Allow override**: "Give this specific accountant PO approval rights just for this month"
-- **Deny override**: "This manager should NOT have delete rights despite their role"
-
-> [!CAUTION]  
-> User-level overrides create complexity. Make them time-bound, require a justification reason, and log them prominently in the audit trail. Avoid making them a common pattern — fix the role instead.
+Direct per-user overrides can be managed via the API but are excluded from the active resolution engine to optimize latency and performance.
 
 ---
 
@@ -506,8 +497,8 @@ Every permission-related action must be logged for compliance (SOC 2, ISO 27001,
                                                         ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   PERMISSION RESOLUTION ENGINE                  │
-│   Feature Enabled? → Deny Override? → Allow Override?           │
-│   → Role Grants? → ALLOW or DENY                               │
+│   Feature Enabled? → Union Flat Roles Permissions?              │
+│   → ALLOW or DENY                                               │
 └─────────────────────────────────────────────────────────────────┘
                                                         │
                               ┌─────────────────────────┴──────┐
@@ -527,7 +518,7 @@ Every permission-related action must be logged for compliance (SOC 2, ISO 27001,
 - [ ] Define all features with plan-tier mapping
 - [ ] Define all permission slugs as `feature:action`
 - [ ] Build subscription → feature auto-enable logic
-- [ ] Build permission resolution engine (5-step algorithm)
+- [ ] Build permission resolution engine (3-step algorithm)
 - [ ] Build audit logging for all permission events
 
 ### For Tenant Onboarding

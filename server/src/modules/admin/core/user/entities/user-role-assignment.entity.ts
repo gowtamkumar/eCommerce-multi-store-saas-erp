@@ -14,18 +14,15 @@ import {
 } from 'typeorm'
 
 /**
- * Associates a user with a role, scoped to a specific context (global, branch, or warehouse).
+ * Associates a user with a role within a tenant.
  *
  * A single user can hold MULTIPLE role assignments simultaneously.
- * Assignments can optionally expire (for contractors, temporary promotions).
+ * The permission engine unions the permissions of all active (non-expired) assignments.
  *
- * Scope rules:
- * - GLOBAL: applies across the entire tenant
- * - BRANCH: only applies when the user acts on resources within scopeId (branchId)
- * - WAREHOUSE: only applies when the user acts on resources within scopeId (warehouseId)
- *
- * During permission resolution, the guard collects all active (non-expired) role assignments
- * for the user (both global and scoped to the current request context) and unions their permissions.
+ * Scope columns (scope_type, scope_id) are kept for future use (branch/warehouse filtering).
+ * The current resolution engine treats all assignments as tenant-wide (GLOBAL).
+ * Assignments can optionally expire — useful for contractors or temporary promotions.
+ * Expired assignments are ignored at runtime but NOT automatically deleted.
  */
 @Entity('user_role_assignments')
 @Index(['userId', 'tenantId'])
@@ -55,7 +52,10 @@ export class UserRoleAssignmentEntity {
   @JoinColumn({ name: 'tenant_id' })
   tenant: TenantEntity
 
-  /** The boundary within which this role assignment applies */
+  /**
+   * The boundary within which this role assignment applies.
+   * Kept for future branch/warehouse scoping. Currently GLOBAL is always used.
+   */
   @Column({
     type: 'enum',
     enum: RoleScopeType,
@@ -67,11 +67,12 @@ export class UserRoleAssignmentEntity {
   /**
    * The specific branch or warehouse UUID this assignment is scoped to.
    * Null when scopeType is GLOBAL.
+   * Kept for future use — not currently read by the permission resolver.
    */
   @Column({ type: 'uuid', name: 'scope_id', nullable: true })
   scopeId: string | null
 
-  /** Who granted this role assignment (must hold user:manage permission) */
+  /** Who granted this role assignment (must hold users:manage permission) */
   @Column({ type: 'uuid', name: 'assigned_by', nullable: true })
   assignedBy: string | null
 

@@ -1,4 +1,3 @@
-import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
 import { RiskLevel } from '@/common/enums/risk-level.enum'
 import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
 import { PermissionEntity } from '@/modules/admin/core/user/entities/permission.entity'
@@ -19,16 +18,12 @@ export interface CreateRoleDto {
   name: string
   description?: string
   permissionCodes?: string[]
-  parentRoleId?: string
-  scopeType?: RoleScopeType
 }
 
 export interface UpdateRoleDto {
   name?: string
   description?: string
   permissionCodes?: string[]
-  parentRoleId?: string | null
-  scopeType?: RoleScopeType
 }
 
 /**
@@ -60,7 +55,7 @@ export class RoleManagementService {
   async getAllRoles(tenantId: string): Promise<RoleEntity[]> {
     return this.roleRepo.find({
       where: [{ tenantId }, { isSystemDefault: true }],
-      relations: ['permissions', 'parentRole'],
+      relations: ['permissions'],
       order: { isSystemRole: 'DESC', name: 'ASC' },
     })
   }
@@ -68,7 +63,7 @@ export class RoleManagementService {
   async getRoleById(roleId: string, tenantId: string): Promise<RoleEntity> {
     const role = await this.roleRepo.findOne({
       where: { id: roleId, tenantId },
-      relations: ['permissions', 'parentRole'],
+      relations: ['permissions'],
     })
     if (!role) throw new NotFoundException(`Role ${roleId} not found`)
     return role
@@ -90,8 +85,6 @@ export class RoleManagementService {
       name: dto.name,
       description: dto.description,
       tenantId,
-      scopeType: (dto.scopeType ? dto.scopeType.toLowerCase() as RoleScopeType : RoleScopeType.GLOBAL),
-      parentRoleId: dto.parentRoleId ?? null,
       permissions,
       isSystemRole: false,
       isSystemDefault: false,
@@ -128,14 +121,10 @@ export class RoleManagementService {
       name: role.name,
       description: role.description,
       permissions: role.permissions?.map((p) => p.code) ?? [],
-      parentRoleId: role.parentRoleId,
-      scopeType: role.scopeType,
     }
 
     if (dto.name !== undefined) role.name = dto.name
     if (dto.description !== undefined) role.description = dto.description
-    if (dto.scopeType !== undefined) role.scopeType = dto.scopeType.toLowerCase() as RoleScopeType
-    if (dto.parentRoleId !== undefined) role.parentRoleId = dto.parentRoleId
 
     if (dto.permissionCodes !== undefined) {
       role.permissions = dto.permissionCodes.length
@@ -149,8 +138,6 @@ export class RoleManagementService {
       name: saved.name,
       description: saved.description,
       permissions: saved.permissions?.map((p) => p.code) ?? [],
-      parentRoleId: saved.parentRoleId,
-      scopeType: saved.scopeType,
     }
 
     await this.auditLogService.logRoleModified(tenantId, actorId, actorName, roleId, before, after)
@@ -190,7 +177,6 @@ export class RoleManagementService {
       name: newName,
       description: `Cloned from: ${source.name}`,
       permissionCodes: source.permissions?.map((p) => p.code) ?? [],
-      scopeType: source.scopeType,
     })
   }
 
@@ -229,7 +215,6 @@ export class RoleManagementService {
       tenantId,
       isSystemRole: true,
       isSystemDefault: true,
-      scopeType: RoleScopeType.GLOBAL,
       permissions: allPermissions,
     })
 
@@ -247,13 +232,11 @@ export class RoleManagementService {
     const defaultRoleDefs: Array<{
       name: string
       description: string
-      scopeType: RoleScopeType
       permCodes: string[]
     }> = [
       {
         name: 'Branch Manager',
-        description: 'Full operational control scoped to their assigned branch.',
-        scopeType: RoleScopeType.BRANCH,
+        description: 'Full operational control across the tenant.',
         permCodes: [
           // POS
           'pos:create-sale', 'pos:manage-shifts', 'pos:override-price', 'pos:apply-discount',
@@ -289,7 +272,6 @@ export class RoleManagementService {
       {
         name: 'Accountant',
         description: 'Financial, general ledger, and reconciliation control.',
-        scopeType: RoleScopeType.GLOBAL,
         permCodes: [
           'finance:read-ledger', 'finance:write-expense', 'finance:post-journal',
           'finance:reverse-journal', 'finance:close-period', 'finance:manage-budget',
@@ -304,7 +286,6 @@ export class RoleManagementService {
       {
         name: 'Sales Associate',
         description: 'Standard retail sales and checkout operator.',
-        scopeType: RoleScopeType.BRANCH,
         permCodes: [
           'pos:create-sale',
           'inventory:read',
@@ -319,7 +300,6 @@ export class RoleManagementService {
       {
         name: 'HR Manager',
         description: 'Comprehensive human resources, employee file, and payroll management.',
-        scopeType: RoleScopeType.GLOBAL,
         permCodes: [
           'hrm:clock-attendance', 'hrm:correct-attendance', 'hrm:view-attendance-report',
           'hrm:process-payroll', 'hrm:approve-payroll', 'hrm:view-payslip',
@@ -331,7 +311,6 @@ export class RoleManagementService {
       {
         name: 'Procurement Officer',
         description: 'Purchase orders, stock receipts, and supplier contract manager.',
-        scopeType: RoleScopeType.GLOBAL,
         permCodes: [
           'purchasing:read', 'purchasing:write', 'purchasing:approve', 'purchasing:receive-grn',
           'inventory:read',
@@ -342,7 +321,6 @@ export class RoleManagementService {
       {
         name: 'Inventory Manager',
         description: 'Warehouse movement, stock adjustments, and carrier logistics controller.',
-        scopeType: RoleScopeType.WAREHOUSE,
         permCodes: [
           'inventory:read', 'inventory:write', 'inventory:adjust', 'inventory:transfer',
           'inventory:cycle-count', 'inventory:report',
@@ -355,7 +333,6 @@ export class RoleManagementService {
       {
         name: 'Viewer',
         description: 'Full read-only auditing and observation access.',
-        scopeType: RoleScopeType.GLOBAL,
         permCodes: [
           'catalog:read',
           'inventory:read',
@@ -391,7 +368,6 @@ export class RoleManagementService {
         tenantId,
         isSystemRole: false,
         isSystemDefault: false,
-        scopeType: def.scopeType,
         permissions,
       })
 
