@@ -5,7 +5,10 @@ import { PosShiftRepository } from './repositories/pos-shift.repository'
 import { PosDrawerTransactionRepository } from './repositories/pos-drawer-transaction.repository'
 import { PosRegisterEntity } from './entities/pos-register.entity'
 import { PosShiftEntity, PosShiftStatus } from './entities/pos-shift.entity'
-import { PosDrawerTransactionEntity, PosDrawerTransactionType } from './entities/pos-drawer-transaction.entity'
+import {
+  PosDrawerTransactionEntity,
+  PosDrawerTransactionType,
+} from './entities/pos-drawer-transaction.entity'
 import { CreatePosRegisterDto } from './dtos/create-pos-register.dto'
 import { OpenPosShiftDto } from './dtos/open-pos-shift.dto'
 import { ClosePosShiftDto } from './dtos/close-pos-shift.dto'
@@ -46,7 +49,7 @@ export class PosService {
     private readonly walletService: WalletService,
     private readonly dataSource: DataSource,
     private readonly batchService: ProductBatchService,
-  ) { }
+  ) {}
 
   // =========================================================================
   // REGISTER TERMINAL METHODS
@@ -74,20 +77,13 @@ export class PosService {
     return register
   }
 
-  async updateRegister(
-    id: string,
-    data: any,
-    ctx: RequestContextDto,
-  ): Promise<PosRegisterEntity> {
+  async updateRegister(id: string, data: any, ctx: RequestContextDto): Promise<PosRegisterEntity> {
     this.logger.log(`${this.updateRegister.name} Service Called`)
     const register = await this.findOneRegister(id, ctx)
     return this.registerRepository.update(register, data)
   }
 
-  async deleteRegister(
-    id: string,
-    ctx: RequestContextDto,
-  ): Promise<void> {
+  async deleteRegister(id: string, ctx: RequestContextDto): Promise<void> {
     this.logger.log(`${this.deleteRegister.name} Service Called`)
     const register = await this.findOneRegister(id, ctx)
     return this.registerRepository.remove(register)
@@ -252,7 +248,10 @@ export class PosService {
         status: OrderStatus.COMPLETED, // POS sales are immediately fulfilled
         orderSource: OrderSource.POS, // Explicit order type categorization!
         paymentMethod: dto.paymentMethod.toLowerCase() as unknown as PaymentMethod,
-        paymentStatus: dto.paymentMethod === PosPaymentMethod.ON_ACCOUNT ? PaymentStatus.PENDING : PaymentStatus.PAID,
+        paymentStatus:
+          dto.paymentMethod === PosPaymentMethod.ON_ACCOUNT
+            ? PaymentStatus.PENDING
+            : PaymentStatus.PAID,
         tenantId,
         userId: dto.customerId || undefined,
         appliedCoupon: dto.appliedCoupon || undefined,
@@ -278,7 +277,7 @@ export class PosService {
           where: { id: item.productId, tenantId },
         })
         const taxRate = product ? Number(product.taxRate || 0) : 0
-        const itemTax = taxRate > 0 ? itemTotal - (itemTotal / (1 + taxRate / 100)) : 0
+        const itemTax = (itemTotal * taxRate) / 100
         totalTaxAmount += itemTax
 
         // Create Order Item record
@@ -305,7 +304,9 @@ export class PosService {
             manager,
           )
         } catch (batchErr) {
-          this.logger.warn(`FEFO Batch allocation failed for POS sale item ${item.productId}: ${batchErr.message}. Falling back to default inventory deduction.`)
+          this.logger.warn(
+            `FEFO Batch allocation failed for POS sale item ${item.productId}: ${batchErr.message}. Falling back to default inventory deduction.`,
+          )
         }
 
         if (allocations.length > 0) {
@@ -352,12 +353,14 @@ export class PosService {
       // Calculate net amounts accounting for coupon discount and shipping fees
       const discount = Number(dto.couponDiscountAmount || 0)
       const shipping = Number(dto.shippingFee || 0)
-      const netSaleAmount = Math.max(0, totalSaleAmount - discount) + shipping
+
+      const discountFactor = totalSaleAmount > 0 ? Math.max(0, 1 - discount / totalSaleAmount) : 1
+      const finalTaxAmount = totalTaxAmount * discountFactor
+      const netSaleAmount = Math.max(0, totalSaleAmount - discount) + finalTaxAmount + shipping
 
       // Update Order total sum
       savedOrder.totalAmount = netSaleAmount
-      const discountFactor = totalSaleAmount > 0 ? Math.max(0, 1 - discount / totalSaleAmount) : 1
-      savedOrder.taxAmount = totalTaxAmount * discountFactor
+      savedOrder.taxAmount = finalTaxAmount
 
       // Wallet Balance Deduction (within same transaction, before GL posting)
       let walletDeductionAmount = 0
@@ -425,16 +428,22 @@ export class PosService {
 
       if (onAccountAmount > 0) {
         if (!customer) {
-          throw new BadRequestException('Customer user profile is required for credit/on-account checkout')
+          throw new BadRequestException(
+            'Customer user profile is required for credit/on-account checkout',
+          )
         }
         if (customer.creditHold) {
           throw new BadRequestException('Checkout blocked: Customer account is on credit hold')
         }
-        const currentOutstanding = await this.arService.getCustomerOutstandingBalance(customer.id, tenantId, manager)
+        const currentOutstanding = await this.arService.getCustomerOutstandingBalance(
+          customer.id,
+          tenantId,
+          manager,
+        )
         const limit = Number(customer.creditLimit || 0)
         if (currentOutstanding + onAccountAmount > limit) {
           throw new BadRequestException(
-            `Checkout blocked: POS sale remaining total ($${onAccountAmount}) exceeds customer credit limit ($${limit}) with current debt ($${currentOutstanding})`
+            `Checkout blocked: POS sale remaining total ($${onAccountAmount}) exceeds customer credit limit ($${limit}) with current debt ($${currentOutstanding})`,
           )
         }
 
@@ -487,7 +496,10 @@ export class PosService {
       const taxAmount = Number(savedOrder.taxAmount || 0)
       const netRevenue = netSaleAmount - taxAmount
 
-      const linesMap = new Map<string, { accountCode: string; side: LedgerEntrySide; amount: number }>()
+      const linesMap = new Map<
+        string,
+        { accountCode: string; side: LedgerEntrySide; amount: number }
+      >()
       const addLine = (accountCode: string, side: LedgerEntrySide, amount: number) => {
         const key = `${accountCode}_${side}`
         if (linesMap.has(key)) {

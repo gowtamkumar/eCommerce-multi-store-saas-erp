@@ -1,10 +1,13 @@
 'use client';
 
+import Pagination from '@/components/shared/Pagination';
+import { useDebounce } from '@/hooks/useDebounce';
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
   Banknote,
+  ChevronDown,
   Coins,
   CreditCard,
   DollarSign,
@@ -17,20 +20,15 @@ import {
   Printer,
   QrCode,
   Receipt,
+  RefreshCw,
   Search,
   ShoppingCart,
   Trash2,
   User,
-  X,
-  ChevronDown,
-  RefreshCw,
-  Wifi,
-  WifiOff
+  X
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useDebounce } from '@/hooks/useDebounce';
-import Pagination from '@/components/shared/Pagination';
 
 interface Register {
   id: string;
@@ -75,6 +73,8 @@ interface Product {
   images?: string[];
   variants?: ProductVariant[];
   taxRate?: number;
+  discountAmount?: number | string;
+  discountType?: string;
 }
 
 interface CartItem {
@@ -82,6 +82,14 @@ interface CartItem {
   variant?: ProductVariant;
   quantity: number;
   price: number;
+}
+
+interface TaxRule {
+  id: string;
+  name: string;
+  rate: number;
+  category: string;
+  isActive: boolean;
 }
 
 export default function Pos() {
@@ -105,10 +113,10 @@ export default function Pos() {
   // Pagination & Search States
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [productPagination, setProductPagination] = useState({
-      total: 0,
-      page: 1,
-      limit: 15,
-      totalPages: 1
+    total: 0,
+    page: 1,
+    limit: 15,
+    totalPages: 1
   });
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
   const [selectedProductForVariant, setSelectedProductForVariant] = useState<Product | null>(null);
@@ -140,7 +148,7 @@ export default function Pos() {
   const [drawerAmount, setDrawerAmount] = useState<number | ''>('');
   const [drawerReason, setDrawerReason] = useState('');
   const [submittingDrawerTx, setSubmittingDrawerTx] = useState(false);
-  
+
   // Advanced features: Customer, discount and receipt
   const [discount, setDiscount] = useState<number>(0);
   const [discountType, setDiscountType] = useState<'FIXED' | 'PERCENT'>('FIXED');
@@ -160,6 +168,10 @@ export default function Pos() {
   // Premium POS Delivery Zones & Custom Shipping Address State
   const [deliveryZone, setDeliveryZone] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
+
+  // POS dynamic tax states
+  const [taxRate, setTaxRate] = useState<number>(5);
+  const [taxName, setTaxName] = useState<string>('VAT / Flat Tax');
 
   // Wallet and credit states
   const [walletBalance, setWalletBalance] = useState<number>(0);
@@ -207,9 +219,26 @@ export default function Pos() {
     );
   };
 
+  const fetchTaxRules = async () => {
+    try {
+      const res = await fetchAPI('/finance/tax/rules');
+      if (res.success && res.data && Array.isArray(res.data)) {
+        const rules = res.data as TaxRule[];
+        const activeRule = rules.find((r) => r.isActive && r.category === 'STANDARD') || rules.find((r) => r.isActive);
+        if (activeRule) {
+          setTaxRate(Number(activeRule.rate));
+          setTaxName(activeRule.name);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load active tax rules:', err);
+    }
+  };
+
   // 1. Initial mounting checks
   useEffect(() => {
     checkActiveShift();
+    fetchTaxRules();
     if (typeof window !== 'undefined') {
       setIsOnline(window.navigator.onLine);
       const savedQueue = localStorage.getItem('pos_offline_queue');
@@ -301,7 +330,7 @@ export default function Pos() {
       try {
         const activeRes = await fetchAPI('/pos/shift/active');
         if (activeRes.success) setActiveShift(activeRes.data);
-      } catch (e) {}
+      } catch (e) { }
     }
     if (failedCount > 0) {
       toast.error(`Failed to sync ${failedCount} sale(s) due to validation errors.`);
@@ -478,7 +507,7 @@ export default function Pos() {
 
       if (res.success && res.data) {
         const returnId = res.data.id;
-        
+
         // Auto-approve the return & issue refund to register customer's wallet
         await fetchAPI(`/returns/${returnId}/status`, {
           method: 'PATCH',
@@ -494,7 +523,7 @@ export default function Pos() {
 
         if (isExchange) {
           const refundAmount = Number(res.data.refundAmount || 0);
-          
+
           if (returnOrder.user) {
             setSelectedCustomer(returnOrder.user);
             fetchAPI(`/finance/wallet/${returnOrder.user.id}`)
@@ -799,7 +828,7 @@ export default function Pos() {
       }
 
       const currentTime = Date.now();
-      
+
       if (currentTime - lastKeyTime > 50) {
         buffer = '';
       }
@@ -861,6 +890,17 @@ export default function Pos() {
     return cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   };
 
+  const calculateCatalogDiscount = () => {
+    return cart.reduce((acc, item) => {
+      const discAmt = Number(item.product.discountAmount || 0);
+      if (discAmt <= 0) return acc;
+      const discType = item.product.discountType || 'fixed';
+      const unitDiscountedPrice = discType === 'percentage' ? item.price * (1 - discAmt / 100) : item.price - discAmt;
+      const discountPerUnit = item.price - Math.max(0, unitDiscountedPrice);
+      return acc + discountPerUnit * item.quantity;
+    }, 0);
+  };
+
   // Premium Coupon Handlers
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -917,20 +957,39 @@ export default function Pos() {
   };
 
   const calculateDiscountValue = () => {
-    const subtotal = calculateSubtotal();
+    const subtotal = calculateSubtotal() - calculateCatalogDiscount();
     return discountType === 'PERCENT' ? (subtotal * discount) / 100 : discount;
   };
 
-  const calculateTaxableAmount = () => {
-    return Math.max(0, calculateSubtotal() - calculateDiscountValue() - calculateCouponDiscount());
+  const calculateTax = () => {
+    return cart.reduce((sum, item) => {
+      const rawTax = item.product.taxRate;
+      const itemTaxRate = rawTax !== undefined && rawTax !== null && !isNaN(Number(rawTax)) ? Number(rawTax) : taxRate;
+      
+      const subtotal = calculateSubtotal() - calculateCatalogDiscount();
+      const totalDiscount = calculateDiscountValue() + calculateCouponDiscount();
+      
+      const discAmt = Number(item.product.discountAmount || 0);
+      const discType = item.product.discountType || 'fixed';
+      const unitDiscountedPrice = discType === 'percentage' ? item.price * (1 - discAmt / 100) : item.price - discAmt;
+      
+      const itemSubtotal = Math.max(0, unitDiscountedPrice) * item.quantity;
+      const itemDiscount = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
+      
+      const itemTaxableAmount = Math.max(0, itemSubtotal - itemDiscount);
+      const itemTax = (itemTaxableAmount * itemTaxRate) / 100;
+      return sum + itemTax;
+    }, 0);
   };
 
-  const calculateTax = () => {
-    return calculateTaxableAmount() * 0.05; // 5% flat VAT
+  const calculateTaxableAmount = () => {
+    const netAmount = Math.max(0, calculateSubtotal() - calculateCatalogDiscount() - calculateDiscountValue() - calculateCouponDiscount());
+    return netAmount;
   };
 
   const calculateGrandTotal = () => {
-    return calculateTaxableAmount() + calculateTax() + calculateShippingFee();
+    const netAmount = Math.max(0, calculateSubtotal() - calculateCatalogDiscount() - calculateDiscountValue() - calculateCouponDiscount());
+    return netAmount + calculateTax() + calculateShippingFee();
   };
 
   const changeDue = amountTendered !== '' ? Number(amountTendered) - calculateGrandTotal() : 0;
@@ -939,7 +998,7 @@ export default function Pos() {
   const handleConfirmCheckout = async () => {
     // 1. Validation
     const remainingAmount = getRemainingPayableAmount();
-    
+
     let payments: { method: 'CASH' | 'CARD' | 'MOBILE' | 'ON_ACCOUNT'; amount: number }[] | undefined = undefined;
 
     if (splitPayment) {
@@ -952,7 +1011,7 @@ export default function Pos() {
         toast.error('Customer profile selection required for on-account split checkout');
         return;
       }
-      
+
       payments = [];
       if (Number(splitPayments.CASH || 0) > 0) payments.push({ method: 'CASH', amount: Number(splitPayments.CASH) });
       if (Number(splitPayments.CARD || 0) > 0) payments.push({ method: 'CARD', amount: Number(splitPayments.CARD) });
@@ -987,7 +1046,7 @@ export default function Pos() {
       paymentAmount: calculateGrandTotal(),
       customerId: selectedCustomer?.id || undefined,
       appliedCoupon: couponApplied?.code || undefined,
-      couponDiscountAmount: calculateCouponDiscount(),
+      couponDiscountAmount: calculateCouponDiscount() + calculateDiscountValue(),
       deliveryZone: deliveryZone || undefined,
       shippingFee: calculateShippingFee(),
       shippingAddress: shippingAddress || undefined,
@@ -1013,13 +1072,14 @@ export default function Pos() {
         };
         setOfflineQueue((prev) => [...prev, queuedSale]);
         toast.success('Offline mode: Sale queued for synchronization!');
-        
+
         // Show success receipt
         setLastTransaction({
           receiptNo: `OFF-${offlineSaleId.slice(-6).toUpperCase()}`,
           date: new Date(createdAt).toLocaleString(),
           items: [...cart],
           subtotal: calculateSubtotal(),
+          catalogDiscount: calculateCatalogDiscount(),
           discount: calculateDiscountValue(),
           couponDiscount: calculateCouponDiscount(),
           couponCode: couponApplied?.code || null,
@@ -1060,13 +1120,14 @@ export default function Pos() {
 
       if (res.success) {
         toast.success('Sale synced successfully & General Ledger journaled! 🧾');
-        
+
         // Save transaction details for receipt modal
         setLastTransaction({
           receiptNo: `REC-${Date.now().toString().slice(-6)}`,
           date: new Date(createdAt).toLocaleString(),
           items: [...cart],
           subtotal: calculateSubtotal(),
+          catalogDiscount: calculateCatalogDiscount(),
           discount: calculateDiscountValue(),
           couponDiscount: calculateCouponDiscount(),
           couponCode: couponApplied?.code || null,
@@ -1109,12 +1170,13 @@ export default function Pos() {
         };
         setOfflineQueue((prev) => [...prev, queuedSale]);
         toast.success('Network issue detected: Sale queued for synchronization!');
-        
+
         setLastTransaction({
           receiptNo: `OFF-${offlineSaleId.slice(-6).toUpperCase()}`,
           date: new Date(createdAt).toLocaleString(),
           items: [...cart],
           subtotal: calculateSubtotal(),
+          catalogDiscount: calculateCatalogDiscount(),
           discount: calculateDiscountValue(),
           couponDiscount: calculateCouponDiscount(),
           couponCode: couponApplied?.code || null,
@@ -1416,9 +1478,28 @@ export default function Pos() {
                           .join(' / ')}
                       </p>
                     )}
-                    <p className="text-xs text-brand-600 dark:text-brand-400 font-bold mt-1">
-                      ${item.price} each
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className="text-xs text-brand-600 dark:text-brand-400 font-black">
+                        ${item.price.toFixed(2)} each
+                      </span>
+                      
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded-md">
+                        Tax: ${(() => {
+                          const rawTax = item.product.taxRate;
+                          const itemTaxRate = rawTax !== undefined && rawTax !== null && !isNaN(Number(rawTax)) ? Number(rawTax) : taxRate;
+                          const discAmt = Number(item.product.discountAmount || 0);
+                          const discType = item.product.discountType || 'fixed';
+                          const unitPrice = discType === 'percentage' ? item.price * (1 - discAmt / 100) : item.price - discAmt;
+                          const itemSubtotal = Math.max(0, unitPrice) * item.quantity;
+                          const itemTax = (itemSubtotal * itemTaxRate) / 100;
+                          return itemTax.toFixed(2);
+                        })()}
+                      </span>
+                      
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded-md">
+                        Subtotal: ${(item.price * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2.5">
@@ -1464,7 +1545,7 @@ export default function Pos() {
                       <p className="text-[9px] font-bold text-emerald-650 dark:text-emerald-500">{selectedCustomer.phone || selectedCustomer.email}</p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setSelectedCustomer(null)}
                     className="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg text-emerald-600"
                   >
@@ -1613,10 +1694,10 @@ export default function Pos() {
                   ${calculateSubtotal().toFixed(2)}
                 </span>
               </div>
-              {calculateDiscountValue() > 0 && (
+              {(calculateCatalogDiscount() + calculateDiscountValue() + calculateCouponDiscount()) > 0 && (
                 <div className="flex justify-between text-xs text-emerald-500 font-bold">
-                  <span>In-store Discount</span>
-                  <span>-${calculateDiscountValue().toFixed(2)}</span>
+                  <span>Discount</span>
+                  <span>-${(calculateCatalogDiscount() + calculateDiscountValue() + calculateCouponDiscount()).toFixed(2)}</span>
                 </div>
               )}
               {calculateCouponDiscount() > 0 && (
@@ -1626,7 +1707,7 @@ export default function Pos() {
                 </div>
               )}
               <div className="flex justify-between text-xs text-slate-500 font-medium">
-                <span>VAT / Flat Tax (5%)</span>
+                <span>{taxName} ({taxRate}%)</span>
                 <span className="font-bold text-slate-800 dark:text-white">
                   ${calculateTax().toFixed(2)}
                 </span>
@@ -1940,7 +2021,7 @@ export default function Pos() {
                           className="w-24 text-right px-2.5 py-1 border border-slate-250 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl outline-none font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed"
                         />
                       </div>
-                      
+
                       <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between text-[10px] font-black">
                         <span className="text-slate-400">Total Applied:</span>
                         <span
@@ -2601,14 +2682,14 @@ export default function Pos() {
                       <span>Subtotal</span>
                       <span>${lastTransaction.subtotal.toFixed(2)}</span>
                     </div>
-                    {lastTransaction.discount > 0 && (
+                    {(lastTransaction.catalogDiscount + lastTransaction.discount + lastTransaction.couponDiscount) > 0 && (
                       <div className="flex justify-between text-emerald-500 font-bold">
-                        <span>Discount Deducted</span>
-                        <span>-${lastTransaction.discount.toFixed(2)}</span>
+                        <span>Discount</span>
+                        <span>-${(lastTransaction.catalogDiscount + lastTransaction.discount + lastTransaction.couponDiscount).toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span>VAT Tax (5%)</span>
+                      <span>{taxName} ({taxRate}%)</span>
                       <span>${lastTransaction.tax.toFixed(2)}</span>
                     </div>
                     {lastTransaction.couponDiscount > 0 && (
@@ -2757,22 +2838,20 @@ export default function Pos() {
                       <button
                         type="button"
                         onClick={() => setDrawerTxType('CASH_IN')}
-                        className={`py-3 rounded-2xl border text-center font-bold text-sm transition-all ${
-                          drawerTxType === 'CASH_IN'
-                            ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/10'
-                            : 'border-slate-250 dark:border-slate-800 text-slate-650 dark:text-slate-400'
-                        }`}
+                        className={`py-3 rounded-2xl border text-center font-bold text-sm transition-all ${drawerTxType === 'CASH_IN'
+                          ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/10'
+                          : 'border-slate-250 dark:border-slate-800 text-slate-650 dark:text-slate-400'
+                          }`}
                       >
                         Cash In (Add float)
                       </button>
                       <button
                         type="button"
                         onClick={() => setDrawerTxType('CASH_OUT')}
-                        className={`py-3 rounded-2xl border text-center font-bold text-sm transition-all ${
-                          drawerTxType === 'CASH_OUT'
-                            ? 'bg-red-650 border-red-650 text-white shadow-lg shadow-red-650/10'
-                            : 'border-slate-250 dark:border-slate-800 text-slate-650 dark:text-slate-400'
-                        }`}
+                        className={`py-3 rounded-2xl border text-center font-bold text-sm transition-all ${drawerTxType === 'CASH_OUT'
+                          ? 'bg-red-650 border-red-650 text-white shadow-lg shadow-red-650/10'
+                          : 'border-slate-250 dark:border-slate-800 text-slate-650 dark:text-slate-400'
+                          }`}
                       >
                         Cash Out (Withdrawal)
                       </button>
