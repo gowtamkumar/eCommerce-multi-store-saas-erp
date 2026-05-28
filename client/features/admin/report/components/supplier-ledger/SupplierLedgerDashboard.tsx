@@ -9,6 +9,7 @@ import { SupplierLedgerData } from '../../types';
 import SupplierLedgerHeader from './SupplierLedgerHeader';
 import SupplierLedgerSummary from './SupplierLedgerSummary';
 import SupplierLedgerTable from './SupplierLedgerTable';
+import { useSearchParams } from 'next/navigation';
 
 const SupplierLedgerDashboard: React.FC = () => {
     const { formatPrice } = useSettings();
@@ -18,12 +19,19 @@ const SupplierLedgerDashboard: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
 
+    const searchParams = useSearchParams();
+
     // Initial load: Fetch all suppliers for the dropdown
     useEffect(() => {
         const loadSuppliers = async () => {
             try {
                 const res = await fetchAPI('/suppliers');
                 setSuppliers(res.data.items || []);
+
+                const supplierIdParam = searchParams.get('supplierId');
+                if (supplierIdParam) {
+                    setSelectedSupplierId(supplierIdParam);
+                }
             } catch (error) {
                 toast.error('Failed to load suppliers');
             } finally {
@@ -31,7 +39,7 @@ const SupplierLedgerDashboard: React.FC = () => {
             }
         };
         loadSuppliers();
-    }, []);
+    }, [searchParams]);
 
     // Fetch ledger data for the selected supplier
     const fetchLedger = useCallback(async (supplierId: string) => {

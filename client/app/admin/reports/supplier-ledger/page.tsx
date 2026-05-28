@@ -1,5 +1,6 @@
 import SupplierLedgerDashboard from '@/features/admin/report/components/supplier-ledger/SupplierLedgerDashboard';
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
     title: 'Supplier Payment Ledger | Admin Dashboard',
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function SupplierLedgerPage() {
-    return <SupplierLedgerDashboard />;
+    return (
+        <Suspense fallback={<div className="p-8 text-center text-slate-500 animate-pulse">Loading Ledger...</div>}>
+            <SupplierLedgerDashboard />
+        </Suspense>
+    );
 }

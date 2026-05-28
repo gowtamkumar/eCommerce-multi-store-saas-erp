@@ -7,8 +7,8 @@ import {
   IsNumber,
   IsInt,
   IsBoolean,
+  IsUUID,
 } from 'class-validator'
-import { SupplierCategory } from '../enums/supplier-category.enum'
 
 export class CreateSupplierDto {
   @IsString()
@@ -31,9 +31,13 @@ export class CreateSupplierDto {
   @IsOptional()
   address?: string
 
-  @IsEnum(SupplierCategory)
+  @IsUUID()
   @IsOptional()
-  category?: SupplierCategory
+  categoryId?: string
+
+  @IsUUID()
+  @IsOptional()
+  category?: string
 
   @IsNumber()
   @IsOptional()
@@ -81,9 +85,13 @@ export class UpdateSupplierDto {
   @IsOptional()
   address?: string
 
-  @IsEnum(SupplierCategory)
+  @IsUUID()
   @IsOptional()
-  category?: SupplierCategory
+  categoryId?: string
+
+  @IsUUID()
+  @IsOptional()
+  category?: string
 
   @IsNumber()
   @IsOptional()

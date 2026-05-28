@@ -2,7 +2,7 @@ import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne, Index, OneToMany } from 'typeorm'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
-import { SupplierCategory } from '../enums/supplier-category.enum'
+import { CategoryEntity } from '@/modules/admin/catalog/category/entities/category.entity'
 import { SupplierDocumentEntity } from './supplier-document.entity'
 
 @Entity('suppliers')
@@ -24,8 +24,12 @@ export class SupplierEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   address: string
 
-  @Column({ type: 'enum', enum: SupplierCategory, default: SupplierCategory.OTHER })
-  category: SupplierCategory
+  @Column({ type: 'uuid', name: 'category_id', nullable: true })
+  categoryId: string | null
+
+  @ManyToOne(() => CategoryEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'category_id' })
+  category: CategoryEntity | null
 
   @Column({ type: 'decimal', precision: 3, scale: 2, default: 0.0 })
   rating: number

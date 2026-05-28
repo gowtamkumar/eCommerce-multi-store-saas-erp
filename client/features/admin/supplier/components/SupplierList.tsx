@@ -16,9 +16,14 @@ const SupplierRow = memo(({ supplier, onEdit, onDelete }: { supplier: Supplier, 
                     </div>
                     <div>
                         <span className="font-semibold text-slate-900 dark:text-white block">{supplier.name}</span>
-                        <div className="flex gap-2 mt-1">
+                        <div className="flex gap-2 mt-1 flex-wrap items-center">
+                            {supplier.code && (
+                                <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                    {supplier.code}
+                                </span>
+                            )}
                             <span className="text-[9px] font-black bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                {supplier.category ? supplier.category.replace('_', ' ') : 'OTHER'}
+                                {supplier.category?.name || 'OTHER'}
                             </span>
                             <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${supplier.isActive !== false ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400'}`}>
                                 {supplier.isActive !== false ? 'Active' : 'Inactive'}
@@ -80,7 +85,7 @@ const SupplierRow = memo(({ supplier, onEdit, onDelete }: { supplier: Supplier, 
             <td className="px-6 py-4 text-right">
                 <div className="flex items-center justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 translate-x-1 group-hover:translate-x-0">
                     <Link
-                        href={`/admin/suppliers/${supplier.id}/ledger`}
+                        href={`/admin/reports/supplier-ledger?supplierId=${supplier.id}`}
                         className="p-2.5 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-xl transition-all hover:shadow-sm"
                         title="View Ledger"
                     >

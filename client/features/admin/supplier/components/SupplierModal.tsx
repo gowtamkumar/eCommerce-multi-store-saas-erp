@@ -1,7 +1,7 @@
 'use client';
 
 import { fetchAPI } from '@/services/api';
-import { X, Save, Loader2, Building, Mail, Phone, MapPin, User } from 'lucide-react';
+import { Building, Loader2, Mail, MapPin, Phone, Save, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -14,27 +14,46 @@ interface SupplierModalProps {
 
 export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: SupplierModalProps) {
     const [loading, setLoading] = useState(false);
+    const [categories, setCategories] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         name: '',
+        code: '',
         contactName: '',
         email: '',
         phone: '',
         address: '',
-        category: 'OTHER',
+        category: '',
         rating: 5,
         leadTimeDays: 0,
         isActive: true
     });
 
     useEffect(() => {
+        if (isOpen) {
+            const loadCategories = async () => {
+                try {
+                    const res = await fetchAPI('/categories');
+                    if (res && res.data) {
+                        setCategories(res.data);
+                    }
+                } catch (error) {
+                    console.error('Failed to load categories:', error);
+                }
+            };
+            loadCategories();
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
         if (supplier) {
             setFormData({
                 name: supplier.name || '',
+                code: supplier.code || '',
                 contactName: supplier.contactName || '',
                 email: supplier.email || '',
                 phone: supplier.phone || '',
                 address: supplier.address || '',
-                category: supplier.category || 'OTHER',
+                category: supplier.category?.id || supplier.categoryId || '',
                 rating: typeof supplier.rating === 'number' ? supplier.rating : Number(supplier.rating || 5),
                 leadTimeDays: typeof supplier.leadTimeDays === 'number' ? supplier.leadTimeDays : Number(supplier.leadTimeDays || 0),
                 isActive: typeof supplier.isActive === 'boolean' ? supplier.isActive : (supplier.isActive !== 'false' && supplier.isActive !== false)
@@ -42,11 +61,12 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
         } else {
             setFormData({
                 name: '',
+                code: '',
                 contactName: '',
                 email: '',
                 phone: '',
                 address: '',
-                category: 'OTHER',
+                category: '',
                 rating: 5,
                 leadTimeDays: 0,
                 isActive: true
@@ -101,18 +121,32 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                            <Building className="w-4 h-4" /> Company Name
-                        </label>
-                        <input
-                            type="text"
-                            required
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
-                            placeholder="e.g. Acme Supplies Ltd."
-                        />
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="col-span-2">
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                                <Building className="w-4 h-4" /> Company Name
+                            </label>
+                            <input
+                                type="text"
+                                required
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                placeholder="e.g. Acme Supplies Ltd."
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                Vendor Code
+                            </label>
+                            <input
+                                type="text"
+                                value={formData.code}
+                                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
+                                placeholder="Auto-gen"
+                            />
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -171,21 +205,19 @@ export default function SupplierModal({ isOpen, onClose, onSuccess, supplier }: 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                                Category
+                                Category dd
                             </label>
                             <select
                                 value={formData.category}
                                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none transition-all"
                             >
-                                <option value="RAW_MATERIALS">Raw Materials</option>
-                                <option value="PACKAGING">Packaging</option>
-                                <option value="SERVICES">Services</option>
-                                <option value="EQUIPMENT">Equipment</option>
-                                <option value="LOGISTICS">Logistics</option>
-                                <option value="IT_SOFTWARE">IT & Software</option>
-                                <option value="OFFICE_SUPPLIES">Office Supplies</option>
-                                <option value="OTHER">Other</option>
+                                <option value="">Select Category</option>
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                         <div>

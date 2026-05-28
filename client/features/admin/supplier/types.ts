@@ -1,11 +1,12 @@
 export interface Supplier {
     id: string;
     name: string;
+    code?: string;
     contactName?: string;
     email?: string;
     phone?: string;
     address?: string;
-    category?: string;
+    category?: any;
     rating?: number;
     leadTimeDays?: number;
     isActive?: boolean;

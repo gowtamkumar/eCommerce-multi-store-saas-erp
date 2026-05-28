@@ -1,25 +1,19 @@
 'use client';
-
 import { useSettings } from '@/hooks/SettingsContext';
 import {
+    ArrowDownLeft,
     ArrowLeft,
-    TrendingUp,
-    TrendingDown,
-    Calendar,
+    ArrowUpRight,
     FileText,
     History,
-    Wallet,
-    ArrowUpRight,
-    ArrowDownLeft,
-    Filter,
-    Search
+    Wallet
 } from 'lucide-react';
 import Link from 'next/link';
 import { memo } from 'react';
 
 const LedgerRow = memo(({ entry, formatPrice }: { entry: any, formatPrice: (p: number) => string }) => {
     const isCredit = Number(entry.credit) > 0;
-    
+
     return (
         <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
             <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono">
