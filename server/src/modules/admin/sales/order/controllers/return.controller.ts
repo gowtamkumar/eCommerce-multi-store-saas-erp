@@ -1,6 +1,7 @@
 import { FilterReturnDto } from '@/modules/admin/sales/order/dto/filter-return.dto'
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, Logger } from '@nestjs/common'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
+import { RefundMethod } from '@/common/enums/refund-method.enum'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { CreateReturnDto } from '@/modules/admin/sales/order/dto/create-return.dto'
 import { ReturnService } from '@/modules/admin/sales/order/services/return.service'
@@ -92,20 +93,66 @@ export class ReturnController {
     }
   }
 
+  /**
+   * Admin updates return status (approve, reject, refund, cancel, exchanged).
+   * Secured with RETURNS_APPROVE permission (not just RETURNS_WRITE).
+   */
   @Patch(':id/status')
-  @RequirePermissions(SystemPermissions.RETURNS_WRITE)
+  @RequirePermissions(SystemPermissions.RETURNS_APPROVE)
   async updateStatus(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body('status') status: ReturnStatus,
     @Body('comment') comment?: string,
+    @Body('refundMethod') refundMethod?: RefundMethod,
   ): Promise<BaseApiSuccessResponse<OrderReturnResponseDto>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateStatus.`)
-    const result = await this.returnService.updateReturnRequestStatus(id, ctx, status, comment)
+    const result = await this.returnService.updateReturnRequestStatus(id, ctx, status, comment, refundMethod)
     return {
       success: true,
       statusCode: 200,
       message: 'Return request status updated',
+      data: result as any,
+    }
+  }
+
+  /**
+   * Warehouse/staff marks returned items as physically received.
+   * Transitions the return to RECEIVED status.
+   */
+  @Patch(':id/received')
+  @RequirePermissions(SystemPermissions.RETURNS_WRITE)
+  async markItemsReceived(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+  ): Promise<BaseApiSuccessResponse<OrderReturnResponseDto>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called markItemsReceived.`)
+    const result = await this.returnService.markItemsReceived(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Return items marked as received',
+      data: result as any,
+    }
+  }
+
+  /**
+   * Links a new sale order to a return as its exchange fulfilment.
+   * Sets status → EXCHANGED and stores the exchangeOrderId.
+   */
+  @Post(':id/exchange')
+  @RequirePermissions(SystemPermissions.RETURNS_APPROVE)
+  async linkExchangeOrder(
+    @RequestContext() ctx: RequestContextDto,
+    @Param('id') id: string,
+    @Body('newOrderId') newOrderId: string,
+  ): Promise<BaseApiSuccessResponse<OrderReturnResponseDto>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called linkExchangeOrder.`)
+    const result = await this.returnService.linkExchangeOrder(id, ctx, newOrderId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Exchange order linked to return',
       data: result as any,
     }
   }

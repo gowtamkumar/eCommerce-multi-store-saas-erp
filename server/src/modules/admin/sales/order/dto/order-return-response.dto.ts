@@ -1,5 +1,6 @@
 import { Expose } from 'class-transformer'
 import { ReturnStatus } from '@/common/enums/return-status.enum'
+import { RefundMethod, ReturnType } from '@/common/enums/refund-method.enum'
 
 export class OrderReturnResponseDto {
   @Expose()
@@ -15,6 +16,12 @@ export class OrderReturnResponseDto {
   status: ReturnStatus
 
   @Expose()
+  returnType: ReturnType
+
+  @Expose()
+  refundMethod: RefundMethod
+
+  @Expose()
   reason: string
 
   @Expose()
@@ -25,6 +32,12 @@ export class OrderReturnResponseDto {
 
   @Expose()
   items: any[]
+
+  @Expose()
+  exchangeOrderId: string | null
+
+  @Expose()
+  receivedAt: Date | null
 
   @Expose()
   tenantId: string

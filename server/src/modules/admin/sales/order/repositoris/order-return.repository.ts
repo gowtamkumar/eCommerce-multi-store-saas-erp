@@ -6,6 +6,7 @@ import { FilterReturnDto } from '../dto/filter-return.dto'
 
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { OrderReturnEntity } from '../entities/order-return.entity'
+import { ReturnType } from '@/common/enums/refund-method.enum'
 
 @Injectable()
 export class OrderReturnRepository {
@@ -103,6 +104,24 @@ export class OrderReturnRepository {
     if (adminComment) {
       returnRequest.adminComment = adminComment
     }
+    return await this.repo.save(returnRequest)
+  }
+
+  /** Sets receivedAt timestamp and transitions status → RECEIVED. */
+  async markReceived(returnRequest: OrderReturnEntity): Promise<OrderReturnEntity> {
+    returnRequest.receivedAt = new Date()
+    returnRequest.status = ReturnStatus.RECEIVED
+    return await this.repo.save(returnRequest)
+  }
+
+  /** Links a new order ID to the return as the exchange fulfillment order. */
+  async linkExchange(
+    returnRequest: OrderReturnEntity,
+    newOrderId: string,
+  ): Promise<OrderReturnEntity> {
+    returnRequest.exchangeOrderId = newOrderId
+    returnRequest.returnType = ReturnType.EXCHANGE
+    returnRequest.status = ReturnStatus.EXCHANGED
     return await this.repo.save(returnRequest)
   }
 }

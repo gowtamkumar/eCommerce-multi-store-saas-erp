@@ -3,6 +3,7 @@
 import { useSettings } from "@/hooks/SettingsContext";
 import { fetchAPI } from "@/services/api";
 import { ReturnStatus } from "@/lib/enums/return-status.enum";
+import { RefundMethod, REFUND_METHOD_LABELS } from "@/lib/enums/refund-method.enum";
 import {
     ArrowLeft,
     Calendar,
@@ -18,7 +19,10 @@ import {
     History,
     AlertCircle,
     ChevronRight,
-    ShoppingBag
+    ShoppingBag,
+    DollarSign,
+    ArrowRightLeft,
+    PackageCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
@@ -34,6 +38,9 @@ export default function ReturnDetailsPage({
     const [returnRequest, setReturnRequest] = useState<ReturnRequest | null>(null);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
+    const [adminComment, setAdminComment] = useState("");
+    const [selectedRefundMethod, setSelectedRefundMethod] = useState<RefundMethod>(RefundMethod.STORE_CREDIT);
+    const [markingReceived, setMarkingReceived] = useState(false);
     const { settings, formatPrice } = useSettings();
 
     useEffect(() => {
@@ -59,25 +66,43 @@ export default function ReturnDetailsPage({
         }
     };
 
-    const handleStatusUpdate = async (status: string, comment?: string) => {
+    const handleStatusUpdate = async (status: string, comment?: string, refundMethod?: RefundMethod) => {
         setUpdating(true);
         try {
             const res = await fetchAPI(`/returns/${id}/status`, {
                 method: "PATCH",
-                body: JSON.stringify({ status, comment }),
+                body: JSON.stringify({ status, comment: comment || adminComment || undefined, refundMethod }),
             });
 
             if (res.success || (res.data && res.data.id)) {
                 setReturnRequest(res.data || res);
+                setAdminComment("");
                 toast.success(`Return request ${status} successfully`);
             } else {
-                toast.error("Failed to update status");
+                toast.error(res.message || "Failed to update status");
             }
         } catch (error) {
             console.error("Failed to update return status", error);
             toast.error("An error occurred");
         } finally {
             setUpdating(false);
+        }
+    };
+
+    const handleMarkReceived = async () => {
+        setMarkingReceived(true);
+        try {
+            const res = await fetchAPI(`/returns/${id}/received`, { method: "PATCH" });
+            if (res.success || res.data?.id) {
+                setReturnRequest(res.data);
+                toast.success("Return items marked as received");
+            } else {
+                toast.error(res.message || "Failed to mark as received");
+            }
+        } catch (e) {
+            toast.error("An error occurred");
+        } finally {
+            setMarkingReceived(false);
         }
     };
 
@@ -112,10 +137,16 @@ export default function ReturnDetailsPage({
         switch (status.toLowerCase()) {
             case ReturnStatus.APPROVED:
                 return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+            case ReturnStatus.RECEIVED:
+                return "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400";
             case ReturnStatus.REJECTED:
                 return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
             case ReturnStatus.REFUNDED:
                 return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+            case ReturnStatus.EXCHANGED:
+                return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
+            case ReturnStatus.CANCELLED:
+                return "bg-slate-100 text-slate-500 dark:bg-slate-700/50 dark:text-slate-400";
             default:
                 return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
         }
@@ -218,18 +249,31 @@ export default function ReturnDetailsPage({
                                 #{returnRequest.id.slice(-8)}
                             </span>
                         </h1>
-                        <div className="flex flex-wrap items-center gap-4 mt-3">
+                        <div className="flex flex-wrap items-center gap-3 mt-3">
                             <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
                                 <Calendar className="w-4 h-4 text-brand-500" />
                                 <span>{new Date(returnRequest.createdAt).toLocaleString()}</span>
                             </div>
-                            <span
-                                className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${getStatusStyles(
-                                    returnRequest.status || "PENDING"
-                                )}`}
-                            >
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${getStatusStyles(returnRequest.status || 'PENDING')}`}>
                                 {returnRequest.status}
                             </span>
+                            {(returnRequest as any).returnType && (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 flex items-center gap-1">
+                                    <ArrowRightLeft className="w-3 h-3" />
+                                    {(returnRequest as any).returnType}
+                                </span>
+                            )}
+                            {(returnRequest as any).refundAmount != null && (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 flex items-center gap-1">
+                                    <DollarSign className="w-3 h-3" />
+                                    Refund: {formatPrice(Number((returnRequest as any).refundAmount))}
+                                </span>
+                            )}
+                            {(returnRequest as any).refundMethod && (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                                    {REFUND_METHOD_LABELS[(returnRequest as any).refundMethod as RefundMethod] ?? (returnRequest as any).refundMethod}
+                                </span>
+                            )}
                         </div>
                     </div>
 
@@ -251,8 +295,40 @@ export default function ReturnDetailsPage({
                     </div>
                 </div>
 
+                {/* Admin Comment Input */}
+                {(returnRequest.status === ReturnStatus.PENDING || returnRequest.status === ReturnStatus.APPROVED || returnRequest.status === ReturnStatus.RECEIVED) && (
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Resolution Notes (optional):</p>
+                        <textarea
+                            rows={2}
+                            placeholder="Add a note for this action (e.g. reason for rejection, notes for refund)..."
+                            value={adminComment}
+                            onChange={(e) => setAdminComment(e.target.value)}
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all resize-none"
+                        />
+                    </div>
+                )}
+
+                {/* Refund Method Selector (for APPROVED → REFUNDED transition) */}
+                {returnRequest.status === ReturnStatus.APPROVED && (
+                    <div className="pt-1 space-y-2">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Refund Method:</p>
+                        <select
+                            value={selectedRefundMethod}
+                            onChange={(e) => setSelectedRefundMethod(e.target.value as RefundMethod)}
+                            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all cursor-pointer"
+                        >
+                            {Object.values(RefundMethod).map((m) => (
+                                <option key={m} value={m}>{REFUND_METHOD_LABELS[m]}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
                 <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">Quick Actions:</p>
+
+                    {/* PENDING actions */}
                     {returnRequest.status === ReturnStatus.PENDING && (
                         <>
                             <button
@@ -260,7 +336,15 @@ export default function ReturnDetailsPage({
                                 disabled={updating}
                                 className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 transition-all shadow-md shadow-green-200 dark:shadow-none hover:translate-y-[-1px] active:translate-y-[0px] disabled:opacity-50"
                             >
-                                <Check className="w-4 h-4" /> Approve & Restock
+                                {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Approve & Restock
+                            </button>
+                            <button
+                                onClick={handleMarkReceived}
+                                disabled={markingReceived || !!returnRequest.receivedAt}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-bold hover:bg-teal-700 transition-all disabled:opacity-50"
+                            >
+                                {markingReceived ? <Loader2 className="w-4 h-4 animate-spin" /> : <PackageCheck className="w-4 h-4" />}
+                                {returnRequest.receivedAt ? 'Items Received ✓' : 'Mark Items Received'}
                             </button>
                             <button
                                 onClick={() => handleStatusUpdate(ReturnStatus.REJECTED)}
@@ -269,16 +353,58 @@ export default function ReturnDetailsPage({
                             >
                                 <X className="w-4 h-4" /> Reject Request
                             </button>
+                            <button
+                                onClick={() => handleStatusUpdate(ReturnStatus.CANCELLED)}
+                                disabled={updating}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all disabled:opacity-50"
+                            >
+                                Cancel Request
+                            </button>
                         </>
                     )}
+
+                    {/* RECEIVED actions */}
+                    {returnRequest.status === ReturnStatus.RECEIVED && (
+                        <>
+                            <button
+                                onClick={() => handleStatusUpdate(ReturnStatus.APPROVED)}
+                                disabled={updating}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 transition-all shadow-md disabled:opacity-50"
+                            >
+                                {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Approve & Restock
+                            </button>
+                            <button
+                                onClick={() => handleStatusUpdate(ReturnStatus.REJECTED)}
+                                disabled={updating}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-800 text-red-600 border border-red-100 dark:border-red-900/30 rounded-xl text-sm font-bold hover:bg-red-50 transition-all disabled:opacity-50"
+                            >
+                                <X className="w-4 h-4" /> Reject
+                            </button>
+                        </>
+                    )}
+
+                    {/* APPROVED actions */}
                     {returnRequest.status === ReturnStatus.APPROVED && (
                         <button
-                            onClick={() => handleStatusUpdate(ReturnStatus.REFUNDED)}
+                            onClick={() => handleStatusUpdate(ReturnStatus.REFUNDED, undefined, selectedRefundMethod)}
                             disabled={updating}
                             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-200 dark:shadow-none disabled:opacity-50"
                         >
-                            <Check className="w-4 h-4" /> Finalize Refund
+                            {updating ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
+                            Finalize Refund via {REFUND_METHOD_LABELS[selectedRefundMethod]}
                         </button>
+                    )}
+
+                    {/* Terminal state indicators */}
+                    {(returnRequest.status === ReturnStatus.REFUNDED || returnRequest.status === ReturnStatus.EXCHANGED) && (
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-xl text-sm font-bold border border-green-100 dark:border-green-900/30">
+                            <Check className="w-4 h-4" /> {returnRequest.status === ReturnStatus.EXCHANGED ? 'Exchange Completed' : 'Refund Processed'}
+                        </div>
+                    )}
+                    {(returnRequest.status === ReturnStatus.REJECTED || returnRequest.status === ReturnStatus.CANCELLED) && (
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 text-slate-500 rounded-xl text-sm font-bold border border-slate-200 dark:border-slate-700">
+                            <X className="w-4 h-4" /> Request {returnRequest.status}
+                        </div>
                     )}
                 </div>
             </div>

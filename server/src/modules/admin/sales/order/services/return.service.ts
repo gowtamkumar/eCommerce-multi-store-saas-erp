@@ -1,4 +1,5 @@
 import { ReturnStatus } from '@/common/enums/return-status.enum'
+import { RefundMethod, ReturnType } from '@/common/enums/refund-method.enum'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 
 import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
@@ -16,6 +17,9 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
 import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
+
+/** Return window policy: returns are only accepted within this many days of the original order. */
+const RETURN_WINDOW_DAYS = 30
 
 @Injectable()
 export class ReturnService {
@@ -37,7 +41,7 @@ export class ReturnService {
     this.logger.log(`${this.createReturnRequest.name} Service Called`)
     const tenantId = ctx.tenantId
     const userId = ctx.userId
-    const { orderId, items, reason } = dto
+    const { orderId, items, reason, returnType, refundMethod } = dto
 
     const order = await this.orderRepository.findOrderById(orderId, tenantId)
 
@@ -45,11 +49,20 @@ export class ReturnService {
       throw new NotFoundException('Order not found or does not belong to user')
     }
 
+    // ── Return window policy ──────────────────────────────────────────────────
+    const MS_PER_DAY = 86_400_000
+    const daysSinceOrder = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / MS_PER_DAY)
+    if (daysSinceOrder > RETURN_WINDOW_DAYS) {
+      throw new BadRequestException(
+        `Returns are only accepted within ${RETURN_WINDOW_DAYS} days of the original purchase. This order was placed ${daysSinceOrder} days ago.`,
+      )
+    }
+
     // Build map of cumulative returned quantities
     const alreadyReturnedMap: Record<string, number> = {}
     if (order.returns) {
       for (const ret of order.returns) {
-        if (ret.status !== ReturnStatus.REJECTED) {
+        if (ret.status !== ReturnStatus.REJECTED && ret.status !== ReturnStatus.CANCELLED) {
           for (const item of ret.items) {
             const key = `${item.productId}_${item.variantId || 'none'}`
             alreadyReturnedMap[key] = (alreadyReturnedMap[key] || 0) + Number(item.quantity)
@@ -99,19 +112,29 @@ export class ReturnService {
     }
 
     const result = await this.returnRepository.createAndSaveReturn(
-      { orderId, reason, items, refundAmount: calculatedRefundAmount },
+      {
+        orderId,
+        reason,
+        items,
+        refundAmount: calculatedRefundAmount,
+        returnType: returnType ?? ReturnType.REFUND,
+        refundMethod: refundMethod ?? RefundMethod.STORE_CREDIT,
+      },
       ctx,
     )
 
     // Trigger Notification for Refund/Return Request
     try {
-      await this.notificationService.createNotification({
-        title: 'Refund Requested',
-        message: `Customer requested a refund/return for Order #${order.id.substring(0, 8)}.`,
-        type: 'WARNING',
-        link: `/admin/sales/returns/${result.id}`,
-        userId: null as any,
-      }, tenantId);
+      await this.notificationService.createNotification(
+        {
+          title: returnType === ReturnType.EXCHANGE ? 'Exchange Requested' : 'Refund Requested',
+          message: `Customer requested a ${returnType ?? 'return'} for Order #${order.id.substring(0, 8)}.`,
+          type: 'WARNING',
+          link: `/admin/sales/returns/${result.id}`,
+          userId: null as any,
+        },
+        tenantId,
+      )
     } catch (e) {
       this.logger.error(`Failed to trigger return/refund notification: ${e.message}`)
     }
@@ -158,11 +181,61 @@ export class ReturnService {
     return returnRequest
   }
 
+  /**
+   * Admin marks items as physically received at the store/warehouse.
+   * Transitions: PENDING → RECEIVED
+   */
+  async markItemsReceived(id: string, ctx: RequestContextDto): Promise<OrderReturnEntity> {
+    this.logger.log(`${this.markItemsReceived.name} Service Called`)
+    const tenantId = ctx.tenantId
+    const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
+    if (!returnRequest) throw new NotFoundException('Return request not found')
+
+    const terminalStatuses = [
+      ReturnStatus.REFUNDED, ReturnStatus.EXCHANGED,
+      ReturnStatus.REJECTED, ReturnStatus.CANCELLED,
+    ]
+    if (terminalStatuses.includes(returnRequest.status)) {
+      throw new BadRequestException(`Cannot mark items received on a ${returnRequest.status} return`)
+    }
+    if (returnRequest.receivedAt) {
+      throw new BadRequestException('Items have already been marked as received')
+    }
+
+    const updated = await this.returnRepository.markReceived(returnRequest)
+    await this.cacheService.delCache('returns:all', tenantId)
+    return updated
+  }
+
+  /**
+   * Admin links a new sale order to this return (completing an exchange).
+   * Sets returnType=EXCHANGE, exchangeOrderId, status=EXCHANGED.
+   */
+  async linkExchangeOrder(
+    id: string,
+    ctx: RequestContextDto,
+    newOrderId: string,
+  ): Promise<OrderReturnEntity> {
+    this.logger.log(`${this.linkExchangeOrder.name} Service Called`)
+    const tenantId = ctx.tenantId
+    const returnRequest = await this.returnRepository.findByIdWithRelations(id, tenantId)
+    if (!returnRequest) throw new NotFoundException('Return request not found')
+
+    if (returnRequest.status !== ReturnStatus.APPROVED && returnRequest.status !== ReturnStatus.REFUNDED) {
+      throw new BadRequestException('Can only link an exchange order to an APPROVED or REFUNDED return')
+    }
+
+    const updated = await this.returnRepository.linkExchange(returnRequest, newOrderId)
+    await this.cacheService.delCache('returns:all', tenantId)
+    return updated
+  }
+
   async updateReturnRequestStatus(
     id: string,
     ctx: RequestContextDto,
     status: ReturnStatus,
     adminComment?: string,
+    refundMethod?: RefundMethod,
   ): Promise<OrderReturnEntity> {
     this.logger.log(`${this.updateReturnRequestStatus.name} Service Called`)
     const tenantId = ctx.tenantId
@@ -178,29 +251,69 @@ export class ReturnService {
       throw new BadRequestException(`Invalid return status: ${status}`)
     }
 
-    // Strict unidirectional state transitions
-    if (currentStatus === ReturnStatus.REFUNDED || currentStatus === ReturnStatus.REJECTED) {
+    // ── Terminal state guard ──────────────────────────────────────────────────
+    const terminalStatuses = [
+      ReturnStatus.REFUNDED, ReturnStatus.EXCHANGED,
+      ReturnStatus.REJECTED, ReturnStatus.CANCELLED,
+    ]
+    if (terminalStatuses.includes(currentStatus)) {
       throw new BadRequestException(
         `Cannot change status of a return request that is already ${currentStatus}`,
       )
     }
-    if (currentStatus === ReturnStatus.APPROVED && targetStatus === ReturnStatus.PENDING) {
-      throw new BadRequestException(`Cannot move an approved return request back to pending`)
+
+    // ── Backwards transition guard ────────────────────────────────────────────
+    if (
+      (currentStatus === ReturnStatus.APPROVED || currentStatus === ReturnStatus.RECEIVED) &&
+      targetStatus === ReturnStatus.PENDING
+    ) {
+      throw new BadRequestException(`Cannot move return back to pending from ${currentStatus}`)
     }
 
-    // Logic for APPROVAL (ensure it only occurs when transitioning from PENDING)
+    // ── APPROVED: restock inventory ───────────────────────────────────────────
     if (targetStatus === ReturnStatus.APPROVED && currentStatus === ReturnStatus.PENDING) {
       await this.restockItems(returnRequest, ctx)
     }
 
+    // ── Override refundMethod if provided at status-update time ───────────────
+    if (refundMethod) {
+      returnRequest.refundMethod = refundMethod
+    }
+
     const updated = await this.returnRepository.updateStatus(returnRequest, targetStatus, adminComment)
 
-    // Refund-to-Wallet: credit customer wallet when return is marked as REFUNDED
+    // ── REFUNDED: issue refund via selected method ────────────────────────────
     if (targetStatus === ReturnStatus.REFUNDED) {
-      const refundAmount = Number(returnRequest.refundAmount || 0)
-      const customerId = returnRequest.order?.userId || (returnRequest as any).userId
+      await this.processRefund(updated, ctx)
+    }
 
-      if (refundAmount > 0 && customerId) {
+    // Invalidate the admin list cache
+    await this.cacheService.delCache('returns:all', tenantId)
+    return updated
+  }
+
+  // ── Private helpers ─────────────────────────────────────────────────────────
+
+  private async processRefund(returnRequest: OrderReturnEntity, ctx: RequestContextDto) {
+    const refundAmount = Number(returnRequest.refundAmount || 0)
+    const customerId = returnRequest.order?.userId || (returnRequest as any).userId
+    const method = returnRequest.refundMethod ?? RefundMethod.STORE_CREDIT
+
+    if (refundAmount <= 0) {
+      this.logger.warn(
+        `Return ${returnRequest.id} marked REFUNDED but refundAmount=${refundAmount} — skipping refund action`,
+      )
+      return
+    }
+
+    switch (method) {
+      case RefundMethod.STORE_CREDIT:
+        if (!customerId) {
+          this.logger.warn(
+            `Return ${returnRequest.id}: STORE_CREDIT refund requested but no customerId — wallet not credited`,
+          )
+          return
+        }
         try {
           await this.walletService.creditWallet(
             {
@@ -219,16 +332,39 @@ export class ReturnService {
         } catch (e) {
           this.logger.error(`Failed to credit wallet for return ${returnRequest.id}: ${e.message}`)
         }
-      } else {
-        this.logger.warn(
-          `Return ${returnRequest.id} marked REFUNDED but refundAmount=${refundAmount} or customerId=${customerId} is missing — wallet not credited`,
-        )
-      }
-    }
+        break
 
-    // Invalidate the admin list cache so the status change is reflected on next load
-    await this.cacheService.delCache('returns:all', tenantId)
-    return updated
+      case RefundMethod.CASH:
+        // Cash refund at the counter — no automated payment processing needed.
+        // The cashier physically hands back cash. Log for audit trail.
+        this.logger.log(
+          `Cash refund of ${refundAmount} authorized for return ${returnRequest.id}. Cashier must physically dispense cash.`,
+        )
+        break
+
+      case RefundMethod.CARD:
+        // Card refund — in a real system this would call a payment gateway reversal API.
+        // Logged for manual follow-up or payment gateway integration.
+        this.logger.log(
+          `Card refund of ${refundAmount} required for return ${returnRequest.id}. Integrate payment gateway reversal here.`,
+        )
+        break
+
+      case RefundMethod.MOBILE:
+        this.logger.log(
+          `Mobile payment refund of ${refundAmount} required for return ${returnRequest.id}. Integrate mobile payment reversal here.`,
+        )
+        break
+
+      case RefundMethod.BANK_TRANSFER:
+        this.logger.log(
+          `Bank transfer refund of ${refundAmount} required for return ${returnRequest.id}. Manual bank transfer to be processed.`,
+        )
+        break
+
+      default:
+        this.logger.warn(`Unknown refund method ${method} for return ${returnRequest.id}`)
+    }
   }
 
   private async restockItems(returnRequest: OrderReturnEntity, ctx: RequestContextDto) {

@@ -93,6 +93,19 @@ interface TaxRule {
   isActive: boolean;
 }
 
+const DENOMINATIONS = [
+  { label: '$100', value: 100, type: 'bill' },
+  { label: '$50', value: 50, type: 'bill' },
+  { label: '$20', value: 20, type: 'bill' },
+  { label: '$10', value: 10, type: 'bill' },
+  { label: '$5', value: 5, type: 'bill' },
+  { label: '$1', value: 1, type: 'bill' },
+  { label: '¢25', value: 0.25, type: 'coin' },
+  { label: '¢10', value: 0.10, type: 'coin' },
+  { label: '¢5', value: 0.05, type: 'coin' },
+  { label: '¢1', value: 0.01, type: 'coin' },
+];
+
 export default function Pos() {
   // Session / Shift state
   const [loadingShift, setLoadingShift] = useState(true);
@@ -184,6 +197,19 @@ export default function Pos() {
   const [isCloseShiftOpen, setIsCloseShiftOpen] = useState(false);
   const [closingBalance, setClosingBalance] = useState<number | ''>('');
   const [closingRemarks, setClosingRemarks] = useState('');
+  const [showDenoCalc, setShowDenoCalc] = useState(false);
+  const [denoCounts, setDenoCounts] = useState<Record<string, number>>({
+    '100': 0,
+    '50': 0,
+    '20': 0,
+    '10': 0,
+    '5': 0,
+    '1': 0,
+    '0.25': 0,
+    '0.10': 0,
+    '0.05': 0,
+    '0.01': 0,
+  });
 
   // POS Return/Exchange states
   const [isReturnOpen, setIsReturnOpen] = useState(false);
@@ -533,9 +559,16 @@ export default function Pos() {
                   setWalletBalance(Number(walletRes.data.balance || 0));
                   setUseWalletBalance(true);
                   setWalletAmountToUse(refundAmount);
-                  toast.success(`Exchange Mode: Applied $${refundAmount} credit from returned order.`);
+                  toast.success(`Exchange Mode: Applied $${refundAmount.toFixed(2)} store credit. Now ring up the new items.`);
                 }
               });
+          } else {
+            // Guest/walk-in customer: exchange cannot be done via store credit.
+            // Show clear guidance to cashier.
+            toast.error(
+              `Walk-in exchange: The return of $${refundAmount.toFixed(2)} has been processed. Please issue a CASH or CARD refund and ring up the exchange items as a new sale.`,
+              { duration: 8000 }
+            );
           }
         }
 
@@ -881,6 +914,36 @@ export default function Pos() {
         .catch(() => setOutstandingBalance(0));
     }
   }, [selectedCustomer]);
+
+  // Reset denomination calculator when modal closes
+  useEffect(() => {
+    if (!isCloseShiftOpen) {
+      setShowDenoCalc(false);
+      setDenoCounts({
+        '100': 0,
+        '50': 0,
+        '20': 0,
+        '10': 0,
+        '5': 0,
+        '1': 0,
+        '0.25': 0,
+        '0.10': 0,
+        '0.05': 0,
+        '0.01': 0,
+      });
+    }
+  }, [isCloseShiftOpen]);
+
+  // Dynamically calculate closingBalance when denomination counts or showDenoCalc change
+  useEffect(() => {
+    if (showDenoCalc) {
+      const total = Object.entries(denoCounts).reduce((acc, [valueStr, count]) => {
+        const val = parseFloat(valueStr);
+        return acc + val * count;
+      }, 0);
+      setClosingBalance(Number(total.toFixed(2)));
+    }
+  }, [denoCounts, showDenoCalc]);
 
   const calculateSubtotal = () => {
     return cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -2295,34 +2358,181 @@ export default function Pos() {
                         +${activeShift.cashSales}
                       </span>
                     </div>
+                    {Number(activeShift.cashIn || 0) > 0 && (
+                      <div className="flex justify-between text-xs text-slate-500 font-medium">
+                        <span>Cash In (Adjustments)</span>
+                        <span className="font-bold text-emerald-500">
+                          +${Number(activeShift.cashIn).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    {Number(activeShift.cashOut || 0) > 0 && (
+                      <div className="flex justify-between text-xs text-slate-500 font-medium">
+                        <span>Cash Out (Adjustments)</span>
+                        <span className="font-bold text-red-500">
+                          -${Number(activeShift.cashOut).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-xs font-black text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-850">
                       <span>Expected Drawer Cash</span>
                       <span className="text-brand-500 font-black">
                         ${activeShift.expectedClosingBalance}
                       </span>
                     </div>
+
+                    {/* Non-Cash Aggregates */}
+                    <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60 space-y-1.5">
+                      <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        <span>Non-Cash Sales (Info Only)</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-slate-500 font-medium">
+                        <span>Card Sales</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          ${Number(activeShift.cardSales || 0).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs text-slate-500 font-medium">
+                        <span>Mobile Sales</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          ${Number(activeShift.mobileSales || 0).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
-                      Actual Audited Cash Count
-                    </label>
+                    <div className="flex justify-between items-center">
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Actual Audited Cash Count
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowDenoCalc(!showDenoCalc)}
+                        className={`text-[10px] font-black px-2 py-1 rounded-lg border transition-all ${
+                          showDenoCalc
+                            ? 'bg-red-500/10 border-red-500/30 text-red-650'
+                            : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                        }`}
+                      >
+                        {showDenoCalc ? 'Close Calculator' : 'Use Calculator'}
+                      </button>
+                    </div>
                     <input
                       type="number"
                       required
                       min="0"
+                      step="0.01"
                       value={closingBalance}
+                      readOnly={showDenoCalc}
                       onChange={(e) =>
                         setClosingBalance(e.target.value === '' ? '' : Number(e.target.value))
                       }
                       placeholder="0.00"
-                      className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl outline-none font-extrabold text-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500"
+                      className={`w-full px-4 py-3 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none font-extrabold text-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-colors ${
+                        showDenoCalc ? 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-850 cursor-not-allowed opacity-90' : 'bg-white dark:bg-slate-900'
+                      }`}
                     />
                   </div>
 
+                  {showDenoCalc && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-850 space-y-4 overflow-hidden"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                          Denomination Counter
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDenoCounts({
+                              '100': 0,
+                              '50': 0,
+                              '20': 0,
+                              '10': 0,
+                              '5': 0,
+                              '1': 0,
+                              '0.25': 0,
+                              '0.10': 0,
+                              '0.05': 0,
+                              '0.01': 0,
+                            });
+                          }}
+                          className="text-[9px] font-bold text-slate-450 hover:text-red-500 uppercase tracking-widest transition-colors"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+
+                      {/* Bills Section */}
+                      <div className="space-y-2">
+                        <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200/40 dark:border-slate-800/40 pb-1">
+                          Bills (Notes)
+                        </span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {DENOMINATIONS.filter((d) => d.type === 'bill').map((d) => (
+                            <div key={d.value} className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200/50 dark:border-slate-800/50">
+                              <span className="text-xs font-bold text-slate-600 dark:text-slate-350 min-w-[32px]">{d.label}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-slate-400 font-semibold">×</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={denoCounts[String(d.value)] || 0}
+                                  onChange={(e) => {
+                                    const val = e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value));
+                                    setDenoCounts((prev) => ({
+                                      ...prev,
+                                      [String(d.value)]: val,
+                                    }));
+                                  }}
+                                  className="w-12 px-1.5 py-1 text-center text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-lg outline-none focus:ring-1 focus:ring-red-500 text-slate-900 dark:text-white"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Coins Section */}
+                      <div className="space-y-2">
+                        <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200/40 dark:border-slate-800/40 pb-1">
+                          Coins
+                        </span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {DENOMINATIONS.filter((d) => d.type === 'coin').map((d) => (
+                            <div key={d.value} className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 p-2 rounded-xl border border-slate-200/50 dark:border-slate-800/50">
+                              <span className="text-xs font-bold text-slate-600 dark:text-slate-350 min-w-[32px]">{d.label}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-slate-400 font-semibold">×</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={denoCounts[String(d.value)] || 0}
+                                  onChange={(e) => {
+                                    const val = e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value));
+                                    setDenoCounts((prev) => ({
+                                      ...prev,
+                                      [String(d.value)]: val,
+                                    }));
+                                  }}
+                                  className="w-12 px-1.5 py-1 text-center text-xs font-bold bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-lg outline-none focus:ring-1 focus:ring-red-500 text-slate-900 dark:text-white"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
                   {closingBalance !== '' && (
                     <div className="flex justify-between items-center text-xs p-3 bg-red-500/10 rounded-xl border border-red-500/20">
-                      <span className="font-bold text-slate-650 flex items-center gap-1.5">
+                      <span className="font-bold text-slate-650 dark:text-slate-300 flex items-center gap-1.5">
                         <AlertCircle className="w-4 h-4 text-red-500 animate-bounce" /> Variance (Difference)
                       </span>
                       <span
@@ -2540,7 +2750,11 @@ export default function Pos() {
                       {Object.entries(returnQuantities)
                         .reduce((total, [itemId, qty]) => {
                           const orderItem = returnOrder.items.find((item: any) => item.id === itemId);
-                          return total + (orderItem ? Number(orderItem.unitPrice) * qty : 0);
+                          // Fix: subtract discountAmount to match backend calculation
+                          const netUnit = orderItem
+                            ? Number(orderItem.unitPrice) - Number(orderItem.discountAmount || 0)
+                            : 0;
+                          return total + netUnit * qty;
                         }, 0)
                         .toFixed(2)}
                     </span>

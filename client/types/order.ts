@@ -67,9 +67,13 @@ export interface ReturnRequest {
   userId: string;
   user?: any;
   status: string;
+  returnType?: string;   // 'refund' | 'exchange'
+  refundMethod?: string; // 'store_credit' | 'cash' | 'card' | 'mobile' | 'bank_transfer'
   reason: string;
   adminComment?: string;
   refundAmount?: number;
+  exchangeOrderId?: string | null;
+  receivedAt?: string | null;
   items: Array<{
     productId: string;
     variantId?: string;

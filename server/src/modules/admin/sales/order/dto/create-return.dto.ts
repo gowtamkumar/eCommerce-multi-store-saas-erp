@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import {
   IsArray,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -9,6 +10,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator'
+import { RefundMethod, ReturnType } from '@/common/enums/refund-method.enum'
 
 export class ReturnItemDto {
   @ApiProperty()
@@ -40,4 +42,16 @@ export class CreateReturnDto {
   @ValidateNested({ each: true })
   @Type(() => ReturnItemDto)
   items: ReturnItemDto[]
+
+  /** Whether this is a refund or exchange. Defaults to REFUND. */
+  @ApiProperty({ enum: ReturnType, required: false })
+  @IsEnum(ReturnType)
+  @IsOptional()
+  returnType?: ReturnType
+
+  /** Preferred refund method. Defaults to STORE_CREDIT (wallet). */
+  @ApiProperty({ enum: RefundMethod, required: false })
+  @IsEnum(RefundMethod)
+  @IsOptional()
+  refundMethod?: RefundMethod
 }
