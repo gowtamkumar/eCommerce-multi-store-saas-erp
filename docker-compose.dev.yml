@@ -14,10 +14,17 @@ services:
       - multi_tenant_main_network
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 512M
 
   pgadmin:
     container_name: multi_tenant_pgadmin_ecommerce
     image: dpage/pgadmin4:latest
+    profiles:
+      - debug
     environment:
       - PGADMIN_DEFAULT_EMAIL=gowtampaul0@gmail.com
       - PGADMIN_DEFAULT_PASSWORD=gowtampaul1995@
@@ -27,6 +34,11 @@ services:
       - postgres
     networks:
       - multi_tenant_main_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 200M
 
   redis:
     image: redis:7-alpine
@@ -37,10 +49,17 @@ services:
       - redis-data:/data # Optional: Persist Redis data
     networks:
       - multi_tenant_main_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 128M
 
   redis-commander:
     image: rediscommander/redis-commander:latest
     container_name: multi_tenant_redis_commander_dev
+    profiles:
+      - debug
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -50,11 +69,16 @@ services:
       - redis
     networks:
       - multi_tenant_main_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 100M
 
   minio:
     image: minio/minio:latest
     container_name: multi_tenant_minio_dev
-    restart: unless-stopped
+    restart: "no"
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -71,22 +95,35 @@ services:
       retries: 5
     networks:
       - multi_tenant_main_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
 
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: multi_tenant_mailhog_dev
-    restart: unless-stopped
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-    networks:
-      - multi_tenant_main_network
+  # mailhog:
+  #   image: mailhog/mailhog:latest
+  #   container_name: multi_tenant_mailhog_dev
+  #   restart: "no"
+  #   profiles:
+  #     - debug
+  #   ports:
+  #     - "1025:1025"
+  #     - "8025:8025"
+  #   networks:
+  #     - multi_tenant_main_network
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.10'
+  #         memory: 64M
 
   server:
     build:
       context: ./server
       dockerfile: Dockerfile.dev
     container_name: multi_tenant_server_dev
+    restart: "no"
     ports:
       - "3900:3900"
     env_file:
@@ -100,12 +137,18 @@ services:
       - redis
     networks:
       - multi_tenant_main_network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.00'
+          memory: 1.5G
 
   client:
     build:
       context: ./client
       dockerfile: Dockerfile.dev
     container_name: multi_tenant_client_dev
+    restart: "no"
     ports:
       - "3000:3000"
     env_file:
@@ -116,6 +159,11 @@ services:
       - /app/.next
     networks:
       - multi_tenant_main_network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.00'
+          memory: 2G
 
 networks:
   multi_tenant_main_network:

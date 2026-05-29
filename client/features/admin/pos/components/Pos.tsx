@@ -1359,12 +1359,12 @@ export default function Pos() {
     <div className="flex flex-col gap-6 -mt-4">
       {/* Header Stat Panel */}
       <div className="bg-slate-900 text-white rounded-3xl p-6 flex flex-col xl:flex-row gap-6 xl:items-center justify-between shadow-2xl">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 min-w-0">
           <div className="p-3 bg-emerald-500/20 rounded-2xl border border-emerald-500/30">
             <Coins className="w-6 h-6 text-emerald-400" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-black text-lg">Active Terminal Shift</h3>
               {isOnline ? (
                 <span className="flex items-center gap-1 px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[9px] font-black uppercase tracking-wider">
@@ -1387,21 +1387,21 @@ export default function Pos() {
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-400 font-medium">
+            <p className="text-xs text-slate-400 font-medium min-w-0 truncate">
               Terminal: <span className="font-bold text-white">{activeShift.register?.name}</span> | Cashier ID:{' '}
               <span className="font-bold text-white">{activeShift.userId?.substring(0, 8)}...</span>
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-6">
-          <div className="flex flex-wrap gap-4 md:gap-6">
-            <div className="text-center md:text-left">
+        <div className="flex flex-wrap items-center gap-6 min-w-0">
+          <div className="flex flex-wrap gap-4 md:gap-6 w-full md:w-auto">
+            <div className="text-center md:text-left min-w-[140px]">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Drawer Base</p>
               <p className="font-black text-sm">${Number(activeShift.openingBalance).toFixed(2)}</p>
             </div>
             <div className="w-px h-8 bg-slate-800" />
-            <div className="text-center md:text-left">
+            <div className="text-center md:text-left min-w-[140px]">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cash Sales</p>
               <p className="font-black text-sm text-emerald-400">+${Number(activeShift.cashSales).toFixed(2)}</p>
             </div>
@@ -1430,7 +1430,7 @@ export default function Pos() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto">
             {isOnline && offlineQueue.length > 0 && (
               <button
                 onClick={() => syncOfflineQueue()}
