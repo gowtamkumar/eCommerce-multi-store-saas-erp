@@ -75,6 +75,8 @@ export class GrnRepository {
       .createQueryBuilder('grn')
       .leftJoinAndSelect('grn.supplier', 'supplier')
       .leftJoinAndSelect('grn.warehouse', 'warehouse')
+      .leftJoinAndSelect('grn.items', 'items')
+      .leftJoinAndSelect('grn.purchaseOrder', 'purchaseOrder')
       .where('grn.tenantId = :tenantId', { tenantId })
 
     if (status) {

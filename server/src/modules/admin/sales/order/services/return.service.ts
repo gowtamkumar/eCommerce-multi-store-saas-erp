@@ -45,6 +45,21 @@ export class ReturnService {
       throw new NotFoundException('Order not found or does not belong to user')
     }
 
+    // Build map of cumulative returned quantities
+    const alreadyReturnedMap: Record<string, number> = {}
+    if (order.returns) {
+      for (const ret of order.returns) {
+        if (ret.status !== ReturnStatus.REJECTED) {
+          for (const item of ret.items) {
+            const key = `${item.productId}_${item.variantId || 'none'}`
+            alreadyReturnedMap[key] = (alreadyReturnedMap[key] || 0) + Number(item.quantity)
+          }
+        }
+      }
+    }
+
+    let calculatedRefundAmount = 0
+
     for (const returnItem of items) {
       const orderItem = order.items.find(
         (oi) =>
@@ -55,12 +70,38 @@ export class ReturnService {
       if (!orderItem) {
         throw new BadRequestException('Item not found in order')
       }
-      if (returnItem.quantity > orderItem.quantity) {
-        throw new BadRequestException('Return quantity exceeds ordered quantity')
+
+      const key = `${returnItem.productId}_${returnItem.variantId || 'none'}`
+      const alreadyReturned = alreadyReturnedMap[key] || 0
+      const maxAllowed = orderItem.quantity - alreadyReturned
+
+      if (returnItem.quantity > maxAllowed) {
+        throw new BadRequestException(
+          `Return quantity (${returnItem.quantity}) exceeds remaining allowed quantity (${maxAllowed}). Already returned: ${alreadyReturned}.`,
+        )
       }
+
+      const netUnitPrice = Number(orderItem.unitPrice || 0) - Number(orderItem.discountAmount || 0)
+      let itemRefundTotal = netUnitPrice * returnItem.quantity
+
+      // Prorate order-level coupon discount
+      const orderSubtotal = order.items.reduce(
+        (sum, oi) => sum + (Number(oi.unitPrice) - Number(oi.discountAmount || 0)) * oi.quantity,
+        0,
+      )
+      if (orderSubtotal > 0 && Number(order.couponDiscountAmount) > 0) {
+        const itemShareRatio = itemRefundTotal / orderSubtotal
+        const couponReduction = Number(order.couponDiscountAmount) * itemShareRatio
+        itemRefundTotal = Math.max(0, itemRefundTotal - couponReduction)
+      }
+
+      calculatedRefundAmount += itemRefundTotal
     }
 
-    const result = await this.returnRepository.createAndSaveReturn({ orderId, reason, items }, ctx)
+    const result = await this.returnRepository.createAndSaveReturn(
+      { orderId, reason, items, refundAmount: calculatedRefundAmount },
+      ctx,
+    )
 
     // Trigger Notification for Refund/Return Request
     try {
@@ -131,23 +172,31 @@ export class ReturnService {
       throw new NotFoundException('Return request not found')
     }
 
-    if (
-      returnRequest.status === ReturnStatus.APPROVED ||
-      returnRequest.status === ReturnStatus.REFUNDED
-    ) {
-      // Avoid double approval effects (restocking)
-      // If moving from Approved -> Refunded, that's fine.
+    const currentStatus = returnRequest.status
+    const targetStatus = (status as string)?.toLowerCase() as ReturnStatus
+    if (!Object.values(ReturnStatus).includes(targetStatus)) {
+      throw new BadRequestException(`Invalid return status: ${status}`)
     }
 
-    // Logic for APPROVAL
-    if (status === ReturnStatus.APPROVED && returnRequest.status !== ReturnStatus.APPROVED) {
+    // Strict unidirectional state transitions
+    if (currentStatus === ReturnStatus.REFUNDED || currentStatus === ReturnStatus.REJECTED) {
+      throw new BadRequestException(
+        `Cannot change status of a return request that is already ${currentStatus}`,
+      )
+    }
+    if (currentStatus === ReturnStatus.APPROVED && targetStatus === ReturnStatus.PENDING) {
+      throw new BadRequestException(`Cannot move an approved return request back to pending`)
+    }
+
+    // Logic for APPROVAL (ensure it only occurs when transitioning from PENDING)
+    if (targetStatus === ReturnStatus.APPROVED && currentStatus === ReturnStatus.PENDING) {
       await this.restockItems(returnRequest, ctx)
     }
 
-    const updated = await this.returnRepository.updateStatus(returnRequest, status, adminComment)
+    const updated = await this.returnRepository.updateStatus(returnRequest, targetStatus, adminComment)
 
     // Refund-to-Wallet: credit customer wallet when return is marked as REFUNDED
-    if (status === ReturnStatus.REFUNDED) {
+    if (targetStatus === ReturnStatus.REFUNDED) {
       const refundAmount = Number(returnRequest.refundAmount || 0)
       const customerId = returnRequest.order?.userId || (returnRequest as any).userId
 

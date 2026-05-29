@@ -16,6 +16,27 @@ const OrderDetailModal = ({
 }: OrderDetailModalProps) => {
     if (!order) return null;
 
+    const getRemainingReturnableQty = (productId: string, variantId?: string) => {
+        const orderItem = order.items?.find((oi: any) =>
+            oi.productId === productId && (oi.variantId === variantId || (!oi.variantId && !variantId))
+        );
+        if (!orderItem) return 0;
+        
+        let returned = 0;
+        if (order.returns) {
+            for (const ret of order.returns) {
+                if (ret.status !== 'rejected') {
+                    for (const retItem of ret.items) {
+                        if (retItem.productId === productId && (retItem.variantId === variantId || (!retItem.variantId && !variantId))) {
+                            returned += Number(retItem.quantity);
+                        }
+                    }
+                }
+            }
+        }
+        return Math.max(0, orderItem.quantity - returned);
+    };
+
     return (
         <div
             className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md"
@@ -153,9 +174,10 @@ const OrderDetailModal = ({
                                                 </button>
                                             )}
                                             {(() => {
+                                                const remainingQty = getRemainingReturnableQty(item.product?.id, item.variant?.id);
                                                 const returnStatus = getReturnStatus(order, item.product?.id, item.variant?.id);
 
-                                                if (returnStatus) {
+                                                if (remainingQty <= 0 && returnStatus) {
                                                     return (
                                                         <span className={`text-[9px] px-2 py-0.5 rounded-lg font-black uppercase tracking-widest ${returnStatus === ReturnStatus.APPROVED ? 'bg-green-100 text-green-700' :
                                                             returnStatus === ReturnStatus.REJECTED ? 'bg-red-100 text-red-700' :
@@ -168,23 +190,32 @@ const OrderDetailModal = ({
                                                 }
 
                                                 if (order.status === OrderStatus.COMPLETED || order.paymentStatus === "Paid") {
-                                                    return (
-                                                        <button
-                                                            onClick={() => onReturnItem({
-                                                                id: item.id,
-                                                                productId: item.product?.id,
-                                                                variantId: item.variant?.id,
-                                                                productName: item.snapshot?.productName || item.product?.name || "Item",
-                                                                quantity: item.quantity,
-                                                                price: item.unitPrice,
-                                                                discount: item.discountAmount || 0
-                                                            })}
-                                                            className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-400 hover:text-red-500 transition-all shadow-sm active:scale-90"
-                                                            title="Return Item"
-                                                        >
-                                                            <RotateCcw className="w-4 h-4" />
-                                                        </button>
-                                                    );
+                                                    if (remainingQty > 0) {
+                                                        return (
+                                                            <div className="flex items-center gap-2">
+                                                                {returnStatus && (
+                                                                    <span className="text-[9px] px-2 py-0.5 rounded-lg font-black bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 uppercase tracking-widest">
+                                                                        Partially Returned
+                                                                    </span>
+                                                                )}
+                                                                <button
+                                                                    onClick={() => onReturnItem({
+                                                                        id: item.id,
+                                                                        productId: item.product?.id,
+                                                                        variantId: item.variant?.id,
+                                                                        productName: item.snapshot?.productName || item.product?.name || "Item",
+                                                                        quantity: remainingQty,
+                                                                        price: item.unitPrice,
+                                                                        discount: item.discountAmount || 0
+                                                                    })}
+                                                                    className="w-8 h-8 flex items-center justify-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-400 hover:text-red-500 transition-all shadow-sm active:scale-90"
+                                                                    title="Return Item"
+                                                                >
+                                                                    <RotateCcw className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    }
                                                 }
                                                 return null;
                                             })()}

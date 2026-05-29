@@ -512,12 +512,12 @@ export default function Pos() {
         // Auto-approve the return & issue refund to register customer's wallet
         await fetchAPI(`/returns/${returnId}/status`, {
           method: 'PATCH',
-          body: JSON.stringify({ status: 'APPROVED', comment: 'Approved automatically at POS register' }),
+          body: JSON.stringify({ status: 'approved', comment: 'Approved automatically at POS register' }),
         });
 
         await fetchAPI(`/returns/${returnId}/status`, {
           method: 'PATCH',
-          body: JSON.stringify({ status: 'REFUNDED', comment: 'Refunded automatically at POS register' }),
+          body: JSON.stringify({ status: 'refunded', comment: 'Refunded automatically at POS register' }),
         });
 
         toast.success('Return processed. Refund credited to store credit.');
@@ -2446,7 +2446,22 @@ export default function Pos() {
                       <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Order Items (Select return quantities)</h4>
                       <div className="space-y-2">
                         {returnOrder.items.map((item: any) => {
-                          const maxQty = item.quantity;
+                          let alreadyReturned = 0;
+                          if (returnOrder.returns) {
+                            for (const ret of returnOrder.returns) {
+                              if (ret.status !== 'rejected') {
+                                for (const retItem of ret.items) {
+                                  if (
+                                    retItem.productId === item.productId &&
+                                    (retItem.variantId === item.variantId || (!retItem.variantId && !item.variantId))
+                                  ) {
+                                    alreadyReturned += Number(retItem.quantity);
+                                  }
+                                }
+                              }
+                            }
+                          }
+                          const maxQty = Math.max(0, item.quantity - alreadyReturned);
                           const currentQty = returnQuantities[item.id] || 0;
                           return (
                             <div key={item.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-955 rounded-2xl border border-slate-100 dark:border-slate-850 hover:border-slate-200 dark:hover:border-slate-800 transition-all shadow-sm">
