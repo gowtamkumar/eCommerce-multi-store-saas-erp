@@ -28,70 +28,24 @@ import {
   Wallet,
   X
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-
-interface Register {
-  id: string;
-  name: string;
-  branchId?: string;
-}
-
-interface PosShift {
-  id: string;
-  registerId: string;
-  userId: string;
-  openingBalance: number;
-  cashSales: number;
-  cardSales: number;
-  mobileSales: number;
-  cashIn?: number;
-  cashOut?: number;
-  expectedClosingBalance: number;
-  closingBalance?: number;
-  status: 'OPEN' | 'CLOSED';
-  openedAt: string;
-  closedAt?: string;
-  register?: Register;
-}
-
-interface ProductVariant {
-  id: string;
-  price?: number;
-  combination: Record<string, string>;
-  sku?: string;
-  barcode?: string;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  stock: number;
-  price: number;
-  sku?: string;
-  barcode?: string;
-  images?: string[];
-  variants?: ProductVariant[];
-  taxRate?: number;
-  discountAmount?: number | string;
-  discountType?: string;
-}
-
-interface CartItem {
-  product: Product;
-  variant?: ProductVariant;
-  quantity: number;
-  price: number;
-}
-
-interface TaxRule {
-  id: string;
-  name: string;
-  rate: number;
-  category: string;
-  isActive: boolean;
-}
+import type {
+  Brand,
+  CartItem,
+  Category,
+  CouponApplied,
+  Customer,
+  OfflineSale,
+  PosShift,
+  Product,
+  ProductVariant,
+  Register,
+  ReturnOrder,
+  TaxRule,
+  TransactionHistory,
+  TransactionItem
+} from '../type';
 
 const DENOMINATIONS = [
   { label: '$100', value: 100, type: 'bill' },
@@ -118,8 +72,8 @@ export default function Pos() {
   // Billing & Catalog state
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categories, setCategories] = useState<any[]>([]);
-  const [brands, setBrands] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedBrandId, setSelectedBrandId] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -144,7 +98,7 @@ export default function Pos() {
 
   // Offline state
   const [isOnline, setIsOnline] = useState(true);
-  const [offlineQueue, setOfflineQueue] = useState<any[]>([]);
+  const [offlineQueue, setOfflineQueue] = useState<OfflineSale[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Split payment state
@@ -166,17 +120,17 @@ export default function Pos() {
   // Advanced features: Customer, discount and receipt
   const [discount, setDiscount] = useState<number>(0);
   const [discountType, setDiscountType] = useState<'FIXED' | 'PERCENT'>('FIXED');
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
-  const [lastTransaction, setLastTransaction] = useState<any>(null);
+  const [lastTransaction, setLastTransaction] = useState<TransactionHistory | null>(null);
 
   // Premium POS Coupons State
   const [couponCode, setCouponCode] = useState('');
-  const [couponApplied, setCouponApplied] = useState<any | null>(null);
+  const [couponApplied, setCouponApplied] = useState<CouponApplied | null>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   // Premium POS Delivery Zones & Custom Shipping Address State
@@ -215,7 +169,7 @@ export default function Pos() {
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const [returnOrderId, setReturnOrderId] = useState('');
   const [searchingOrder, setSearchingOrder] = useState(false);
-  const [returnOrder, setReturnOrder] = useState<any | null>(null);
+  const [returnOrder, setReturnOrder] = useState<ReturnOrder | null>(null);
   const [returnQuantities, setReturnQuantities] = useState<Record<string, number>>({});
   const [returnReason, setReturnReason] = useState('Customer exchange');
   const [submittingReturn, setSubmittingReturn] = useState(false);
@@ -304,7 +258,7 @@ export default function Pos() {
   }, [offlineQueue]);
 
   // Sync offline queue helper
-  const syncOfflineQueue = async (forceQueue?: any[]) => {
+  const syncOfflineQueue = async (forceQueue?: OfflineSale[]) => {
     const queueToProcess = forceQueue || offlineQueue;
     if (queueToProcess.length === 0) return;
 
@@ -344,7 +298,7 @@ export default function Pos() {
           failedCount++;
           console.error('Failed syncing offline sale:', res.message);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Network error during offline sync:', err);
         toast.error('Sync failed due to network connection issues.');
         break;
@@ -357,7 +311,9 @@ export default function Pos() {
       try {
         const activeRes = await fetchAPI('/pos/shift/active');
         if (activeRes.success) setActiveShift(activeRes.data);
-      } catch (e) { }
+      } catch (e: unknown) {
+        console.error('Failed to refresh shift after sync:', e);
+      }
     }
     if (failedCount > 0) {
       toast.error(`Failed to sync ${failedCount} sale(s) due to validation errors.`);
@@ -420,42 +376,45 @@ export default function Pos() {
     }
   };
 
-  const fetchProducts = async (
-    page = 1,
-    search = searchQuery,
-    categoryId = selectedCategoryId,
-    brandId = selectedBrandId
-  ) => {
-    setLoadingProducts(true);
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: productPagination.limit.toString(),
-        status: 'active',
-      });
-      if (search.trim()) params.append('q', search.trim());
-      if (categoryId) params.append('categoryId', categoryId);
-      if (brandId) params.append('brandId', brandId);
+  const fetchProducts = useCallback(
+    async (
+      page = 1,
+      search = '',
+      categoryId = '',
+      brandId = ''
+    ) => {
+      setLoadingProducts(true);
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: productPagination.limit.toString(),
+          status: 'active',
+        });
+        if (search.trim()) params.append('q', search.trim());
+        if (categoryId) params.append('categoryId', categoryId);
+        if (brandId) params.append('brandId', brandId);
 
-      const res = await fetchAPI(`/products?${params}`);
-      if (res.success) {
-        setProducts(res.data || []);
-        if (res.pagination) {
-          setProductPagination({
-            total: res.pagination.total,
-            page: res.pagination.page,
-            limit: res.pagination.limit,
-            totalPages: res.pagination.totalPages
-          });
+        const res = await fetchAPI(`/products?${params}`);
+        if (res.success) {
+          setProducts(res.data || []);
+          if (res.pagination) {
+            setProductPagination({
+              total: res.pagination.total,
+              page: res.pagination.page,
+              limit: res.pagination.limit,
+              totalPages: res.pagination.totalPages
+            });
+          }
         }
+      } catch (error) {
+        console.error('Failed to load store products', error);
+        toast.error('Failed to load store products');
+      } finally {
+        setLoadingProducts(false);
       }
-    } catch (error) {
-      console.error('Failed to load store products', error);
-      toast.error('Failed to load store products');
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
+    },
+    [productPagination.limit]
+  );
 
   const handleProductPageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= productPagination.totalPages) {
@@ -467,7 +426,7 @@ export default function Pos() {
     if (activeShift) {
       fetchProducts(1, debouncedSearchQuery, selectedCategoryId, selectedBrandId);
     }
-  }, [debouncedSearchQuery, selectedCategoryId, selectedBrandId, activeShift]);
+  }, [activeShift, debouncedSearchQuery, selectedCategoryId, selectedBrandId, fetchProducts]);
 
   // POS Return & Exchange Handlers
   const handleSearchReturnOrder = async () => {
@@ -496,8 +455,9 @@ export default function Pos() {
       } else {
         toast.error('No order found matching this reference');
       }
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to search order');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Failed to search order';
+      toast.error(message);
     } finally {
       setSearchingOrder(false);
     }
@@ -507,7 +467,7 @@ export default function Pos() {
     if (!returnOrder) return;
     const itemsToReturn = Object.entries(returnQuantities)
       .map(([itemId, qty]) => {
-        const orderItem = returnOrder.items.find((item: any) => item.id === itemId);
+        const orderItem = returnOrder.items.find((item) => item.id === itemId);
         return {
           productId: orderItem.productId,
           variantId: orderItem.variantId || undefined,
@@ -528,6 +488,7 @@ export default function Pos() {
         body: JSON.stringify({
           orderId: returnOrder.id,
           reason: returnReason,
+          returnType: isExchange ? 'exchange' : 'refund',
           items: itemsToReturn,
         }),
       });
@@ -565,7 +526,7 @@ export default function Pos() {
           } else {
             // Guest/walk-in customer: exchange cannot be done via store credit.
             // Show clear guidance to cashier.
-            toast.error(
+            toast.success(
               `Walk-in exchange: The return of $${refundAmount.toFixed(2)} has been processed. Please issue a CASH or CARD refund and ring up the exchange items as a new sale.`,
               { duration: 8000 }
             );
@@ -578,8 +539,9 @@ export default function Pos() {
       } else {
         toast.error(res.message || 'Failed to submit return');
       }
-    } catch (e: any) {
-      toast.error(e?.message || 'Error processing return');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Error processing return';
+      toast.error(message);
     } finally {
       setSubmittingReturn(false);
     }
@@ -677,8 +639,9 @@ export default function Pos() {
       } else {
         toast.error(res.message || 'Failed to submit drawer transaction');
       }
-    } catch (err: any) {
-      toast.error(err?.message || 'Error recording drawer transaction');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error recording drawer transaction';
+      toast.error(message);
     } finally {
       setSubmittingDrawerTx(false);
     }
@@ -694,30 +657,99 @@ export default function Pos() {
     executeAddToCart(product);
   };
 
-  const executeAddToCart = (product: Product, variant?: ProductVariant) => {
-    const existingIndex = cart.findIndex(
-      (item) => item.product.id === product.id && item.variant?.id === variant?.id
-    );
+  const executeAddToCart = useCallback((product: Product, variant?: ProductVariant) => {
+    setCart((currentCart) => {
+      const existingIndex = currentCart.findIndex(
+        (item) => item.product.id === product.id && item.variant?.id === variant?.id
+      );
 
-    if (existingIndex > -1) {
-      const updatedCart = [...cart];
-      updatedCart[existingIndex].quantity += 1;
-      setCart(updatedCart);
-    } else {
-      setCart([
-        ...cart,
+      if (existingIndex > -1) {
+        const updatedCart = [...currentCart];
+        updatedCart[existingIndex].quantity += 1;
+        return updatedCart;
+      }
+
+      return [
+        ...currentCart,
         {
           product,
           variant,
           quantity: 1,
           price: Number(product.price),
         },
-      ]);
-    }
+      ];
+    });
+
     toast.success(`${product.name} added to cart`, { duration: 1000 });
+  }, []);
+
+  const updateQuantity = (index: number, delta: number) => {
+    const updatedCart = [...cart];
+    const newQty = updatedCart[index].quantity + delta;
+    if (newQty <= 0) {
+      updatedCart.splice(index, 1);
+    } else {
+      updatedCart[index].quantity = newQty;
+    }
+    setCart(updatedCart);
   };
 
-  const findAndAddProductByCode = async (query: string, rawQuery: string): Promise<boolean> => {
+  const removeFromCart = (index: number) => {
+    const updatedCart = [...cart];
+    updatedCart.splice(index, 1);
+    setCart(updatedCart);
+  };
+
+  const fetchCustomers = async (q = '') => {
+    setLoadingCustomers(true);
+    try {
+      const res = await fetchAPI(`/customer?q=${q}&limit=10`);
+      if (res.success && res.data) {
+        setCustomers(res.data.items || []);
+      }
+    } catch {
+      toast.error('Failed to load customers');
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeShift) {
+      fetchCustomers();
+    }
+  }, [activeShift]);
+
+  const playBeepSound = useCallback(() => {
+    try {
+      const windowWithAudio = window as unknown as {
+        AudioContext?: typeof AudioContext;
+        webkitAudioContext?: typeof AudioContext;
+      };
+      const AudioCtxConstructor = windowWithAudio.AudioContext || windowWithAudio.webkitAudioContext;
+      if (!AudioCtxConstructor) {
+        throw new Error('AudioContext is not supported');
+      }
+      const audioCtx = new AudioCtxConstructor();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // 880Hz beep
+      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.12);
+    } catch (e: unknown) {
+      console.warn('AudioContext beep blocked or not supported:', e);
+    }
+  }, []);
+
+  const findAndAddProductByCode = useCallback(async (query: string, rawQuery: string): Promise<boolean> => {
     // 1. Check local products first
     let matchedProduct: Product | null = null;
     let matchedVariant: ProductVariant | null = null;
@@ -759,7 +791,7 @@ export default function Pos() {
         let v: ProductVariant | undefined;
         if (p.variants && p.variants.length > 0) {
           v = p.variants.find(
-            (varItem: any) =>
+            (varItem: ProductVariant) =>
               (varItem.sku && varItem.sku.toLowerCase() === query) ||
               (varItem.barcode && varItem.barcode.toLowerCase() === query)
           );
@@ -768,71 +800,13 @@ export default function Pos() {
         playBeepSound();
         return true;
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error looking up product on backend:', err);
     }
 
     toast.error(`No product found matching code: "${rawQuery}"`);
     return false;
-  };
-
-  const updateQuantity = (index: number, delta: number) => {
-    const updatedCart = [...cart];
-    const newQty = updatedCart[index].quantity + delta;
-    if (newQty <= 0) {
-      updatedCart.splice(index, 1);
-    } else {
-      updatedCart[index].quantity = newQty;
-    }
-    setCart(updatedCart);
-  };
-
-  const removeFromCart = (index: number) => {
-    const updatedCart = [...cart];
-    updatedCart.splice(index, 1);
-    setCart(updatedCart);
-  };
-
-  const fetchCustomers = async (q = '') => {
-    setLoadingCustomers(true);
-    try {
-      const res = await fetchAPI(`/customer?q=${q}&limit=10`);
-      if (res.success && res.data) {
-        setCustomers(res.data.items || []);
-      }
-    } catch {
-      toast.error('Failed to load customers');
-    } finally {
-      setLoadingCustomers(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeShift) {
-      fetchCustomers();
-    }
-  }, [activeShift]);
-
-  const playBeepSound = () => {
-    try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // 880Hz beep
-      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
-
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.12);
-    } catch (e) {
-      console.warn('AudioContext beep blocked or not supported:', e);
-    }
-  };
+  }, [products, executeAddToCart, playBeepSound]);
 
   const handleSearchKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -887,7 +861,7 @@ export default function Pos() {
     return () => {
       window.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, [products]);
+  }, [findAndAddProductByCode]);
 
   useEffect(() => {
     if (!selectedCustomer) {
@@ -899,7 +873,7 @@ export default function Pos() {
         setPaymentMethod('cash');
       }
     }
-  }, [selectedCustomer]);
+  }, [selectedCustomer, paymentMethod]);
 
   // Fetch outstanding AR balance whenever customer changes (wallet is fetched on-demand when WALLET method is selected)
   useEffect(() => {
@@ -907,7 +881,10 @@ export default function Pos() {
       fetchAPI(`/finance/ar/customer/${selectedCustomer.id}`)
         .then((res) => {
           if (res.success && Array.isArray(res.data)) {
-            const outstanding = res.data.reduce((sum: number, e: any) => sum + Number(e.amount), 0);
+            const outstanding = (res.data as Array<{ amount: number | string }>).reduce(
+              (sum: number, entry) => sum + Number(entry.amount),
+              0
+            );
             setOutstandingBalance(outstanding);
           }
         })
@@ -984,8 +961,9 @@ export default function Pos() {
       } else {
         toast.error(res.message || 'Invalid or expired coupon code');
       }
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to validate coupon');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to validate coupon';
+      toast.error(message);
     } finally {
       setValidatingCoupon(false);
     }
@@ -1024,17 +1002,17 @@ export default function Pos() {
     return cart.reduce((sum, item) => {
       const rawTax = item.product.taxRate;
       const itemTaxRate = rawTax !== undefined && rawTax !== null && !isNaN(Number(rawTax)) ? Number(rawTax) : taxRate;
-      
+
       const subtotal = calculateSubtotal() - calculateCatalogDiscount();
       const totalDiscount = calculateDiscountValue() + calculateCouponDiscount();
-      
+
       const discAmt = Number(item.product.discountAmount || 0);
       const discType = item.product.discountType || 'fixed';
       const unitDiscountedPrice = discType === 'percentage' ? item.price * (1 - discAmt / 100) : item.price - discAmt;
-      
+
       const itemSubtotal = Math.max(0, unitDiscountedPrice) * item.quantity;
       const itemDiscount = subtotal > 0 ? (itemSubtotal / subtotal) * totalDiscount : 0;
-      
+
       const itemTaxableAmount = Math.max(0, itemSubtotal - itemDiscount);
       const itemTax = (itemTaxableAmount * itemTaxRate) / 100;
       return sum + itemTax;
@@ -1169,8 +1147,9 @@ export default function Pos() {
         // Reset state
         resetCheckoutState();
         setIsReceiptOpen(true);
-      } catch (err: any) {
-        toast.error(err?.message || 'Failed to save offline sale');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to save offline sale';
+        toast.error(message);
       } finally {
         setProcessingPayment(false);
       }
@@ -1221,10 +1200,11 @@ export default function Pos() {
         const activeRes = await fetchAPI('/pos/shift/active');
         if (activeRes.success) setActiveShift(activeRes.data);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // If network failure, offer to queue offline
       console.error('Online checkout failed:', err);
-      if (err.message && err.message.includes('fetch')) {
+      const errorMessage = err instanceof Error ? err.message : '';
+      if (errorMessage.includes('fetch')) {
         // Network connection error - queue it
         const queuedSale = {
           ...salePayload,
@@ -1548,7 +1528,7 @@ export default function Pos() {
                       <span className="text-xs text-brand-600 dark:text-brand-400 font-black">
                         ${item.price.toFixed(2)} each
                       </span>
-                      
+
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded-md">
                         Tax: ${(() => {
                           const rawTax = item.product.taxRate;
@@ -1561,7 +1541,7 @@ export default function Pos() {
                           return itemTax.toFixed(2);
                         })()}
                       </span>
-                      
+
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded-md">
                         Subtotal: ${(item.price * item.quantity).toFixed(2)}
                       </span>
@@ -1697,7 +1677,7 @@ export default function Pos() {
                 />
                 <select
                   value={discountType}
-                  onChange={(e: any) => setDiscountType(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setDiscountType(e.target.value)}
                   className="px-2 py-1.5 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-850 dark:text-white rounded-xl outline-none font-bold text-xs"
                 >
                   <option value="FIXED">Flat ($)</option>
@@ -1822,7 +1802,7 @@ export default function Pos() {
                 className="w-full pl-3 pr-8 py-2 text-xs font-bold border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-brand-500 shadow-sm appearance-none cursor-pointer transition-all"
               >
                 <option value="">All Categories</option>
-                {categories.map((c: any) => (
+                {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
@@ -1840,7 +1820,7 @@ export default function Pos() {
                 className="w-full pl-3 pr-8 py-2 text-xs font-bold border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-brand-500 shadow-sm appearance-none cursor-pointer transition-all"
               >
                 <option value="">All Brands</option>
-                {brands.map((b: any) => (
+                {brands.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
                   </option>
@@ -2409,11 +2389,10 @@ export default function Pos() {
                       <button
                         type="button"
                         onClick={() => setShowDenoCalc(!showDenoCalc)}
-                        className={`text-[10px] font-black px-2 py-1 rounded-lg border transition-all ${
-                          showDenoCalc
-                            ? 'bg-red-500/10 border-red-500/30 text-red-650'
-                            : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
-                        }`}
+                        className={`text-[10px] font-black px-2 py-1 rounded-lg border transition-all ${showDenoCalc
+                          ? 'bg-red-500/10 border-red-500/30 text-red-650'
+                          : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                          }`}
                       >
                         {showDenoCalc ? 'Close Calculator' : 'Use Calculator'}
                       </button>
@@ -2429,9 +2408,8 @@ export default function Pos() {
                         setClosingBalance(e.target.value === '' ? '' : Number(e.target.value))
                       }
                       placeholder="0.00"
-                      className={`w-full px-4 py-3 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none font-extrabold text-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-colors ${
-                        showDenoCalc ? 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-850 cursor-not-allowed opacity-90' : 'bg-white dark:bg-slate-900'
-                      }`}
+                      className={`w-full px-4 py-3 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none font-extrabold text-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-colors ${showDenoCalc ? 'bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-850 cursor-not-allowed opacity-90' : 'bg-white dark:bg-slate-900'
+                        }`}
                     />
                   </div>
 
@@ -2655,7 +2633,7 @@ export default function Pos() {
                     <div className="space-y-3">
                       <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">Order Items (Select return quantities)</h4>
                       <div className="space-y-2">
-                        {returnOrder.items.map((item: any) => {
+                        {returnOrder.items.map((item) => {
                           let alreadyReturned = 0;
                           if (returnOrder.returns) {
                             for (const ret of returnOrder.returns) {
@@ -2743,22 +2721,29 @@ export default function Pos() {
 
               {returnOrder && (
                 <div className="p-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-400">
-                    Refund Total:{' '}
-                    <span className="text-brand-500 font-black text-sm">
-                      $
-                      {Object.entries(returnQuantities)
-                        .reduce((total, [itemId, qty]) => {
-                          const orderItem = returnOrder.items.find((item: any) => item.id === itemId);
-                          // Fix: subtract discountAmount to match backend calculation
-                          const netUnit = orderItem
-                            ? Number(orderItem.unitPrice) - Number(orderItem.discountAmount || 0)
-                            : 0;
-                          return total + netUnit * qty;
-                        }, 0)
-                        .toFixed(2)}
+                  <div className="flex flex-col gap-3">
+                    <span className="text-xs font-bold text-slate-400">
+                      Refund Total:{' '}
+                      <span className="text-brand-500 font-black text-sm">
+                        $
+                        {Object.entries(returnQuantities)
+                          .reduce((total, [itemId, qty]) => {
+                            const orderItem = returnOrder.items.find((item) => item.id === itemId);
+                            // Fix: subtract discountAmount to match backend calculation
+                            const netUnit = orderItem
+                              ? Number(orderItem.unitPrice) - Number(orderItem.discountAmount || 0)
+                              : 0;
+                            return total + netUnit * qty;
+                          }, 0)
+                          .toFixed(2)}
+                      </span>
                     </span>
-                  </span>
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 text-[11px] text-slate-600 dark:text-slate-300 space-y-2">
+                      <p className="font-semibold text-slate-900 dark:text-white">Return action guidance</p>
+                      <p>Straight Return & Refund: complete a normal return and issue the refund for the returned items.</p>
+                      <p>Process Return & Start Exchange: process the return, then ring up replacement items as a new sale. For walk-in customers without an account, refund via CASH or CARD.</p>
+                    </div>
+                  </div>
                   <div className="flex gap-3">
                     <button
                       type="button"
@@ -2911,7 +2896,7 @@ export default function Pos() {
                       <span>Item Description</span>
                       <span>Total</span>
                     </div>
-                    {lastTransaction.items.map((item: any, idx: number) => (
+                    {lastTransaction.items.map((item: TransactionItem, idx: number) => (
                       <div key={idx} className="flex justify-between items-start text-[10px] leading-tight">
                         <div className="min-w-0 pr-4">
                           <p className="font-bold text-slate-850 dark:text-slate-350 truncate">{item.product.name}</p>
@@ -2979,7 +2964,7 @@ export default function Pos() {
                     </div>
                     {lastTransaction.splitPayments && lastTransaction.splitPayments.length > 0 ? (
                       <div className="pl-2 space-y-0.5 border-l border-slate-150 dark:border-slate-800">
-                        {lastTransaction.splitPayments.map((p: any, idx: number) => (
+                        {lastTransaction.splitPayments.map((p: { method: string; amount: number }, idx: number) => (
                           <div key={idx} className="flex justify-between text-[8px]">
                             <span>- {p.method}</span>
                             <span>${Number(p.amount).toFixed(2)}</span>

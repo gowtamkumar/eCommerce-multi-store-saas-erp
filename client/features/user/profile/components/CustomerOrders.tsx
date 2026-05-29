@@ -1,18 +1,18 @@
 "use client";
 
 import { useSettings } from "@/hooks/SettingsContext";
-import { fetchAPI } from "@/services/api";
 import { OrderStatus } from "@/lib/enums/order-status.enum";
+import { fetchAPI } from "@/services/api";
 
+import ReturnModal from "@/features/admin/return/components/ReturnModal";
+import { ReturnStatus } from "@/lib/enums/return-status.enum";
+import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
 import { getOrderStatusStyles } from "@/lib/utils";
+import { Order, OrderItem } from "@/types/order";
 import { Eye, FileText, Package, RotateCcw, Search, ShoppingBag, Star, Truck } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Order, OrderItem } from "@/types/order";
-import ReturnModal from "@/features/admin/return/components/ReturnModal";
-import { useDownloadInvoice } from "@/lib/handleDownloadInvoice";
-import { ReturnStatus } from "@/lib/enums/return-status.enum";
 
 
 const CustomerOrders = () => {
@@ -627,6 +627,7 @@ const CustomerOrders = () => {
                 <ReturnModal
                     orderId={selectedOrder.id}
                     item={returningItem}
+                    apiPath="/store/returns"
                     onClose={() => setIsReturnModalOpen(false)}
                     onSuccess={() => {
                         setIsReturnModalOpen(false);

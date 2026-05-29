@@ -1,8 +1,8 @@
 import { GlobalExceptionFilter } from '@/common/exception/exception-filter'
-import { TenantStatusGuard } from '@/common/guards/tenant-status.guard'
 import { BranchScopeGuard } from '@/common/guards/branch-scope.guard'
-import { PermissionsGuard } from '@/common/guards/permissions.guard'
 import { MaintenanceGuard } from '@/common/guards/maintenance.guard'
+import { PermissionsGuard } from '@/common/guards/permissions.guard'
+import { TenantStatusGuard } from '@/common/guards/tenant-status.guard'
 import { AuditLogInterceptor } from '@/common/interceptors/audit-log.interceptor'
 import { LoggingInterceptor } from '@/common/interceptors/logging.interceptor'
 import { TransformInterceptor } from '@/common/interceptors/transform.interceptor'
@@ -14,16 +14,17 @@ import { ContentModule } from '@/modules/admin/content/content.module'
 import { AdminModule } from '@/modules/admin/core/admin.module'
 import { AuthModule } from '@/modules/admin/core/auth/auth.module'
 import { CustomerModule } from '@/modules/admin/customer/customer.module'
+import { MarketingModule } from '@/modules/admin/marketing/marketing.module'
 import { OperationsModule } from '@/modules/admin/operations/operations.module'
 import { PaymentModule } from '@/modules/admin/sales/payment/payment.module'
 import { SalesModule } from '@/modules/admin/sales/sales.module'
 import { SettingsModule } from '@/modules/admin/settings/settings.module'
 import { CartModule } from '@/modules/store/cart/cart.module'
+import { StoreReturnModule } from '@/modules/store/return/store-return.module'
 import { ShippingAddressModule } from '@/modules/store/shipping-address/shipping-address.module'
-import { WishlistModule } from '@/modules/store/wishlist/wishlist.module'
 import { StoreWalletModule } from '@/modules/store/wallet/store-wallet.module'
+import { WishlistModule } from '@/modules/store/wishlist/wishlist.module'
 import { SystemModule } from '@/modules/system/system.module'
-import { MarketingModule } from '@/modules/admin/marketing/marketing.module'
 import { TenantModule } from '@/modules/system/tenant/tenant.module'
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
@@ -52,6 +53,7 @@ import { QueueModule } from './modules/admin/operations/infra/queue/queue.module
     ShippingAddressModule,
     WishlistModule,
     StoreWalletModule,
+    StoreReturnModule,
 
     // Admin Sub-Domains
     CatalogModule,
