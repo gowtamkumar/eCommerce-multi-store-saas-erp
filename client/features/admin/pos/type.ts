@@ -37,6 +37,9 @@ export interface Customer {
   name: string;
   email?: string;
   phone?: string;
+  username?: string;
+  creditLimit?: number;
+  creditHold?: boolean;
 }
 
 export interface ProductVariant {
@@ -96,6 +99,10 @@ export interface ReturnOrder {
   user?: Customer | null;
   items: ReturnOrderItem[];
   returns?: ReturnRecord[];
+  customerName?: string;
+  customerPhone?: string;
+  totalAmount: number;
+  createdAt: string;
 }
 
 export interface CouponApplied {

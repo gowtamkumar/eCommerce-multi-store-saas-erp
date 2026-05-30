@@ -6,7 +6,7 @@ import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, UseGuards, ParseUUIDPipe } from '@nestjs/common'
 import { ClosePosShiftDto } from './dtos/close-pos-shift.dto'
 import { CreatePosRegisterDto } from './dtos/create-pos-register.dto'
 import { OpenPosShiftDto } from './dtos/open-pos-shift.dto'
@@ -60,10 +60,11 @@ export class PosController {
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async findOneRegister(
     @RequestContext() ctx: RequestContextDto,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<BaseApiSuccessResponse<PosRegisterEntity>> {
+    const sanitizedId = id.replace(/[\r\n]/g, '_')
     this.logger.verbose(
-      `User "${ctx.user?.username || 'System'}" called findOneRegister for ${id}.`,
+      `User "${ctx.user?.username || 'System'}" called findOneRegister for ${sanitizedId}.`,
     )
     const register = await this.service.findOneRegister(id, ctx)
     return {
@@ -78,10 +79,11 @@ export class PosController {
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async updateRegister(
     @RequestContext() ctx: RequestContextDto,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: any,
   ): Promise<BaseApiSuccessResponse<PosRegisterEntity>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateRegister for ${id}.`)
+    const sanitizedId = id.replace(/[\r\n]/g, '_')
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateRegister for ${sanitizedId}.`)
     const register = await this.service.updateRegister(id, dto, ctx)
     return {
       success: true,
@@ -95,9 +97,10 @@ export class PosController {
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async deleteRegister(
     @RequestContext() ctx: RequestContextDto,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<BaseApiSuccessResponse<null>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called deleteRegister for ${id}.`)
+    const sanitizedId = id.replace(/[\r\n]/g, '_')
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called deleteRegister for ${sanitizedId}.`)
     await this.service.deleteRegister(id, ctx)
     return {
       success: true,
@@ -142,11 +145,12 @@ export class PosController {
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async closeShift(
     @RequestContext() ctx: RequestContextDto,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ClosePosShiftDto,
   ): Promise<BaseApiSuccessResponse<PosShiftEntity>> {
+    const sanitizedId = id.replace(/[\r\n]/g, '_')
     this.logger.verbose(
-      `User "${ctx.user?.username || 'System'}" called closeShift for shift ${id}.`,
+      `User "${ctx.user?.username || 'System'}" called closeShift for shift ${sanitizedId}.`,
     )
     const shift = await this.service.closeShift(id, dto, ctx)
     return {
@@ -177,14 +181,14 @@ export class PosController {
   async syncPosSale(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: SyncPosSaleDto,
-  ): Promise<BaseApiSuccessResponse<null>> {
+  ): Promise<BaseApiSuccessResponse<{ orderId?: string }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called syncPosSale.`)
-    await this.service.syncPosSale(dto, ctx)
+    const result = await this.service.syncPosSale(dto, ctx)
     return {
       success: true,
       statusCode: 200,
       message: 'POS offline sale transaction processed and synced successfully',
-      data: null,
+      data: result.data || null,
     }
   }
 
@@ -192,10 +196,11 @@ export class PosController {
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async createDrawerTransaction(
     @RequestContext() ctx: RequestContextDto,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateDrawerTransactionDto,
   ): Promise<BaseApiSuccessResponse<PosDrawerTransactionEntity>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createDrawerTransaction for shift ${id}.`)
+    const sanitizedId = id.replace(/[\r\n]/g, '_')
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createDrawerTransaction for shift ${sanitizedId}.`)
     const tx = await this.service.createDrawerTransaction(id, dto, ctx)
     return {
       success: true,
@@ -209,9 +214,10 @@ export class PosController {
   @RequirePermissions(SystemPermissions.POS_SHIFT_MANAGE)
   async getDrawerTransactions(
     @RequestContext() ctx: RequestContextDto,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<BaseApiSuccessResponse<PosDrawerTransactionEntity[]>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getDrawerTransactions for shift ${id}.`)
+    const sanitizedId = id.replace(/[\r\n]/g, '_')
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getDrawerTransactions for shift ${sanitizedId}.`)
     const txs = await this.service.getDrawerTransactionsForShift(id, ctx)
     return {
       success: true,

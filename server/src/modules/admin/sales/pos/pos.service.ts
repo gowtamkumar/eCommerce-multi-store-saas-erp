@@ -182,7 +182,7 @@ export class PosService {
   async syncPosSale(
     dto: SyncPosSaleDto,
     ctx: RequestContextDto,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{ success: boolean; message: string; data?: { orderId: string } }> {
     this.logger.log(`${this.syncPosSale.name} Service Called`)
     const tenantId = ctx.tenantId
 
@@ -197,6 +197,7 @@ export class PosService {
     }
 
     // 2. Process transactions within a database runner to ensure transactional atomicity
+    let savedOrderId = ''
     await this.dataSource.transaction(async (manager) => {
       // 1. Idempotency Check using offlineSaleId
       if (dto.offlineSaleId) {
@@ -206,6 +207,7 @@ export class PosService {
         })
         if (existingOrder) {
           // Transaction already processed, return success immediately
+          savedOrderId = existingOrder.id
           return
         }
       }
@@ -418,6 +420,7 @@ export class PosService {
         savedOrder.createdAt = new Date(dto.createdAt)
       }
       await orderRepo.save(savedOrder)
+      savedOrderId = savedOrder.id
 
       // Verify B2B Credit Limits & Post AR Ledger if ON_ACCOUNT
       const onAccountAmount = paymentBreakdown
@@ -556,6 +559,9 @@ export class PosService {
     return {
       success: true,
       message: 'POS offline sale transaction processed and synced successfully',
+      data: {
+        orderId: savedOrderId,
+      },
     }
   }
 

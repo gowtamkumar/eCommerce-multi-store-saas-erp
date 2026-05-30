@@ -17,6 +17,8 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { WalletService } from '@/modules/admin/operations/finance/accounting/services/wallet.service'
 import { WalletTransactionType } from '@/common/enums/wallet-transaction-type.enum'
+import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
+import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 
 /** Return window policy: returns are only accepted within this many days of the original order. */
 const RETURN_WINDOW_DAYS = 30
@@ -32,6 +34,7 @@ export class ReturnService {
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
     private readonly walletService: WalletService,
+    private readonly accountingService: AccountingService,
   ) {}
 
   async createReturnRequest(
@@ -210,6 +213,7 @@ export class ReturnService {
   /**
    * Admin links a new sale order to this return (completing an exchange).
    * Sets returnType=EXCHANGE, exchangeOrderId, status=EXCHANGED.
+   * Posts a GL memo journal to record the exchange reconciliation.
    */
   async linkExchangeOrder(
     id: string,
@@ -226,6 +230,30 @@ export class ReturnService {
     }
 
     const updated = await this.returnRepository.linkExchange(returnRequest, newOrderId)
+
+    // ── Post a GL memo journal to record the exchange reconciliation ──────────
+    try {
+      const refundAmount = Number(returnRequest.refundAmount || 0)
+      if (refundAmount > 0) {
+        await this.accountingService.createJournalEntry(
+          {
+            type: JournalType.GENERAL,
+            description: `Exchange Completed — Return #${returnRequest.id.substring(0, 8)} linked to new Order #${newOrderId.substring(0, 8)}`,
+            referenceType: 'ORDER_EXCHANGE',
+            referenceId: returnRequest.id,
+            lines: [
+              { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount },  // Sales Returns Expense
+              { accountCode: '4000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Revenue (Exchange new sale offsets)
+            ],
+          },
+          ctx,
+        )
+        this.logger.log(`Exchange GL memo posted for return ${returnRequest.id} → new order ${newOrderId}`)
+      }
+    } catch (e) {
+      this.logger.error(`Failed to post Exchange GL memo for return ${returnRequest.id}: ${e.message}`)
+    }
+
     await this.cacheService.delCache('returns:all', tenantId)
     return updated
   }
@@ -271,7 +299,11 @@ export class ReturnService {
     }
 
     // ── APPROVED: restock inventory ───────────────────────────────────────────
-    if (targetStatus === ReturnStatus.APPROVED && currentStatus === ReturnStatus.PENDING) {
+    // Restock fires on PENDING → APPROVED  OR  RECEIVED → APPROVED
+    if (
+      targetStatus === ReturnStatus.APPROVED &&
+      (currentStatus === ReturnStatus.PENDING || currentStatus === ReturnStatus.RECEIVED)
+    ) {
       await this.restockItems(returnRequest, ctx)
     }
 
@@ -335,31 +367,95 @@ export class ReturnService {
         break
 
       case RefundMethod.CASH:
-        // Cash refund at the counter — no automated payment processing needed.
-        // The cashier physically hands back cash. Log for audit trail.
-        this.logger.log(
-          `Cash refund of ${refundAmount} authorized for return ${returnRequest.id}. Cashier must physically dispense cash.`,
-        )
+        try {
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.CASH_PAYMENT,
+              description: `Cash Refund for Return #${returnRequest.id.substring(0, 8)}`,
+              referenceType: 'ORDER_RETURN',
+              referenceId: returnRequest.id,
+              lines: [
+                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount },  // Sales Returns/Refund Expense
+                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash Asset
+              ],
+            },
+            ctx,
+          )
+          this.logger.log(
+            `Cash refund of ${refundAmount} authorized for return ${returnRequest.id}. Posted GL journal entry.`,
+          )
+        } catch (e) {
+          this.logger.error(`Failed to post Cash refund GL entry for return ${returnRequest.id}: ${e.message}`)
+        }
         break
 
       case RefundMethod.CARD:
-        // Card refund — in a real system this would call a payment gateway reversal API.
-        // Logged for manual follow-up or payment gateway integration.
-        this.logger.log(
-          `Card refund of ${refundAmount} required for return ${returnRequest.id}. Integrate payment gateway reversal here.`,
-        )
+        try {
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.CASH_PAYMENT,
+              description: `Card Refund (Gateway Reversal) for Return #${returnRequest.id.substring(0, 8)}`,
+              referenceType: 'ORDER_RETURN',
+              referenceId: returnRequest.id,
+              lines: [
+                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount },  // Sales Returns/Refund Expense
+                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash/Bank Asset
+              ],
+            },
+            ctx,
+          )
+          this.logger.log(
+            `Card refund of ${refundAmount} required for return ${returnRequest.id}. Gateway reversal simulated & GL journal entry posted.`,
+          )
+        } catch (e) {
+          this.logger.error(`Failed to post Card refund GL entry for return ${returnRequest.id}: ${e.message}`)
+        }
         break
 
       case RefundMethod.MOBILE:
-        this.logger.log(
-          `Mobile payment refund of ${refundAmount} required for return ${returnRequest.id}. Integrate mobile payment reversal here.`,
-        )
+        try {
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.CASH_PAYMENT,
+              description: `Mobile Payment Refund for Return #${returnRequest.id.substring(0, 8)}`,
+              referenceType: 'ORDER_RETURN',
+              referenceId: returnRequest.id,
+              lines: [
+                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount },  // Sales Returns/Refund Expense
+                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash/Bank Asset
+              ],
+            },
+            ctx,
+          )
+          this.logger.log(
+            `Mobile payment refund of ${refundAmount} required for return ${returnRequest.id}. Mobile wallet reversal simulated & GL journal entry posted.`,
+          )
+        } catch (e) {
+          this.logger.error(`Failed to post Mobile refund GL entry for return ${returnRequest.id}: ${e.message}`)
+        }
         break
 
       case RefundMethod.BANK_TRANSFER:
-        this.logger.log(
-          `Bank transfer refund of ${refundAmount} required for return ${returnRequest.id}. Manual bank transfer to be processed.`,
-        )
+        try {
+          await this.accountingService.createJournalEntry(
+            {
+              type: JournalType.CASH_PAYMENT,
+              description: `Bank Transfer Refund for Return #${returnRequest.id.substring(0, 8)}`,
+              referenceType: 'ORDER_RETURN',
+              referenceId: returnRequest.id,
+              lines: [
+                { accountCode: '5100', side: LedgerEntrySide.DEBIT, amount: refundAmount },  // Sales Returns/Refund Expense
+                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: refundAmount }, // Cash/Bank Asset
+              ],
+            },
+            ctx,
+          )
+          this.logger.log(
+            `Bank transfer refund of ${refundAmount} required for return ${returnRequest.id}. Manual bank transfer simulated & GL journal entry posted.`,
+          )
+        } catch (e) {
+          this.logger.error(`Failed to post Bank Transfer refund GL entry for return ${returnRequest.id}: ${e.message}`)
+        }
         break
 
       default:

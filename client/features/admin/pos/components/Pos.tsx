@@ -468,13 +468,14 @@ export default function Pos() {
     const itemsToReturn = Object.entries(returnQuantities)
       .map(([itemId, qty]) => {
         const orderItem = returnOrder.items.find((item) => item.id === itemId);
+        if (!orderItem) return null;
         return {
           productId: orderItem.productId,
           variantId: orderItem.variantId || undefined,
           quantity: qty,
         };
       })
-      .filter((item) => item.quantity > 0);
+      .filter((item): item is { productId: string; variantId: string | undefined; quantity: number } => item !== null && item.quantity > 0);
 
     if (itemsToReturn.length === 0) {
       toast.error('Please select at least one item to return');
@@ -1168,7 +1169,9 @@ export default function Pos() {
 
         // Save transaction details for receipt modal
         setLastTransaction({
-          receiptNo: `REC-${Date.now().toString().slice(-6)}`,
+          receiptNo: res.data?.orderId
+            ? `#${res.data.orderId.slice(-8).toUpperCase()}`
+            : `REC-${Date.now().toString().slice(-6)}`,
           date: new Date(createdAt).toLocaleString(),
           items: [...cart],
           subtotal: calculateSubtotal(),
@@ -1245,7 +1248,7 @@ export default function Pos() {
         resetCheckoutState();
         setIsReceiptOpen(true);
       } else {
-        toast.error(err?.message || 'Failed to sync POS transaction');
+        toast.error(errorMessage || 'Failed to sync POS transaction');
       }
     } finally {
       setProcessingPayment(false);
@@ -1677,7 +1680,7 @@ export default function Pos() {
                 />
                 <select
                   value={discountType}
-                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setDiscountType(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setDiscountType(e.target.value as 'FIXED' | 'PERCENT')}
                   className="px-2 py-1.5 border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-850 dark:text-white rounded-xl outline-none font-bold text-xs"
                 >
                   <option value="FIXED">Flat ($)</option>
