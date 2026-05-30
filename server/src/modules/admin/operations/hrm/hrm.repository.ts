@@ -52,7 +52,7 @@ export class HrmRepository {
     private readonly interviewRepo: Repository<InterviewEntity>,
     @InjectRepository(PerformanceReviewEntity)
     private readonly performanceReviewRepo: Repository<PerformanceReviewEntity>,
-  ) { }
+  ) {}
 
   // --- Department ---
   async createDepartment(data: Partial<DepartmentEntity>): Promise<DepartmentEntity> {
@@ -202,7 +202,10 @@ export class HrmRepository {
     })
   }
 
-  async findAllAttendanceSessions(tenantId: string, branchId?: string): Promise<AttendanceSessionEntity[]> {
+  async findAllAttendanceSessions(
+    tenantId: string,
+    branchId?: string,
+  ): Promise<AttendanceSessionEntity[]> {
     const whereClause: any = { tenantId }
     if (branchId) {
       whereClause.branchId = branchId
@@ -310,6 +313,13 @@ export class HrmRepository {
       where: { tenantId },
       relations: ['jobPosting', 'interviews'],
       order: { createdAt: 'DESC' },
+    })
+  }
+
+  async findApplicantById(id: string, tenantId: string): Promise<ApplicantEntity | null> {
+    return this.applicantRepo.findOne({
+      where: { id, tenantId },
+      relations: ['jobPosting'],
     })
   }
 

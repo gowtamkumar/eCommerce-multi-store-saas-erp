@@ -1,12 +1,19 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { ApplicantStatus, LeaveStatus, LeaveType } from '@/common/enums/hrm/hrm-enums'
+import { ApplicantStatus, JobStatus, LeaveStatus, LeaveType } from '@/common/enums/hrm/hrm-enums'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
 import { AccountingService } from '@/modules/admin/operations/finance/accounting/services/accounting.service'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException, forwardRef } from '@nestjs/common'
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common'
 import * as crypto from 'crypto'
 import { Between } from 'typeorm'
 import {
@@ -426,13 +433,16 @@ export class HrmService {
     try {
       const employee = await this.hrmRepo.findEmployeeById(employeeId, ctx.tenantId)
       const empName = employee?.user?.name || employee?.user?.username || 'An employee'
-      await this.notificationService.createNotification({
-        title: 'New Leave Request Submitted',
-        message: `${empName} has requested ${data.totalDays} days of ${data.leaveType} leave starting from ${new Date(data.startDate).toLocaleDateString()}.`,
-        type: 'info',
-        link: '/admin/hrm/leaves',
-        userId: null, // Send to all admins
-      }, ctx.tenantId)
+      await this.notificationService.createNotification(
+        {
+          title: 'New Leave Request Submitted',
+          message: `${empName} has requested ${data.totalDays} days of ${data.leaveType} leave starting from ${new Date(data.startDate).toLocaleDateString()}.`,
+          type: 'info',
+          link: '/admin/hrm/leaves',
+          userId: null, // Send to all admins
+        },
+        ctx.tenantId,
+      )
     } catch (e) {
       this.logger.error(`Failed to trigger leave request notification: ${e.message}`)
     }
@@ -479,13 +489,16 @@ export class HrmService {
     try {
       const employee = await this.hrmRepo.findEmployeeById(request.employeeId, ctx.tenantId)
       if (employee?.userId) {
-        await this.notificationService.createNotification({
-          title: 'Leave Request Approved',
-          message: `Your leave request for ${new Date(request.startDate).toLocaleDateString()} has been approved.`,
-          type: 'success',
-          link: '/admin/profile',
-          userId: employee.userId,
-        }, ctx.tenantId)
+        await this.notificationService.createNotification(
+          {
+            title: 'Leave Request Approved',
+            message: `Your leave request for ${new Date(request.startDate).toLocaleDateString()} has been approved.`,
+            type: 'success',
+            link: '/admin/profile',
+            userId: employee.userId,
+          },
+          ctx.tenantId,
+        )
       }
     } catch (e) {
       this.logger.error(`Failed to trigger leave approval notification: ${e.message}`)
@@ -587,7 +600,9 @@ export class HrmService {
         // Rates Calculations
         const hourlyRate = salary / 160
         const overtimePay = parseFloat((overtimeHours * (hourlyRate * 1.5)).toFixed(2))
-        const lateDeductions = parseFloat((Math.floor(lateMinutes / 30) * (hourlyRate * 0.5)).toFixed(2))
+        const lateDeductions = parseFloat(
+          (Math.floor(lateMinutes / 30) * (hourlyRate * 0.5)).toFixed(2),
+        )
 
         // Day-by-day cursor check from 1st to last day of month for pro-rating leaves/absences
         const joiningDateStr = toDateString(employee.joiningDate)
@@ -602,7 +617,8 @@ export class HrmService {
           const currentStr = toDateString(currentDate)
 
           // Check if within active employment
-          const isActive = currentStr >= joiningDateStr && (!exitDateStr || currentStr <= exitDateStr)
+          const isActive =
+            currentStr >= joiningDateStr && (!exitDateStr || currentStr <= exitDateStr)
           if (!isActive) {
             continue
           }
@@ -648,7 +664,7 @@ export class HrmService {
         const grossSalary = salary + allowances + overtimePay
         let incomeTax = 0
         if (grossSalary > 3000) {
-          incomeTax = 75 + (grossSalary - 3000) * 0.10
+          incomeTax = 75 + (grossSalary - 3000) * 0.1
         } else if (grossSalary > 1500) {
           incomeTax = (grossSalary - 1500) * 0.05
         }
@@ -656,7 +672,10 @@ export class HrmService {
 
         // Net Salary formula
         const netSalary = parseFloat(
-          (grossSalary - (baseDeductions + lateDeductions + incomeTax + totalUnpaidDeductions)).toFixed(2),
+          (
+            grossSalary -
+            (baseDeductions + lateDeductions + incomeTax + totalUnpaidDeductions)
+          ).toFixed(2),
         )
 
         const slip = em.create(PayrollSlipEntity, {
@@ -775,7 +794,9 @@ export class HrmService {
     this.logger.log(`Starting payroll release run for batch ${batchId}`)
     return await this.hrmRepo.personalDetailsRepo.manager.transaction(async (em) => {
       const payrollBatchRepo = em.getRepository(PayrollBatchEntity)
-      const batch = await payrollBatchRepo.findOne({ where: { id: batchId, tenantId: ctx.tenantId } })
+      const batch = await payrollBatchRepo.findOne({
+        where: { id: batchId, tenantId: ctx.tenantId },
+      })
       if (!batch) throw new NotFoundException('Payroll batch not found')
       if (batch.status === 'PAID') throw new BadRequestException('Payroll batch already paid')
 
@@ -811,7 +832,9 @@ export class HrmService {
         status: 'PAID',
       })
 
-      const updatedBatch = await payrollBatchRepo.findOne({ where: { id: batchId, tenantId: ctx.tenantId } })
+      const updatedBatch = await payrollBatchRepo.findOne({
+        where: { id: batchId, tenantId: ctx.tenantId },
+      })
 
       await this.auditLogService.log(ctx, {
         action: 'PAY',
@@ -883,10 +906,18 @@ export class HrmService {
   }
 
   async createJobPosting(data: any, ctx: RequestContextDto) {
+    const requestedStatus = String(data?.status || '').toUpperCase()
+    const status =
+      requestedStatus === 'OPEN'
+        ? JobStatus.PUBLISHED
+        : Object.values(JobStatus).includes(requestedStatus as JobStatus)
+          ? (requestedStatus as JobStatus)
+          : JobStatus.DRAFT
+
     const job = await this.hrmRepo.createJobPosting({
       ...data,
       tenantId: ctx.tenantId,
-      status: data.status || 'OPEN',
+      status,
     })
     await this.auditLogService.log(ctx, {
       action: 'CREATE',
@@ -918,10 +949,37 @@ export class HrmService {
   }
 
   async scheduleInterview(data: any, ctx: RequestContextDto) {
+    const applicantId = data.applicantId
+    const interviewerId = data.interviewerId
+    const scheduledAtValue = data.scheduledAt ?? data.interviewDate
+    const notes = data.notes ?? data.feedback
+
+    if (!applicantId) {
+      throw new BadRequestException('Applicant ID is required for scheduling an interview')
+    }
+    if (!interviewerId) {
+      throw new BadRequestException('Interviewer ID is required for scheduling an interview')
+    }
+
+    const applicant = await this.hrmRepo.findApplicantById(applicantId, ctx.tenantId)
+    if (!applicant) {
+      throw new NotFoundException('Applicant not found')
+    }
+
+    await this.findOneEmployee(interviewerId, ctx)
+
+    const scheduledAt = scheduledAtValue ? new Date(scheduledAtValue) : null
+    if (!scheduledAt || Number.isNaN(scheduledAt.getTime())) {
+      throw new BadRequestException('A valid interview date/time is required')
+    }
+
     const interview = await this.hrmRepo.scheduleInterview({
-      ...data,
+      applicantId,
+      interviewerId,
+      scheduledAt,
+      feedback: notes,
+      status: data.status || 'SCHEDULED',
       tenantId: ctx.tenantId,
-      scheduledAt: new Date(data.scheduledAt),
     })
     await this.auditLogService.log(ctx, {
       action: 'SCHEDULE',
@@ -998,13 +1056,16 @@ export class HrmService {
     // Trigger Notification for Admin
     try {
       const applicantName = `${applicant.firstName} ${applicant.lastName}`.trim() || 'An applicant'
-      await this.notificationService.createNotification({
-        title: 'Applicant Onboarded Successfully',
-        message: `Applicant "${applicantName}" has been onboarded as an Employee.`,
-        type: 'SUCCESS',
-        link: '/admin/hrm/employees',
-        userId: null as any, // Send to all admins
-      }, ctx.tenantId)
+      await this.notificationService.createNotification(
+        {
+          title: 'Applicant Onboarded Successfully',
+          message: `Applicant "${applicantName}" has been onboarded as an Employee.`,
+          type: 'SUCCESS',
+          link: '/admin/hrm/employees',
+          userId: null as any, // Send to all admins
+        },
+        ctx.tenantId,
+      )
     } catch (e) {
       this.logger.error(`Failed to trigger applicant onboarding notification: ${e.message}`)
     }

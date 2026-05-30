@@ -1,34 +1,28 @@
 'use client';
 
 import {
-  getJobPostings,
-  getApplicants,
-  updateApplicantStatus,
-  scheduleInterview,
   createJobPosting,
-  getEmployees,
+  getApplicants,
   getDepartments,
-  onboardApplicant
+  getEmployees,
+  getJobPostings,
+  onboardApplicant,
+  scheduleInterview,
+  updateApplicantStatus
 } from '@/services/hrm';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Briefcase,
-  Users,
   Calendar,
+  CheckCircle2,
   Clock,
+  FileText,
+  Loader2,
+  Mail,
+  MoreVertical,
   Plus,
   Search,
-  Filter,
-  MoreVertical,
-  ChevronRight,
-  Loader2,
-  FileText,
-  Mail,
-  Phone,
-  MapPin,
-  CheckCircle2,
-  XCircle,
-  Clock3,
+  Users,
   Video,
   X
 } from 'lucide-react';
@@ -187,7 +181,9 @@ export default function RecruitmentManagementPage() {
       setSubmitting(true);
       await scheduleInterview({
         applicantId,
-        ...interviewData
+        interviewerId: interviewData.interviewerId,
+        scheduledAt: interviewData.interviewDate,
+        notes: interviewData.notes,
       });
       setShowInterviewModal(null);
       handleStatusChange(applicantId, ApplicantStatus.INTERVIEW);
@@ -223,7 +219,7 @@ export default function RecruitmentManagementPage() {
   });
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-8">
+    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -295,9 +291,9 @@ export default function RecruitmentManagementPage() {
             <p className="text-xs font-black uppercase tracking-widest text-slate-400 italic">Synchronizing Talent Cloud...</p>
           </div>
         ) : view === 'PIPELINE' ? (
-          <div className="flex gap-6 overflow-x-auto pb-8 min-h-[600px] scrollbar-hide">
+          <div className="flex flex-wrap gap-4 overflow-x-auto pb-8 min-h-150 scrollbar-hide">
             {Object.values(ApplicantStatus).map((status) => (
-              <div key={status} className="flex-shrink-0 w-80 group/col">
+              <div key={status} className="shrink-0 w-full sm:w-80 group/col">
                 <div className="flex items-center justify-between mb-4 px-2">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${status === ApplicantStatus.JOINED ? 'bg-emerald-500' :
@@ -317,7 +313,7 @@ export default function RecruitmentManagementPage() {
                   </button>
                 </div>
 
-                <div className="space-y-4 min-h-[500px] p-2 bg-slate-50/50 dark:bg-slate-900/20 rounded-[2rem] border-2 border-dashed border-slate-100 dark:border-slate-800/50">
+                <div className="space-y-4 min-h-125 p-2 bg-slate-50/50 dark:bg-slate-900/20 rounded-4xl border-2 border-dashed border-slate-100 dark:border-slate-800/50">
                   {filteredApps.filter(a => a.status === status).map((app) => (
                     <motion.div
                       key={app.id}
@@ -623,7 +619,7 @@ export default function RecruitmentManagementPage() {
               <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic mb-8">Add <span className="text-indigo-600">Applicant</span></h2>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">First Name</label>
                     <input type="text" value={applyFormData.firstName} onChange={e => setApplyFormData({ ...applyFormData, firstName: e.target.value })} className="w-full px-6 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none" placeholder="John" />
