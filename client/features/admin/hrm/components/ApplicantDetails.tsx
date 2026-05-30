@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React from 'react';
 import {
@@ -136,7 +137,7 @@ export default function ApplicantDetails({
                       <span className="text-[10px] font-black text-slate-400 ml-2">4.0 / 5.0</span>
                     </div>
                     <p className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed italic">
-                      "Candidate showed strong technical aptitude in React and Node.js. Communication was clear, though a bit nervous during the architectural round."
+                      &ldquo;Candidate showed strong technical aptitude in React and Node.js. Communication was clear, though a bit nervous during the architectural round.&rdquo;
                     </p>
                     <div className="mt-4 flex items-center gap-2">
                       <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center text-[9px] font-black text-indigo-600">TH</div>

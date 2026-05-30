@@ -1,5 +1,13 @@
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { ApplicantStatus, JobStatus, LeaveStatus, LeaveType } from '@/common/enums/hrm/hrm-enums'
+import {
+  ApplicantStatus,
+  AttendanceSource,
+  EmployeeStatus,
+  JobStatus,
+  LeaveStatus,
+  LeaveType,
+  PayrollBatchStatus,
+} from '@/common/enums/hrm/hrm-enums'
 import { JournalType, LedgerEntrySide } from '@/common/enums/journal-type.enum'
 import { UserRole } from '@/common/enums/user/user-role.enum'
 import { UserService } from '@/modules/admin/core/user/services/user.service'
@@ -8,6 +16,8 @@ import { NotificationService } from '@/modules/admin/operations/infra/notificati
 import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 import {
   BadRequestException,
+  ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   Logger,
@@ -15,20 +25,42 @@ import {
   forwardRef,
 } from '@nestjs/common'
 import * as crypto from 'crypto'
-import { Between, Not } from 'typeorm'
+import { Between, In } from 'typeorm'
 import {
   AssignShiftDto,
   CreateDepartmentDto,
   CreateDesignationDto,
   CreateEmployeeDto,
+  CreateHolidayDto,
   CreateShiftDto,
+  CreateTaxBracketDto,
+  UpdateDepartmentDto,
+  UpdateDesignationDto,
   UpdateEmployeeDto,
+  UpdateHolidayDto,
+  UpdateShiftDto,
 } from './dto/hrm.dto'
 import { AttendanceSessionEntity } from './entities/attendance.entity'
 import { EmployeeEntity } from './entities/employee.entity'
+import { HolidayEntity } from './entities/holiday.entity'
 import { LeaveRequestEntity } from './entities/leave.entity'
 import { PayrollBatchEntity, PayrollSlipEntity } from './entities/payroll.entity'
+import { EmployeeShiftAssignmentEntity } from './entities/shift.entity'
+import { TaxBracketEntity } from './entities/tax-bracket.entity'
 import { HrmRepository } from './hrm.repository'
+import {
+  assertProductionSafe,
+  buildCheckInDateSet,
+  buildHolidayDateSet,
+  classifyPayrollDays,
+  computeIncomeTax,
+  computeLateMinutes,
+  computeOvertimeHours,
+  countCalendarDays,
+  isIpAllowed,
+  resolveWorkingDays,
+  toDateString,
+} from './hrm.helpers'
 
 @Injectable()
 export class HrmService {
@@ -45,6 +77,13 @@ export class HrmService {
 
   async getDashboardStats(ctx: RequestContextDto) {
     return this.hrmRepo.getStats(ctx.tenantId, ctx.branchId)
+  }
+
+  /** Ensure an employee record belongs to the current tenant. */
+  private async validateEmployeeInTenant(employeeId: string, tenantId: string): Promise<EmployeeEntity> {
+    const employee = await this.hrmRepo.findEmployeeById(employeeId, tenantId)
+    if (!employee) throw new NotFoundException(`Employee ${employeeId} not found in this tenant`)
+    return employee
   }
 
   // --- Department CRUD ---
@@ -64,7 +103,7 @@ export class HrmService {
     return this.hrmRepo.findAllDepartments(ctx.tenantId)
   }
 
-  async updateDepartment(id: string, data: any, ctx: RequestContextDto) {
+  async updateDepartment(id: string, data: UpdateDepartmentDto, ctx: RequestContextDto) {
     this.logger.log(`Updating department ${id} for tenant ${ctx.tenantId}`)
     const old = await this.hrmRepo.findDepartmentById(id, ctx.tenantId)
     if (!old) throw new NotFoundException('Department not found')
@@ -111,7 +150,7 @@ export class HrmService {
     return this.hrmRepo.findAllDesignations(ctx.tenantId)
   }
 
-  async updateDesignation(id: string, data: any, ctx: RequestContextDto) {
+  async updateDesignation(id: string, data: UpdateDesignationDto, ctx: RequestContextDto) {
     this.logger.log(`Updating designation ${id} for tenant ${ctx.tenantId}`)
     const old = await this.hrmRepo.findDesignationById(id, ctx.tenantId)
     if (!old) throw new NotFoundException('Designation not found')
@@ -144,10 +183,17 @@ export class HrmService {
   // --- Employee CRUD ---
   async createEmployee(data: CreateEmployeeDto, ctx: RequestContextDto) {
     this.logger.log(`Creating employee profile for user ${data.userId} in tenant ${ctx.tenantId}`)
+
+    if (data.managerId) {
+      await this.validateEmployeeInTenant(data.managerId, ctx.tenantId)
+    }
+
     const { personalDetails, documents, ...employeeData } = data
+    const humanReadableId = await this.hrmRepo.nextEmployeeId(ctx.tenantId)
 
     const employee = await this.hrmRepo.createEmployee({
       ...employeeData,
+      employeeId: humanReadableId,
       tenantId: ctx.tenantId,
       branchId: employeeData.branchId || ctx.branchId || null,
       joiningDate: new Date(data.joiningDate),
@@ -182,8 +228,17 @@ export class HrmService {
     return this.findOneEmployee(employee.id, ctx)
   }
 
-  async findAllEmployees(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllEmployees(ctx.tenantId, ctx.branchId)
+  async findAllEmployees(
+    ctx: RequestContextDto,
+    options?: {
+      page?: number
+      limit?: number
+      departmentId?: string
+      status?: string
+      q?: string
+    },
+  ) {
+    return this.hrmRepo.findAllEmployees(ctx.tenantId, ctx.branchId, options)
   }
 
   async findOneEmployee(id: string, ctx: RequestContextDto) {
@@ -199,6 +254,10 @@ export class HrmService {
     const { personalDetails, documents, ...updateData } = data
     const formattedUpdate: any = { ...updateData }
     if (data.exitDate) formattedUpdate.exitDate = new Date(data.exitDate)
+
+    if (data.managerId) {
+      await this.validateEmployeeInTenant(data.managerId, ctx.tenantId)
+    }
 
     await this.hrmRepo.updateEmployee(id, formattedUpdate)
 
@@ -222,18 +281,8 @@ export class HrmService {
       }
     }
 
-    if (documents) {
-      await this.hrmRepo.documentRepo.delete({ employeeId: id, tenantId: ctx.tenantId })
-      if (documents.length > 0) {
-        for (const doc of documents) {
-          await this.hrmRepo.documentRepo.save({
-            ...doc,
-            employeeId: id,
-            tenantId: ctx.tenantId,
-            expiryDate: doc.expiryDate ? new Date(doc.expiryDate) : null,
-          })
-        }
-      }
+    if (documents !== undefined) {
+      await this.syncEmployeeDocuments(id, documents, ctx.tenantId)
     }
 
     const newEmployee = await this.findOneEmployee(id, ctx)
@@ -264,7 +313,7 @@ export class HrmService {
     return this.hrmRepo.findAllShifts(ctx.tenantId)
   }
 
-  async updateShift(id: string, data: any, ctx: RequestContextDto) {
+  async updateShift(id: string, data: UpdateShiftDto, ctx: RequestContextDto) {
     this.logger.log(`Updating shift ${id} for tenant ${ctx.tenantId}`)
     const old = await this.hrmRepo.findShiftById(id, ctx.tenantId)
     if (!old) throw new NotFoundException('Shift not found')
@@ -296,6 +345,10 @@ export class HrmService {
 
   async assignShift(employeeId: string, data: AssignShiftDto, ctx: RequestContextDto) {
     this.logger.log(`Assigning shift ${data.shiftId} to employee ${employeeId}`)
+    await this.validateEmployeeInTenant(employeeId, ctx.tenantId)
+    const shift = await this.hrmRepo.findShiftById(data.shiftId, ctx.tenantId)
+    if (!shift) throw new NotFoundException('Shift not found')
+
     const res = await this.hrmRepo.assignShift({
       ...data,
       employeeId,
@@ -316,135 +369,178 @@ export class HrmService {
     return this.hrmRepo.findEmployeeShiftAssignments(employeeId, ctx.tenantId)
   }
 
-  // --- Attendance Logic (Production Refined) ---
-  async checkIn(employeeId: string, ipAddress: string, ctx: RequestContextDto) {
+  // --- Attendance Logic ---
+  async checkIn(
+    employeeId: string,
+    ipAddress: string,
+    ctx: RequestContextDto,
+    options?: {
+      source?: AttendanceSource
+      deviceId?: string
+      gpsLat?: number
+      gpsLong?: number
+      photoUrl?: string
+    },
+  ) {
     const employee = await this.findOneEmployee(employeeId, ctx)
 
-    // IP Verification (Geofencing)
     const location = employee.branch
-    if (location?.ipWhitelist) {
-      const allowedIps = location.ipWhitelist.split(',').map((ip) => ip.trim())
-      if (!allowedIps.includes(ipAddress)) {
+    if (location?.ipWhitelist && ipAddress) {
+      if (!isIpAllowed(ipAddress, location.ipWhitelist)) {
         this.logger.warn(
           `Unauthorized check-in attempt from IP ${ipAddress} for employee ${employeeId}`,
         )
-        throw new Error('Unauthorized location. Please connect to the company network.')
+        throw new ForbiddenException(
+          'Unauthorized location. Please connect to the company network.',
+        )
       }
     }
 
-    // Immutable Event Log
+    const latest = await this.hrmRepo.findLatestAttendanceSession(employeeId, ctx.tenantId)
+    if (latest && !latest.checkOut) {
+      throw new ConflictException('Employee is already checked in')
+    }
+
+    const now = new Date()
+    const assignment = await this.hrmRepo.findEmployeeShift(employeeId, now, ctx.tenantId)
+    const lateMinutes = computeLateMinutes(now, assignment)
+
     await this.hrmRepo.logAttendanceEvent({
       employeeId,
       tenantId: ctx.tenantId,
       eventType: 'CHECK_IN',
       ipAddress,
-      source: 'WEB',
+      source: options?.source ?? AttendanceSource.WEB,
+      deviceId: options?.deviceId,
+      gpsLat: options?.gpsLat,
+      gpsLong: options?.gpsLong,
+      photoUrl: options?.photoUrl,
+      timestamp: now,
     })
-
-    // Check for active session
-    const latest = await this.hrmRepo.findLatestAttendanceSession(employeeId, ctx.tenantId)
-    if (latest && !latest.checkOut) {
-      throw new Error('Employee is already checked in')
-    }
-
-    // Shift Logic (Check for lateness)
-    const assignment = await this.hrmRepo.findEmployeeShift(employeeId, new Date(), ctx.tenantId)
-    let lateMinutes = 0
-    if (assignment?.shift) {
-      const now = new Date()
-      const [startH, startM] = assignment.shift.startTime.split(':').map(Number)
-      const shiftStartTime = new Date(now)
-      shiftStartTime.setHours(startH, startM, 0, 0)
-
-      const graceTime = new Date(shiftStartTime)
-      graceTime.setMinutes(graceTime.getMinutes() + assignment.shift.graceMinutes)
-
-      if (now > graceTime) {
-        lateMinutes = Math.floor((now.getTime() - shiftStartTime.getTime()) / (1000 * 60))
-      }
-    }
 
     return this.hrmRepo.saveAttendanceSession({
       employeeId,
       tenantId: ctx.tenantId,
       branchId: employee.branchId,
-      checkIn: new Date(),
+      checkIn: now,
       lateMinutes,
     })
   }
 
-  async checkOut(employeeId: string, ctx: RequestContextDto) {
+  async checkOut(
+    employeeId: string,
+    ctx: RequestContextDto,
+    options?: { source?: AttendanceSource; deviceId?: string },
+  ) {
     const latest = await this.hrmRepo.findLatestAttendanceSession(employeeId, ctx.tenantId)
     if (!latest || latest.checkOut) {
-      throw new Error('No active check-in session found')
+      throw new BadRequestException('No active check-in session found')
     }
 
-    // Immutable Event Log
+    const checkOut = new Date()
+    const assignment = await this.hrmRepo.findEmployeeShift(employeeId, latest.checkIn, ctx.tenantId)
+    const diffMs = checkOut.getTime() - new Date(latest.checkIn).getTime()
+    const workHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2))
+    const overtimeHours = computeOvertimeHours(new Date(latest.checkIn), checkOut, assignment)
+
     await this.hrmRepo.logAttendanceEvent({
       employeeId,
       tenantId: ctx.tenantId,
       eventType: 'CHECK_OUT',
-      source: 'WEB',
+      source: options?.source ?? AttendanceSource.WEB,
+      deviceId: options?.deviceId,
+      timestamp: checkOut,
     })
-
-    const checkOut = new Date()
-    const checkInDate = new Date(latest.checkIn)
-    const diffMs = checkOut.getTime() - checkInDate.getTime()
-    const workHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2))
-
-    // Simple overtime logic: anything above 8 hours
-    const overtimeHours = Math.max(0, workHours - 8)
 
     await this.hrmRepo.saveAttendanceSession({
       ...latest,
       checkOut,
       workHours,
-      overtimeHours: parseFloat(overtimeHours.toFixed(2)),
+      overtimeHours,
     })
 
     return this.findOneEmployee(employeeId, ctx)
   }
 
-  async findAllAttendanceSessions(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllAttendanceSessions(ctx.tenantId, ctx.branchId)
+  async findAllAttendanceSessions(
+    ctx: RequestContextDto,
+    options?: {
+      page?: number
+      limit?: number
+      employeeId?: string
+      from?: string
+      to?: string
+    },
+  ) {
+    return this.hrmRepo.findAllAttendanceSessions(ctx.tenantId, ctx.branchId, {
+      ...options,
+      from: options?.from ? new Date(options.from) : undefined,
+      to: options?.to ? new Date(options.to) : undefined,
+    })
   }
 
   // --- Leave Management ---
-  async requestLeave(employeeId: string, data: any, ctx: RequestContextDto) {
+  async requestLeave(
+    employeeId: string,
+    data: { leaveType: LeaveType; startDate: string; endDate: string; reason: string },
+    ctx: RequestContextDto,
+  ) {
+    await this.validateEmployeeInTenant(employeeId, ctx.tenantId)
+
+    const startDate = new Date(data.startDate)
+    const endDate = new Date(data.endDate)
+    if (endDate < startDate) {
+      throw new BadRequestException('End date must be on or after start date')
+    }
+
+    const totalDays = countCalendarDays(startDate, endDate)
+
+    const overlapping = await this.hrmRepo.findOverlappingLeaves(
+      employeeId,
+      startDate,
+      endDate,
+      ctx.tenantId,
+    )
+    if (overlapping.length > 0) {
+      throw new ConflictException(
+        'This leave request overlaps with an existing pending or approved leave',
+      )
+    }
+
     const quotas = await this.hrmRepo.findLeaveQuota(
       employeeId,
-      new Date(data.startDate).getFullYear(),
+      startDate.getFullYear(),
       ctx.tenantId,
     )
     const quota = quotas.find((q) => q.leaveType === data.leaveType)
-
-    if (quota && quota.usedDays + data.totalDays > quota.totalDays) {
-      throw new Error(`Insufficient leave balance for ${data.leaveType}`)
+    if (quota && quota.usedDays + totalDays > quota.totalDays) {
+      throw new BadRequestException(`Insufficient leave balance for ${data.leaveType}`)
     }
 
     const res = await this.hrmRepo.createLeaveRequest({
-      ...data,
+      leaveType: data.leaveType,
+      reason: data.reason,
       employeeId,
       tenantId: ctx.tenantId,
-      startDate: new Date(data.startDate),
-      endDate: new Date(data.endDate),
+      startDate,
+      endDate,
+      totalDays,
     })
 
-    // Trigger Notification for Admin
     try {
       const employee = await this.hrmRepo.findEmployeeById(employeeId, ctx.tenantId)
       const empName = employee?.user?.name || employee?.user?.username || 'An employee'
       await this.notificationService.createNotification(
         {
           title: 'New Leave Request Submitted',
-          message: `${empName} has requested ${data.totalDays} days of ${data.leaveType} leave starting from ${new Date(data.startDate).toLocaleDateString()}.`,
-          type: 'info',
+          message: `${empName} has requested ${totalDays} day(s) of ${data.leaveType} leave starting ${startDate.toLocaleDateString()}.`,
+          type: 'INFO',
           link: '/admin/hrm/leaves',
-          userId: null, // Send to all admins
+          userId: null,
         },
         ctx.tenantId,
       )
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to trigger leave request notification: ${e.message}`)
     }
 
@@ -463,30 +559,42 @@ export class HrmService {
     managerNote: string,
     ctx: RequestContextDto,
   ) {
-    const request = await (this.hrmRepo as any).leaveRequestRepo.findOne({
-      where: { id: requestId, tenantId: ctx.tenantId },
-    })
+    await this.validateEmployeeInTenant(approvedById, ctx.tenantId)
+
+    const request = await this.hrmRepo.findLeaveRequestById(requestId, ctx.tenantId)
     if (!request) throw new NotFoundException('Leave request not found')
-
-    await this.hrmRepo.updateLeaveRequest(requestId, {
-      status: LeaveStatus.APPROVED,
-      approvedById,
-      managerNote,
-    })
-
-    // Update quota
-    const quotas = await this.hrmRepo.findLeaveQuota(
-      request.employeeId,
-      new Date(request.startDate).getFullYear(),
-      ctx.tenantId,
-    )
-    const quota = quotas.find((q) => q.leaveType === request.leaveType)
-    if (quota) {
-      quota.usedDays += request.totalDays
-      await (this.hrmRepo as any).leaveQuotaRepo.save(quota)
+    if (request.status !== LeaveStatus.PENDING) {
+      throw new BadRequestException(`Leave request is already ${request.status}`)
     }
 
-    // Trigger Notification for Employee
+    await this.hrmRepo.leaveRequestRepo.manager.transaction(async (em) => {
+      await em.getRepository(LeaveRequestEntity).update(requestId, {
+        status: LeaveStatus.APPROVED,
+        approvedById,
+        managerNote,
+      })
+
+      const year = new Date(request.startDate).getFullYear()
+      const quotaResult = await em
+        .createQueryBuilder()
+        .update('leave_quotas')
+        .set({ usedDays: () => `"used_days" + ${request.totalDays}` })
+        .where('employee_id = :employeeId', { employeeId: request.employeeId })
+        .andWhere('tenant_id = :tenantId', { tenantId: ctx.tenantId })
+        .andWhere('leave_type = :leaveType', { leaveType: request.leaveType })
+        .andWhere('year = :year', { year })
+        .andWhere(`"used_days" + ${request.totalDays} <= "total_days"`)
+        .execute()
+
+      if (quotaResult.affected === 0) {
+        const quota = await this.hrmRepo.findLeaveQuota(request.employeeId, year, ctx.tenantId)
+        const match = quota.find((q) => q.leaveType === request.leaveType)
+        if (match && match.usedDays + request.totalDays > match.totalDays) {
+          throw new BadRequestException(`Insufficient leave balance for ${request.leaveType}`)
+        }
+      }
+    })
+
     try {
       const employee = await this.hrmRepo.findEmployeeById(request.employeeId, ctx.tenantId)
       if (employee?.userId) {
@@ -494,14 +602,14 @@ export class HrmService {
           {
             title: 'Leave Request Approved',
             message: `Your leave request for ${new Date(request.startDate).toLocaleDateString()} has been approved.`,
-            type: 'success',
+            type: 'SUCCESS',
             link: '/admin/profile',
             userId: employee.userId,
           },
           ctx.tenantId,
         )
       }
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to trigger leave approval notification: ${e.message}`)
     }
 
@@ -509,72 +617,99 @@ export class HrmService {
       action: 'APPROVE',
       entity: 'LeaveRequest',
       entityId: requestId,
-      newValue: { status: 'APPROVED' },
+      newValue: { status: LeaveStatus.APPROVED },
     })
-    return request
+
+    return this.hrmRepo.findLeaveRequestById(requestId, ctx.tenantId)
   }
 
-  async findAllLeaveRequests(ctx: RequestContextDto) {
-    return this.hrmRepo.findAllLeaveRequests(ctx.tenantId)
+  async findAllLeaveRequests(
+    ctx: RequestContextDto,
+    options?: {
+      page?: number
+      limit?: number
+      employeeId?: string
+      status?: string
+      from?: string
+      to?: string
+    },
+  ) {
+    return this.hrmRepo.findAllLeaveRequests(ctx.tenantId, {
+      ...options,
+      from: options?.from ? new Date(options.from) : undefined,
+      to: options?.to ? new Date(options.to) : undefined,
+    })
   }
 
   // --- Payroll Engine ---
   async processPayroll(period: string, name: string, ctx: RequestContextDto) {
     this.logger.log(`Starting payroll process for period ${period}`)
 
-    // Validate only one active payroll batch per period (month) is allowed
-    const existing = await this.hrmRepo.personalDetailsRepo.manager.getRepository(PayrollBatchEntity).findOne({
-      where: {
-        tenantId: ctx.tenantId,
-        period,
-        status: Not('CANCELLED'),
-      },
-    })
+    const existing = await this.hrmRepo.findActivePayrollBatchForPeriod(ctx.tenantId, period)
     if (existing) {
-      throw new BadRequestException(`Payroll for period ${period} has already been processed and is in ${existing.status} status.`)
+      throw new BadRequestException(
+        `Payroll for period ${period} has already been processed and is in ${existing.status} status.`,
+      )
     }
 
-    const toDateString = (date: Date | string) => {
-      const d = new Date(date)
-      const yyyy = d.getFullYear()
-      const mm = String(d.getMonth() + 1).padStart(2, '0')
-      const dd = String(d.getDate()).padStart(2, '0')
-      return `${yyyy}-${mm}-${dd}`
-    }
-
-    // Month and Year parsing from period string "YYYY-MM"
     const [yearStr, monthStr] = period.split('-')
     const year = parseInt(yearStr, 10)
     const month = parseInt(monthStr, 10)
+    if (!year || !month || month < 1 || month > 12) {
+      throw new BadRequestException('Period must be in YYYY-MM format')
+    }
+
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0, 23, 59, 59, 999)
     const totalDaysInMonth = new Date(year, month, 0).getDate()
 
-    return await this.hrmRepo.personalDetailsRepo.manager.transaction(async (em) => {
+    const holidays = await this.hrmRepo.findHolidaysInRange(ctx.tenantId, startDate, endDate)
+    const holidayDateSet = buildHolidayDateSet(holidays)
+
+    const taxBrackets = await this.hrmRepo.taxBracketRepo.find({
+      where: { tenantId: ctx.tenantId, fiscalYear: year },
+      order: { sortOrder: 'ASC', minAmount: 'ASC' },
+    })
+
+    return await this.hrmRepo.employeeRepo.manager.transaction(async (em) => {
       const employeeRepo = em.getRepository(EmployeeEntity)
       const leaveRequestRepo = em.getRepository(LeaveRequestEntity)
       const attendanceSessionRepo = em.getRepository(AttendanceSessionEntity)
       const payrollBatchRepo = em.getRepository(PayrollBatchEntity)
-      const payrollSlipRepo = em.getRepository(PayrollSlipEntity)
 
       const employees = await employeeRepo.find({
         where: { tenantId: ctx.tenantId },
         relations: ['user', 'department', 'designation', 'branch', 'manager', 'personalDetails'],
       })
 
-      const approvedLeaves = await leaveRequestRepo.find({
-        where: {
-          tenantId: ctx.tenantId,
-          status: LeaveStatus.APPROVED,
-        },
-      })
+      const activeEmployees = employees.filter(
+        (e) => e.status === EmployeeStatus.ACTIVE || e.status === EmployeeStatus.PROBATION,
+      )
+      const employeeIds = activeEmployees.map((e) => e.id)
+
+      const [approvedLeaves, allSessions] = await Promise.all([
+        leaveRequestRepo.find({ where: { tenantId: ctx.tenantId, status: LeaveStatus.APPROVED } }),
+        employeeIds.length > 0
+          ? attendanceSessionRepo.find({
+              where: { employeeId: In(employeeIds), tenantId: ctx.tenantId, checkIn: Between(startDate, endDate) },
+              order: { checkIn: 'ASC' },
+            })
+          : Promise.resolve([]),
+      ])
+
+      const sessionsByEmployee = new Map<string, AttendanceSessionEntity[]>()
+      for (const session of allSessions) {
+        const list = sessionsByEmployee.get(session.employeeId) ?? []
+        list.push(session)
+        sessionsByEmployee.set(session.employeeId, list)
+      }
 
       const batch = await payrollBatchRepo.save(
         payrollBatchRepo.create({
           name,
           period,
           tenantId: ctx.tenantId,
-          status: 'DRAFT',
+          status: PayrollBatchStatus.DRAFT,
         }),
       )
 
@@ -586,109 +721,62 @@ export class HrmService {
       let totalUnpaidLeaveDeductions = 0
       let totalUnpaidAbsenceDeductions = 0
       let totalInactiveDeductions = 0
-      const slips = []
+      const slips: PayrollSlipEntity[] = []
 
-      for (const employee of employees) {
-        if (employee.status !== 'ACTIVE' && employee.status !== 'PROBATION') continue
-
-        const salary = employee.salaryConfig?.basicSalary || 0
+      for (const employee of activeEmployees) {
+        const salary = Number(employee.salaryConfig?.basicSalary ?? 0)
         const allowances =
-          employee.salaryConfig?.allowances?.reduce((sum, a) => sum + Number(a.amount), 0) || 0
+          employee.salaryConfig?.allowances?.reduce((sum, a) => sum + Number(a.amount), 0) ?? 0
         const baseDeductions =
-          employee.salaryConfig?.deductions?.reduce((sum, d) => sum + Number(d.amount), 0) || 0
+          employee.salaryConfig?.deductions?.reduce((sum, d) => sum + Number(d.amount), 0) ?? 0
 
-        // Fetch verified attendance sessions in billing period for late & overtime
-        const sessions = await attendanceSessionRepo.find({
-          where: {
-            employeeId: employee.id,
-            tenantId: ctx.tenantId,
-            checkIn: Between(startDate, endDate),
-          },
-          order: { checkIn: 'ASC' },
-        })
+        const sessions = sessionsByEmployee.get(employee.id) ?? []
+        const overtimeHours = sessions.reduce((sum, s) => sum + Number(s.overtimeHours ?? 0), 0)
+        const lateMinutes = sessions.reduce((sum, s) => sum + Number(s.lateMinutes ?? 0), 0)
 
-        const overtimeHours = sessions.reduce((sum, s) => sum + Number(s.overtimeHours || 0), 0)
-        const lateMinutes = sessions.reduce((sum, s) => sum + Number(s.lateMinutes || 0), 0)
-
-        // Rates Calculations
         const hourlyRate = salary / 160
-        const overtimePay = parseFloat((overtimeHours * (hourlyRate * 1.5)).toFixed(2))
+        const overtimePay = parseFloat((overtimeHours * hourlyRate * 1.5).toFixed(2))
         const lateDeductions = parseFloat(
           (Math.floor(lateMinutes / 30) * (hourlyRate * 0.5)).toFixed(2),
         )
 
-        // Day-by-day cursor check from 1st to last day of month for pro-rating leaves/absences
-        const joiningDateStr = toDateString(employee.joiningDate)
-        const exitDateStr = employee.exitDate ? toDateString(employee.exitDate) : null
+        const assignment = await this.hrmRepo.findEmployeeShift(employee.id, startDate, ctx.tenantId)
+        const workingDays = resolveWorkingDays(assignment)
+        const employeeLeaves = approvedLeaves.filter((l) => l.employeeId === employee.id)
+        const checkInDateSet = buildCheckInDateSet(sessions)
 
-        let activeDays = 0
-        let unpaidLeaveDays = 0
-        let unpaidAbsenceDays = 0
+        const dayStats = classifyPayrollDays({
+          year,
+          month,
+          totalDaysInMonth,
+          joiningDateStr: toDateString(employee.joiningDate),
+          exitDateStr: employee.exitDate ? toDateString(employee.exitDate) : null,
+          workingDays,
+          holidayDateSet,
+          checkInDateSet,
+          approvedLeaves: employeeLeaves,
+        })
 
-        for (let dayNum = 1; dayNum <= totalDaysInMonth; dayNum++) {
-          const currentDate = new Date(year, month - 1, dayNum)
-          const currentStr = toDateString(currentDate)
-
-          // Check if within active employment
-          const isActive =
-            currentStr >= joiningDateStr && (!exitDateStr || currentStr <= exitDateStr)
-          if (!isActive) {
-            continue
-          }
-          activeDays++
-
-          // Check for approved leaves
-          const employeeLeaves = approvedLeaves.filter((l) => l.employeeId === employee.id)
-          const leaveOnDay = employeeLeaves.find((l) => {
-            const startStr = toDateString(l.startDate)
-            const endStr = toDateString(l.endDate)
-            return currentStr >= startStr && currentStr <= endStr
-          })
-
-          if (leaveOnDay) {
-            if (leaveOnDay.leaveType === LeaveType.UNPAID) {
-              unpaidLeaveDays++
-            }
-          } else {
-            // Check for unexcused absence (weekdays, no check-in)
-            const dayOfWeek = currentDate.getDay() // 0 = Sun, 6 = Sat
-            const isWeekday = dayOfWeek !== 0 && dayOfWeek !== 6
-            if (isWeekday) {
-              const hasCheckIn = sessions.some((s) => toDateString(s.checkIn) === currentStr)
-              if (!hasCheckIn) {
-                unpaidAbsenceDays++
-              }
-            }
-          }
-        }
-
+        const activeDays = dayStats.filter((d) => d.isActive).length
+        const unpaidLeaveDays = dayStats.filter((d) => d.isUnpaidLeave).length
+        const unpaidAbsenceDays = dayStats.filter((d) => d.isUnpaidAbsence).length
+        const holidayDays = dayStats.filter((d) => d.isActive && d.isHoliday).length
+        const weeklyOffDays = dayStats.filter((d) => d.isActive && d.isWeeklyOff).length
+        const workingDayCount = dayStats.filter((d) => d.isWorkingDay).length
         const inactiveDays = totalDaysInMonth - activeDays
         const dailyRate = salary / totalDaysInMonth
 
         const unpaidLeaveDeductions = parseFloat((unpaidLeaveDays * dailyRate).toFixed(2))
         const unpaidAbsenceDeductions = parseFloat((unpaidAbsenceDays * dailyRate).toFixed(2))
         const inactiveDeductions = parseFloat((inactiveDays * dailyRate).toFixed(2))
-
         const totalUnpaidDeductions = parseFloat(
           (unpaidLeaveDeductions + unpaidAbsenceDeductions + inactiveDeductions).toFixed(2),
         )
 
-        // Progressive Income Tax Calculations
         const grossSalary = salary + allowances + overtimePay
-        let incomeTax = 0
-        if (grossSalary > 3000) {
-          incomeTax = 75 + (grossSalary - 3000) * 0.1
-        } else if (grossSalary > 1500) {
-          incomeTax = (grossSalary - 1500) * 0.05
-        }
-        incomeTax = parseFloat(incomeTax.toFixed(2))
-
-        // Net Salary formula
+        const incomeTax = computeIncomeTax(grossSalary, taxBrackets)
         const netSalary = parseFloat(
-          (
-            grossSalary -
-            (baseDeductions + lateDeductions + incomeTax + totalUnpaidDeductions)
-          ).toFixed(2),
+          (grossSalary - (baseDeductions + lateDeductions + incomeTax + totalUnpaidDeductions)).toFixed(2),
         )
 
         const slip = em.create(PayrollSlipEntity, {
@@ -702,22 +790,25 @@ export class HrmService {
           ),
           netSalary,
           details: {
-            allowances: employee.salaryConfig?.allowances || [],
-            deductions: employee.salaryConfig?.deductions || [],
+            allowances: employee.salaryConfig?.allowances ?? [],
+            deductions: employee.salaryConfig?.deductions ?? [],
             overtimePay,
             leaveDeductions: totalUnpaidDeductions,
             lateDeductions,
             incomeTax,
             overtimeHours,
             lateMinutes,
-            // New breakdown fields
             unpaidLeaveDays,
             unpaidAbsenceDays,
             inactiveDays,
+            holidayDays,
+            weeklyOffDays,
+            activeDays,
+            workingDays: workingDayCount,
             unpaidLeaveDeductions,
             unpaidAbsenceDeductions,
             inactiveDeductions,
-          } as any,
+          },
         })
 
         await em.save(PayrollSlipEntity, slip)
@@ -733,62 +824,10 @@ export class HrmService {
         totalInactiveDeductions += inactiveDeductions
       }
 
-      // Update batch total
       await payrollBatchRepo.update(batch.id, {
         totalAmount: batchNetTotal,
-        status: 'APPROVED',
+        status: PayrollBatchStatus.PENDING_APPROVAL,
       })
-
-      // Accounting Journal Posting (Salary Accrual Entry)
-      try {
-        if (this.accountingService) {
-          await this.accountingService.createJournalEntry(
-            {
-              type: JournalType.GENERAL,
-              description: `Salary Accrual for Period ${period}: ${name}`,
-              referenceType: 'PAYROLL_BATCH',
-              referenceId: batch.id,
-              lines: [
-                {
-                  accountCode: '6000',
-                  side: LedgerEntrySide.DEBIT,
-                  amount: parseFloat(
-                    (
-                      totalGrossSalaries -
-                      totalLateDeductions -
-                      totalUnpaidLeaveDeductions -
-                      totalUnpaidAbsenceDeductions -
-                      totalInactiveDeductions
-                    ).toFixed(2),
-                  ),
-                },
-                {
-                  accountCode: '2100',
-                  side: LedgerEntrySide.CREDIT,
-                  amount: parseFloat(batchNetTotal.toFixed(2)),
-                },
-                {
-                  accountCode: '2200',
-                  side: LedgerEntrySide.CREDIT,
-                  amount: parseFloat(totalTaxesWithheld.toFixed(2)),
-                },
-                {
-                  accountCode: '2100',
-                  side: LedgerEntrySide.CREDIT,
-                  amount: parseFloat(totalBaseDeductions.toFixed(2)),
-                },
-              ].filter((line) => line.amount > 0),
-            },
-            ctx,
-            em,
-          )
-        }
-      } catch (error: any) {
-        this.logger.error(
-          `Failed to create accrual accounting entries for payroll batch ${batch.id}: ${error.message}`,
-        )
-        throw error // Throw to trigger rollback of payroll generation!
-      }
 
       const updatedBatch = await payrollBatchRepo.findOne({ where: { id: batch.id } })
 
@@ -803,46 +842,151 @@ export class HrmService {
     })
   }
 
+  async approvePayrollBatch(batchId: string, approvedById: string, ctx: RequestContextDto) {
+    await this.validateEmployeeInTenant(approvedById, ctx.tenantId)
+
+    return await this.hrmRepo.payrollBatchRepo.manager.transaction(async (em) => {
+      const payrollBatchRepo = em.getRepository(PayrollBatchEntity)
+      const batch = await payrollBatchRepo.findOne({ where: { id: batchId, tenantId: ctx.tenantId } })
+      if (!batch) throw new NotFoundException('Payroll batch not found')
+
+      if (
+        batch.status !== PayrollBatchStatus.DRAFT &&
+        batch.status !== PayrollBatchStatus.PENDING_APPROVAL
+      ) {
+        throw new BadRequestException(`Cannot approve a batch in ${batch.status} status`)
+      }
+
+      const slips = await this.hrmRepo.findPayrollSlipsByBatch(batchId, ctx.tenantId)
+      let totalGrossSalaries = 0
+      let totalTaxesWithheld = 0
+      let totalBaseDeductions = 0
+      let totalLateDeductions = 0
+      let totalUnpaidLeaveDeductions = 0
+      let totalUnpaidAbsenceDeductions = 0
+      let totalInactiveDeductions = 0
+
+      for (const slip of slips) {
+        const d = slip.details
+        totalGrossSalaries +=
+          Number(slip.basicSalary) + Number(slip.totalAllowances) + Number(d.overtimePay ?? 0)
+        totalTaxesWithheld += Number(d.incomeTax ?? 0)
+        totalBaseDeductions +=
+          (d.deductions ?? []).reduce((s, x) => s + Number(x.amount), 0)
+        totalLateDeductions += Number(d.lateDeductions ?? 0)
+        totalUnpaidLeaveDeductions += Number(d.unpaidLeaveDeductions ?? 0)
+        totalUnpaidAbsenceDeductions += Number(d.unpaidAbsenceDeductions ?? 0)
+        totalInactiveDeductions += Number(d.inactiveDeductions ?? 0)
+      }
+
+      try {
+        await this.accountingService.createJournalEntry(
+          {
+            type: JournalType.GENERAL,
+            description: `Salary Accrual for Period ${batch.period}: ${batch.name}`,
+            referenceType: 'PAYROLL_BATCH',
+            referenceId: batch.id,
+            lines: [
+              {
+                accountCode: '6000',
+                side: LedgerEntrySide.DEBIT,
+                amount: parseFloat(
+                  (
+                    totalGrossSalaries -
+                    totalLateDeductions -
+                    totalUnpaidLeaveDeductions -
+                    totalUnpaidAbsenceDeductions -
+                    totalInactiveDeductions
+                  ).toFixed(2),
+                ),
+              },
+              {
+                accountCode: '2100',
+                side: LedgerEntrySide.CREDIT,
+                amount: parseFloat(Number(batch.totalAmount).toFixed(2)),
+              },
+              {
+                accountCode: '2200',
+                side: LedgerEntrySide.CREDIT,
+                amount: parseFloat(totalTaxesWithheld.toFixed(2)),
+              },
+              {
+                accountCode: '2100',
+                side: LedgerEntrySide.CREDIT,
+                amount: parseFloat(totalBaseDeductions.toFixed(2)),
+              },
+            ].filter((line) => line.amount > 0),
+          },
+          ctx,
+          em,
+        )
+      } catch (error: any) {
+        this.logger.error(
+          `Failed to create accrual accounting entries for payroll batch ${batch.id}: ${error.message}`,
+        )
+        throw new BadRequestException(`Accounting GL post failed: ${error.message}`)
+      }
+
+      await payrollBatchRepo.update(batch.id, {
+        status: PayrollBatchStatus.APPROVED,
+        approvedById,
+        approvedAt: new Date(),
+      })
+
+      const updatedBatch = await payrollBatchRepo.findOne({ where: { id: batchId } })
+      await this.auditLogService.log(ctx, {
+        action: 'APPROVE',
+        entity: 'PayrollBatch',
+        entityId: batchId,
+        newValue: updatedBatch,
+      })
+      return updatedBatch
+    })
+  }
+
   async payPayrollBatch(batchId: string, ctx: RequestContextDto) {
     this.logger.log(`Starting payroll release run for batch ${batchId}`)
-    return await this.hrmRepo.personalDetailsRepo.manager.transaction(async (em) => {
+    return await this.hrmRepo.payrollBatchRepo.manager.transaction(async (em) => {
       const payrollBatchRepo = em.getRepository(PayrollBatchEntity)
       const batch = await payrollBatchRepo.findOne({
         where: { id: batchId, tenantId: ctx.tenantId },
       })
       if (!batch) throw new NotFoundException('Payroll batch not found')
-      if (batch.status === 'PAID') throw new BadRequestException('Payroll batch already paid')
+      if (batch.status === PayrollBatchStatus.PAID) {
+        throw new BadRequestException('Payroll batch already paid')
+      }
+      if (batch.status !== PayrollBatchStatus.APPROVED) {
+        throw new BadRequestException(
+          `Payroll batch must be APPROVED before payment. Current status: ${batch.status}`,
+        )
+      }
 
-      // Accounting Journal Posting (Salary Payment Settlement)
       try {
-        if (this.accountingService) {
-          const amountToPay = Number(batch.totalAmount)
-          // Debit: Salaries Payable (2100) -> Net wages cleared
-          // Credit: Cash & Bank Account (1000) -> Cash outlay
-          await this.accountingService.createJournalEntry(
-            {
-              type: JournalType.GENERAL,
-              description: `Payment Settlement for Payroll Batch: ${batch.name}`,
-              referenceType: 'PAYROLL_PAYMENT',
-              referenceId: batch.id,
-              lines: [
-                { accountCode: '2100', side: LedgerEntrySide.DEBIT, amount: amountToPay },
-                { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: amountToPay },
-              ],
-            },
-            ctx,
-            em,
-          )
-        }
+        const amountToPay = Number(batch.totalAmount)
+        await this.accountingService.createJournalEntry(
+          {
+            type: JournalType.GENERAL,
+            description: `Payment Settlement for Payroll Batch: ${batch.name}`,
+            referenceType: 'PAYROLL_PAYMENT',
+            referenceId: batch.id,
+            lines: [
+              { accountCode: '2100', side: LedgerEntrySide.DEBIT, amount: amountToPay },
+              { accountCode: '1000', side: LedgerEntrySide.CREDIT, amount: amountToPay },
+            ],
+          },
+          ctx,
+          em,
+        )
       } catch (error: any) {
         this.logger.error(
           `Failed to post payment journal entries for batch ${batchId}: ${error.message}`,
         )
-        throw new Error(`Accounting GL post failed: ${error.message}`)
+        throw new BadRequestException(`Accounting GL post failed: ${error.message}`)
       }
 
       await payrollBatchRepo.update(batch.id, {
-        status: 'PAID',
+        status: PayrollBatchStatus.PAID,
+        paidAt: new Date(),
       })
 
       const updatedBatch = await payrollBatchRepo.findOne({
@@ -866,18 +1010,20 @@ export class HrmService {
     managerNote: string,
     ctx: RequestContextDto,
   ) {
-    const request = await (this.hrmRepo as any).leaveRequestRepo.findOne({
-      where: { id: requestId, tenantId: ctx.tenantId },
-    })
+    await this.validateEmployeeInTenant(rejectedById, ctx.tenantId)
+
+    const request = await this.hrmRepo.findLeaveRequestById(requestId, ctx.tenantId)
     if (!request) throw new NotFoundException('Leave request not found')
+    if (request.status !== LeaveStatus.PENDING) {
+      throw new BadRequestException(`Leave request is already ${request.status}`)
+    }
 
     await this.hrmRepo.updateLeaveRequest(requestId, {
-      status: LeaveStatus.REJECTED as any,
+      status: LeaveStatus.REJECTED,
       approvedById: rejectedById,
       managerNote,
     })
 
-    // Trigger Notification for Employee
     try {
       const employee = await this.hrmRepo.findEmployeeById(request.employeeId, ctx.tenantId)
       if (employee?.userId) {
@@ -885,7 +1031,7 @@ export class HrmService {
           {
             title: 'Leave Request Rejected',
             message: `Your leave request for ${new Date(request.startDate).toLocaleDateString()} has been rejected.`,
-            type: 'error',
+            type: 'ERROR',
             link: '/admin/profile',
             userId: employee.userId,
           },
@@ -900,9 +1046,9 @@ export class HrmService {
       action: 'REJECT',
       entity: 'LeaveRequest',
       entityId: requestId,
-      newValue: { status: 'REJECTED' },
+      newValue: { status: LeaveStatus.REJECTED },
     })
-    return request
+    return this.hrmRepo.findLeaveRequestById(requestId, ctx.tenantId)
   }
 
   async findAllPayrollBatches(ctx: RequestContextDto) {
@@ -1019,14 +1165,9 @@ export class HrmService {
   }
 
   async onboardApplicant(id: string, ctx: RequestContextDto) {
-    const applicant = await (this.hrmRepo as any).applicantRepo.findOne({
-      where: { id, tenantId: ctx.tenantId },
-      relations: ['jobPosting'],
-    })
+    const applicant = await this.hrmRepo.findApplicantById(id, ctx.tenantId)
+    if (!applicant) throw new NotFoundException('Applicant not found')
 
-    if (!applicant) throw new Error('Applicant not found')
-
-    // 1. Create or Find User Account
     let user = await this.userService.findUserByEmail(applicant.email, ctx.tenantId)
     if (!user) {
       const secureRandomPassword = crypto.randomBytes(16).toString('hex') + 'A1!'
@@ -1035,7 +1176,7 @@ export class HrmService {
         {
           email: applicant.email,
           username: applicant.email,
-          name: `${applicant.firstName} ${applicant.lastName}`,
+          name: `${applicant.firstName} ${applicant.lastName}`.trim(),
           role: UserRole.EMPLOYEE,
           password: secureRandomPassword,
           tenantId: ctx.tenantId,
@@ -1044,13 +1185,13 @@ export class HrmService {
       )
     }
 
-    // 2. Create Employee record linked to User
+    const humanReadableId = await this.hrmRepo.nextEmployeeId(ctx.tenantId)
     const employee = await this.hrmRepo.createEmployee({
       tenantId: ctx.tenantId,
       userId: user.id,
-      departmentId: applicant.jobPosting.departmentId,
-      status: 'PROBATION' as any,
-      employeeId: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+      departmentId: applicant.jobPosting?.departmentId,
+      status: EmployeeStatus.PROBATION,
+      employeeId: humanReadableId,
       joiningDate: new Date(),
     })
 
@@ -1132,61 +1273,8 @@ export class HrmService {
     return this.hrmRepo.findEmployeeReviews(employeeId, ctx.tenantId)
   }
 
-  // --- Demo Data Seeder ---
-  async fixDatabaseSchema() {
-    this.logger.log('Repairing HRM Database Schema...')
-    const queryRunner = this.hrmRepo.personalDetailsRepo.manager.connection.createQueryRunner()
-    await queryRunner.connect()
-    try {
-      // 1. Fix missing applicant columns (nullable name)
-      const hasName = await queryRunner.hasColumn('applicants', 'name')
-      if (hasName) {
-        await queryRunner.query('ALTER TABLE applicants ALTER COLUMN "name" DROP NOT NULL')
-      }
-
-      // 1.5 Fix missing employee columns
-      const hasEmpId = await queryRunner.hasColumn('employees', 'employee_id')
-      if (!hasEmpId) {
-        await queryRunner.query(
-          'ALTER TABLE employees ADD COLUMN "employee_id" VARCHAR(255) UNIQUE',
-        )
-      }
-
-      // 1.55 Fix mandatory designation constraint
-      const hasDesignation = await queryRunner.hasColumn('employees', 'designation_id')
-      if (hasDesignation) {
-        await queryRunner.query('ALTER TABLE employees ALTER COLUMN "designation_id" DROP NOT NULL')
-      }
-
-      // 2. Fix enum values (Postgres doesn't sync enums automatically)
-      const statuses = [
-        'APPLIED',
-        'SCREENING',
-        'INTERVIEW',
-        'TECHNICAL',
-        'HR_ROUND',
-        'OFFER',
-        'JOINED',
-        'REJECTED',
-      ]
-      for (const status of statuses) {
-        try {
-          await queryRunner.query(
-            `ALTER TYPE applicants_status_enum ADD VALUE IF NOT EXISTS '${status}'`,
-          )
-        } catch (e) {
-          // Ignore if value already exists
-        }
-      }
-    } catch (err) {
-      this.logger.error(`Schema repair failed: ${err.message}`)
-    } finally {
-      await queryRunner.release()
-    }
-  }
-
   async seedDemoData(ctx: RequestContextDto) {
-    await this.fixDatabaseSchema()
+    assertProductionSafe('Demo data seeding')
     this.logger.log(`Seeding demo HRM data for tenant ${ctx.tenantId}`)
 
     // 1. Departments & Designations
@@ -1229,11 +1317,11 @@ export class HrmService {
     })
 
     // 3. Find some existing entities to link
-    const employees = await this.hrmRepo.findAllEmployees(ctx.tenantId)
-    if (employees.length === 0)
+    const employeesResult = await this.hrmRepo.findEmployeesAll(ctx.tenantId)
+    if (employeesResult.length === 0)
       return { message: 'Please create at least one employee first to link demo data.' }
 
-    const emp = employees[0]
+    const emp = employeesResult[0]
 
     // 4. Assignments
     await this.hrmRepo.assignShift({
@@ -1330,5 +1418,127 @@ export class HrmService {
       entityId: docId,
       oldValue: doc,
     })
+  }
+
+  // --- Holiday Management ---
+  async createHoliday(data: CreateHolidayDto, ctx: RequestContextDto) {
+    const holiday = await this.hrmRepo.holidayRepo.save(
+      this.hrmRepo.holidayRepo.create({
+        ...data,
+        date: new Date(data.date),
+        tenantId: ctx.tenantId,
+        branchId: data.branchId ?? null,
+      }),
+    )
+    await this.auditLogService.log(ctx, {
+      action: 'CREATE',
+      entity: 'Holiday',
+      entityId: holiday.id,
+      newValue: holiday,
+    })
+    return holiday
+  }
+
+  async findAllHolidays(ctx: RequestContextDto, year?: number) {
+    const qb = this.hrmRepo.holidayRepo
+      .createQueryBuilder('h')
+      .where('h.tenantId = :tenantId', { tenantId: ctx.tenantId })
+      .orderBy('h.date', 'ASC')
+    if (year) qb.andWhere('h.year = :year', { year })
+    return qb.getMany()
+  }
+
+  async updateHoliday(id: string, data: UpdateHolidayDto, ctx: RequestContextDto) {
+    const holiday = await this.hrmRepo.holidayRepo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    if (!holiday) throw new NotFoundException('Holiday not found')
+    const update: Record<string, unknown> = {}
+    if (data.name !== undefined) update.name = data.name
+    if (data.isOptional !== undefined) update.isOptional = data.isOptional
+    if (data.description !== undefined) update.description = data.description
+    if (data.branchId !== undefined) update.branchId = data.branchId
+    if (data.date) update.date = new Date(data.date)
+    await this.hrmRepo.holidayRepo.update(id, update)
+    return this.hrmRepo.holidayRepo.findOne({ where: { id, tenantId: ctx.tenantId } })
+  }
+
+  async deleteHoliday(id: string, ctx: RequestContextDto) {
+    const holiday = await this.hrmRepo.holidayRepo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    if (!holiday) throw new NotFoundException('Holiday not found')
+    await this.hrmRepo.holidayRepo.delete(id)
+    await this.auditLogService.log(ctx, {
+      action: 'DELETE',
+      entity: 'Holiday',
+      entityId: id,
+      oldValue: holiday,
+    })
+    return { id }
+  }
+
+  // --- Tax Bracket Management ---
+  async createTaxBracket(data: CreateTaxBracketDto, ctx: RequestContextDto) {
+    const bracket = await this.hrmRepo.taxBracketRepo.save(
+      this.hrmRepo.taxBracketRepo.create({ ...data, tenantId: ctx.tenantId }),
+    )
+    await this.auditLogService.log(ctx, {
+      action: 'CREATE',
+      entity: 'TaxBracket',
+      entityId: bracket.id,
+      newValue: bracket,
+    })
+    return bracket
+  }
+
+  async findAllTaxBrackets(ctx: RequestContextDto, fiscalYear?: number) {
+    const qb = this.hrmRepo.taxBracketRepo
+      .createQueryBuilder('tb')
+      .where('tb.tenantId = :tenantId', { tenantId: ctx.tenantId })
+      .orderBy('tb.fiscalYear', 'DESC')
+      .addOrderBy('tb.sortOrder', 'ASC')
+      .addOrderBy('tb.minAmount', 'ASC')
+    if (fiscalYear) qb.andWhere('tb.fiscalYear = :fiscalYear', { fiscalYear })
+    return qb.getMany()
+  }
+
+  async deleteTaxBracket(id: string, ctx: RequestContextDto) {
+    const bracket = await this.hrmRepo.taxBracketRepo.findOne({ where: { id, tenantId: ctx.tenantId } })
+    if (!bracket) throw new NotFoundException('Tax bracket not found')
+    await this.hrmRepo.taxBracketRepo.delete(id)
+    return { id }
+  }
+
+  /**
+   * Diff-based document sync: only creates, updates, or deletes documents
+   * that actually changed — never wipes the entire collection.
+   */
+  private async syncEmployeeDocuments(
+    employeeId: string,
+    incoming: { id?: string; documentType: string; fileUrl: string; expiryDate?: string }[],
+    tenantId: string,
+  ) {
+    const existing = await this.hrmRepo.documentRepo.find({ where: { employeeId, tenantId } })
+    const incomingIds = new Set(incoming.filter((d) => d.id).map((d) => d.id!))
+
+    for (const doc of existing) {
+      if (!incomingIds.has(doc.id)) {
+        await this.hrmRepo.documentRepo.delete(doc.id)
+      }
+    }
+
+    for (const doc of incoming) {
+      const payload = {
+        documentType: doc.documentType,
+        fileUrl: doc.fileUrl,
+        expiryDate: doc.expiryDate ? new Date(doc.expiryDate) : null,
+      }
+      if (doc.id) {
+        await this.hrmRepo.documentRepo.update(doc.id, payload)
+      } else {
+        await this.hrmRepo.documentRepo.save({
+          ...payload,
+          employeeId,
+          tenantId,
+        })
+      }
+    }
   }
 }

@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import EmployeeDetails from '@/features/admin/hrm/components/EmployeeDetails';
 import EmployeeForm from '@/features/admin/hrm/components/EmployeeForm';
@@ -48,7 +49,7 @@ export default function EmployeesPage() {
   }, []);
 
   useEffect(() => {
-    fetchEmployees();
+    void Promise.resolve().then(fetchEmployees);
   }, [fetchEmployees]);
 
   const handleSubmit = async (data: any) => {

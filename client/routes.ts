@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   ArrowLeftRight,
   Award,
@@ -424,6 +425,18 @@ export const navGroups = [
         icon: Award,
         label: "Performance",
         href: "/admin/hrm/performance",
+        feature: "hrm",
+      },
+      {
+        icon: Calendar,
+        label: "Holidays",
+        href: "/admin/hrm/holidays",
+        feature: "hrm",
+      },
+      {
+        icon: Receipt,
+        label: "Tax Brackets",
+        href: "/admin/hrm/tax-brackets",
         feature: "hrm",
       },
     ],

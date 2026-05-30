@@ -1,6 +1,6 @@
 'use client';
 
-import { getPayrollBatches, getPayrollSlips, processPayroll, payPayrollBatch } from '@/services/hrm';
+import { approvePayrollBatch, getEmployees, getPayrollBatches, getPayrollSlips, payPayrollBatch, processPayroll } from '@/services/hrm';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -8,13 +8,10 @@ import {
   Calendar,
   CheckCircle2,
   ChevronRight,
-  Download,
-  FileText,
   Loader2,
-  MoreVertical,
   Plus,
   Printer,
-  Search,
+  ShieldCheck,
   TrendingUp,
   User,
   X
@@ -28,6 +25,8 @@ interface PayrollBatch {
   totalAmount: number;
   status: string;
   processedAt?: string;
+  approvedAt?: string;
+  paidAt?: string;
   createdAt: string;
 }
 
@@ -45,25 +44,49 @@ interface PayrollSlip {
   };
 }
 
+interface Employee {
+  id: string;
+  user?: { name: string };
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  DRAFT: 'bg-slate-100 text-slate-600',
+  PENDING_APPROVAL: 'bg-amber-50 text-amber-700',
+  APPROVED: 'bg-blue-50 text-blue-700',
+  PAID: 'bg-emerald-50 text-emerald-700',
+  CANCELLED: 'bg-rose-50 text-rose-700',
+};
+
+const getErrorMessage = (error: unknown, fallback: string) => (
+  error instanceof Error ? error.message : fallback
+);
+
 export default function PayrollManagementPage() {
   const [loading, setLoading] = useState(true);
   const [batches, setBatches] = useState<PayrollBatch[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<PayrollBatch | null>(null);
   const [slips, setSlips] = useState<PayrollSlip[]>([]);
   const [loadingSlips, setLoadingSlips] = useState(false);
 
   const [showProcessModal, setShowProcessModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState<PayrollBatch | null>(null);
+  const [approvedById, setApprovedById] = useState('');
   const [processing, setProcessing] = useState(false);
   const [processData, setProcessData] = useState({
-    period: new Date().toISOString().slice(0, 7), // YYYY-MM
+    period: new Date().toISOString().slice(0, 7),
     name: `Payroll ${new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}`
   });
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await getPayrollBatches();
-      setBatches(res || []);
+      const [batchesRes, empRes] = await Promise.all([
+        getPayrollBatches(),
+        getEmployees(),
+      ]);
+      setBatches(batchesRes || []);
+      setEmployees(empRes || []);
     } catch (err) {
       console.error('Failed to fetch payroll batches:', err);
     } finally {
@@ -71,7 +94,7 @@ export default function PayrollManagementPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { void Promise.resolve().then(fetchData); }, [fetchData]);
 
   const handleProcessPayroll = async () => {
     try {
@@ -79,8 +102,26 @@ export default function PayrollManagementPage() {
       await processPayroll(processData.period, processData.name);
       setShowProcessModal(false);
       fetchData();
-    } catch (err: any) {
-      alert(err.message || 'Payroll processing failed');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, 'Payroll processing failed'));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!showApproveModal || !approvedById) return;
+    try {
+      setProcessing(true);
+      const updated = await approvePayrollBatch(showApproveModal.id, approvedById);
+      if (selectedBatch?.id === showApproveModal.id) {
+        setSelectedBatch(updated);
+      }
+      setShowApproveModal(null);
+      setApprovedById('');
+      fetchData();
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, 'Approval failed'));
     } finally {
       setProcessing(false);
     }
@@ -88,14 +129,18 @@ export default function PayrollManagementPage() {
 
   const handlePayBatch = async () => {
     if (!selectedBatch) return;
+    if (selectedBatch.status !== 'APPROVED') {
+      alert('This batch must be APPROVED before it can be paid out.');
+      return;
+    }
     try {
       setProcessing(true);
       const updatedBatch = await payPayrollBatch(selectedBatch.id);
       setSelectedBatch(updatedBatch);
       fetchData();
       alert('Payroll batch disbursed and GL journal entries successfully created!');
-    } catch (err: any) {
-      alert(err.message || 'Payment release failed');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, 'Payment release failed'));
     } finally {
       setProcessing(false);
     }
@@ -177,12 +222,20 @@ export default function PayrollManagementPage() {
                     <div className="flex items-center gap-12 ml-auto">
                       <div className="text-right">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Disbursement</p>
-                        <p className="text-lg font-black text-slate-900 dark:text-white">${batch.totalAmount.toLocaleString()}</p>
+                        <p className="text-lg font-black text-slate-900 dark:text-white">${Number(batch.totalAmount).toLocaleString()}</p>
                       </div>
-                      <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${batch.status === 'PAID' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                        }`}>
-                        {batch.status}
+                      <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${STATUS_STYLES[batch.status] || 'bg-slate-100 text-slate-600'}`}>
+                        {batch.status?.replace('_', ' ')}
                       </div>
+                      {batch.status === 'PENDING_APPROVAL' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setShowApproveModal(batch); }}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          Approve
+                        </button>
+                      )}
                       <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-600 transition-all" />
                     </div>
                   </div>
@@ -198,15 +251,19 @@ export default function PayrollManagementPage() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/30 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
             <TrendingUp className="w-10 h-10 text-indigo-400 mb-8" />
             <h4 className="text-3xl font-black italic uppercase tracking-tighter leading-none mb-4">Total <br />Compensated</h4>
-            <p className="text-5xl font-black text-indigo-400 mb-8">${batches.reduce((sum, b) => sum + b.totalAmount, 0).toLocaleString()}</p>
+            <p className="text-5xl font-black text-indigo-400 mb-8">${batches.reduce((sum, b) => sum + Number(b.totalAmount || 0), 0).toLocaleString()}</p>
             <div className="space-y-4 pt-8 border-t border-white/10">
               <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <span>Active Staff</span>
-                <span className="text-white">Active Only</span>
+                <span>Pending Approval</span>
+                <span className="text-amber-400">{batches.filter(b => b.status === 'PENDING_APPROVAL').length}</span>
               </div>
               <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <span>Tax Compliance</span>
-                <span className="text-emerald-400">100% Verified</span>
+                <span>Approved (Awaiting Pay)</span>
+                <span className="text-blue-400">{batches.filter(b => b.status === 'APPROVED').length}</span>
+              </div>
+              <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <span>Settled</span>
+                <span className="text-emerald-400">{batches.filter(b => b.status === 'PAID').length}</span>
               </div>
             </div>
           </div>
@@ -214,7 +271,7 @@ export default function PayrollManagementPage() {
           <div className="p-8 bg-indigo-50 dark:bg-indigo-900/20 rounded-[2.5rem] border border-indigo-100 dark:border-indigo-800/50">
             <h5 className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-4">Pro Tip</h5>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-bold leading-relaxed italic">
-              "Payroll processing automatically generates General Ledger entries in the Finance module for salary expenses and liabilities."
+              &ldquo;Payroll processing automatically generates General Ledger entries in the Finance module for salary expenses and liabilities.&rdquo;
             </p>
           </div>
         </div>
@@ -270,17 +327,37 @@ export default function PayrollManagementPage() {
                 ))}
               </div>
 
-              <div className="p-8 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex gap-4">
-                <button 
-                  onClick={handlePayBatch}
-                  disabled={processing || selectedBatch.status === 'PAID'}
-                  className="flex-1 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-xl disabled:opacity-50"
-                >
-                  {processing ? 'Processing...' : selectedBatch.status === 'PAID' ? 'PAID / SETTLED' : 'Release Payroll Payment'}
-                </button>
-                <button className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 hover:text-indigo-600 transition-all">
-                  Export PDF
-                </button>
+              <div className="p-8 border-t border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col gap-3">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  <span>Status</span>
+                  <span className={`px-3 py-1 rounded-lg ${STATUS_STYLES[selectedBatch.status] || 'bg-slate-100 text-slate-600'}`}>
+                    {selectedBatch.status?.replace('_', ' ')}
+                  </span>
+                </div>
+                <div className="flex gap-4">
+                  {selectedBatch.status === 'PENDING_APPROVAL' && (
+                    <button
+                      onClick={() => setShowApproveModal(selectedBatch)}
+                      className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl flex items-center justify-center gap-2"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      Approve Batch
+                    </button>
+                  )}
+                  <button
+                    onClick={handlePayBatch}
+                    disabled={processing || selectedBatch.status !== 'APPROVED'}
+                    className="flex-1 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-xl disabled:opacity-50"
+                  >
+                    {processing ? 'Processing...'
+                      : selectedBatch.status === 'PAID' ? 'Settled'
+                        : selectedBatch.status === 'APPROVED' ? 'Release Payment'
+                          : 'Awaiting Approval'}
+                  </button>
+                  <button className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-slate-100 dark:border-slate-700 hover:text-indigo-600 transition-all">
+                    Export PDF
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -325,6 +402,51 @@ export default function PayrollManagementPage() {
                 >
                   {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   Confirm & Process
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Approve Modal */}
+      <AnimatePresence>
+        {showApproveModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowApproveModal(null)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl p-10">
+              <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic mb-2">Approve <span className="text-blue-600">Batch</span></h2>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-8">{showApproveModal.name} • {showApproveModal.period}</p>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Approving Manager</label>
+                  <select
+                    value={approvedById}
+                    onChange={(e) => setApprovedById(e.target.value)}
+                    className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none"
+                  >
+                    <option value="">Select Approver…</option>
+                    {employees.map((e) => (
+                      <option key={e.id} value={e.id}>{e.user?.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-3xl border border-blue-100 dark:border-blue-800/50 flex items-start gap-4">
+                  <ShieldCheck className="w-5 h-5 text-blue-600 mt-1" />
+                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 leading-relaxed italic">
+                    Approving will lock this batch, post salary accrual entries to the General Ledger, and unlock the &ldquo;Release Payment&rdquo; action.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleApprove}
+                  disabled={processing || !approvedById}
+                  className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                  Confirm Approval
                 </button>
               </div>
             </motion.div>

@@ -139,7 +139,7 @@ export default function RecruitmentManagementPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { void Promise.resolve().then(fetchData); }, [fetchData]);
 
   const handleCreateJob = async () => {
     try {

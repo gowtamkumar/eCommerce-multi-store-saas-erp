@@ -3,7 +3,6 @@
 import { assignShift, createShift, deleteShift, getEmployees, getShifts, updateShift } from '@/services/hrm';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Calendar,
   Clock,
   Edit2,
   Loader2,
@@ -25,6 +24,7 @@ interface Shift {
   endTime: string;
   graceMinutes: number;
   isNightShift: boolean;
+  workingDays?: number[];
 }
 
 interface Employee {
@@ -35,7 +35,7 @@ interface Employee {
 }
 
 export default function ShiftManagementPage() {
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -52,7 +52,8 @@ export default function ShiftManagementPage() {
     startTime: '09:00:00',
     endTime: '18:00:00',
     graceMinutes: 15,
-    isNightShift: false
+    isNightShift: false,
+    workingDays: [1, 2, 3, 4, 5] as number[],
   });
 
   const [assignData, setAssignData] = useState({
@@ -74,7 +75,7 @@ export default function ShiftManagementPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { void Promise.resolve().then(fetchData); }, [fetchData]);
 
   const handleShiftSubmit = async () => {
     if (!shiftData.name.trim()) return;
@@ -87,7 +88,7 @@ export default function ShiftManagementPage() {
       }
       setShowShiftForm(false);
       setEditingId(null);
-      setShiftData({ name: '', startTime: '09:00:00', endTime: '18:00:00', graceMinutes: 15, isNightShift: false });
+      setShiftData({ name: '', startTime: '09:00:00', endTime: '18:00:00', graceMinutes: 15, isNightShift: false, workingDays: [1, 2, 3, 4, 5] });
       fetchData();
     } catch (err) {
       console.error('Failed to save shift:', err);
@@ -149,7 +150,7 @@ export default function ShiftManagementPage() {
             Assign Shift
           </button>
           <button
-            onClick={() => { setEditingId(null); setShiftData({ name: '', startTime: '09:00:00', endTime: '18:00:00', graceMinutes: 15, isNightShift: false }); setShowShiftForm(true); }}
+            onClick={() => { setEditingId(null); setShiftData({ name: '', startTime: '09:00:00', endTime: '18:00:00', graceMinutes: 15, isNightShift: false, workingDays: [1, 2, 3, 4, 5] }); setShowShiftForm(true); }}
             className="flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all hover:scale-105 active:scale-95 shadow-xl"
           >
             <Plus className="w-4 h-4" />
@@ -182,7 +183,7 @@ export default function ShiftManagementPage() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="group bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-indigo-500/20 transition-all relative overflow-hidden"
+                  className="group bg-white dark:bg-slate-800 p-6 rounded-4xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-indigo-500/20 transition-all relative overflow-hidden"
                 >
                   {/* Decorative background icon */}
                   <Clock className="absolute -right-4 -bottom-4 w-24 h-24 text-slate-50 dark:text-slate-700/30 group-hover:text-indigo-50 dark:group-hover:text-indigo-900/10 transition-colors" />
@@ -194,7 +195,7 @@ export default function ShiftManagementPage() {
                       </div>
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={() => { setEditingId(shift.id); setShiftData(shift); setShowShiftForm(true); }}
+                          onClick={() => { setEditingId(shift.id); setShiftData({ ...shift, workingDays: shift.workingDays?.length ? shift.workingDays : [1, 2, 3, 4, 5] }); setShowShiftForm(true); }}
                           className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -228,6 +229,21 @@ export default function ShiftManagementPage() {
                     <p className="mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                       Grace Period: <span className="text-slate-900 dark:text-white">{shift.graceMinutes} mins</span>
                     </p>
+                    {shift.workingDays && shift.workingDays.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, idx) => (
+                          <span
+                            key={idx}
+                            className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${shift.workingDays!.includes(idx)
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-slate-100 dark:bg-slate-700 text-slate-400'
+                              }`}
+                          >
+                            {d.charAt(0)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -260,7 +276,7 @@ export default function ShiftManagementPage() {
           <div className="p-8 bg-indigo-50 dark:bg-indigo-900/20 rounded-[2.5rem] border border-indigo-100 dark:border-indigo-800/50">
             <h5 className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-4">Assignment Tip</h5>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-bold leading-relaxed italic">
-              "Assigning a shift with an effective date in the future will automatically queue it in the employee's timeline."
+              &ldquo;Assigning a shift with an effective date in the future will automatically queue it in the employee&apos;s timeline.&rdquo;
             </p>
           </div>
         </div>
@@ -347,6 +363,45 @@ export default function ShiftManagementPage() {
                     onChange={(e) => setShiftData({ ...shiftData, graceMinutes: parseInt(e.target.value) || 0 })}
                     className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Working Days</label>
+                  <div className="grid grid-cols-7 gap-2">
+                    {[
+                      { idx: 0, label: 'Sun' },
+                      { idx: 1, label: 'Mon' },
+                      { idx: 2, label: 'Tue' },
+                      { idx: 3, label: 'Wed' },
+                      { idx: 4, label: 'Thu' },
+                      { idx: 5, label: 'Fri' },
+                      { idx: 6, label: 'Sat' },
+                    ].map((d) => {
+                      const active = (shiftData.workingDays || []).includes(d.idx);
+                      return (
+                        <button
+                          type="button"
+                          key={d.idx}
+                          onClick={() => {
+                            const current = shiftData.workingDays || [];
+                            const next = active
+                              ? current.filter((x) => x !== d.idx)
+                              : [...current, d.idx].sort((a, b) => a - b);
+                            setShiftData({ ...shiftData, workingDays: next });
+                          }}
+                          className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${active
+                            ? 'bg-indigo-600 text-white shadow-md'
+                            : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border border-slate-100 dark:border-slate-700 hover:text-indigo-600'
+                            }`}
+                        >
+                          {d.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                    Days marked off are treated as scheduled rest (not absences) by payroll.
+                  </p>
                 </div>
 
                 <button

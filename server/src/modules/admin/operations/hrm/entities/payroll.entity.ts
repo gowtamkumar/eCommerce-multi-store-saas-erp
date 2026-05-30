@@ -1,9 +1,11 @@
 import { BaseEntity } from '@/common/base-entity/BaseEntity'
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
 import { EmployeeEntity } from './employee.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { PayrollBatchStatus } from '@/common/enums/hrm/hrm-enums'
 
 @Entity('payroll_batches')
+@Index(['tenantId', 'period'])
 export class PayrollBatchEntity extends BaseEntity {
   @Column()
   name: string // e.g. "May 2026 Payroll"
@@ -14,8 +16,12 @@ export class PayrollBatchEntity extends BaseEntity {
   @Column({ type: 'decimal', name: 'total_amount', precision: 15, scale: 2, default: 0 })
   totalAmount: number
 
-  @Column({ type: 'enum', enum: ['DRAFT', 'APPROVED', 'PAID', 'CANCELLED'], default: 'DRAFT' })
-  status: string
+  @Column({
+    type: 'enum',
+    enum: PayrollBatchStatus,
+    default: PayrollBatchStatus.DRAFT,
+  })
+  status: PayrollBatchStatus
 
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
@@ -26,6 +32,15 @@ export class PayrollBatchEntity extends BaseEntity {
 
   @Column({ type: 'uuid', name: 'journal_entry_id', nullable: true })
   journalEntryId: string
+
+  @Column({ type: 'uuid', name: 'approved_by_id', nullable: true })
+  approvedById: string | null
+
+  @Column({ type: 'timestamptz', name: 'approved_at', nullable: true })
+  approvedAt: Date | null
+
+  @Column({ type: 'timestamptz', name: 'paid_at', nullable: true })
+  paidAt: Date | null
 
   @OneToMany(() => PayrollSlipEntity, (slip) => slip.batch)
   slips: PayrollSlipEntity[]
@@ -69,6 +84,16 @@ export class PayrollSlipEntity extends BaseEntity {
     incomeTax?: number
     overtimeHours?: number
     lateMinutes?: number
+    unpaidLeaveDays?: number
+    unpaidAbsenceDays?: number
+    inactiveDays?: number
+    holidayDays?: number
+    weeklyOffDays?: number
+    activeDays?: number
+    workingDays?: number
+    unpaidLeaveDeductions?: number
+    unpaidAbsenceDeductions?: number
+    inactiveDeductions?: number
   }
 
   @Column({ type: 'uuid', name: 'tenant_id' })

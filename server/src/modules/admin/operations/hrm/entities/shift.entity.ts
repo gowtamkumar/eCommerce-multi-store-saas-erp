@@ -20,6 +20,14 @@ export class ShiftEntity extends BaseEntity {
   @Column({ type: 'boolean', name: 'is_night_shift', default: false })
   isNightShift: boolean
 
+  /**
+   * Weekly working days, 0=Sun … 6=Sat. Defaults to Mon-Fri (1-5).
+   * Days NOT listed are treated as weekly-off and excluded from
+   * unpaid-absence and lateness calculations.
+   */
+  @Column({ type: 'int', array: true, name: 'working_days', default: '{1,2,3,4,5}' })
+  workingDays: number[]
+
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
 

@@ -47,7 +47,7 @@ export default function DepartmentManagementPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { void Promise.resolve().then(fetchData); }, [fetchData]);
 
   const handleSubmit = async () => {
     if (!formData.name?.trim()) return;

@@ -8,11 +8,9 @@ import {
   Clock,
   Filter,
   Loader2,
-  MoreVertical,
   Plus,
   Search,
   User,
-  X,
   FileText,
   AlertCircle,
   ThumbsUp,
@@ -60,6 +58,10 @@ interface Employee {
   user?: { name: string; email: string };
 }
 
+const getErrorMessage = (error: unknown, fallback: string) => (
+  error instanceof Error ? error.message : fallback
+);
+
 export default function LeaveManagementPage() {
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
@@ -76,7 +78,6 @@ export default function LeaveManagementPage() {
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
     reason: '',
-    totalDays: 1
   });
 
   const [approveData, setApproveData] = useState({
@@ -100,7 +101,7 @@ export default function LeaveManagementPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { void Promise.resolve().then(fetchData); }, [fetchData]);
 
   const handleRequestSubmit = async () => {
     if (!formData.employeeId || !formData.reason) return;
@@ -109,8 +110,8 @@ export default function LeaveManagementPage() {
       await requestLeave(formData.employeeId, formData);
       setShowRequestForm(false);
       fetchData();
-    } catch (err: any) {
-      alert(err.message || 'Request failed');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, 'Request failed'));
     } finally {
       setSubmitting(false);
     }
@@ -126,8 +127,8 @@ export default function LeaveManagementPage() {
       await approveLeave(requestId, approveData.approvedById, approveData.managerNote);
       setShowApproveModal(null);
       fetchData();
-    } catch (err: any) {
-      alert(err.message || 'Approval failed');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, 'Approval failed'));
     } finally {
       setSubmitting(false);
     }
@@ -143,8 +144,8 @@ export default function LeaveManagementPage() {
       await rejectLeave(requestId, approveData.approvedById, approveData.managerNote);
       setShowRejectModal(null);
       fetchData();
-    } catch (err: any) {
-      alert(err.message || 'Rejection failed');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, 'Rejection failed'));
     } finally {
       setSubmitting(false);
     }
@@ -185,7 +186,7 @@ export default function LeaveManagementPage() {
           { label: 'Active Today', count: requests.filter(r => r.status === LeaveStatus.APPROVED && new Date(r.startDate) <= new Date() && new Date(r.endDate) >= new Date()).length, icon: User, color: 'text-indigo-600', bg: 'bg-indigo-50' },
           { label: 'Annual Quota', count: '100%', icon: FileText, color: 'text-slate-400', bg: 'bg-slate-50' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-4">
+          <div key={i} className="bg-white dark:bg-slate-800 p-6 rounded-4xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-4">
             <div className={`w-12 h-12 rounded-2xl ${stat.bg} dark:bg-slate-700 flex items-center justify-center ${stat.color}`}>
               <stat.icon className="w-6 h-6" />
             </div>
@@ -288,7 +289,7 @@ export default function LeaveManagementPage() {
                           </td>
                           <td className="px-8 py-6">
                             <p className="text-xs font-bold text-slate-600 dark:text-slate-400 italic max-w-[200px] truncate" title={request.reason}>
-                              "{request.reason}"
+                              &ldquo;{request.reason}&rdquo;
                             </p>
                           </td>
                           <td className="px-8 py-6">
@@ -369,8 +370,10 @@ export default function LeaveManagementPage() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Duration (Days)</label>
-                    <input type="number" value={formData.totalDays} onChange={e => setFormData({...formData, totalDays: parseInt(e.target.value)})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none" />
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Computed Duration</label>
+                    <div className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-black text-indigo-600 dark:text-indigo-400">
+                      {Math.max(1, Math.floor((new Date(formData.endDate).getTime() - new Date(formData.startDate).getTime()) / 86_400_000) + 1)} day(s)
+                    </div>
                   </div>
                 </div>
 

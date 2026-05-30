@@ -31,6 +31,7 @@ interface AttendanceSession {
   workHours: number;
   overtimeHours: number;
   lateMinutes: number;
+  source?: 'WEB' | 'MOBILE' | 'BIOMETRIC' | 'POS' | 'KIOSK';
   employee?: {
     user?: { name: string; email: string };
     department?: { name: string };
@@ -59,6 +60,7 @@ export default function AttendanceManagementPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState('');
+  const [manualSource, setManualSource] = useState<'WEB' | 'MOBILE' | 'BIOMETRIC' | 'POS' | 'KIOSK'>('WEB');
   const [now, setNow] = useState(() => dayjs());
 
   const fetchData = useCallback(async () => {
@@ -77,12 +79,12 @@ export default function AttendanceManagementPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { void Promise.resolve().then(fetchData); }, [fetchData]);
 
-  const handleQuickCheckIn = async (employeeId: string) => {
+  const handleQuickCheckIn = async (employeeId: string, source: 'WEB' | 'MOBILE' | 'BIOMETRIC' | 'POS' | 'KIOSK' = 'WEB') => {
     try {
       setIsProcessing(true);
-      await checkIn(employeeId);
+      await checkIn(employeeId, { source });
       fetchData();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Check-in failed';
@@ -92,10 +94,10 @@ export default function AttendanceManagementPage() {
     }
   };
 
-  const handleQuickCheckOut = async (employeeId: string) => {
+  const handleQuickCheckOut = async (employeeId: string, source: 'WEB' | 'MOBILE' | 'BIOMETRIC' | 'POS' | 'KIOSK' = 'WEB') => {
     try {
       setIsProcessing(true);
-      await checkOut(employeeId);
+      await checkOut(employeeId, { source });
       fetchData();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Check-out failed';
@@ -111,7 +113,7 @@ export default function AttendanceManagementPage() {
   }, []);
 
   useEffect(() => {
-    setCurrentPage(1);
+    void Promise.resolve().then(() => setCurrentPage(1));
   }, [searchQuery, statusFilter, employeeFilter, pageSize, selectedDate]);
 
   const filteredSessions = useMemo(() => {
@@ -303,13 +305,14 @@ export default function AttendanceManagementPage() {
                 <th className="px-8 py-6">Check Out</th>
                 <th className="px-8 py-6">Work Duration</th>
                 <th className="px-8 py-6">Punctuality</th>
+                <th className="px-8 py-6">Source</th>
                 <th className="px-8 py-6 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-8 py-24 text-center">
+                  <td colSpan={7} className="px-8 py-24 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
                       <p className="text-xs font-black uppercase tracking-widest text-slate-400 italic">Syncing with server...</p>
@@ -318,7 +321,7 @@ export default function AttendanceManagementPage() {
                 </tr>
               ) : filteredSessions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-8 py-24 text-center">
+                  <td colSpan={7} className="px-8 py-24 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-40">
                       <Calendar className="w-12 h-12 text-slate-300" />
                       <p className="text-sm font-bold text-slate-400 italic uppercase">No activity records found</p>
@@ -401,6 +404,11 @@ export default function AttendanceManagementPage() {
                           </span>
                         )}
                       </td>
+                      <td className="px-8 py-6">
+                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                          {session.source || 'WEB'}
+                        </span>
+                      </td>
                       <td className="px-8 py-6 text-right">
                         <div className="flex justify-end gap-2">
                           {!session.checkOut ? (
@@ -464,16 +472,35 @@ export default function AttendanceManagementPage() {
                   </select>
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Source</label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {(['WEB', 'MOBILE', 'BIOMETRIC', 'POS', 'KIOSK'] as const).map((src) => (
+                      <button
+                        type="button"
+                        key={src}
+                        onClick={() => setManualSource(src)}
+                        className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${manualSource === src
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-slate-50 dark:bg-slate-900 text-slate-400 border border-slate-100 dark:border-slate-700 hover:text-indigo-600'
+                          }`}
+                      >
+                        {src}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex gap-4">
                   <button
-                    onClick={() => { handleQuickCheckIn(selectedEmp); setShowManualModal(false); }}
+                    onClick={() => { handleQuickCheckIn(selectedEmp, manualSource); setShowManualModal(false); }}
                     disabled={!selectedEmp || isProcessing}
                     className="flex-1 py-5 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl flex items-center justify-center gap-2"
                   >
                     <LogIn className="w-4 h-4" /> Check In
                   </button>
                   <button
-                    onClick={() => { handleQuickCheckOut(selectedEmp); setShowManualModal(false); }}
+                    onClick={() => { handleQuickCheckOut(selectedEmp, manualSource); setShowManualModal(false); }}
                     disabled={!selectedEmp || isProcessing}
                     className="flex-1 py-5 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-700 transition-all shadow-xl flex items-center justify-center gap-2"
                   >

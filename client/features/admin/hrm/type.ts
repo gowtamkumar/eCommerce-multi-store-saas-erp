@@ -1,3 +1,19 @@
+export enum AttendanceSource {
+  WEB = 'WEB',
+  MOBILE = 'MOBILE',
+  BIOMETRIC = 'BIOMETRIC',
+  POS = 'POS',
+  KIOSK = 'KIOSK',
+}
+
+export enum PayrollBatchStatus {
+  DRAFT = 'DRAFT',
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  PAID = 'PAID',
+  CANCELLED = 'CANCELLED',
+}
+
 export enum EmployeeStatus {
   ACTIVE = 'ACTIVE',
   PROBATION = 'PROBATION',
@@ -95,6 +111,8 @@ export interface AttendanceSession {
   lateMinutes: number
   status: string
   note?: string
+  source?: AttendanceSource
+  deviceId?: string
 }
 
 export interface LeaveRequest {
@@ -115,8 +133,41 @@ export interface PayrollBatch {
   name: string
   period: string
   totalAmount: number
-  status: string
+  status: PayrollBatchStatus | string
   processedAt?: string
+  approvedAt?: string
+  paidAt?: string
+  approvedById?: string
+}
+
+export interface Holiday {
+  id: string
+  date: string
+  name: string
+  description?: string
+  isOptional: boolean
+  year: number
+  branchId?: string | null
+}
+
+export interface TaxBracket {
+  id: string
+  fiscalYear: number
+  minAmount: number
+  maxAmount: number | null
+  rate: number
+  flatTax: number
+  sortOrder: number
+}
+
+export interface Shift {
+  id: string
+  name: string
+  startTime: string
+  endTime: string
+  graceMinutes: number
+  isNightShift: boolean
+  workingDays?: number[]
 }
 
 export interface JobPosting {

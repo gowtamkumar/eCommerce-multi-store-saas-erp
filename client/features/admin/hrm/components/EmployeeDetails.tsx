@@ -48,13 +48,6 @@ export default function EmployeeDetails({ employee, isOpen, onClose, onEdit }: E
   const [newDocExpiry, setNewDocExpiry] = useState('');
   const [uploadingFile, setUploadingFile] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && employee?.id) {
-      loadDocuments();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, employee?.id]);
-
   const loadDocuments = async () => {
     if (!employee?.id) return;
     setDocsLoading(true);
@@ -67,6 +60,13 @@ export default function EmployeeDetails({ employee, isOpen, onClose, onEdit }: E
       setDocsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen && employee?.id) {
+      void Promise.resolve().then(loadDocuments);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, employee?.id]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -367,7 +367,7 @@ export default function EmployeeDetails({ employee, isOpen, onClose, onEdit }: E
                   <div className="py-10 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
                     <FileText className="w-10 h-10 mx-auto text-slate-200 dark:text-slate-700 mb-2" />
                     <p className="text-xs font-bold text-slate-400">No documents attached yet.</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">Use "Attach File" to add employment contracts, IDs, etc.</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">Use &ldquo;Attach File&rdquo; to add employment contracts, IDs, etc.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">

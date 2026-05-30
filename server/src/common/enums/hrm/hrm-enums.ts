@@ -36,6 +36,22 @@ export enum AttendanceStatus {
   HALFDAY = 'HALFDAY',
 }
 
+export enum AttendanceSource {
+  WEB = 'WEB',
+  MOBILE = 'MOBILE',
+  BIOMETRIC = 'BIOMETRIC',
+  POS = 'POS',
+  KIOSK = 'KIOSK',
+}
+
+export enum PayrollBatchStatus {
+  DRAFT = 'DRAFT',
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  PAID = 'PAID',
+  CANCELLED = 'CANCELLED',
+}
+
 export enum JobStatus {
   DRAFT = 'DRAFT',
   PUBLISHED = 'PUBLISHED',

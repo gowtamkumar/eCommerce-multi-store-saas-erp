@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -52,8 +53,15 @@ export default function EmployeeForm({
     documents: [],
   });
 
+  // Local helper for document state inside the form wizard
+  const [newDocType, setNewDocType] = useState('');
+  const [newDocUrl, setNewDocUrl] = useState('');
+  const [newDocExpiry, setNewDocExpiry] = useState('');
+  const [uploadingFile, setUploadingFile] = useState(false);
+
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    void Promise.resolve().then(() => {
       setActiveStep(1);
       setNewDocType('');
       setNewDocUrl('');
@@ -115,14 +123,8 @@ export default function EmployeeForm({
           documents: [],
         });
       }
-    }
+    });
   }, [employee, isOpen]);
-
-  // Local helper for document state inside the form wizard
-  const [newDocType, setNewDocType] = useState('');
-  const [newDocUrl, setNewDocUrl] = useState('');
-  const [newDocExpiry, setNewDocExpiry] = useState('');
-  const [uploadingFile, setUploadingFile] = useState(false);
 
   const steps = [
     { id: 1, label: 'Account',    icon: User },

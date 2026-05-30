@@ -1,4 +1,33 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { fetchAPI } from "./api";
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+/**
+ * Helper to unwrap a possibly-paginated response into a plain array
+ * so legacy callers that expect `T[]` keep working unchanged.
+ */
+function unwrapList<T>(payload: any): T[] {
+  if (Array.isArray(payload)) return payload as T[];
+  if (payload && Array.isArray(payload.data)) return payload.data as T[];
+  return [];
+}
+
+function buildQuery(params?: Record<string, unknown>): string {
+  if (!params) return "";
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === "") continue;
+    search.append(key, String(value));
+  }
+  const qs = search.toString();
+  return qs ? `?${qs}` : "";
+}
 
 export async function getHrmDashboardStats() {
   const res = await fetchAPI("/operations/hrm/dashboard/stats");
@@ -8,14 +37,28 @@ export async function getHrmDashboardStats() {
 // ─────────────────────────────────────────────────
 // Employee
 // ─────────────────────────────────────────────────
-export async function getEmployees() {
+export async function getEmployees(): Promise<any[]> {
   const res = await fetchAPI("/operations/hrm/employees");
+  return unwrapList(res.data);
+}
+
+export async function getEmployeesPage(params?: {
+  page?: number;
+  limit?: number;
+  q?: string;
+  departmentId?: string;
+  status?: string;
+}): Promise<PaginatedResult<any>> {
+  const res = await fetchAPI(`/operations/hrm/employees${buildQuery(params)}`);
+  if (Array.isArray(res.data)) {
+    return { data: res.data, total: res.data.length, page: 1, limit: res.data.length };
+  }
   return res.data;
 }
 
-export async function getAttendanceEmployees() {
+export async function getAttendanceEmployees(): Promise<any[]> {
   const res = await fetchAPI("/operations/hrm/employees/attendance");
-  return res.data;
+  return unwrapList(res.data);
 }
 
 export async function getEmployee(id: string) {
@@ -104,29 +147,60 @@ export async function deleteDesignation(id: string) {
 // ─────────────────────────────────────────────────
 // Attendance
 // ─────────────────────────────────────────────────
-export async function checkIn(employeeId: string, ip?: string) {
+export interface CheckInOptions {
+  ip?: string;
+  source?: "WEB" | "MOBILE" | "BIOMETRIC" | "POS" | "KIOSK";
+  deviceId?: string;
+  gpsLat?: number;
+  gpsLong?: number;
+  photoUrl?: string;
+}
+
+export async function checkIn(employeeId: string, ipOrOptions?: string | CheckInOptions) {
+  const body: CheckInOptions =
+    typeof ipOrOptions === "string"
+      ? { ip: ipOrOptions || "" }
+      : { ip: "", ...(ipOrOptions || {}) };
   const res = await fetchAPI(
     `/operations/hrm/employees/${employeeId}/check-in`,
     {
       method: "POST",
-      body: JSON.stringify({ ip: ip || "" }),
+      body: JSON.stringify(body),
     },
   );
   return res.data;
 }
 
-export async function checkOut(employeeId: string) {
+export async function checkOut(
+  employeeId: string,
+  options?: { source?: CheckInOptions["source"]; deviceId?: string },
+) {
   const res = await fetchAPI(
     `/operations/hrm/employees/${employeeId}/check-out`,
     {
       method: "POST",
+      body: JSON.stringify(options || {}),
     },
   );
   return res.data;
 }
 
-export async function getAttendanceSessions() {
+export async function getAttendanceSessions(): Promise<any[]> {
   const res = await fetchAPI("/operations/hrm/attendance");
+  return unwrapList(res.data);
+}
+
+export async function getAttendanceSessionsPage(params?: {
+  page?: number;
+  limit?: number;
+  employeeId?: string;
+  from?: string;
+  to?: string;
+}): Promise<PaginatedResult<any>> {
+  const res = await fetchAPI(`/operations/hrm/attendance${buildQuery(params)}`);
+  if (Array.isArray(res.data)) {
+    return { data: res.data, total: res.data.length, page: 1, limit: res.data.length };
+  }
   return res.data;
 }
 
@@ -165,8 +239,23 @@ export async function rejectLeave(
   return res.data;
 }
 
-export async function getLeaveRequests() {
+export async function getLeaveRequests(): Promise<any[]> {
   const res = await fetchAPI("/operations/hrm/leaves");
+  return unwrapList(res.data);
+}
+
+export async function getLeaveRequestsPage(params?: {
+  page?: number;
+  limit?: number;
+  employeeId?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+}): Promise<PaginatedResult<any>> {
+  const res = await fetchAPI(`/operations/hrm/leaves${buildQuery(params)}`);
+  if (Array.isArray(res.data)) {
+    return { data: res.data, total: res.data.length, page: 1, limit: res.data.length };
+  }
   return res.data;
 }
 
@@ -189,6 +278,17 @@ export async function getPayrollBatches() {
 export async function getPayrollSlips(batchId: string) {
   const res = await fetchAPI(
     `/operations/hrm/payroll/batches/${batchId}/slips`,
+  );
+  return res.data;
+}
+
+export async function approvePayrollBatch(batchId: string, approvedById: string) {
+  const res = await fetchAPI(
+    `/operations/hrm/payroll/batches/${batchId}/approve`,
+    {
+      method: "POST",
+      body: JSON.stringify({ approvedById }),
+    },
   );
   return res.data;
 }
@@ -381,4 +481,77 @@ export async function deleteEmployeeDocument(
     },
   );
   return res;
+}
+
+// ─────────────────────────────────────────────────
+// Holidays
+// ─────────────────────────────────────────────────
+export interface HolidayPayload {
+  date: string;
+  name: string;
+  isOptional?: boolean;
+  description?: string;
+  branchId?: string | null;
+}
+
+export async function getHolidays(params?: { year?: number; branchId?: string }) {
+  const res = await fetchAPI(`/operations/hrm/holidays${buildQuery(params)}`);
+  return unwrapList(res.data);
+}
+
+export async function createHoliday(data: HolidayPayload) {
+  const res = await fetchAPI("/operations/hrm/holidays", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return res.data;
+}
+
+export async function updateHoliday(id: string, data: Partial<HolidayPayload>) {
+  const res = await fetchAPI(`/operations/hrm/holidays/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+  return res.data;
+}
+
+export async function deleteHoliday(id: string) {
+  const res = await fetchAPI(`/operations/hrm/holidays/${id}`, {
+    method: "DELETE",
+  });
+  return res.data;
+}
+
+// ─────────────────────────────────────────────────
+// Tax Brackets
+// ─────────────────────────────────────────────────
+export interface TaxBracketPayload {
+  fiscalYear: number;
+  minAmount: number;
+  maxAmount?: number | null;
+  rate: number;
+  flatTax?: number;
+  sortOrder?: number;
+}
+
+export async function getTaxBrackets(fiscalYear?: number) {
+  const res = await fetchAPI(
+    `/operations/hrm/tax-brackets${buildQuery({ fiscalYear })}`,
+  );
+  return unwrapList(res.data);
+}
+
+export async function createTaxBracket(data: TaxBracketPayload) {
+  const res = await fetchAPI("/operations/hrm/tax-brackets", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return res.data;
+}
+
+export async function deleteTaxBracket(id: string) {
+  const res = await fetchAPI(`/operations/hrm/tax-brackets/${id}`, {
+    method: "DELETE",
+  });
+  return res.data;
 }

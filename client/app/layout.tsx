@@ -5,6 +5,7 @@ import ToasterProvider from "@/hooks/ToasterProvider";
 import { getSiteSettings } from "@/services/getSettings";
 import Script from "next/script";
 import "../styles/typography.css";
+import "react-calendar/dist/Calendar.css";
 import "./globals.css";
 
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";

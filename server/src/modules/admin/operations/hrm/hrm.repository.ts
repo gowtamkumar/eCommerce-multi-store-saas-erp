@@ -1,19 +1,31 @@
-import { ApplicantStatus } from '@/common/enums/hrm/hrm-enums'
+import { ApplicantStatus, PayrollBatchStatus } from '@/common/enums/hrm/hrm-enums'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Between, Repository } from 'typeorm'
+import { Between, FindOptionsWhere, In, LessThanOrEqual, MoreThanOrEqual, Not, Repository } from 'typeorm'
 import { AttendanceEventEntity } from './entities/attendance-event.entity'
 import { AttendanceSessionEntity } from './entities/attendance.entity'
 import { DepartmentEntity } from './entities/department.entity'
 import { DesignationEntity } from './entities/designation.entity'
 import { EmployeeDocumentEntity } from './entities/employee-document.entity'
+import { EmployeeIdSequenceEntity } from './entities/employee-id-sequence.entity'
 import { EmployeePersonalDetailsEntity } from './entities/employee-personal-details.entity'
 import { EmployeeEntity } from './entities/employee.entity'
+import { HolidayEntity } from './entities/holiday.entity'
 import { LeaveQuotaEntity, LeaveRequestEntity } from './entities/leave.entity'
 import { PayrollBatchEntity, PayrollSlipEntity } from './entities/payroll.entity'
 import { PerformanceReviewEntity } from './entities/performance.entity'
 import { ApplicantEntity, InterviewEntity, JobPostingEntity } from './entities/recruitment.entity'
 import { EmployeeShiftAssignmentEntity, ShiftEntity } from './entities/shift.entity'
+import { TaxBracketEntity } from './entities/tax-bracket.entity'
+
+export interface PaginatedResult<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
+}
+
+const DEFAULT_LIMIT = 20
 
 @Injectable()
 export class HrmRepository {
@@ -23,7 +35,7 @@ export class HrmRepository {
     @InjectRepository(DesignationEntity)
     private readonly designationRepo: Repository<DesignationEntity>,
     @InjectRepository(EmployeeEntity)
-    private readonly employeeRepo: Repository<EmployeeEntity>,
+    public readonly employeeRepo: Repository<EmployeeEntity>,
     @InjectRepository(EmployeePersonalDetailsEntity)
     public readonly personalDetailsRepo: Repository<EmployeePersonalDetailsEntity>,
     @InjectRepository(EmployeeDocumentEntity)
@@ -37,21 +49,27 @@ export class HrmRepository {
     @InjectRepository(AttendanceSessionEntity)
     private readonly attendanceSessionRepo: Repository<AttendanceSessionEntity>,
     @InjectRepository(LeaveRequestEntity)
-    private readonly leaveRequestRepo: Repository<LeaveRequestEntity>,
+    public readonly leaveRequestRepo: Repository<LeaveRequestEntity>,
     @InjectRepository(LeaveQuotaEntity)
-    private readonly leaveQuotaRepo: Repository<LeaveQuotaEntity>,
+    public readonly leaveQuotaRepo: Repository<LeaveQuotaEntity>,
     @InjectRepository(PayrollBatchEntity)
-    private readonly payrollBatchRepo: Repository<PayrollBatchEntity>,
+    public readonly payrollBatchRepo: Repository<PayrollBatchEntity>,
     @InjectRepository(PayrollSlipEntity)
     private readonly payrollSlipRepo: Repository<PayrollSlipEntity>,
     @InjectRepository(JobPostingEntity)
     private readonly jobPostingRepo: Repository<JobPostingEntity>,
     @InjectRepository(ApplicantEntity)
-    private readonly applicantRepo: Repository<ApplicantEntity>,
+    public readonly applicantRepo: Repository<ApplicantEntity>,
     @InjectRepository(InterviewEntity)
     private readonly interviewRepo: Repository<InterviewEntity>,
     @InjectRepository(PerformanceReviewEntity)
     private readonly performanceReviewRepo: Repository<PerformanceReviewEntity>,
+    @InjectRepository(HolidayEntity)
+    public readonly holidayRepo: Repository<HolidayEntity>,
+    @InjectRepository(TaxBracketEntity)
+    public readonly taxBracketRepo: Repository<TaxBracketEntity>,
+    @InjectRepository(EmployeeIdSequenceEntity)
+    public readonly employeeIdSeqRepo: Repository<EmployeeIdSequenceEntity>,
   ) {}
 
   // --- Department ---
@@ -101,13 +119,56 @@ export class HrmRepository {
     return this.employeeRepo.save(this.employeeRepo.create(data))
   }
 
-  async findAllEmployees(tenantId: string, branchId?: string): Promise<EmployeeEntity[]> {
-    const whereClause: any = { tenantId }
-    if (branchId) {
-      whereClause.branchId = branchId
+  async findAllEmployees(
+    tenantId: string,
+    branchId?: string,
+    options?: {
+      page?: number
+      limit?: number
+      departmentId?: string
+      status?: string
+      q?: string
+    },
+  ): Promise<PaginatedResult<EmployeeEntity>> {
+    const page = options?.page ?? 1
+    const limit = options?.limit ?? DEFAULT_LIMIT
+    const where: FindOptionsWhere<EmployeeEntity> = { tenantId }
+    if (branchId) where.branchId = branchId
+    if (options?.departmentId) where.departmentId = options.departmentId
+    if (options?.status) where.status = options.status as any
+
+    const qb = this.employeeRepo
+      .createQueryBuilder('e')
+      .leftJoinAndSelect('e.user', 'user')
+      .leftJoinAndSelect('e.department', 'department')
+      .leftJoinAndSelect('e.designation', 'designation')
+      .leftJoinAndSelect('e.branch', 'branch')
+      .leftJoinAndSelect('e.manager', 'manager')
+      .leftJoinAndSelect('e.personalDetails', 'personalDetails')
+      .where('e.tenantId = :tenantId', { tenantId })
+
+    if (branchId) qb.andWhere('e.branchId = :branchId', { branchId })
+    if (options?.departmentId) qb.andWhere('e.departmentId = :departmentId', { departmentId: options.departmentId })
+    if (options?.status) qb.andWhere('e.status = :status', { status: options.status })
+    if (options?.q) {
+      qb.andWhere('(user.name ILIKE :q OR user.username ILIKE :q OR e.employeeId ILIKE :q)', {
+        q: `%${options.q}%`,
+      })
     }
+
+    qb.orderBy('e.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    const [data, total] = await qb.getManyAndCount()
+    return { data, total, page, limit }
+  }
+
+  async findEmployeesAll(tenantId: string, branchId?: string): Promise<EmployeeEntity[]> {
+    const where: FindOptionsWhere<EmployeeEntity> = { tenantId }
+    if (branchId) where.branchId = branchId
     return this.employeeRepo.find({
-      where: whereClause,
+      where,
       relations: ['user', 'department', 'designation', 'branch', 'manager', 'personalDetails'],
     })
   }
@@ -169,16 +230,25 @@ export class HrmRepository {
     })
   }
 
+  /**
+   * Find the active shift assignment whose date range contains `date`.
+   * Honours both `effectiveFrom` and `effectiveTo`.
+   */
   async findEmployeeShift(
     employeeId: string,
     date: Date,
     tenantId: string,
   ): Promise<EmployeeShiftAssignmentEntity | null> {
-    return this.shiftAssignmentRepo.findOne({
-      where: { employeeId, tenantId, effectiveFrom: Between(new Date(0), date) }, // Simple logic for now
-      relations: ['shift'],
-      order: { effectiveFrom: 'DESC' },
-    })
+    const qb = this.shiftAssignmentRepo
+      .createQueryBuilder('a')
+      .leftJoinAndSelect('a.shift', 'shift')
+      .where('a.employeeId = :employeeId', { employeeId })
+      .andWhere('a.tenantId = :tenantId', { tenantId })
+      .andWhere('a.effectiveFrom <= :date', { date })
+      .andWhere('(a.effectiveTo IS NULL OR a.effectiveTo >= :date)', { date })
+      .orderBy('a.effectiveFrom', 'DESC')
+      .limit(1)
+    return qb.getOne()
   }
 
   // --- Attendance ---
@@ -205,16 +275,36 @@ export class HrmRepository {
   async findAllAttendanceSessions(
     tenantId: string,
     branchId?: string,
-  ): Promise<AttendanceSessionEntity[]> {
-    const whereClause: any = { tenantId }
-    if (branchId) {
-      whereClause.branchId = branchId
-    }
-    return this.attendanceSessionRepo.find({
-      where: whereClause,
-      relations: ['employee', 'employee.user', 'employee.department', 'employee.designation'],
-      order: { checkIn: 'DESC' },
-    })
+    options?: {
+      page?: number
+      limit?: number
+      employeeId?: string
+      from?: Date
+      to?: Date
+    },
+  ): Promise<PaginatedResult<AttendanceSessionEntity>> {
+    const page = options?.page ?? 1
+    const limit = options?.limit ?? DEFAULT_LIMIT
+
+    const qb = this.attendanceSessionRepo
+      .createQueryBuilder('s')
+      .leftJoinAndSelect('s.employee', 'employee')
+      .leftJoinAndSelect('employee.user', 'user')
+      .leftJoinAndSelect('employee.department', 'department')
+      .leftJoinAndSelect('employee.designation', 'designation')
+      .where('s.tenantId = :tenantId', { tenantId })
+
+    if (branchId) qb.andWhere('s.branchId = :branchId', { branchId })
+    if (options?.employeeId) qb.andWhere('s.employeeId = :employeeId', { employeeId: options.employeeId })
+    if (options?.from) qb.andWhere('s.checkIn >= :from', { from: options.from })
+    if (options?.to) qb.andWhere('s.checkIn <= :to', { to: options.to })
+
+    qb.orderBy('s.checkIn', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    const [data, total] = await qb.getManyAndCount()
+    return { data, total, page, limit }
   }
 
   async findAttendanceSessionsForEmployee(
@@ -233,6 +323,23 @@ export class HrmRepository {
     })
   }
 
+  async findAttendanceSessionsForEmployees(
+    employeeIds: string[],
+    startDate: Date,
+    endDate: Date,
+    tenantId: string,
+  ): Promise<AttendanceSessionEntity[]> {
+    if (employeeIds.length === 0) return []
+    return this.attendanceSessionRepo.find({
+      where: {
+        employeeId: In(employeeIds),
+        tenantId,
+        checkIn: Between(startDate, endDate),
+      },
+      order: { checkIn: 'ASC' },
+    })
+  }
+
   // --- Leaves ---
   async createLeaveRequest(data: Partial<LeaveRequestEntity>): Promise<LeaveRequestEntity> {
     return this.leaveRequestRepo.save(this.leaveRequestRepo.create(data))
@@ -242,18 +349,62 @@ export class HrmRepository {
     await this.leaveRequestRepo.update(id, data)
   }
 
-  async findAllLeaveRequests(tenantId: string): Promise<LeaveRequestEntity[]> {
-    return this.leaveRequestRepo.find({
-      where: { tenantId },
-      relations: [
-        'employee',
-        'employee.user',
-        'employee.department',
-        'approvedBy',
-        'approvedBy.user',
-      ],
-      order: { createdAt: 'DESC' },
-    })
+  async findLeaveRequestById(id: string, tenantId: string): Promise<LeaveRequestEntity | null> {
+    return this.leaveRequestRepo.findOne({ where: { id, tenantId } })
+  }
+
+  async findAllLeaveRequests(
+    tenantId: string,
+    options?: {
+      page?: number
+      limit?: number
+      employeeId?: string
+      status?: string
+      from?: Date
+      to?: Date
+    },
+  ): Promise<PaginatedResult<LeaveRequestEntity>> {
+    const page = options?.page ?? 1
+    const limit = options?.limit ?? DEFAULT_LIMIT
+
+    const qb = this.leaveRequestRepo
+      .createQueryBuilder('lr')
+      .leftJoinAndSelect('lr.employee', 'employee')
+      .leftJoinAndSelect('employee.user', 'eu')
+      .leftJoinAndSelect('employee.department', 'ed')
+      .leftJoinAndSelect('lr.approvedBy', 'approvedBy')
+      .leftJoinAndSelect('approvedBy.user', 'au')
+      .where('lr.tenantId = :tenantId', { tenantId })
+
+    if (options?.employeeId) qb.andWhere('lr.employeeId = :employeeId', { employeeId: options.employeeId })
+    if (options?.status) qb.andWhere('lr.status = :status', { status: options.status })
+    if (options?.from) qb.andWhere('lr.endDate >= :from', { from: options.from })
+    if (options?.to) qb.andWhere('lr.startDate <= :to', { to: options.to })
+
+    qb.orderBy('lr.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    const [data, total] = await qb.getManyAndCount()
+    return { data, total, page, limit }
+  }
+
+  async findOverlappingLeaves(
+    employeeId: string,
+    startDate: Date,
+    endDate: Date,
+    tenantId: string,
+    excludeId?: string,
+  ): Promise<LeaveRequestEntity[]> {
+    const qb = this.leaveRequestRepo
+      .createQueryBuilder('lr')
+      .where('lr.employeeId = :employeeId', { employeeId })
+      .andWhere('lr.tenantId = :tenantId', { tenantId })
+      .andWhere('lr.status IN (:...statuses)', { statuses: ['PENDING', 'APPROVED'] })
+      .andWhere('lr.startDate <= :endDate', { endDate })
+      .andWhere('lr.endDate >= :startDate', { startDate })
+    if (excludeId) qb.andWhere('lr.id != :excludeId', { excludeId })
+    return qb.getMany()
   }
 
   async findLeaveQuota(
@@ -265,8 +416,17 @@ export class HrmRepository {
   }
 
   // --- Payroll ---
-  async createPayrollBatch(data: Partial<PayrollBatchEntity>): Promise<PayrollBatchEntity> {
-    return this.payrollBatchRepo.save(this.payrollBatchRepo.create(data))
+  async findActivePayrollBatchForPeriod(
+    tenantId: string,
+    period: string,
+  ): Promise<PayrollBatchEntity | null> {
+    return this.payrollBatchRepo.findOne({
+      where: {
+        tenantId,
+        period,
+        status: Not(PayrollBatchStatus.CANCELLED),
+      },
+    })
   }
 
   async findAllPayrollBatches(tenantId: string): Promise<PayrollBatchEntity[]> {
@@ -282,10 +442,6 @@ export class HrmRepository {
 
   async updatePayrollBatch(id: string, data: Partial<PayrollBatchEntity>): Promise<void> {
     await this.payrollBatchRepo.update(id, data)
-  }
-
-  async createPayrollSlip(data: Partial<PayrollSlipEntity>): Promise<PayrollSlipEntity> {
-    return this.payrollSlipRepo.save(this.payrollSlipRepo.create(data))
   }
 
   async findPayrollSlipsByBatch(batchId: string, tenantId: string): Promise<PayrollSlipEntity[]> {
@@ -321,10 +477,6 @@ export class HrmRepository {
       where: { id, tenantId },
       relations: ['jobPosting'],
     })
-  }
-
-  async findApplicantsByJob(jobPostingId: string, tenantId: string): Promise<ApplicantEntity[]> {
-    return this.applicantRepo.find({ where: { jobPostingId, tenantId }, relations: ['interviews'] })
   }
 
   async updateApplicantStatus(id: string, status: ApplicantStatus): Promise<void> {
@@ -372,15 +524,112 @@ export class HrmRepository {
     })
   }
 
+  // --- Holidays ---
+  async findHolidaysInRange(
+    tenantId: string,
+    startDate: Date,
+    endDate: Date,
+    branchId?: string,
+  ): Promise<HolidayEntity[]> {
+    const qb = this.holidayRepo
+      .createQueryBuilder('h')
+      .where('h.tenantId = :tenantId', { tenantId })
+      .andWhere('h.date >= :startDate', { startDate })
+      .andWhere('h.date <= :endDate', { endDate })
+
+    if (branchId) {
+      qb.andWhere('(h.branchId IS NULL OR h.branchId = :branchId)', { branchId })
+    }
+    return qb.getMany()
+  }
+
+  async findHolidaysExpiringSoon(
+    referenceDate: Date,
+  ): Promise<EmployeeDocumentEntity[]> {
+    return this.documentRepo.find({
+      where: {
+        expiryDate: LessThanOrEqual(referenceDate),
+      } as any,
+    })
+  }
+
+  async findExpiringDocuments(daysAhead: number): Promise<EmployeeDocumentEntity[]> {
+    const now = new Date()
+    const ahead = new Date()
+    ahead.setDate(ahead.getDate() + daysAhead)
+
+    return this.documentRepo
+      .createQueryBuilder('d')
+      .leftJoinAndSelect('d.employee', 'employee')
+      .leftJoinAndSelect('employee.user', 'user')
+      .where('d.expiryDate IS NOT NULL')
+      .andWhere('d.expiryDate >= :now', { now })
+      .andWhere('d.expiryDate <= :ahead', { ahead })
+      .getMany()
+  }
+
+  // --- Probation auto-confirmation ---
+  async findEmployeesEligibleForProbationCompletion(
+    referenceDate: Date,
+    probationDays: number,
+  ): Promise<EmployeeEntity[]> {
+    const cutoff = new Date(referenceDate)
+    cutoff.setDate(cutoff.getDate() - probationDays)
+
+    return this.employeeRepo.find({
+      where: {
+        status: 'PROBATION' as any,
+        joiningDate: LessThanOrEqual(cutoff) as any,
+      },
+      relations: ['user'],
+    })
+  }
+
+  // --- Employee ID sequence ---
+  /**
+   * Atomically increments the per-tenant employee-id counter and returns the
+   * generated code. Uses a single UPDATE with RETURNING so concurrent calls
+   * cannot mint duplicates.
+   */
+  async nextEmployeeId(tenantId: string): Promise<string> {
+    let seq = await this.employeeIdSeqRepo.findOne({ where: { tenantId } })
+    if (!seq) {
+      seq = this.employeeIdSeqRepo.create({ tenantId })
+      try {
+        await this.employeeIdSeqRepo.save(seq)
+      } catch {
+        // race: another caller created it concurrently
+        seq = await this.employeeIdSeqRepo.findOne({ where: { tenantId } })
+      }
+    }
+
+    const result = await this.employeeIdSeqRepo
+      .createQueryBuilder()
+      .update(EmployeeIdSequenceEntity)
+      .set({ lastValue: () => '"last_value" + 1' })
+      .where('tenant_id = :tenantId', { tenantId })
+      .returning(['lastValue', 'prefix', 'padLength'])
+      .execute()
+
+    const row = (result.raw && result.raw[0]) || {}
+    const lastValue = Number(row.last_value ?? row.lastValue ?? seq?.lastValue ?? 1)
+    const prefix = row.prefix ?? seq?.prefix ?? 'EMP-'
+    const padLength = Number(row.pad_length ?? row.padLength ?? seq?.padLength ?? 6)
+    return `${prefix}${String(lastValue).padStart(padLength, '0')}`
+  }
+
   async getStats(tenantId: string, branchId?: string) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const employeeWhere: any = { tenantId }
-    const attendanceWhere: any = { tenantId, checkIn: Between(today, new Date()) }
-    const jobWhere: any = { tenantId, status: 'PUBLISHED' as any }
-    const applicantWhere: any = { tenantId }
-    const leaveWhere: any = { tenantId, status: 'PENDING' as any }
+    const employeeWhere: FindOptionsWhere<EmployeeEntity> = { tenantId }
+    const attendanceWhere: FindOptionsWhere<AttendanceSessionEntity> = {
+      tenantId,
+      checkIn: MoreThanOrEqual(today) as any,
+    }
+    const jobWhere: FindOptionsWhere<JobPostingEntity> = { tenantId, status: 'PUBLISHED' as any }
+    const applicantWhere: FindOptionsWhere<ApplicantEntity> = { tenantId }
+    const leaveWhere: FindOptionsWhere<LeaveRequestEntity> = { tenantId, status: 'PENDING' as any }
 
     if (branchId) {
       employeeWhere.branchId = branchId
