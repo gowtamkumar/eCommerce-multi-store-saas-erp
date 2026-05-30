@@ -15,7 +15,7 @@ import {
   forwardRef,
 } from '@nestjs/common'
 import * as crypto from 'crypto'
-import { Between } from 'typeorm'
+import { Between, Not } from 'typeorm'
 import {
   AssignShiftDto,
   CreateDepartmentDto,
@@ -388,7 +388,8 @@ export class HrmService {
     })
 
     const checkOut = new Date()
-    const diffMs = checkOut.getTime() - latest.checkIn.getTime()
+    const checkInDate = new Date(latest.checkIn)
+    const diffMs = checkOut.getTime() - checkInDate.getTime()
     const workHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2))
 
     // Simple overtime logic: anything above 8 hours
@@ -520,6 +521,18 @@ export class HrmService {
   // --- Payroll Engine ---
   async processPayroll(period: string, name: string, ctx: RequestContextDto) {
     this.logger.log(`Starting payroll process for period ${period}`)
+
+    // Validate only one active payroll batch per period (month) is allowed
+    const existing = await this.hrmRepo.personalDetailsRepo.manager.getRepository(PayrollBatchEntity).findOne({
+      where: {
+        tenantId: ctx.tenantId,
+        period,
+        status: Not('CANCELLED'),
+      },
+    })
+    if (existing) {
+      throw new BadRequestException(`Payroll for period ${period} has already been processed and is in ${existing.status} status.`)
+    }
 
     const toDateString = (date: Date | string) => {
       const d = new Date(date)

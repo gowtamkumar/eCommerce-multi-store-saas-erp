@@ -36,7 +36,7 @@ export class SubscriberService {
       ctx,
     )
 
-    await this.cache.delCache('subscribers:list', tenantId)
+    await this.cache.delCacheByPattern('subscribers:list*', tenantId)
     return subscriber
   }
 

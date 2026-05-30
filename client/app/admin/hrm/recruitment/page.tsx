@@ -23,8 +23,7 @@ import {
   Plus,
   Search,
   Users,
-  Video,
-  X
+  Video
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -64,12 +63,24 @@ interface Applicant {
   createdAt: string;
 }
 
+interface Employee {
+  id: string;
+  user?: {
+    name: string;
+  };
+}
+
+interface Department {
+  id: string;
+  name: string;
+}
+
 export default function RecruitmentManagementPage() {
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
 
   const [view, setView] = useState<'BOARD' | 'APPLICANTS' | 'PIPELINE'>('BOARD');
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,6 +91,8 @@ export default function RecruitmentManagementPage() {
   const [showInterviewModal, setShowInterviewModal] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [jobStatusFilter, setJobStatusFilter] = useState<'ALL' | 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'CANCELLED'>('ALL');
+  const [applicantStatusFilter, setApplicantStatusFilter] = useState<'ALL' | ApplicantStatus>('ALL');
 
   const [jobFormData, setJobFormData] = useState({
     title: '',
@@ -211,11 +224,18 @@ export default function RecruitmentManagementPage() {
     }
   };
 
-  const filteredJobs = jobs.filter(j => j.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  const isJobFormValid = Boolean(jobFormData.title.trim() && jobFormData.departmentId);
+  const isInterviewFormValid = Boolean(interviewData.interviewerId.trim() && interviewData.interviewDate.trim());
+
+  const filteredJobs = jobs
+    .filter(j => j.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(j => jobStatusFilter === 'ALL' || j.status === jobStatusFilter);
+
   const filteredApps = applicants.filter(a => {
     const matchesSearch = `${a.firstName} ${a.lastName}`.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesJob = !selectedJobId || a.jobPostingId === selectedJobId;
-    return matchesSearch && matchesJob;
+    const matchesStage = applicantStatusFilter === 'ALL' || a.status === applicantStatusFilter;
+    return matchesSearch && matchesJob && matchesStage;
   });
 
   return (
@@ -253,34 +273,68 @@ export default function RecruitmentManagementPage() {
       </div>
 
       {/* Control Bar */}
-      <div className="flex flex-col md:flex-row items-center gap-4">
-        <div className="relative flex-1 group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-          <input
-            type="text"
-            placeholder={`Search ${view === 'BOARD' ? 'open positions' : 'applicants'}...`}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-6 py-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold shadow-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
-          />
-        </div>
-        {view === 'BOARD' && (
-          <button
-            onClick={() => setShowJobModal(true)}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-500/20"
-          >
-            <Plus className="w-4 h-4" />
-            Post Opening
-          </button>
-        )}
-        {selectedJobId && (
-          <div className="flex items-center gap-2 px-6 py-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-indigo-100 dark:border-indigo-800/50">
-            Filtering by: {jobs.find(j => j.id === selectedJobId)?.title}
-            <button onClick={() => setSelectedJobId(null)} className="ml-2 p-1 hover:bg-indigo-100 dark:hover:bg-indigo-800 rounded-full transition-colors">
-              <X className="w-3 h-3" />
-            </button>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+            <input
+              type="text"
+              placeholder={`Search ${view === 'BOARD' ? 'open positions' : 'applicants'}...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-6 py-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold shadow-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+            />
           </div>
-        )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {view === 'BOARD' ? (
+            <select
+              value={jobStatusFilter}
+              onChange={(e) => setJobStatusFilter(e.target.value as 'ALL' | 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'CANCELLED')}
+              className="w-full sm:w-auto px-5 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none"
+            >
+              <option value="ALL">All statuses</option>
+              <option value="DRAFT">Draft</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="CLOSED">Closed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          ) : (
+            <>
+              <select
+                value={applicantStatusFilter}
+                onChange={(e) => setApplicantStatusFilter(e.target.value as 'ALL' | ApplicantStatus)}
+                className="w-full sm:w-auto px-5 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none"
+              >
+                <option value="ALL">All stages</option>
+                {Object.values(ApplicantStatus).map((stage) => (
+                  <option key={stage} value={stage}>{stage}</option>
+                ))}
+              </select>
+              <select
+                value={selectedJobId || ''}
+                onChange={(e) => setSelectedJobId(e.target.value || null)}
+                className="w-full sm:w-auto px-5 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none"
+              >
+                <option value="">All jobs</option>
+                {jobs.map((job) => (
+                  <option key={job.id} value={job.id}>{job.title}</option>
+                ))}
+              </select>
+            </>
+          )}
+
+          {view === 'BOARD' && (
+            <button
+              onClick={() => setShowJobModal(true)}
+              className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-500/20"
+            >
+              <Plus className="w-4 h-4" />
+              Post Opening
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Content Grid */}
@@ -560,8 +614,8 @@ export default function RecruitmentManagementPage() {
 
                 <button
                   onClick={handleCreateJob}
-                  disabled={submitting}
-                  className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2"
+                  disabled={submitting || !isJobFormValid}
+                  className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   Publish Opening
@@ -599,8 +653,8 @@ export default function RecruitmentManagementPage() {
 
                 <button
                   onClick={() => handleScheduleInterview(showInterviewModal)}
-                  disabled={submitting}
-                  className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl flex items-center justify-center gap-2"
+                  disabled={submitting || !isInterviewFormValid}
+                  className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
                   Confirm Interview

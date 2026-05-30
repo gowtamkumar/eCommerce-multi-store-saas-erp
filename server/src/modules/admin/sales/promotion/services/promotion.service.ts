@@ -44,7 +44,7 @@ export class PromotionService {
     // Invalidate all affected cache keys
     await Promise.all([
       this.cache.delCache('promotions:active', tenantId),
-      this.cache.delCache('promotions:list', tenantId),
+      this.cache.delCacheByPattern('promotions:list*', tenantId),
       this.cache.delCache('promotions:offers', tenantId),
     ])
     return saved
@@ -131,7 +131,7 @@ export class PromotionService {
     // Invalidate all affected cache keys atomically
     await Promise.all([
       this.cache.delCache('promotions:active', tenantId),
-      this.cache.delCache('promotions:list', tenantId),
+      this.cache.delCacheByPattern('promotions:list*', tenantId),
       this.cache.delCache('promotions:offers', tenantId),
       this.cache.delCache(`promotions:id:${id}`, tenantId),
       this.cache.delCache(`promotions:slug:${promotion.slug}`, tenantId),
@@ -149,7 +149,7 @@ export class PromotionService {
     await this.promotionRepository.removePromotion(promotion)
     await Promise.all([
       this.cache.delCache('promotions:active', tenantId),
-      this.cache.delCache('promotions:list', tenantId),
+      this.cache.delCacheByPattern('promotions:list*', tenantId),
       this.cache.delCache('promotions:offers', tenantId),
       this.cache.delCache(`promotions:id:${id}`, tenantId),
       this.cache.delCache(`promotions:slug:${promotion.slug}`, tenantId),

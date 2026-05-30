@@ -5,12 +5,16 @@ import { CreateSubscriptionPlanDto } from './dto/create-subscription-plan.dto'
 import { UpdateSubscriptionPlanDto } from './dto/update-subscription-plan.dto'
 import { SubscriptionPlanEntity } from './entities/subscription-plan.entity'
 import { SubscriptionPlanRepository } from './subscription-plan.repository'
+import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 
 @Injectable()
 export class SubscriptionPlanService {
   private readonly logger = new Logger(SubscriptionPlanService.name)
 
-  constructor(private readonly planRepository: SubscriptionPlanRepository) {}
+  constructor(
+    private readonly planRepository: SubscriptionPlanRepository,
+    private readonly cacheService: CacheService,
+  ) {}
 
   async createSubscriptionPlan(
     createDto: CreateSubscriptionPlanDto,
@@ -21,6 +25,7 @@ export class SubscriptionPlanService {
       createDto.features = normalizeFeatures(createDto.features)
     }
     const plan = await this.planRepository.createAndSave(createDto, ctx)
+    await this.cacheService.delCache('subscription:plans:active')
     return plan
   }
 
@@ -49,6 +54,7 @@ export class SubscriptionPlanService {
       updateDto.features = normalizeFeatures(updateDto.features)
     }
     const updated = await this.planRepository.updateAndSave(plan, updateDto)
+    await this.cacheService.delCache('subscription:plans:active')
     return updated
   }
 
@@ -59,6 +65,7 @@ export class SubscriptionPlanService {
       throw new NotFoundException(`Subscription plan with ID "${id}" not found`)
     }
     await this.planRepository.removePlan(plan)
+    await this.cacheService.delCache('subscription:plans:active')
     return { success: true, message: 'Subscription plan deleted successfully' }
   }
 

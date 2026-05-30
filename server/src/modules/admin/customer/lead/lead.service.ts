@@ -34,7 +34,7 @@ export class LeadService {
       this.logger.error(`Failed to trigger new lead notification: ${e.message}`)
     }
 
-    await this.cache.delCache('leads:list', tenantId)
+    await this.cache.delCacheByPattern('leads:list*', tenantId)
     return lead
   }
 
@@ -62,7 +62,7 @@ export class LeadService {
     if (!lead) throw new NotFoundException('Lead not found')
 
     const updated = await this.leadRepository.updateAndSave(lead, dto)
-    await this.cache.delCache('leads:list', tenantId)
+    await this.cache.delCacheByPattern('leads:list*', tenantId)
     return updated
   }
 }

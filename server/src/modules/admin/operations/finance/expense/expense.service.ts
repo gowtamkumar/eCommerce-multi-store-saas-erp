@@ -52,7 +52,14 @@ export class ExpenseService {
     }
 
     // Invalidate list cache on creation
-    await this.cacheService.delCache('expenses:list', tenantId)
+    await Promise.all([
+      this.cacheService.delCacheByPattern('expenses:list*', tenantId),
+      this.cacheService.delCacheByPattern('expenses:raw*', tenantId),
+      this.cacheService.delCacheByPattern('dashboard*', tenantId),
+      this.cacheService.delCacheByPattern('pnl*', tenantId),
+      this.cacheService.delCacheByPattern('cashflow*', tenantId),
+      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+    ])
     return result
   }
 
@@ -144,8 +151,13 @@ export class ExpenseService {
     const result = await this.expenseRepository.updateAndSave(expense, updateExpenseDto)
     // Invalidate both list and individual caches
     await Promise.all([
-      this.cacheService.delCache('expenses:list', tenantId),
+      this.cacheService.delCacheByPattern('expenses:list*', tenantId),
+      this.cacheService.delCacheByPattern('expenses:raw*', tenantId),
       this.cacheService.delCache(`expenses:id:${id}`, tenantId),
+      this.cacheService.delCacheByPattern('dashboard*', tenantId),
+      this.cacheService.delCacheByPattern('pnl*', tenantId),
+      this.cacheService.delCacheByPattern('cashflow*', tenantId),
+      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
     ])
     return result
   }
@@ -159,8 +171,13 @@ export class ExpenseService {
     const result = await this.expenseRepository.removeExpense(expense)
     // Surgical cache invalidation
     await Promise.all([
-      this.cacheService.delCache('expenses:list', tenantId),
+      this.cacheService.delCacheByPattern('expenses:list*', tenantId),
+      this.cacheService.delCacheByPattern('expenses:raw*', tenantId),
       this.cacheService.delCache(`expenses:id:${id}`, tenantId),
+      this.cacheService.delCacheByPattern('dashboard*', tenantId),
+      this.cacheService.delCacheByPattern('pnl*', tenantId),
+      this.cacheService.delCacheByPattern('cashflow*', tenantId),
+      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
     ])
     return result
   }

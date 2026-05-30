@@ -26,7 +26,7 @@ export class CouponService {
     if (existing) throw new BadRequestException('Coupon code already exists')
 
     const result = await this.couponRepository.createAndSave(createCouponDto, ctx)
-    await this.cacheService.delCache('coupons:list', tenantId)
+    await this.cacheService.delCacheByPattern('coupons:list*', tenantId)
     return result
   }
 
@@ -101,7 +101,7 @@ export class CouponService {
     const result = await this.couponRepository.updateAndSave(coupon, updateCouponDto)
     // Invalidate all affected cache keys
     await Promise.all([
-      this.cacheService.delCache('coupons:list', tenantId),
+      this.cacheService.delCacheByPattern('coupons:list*', tenantId),
       this.cacheService.delCache(`coupons:id:${id}`, tenantId),
       this.cacheService.delCache(`coupons:code:${coupon.code}`, tenantId),
     ])
@@ -119,7 +119,7 @@ export class CouponService {
 
     await this.couponRepository.removeCoupon(coupon)
     await Promise.all([
-      this.cacheService.delCache('coupons:list', tenantId),
+      this.cacheService.delCacheByPattern('coupons:list*', tenantId),
       this.cacheService.delCache(`coupons:id:${id}`, tenantId),
       this.cacheService.delCache(`coupons:code:${coupon.code}`, tenantId),
     ])

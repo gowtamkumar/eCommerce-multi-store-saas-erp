@@ -223,6 +223,9 @@ export class UserService implements OnApplicationBootstrap {
       } as any,
       ctx,
     )
+    if (ctx.tenantId) {
+      await this.cacheService.delCache('team:members', ctx.tenantId)
+    }
     return user
   }
 
@@ -234,6 +237,10 @@ export class UserService implements OnApplicationBootstrap {
     const cacheKey = `user:profile:${id}`
     await this.cacheService.delCache(cacheKey)
     this.logger.verbose(`Cache INVALIDATED for ${cacheKey} due to profile update`)
+
+    if (user.tenantId) {
+      await this.cacheService.delCache('team:members', user.tenantId)
+    }
 
     return result
   }

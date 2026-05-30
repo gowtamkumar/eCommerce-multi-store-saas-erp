@@ -111,7 +111,15 @@ export class PaymentService {
       this.mailService.sendNewOrderNotification(orderWithRelations, order.tenantId)
     }
 
-    await this.cacheService.delCache(`payments:list`, order.tenantId)
+    await Promise.all([
+      this.cacheService.delCacheByPattern('payments:list*', order.tenantId),
+      this.cacheService.delCacheByPattern('analytics*', order.tenantId),
+      this.cacheService.delCacheByPattern('dashboard*', order.tenantId),
+      this.cacheService.delCacheByPattern('pnl*', order.tenantId),
+      this.cacheService.delCacheByPattern('cashflow*', order.tenantId),
+      this.cacheService.delCacheByPattern('finance:summary*', order.tenantId),
+      this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
+    ])
     return { success: true }
   }
 
@@ -137,7 +145,15 @@ export class PaymentService {
       { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
     )
 
-    await this.cacheService.delCache(`payments:list`, order.tenantId)
+    await Promise.all([
+      this.cacheService.delCacheByPattern('payments:list*', order.tenantId),
+      this.cacheService.delCacheByPattern('analytics*', order.tenantId),
+      this.cacheService.delCacheByPattern('dashboard*', order.tenantId),
+      this.cacheService.delCacheByPattern('pnl*', order.tenantId),
+      this.cacheService.delCacheByPattern('cashflow*', order.tenantId),
+      this.cacheService.delCacheByPattern('finance:summary*', order.tenantId),
+      this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
+    ])
     return { success: false }
   }
 
@@ -166,7 +182,15 @@ export class PaymentService {
       { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
     )
 
-    await this.cacheService.delCache(`payments:list`, order.tenantId)
+    await Promise.all([
+      this.cacheService.delCacheByPattern('payments:list*', order.tenantId),
+      this.cacheService.delCacheByPattern('analytics*', order.tenantId),
+      this.cacheService.delCacheByPattern('dashboard*', order.tenantId),
+      this.cacheService.delCacheByPattern('pnl*', order.tenantId),
+      this.cacheService.delCacheByPattern('cashflow*', order.tenantId),
+      this.cacheService.delCacheByPattern('finance:summary*', order.tenantId),
+      this.cacheService.delCacheByPattern('ledger:customer*', order.tenantId),
+    ])
     return { cancelled: true }
   }
 

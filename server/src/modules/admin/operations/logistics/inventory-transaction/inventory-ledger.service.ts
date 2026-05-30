@@ -147,8 +147,11 @@ export class InventoryLedgerService {
     const transaction = manager ? await internalExecute(manager) : await internalExecute(null)
 
     // Invalidate inventory caches
-    await this.cacheService.delCache(`inventory:list`, tenantId)
-    await this.cacheService.delCache(`inventory:summary`, tenantId)
+    await Promise.all([
+      this.cacheService.delCacheByPattern('inventory:ledger*', tenantId),
+      this.cacheService.delCacheByPattern('inventory:summary*', tenantId),
+      this.cacheService.delCacheByPattern('dashboard*', tenantId),
+    ])
 
     // Trigger Low Stock / Out of Stock Warnings
     try {

@@ -1,5 +1,9 @@
 'use client';
 
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+dayjs.extend(duration);
+
 import Pagination from '@/components/shared/Pagination';
 import { checkIn, checkOut, getAttendanceEmployees, getAttendanceSessions } from '@/services/hrm';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -55,7 +59,7 @@ export default function AttendanceManagementPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState('');
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => dayjs());
 
   const fetchData = useCallback(async () => {
     try {
@@ -102,7 +106,7 @@ export default function AttendanceManagementPage() {
   };
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => setNow(Date.now()), 60_000);
+    const intervalId = window.setInterval(() => setNow(dayjs()), 60_000);
     return () => window.clearInterval(intervalId);
   }, []);
 
@@ -149,24 +153,15 @@ export default function AttendanceManagementPage() {
     };
   }, [sessions, selectedDate]);
 
-  const formatDuration = (hours: number) => {
-    const totalMinutes = Math.round(hours * 60);
-    const h = Math.floor(totalMinutes / 60);
-    const m = totalMinutes % 60;
-    if (h > 0) return `${h}h ${m}m`;
-    return `${m}m`;
-  }
 
   const getSessionDuration = (session: AttendanceSession) => {
-    if (!session.checkOut) {
-      const elapsedMs = now - new Date(session.checkIn).getTime();
-      const totalMinutes = Math.max(0, Math.floor(elapsedMs / 60000));
-      const h = Math.floor(totalMinutes / 60);
-      const m = totalMinutes % 60;
-      return `${h > 0 ? `${h}h ` : ''}${m}m`;
-    }
-
-    return formatDuration(session.workHours || 0);
+    const start = dayjs(session.checkIn);
+    const end = session.checkOut ? dayjs(session.checkOut) : now;
+    const diffMs = Math.max(0, end.diff(start));
+    const dur = dayjs.duration(diffMs);
+    const h = Math.floor(dur.asHours());
+    const m = dur.minutes();
+    return `${h > 0 ? `${h}h ` : ''}${m}m`;
   }
 
   return (

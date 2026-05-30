@@ -206,7 +206,14 @@ export class ReturnService {
     }
 
     const updated = await this.returnRepository.markReceived(returnRequest)
-    await this.cacheService.delCache('returns:all', tenantId)
+    await Promise.all([
+      this.cacheService.delCacheByPattern('returns:all*', tenantId),
+      this.cacheService.delCacheByPattern('analytics*', tenantId),
+      this.cacheService.delCacheByPattern('dashboard*', tenantId),
+      this.cacheService.delCacheByPattern('pnl*', tenantId),
+      this.cacheService.delCacheByPattern('cashflow*', tenantId),
+      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+    ])
     return updated
   }
 
@@ -254,7 +261,14 @@ export class ReturnService {
       this.logger.error(`Failed to post Exchange GL memo for return ${returnRequest.id}: ${e.message}`)
     }
 
-    await this.cacheService.delCache('returns:all', tenantId)
+    await Promise.all([
+      this.cacheService.delCacheByPattern('returns:all*', tenantId),
+      this.cacheService.delCacheByPattern('analytics*', tenantId),
+      this.cacheService.delCacheByPattern('dashboard*', tenantId),
+      this.cacheService.delCacheByPattern('pnl*', tenantId),
+      this.cacheService.delCacheByPattern('cashflow*', tenantId),
+      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+    ])
     return updated
   }
 
@@ -320,7 +334,14 @@ export class ReturnService {
     }
 
     // Invalidate the admin list cache
-    await this.cacheService.delCache('returns:all', tenantId)
+    await Promise.all([
+      this.cacheService.delCacheByPattern('returns:all*', tenantId),
+      this.cacheService.delCacheByPattern('analytics*', tenantId),
+      this.cacheService.delCacheByPattern('dashboard*', tenantId),
+      this.cacheService.delCacheByPattern('pnl*', tenantId),
+      this.cacheService.delCacheByPattern('cashflow*', tenantId),
+      this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+    ])
     return updated
   }
 

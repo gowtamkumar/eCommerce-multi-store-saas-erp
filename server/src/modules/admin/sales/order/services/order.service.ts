@@ -336,7 +336,15 @@ export class OrderService {
         await this.cartService.clearCart(ctx)
       }
 
-      await this.cacheService.delCache('orders:overview', tenantId)
+      await Promise.all([
+        this.cacheService.delCache('orders:overview', tenantId),
+        this.cacheService.delCacheByPattern('analytics*', tenantId),
+        this.cacheService.delCacheByPattern('dashboard*', tenantId),
+        this.cacheService.delCacheByPattern('pnl*', tenantId),
+        this.cacheService.delCacheByPattern('cashflow*', tenantId),
+        this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+        this.cacheService.delCacheByPattern('ledger:customer*', tenantId),
+      ])
 
       const finalOrder = await manager.findOne(OrderEntity, {
         where: { id: savedOrder.id, tenantId },
@@ -643,7 +651,15 @@ export class OrderService {
         this.logger.error(`Failed to trigger order notifications: ${e.message}`);
       }
 
-      await this.cacheService.delCache('orders:overview', tenantId)
+      await Promise.all([
+        this.cacheService.delCache('orders:overview', tenantId),
+        this.cacheService.delCacheByPattern('analytics*', tenantId),
+        this.cacheService.delCacheByPattern('dashboard*', tenantId),
+        this.cacheService.delCacheByPattern('pnl*', tenantId),
+        this.cacheService.delCacheByPattern('cashflow*', tenantId),
+        this.cacheService.delCacheByPattern('finance:summary*', tenantId),
+        this.cacheService.delCacheByPattern('ledger:customer*', tenantId),
+      ])
       return savedOrder
     } catch (err) {
       await queryRunner.rollbackTransaction()
@@ -666,7 +682,7 @@ export class OrderService {
     cancelledOrders: number
   }> {
     const tenantId = ctx?.tenantId
-    const cacheKey = tenantId ? `orders:overview:${tenantId}` : 'orders:overview:global'
+    const cacheKey = 'orders:overview'
     return this.cacheService.rememberCache(
       cacheKey,
       () => this.orderRepository.orderOverview(tenantId),
