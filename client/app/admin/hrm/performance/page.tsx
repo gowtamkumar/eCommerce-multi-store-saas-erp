@@ -109,7 +109,6 @@ export default function PerformancePage() {
 
   useEffect(() => {
     void Promise.resolve().then(fetchData);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filtered = useMemo(
