@@ -122,9 +122,14 @@ export async function awardQuotation(quotationId: string) {
 }
 
 // --- Debit Notes ---
-export async function getDebitNotes() {
-  const res = await fetchAPI("/debit-notes?limit=100");
-  return res.data?.items || [];
+export async function getDebitNotes(page: number = 1, limit: number = 10, status: string = "") {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(status && { status }),
+  });
+  const res = await fetchAPI(`/debit-notes?${params.toString()}`);
+  return res;
 }
 
 export async function createDebitNote(data: any) {

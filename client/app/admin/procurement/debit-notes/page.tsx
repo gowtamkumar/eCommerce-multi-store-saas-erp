@@ -27,6 +27,7 @@ import {
 } from '@/services/procurement';
 import { Supplier } from '@/features/admin/supplier/types';
 import { PurchaseOrder } from '@/features/admin/purchase/types';
+import Pagination from '@/components/shared/Pagination';
 
 
 interface DebitNote {
@@ -47,6 +48,12 @@ export default function DebitNotePage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNote, setSelectedNote] = useState<DebitNote | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
   // Modals
   const [createOpen, setCreateOpen] = useState(false);
@@ -60,11 +67,19 @@ export default function DebitNotePage() {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
 
 
-  const fetchDebitNotes = async () => {
+  const fetchDebitNotes = async (page: number = 1) => {
     try {
       setLoading(true);
-      const data = await getDebitNotes();
-      setDebitNotes(data);
+      const res = await getDebitNotes(page, 10);
+      if (res.success && res.data) {
+        setDebitNotes(res.data.items || []);
+        setPagination({
+          page: res.data.page,
+          limit: res.data.limit,
+          total: res.data.total,
+          totalPages: res.data.totalPages,
+        });
+      }
     } catch (err) {
       console.error(err);
       toast.error('Failed to load debit notes');
@@ -74,12 +89,23 @@ export default function DebitNotePage() {
   };
 
   useEffect(() => {
-    fetchDebitNotes();
+    fetchDebitNotes(1);
 
     // Fetch lists
     getSuppliers().then(setSuppliers).catch(console.error);
     getPurchaseOrders().then(setPurchaseOrders).catch(console.error);
   }, []);
+
+  // Auto-populate supplier when PO is selected
+  useEffect(() => {
+    if (!selectedPoId) return;
+
+    const po = purchaseOrders.find((p) => p.id === selectedPoId);
+    const supplierId = po?.supplierId || po?.supplier?.id;
+    if (po && supplierId && !selectedSupplierId) {
+      setSelectedSupplierId(supplierId);
+    }
+  }, [selectedPoId, purchaseOrders, selectedSupplierId]);
 
   const filteredDebitNotes = useMemo(() => {
     return debitNotes.filter((n) =>
@@ -221,6 +247,20 @@ export default function DebitNotePage() {
               </tbody>
             </table>
           </div>
+          {/* Pagination */}
+          {!loading && pagination.totalPages > 1 && (
+            <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center sm:text-left">
+                Page {pagination.page} of {pagination.totalPages}
+              </p>
+              <Pagination
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                onPageChange={(p) => fetchDebitNotes(p)}
+                loading={loading}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -364,7 +404,10 @@ export default function DebitNotePage() {
                     className="w-full px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none font-bold text-xs"
                   >
                     <option value="">Select PO</option>
-                    {purchaseOrders.map((po) => (
+                    {(selectedSupplierId
+                      ? purchaseOrders.filter((po) => (po.supplierId || po.supplier?.id) === selectedSupplierId)
+                      : purchaseOrders
+                    ).map((po) => (
                       <option key={po.id} value={po.id}>
                         {po.referenceNumber}
                       </option>

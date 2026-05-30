@@ -113,6 +113,40 @@ export default function SupplierInvoicePage() {
       .catch(console.error);
   }, []);
 
+  // Load Purchase Order items when PO is selected
+  useEffect(() => {
+    if (!selectedPoId) {
+      setAddedItems([]);
+      return;
+    }
+
+    const po = purchaseOrders.find((p) => p.id === selectedPoId);
+    const supplierId = po?.supplierId || po?.supplier?.id;
+    if (po && supplierId && !selectedSupplierId) {
+      setSelectedSupplierId(supplierId);
+    }
+
+    const loadPoItems = async () => {
+      try {
+        const res = await fetchAPI(`/purchase-orders/${selectedPoId}`);
+        if (res.success && res.data && Array.isArray(res.data.items)) {
+          setAddedItems(
+            res.data.items.map((item: any) => ({
+              productId: item.productId,
+              name: item.product?.name || 'Unknown Product',
+              quantity: item.quantity,
+              unitPrice: Number(item.unitPrice),
+            }))
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to load purchase order items');
+      }
+    };
+    loadPoItems();
+  }, [selectedPoId, purchaseOrders, selectedSupplierId]);
+
   const filteredInvoices = useMemo(() => {
     return invoices.filter((i) =>
       i.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -512,7 +546,10 @@ export default function SupplierInvoicePage() {
                       className="w-full px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none font-bold text-xs"
                     >
                       <option value="">Select PO</option>
-                      {purchaseOrders.map((po) => (
+                      {(selectedSupplierId
+                        ? purchaseOrders.filter((po) => (po.supplierId || po.supplier?.id) === selectedSupplierId)
+                        : purchaseOrders
+                      ).map((po) => (
                         <option key={po.id} value={po.id}>
                           {po.referenceNumber}
                         </option>

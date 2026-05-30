@@ -129,7 +129,7 @@ export class SupplierInvoiceService {
 
       await queryRunner.commitTransaction()
 
-      await this.cacheService.delCache(`si:list`, tenantId)
+      await this.cacheService.delCacheByPattern(`si:list*`, tenantId)
       return finalInvoice
     } catch (error) {
       await queryRunner.rollbackTransaction()
@@ -275,7 +275,7 @@ export class SupplierInvoiceService {
 
       await queryRunner.commitTransaction()
 
-      await this.cacheService.delCache(`si:list`, tenantId)
+      await this.cacheService.delCacheByPattern(`si:list*`, tenantId)
       await this.cacheService.delCache(`si:id:${invoice.id}`, tenantId)
 
       return savedInvoice
@@ -305,7 +305,7 @@ export class SupplierInvoiceService {
     }
 
     const saved = await this.repository.saveInvoice(invoice)
-    await this.cacheService.delCache(`si:list`, tenantId)
+    await this.cacheService.delCacheByPattern(`si:list*`, tenantId)
     await this.cacheService.delCache(`si:id:${id}`, tenantId)
     return saved
   }

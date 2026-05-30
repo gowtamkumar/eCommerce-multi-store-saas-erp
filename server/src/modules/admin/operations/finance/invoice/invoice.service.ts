@@ -60,7 +60,7 @@ export class InvoiceService {
       ctx,
     )
 
-    await this.cacheService.delCache(`invoices:list`, tenantId)
+    await this.cacheService.delCacheByPattern(`invoices:list*`, tenantId)
     return invoice
   }
 
@@ -140,7 +140,7 @@ export class InvoiceService {
     }
 
     const updatedInvoice = await this.invoiceRepository.updateAndSave(invoice, updateData)
-    await this.cacheService.delCache(`invoices:list`, tenantId)
+    await this.cacheService.delCacheByPattern(`invoices:list*`, tenantId)
     await this.cacheService.delCache(`invoices:id:${id}`, tenantId)
     return updatedInvoice
   }
@@ -150,7 +150,7 @@ export class InvoiceService {
     const tenantId = ctx.tenantId
     const invoice = await this.findOneInvoice(id, ctx)
     const removedInvoice = await this.invoiceRepository.removeInvoice(invoice)
-    await this.cacheService.delCache(`invoices:list`, tenantId)
+    await this.cacheService.delCacheByPattern(`invoices:list*`, tenantId)
     await this.cacheService.delCache(`invoices:id:${id}`, tenantId)
     return removedInvoice
   }
@@ -165,7 +165,7 @@ export class InvoiceService {
     const invoice = await this.invoiceRepository.findByOrderId(orderId, tenantId)
     if (invoice) {
       await this.invoiceRepository.updateAndSave(invoice, { status })
-      await this.cacheService.delCache(`invoices:list`, tenantId)
+      await this.cacheService.delCacheByPattern(`invoices:list*`, tenantId)
       await this.cacheService.delCache(`invoices:id:${invoice.id}`, tenantId)
     }
   }

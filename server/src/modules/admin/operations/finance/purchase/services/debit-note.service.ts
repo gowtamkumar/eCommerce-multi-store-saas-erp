@@ -37,7 +37,7 @@ export class DebitNoteService {
       ctx,
     )
 
-    await this.cacheService.delCache(`dn:list`, tenantId)
+    await this.cacheService.delCacheByPattern(`dn:list*`, tenantId)
     return result
   }
 
@@ -106,7 +106,7 @@ export class DebitNoteService {
     } else {
       dn.status = dto.status
       const saved = await this.repository.saveDebitNote(dn)
-      await this.cacheService.delCache(`dn:list`, tenantId)
+      await this.cacheService.delCacheByPattern(`dn:list*`, tenantId)
       await this.cacheService.delCache(`dn:id:${id}`, tenantId)
       return saved
     }
@@ -165,7 +165,7 @@ export class DebitNoteService {
 
       await queryRunner.commitTransaction()
 
-      await this.cacheService.delCache(`dn:list`, tenantId)
+      await this.cacheService.delCacheByPattern(`dn:list*`, tenantId)
       await this.cacheService.delCache(`dn:id:${dn.id}`, tenantId)
 
       return savedDn
