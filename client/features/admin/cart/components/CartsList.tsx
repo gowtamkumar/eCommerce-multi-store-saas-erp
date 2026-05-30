@@ -3,10 +3,11 @@
 import { useSettings } from '@/hooks/SettingsContext';
 import { useDebounce } from '@/hooks/useDebounce';
 import { fetchAPI } from '@/services/api';
-import { ChevronLeft, ChevronRight, Loader2, Search, ShoppingBag } from 'lucide-react';
+import { Loader2, Search, ShoppingBag } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import Pagination from '@/components/shared/Pagination';
 
 export default function CartsList() {
     const { data: session } = useSession();
@@ -151,22 +152,12 @@ export default function CartsList() {
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center sm:text-left">
                             Page {pagination.page} of {pagination.totalPages}
                         </p>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => handlePageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1 || loading}
-                                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm bg-white dark:bg-slate-800"
-                            >
-                                <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                            </button>
-                            <button
-                                onClick={() => handlePageChange(pagination.page + 1)}
-                                disabled={pagination.page === pagination.totalPages || loading}
-                                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm bg-white dark:bg-slate-800"
-                            >
-                                <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                            </button>
-                        </div>
+                        <Pagination
+                            currentPage={pagination.page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={handlePageChange}
+                            loading={loading}
+                        />
                     </div>
                 )}
             </div>

@@ -35,7 +35,7 @@ export default function ReturnDashboard() {
     const [pagination, setPagination] = useState({
         total: 0,
         page: 1,
-        limit: 20,
+        limit: 10,
         totalPages: 0,
     });
 

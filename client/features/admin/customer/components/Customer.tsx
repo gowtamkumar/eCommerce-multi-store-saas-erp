@@ -16,7 +16,7 @@ export default function Customer() {
     const [pagination, setPagination] = useState<Pagination>({
         total: 0,
         page: 1,
-        limit: 20,
+        limit: 10,
         totalPages: 1
     });
 
@@ -42,17 +42,17 @@ export default function Customer() {
         try {
             const params = new URLSearchParams({
                 page: page.toString(),
-                limit: '20',
+                limit: '10',
                 search: search
             });
             const res = await fetchAPI(`/users?${params.toString()}`);
 
             if (res.success && res.data) {
                 setUsers(res.data || []);
-                setPagination(res.data.pagination || {
+                setPagination(res.pagination || {
                     total: res.data?.length || 0,
                     page: 1,
-                    limit: 20,
+                    limit: 10,
                     totalPages: 1
                 });
             }

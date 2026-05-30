@@ -29,7 +29,7 @@ export default function Order() {
     const [pagination, setPagination] = useState<OrderListPagination>({
         total: 0,
         page: 1,
-        limit: 20,
+        limit: 10,
         totalPages: 1
     });
 

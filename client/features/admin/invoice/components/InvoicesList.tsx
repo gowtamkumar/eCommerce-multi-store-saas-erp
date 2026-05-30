@@ -2,13 +2,14 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import dayjs from 'dayjs';
-import { Download, Eye, Receipt, Search, Filter, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Download, Eye, Receipt, Search, Filter, Loader2 } from 'lucide-react';
 import { useEffect, useState, useCallback, memo } from 'react';
 import toast from 'react-hot-toast';
 import { useDownloadInvoice } from '@/lib/handleDownloadInvoice';
 import { fetchAPI } from '@/services/api';
 import InvoiceDetailsModal from './InvoiceDetailsModal';
 import { useDebounce } from '@/hooks/useDebounce';
+import Pagination from '@/components/shared/Pagination';
 
 // Memoized Invoice Row component to prevent full table re-renders
 const InvoiceRow = memo(({ invoice, onView, onDownload, formatPrice }: { 
@@ -232,22 +233,12 @@ export default function InvoicesList() {
                         <p className="text-sm text-slate-500">
                             Showing page <span className="font-medium">{pagination.page}</span> of <span className="font-medium">{pagination.totalPages}</span>
                         </p>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => handlePageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1}
-                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => handlePageChange(pagination.page + 1)}
-                                disabled={pagination.page === pagination.totalPages}
-                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
-                        </div>
+                        <Pagination
+                            currentPage={pagination.page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={handlePageChange}
+                            loading={isLoading}
+                        />
                     </div>
                 )}
             </div>
