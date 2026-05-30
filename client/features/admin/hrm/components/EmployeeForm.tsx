@@ -6,7 +6,7 @@ import {
   Briefcase, Building2, Calendar, DollarSign, FileText,
   Loader2, MapPin, Phone, Plus, Save, ShieldCheck, Trash2, User, X
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ContractType, Employee, EmployeeStatus } from '../type';
 
@@ -51,6 +51,72 @@ export default function EmployeeForm({
     },
     documents: [],
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveStep(1);
+      setNewDocType('');
+      setNewDocUrl('');
+      setNewDocExpiry('');
+      if (employee) {
+        setFormData({
+          userId: employee.userId || '',
+          departmentId: employee.departmentId || '',
+          designationId: employee.designationId || '',
+          managerId: employee.managerId || '',
+          branchId: employee.branchId || '',
+          status: employee.status || EmployeeStatus.ACTIVE,
+          contractType: employee.contractType || ContractType.FULL_TIME,
+          joiningDate: typeof employee.joiningDate === 'string'
+            ? employee.joiningDate.split('T')[0]
+            : new Date().toISOString().split('T')[0],
+          exitDate: typeof employee.exitDate === 'string'
+            ? employee.exitDate.split('T')[0]
+            : '',
+          salaryConfig: {
+            basicSalary: employee.salaryConfig?.basicSalary || 0,
+            allowances: employee.salaryConfig?.allowances || [],
+            deductions: employee.salaryConfig?.deductions || [],
+          },
+          personalDetails: {
+            gender: employee.personalDetails?.gender || 'MALE',
+            bloodGroup: employee.personalDetails?.bloodGroup || 'A+',
+            nationalId: employee.personalDetails?.nationalId || '',
+            passportNo: employee.personalDetails?.passportNo || '',
+            address: employee.personalDetails?.address || '',
+            dob: typeof employee.personalDetails?.dob === 'string'
+              ? employee.personalDetails.dob.split('T')[0]
+              : '',
+            emergencyContact: {
+              name: employee.personalDetails?.emergencyContact?.name || '',
+              relationship: employee.personalDetails?.emergencyContact?.relationship || '',
+              phone: employee.personalDetails?.emergencyContact?.phone || '',
+            },
+          },
+          documents: employee.documents || [],
+        });
+      } else {
+        setFormData({
+          userId: '',
+          departmentId: '',
+          designationId: '',
+          managerId: '',
+          branchId: '',
+          status: EmployeeStatus.ACTIVE,
+          contractType: ContractType.FULL_TIME,
+          joiningDate: new Date().toISOString().split('T')[0],
+          exitDate: '',
+          salaryConfig: { basicSalary: 0, allowances: [], deductions: [] },
+          personalDetails: {
+            gender: 'MALE', bloodGroup: 'A+',
+            nationalId: '', passportNo: '', address: '', dob: '',
+            emergencyContact: { name: '', relationship: '', phone: '' },
+          },
+          documents: [],
+        });
+      }
+    }
+  }, [employee, isOpen]);
 
   // Local helper for document state inside the form wizard
   const [newDocType, setNewDocType] = useState('');

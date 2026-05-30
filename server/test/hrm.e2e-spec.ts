@@ -253,8 +253,8 @@ describe('HRM Module (e2e)', () => {
           attendanceRepo.create({
             employeeId: employee.id,
             tenantId: tenant.id,
-            clockIn: new Date(`2026-05-${String(day).padStart(2, '0')}T09:00:00Z`),
-            clockOut: new Date(`2026-05-${String(day).padStart(2, '0')}T17:00:00Z`),
+            checkIn: new Date(`2026-05-${String(day).padStart(2, '0')}T09:00:00Z`),
+            checkOut: new Date(`2026-05-${String(day).padStart(2, '0')}T17:00:00Z`),
             workHours: 8,
             overtimeHours: 0,
             lateMinutes: 0,

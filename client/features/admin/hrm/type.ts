@@ -25,6 +25,13 @@ export interface Employee {
   contractType: ContractType
   joiningDate: string
   exitDate?: string
+  managerId?: string
+  manager?: {
+    id: string
+    user?: {
+      name: string
+    }
+  }
   salaryConfig?: {
     basicSalary: number
     allowances: { type: string; amount: number }[]

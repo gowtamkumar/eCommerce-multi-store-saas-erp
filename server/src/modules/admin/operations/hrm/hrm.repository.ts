@@ -198,7 +198,7 @@ export class HrmRepository {
   ): Promise<AttendanceSessionEntity | null> {
     return this.attendanceSessionRepo.findOne({
       where: { employeeId, tenantId },
-      order: { clockIn: 'DESC' },
+      order: { checkIn: 'DESC' },
     })
   }
 
@@ -210,7 +210,7 @@ export class HrmRepository {
     return this.attendanceSessionRepo.find({
       where: whereClause,
       relations: ['employee', 'employee.user', 'employee.department', 'employee.designation'],
-      order: { clockIn: 'DESC' },
+      order: { checkIn: 'DESC' },
     })
   }
 
@@ -224,9 +224,9 @@ export class HrmRepository {
       where: {
         employeeId,
         tenantId,
-        clockIn: Between(startDate, endDate),
+        checkIn: Between(startDate, endDate),
       },
-      order: { clockIn: 'ASC' },
+      order: { checkIn: 'ASC' },
     })
   }
 
@@ -367,7 +367,7 @@ export class HrmRepository {
     today.setHours(0, 0, 0, 0)
 
     const employeeWhere: any = { tenantId }
-    const attendanceWhere: any = { tenantId, clockIn: Between(today, new Date()) }
+    const attendanceWhere: any = { tenantId, checkIn: Between(today, new Date()) }
     const jobWhere: any = { tenantId, status: 'PUBLISHED' as any }
     const applicantWhere: any = { tenantId }
     const leaveWhere: any = { tenantId, status: 'PENDING' as any }

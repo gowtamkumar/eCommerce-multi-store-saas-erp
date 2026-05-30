@@ -15,13 +15,13 @@ import {
 import { motion } from 'framer-motion';
 
 export default function AttendanceBoard() {
-  const [isClockedIn, setIsClockedIn] = useState(false);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleClockToggle = () => {
     setLoading(true);
     setTimeout(() => {
-      setIsClockedIn(!isClockedIn);
+      setIsCheckedIn(!isCheckedIn);
       setLoading(false);
     }, 1000);
   };
@@ -52,27 +52,27 @@ export default function AttendanceBoard() {
 
           <div className="bg-white/10 backdrop-blur-xl p-8 rounded-[2rem] border border-white/20 flex flex-col items-center gap-4 min-w-[280px]">
             <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-xl">
-              <Clock className={`w-10 h-10 ${isClockedIn ? 'text-rose-500' : 'text-indigo-600'}`} />
+              <Clock className={`w-10 h-10 ${isCheckedIn ? 'text-rose-500' : 'text-indigo-600'}`} />
             </div>
             <button 
               onClick={handleClockToggle}
               disabled={loading}
               className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 shadow-lg ${
-                isClockedIn 
+                isCheckedIn 
                 ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20' 
                 : 'bg-white hover:bg-slate-50 text-indigo-900'
               }`}
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-              ) : isClockedIn ? (
-                <>Clock Out Now</>
+              ) : isCheckedIn ? (
+                <>Check Out Now</>
               ) : (
-                <>Clock In Now</>
+                <>Check In Now</>
               )}
             </button>
             <p className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest">
-              {isClockedIn ? 'Session Active: 4h 12m' : 'Awaiting clock-in for today'}
+              {isCheckedIn ? 'Session Active: 4h 12m' : 'Awaiting check-in for today'}
             </p>
           </div>
         </div>
@@ -131,7 +131,7 @@ export default function AttendanceBoard() {
                   </div>
                   <div>
                     <p className="font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                      {i % 2 === 0 ? 'Clock Out' : 'Clock In'}
+                      {i % 2 === 0 ? 'Check Out' : 'Check In'}
                     </p>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Main Hub • IP: 192.168.1.45</p>
                   </div>

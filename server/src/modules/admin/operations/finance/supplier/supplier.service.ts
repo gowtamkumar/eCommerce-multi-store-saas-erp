@@ -27,7 +27,7 @@ export class SupplierService {
     this.logger.log(`${this.createSupplier.name} Service Called`)
     const tenantId = ctx.tenantId
     const result = await this.repository.createAndSave(dto, ctx)
-    await this.cacheService.delCache(`suppliers:list`, tenantId)
+    await this.cacheService.delCacheByPattern(`suppliers:list*`, tenantId)
     return result
   }
 
@@ -113,7 +113,7 @@ export class SupplierService {
     const tenantId = ctx.tenantId
     const supplier = await this.findOneSupplier(id, ctx)
     const result = await this.repository.updateAndSave(supplier, dto)
-    await this.cacheService.delCache(`suppliers:list`, tenantId)
+    await this.cacheService.delCacheByPattern(`suppliers:list*`, tenantId)
     await this.cacheService.delCache(`suppliers:id:${id}`, tenantId)
     return result
   }
@@ -123,7 +123,7 @@ export class SupplierService {
     const tenantId = ctx.tenantId
     const supplier = await this.findOneSupplier(id, ctx)
     const result = await this.repository.removeSupplier(supplier)
-    await this.cacheService.delCache(`suppliers:list`, tenantId)
+    await this.cacheService.delCacheByPattern(`suppliers:list*`, tenantId)
     await this.cacheService.delCache(`suppliers:id:${id}`, tenantId)
     return result
   }

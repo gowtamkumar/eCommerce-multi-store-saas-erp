@@ -12,7 +12,7 @@ export class AttendanceEventEntity extends BaseEntity {
   @JoinColumn({ name: 'employee_id' })
   employee: EmployeeEntity
 
-  @Column({ type: 'varchar', name: 'event_type' }) // CLOCK_IN, CLOCK_OUT
+  @Column({ type: 'varchar', name: 'event_type' }) // CHECK_IN, CHECK_OUT
   eventType: string
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

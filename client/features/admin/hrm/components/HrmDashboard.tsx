@@ -91,8 +91,8 @@ export default function HrmDashboard() {
         
         if (Array.isArray(sessionsData)) {
           sessionsData.forEach((s: any) => {
-            if (s.clockIn) {
-              const d = new Date(s.clockIn);
+            if (s.checkIn) {
+              const d = new Date(s.checkIn);
               const dayName = days[d.getDay()];
               if (dayCounts[dayName] !== undefined) {
                 dayCounts[dayName]++;
@@ -160,7 +160,7 @@ export default function HrmDashboard() {
                 Attendance <span className="text-indigo-600">Trends</span>
               </h2>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                Daily clock-in totals for the current week
+                Daily check-in totals for the current week
               </p>
             </div>
             <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700 p-1 rounded-xl">
@@ -221,7 +221,7 @@ export default function HrmDashboard() {
               Quick <span className="text-indigo-600">Actions</span>
             </h2>
             <div className="grid grid-cols-1 gap-4">
-              <QuickAction label="Clock In/Out" icon={Clock} href="/admin/hrm/attendance" color="bg-indigo-500 text-indigo-500" />
+              <QuickAction label="Check In/Out" icon={Clock} href="/admin/hrm/attendance" color="bg-indigo-500 text-indigo-500" />
               <QuickAction label="Request Leave" icon={Calendar} href="/admin/hrm/leaves" color="bg-rose-500 text-rose-500" />
               <QuickAction label="Payroll Processing" icon={DollarSign} href="/admin/hrm/payroll" color="bg-emerald-500 text-emerald-500" />
               <QuickAction label="Post New Job" icon={Briefcase} href="/admin/hrm/recruitment" color="bg-amber-500 text-amber-500" />

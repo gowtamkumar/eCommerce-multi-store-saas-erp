@@ -32,10 +32,10 @@ export class AttendanceSessionEntity extends BaseEntity {
   branch: BranchEntity
 
   @Column({ type: 'timestamp', name: 'clock_in' })
-  clockIn: Date
+  checkIn: Date
 
   @Column({ type: 'timestamp', name: 'clock_out', nullable: true })
-  clockOut: Date
+  checkOut: Date
 
   @Column({ type: 'decimal', name: 'work_hours', precision: 5, scale: 2, default: 0 })
   workHours: number

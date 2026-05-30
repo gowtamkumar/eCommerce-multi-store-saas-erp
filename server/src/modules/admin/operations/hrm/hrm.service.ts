@@ -310,7 +310,7 @@ export class HrmService {
   }
 
   // --- Attendance Logic (Production Refined) ---
-  async clockIn(employeeId: string, ipAddress: string, ctx: RequestContextDto) {
+  async checkIn(employeeId: string, ipAddress: string, ctx: RequestContextDto) {
     const employee = await this.findOneEmployee(employeeId, ctx)
 
     // IP Verification (Geofencing)
@@ -319,7 +319,7 @@ export class HrmService {
       const allowedIps = location.ipWhitelist.split(',').map((ip) => ip.trim())
       if (!allowedIps.includes(ipAddress)) {
         this.logger.warn(
-          `Unauthorized clock-in attempt from IP ${ipAddress} for employee ${employeeId}`,
+          `Unauthorized check-in attempt from IP ${ipAddress} for employee ${employeeId}`,
         )
         throw new Error('Unauthorized location. Please connect to the company network.')
       }
@@ -329,15 +329,15 @@ export class HrmService {
     await this.hrmRepo.logAttendanceEvent({
       employeeId,
       tenantId: ctx.tenantId,
-      eventType: 'CLOCK_IN',
+      eventType: 'CHECK_IN',
       ipAddress,
       source: 'WEB',
     })
 
     // Check for active session
     const latest = await this.hrmRepo.findLatestAttendanceSession(employeeId, ctx.tenantId)
-    if (latest && !latest.clockOut) {
-      throw new Error('Employee is already clocked in')
+    if (latest && !latest.checkOut) {
+      throw new Error('Employee is already checked in')
     }
 
     // Shift Logic (Check for lateness)
@@ -361,27 +361,27 @@ export class HrmService {
       employeeId,
       tenantId: ctx.tenantId,
       branchId: employee.branchId,
-      clockIn: new Date(),
+      checkIn: new Date(),
       lateMinutes,
     })
   }
 
-  async clockOut(employeeId: string, ctx: RequestContextDto) {
+  async checkOut(employeeId: string, ctx: RequestContextDto) {
     const latest = await this.hrmRepo.findLatestAttendanceSession(employeeId, ctx.tenantId)
-    if (!latest || latest.clockOut) {
-      throw new Error('No active clock-in session found')
+    if (!latest || latest.checkOut) {
+      throw new Error('No active check-in session found')
     }
 
     // Immutable Event Log
     await this.hrmRepo.logAttendanceEvent({
       employeeId,
       tenantId: ctx.tenantId,
-      eventType: 'CLOCK_OUT',
+      eventType: 'CHECK_OUT',
       source: 'WEB',
     })
 
-    const clockOut = new Date()
-    const diffMs = clockOut.getTime() - latest.clockIn.getTime()
+    const checkOut = new Date()
+    const diffMs = checkOut.getTime() - latest.checkIn.getTime()
     const workHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2))
 
     // Simple overtime logic: anything above 8 hours
@@ -389,7 +389,7 @@ export class HrmService {
 
     await this.hrmRepo.saveAttendanceSession({
       ...latest,
-      clockOut,
+      checkOut,
       workHours,
       overtimeHours: parseFloat(overtimeHours.toFixed(2)),
     })
@@ -576,9 +576,9 @@ export class HrmService {
           where: {
             employeeId: employee.id,
             tenantId: ctx.tenantId,
-            clockIn: Between(startDate, endDate),
+            checkIn: Between(startDate, endDate),
           },
-          order: { clockIn: 'ASC' },
+          order: { checkIn: 'ASC' },
         })
 
         const overtimeHours = sessions.reduce((sum, s) => sum + Number(s.overtimeHours || 0), 0)
@@ -621,12 +621,12 @@ export class HrmService {
               unpaidLeaveDays++
             }
           } else {
-            // Check for unexcused absence (weekdays, no clock-in)
+            // Check for unexcused absence (weekdays, no check-in)
             const dayOfWeek = currentDate.getDay() // 0 = Sun, 6 = Sat
             const isWeekday = dayOfWeek !== 0 && dayOfWeek !== 6
             if (isWeekday) {
-              const hasClockIn = sessions.some((s) => toDateString(s.clockIn) === currentStr)
-              if (!hasClockIn) {
+              const hasCheckIn = sessions.some((s) => toDateString(s.checkIn) === currentStr)
+              if (!hasCheckIn) {
                 unpaidAbsenceDays++
               }
             }
@@ -1174,21 +1174,21 @@ export class HrmService {
       const date = new Date()
       date.setDate(date.getDate() - i)
 
-      const clockIn = new Date(date)
-      clockIn.setHours(9, Math.floor(Math.random() * 20), 0) // Randomly late or on time
+      const checkIn = new Date(date)
+      checkIn.setHours(9, Math.floor(Math.random() * 20), 0) // Randomly late or on time
 
-      const clockOut = new Date(date)
-      clockOut.setHours(18, Math.floor(Math.random() * 30), 0)
+      const checkOut = new Date(date)
+      checkOut.setHours(18, Math.floor(Math.random() * 30), 0)
 
-      const diffMs = clockOut.getTime() - clockIn.getTime()
+      const diffMs = checkOut.getTime() - checkIn.getTime()
       const workHours = parseFloat((diffMs / (1000 * 60 * 60)).toFixed(2))
 
       await this.hrmRepo.saveAttendanceSession({
         employeeId: emp.id,
-        clockIn,
-        clockOut,
+        checkIn,
+        checkOut,
         workHours,
-        lateMinutes: clockIn.getMinutes() > 15 ? clockIn.getMinutes() - 15 : 0,
+        lateMinutes: checkIn.getMinutes() > 15 ? checkIn.getMinutes() - 15 : 0,
         tenantId: ctx.tenantId,
       })
     }

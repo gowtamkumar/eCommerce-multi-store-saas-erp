@@ -102,6 +102,7 @@ export default function EmployeesPage() {
       />
 
       <EmployeeForm
+        key={selectedEmployee?.id || 'new'}
         employee={selectedEmployee}
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}

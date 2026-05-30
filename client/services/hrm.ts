@@ -13,6 +13,11 @@ export async function getEmployees() {
   return res.data;
 }
 
+export async function getAttendanceEmployees() {
+  const res = await fetchAPI("/operations/hrm/employees/attendance");
+  return res.data;
+}
+
 export async function getEmployee(id: string) {
   const res = await fetchAPI(`/operations/hrm/employees/${id}`);
   return res.data;
@@ -99,9 +104,9 @@ export async function deleteDesignation(id: string) {
 // ─────────────────────────────────────────────────
 // Attendance
 // ─────────────────────────────────────────────────
-export async function clockIn(employeeId: string, ip?: string) {
+export async function checkIn(employeeId: string, ip?: string) {
   const res = await fetchAPI(
-    `/operations/hrm/employees/${employeeId}/clock-in`,
+    `/operations/hrm/employees/${employeeId}/check-in`,
     {
       method: "POST",
       body: JSON.stringify({ ip: ip || "" }),
@@ -110,9 +115,9 @@ export async function clockIn(employeeId: string, ip?: string) {
   return res.data;
 }
 
-export async function clockOut(employeeId: string) {
+export async function checkOut(employeeId: string) {
   const res = await fetchAPI(
-    `/operations/hrm/employees/${employeeId}/clock-out`,
+    `/operations/hrm/employees/${employeeId}/check-out`,
     {
       method: "POST",
     },
@@ -182,7 +187,9 @@ export async function getPayrollBatches() {
 }
 
 export async function getPayrollSlips(batchId: string) {
-  const res = await fetchAPI(`/operations/hrm/payroll/batches/${batchId}/slips`);
+  const res = await fetchAPI(
+    `/operations/hrm/payroll/batches/${batchId}/slips`,
+  );
   return res.data;
 }
 
@@ -286,7 +293,9 @@ export async function updateApplicantStatus(id: string, status: string) {
 }
 
 export async function getApplicantInterviews(applicantId: string) {
-  const res = await fetchAPI(`/operations/hrm/applicants/${applicantId}/interviews`);
+  const res = await fetchAPI(
+    `/operations/hrm/applicants/${applicantId}/interviews`,
+  );
   return res.data;
 }
 
@@ -314,7 +323,9 @@ export async function getPerformanceReviews() {
 }
 
 export async function getEmployeePerformanceReviews(employeeId: string) {
-  const res = await fetchAPI(`/operations/hrm/employees/${employeeId}/performance/reviews`);
+  const res = await fetchAPI(
+    `/operations/hrm/employees/${employeeId}/performance/reviews`,
+  );
   return res.data;
 }
 
@@ -339,7 +350,9 @@ export async function seedDemoData() {
 // Employee Documents (HR Document Vault)
 // ─────────────────────────────────────────────────
 export async function getEmployeeDocuments(employeeId: string) {
-  const res = await fetchAPI(`/operations/hrm/employees/${employeeId}/documents`);
+  const res = await fetchAPI(
+    `/operations/hrm/employees/${employeeId}/documents`,
+  );
   return res.data;
 }
 
@@ -347,17 +360,25 @@ export async function addEmployeeDocument(
   employeeId: string,
   data: { documentType: string; fileUrl: string; expiryDate?: string },
 ) {
-  const res = await fetchAPI(`/operations/hrm/employees/${employeeId}/documents`, {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  const res = await fetchAPI(
+    `/operations/hrm/employees/${employeeId}/documents`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
   return res;
 }
 
-export async function deleteEmployeeDocument(employeeId: string, docId: string) {
-  const res = await fetchAPI(`/operations/hrm/employees/${employeeId}/documents/${docId}`, {
-    method: "DELETE",
-  });
+export async function deleteEmployeeDocument(
+  employeeId: string,
+  docId: string,
+) {
+  const res = await fetchAPI(
+    `/operations/hrm/employees/${employeeId}/documents/${docId}`,
+    {
+      method: "DELETE",
+    },
+  );
   return res;
 }
-

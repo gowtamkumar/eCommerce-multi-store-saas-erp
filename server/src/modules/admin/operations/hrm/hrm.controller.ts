@@ -1,13 +1,13 @@
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
-import { RequirePermissions } from '@/common/decorators/permissions.decorator'
-import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { ApplicantStatus } from '@/common/enums/hrm/hrm-enums'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
+import { BranchScopeGuard } from '@/common/guards/branch-scope.guard'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { BranchScopeGuard } from '@/common/guards/branch-scope.guard'
 import {
   Body,
   Controller,
@@ -21,12 +21,12 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import {
+  AssignShiftDto,
   CreateDepartmentDto,
   CreateDesignationDto,
   CreateEmployeeDto,
-  UpdateEmployeeDto,
   CreateShiftDto,
-  AssignShiftDto,
+  UpdateEmployeeDto,
 } from './dto/hrm.dto'
 import { HrmService } from './hrm.service'
 
@@ -211,6 +211,23 @@ export class HrmController {
     }
   }
 
+  @Get('employees/attendance')
+  @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
+  async findEmployeesForAttendance(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<any>> {
+    this.logger.verbose(
+      `User "${ctx.user?.username || 'System'}" called findEmployeesForAttendance.`,
+    )
+    const res = await this.hrmService.findAllEmployees(ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Employees retrieved successfully for attendance',
+      data: res,
+    }
+  }
+
   @Get('employees/:id')
   @RequirePermissions(SystemPermissions.HRM_EMPLOYEE_MANAGE)
   async findOneEmployee(
@@ -244,35 +261,35 @@ export class HrmController {
     }
   }
 
-  @Post('employees/:id/clock-in')
+  @Post('employees/:id/check-in')
   @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
-  async clockIn(
+  async checkIn(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body('ip') ip: string, // In production, we'd use @Ip() but allowing manual for testing
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called clockIn for ${id}.`)
-    const res = await this.hrmService.clockIn(id, ip, ctx)
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called checkIn for ${id}.`)
+    const res = await this.hrmService.checkIn(id, ip, ctx)
     return {
       success: true,
       statusCode: 200,
-      message: 'Clock-in successful',
+      message: 'Check-in successful',
       data: res,
     }
   }
 
-  @Post('employees/:id/clock-out')
+  @Post('employees/:id/check-out')
   @RequirePermissions(SystemPermissions.HRM_ATTENDANCE_CLOCK)
-  async clockOut(
+  async checkOut(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
   ): Promise<BaseApiSuccessResponse<any>> {
-    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called clockOut for ${id}.`)
-    const res = await this.hrmService.clockOut(id, ctx)
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called checkOut for ${id}.`)
+    const res = await this.hrmService.checkOut(id, ctx)
     return {
       success: true,
       statusCode: 200,
-      message: 'Clock-out successful',
+      message: 'Check-out successful',
       data: res,
     }
   }
@@ -783,4 +800,3 @@ export class HrmController {
     }
   }
 }
-
