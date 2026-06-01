@@ -10,6 +10,7 @@ import { PurchaseOrderService } from '@/modules/admin/operations/finance/purchas
 import { SupplierService } from '@/modules/admin/operations/finance/supplier/supplier.service'
 import { OrderService } from '@/modules/admin/sales/order/services/order.service'
 import { PaymentService } from '@/modules/admin/sales/payment/services/payment.service'
+import { csvRow, isSuccessfulPaymentStatus } from './report-export.util'
 import { ReportRepository } from './report.repository'
 
 @Injectable()
@@ -27,7 +28,7 @@ export class ReportService {
     private readonly expenseService: ExpenseService,
     private readonly reportRepo: ReportRepository,
     private readonly cacheService: CacheService,
-  ) { }
+  ) {}
 
   async getAnalytics(ctx: RequestContextDto) {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getAnalytics.`)
@@ -196,7 +197,9 @@ export class ReportService {
           return itemDate >= startDate && itemDate <= endDate
         }
 
-        const filteredPayments = paymentsData.filter((p: any) => filterByDate(p))
+        const filteredPayments = paymentsData.filter(
+          (p: any) => isSuccessfulPaymentStatus(p.status) && filterByDate(p),
+        )
         const filteredExpenses = expensesData.filter((e: any) => filterByDate(e, 'expenseDate'))
         const filteredPurchaseOrders = purchaseOrdersData.filter((po: any) => filterByDate(po))
 
@@ -382,7 +385,7 @@ export class ReportService {
 
         const totalOrders = orders.reduce((sum, order) => sum + (+order.totalAmount || 0), 0)
         const totalPaid = payments
-          .filter((p: any) => p.status === 'SUCCESS')
+          .filter((p: any) => isSuccessfulPaymentStatus(p.status))
           .reduce((sum, p) => sum + (+p.amount || 0), 0)
 
         return {
@@ -418,7 +421,7 @@ export class ReportService {
           this.purchaseOrderService.findAllPaymentsByPurchaseOrder(ctx),
         ])
 
-        const inflow = customerPayments.filter((p: any) => p.status === 'completed')
+        const inflow = customerPayments.filter((p: any) => isSuccessfulPaymentStatus(p.status))
 
         // Combine all movements into a single array
         const movements: any[] = [
@@ -531,35 +534,86 @@ export class ReportService {
     switch (type) {
       case 'sales': {
         const filtered = await this.paymentService.findAllPaymentsRaw(ctx, startDate, endDate)
-        csvContent = 'Date,Transaction ID,Order ID,Amount,Currency,Method\n'
+        csvContent = csvRow(['Date', 'Transaction ID', 'Order ID', 'Amount', 'Currency', 'Method'])
         filtered.forEach((p: any) => {
-          csvContent += `${p.createdAt},${p.transactionId},${p.orderId},${p.amount},${p.currency},${p.method}\n`
+          csvContent += csvRow([
+            p.createdAt,
+            p.transactionId,
+            p.orderId,
+            p.amount,
+            p.currency,
+            p.method,
+          ])
         })
         break
       }
       case 'expenses': {
         const filtered = await this.expenseService.findAllExpensesRaw(ctx, startDate, endDate)
-        csvContent = 'Date,Category,Description,Amount,Tenant ID\n'
+        csvContent = csvRow(['Date', 'Category', 'Description', 'Amount', 'Tenant ID'])
         filtered.forEach((e: any) => {
-          csvContent += `${e.expenseDate},${e.category},"${e.description || ''}",${e.amount},${e.tenantId}\n`
+          csvContent += csvRow([
+            e.expenseDate,
+            e.category,
+            e.description || '',
+            e.amount,
+            e.tenantId,
+          ])
         })
         break
       }
       case 'supplier-ledger': {
         if (!supplierId) throw new BadRequestException('Supplier ID required')
         const data = await this.getSupplierLedger(ctx, supplierId)
-        csvContent = `Supplier: ${data.supplier.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`
+        csvContent = csvRow([`Supplier: ${data.supplier.name}`])
+        csvContent += csvRow([
+          'Date',
+          'Type',
+          'Reference',
+          'Debit',
+          'Credit',
+          'Balance',
+          'Status',
+          'Note',
+        ])
         data.ledger.forEach((tx: any) => {
-          csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`
+          csvContent += csvRow([
+            tx.date,
+            tx.type,
+            tx.reference,
+            tx.debit,
+            tx.credit,
+            tx.balance,
+            tx.status || '',
+            tx.note || '',
+          ])
         })
         break
       }
       case 'customer-ledger': {
         if (!customerId) throw new BadRequestException('Customer ID required')
         const data = await this.getCustomerLedger(ctx, customerId)
-        csvContent = `Customer: ${data.customer.name}\nDate,Type,Reference,Debit,Credit,Balance,Status,Note\n`
+        csvContent = csvRow([`Customer: ${data.customer.name}`])
+        csvContent += csvRow([
+          'Date',
+          'Type',
+          'Reference',
+          'Debit',
+          'Credit',
+          'Balance',
+          'Status',
+          'Note',
+        ])
         data.ledger.forEach((tx: any) => {
-          csvContent += `${tx.date},${tx.type},${tx.reference},${tx.debit},${tx.credit},${tx.balance},${tx.status || ''},"${tx.note || ''}"\n`
+          csvContent += csvRow([
+            tx.date,
+            tx.type,
+            tx.reference,
+            tx.debit,
+            tx.credit,
+            tx.balance,
+            tx.status || '',
+            tx.note || '',
+          ])
         })
         break
       }
@@ -570,7 +624,7 @@ export class ReportService {
           this.purchaseOrderService.findAllPaymentsByPurchaseOrder(ctx),
         ])
 
-        const inflow = customerPayments.filter((p: any) => p.status === 'completed')
+        const inflow = customerPayments.filter((p: any) => isSuccessfulPaymentStatus(p.status))
 
         const filterByDate = (dateVal: any) => {
           if (!dateVal) return false
@@ -608,9 +662,9 @@ export class ReportService {
           return dateB - dateA
         })
 
-        csvContent = 'Date,Type,Category,Reference,Amount\n'
+        csvContent = csvRow(['Date', 'Type', 'Category', 'Reference', 'Amount'])
         movements.forEach((m: any) => {
-          csvContent += `${m.date},${m.type},${m.category},"${m.reference || ''}",${m.amount}\n`
+          csvContent += csvRow([m.date, m.type, m.category, m.reference || '', m.amount])
         })
         break
       }
@@ -658,7 +712,7 @@ export class ReportService {
         const filteredPurchaseOrders = purchaseOrders || []
 
         const inflow = filteredCustomerPayments.filter(
-          (p: any) => p.status === 'completed' && filterByDate(p),
+          (p: any) => isSuccessfulPaymentStatus(p.status) && filterByDate(p),
         )
         const totalRevenue = inflow.reduce((sum, p) => sum + (+p.amount || 0), 0)
 
@@ -697,7 +751,8 @@ export class ReportService {
         const chartData = months.map((month) => {
           const monthInflow = customerPayments
             .filter(
-              (p: any) => p.status === 'completed' && getYearMonthString(p.createdAt) === month,
+              (p: any) =>
+                isSuccessfulPaymentStatus(p.status) && getYearMonthString(p.createdAt) === month,
             )
             .reduce((sum, p) => sum + (+p.amount || 0), 0)
           const monthOpEx = expenses
