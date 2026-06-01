@@ -4,6 +4,7 @@ import { createTaxBracket, deleteTaxBracket, getTaxBrackets } from '@/services/h
 import { AnimatePresence, motion } from 'framer-motion';
 import { Calculator, CheckCircle2, Loader2, Plus, Receipt, Trash2, TrendingUp, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface TaxBracket {
   id: string;
@@ -59,6 +60,10 @@ export default function TaxBracketsPage() {
   }, [brackets]);
 
   const handleCreate = async () => {
+    if (formData.rate < 0 || formData.rate > 1) {
+      toast.error('Rate must be between 0 and 1 (e.g., 0.10 for 10%)');
+      return;
+    }
     try {
       setSubmitting(true);
       await createTaxBracket({
@@ -72,8 +77,9 @@ export default function TaxBracketsPage() {
       setShowForm(false);
       setFiscalYear(formData.fiscalYear);
       await fetchData();
+      toast.success('Tax bracket created successfully!');
     } catch (err: unknown) {
-      alert(getErrorMessage(err, 'Failed to create tax bracket'));
+      toast.error(getErrorMessage(err, 'Failed to create tax bracket'));
     } finally {
       setSubmitting(false);
     }
@@ -84,8 +90,9 @@ export default function TaxBracketsPage() {
     try {
       await deleteTaxBracket(id);
       await fetchData();
+      toast.success('Tax bracket deleted successfully!');
     } catch (err: unknown) {
-      alert(getErrorMessage(err, 'Failed to delete tax bracket'));
+      toast.error(getErrorMessage(err, 'Failed to delete tax bracket'));
     }
   };
 
@@ -261,13 +268,18 @@ export default function TaxBracketsPage() {
                       placeholder={placeholder}
                       className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none"
                     />
+                    {key === 'rate' && (formData.rate < 0 || formData.rate > 1) && (
+                      <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider ml-1">
+                        Must be between 0 and 1 (e.g., 0.10 for 10%)
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
 
               <button
                 onClick={handleCreate}
-                disabled={submitting || formData.rate < 0 || formData.minAmount < 0}
+                disabled={submitting || formData.rate < 0 || formData.rate > 1 || formData.minAmount < 0}
                 className="w-full mt-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}

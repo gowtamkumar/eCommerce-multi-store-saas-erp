@@ -152,7 +152,7 @@ export default function LeaveManagementPage() {
   };
 
   const filteredRequests = requests.filter(r =>
-    !searchQuery || 
+    !searchQuery ||
     r.employee?.user?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.reason.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -249,7 +249,7 @@ export default function LeaveManagementPage() {
                   ) : (
                     <AnimatePresence>
                       {filteredRequests.map((request, i) => (
-                        <motion.tr 
+                        <motion.tr
                           key={request.id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -293,25 +293,24 @@ export default function LeaveManagementPage() {
                             </p>
                           </td>
                           <td className="px-8 py-6">
-                            <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                              request.status === LeaveStatus.APPROVED ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                              request.status === LeaveStatus.REJECTED ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                              'bg-amber-50 text-amber-700 border-amber-100'
-                            }`}>
+                            <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${request.status === LeaveStatus.APPROVED ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                request.status === LeaveStatus.REJECTED ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                                  'bg-amber-50 text-amber-700 border-amber-100'
+                              }`}>
                               {request.status}
                             </span>
                           </td>
                           <td className="px-8 py-6 text-right">
                             {request.status === LeaveStatus.PENDING ? (
                               <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button 
+                                <button
                                   onClick={() => setShowApproveModal(request.id)}
                                   className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all"
                                   title="Approve"
                                 >
                                   <ThumbsUp className="w-4 h-4" />
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => setShowRejectModal(request.id)}
                                   className="p-3 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all"
                                   title="Reject"
@@ -344,13 +343,13 @@ export default function LeaveManagementPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRequestForm(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl p-8">
               <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-8 italic">New <span className="text-indigo-600">Application</span></h2>
-              
+
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Personnel Selection</label>
-                  <select 
-                    value={formData.employeeId} 
-                    onChange={e => setFormData({...formData, employeeId: e.target.value})}
+                  <select
+                    value={formData.employeeId}
+                    onChange={e => setFormData({ ...formData, employeeId: e.target.value })}
                     className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none"
                   >
                     <option value="">Select Employee...</option>
@@ -361,9 +360,9 @@ export default function LeaveManagementPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Type</label>
-                    <select 
-                      value={formData.leaveType} 
-                      onChange={e => setFormData({...formData, leaveType: e.target.value as LeaveType})}
+                    <select
+                      value={formData.leaveType}
+                      onChange={e => setFormData({ ...formData, leaveType: e.target.value as LeaveType })}
                       className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none"
                     >
                       {Object.values(LeaveType).map(t => <option key={t} value={t}>{t}</option>)}
@@ -380,20 +379,20 @@ export default function LeaveManagementPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Date</label>
-                    <input type="date" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none" />
+                    <input type="date" value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">End Date</label>
-                    <input type="date" value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none" />
+                    <input type="date" value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reason / Context</label>
-                  <textarea value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none h-24 resize-none" placeholder="Explain the necessity for this leave..." />
+                  <textarea value={formData.reason} onChange={e => setFormData({ ...formData, reason: e.target.value })} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none h-24 resize-none" placeholder="Explain the necessity for this leave..." />
                 </div>
 
-                <button 
+                <button
                   onClick={handleRequestSubmit}
                   disabled={submitting || !formData.employeeId || !formData.reason}
                   className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
@@ -414,13 +413,13 @@ export default function LeaveManagementPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowApproveModal(null)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl p-8">
               <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-8 italic">Final <span className="text-emerald-600">Decision</span></h2>
-              
+
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Approving Manager</label>
-                  <select 
-                    value={approveData.approvedById} 
-                    onChange={e => setApproveData({...approveData, approvedById: e.target.value})}
+                  <select
+                    value={approveData.approvedById}
+                    onChange={e => setApproveData({ ...approveData, approvedById: e.target.value })}
                     className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none"
                   >
                     <option value="">Select Manager...</option>
@@ -430,10 +429,10 @@ export default function LeaveManagementPage() {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Manager Context (Optional)</label>
-                  <textarea value={approveData.managerNote} onChange={e => setApproveData({...approveData, managerNote: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none h-24 resize-none" placeholder="Add any specific instructions or notes..." />
+                  <textarea value={approveData.managerNote} onChange={e => setApproveData({ ...approveData, managerNote: e.target.value })} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none h-24 resize-none" placeholder="Add any specific instructions or notes..." />
                 </div>
 
-                <button 
+                <button
                   onClick={() => handleApproveAction(showApproveModal)}
                   disabled={submitting || !approveData.approvedById}
                   className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
@@ -454,13 +453,13 @@ export default function LeaveManagementPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRejectModal(null)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl p-8">
               <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-8 italic">Reject <span className="text-rose-600">Application</span></h2>
-              
+
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rejecting Manager</label>
-                  <select 
-                    value={approveData.approvedById} 
-                    onChange={e => setApproveData({...approveData, approvedById: e.target.value})}
+                  <select
+                    value={approveData.approvedById}
+                    onChange={e => setApproveData({ ...approveData, approvedById: e.target.value })}
                     className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none"
                   >
                     <option value="">Select Manager...</option>
@@ -470,10 +469,10 @@ export default function LeaveManagementPage() {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rejection Reason</label>
-                  <textarea value={approveData.managerNote} onChange={e => setApproveData({...approveData, managerNote: e.target.value})} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none h-24 resize-none" placeholder="Explain the reason for rejecting this leave application..." />
+                  <textarea value={approveData.managerNote} onChange={e => setApproveData({ ...approveData, managerNote: e.target.value })} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none h-24 resize-none" placeholder="Explain the reason for rejecting this leave application..." />
                 </div>
 
-                <button 
+                <button
                   onClick={() => handleRejectAction(showRejectModal)}
                   disabled={submitting || !approveData.approvedById}
                   className="w-full py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-700 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"

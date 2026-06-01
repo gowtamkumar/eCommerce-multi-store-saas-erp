@@ -102,6 +102,7 @@ export default function PayrollManagementPage() {
       await processPayroll(processData.period, processData.name);
       setShowProcessModal(false);
       fetchData();
+      alert('Payroll cycle processed successfully! Salary slips have been generated and the batch is now pending approval.');
     } catch (err: unknown) {
       alert(getErrorMessage(err, 'Payroll processing failed'));
     } finally {
@@ -120,6 +121,7 @@ export default function PayrollManagementPage() {
       setShowApproveModal(null);
       setApprovedById('');
       fetchData();
+      alert('Payroll batch approved successfully! Salary accrual journal entries have been successfully posted to the General Ledger.');
     } catch (err: unknown) {
       alert(getErrorMessage(err, 'Approval failed'));
     } finally {

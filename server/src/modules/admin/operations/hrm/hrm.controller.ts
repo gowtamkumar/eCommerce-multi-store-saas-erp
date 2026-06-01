@@ -223,6 +223,7 @@ export class HrmController {
       gpsLat: body.gpsLat,
       gpsLong: body.gpsLong,
       photoUrl: body.photoUrl,
+      timezoneOffset: body.timezoneOffset,
     })
     return { success: true, statusCode: 200, message: 'Check-in successful', data: res }
   }

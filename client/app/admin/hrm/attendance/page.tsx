@@ -84,7 +84,7 @@ export default function AttendanceManagementPage() {
   const handleQuickCheckIn = async (employeeId: string, source: 'WEB' | 'MOBILE' | 'BIOMETRIC' | 'POS' | 'KIOSK' = 'WEB') => {
     try {
       setIsProcessing(true);
-      await checkIn(employeeId, { source });
+      await checkIn(employeeId, { source, timezoneOffset: new Date().getTimezoneOffset() });
       fetchData();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Check-in failed';
@@ -155,6 +155,15 @@ export default function AttendanceManagementPage() {
     };
   }, [sessions, selectedDate]);
 
+
+  const formatLateMinutes = (minutes: number) => {
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h}h${m > 0 ? ` ${m}m` : ''}`;
+  };
 
   const getSessionDuration = (session: AttendanceSession) => {
     const start = dayjs(session.checkIn);
@@ -395,7 +404,7 @@ export default function AttendanceManagementPage() {
                         {session.lateMinutes > 0 ? (
                           <div className="flex items-center gap-2">
                             <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-amber-100">
-                              Late: {session.lateMinutes}m
+                              Late: {formatLateMinutes(session.lateMinutes)}
                             </span>
                           </div>
                         ) : (

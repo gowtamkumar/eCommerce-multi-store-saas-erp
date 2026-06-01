@@ -401,6 +401,10 @@ export class CheckInDto {
   @IsString()
   @IsOptional()
   photoUrl?: string
+
+  @IsNumber()
+  @IsOptional()
+  timezoneOffset?: number
 }
 
 export class ProcessPayrollDto {
@@ -597,7 +601,7 @@ export class CreateTaxBracketDto {
   sortOrder?: number
 }
 
-export class TaxBracketDto extends CreateTaxBracketDto {}
+export class TaxBracketDto extends CreateTaxBracketDto { }
 
 export class AddEmployeeDocumentDto {
   @IsString()

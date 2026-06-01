@@ -73,7 +73,7 @@ export class HrmService {
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
-  ) {}
+  ) { }
 
   async getDashboardStats(ctx: RequestContextDto) {
     return this.hrmRepo.getStats(ctx.tenantId, ctx.branchId)
@@ -380,6 +380,7 @@ export class HrmService {
       gpsLat?: number
       gpsLong?: number
       photoUrl?: string
+      timezoneOffset?: number
     },
   ) {
     const employee = await this.findOneEmployee(employeeId, ctx)
@@ -403,7 +404,7 @@ export class HrmService {
 
     const now = new Date()
     const assignment = await this.hrmRepo.findEmployeeShift(employeeId, now, ctx.tenantId)
-    const lateMinutes = computeLateMinutes(now, assignment)
+    const lateMinutes = computeLateMinutes(now, assignment, options?.timezoneOffset)
 
     await this.hrmRepo.logAttendanceEvent({
       employeeId,
@@ -691,9 +692,9 @@ export class HrmService {
         leaveRequestRepo.find({ where: { tenantId: ctx.tenantId, status: LeaveStatus.APPROVED } }),
         employeeIds.length > 0
           ? attendanceSessionRepo.find({
-              where: { employeeId: In(employeeIds), tenantId: ctx.tenantId, checkIn: Between(startDate, endDate) },
-              order: { checkIn: 'ASC' },
-            })
+            where: { employeeId: In(employeeIds), tenantId: ctx.tenantId, checkIn: Between(startDate, endDate) },
+            order: { checkIn: 'ASC' },
+          })
           : Promise.resolve([]),
       ])
 

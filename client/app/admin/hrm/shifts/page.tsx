@@ -62,6 +62,19 @@ export default function ShiftManagementPage() {
     effectiveFrom: new Date().toISOString().split('T')[0],
   });
 
+  const formatTime12h = (timeStr: string) => {
+    if (!timeStr) return '';
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return timeStr;
+    let hour = parseInt(parts[0], 10);
+    const minute = parts[1];
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    hour = hour ? hour : 12;
+    const strHour = String(hour).padStart(2, '0');
+    return `${strHour}:${minute} ${ampm}`;
+  };
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -213,12 +226,12 @@ export default function ShiftManagementPage() {
                     <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-50 dark:border-slate-700">
                       <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Start</p>
-                        <p className="text-sm font-black text-indigo-600 dark:text-indigo-400">{shift.startTime.slice(0, 5)}</p>
+                        <p className="text-sm font-black text-indigo-600 dark:text-indigo-400">{formatTime12h(shift.startTime)}</p>
                       </div>
                       <div className="h-8 w-px bg-slate-100 dark:bg-slate-700 mx-2" />
                       <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">End</p>
-                        <p className="text-sm font-black text-slate-900 dark:text-white">{shift.endTime.slice(0, 5)}</p>
+                        <p className="text-sm font-black text-slate-900 dark:text-white">{formatTime12h(shift.endTime)}</p>
                       </div>
                       <div className="ml-auto">
                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${shift.isNightShift ? 'bg-indigo-900 text-indigo-200' : 'bg-amber-100 text-amber-700'}`}>
@@ -466,8 +479,8 @@ export default function ShiftManagementPage() {
                     className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm font-bold outline-none appearance-none"
                   >
                     <option value="">Select Template...</option>
-                    {shifts.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} ({s.startTime.slice(0, 5)} - {s.endTime.slice(0, 5)})</option>
+                     {shifts.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({formatTime12h(s.startTime)} - {formatTime12h(s.endTime)})</option>
                     ))}
                   </select>
                 </div>

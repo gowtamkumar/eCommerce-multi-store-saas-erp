@@ -93,9 +93,13 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
       }
     }
 
-    throw new Error(
-      error.message || "An error occurred while fetching the data.",
-    );
+    const errMsg = Array.isArray(error.message)
+      ? error.message.join(", ")
+      : typeof error.message === "string"
+        ? error.message
+        : "An error occurred while fetching the data.";
+
+    throw new Error(errMsg);
   }
 
   return await res.json();

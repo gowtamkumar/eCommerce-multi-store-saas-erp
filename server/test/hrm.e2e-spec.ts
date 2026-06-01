@@ -296,6 +296,9 @@ describe('HRM Module (e2e)', () => {
       // Net Salary = 3300 - 905 = 2395
       expect(Number(slip.netSalary)).toBeCloseTo(2395, 1)
 
+      // Approve the payroll batch so that the GL journal entry is posted
+      await hrmService.approvePayrollBatch(result.batch.id, employee.id, ctx)
+
       // Verify general ledger journal entry is posted and balanced
       const journalRepo = dataSource.getRepository(JournalEntryEntity)
       const entry = await journalRepo.findOne({

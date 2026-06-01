@@ -154,6 +154,7 @@ export interface CheckInOptions {
   gpsLat?: number;
   gpsLong?: number;
   photoUrl?: string;
+  timezoneOffset?: number;
 }
 
 export async function checkIn(employeeId: string, ipOrOptions?: string | CheckInOptions) {

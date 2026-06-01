@@ -33,26 +33,34 @@ export function countCalendarDays(startDate: Date, endDate: Date): number {
 export function computeLateMinutes(
   now: Date,
   assignment: EmployeeShiftAssignmentEntity | null,
+  timezoneOffset?: number,
 ): number {
   if (!assignment?.shift) return 0
 
   const shift = assignment.shift
   const [startH, startM] = shift.startTime.split(':').map(Number)
 
-  const shiftStart = new Date(now)
-  shiftStart.setHours(startH, startM, 0, 0)
+  // timezoneOffset is in minutes (e.g. -360 for +06:00).
+  // If not provided, we fall back to the server's local timezone offset.
+  const offset = timezoneOffset !== undefined ? timezoneOffset : now.getTimezoneOffset()
+
+  const localTimeMs = now.getTime() - offset * 60 * 1000
+  const localDate = new Date(localTimeMs)
+
+  const localStart = new Date(localTimeMs)
+  localStart.setUTCHours(startH, startM, 0, 0)
 
   // Night shift: if current time is before noon and shift starts in the evening,
   // the shift start was yesterday evening.
-  if (shift.isNightShift && now.getHours() < 12 && startH >= 12) {
-    shiftStart.setDate(shiftStart.getDate() - 1)
+  if (shift.isNightShift && localDate.getUTCHours() < 12 && startH >= 12) {
+    localStart.setUTCDate(localStart.getUTCDate() - 1)
   }
 
-  const graceEnd = new Date(shiftStart)
-  graceEnd.setMinutes(graceEnd.getMinutes() + (shift.graceMinutes ?? 0))
+  const graceEnd = new Date(localStart)
+  graceEnd.setUTCMinutes(graceEnd.getUTCMinutes() + (shift.graceMinutes ?? 0))
 
-  if (now <= graceEnd) return 0
-  return Math.floor((now.getTime() - graceEnd.getTime()) / (1000 * 60))
+  if (localDate <= graceEnd) return 0
+  return Math.floor((localDate.getTime() - graceEnd.getTime()) / (1000 * 60))
 }
 
 /**
