@@ -91,15 +91,24 @@ export class DunningService {
       where: { tenantId },
     })
 
+    // Preload all AR entries to avoid N+1 queries
+    const allEntries = await em.find(ArLedgerEntity, {
+      where: { tenantId },
+      order: { createdAt: 'ASC', id: 'ASC' },
+    })
+
+    const entriesMap = new Map<string, ArLedgerEntity[]>()
+    for (const entry of allEntries) {
+      const list = entriesMap.get(entry.customerId) ?? []
+      list.push(entry)
+      entriesMap.set(entry.customerId, list)
+    }
+
     let processedCount = 0
     let logsCreatedCount = 0
 
     for (const customer of customers) {
-      // 3. Get AR ledger entries for customer
-      const entries = await em.find(ArLedgerEntity, {
-        where: { customerId: customer.id, tenantId },
-        order: { createdAt: 'ASC', id: 'ASC' },
-      })
+      const entries = entriesMap.get(customer.id) ?? []
 
       if (entries.length === 0) continue
 

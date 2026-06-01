@@ -37,11 +37,14 @@ export class FinancialReportService {
     })
 
     if (allPlAccountIds.length > 0) {
-      // Query ledger entry lines scoped inside target dates
+      // Query ledger entry lines scoped inside target dates and sum them grouped by account and side
       const qb = this.dataSource
         .getRepository(LedgerEntryEntity)
         .createQueryBuilder('le')
-        .leftJoinAndSelect('le.journalEntry', 'je')
+        .select('le.accountId', 'accountId')
+        .addSelect('le.side', 'side')
+        .addSelect('SUM(le.amount)', 'total')
+        .leftJoin('le.journalEntry', 'je')
         .where('le.tenantId = :tenantId', { tenantId })
         .andWhere('le.accountId IN (:...allPlAccountIds)', { allPlAccountIds })
 
@@ -55,27 +58,31 @@ export class FinancialReportService {
         qb.andWhere('je.date <= :endDate', { endDate: end })
       }
 
-      const entries = await qb.getMany()
+      qb.groupBy('le.accountId').addGroupBy('le.side')
+      const sums = await qb.getRawMany()
 
       // Calculate net balances based on double-entry side impacts
-      for (const entry of entries) {
-        const account = accounts.find((a) => a.id === entry.accountId)
+      for (const sumRow of sums) {
+        const accountId = sumRow.accountId
+        const side = sumRow.side
+        const total = Number(sumRow.total || 0)
+
+        const account = accounts.find((a) => a.id === accountId)
         if (!account) continue
 
-        const amount = Number(entry.amount)
         if (account.type === AccountType.REVENUE) {
           // Credits increase revenue, debits decrease
-          if (entry.side === LedgerEntrySide.CREDIT) {
-            periodicBalances[account.id] += amount
+          if (side === LedgerEntrySide.CREDIT) {
+            periodicBalances[accountId] += total
           } else {
-            periodicBalances[account.id] -= amount
+            periodicBalances[accountId] -= total
           }
         } else if (account.type === AccountType.EXPENSE) {
           // Debits increase expense, credits decrease
-          if (entry.side === LedgerEntrySide.DEBIT) {
-            periodicBalances[account.id] += amount
+          if (side === LedgerEntrySide.DEBIT) {
+            periodicBalances[accountId] += total
           } else {
-            periodicBalances[account.id] -= amount
+            periodicBalances[accountId] -= total
           }
         }
       }
@@ -159,7 +166,10 @@ export class FinancialReportService {
       const qb = this.dataSource
         .getRepository(LedgerEntryEntity)
         .createQueryBuilder('le')
-        .leftJoinAndSelect('le.journalEntry', 'je')
+        .select('le.accountId', 'accountId')
+        .addSelect('le.side', 'side')
+        .addSelect('SUM(le.amount)', 'total')
+        .leftJoin('le.journalEntry', 'je')
         .where('le.tenantId = :tenantId', { tenantId })
         .andWhere('le.accountId IN (:...allAccountIds)', { allAccountIds })
 
@@ -169,26 +179,30 @@ export class FinancialReportService {
         qb.andWhere('je.date <= :limitDate', { limitDate })
       }
 
-      const entries = await qb.getMany()
+      qb.groupBy('le.accountId').addGroupBy('le.side')
+      const sums = await qb.getRawMany()
 
-      for (const entry of entries) {
-        const account = accounts.find((a) => a.id === entry.accountId)
+      for (const sumRow of sums) {
+        const accountId = sumRow.accountId
+        const side = sumRow.side
+        const total = Number(sumRow.total || 0)
+
+        const account = accounts.find((a) => a.id === accountId)
         if (!account) continue
 
-        const amount = Number(entry.amount)
         if (account.type === AccountType.ASSET) {
           // Debits increase, Credits decrease
-          if (entry.side === LedgerEntrySide.DEBIT) {
-            historicalBalances[account.id] += amount
+          if (side === LedgerEntrySide.DEBIT) {
+            historicalBalances[accountId] += total
           } else {
-            historicalBalances[account.id] -= amount
+            historicalBalances[accountId] -= total
           }
         } else if (account.type === AccountType.LIABILITY || account.type === AccountType.EQUITY) {
           // Credits increase, Debits decrease
-          if (entry.side === LedgerEntrySide.CREDIT) {
-            historicalBalances[account.id] += amount
+          if (side === LedgerEntrySide.CREDIT) {
+            historicalBalances[accountId] += total
           } else {
-            historicalBalances[account.id] -= amount
+            historicalBalances[accountId] -= total
           }
         }
       }
@@ -240,11 +254,15 @@ export class FinancialReportService {
       }
     }
 
-    // Load ledger entries that impacted cash/bank accounts inside dates
+    // Load ledger entries that impacted cash/bank accounts inside dates and sum them grouped by side and types
     const qb = this.dataSource
       .getRepository(LedgerEntryEntity)
       .createQueryBuilder('le')
-      .leftJoinAndSelect('le.journalEntry', 'je')
+      .select('le.side', 'side')
+      .addSelect('je.type', 'type')
+      .addSelect('je.referenceType', 'referenceType')
+      .addSelect('SUM(le.amount)', 'total')
+      .leftJoin('le.journalEntry', 'je')
       .where('le.accountId IN (:...cashAccountIds)', { cashAccountIds })
       .andWhere('le.tenantId = :tenantId', { tenantId })
 
@@ -257,7 +275,11 @@ export class FinancialReportService {
       qb.andWhere('je.date <= :endDate', { endDate: end })
     }
 
-    const ledgerEntries = await qb.getMany()
+    qb.groupBy('le.side')
+      .addGroupBy('je.type')
+      .addGroupBy('je.referenceType')
+
+    const sums = await qb.getRawMany()
 
     let operatingIn = 0
     let operatingOut = 0
@@ -266,44 +288,47 @@ export class FinancialReportService {
     let financingIn = 0
     let financingOut = 0
 
-    for (const le of ledgerEntries) {
-      const amount = Number(le.amount)
-      const isDebit = le.side === LedgerEntrySide.DEBIT
+    for (const sumRow of sums) {
+      const total = Number(sumRow.total || 0)
+      const side = sumRow.side
+      const type = sumRow.type
+      const referenceType = sumRow.referenceType
+      const isDebit = side === LedgerEntrySide.DEBIT
 
       if (isDebit) {
         // Cash Inflow
         if (
-          le.journalEntry?.type === JournalType.SALES ||
-          le.journalEntry?.referenceType === 'AR_PAYMENT' ||
-          le.journalEntry?.referenceType === 'CUSTOMER_PAYMENT'
+          type === JournalType.SALES ||
+          referenceType === 'AR_PAYMENT' ||
+          referenceType === 'CUSTOMER_PAYMENT'
         ) {
-          operatingIn += amount
+          operatingIn += total
         } else if (
-          le.journalEntry?.referenceType === 'EQUITY_INJECTION' ||
-          le.journalEntry?.referenceType === 'LOAN_RECEIPT'
+          referenceType === 'EQUITY_INJECTION' ||
+          referenceType === 'LOAN_RECEIPT'
         ) {
-          financingIn += amount
+          financingIn += total
         } else {
-          operatingIn += amount
+          operatingIn += total
         }
       } else {
         // Cash Outflow
         if (
-          le.journalEntry?.type === JournalType.PURCHASE ||
-          le.journalEntry?.referenceType === 'SUPPLIER_INVOICE' ||
-          le.journalEntry?.referenceType === 'EXPENSE' ||
-          le.journalEntry?.referenceType === 'SUPPLIER_PAYMENT'
+          type === JournalType.PURCHASE ||
+          referenceType === 'SUPPLIER_INVOICE' ||
+          referenceType === 'EXPENSE' ||
+          referenceType === 'SUPPLIER_PAYMENT'
         ) {
-          operatingOut += amount
-        } else if (le.journalEntry?.referenceType === 'ASSET_PURCHASE') {
-          investingOut += amount
+          operatingOut += total
+        } else if (referenceType === 'ASSET_PURCHASE') {
+          investingOut += total
         } else if (
-          le.journalEntry?.referenceType === 'LOAN_REPAYMENT' ||
-          le.journalEntry?.referenceType === 'DIVIDEND_PAYMENT'
+          referenceType === 'LOAN_REPAYMENT' ||
+          referenceType === 'DIVIDEND_PAYMENT'
         ) {
-          financingOut += amount
+          financingOut += total
         } else {
-          operatingOut += amount
+          operatingOut += total
         }
       }
     }

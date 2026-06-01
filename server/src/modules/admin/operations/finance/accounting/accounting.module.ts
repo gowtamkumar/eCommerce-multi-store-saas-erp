@@ -23,6 +23,7 @@ import { DunningRuleEntity } from './entities/dunning-rule.entity'
 import { DunningLogEntity } from './entities/dunning-log.entity'
 import { DunningService } from './services/dunning.service'
 import { MailModule } from '@/modules/admin/operations/infra/mail/mail.module'
+import { NotificationModule } from '@/modules/admin/operations/infra/notification/notification.module'
 import { TaxRuleEntity } from './entities/tax-rule.entity'
 import { TaxService } from './services/tax.service'
 import { TaxController } from './controllers/tax.controller'
@@ -30,6 +31,7 @@ import { TaxController } from './controllers/tax.controller'
 @Module({
   imports: [
     MailModule,
+    NotificationModule,
     TypeOrmModule.forFeature([
       AccountEntity,
       JournalEntryEntity,

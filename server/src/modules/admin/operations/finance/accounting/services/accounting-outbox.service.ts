@@ -3,6 +3,7 @@ import { DataSource, EntityManager, LessThan } from 'typeorm'
 import { AccountingOutboxEntity } from '../entities/accounting-outbox.entity'
 import { AccountingService } from './accounting.service'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
 
 @Injectable()
 export class AccountingOutboxService {
@@ -11,6 +12,7 @@ export class AccountingOutboxService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly accountingService: AccountingService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -99,6 +101,24 @@ export class AccountingOutboxService {
               `Failed to process accounting outbox entry ${outbox.id}: ${outbox.error}`,
               err.stack,
             )
+
+            // Trigger system alert notification for admins on final fail (reached 3 attempts)
+            if (outbox.attempts >= 3) {
+              try {
+                await this.notificationService.createNotification(
+                  {
+                    title: 'Accounting Outbox Processing Failed',
+                    message: `Journal entry outbox ID ${outbox.id} failed after maximum retry attempts. Error: ${outbox.error}`,
+                    type: 'DANGER',
+                    link: '/admin/finance/accounting',
+                    userId: null as any, // tenant-wide notification
+                  },
+                  outbox.tenantId,
+                )
+              } catch (notifErr: any) {
+                this.logger.error(`Failed to trigger outbox error notification: ${notifErr.message}`)
+              }
+            }
           }
 
           await transactionManager.save(AccountingOutboxEntity, outbox)

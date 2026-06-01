@@ -165,15 +165,24 @@ export class ArService {
       order: { name: 'ASC' },
     })
 
+    // Preload all AR entries to avoid N+1 queries
+    const allEntries = await em.find(ArLedgerEntity, {
+      where: { tenantId },
+      order: { createdAt: 'ASC', id: 'ASC' },
+    })
+
+    const entriesMap = new Map<string, ArLedgerEntity[]>()
+    for (const entry of allEntries) {
+      const list = entriesMap.get(entry.customerId) ?? []
+      list.push(entry)
+      entriesMap.set(entry.customerId, list)
+    }
+
     const report: any[] = []
     const now = new Date()
 
     for (const customer of customers) {
-      // Get all ledger entries for this customer
-      const entries = await em.find(ArLedgerEntity, {
-        where: { customerId: customer.id, tenantId },
-        order: { createdAt: 'ASC', id: 'ASC' },
-      })
+      const entries = entriesMap.get(customer.id) ?? []
 
       if (entries.length === 0) continue
 

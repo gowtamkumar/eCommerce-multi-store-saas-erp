@@ -167,13 +167,25 @@ export class TaxService {
     const accountsRepo = this.dataSource.getRepository(AccountEntity)
     const allAccounts = await accountsRepo.find({ where: { tenantId } })
 
-    // Build ledger entries query scoped to date range
+    // Build ledger entries query scoped to date range and restricted to tax-related accounts
     const qb = this.dataSource
       .getRepository(LedgerEntryEntity)
       .createQueryBuilder('le')
       .leftJoinAndSelect('le.journalEntry', 'je')
       .leftJoinAndSelect('le.account', 'acc')
       .where('le.tenantId = :tenantId', { tenantId })
+      .andWhere(
+        `((acc.code = :outputCode OR LOWER(acc.name) LIKE :outputVatLike OR LOWER(acc.name) LIKE :salesTaxLike) OR 
+          (acc.code = :inputCode OR LOWER(acc.name) LIKE :inputVatLike OR LOWER(acc.name) LIKE :taxCreditLike))`,
+        {
+          outputCode: '2200',
+          outputVatLike: '%output vat%',
+          salesTaxLike: '%sales tax%',
+          inputCode: '1300',
+          inputVatLike: '%input vat%',
+          taxCreditLike: '%tax credit%',
+        }
+      )
 
     if (query?.startDate) {
       qb.andWhere('je.date >= :startDate', { startDate: new Date(query.startDate) })

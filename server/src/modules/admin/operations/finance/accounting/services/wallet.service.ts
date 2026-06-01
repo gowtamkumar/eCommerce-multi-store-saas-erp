@@ -61,8 +61,12 @@ export class WalletService {
       throw new BadRequestException('Credit amount must be greater than zero')
     }
 
-    // Verify customer exists
-    const customer = await em.findOne(UserEntity, { where: { id: data.customerId, tenantId } })
+    // Verify customer exists and acquire a pessimistic write lock to prevent concurrent modifications
+    const customer = await em.createQueryBuilder(UserEntity, 'u')
+      .setLock('pessimistic_write')
+      .where('u.id = :customerId AND u.tenantId = :tenantId', { customerId: data.customerId, tenantId })
+      .getOne()
+
     if (!customer) {
       throw new NotFoundException(`Customer with ID ${data.customerId} not found`)
     }
@@ -129,6 +133,16 @@ export class WalletService {
 
     if (amount <= 0) {
       throw new BadRequestException('Debit amount must be greater than zero')
+    }
+
+    // Verify customer exists and acquire a pessimistic write lock to serialize wallet transactions
+    const customer = await em.createQueryBuilder(UserEntity, 'u')
+      .setLock('pessimistic_write')
+      .where('u.id = :customerId AND u.tenantId = :tenantId', { customerId: data.customerId, tenantId })
+      .getOne()
+
+    if (!customer) {
+      throw new NotFoundException(`Customer with ID ${data.customerId} not found`)
     }
 
     const currentBalance = await this.getAvailableBalance(data.customerId, tenantId, em)
