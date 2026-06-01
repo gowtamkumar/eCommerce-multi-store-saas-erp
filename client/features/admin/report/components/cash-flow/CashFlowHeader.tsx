@@ -1,11 +1,11 @@
 'use client';
 
-import { Download, Wallet } from 'lucide-react';
+import { Download, Loader2, Wallet } from 'lucide-react';
 import React from 'react';
 import type { CashFlowHeaderProps } from '../../types';
 
 
-const CashFlowHeader: React.FC<CashFlowHeaderProps> = React.memo(({ onExport }) => {
+const CashFlowHeader: React.FC<CashFlowHeaderProps> = React.memo(({ onExport, isExporting }) => {
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
             <div>
@@ -18,15 +18,23 @@ const CashFlowHeader: React.FC<CashFlowHeaderProps> = React.memo(({ onExport }) 
 
             <div className="flex items-center gap-3">
                 <button
+                    type="button"
                     onClick={onExport}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                    disabled={isExporting}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                    <Download className="w-4 h-4" />
-                    Export PDF
+                    {isExporting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        <Download className="w-4 h-4" />
+                    )}
+                    {isExporting ? 'Exporting…' : 'Export CSV'}
                 </button>
             </div>
         </div>
     );
 })
 
-export default React.memo(CashFlowHeader);
+CashFlowHeader.displayName = 'CashFlowHeader';
+
+export default CashFlowHeader;

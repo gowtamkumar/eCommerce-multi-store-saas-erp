@@ -4,19 +4,20 @@ import { fetchAPI } from '@/services/api';
 import { FileText, LayoutDashboard, Users, Wallet } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { ReportExportType, useReportExport } from '../../hooks/useReportExport';
 import ReportExportHeader from './ReportExportHeader';
 import ReportExportSettings from './ReportExportSettings';
 import ReportTypeSelection from './ReportTypeSelection';
 
 const ReportExportDashboard: React.FC = () => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [reportType, setReportType] = useState('sales');
+    const [reportType, setReportType] = useState<ReportExportType>('sales');
     const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [suppliers, setSuppliers] = useState<any[]>([]);
     const [selectedSupplierId, setSelectedSupplierId] = useState('');
     const [customers, setCustomers] = useState<any[]>([]);
     const [selectedCustomerId, setSelectedCustomerId] = useState('');
+    const { exportReport, isExporting } = useReportExport();
 
     const reports = useMemo(() => [
         { id: 'sales', name: 'Sales Report', description: 'Detailed log of successful customer payments', icon: LayoutDashboard, color: 'text-brand-600 bg-brand-50 dark:bg-brand-900/20' },
@@ -50,41 +51,19 @@ const ReportExportDashboard: React.FC = () => {
         }
     }, [reportType]);
 
-    const handleExport = useCallback(async () => {
-        try {
-            setIsLoading(true);
-            let url = `/report/export/${reportType}?startDate=${startDate}&endDate=${endDate}`;
-            if (reportType === 'supplier-ledger' && selectedSupplierId) {
-                url += `&supplierId=${selectedSupplierId}`;
-            } else if (reportType === 'customer-ledger' && selectedCustomerId) {
-                url += `&customerId=${selectedCustomerId}`;
-            }
+    const handleExport = useCallback(() => {
+        void exportReport({
+            type: reportType,
+            startDate,
+            endDate,
+            supplierId: selectedSupplierId || undefined,
+            customerId: selectedCustomerId || undefined,
+        });
+    }, [exportReport, reportType, startDate, endDate, selectedSupplierId, selectedCustomerId]);
 
-            const res = await fetchAPI(url);
-
-            if (res.success && res.data) {
-                const { csv, filename } = res.data;
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement('a');
-                if (link.download !== undefined) {
-                    const url = URL.createObjectURL(blob);
-                    link.setAttribute('href', url);
-                    link.setAttribute('download', filename);
-                    link.style.visibility = 'hidden';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    toast.success('Report exported successfully');
-                }
-            } else {
-                toast.error(res.message || 'Export failed');
-            }
-        } catch (error) {
-            toast.error('Export failed. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    }, [reportType, startDate, endDate, selectedSupplierId, selectedCustomerId]);
+    const handleTypeChange = useCallback((type: string) => {
+        setReportType(type as ReportExportType);
+    }, []);
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 p-4">
@@ -105,7 +84,7 @@ const ReportExportDashboard: React.FC = () => {
                         selectedCustomerId={selectedCustomerId}
                         onCustomerChange={setSelectedCustomerId}
                         onExport={handleExport}
-                        isLoading={isLoading}
+                        isLoading={isExporting}
                     />
                 </div>
 
@@ -113,7 +92,7 @@ const ReportExportDashboard: React.FC = () => {
                     <ReportTypeSelection
                         reports={reports}
                         currentType={reportType}
-                        onTypeChange={setReportType}
+                        onTypeChange={handleTypeChange}
                     />
                 </div>
             </div>

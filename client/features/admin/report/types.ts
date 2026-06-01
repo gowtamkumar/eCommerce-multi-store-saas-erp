@@ -10,11 +10,12 @@ export interface LowStockProduct {
     stock: number;
 }
 
-export interface RecentPage {
+export interface RecentProduct {
     id: string;
-    title: string;
-    slug: string;
+    name: string;
     createdAt: string;
+    price: number;
+    stock: number;
 }
 
 export interface SalesDashboardData {
@@ -27,7 +28,7 @@ export interface SalesDashboardData {
     };
     salesData: SalesTrendPoint[];
     lowStockProducts: LowStockProduct[];
-    recentPages: RecentPage[];
+    recentProducts: RecentProduct[];
 }
 
 export interface FinanceChartPoint {
@@ -174,14 +175,6 @@ export interface SalesTrendChartProps {
     isLoading: boolean;
 }
 
-export interface RecentProduct {
-    id: string;
-    name: string;
-    createdAt: string;
-    price: number;
-    stock: number;
-}
-
 export interface RecentProductsTableProps {
     products: RecentProduct[];
     isLoading: boolean;
@@ -234,6 +227,8 @@ export interface CustomerLedgerHeaderProps {
     selectedCustomerId: string;
     onCustomerChange: (id: string) => void;
     hasLedgerData: boolean;
+    onExportCsv?: () => void;
+    isExporting?: boolean;
 }
 
 export interface CustomerLedgerSummaryProps {
@@ -300,6 +295,8 @@ export interface SupplierLedgerHeaderProps {
     selectedSupplierId: string;
     onSupplierChange: (id: string) => void;
     hasLedgerData: boolean;
+    onExportCsv?: () => void;
+    isExporting?: boolean;
 }
 
 
@@ -316,4 +313,5 @@ export interface SupplierLedgerTableProps {
 
 export interface CashFlowHeaderProps {
     onExport: () => void;
+    isExporting?: boolean;
 }

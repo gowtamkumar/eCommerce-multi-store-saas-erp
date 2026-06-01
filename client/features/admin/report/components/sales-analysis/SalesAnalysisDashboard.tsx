@@ -2,25 +2,49 @@
 
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
-import { Download, TrendingUp } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { Download, Loader2, TrendingUp } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useReportExport } from '../../hooks/useReportExport';
 import type { SalesDashboardData } from '../../types';
 import LowStockTable from './LowStockTable';
 import RecentProductsTable from './RecentProductsTable';
 import SalesStatsGrid from './SalesStatsGrid';
 import SalesTrendChart from './SalesTrendChart';
 
+const computePeriodRange = (period: string): { startDate: string; endDate: string } => {
+    const now = new Date();
+    const end = now.toISOString().split('T')[0];
+    const start = new Date(now);
+
+    switch (period) {
+        case 'day':
+            // Today only — start and end are the same date
+            return { startDate: end, endDate: end };
+        case 'week':
+            start.setDate(start.getDate() - 6);
+            return { startDate: start.toISOString().split('T')[0], endDate: end };
+        case 'month':
+        default:
+            return {
+                startDate: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0],
+                endDate: end,
+            };
+    }
+};
+
 export default function SalesAnalysisDashboard() {
     const { formatPrice } = useSettings();
     const [data, setData] = useState<SalesDashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [period, setPeriod] = useState('month');
+    const { exportReport, isExporting } = useReportExport();
 
     const fetchReport = useCallback(async () => {
         try {
             setIsLoading(true);
-            const res = await fetchAPI(`/report/dashboard?period=${period}`);
+            const params = new URLSearchParams({ period });
+            const res = await fetchAPI(`/report/dashboard?${params.toString()}`);
             if (res && res.data) {
                 setData(res.data);
             }
@@ -36,9 +60,11 @@ export default function SalesAnalysisDashboard() {
         fetchReport();
     }, [fetchReport]);
 
-    const handleExport = () => {
-        window.print();
-    };
+    const dateRange = useMemo(() => computePeriodRange(period), [period]);
+
+    const handleExport = useCallback(() => {
+        void exportReport({ type: 'sales', ...dateRange });
+    }, [exportReport, dateRange]);
 
     return (
         <div className="space-y-6">
@@ -63,11 +89,17 @@ export default function SalesAnalysisDashboard() {
                         <option value="month">This Month</option>
                     </select>
                     <button
+                        type="button"
                         onClick={handleExport}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium border border-transparent"
+                        disabled={isExporting}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium border border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        <Download className="w-4 h-4" />
-                        Export
+                        {isExporting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Download className="w-4 h-4" />
+                        )}
+                        {isExporting ? 'Exporting…' : 'Export CSV'}
                     </button>
                 </div>
             </div>
@@ -92,7 +124,7 @@ export default function SalesAnalysisDashboard() {
                     isLoading={isLoading}
                 />
                 <RecentProductsTable
-                    products={(data as any)?.recentProducts || []}
+                    products={data?.recentProducts || []}
                     isLoading={isLoading}
                 />
             </div>

@@ -3,13 +3,14 @@
 import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
 import { Search } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useReportExport } from '../../hooks/useReportExport';
 import { SupplierLedgerData } from '../../types';
 import SupplierLedgerHeader from './SupplierLedgerHeader';
 import SupplierLedgerSummary from './SupplierLedgerSummary';
 import SupplierLedgerTable from './SupplierLedgerTable';
-import { useSearchParams } from 'next/navigation';
 
 const SupplierLedgerDashboard: React.FC = () => {
     const { formatPrice } = useSettings();
@@ -18,6 +19,7 @@ const SupplierLedgerDashboard: React.FC = () => {
     const [ledgerData, setLedgerData] = useState<SupplierLedgerData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const { exportReport, isExporting } = useReportExport();
 
     const searchParams = useSearchParams();
 
@@ -73,6 +75,11 @@ const SupplierLedgerDashboard: React.FC = () => {
         setSelectedSupplierId(id);
     }, []);
 
+    const handleExportCsv = useCallback(() => {
+        if (!selectedSupplierId) return;
+        void exportReport({ type: 'supplier-ledger', supplierId: selectedSupplierId });
+    }, [exportReport, selectedSupplierId]);
+
     if (isInitialLoading) {
         return (
             <div className="p-12 text-center text-slate-500 animate-pulse">
@@ -91,6 +98,8 @@ const SupplierLedgerDashboard: React.FC = () => {
                 selectedSupplierId={selectedSupplierId}
                 onSupplierChange={handleSupplierChange}
                 hasLedgerData={!!ledgerData}
+                onExportCsv={handleExportCsv}
+                isExporting={isExporting}
             />
 
             {!selectedSupplierId ? (

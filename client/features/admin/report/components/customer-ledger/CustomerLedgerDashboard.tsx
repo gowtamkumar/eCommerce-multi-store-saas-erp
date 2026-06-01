@@ -5,6 +5,7 @@ import { fetchAPI } from '@/services/api';
 import { Search } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useReportExport } from '../../hooks/useReportExport';
 import { CustomerLedgerData } from '../../types';
 import CustomerLedgerHeader from './CustomerLedgerHeader';
 import CustomerLedgerSummary from './CustomerLedgerSummary';
@@ -17,6 +18,7 @@ const CustomerLedgerDashboard: React.FC = () => {
     const [ledgerData, setLedgerData] = useState<CustomerLedgerData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const { exportReport, isExporting } = useReportExport();
 
     // Initial load: Fetch all customers for the dropdown
     useEffect(() => {
@@ -65,6 +67,11 @@ const CustomerLedgerDashboard: React.FC = () => {
         setSelectedCustomerId(id);
     }, []);
 
+    const handleExportCsv = useCallback(() => {
+        if (!selectedCustomerId) return;
+        void exportReport({ type: 'customer-ledger', customerId: selectedCustomerId });
+    }, [exportReport, selectedCustomerId]);
+
     if (isInitialLoading) {
         return (
             <div className="p-12 text-center text-slate-500 animate-pulse">
@@ -83,6 +90,8 @@ const CustomerLedgerDashboard: React.FC = () => {
                 selectedCustomerId={selectedCustomerId}
                 onCustomerChange={handleCustomerChange}
                 hasLedgerData={!!ledgerData}
+                onExportCsv={handleExportCsv}
+                isExporting={isExporting}
             />
 
             {!selectedCustomerId ? (

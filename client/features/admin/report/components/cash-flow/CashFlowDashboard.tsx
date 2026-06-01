@@ -4,6 +4,7 @@ import { useSettings } from '@/hooks/SettingsContext';
 import { fetchAPI } from '@/services/api';
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useReportExport } from '../../hooks/useReportExport';
 import { CashFlowData } from '../../types';
 import CashFlowChart from './CashFlowChart';
 import CashFlowHeader from './CashFlowHeader';
@@ -14,6 +15,7 @@ const CashFlowDashboard: React.FC = () => {
     const { formatPrice } = useSettings();
     const [data, setData] = useState<CashFlowData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const { exportReport, isExporting } = useReportExport();
 
     const fetchReport = useCallback(async () => {
         try {
@@ -33,8 +35,8 @@ const CashFlowDashboard: React.FC = () => {
     }, [fetchReport]);
 
     const handleExport = useCallback(() => {
-        window.print();
-    }, []);
+        void exportReport({ type: 'cash-flow' });
+    }, [exportReport]);
 
     if (isLoading && !data) {
         return (
@@ -48,7 +50,7 @@ const CashFlowDashboard: React.FC = () => {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <CashFlowHeader onExport={handleExport} />
+            <CashFlowHeader onExport={handleExport} isExporting={isExporting} />
 
             <CashFlowKpiGrid
                 summary={data.summary}

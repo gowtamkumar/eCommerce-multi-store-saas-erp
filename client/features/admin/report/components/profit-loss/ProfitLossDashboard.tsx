@@ -23,8 +23,11 @@ export default function ProfitLossDashboard() {
     const fetchReport = useCallback(async () => {
         try {
             setIsLoading(true);
-            const query = `?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
-            const res = await fetchAPI(`/report/profit-loss${query}`);
+            const params = new URLSearchParams({
+                startDate: dateRange.startDate,
+                endDate: dateRange.endDate,
+            });
+            const res = await fetchAPI(`/report/profit-loss?${params.toString()}`);
             if (res && res.data) {
                 setData(res.data);
             }

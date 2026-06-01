@@ -5,7 +5,7 @@ export interface DashboardStats {
     activeOrders: number;
     totalProducts: number;
     totalPages: number;
-    recentPages: any[];
+    recentProducts: any[];
     salesData: any[];
     monthlyGrowth: number | null;
     supplierStats?: {
@@ -21,5 +21,11 @@ export interface DashboardStats {
         products: number;
         orders: number;
         pages: number;
+        suppliers?: number;
+        purchaseOrders?: number;
+    };
+    fulfillment?: {
+        pending: number | string;
+        picking: number | string;
     };
 }
