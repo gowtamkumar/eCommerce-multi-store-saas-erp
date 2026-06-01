@@ -12,10 +12,22 @@ interface Subscriber {
     id: string;
     email: string;
     isActive: boolean;
+    status?: 'pending' | 'confirmed' | 'unsubscribed' | 'suppressed';
+    source?: string | null;
+    confirmedAt?: string | null;
+    unsubscribedAt?: string | null;
     createdAt: string;
 }
 
 const SubscriberRow = memo(({ subscriber }: { subscriber: Subscriber }) => {
+    const status = subscriber.status || (subscriber.isActive ? 'confirmed' : 'unsubscribed');
+    const statusStyles: Record<string, string> = {
+        confirmed: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50',
+        pending: 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50',
+        unsubscribed: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700',
+        suppressed: 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50',
+    };
+
     return (
         <motion.tr
             initial={{ opacity: 0, y: 5 }}
@@ -35,26 +47,35 @@ const SubscriberRow = memo(({ subscriber }: { subscriber: Subscriber }) => {
                     <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-brand-500 transition-colors">
                         <Mail className="w-4 h-4" />
                     </div>
-                    <span className="font-semibold text-slate-900 dark:text-white">{subscriber.email}</span>
+                    <div>
+                        <span className="font-semibold text-slate-900 dark:text-white">{subscriber.email}</span>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                            {subscriber.source || 'storefront'}
+                        </p>
+                    </div>
                 </div>
             </td>
             <td className="px-6 py-5">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${subscriber.isActive
-                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50'
-                    : 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50'
-                    }`}>
-                    {subscriber.isActive ? (
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${statusStyles[status] || statusStyles.unsubscribed}`}>
+                    {status === 'confirmed' ? (
                         <>
                             <CheckCircle className="w-3 h-3" />
-                            Active
+                            Confirmed
                         </>
                     ) : (
                         <>
                             <XCircle className="w-3 h-3" />
-                            Inactive
+                            {status}
                         </>
                     )}
                 </span>
+                <p className="mt-1 text-[10px] text-slate-400 font-semibold">
+                    {subscriber.confirmedAt
+                        ? `Confirmed ${new Date(subscriber.confirmedAt).toLocaleDateString()}`
+                        : subscriber.unsubscribedAt
+                            ? `Left ${new Date(subscriber.unsubscribedAt).toLocaleDateString()}`
+                            : 'Awaiting opt-in'}
+                </p>
             </td>
         </motion.tr>
     );
@@ -117,13 +138,14 @@ export default function Subscribers() {
             const res = await fetchAPI(`/subscribers?${params}`);
             if (res && res.data) {
                 const data = res.data;
-                const headers = ['Date', 'Email', 'Status'];
+                const headers = ['Date', 'Email', 'Status', 'Source'];
                 const csvContent = [
                     headers.join(','),
                     ...data.map((s: Subscriber) => [
                         new Date(s.createdAt).toISOString(),
                         `"${s.email}"`,
-                        s.isActive ? 'Active' : 'Inactive'
+                        s.status || (s.isActive ? 'confirmed' : 'unsubscribed'),
+                        `"${s.source || ''}"`
                     ].join(','))
                 ].join('\n');
 
@@ -146,7 +168,7 @@ export default function Subscribers() {
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-gradient-to-br from-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-brand-500/20">
+                    <div className="w-14 h-14 bg-linear-to-br from-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-brand-500/20">
                         <Mail className="w-7 h-7" />
                     </div>
                     <div>

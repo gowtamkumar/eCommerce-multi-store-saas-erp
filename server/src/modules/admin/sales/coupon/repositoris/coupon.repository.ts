@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { ILike, Repository } from 'typeorm'
+import { EntityManager, ILike, Repository } from 'typeorm'
 import { CouponEntity } from '../entities/coupon.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
@@ -10,6 +10,54 @@ export class CouponRepository {
     @InjectRepository(CouponEntity)
     private readonly repo: Repository<CouponEntity>,
   ) {}
+
+  /**
+   * Atomically reserve one coupon usage slot.
+   *
+   *   UPDATE coupons SET used_count = used_count + 1
+   *    WHERE id = $1 AND tenant_id = $2 AND is_active = true
+   *      AND (usage_limit IS NULL OR used_count < usage_limit)
+   *
+   * Returns true iff exactly one row was updated. Used at order-commit time
+   * to close the validate-then-increment race that allowed coupons to go
+   * over their `usage_limit`.
+   *
+   * Always pass the order's transactional EntityManager so a later order
+   * rollback rolls the counter back too.
+   */
+  async tryReserveUsage(id: string, tenantId: string, manager: EntityManager): Promise<boolean> {
+    const repo = manager.getRepository(CouponEntity)
+    const result = await repo
+      .createQueryBuilder()
+      .update(CouponEntity)
+      .set({ usedCount: () => '"used_count" + 1' })
+      .where('id = :id', { id })
+      .andWhere('tenant_id = :tenantId', { tenantId })
+      .andWhere('is_active = true')
+      .andWhere('(usage_limit IS NULL OR used_count < usage_limit)')
+      .andWhere('(start_date IS NULL OR start_date <= NOW())')
+      .andWhere('(expiry_date IS NULL OR expiry_date > NOW())')
+      .execute()
+    return (result.affected ?? 0) > 0
+  }
+
+  /**
+   * Inverse of `tryReserveUsage` — used to release a previously reserved
+   * slot if a downstream step fails before the transaction commits.
+   * (Optional safety net; rollback handles this automatically when the
+   * reserve and the failure share a transaction.)
+   */
+  async releaseUsage(id: string, tenantId: string, manager: EntityManager): Promise<boolean> {
+    const repo = manager.getRepository(CouponEntity)
+    const result = await repo
+      .createQueryBuilder()
+      .update(CouponEntity)
+      .set({ usedCount: () => 'GREATEST("used_count" - 1, 0)' })
+      .where('id = :id', { id })
+      .andWhere('tenant_id = :tenantId', { tenantId })
+      .execute()
+    return (result.affected ?? 0) > 0
+  }
 
   async findByCode(code: string, tenantId: string): Promise<CouponEntity | null> {
     return await this.repo.findOne({

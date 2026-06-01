@@ -180,6 +180,7 @@ export class OrderService {
         preCouponTotal,
         createOrderDto.appliedCouponCode,
         ctx,
+        manager,
       )
 
       const shippingFee = await this.orderProcessHelper.calculateShipping(

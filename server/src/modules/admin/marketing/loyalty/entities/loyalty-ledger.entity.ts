@@ -7,6 +7,8 @@ import { LoyaltyTransactionType } from '@/common/enums/loyalty-transaction-type.
 @Entity('loyalty_ledger')
 @Index(['tenantId', 'customerId'])
 @Index(['tenantId', 'createdAt'])
+// Aging support — point expiry sweeper joins on these
+@Index(['tenantId', 'expiresAt'])
 export class LoyaltyLedgerEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'customer_id' })
   customerId: string
@@ -42,4 +44,20 @@ export class LoyaltyLedgerEntity extends BaseEntity {
 
   @Column({ type: 'uuid', name: 'created_by', nullable: true })
   createdBy: string
+
+  /**
+   * When this batch of points expires (NULL = never). Points-expiry sweep
+   * inserts a matching negative-points "EXPIRED" entry once `now() > expires_at`
+   * and zeroes out any remaining unredeemed balance from this batch.
+   */
+  @Column({ type: 'timestamp', name: 'expires_at', nullable: true })
+  expiresAt: Date | null
+
+  /**
+   * Remaining points from this earning that have not yet been redeemed or
+   * expired. Only meaningful for positive credit entries; redemptions and
+   * expirations record 0. Lets us age points FIFO.
+   */
+  @Column({ type: 'integer', name: 'remaining_points', default: 0 })
+  remainingPoints: number
 }

@@ -38,6 +38,16 @@ export class LoyaltyService {
 
   /**
    * Credits loyalty points to a customer's balance.
+   *
+   * When called WITHOUT a manager, the operation is wrapped in its own
+   * transaction so the user-balance update and ledger insert remain
+   * atomic — previously a crash between the two would corrupt the
+   * running balance.
+   *
+   * Idempotency: if `referenceType`+`referenceId` is supplied, a unique
+   * partial index (see migration `MarketingMarketingHardening`) prevents
+   * duplicate awards for the same source event. The duplicate insert is
+   * caught and ignored.
    */
   async creditPoints(
     data: {
@@ -48,16 +58,35 @@ export class LoyaltyService {
       referenceId?: string
       note?: string
       createdBy?: string
+      expiresAt?: Date | null
     },
     ctx: RequestContextDto,
     manager?: EntityManager,
-  ): Promise<LoyaltyLedgerEntity> {
-    const em = manager || this.dataSource.manager
+  ): Promise<LoyaltyLedgerEntity | null> {
     const points = Math.max(0, Math.round(data.points))
-    if (points === 0) {
-      return null as any
-    }
+    if (points === 0) return null
 
+    if (manager) {
+      return this.creditPointsInternal(data, ctx, manager, points)
+    }
+    return this.dataSource.transaction((em) => this.creditPointsInternal(data, ctx, em, points))
+  }
+
+  private async creditPointsInternal(
+    data: {
+      customerId: string
+      points: number
+      type: LoyaltyTransactionType
+      referenceType?: string
+      referenceId?: string
+      note?: string
+      createdBy?: string
+      expiresAt?: Date | null
+    },
+    ctx: RequestContextDto,
+    em: EntityManager,
+    points: number,
+  ): Promise<LoyaltyLedgerEntity | null> {
     const tenantId = ctx.tenantId
 
     // Row lock user for update to prevent race conditions on balance updates
@@ -70,31 +99,48 @@ export class LoyaltyService {
       throw new BadRequestException('Customer user not found')
     }
 
-    const currentBalance = user.loyaltyPointsBalance || 0
-    const newBalance = currentBalance + points
-
-    // Update user balance
-    user.loyaltyPointsBalance = newBalance
-    await em.save(UserEntity, user)
-
-    // Save ledger entry
+    // Try to insert the ledger entry first; if a duplicate row already
+    // exists for the same (tenant, customer, type, referenceType, referenceId)
+    // we skip the balance update entirely — that's how we guarantee a
+    // single earn per order/referral/etc.
     const ledgerEntry = em.create(LoyaltyLedgerEntity, {
       customerId: data.customerId,
       type: data.type,
       points,
-      balanceAfter: newBalance,
+      balanceAfter: (user.loyaltyPointsBalance || 0) + points,
       referenceType: data.referenceType,
       referenceId: data.referenceId,
       note: data.note,
       tenantId,
       createdBy: data.createdBy || ctx.userId,
+      expiresAt: data.expiresAt ?? null,
+      remainingPoints: points,
     })
 
-    return await em.save(LoyaltyLedgerEntity, ledgerEntry)
+    try {
+      const saved = await em.save(LoyaltyLedgerEntity, ledgerEntry)
+      user.loyaltyPointsBalance = (user.loyaltyPointsBalance || 0) + points
+      await em.save(UserEntity, user)
+      return saved
+    } catch (e: any) {
+      if (e?.code === '23505') {
+        this.logger.warn(
+          `Duplicate loyalty earn suppressed: customer=${data.customerId} ` +
+            `type=${data.type} ref=${data.referenceType}:${data.referenceId}`,
+        )
+        return null
+      }
+      throw e
+    }
   }
 
   /**
    * Debits loyalty points from a customer's balance.
+   *
+   * Wraps itself in a transaction when no manager is passed so the user
+   * balance update and ledger insert remain atomic. Burns from oldest
+   * unexpired earnings first (FIFO) by drawing down the
+   * `remaining_points` columns on the credit batches.
    */
   async debitPoints(
     data: {
@@ -108,13 +154,30 @@ export class LoyaltyService {
     },
     ctx: RequestContextDto,
     manager?: EntityManager,
-  ): Promise<LoyaltyLedgerEntity> {
-    const em = manager || this.dataSource.manager
+  ): Promise<LoyaltyLedgerEntity | null> {
     const points = Math.max(0, Math.round(data.points))
-    if (points === 0) {
-      return null as any
-    }
+    if (points === 0) return null
 
+    if (manager) {
+      return this.debitPointsInternal(data, ctx, manager, points)
+    }
+    return this.dataSource.transaction((em) => this.debitPointsInternal(data, ctx, em, points))
+  }
+
+  private async debitPointsInternal(
+    data: {
+      customerId: string
+      points: number
+      type: LoyaltyTransactionType
+      referenceType?: string
+      referenceId?: string
+      note?: string
+      createdBy?: string
+    },
+    ctx: RequestContextDto,
+    em: EntityManager,
+    points: number,
+  ): Promise<LoyaltyLedgerEntity> {
     const tenantId = ctx.tenantId
 
     // Row lock user for update
@@ -129,16 +192,40 @@ export class LoyaltyService {
 
     const currentBalance = user.loyaltyPointsBalance || 0
     if (currentBalance < points) {
-      throw new BadRequestException(`Insufficient points balance. Available: ${currentBalance}, Required: ${points}`)
+      throw new BadRequestException(
+        `Insufficient points balance. Available: ${currentBalance}, Required: ${points}`,
+      )
+    }
+
+    // FIFO redemption: drain remaining_points from the oldest unexpired
+    // earn batches first. Skips the loop silently if older entries pre-date
+    // the column (remaining_points = 0) and falls back to balance-only mode.
+    const now = new Date()
+    let remaining = points
+    const batches = await em
+      .createQueryBuilder(LoyaltyLedgerEntity, 'l')
+      .where('l.tenant_id = :tenantId AND l.customer_id = :customerId', {
+        tenantId,
+        customerId: data.customerId,
+      })
+      .andWhere('l.remaining_points > 0')
+      .andWhere('(l.expires_at IS NULL OR l.expires_at > :now)', { now })
+      .orderBy('l.created_at', 'ASC')
+      .setLock('pessimistic_write')
+      .getMany()
+
+    for (const batch of batches) {
+      if (remaining <= 0) break
+      const take = Math.min(batch.remainingPoints, remaining)
+      batch.remainingPoints -= take
+      remaining -= take
+      await em.save(LoyaltyLedgerEntity, batch)
     }
 
     const newBalance = currentBalance - points
-
-    // Update user balance
     user.loyaltyPointsBalance = newBalance
     await em.save(UserEntity, user)
 
-    // Save ledger entry
     const ledgerEntry = em.create(LoyaltyLedgerEntity, {
       customerId: data.customerId,
       type: data.type,
@@ -149,9 +236,91 @@ export class LoyaltyService {
       note: data.note,
       tenantId,
       createdBy: data.createdBy || ctx.userId,
+      remainingPoints: 0,
     })
 
     return await em.save(LoyaltyLedgerEntity, ledgerEntry)
+  }
+
+  /**
+   * Sweep step: zero out any unredeemed remaining_points whose expiry has
+   * passed, and write a matching `EXPIRED` ledger entry. Idempotent — the
+   * unique partial index on (referenceType='EXPIRY', referenceId=batchId)
+   * keeps repeated runs safe.
+   */
+  async expirePoints(tenantId: string): Promise<{ batchesExpired: number; pointsExpired: number }> {
+    return this.dataSource.transaction(async (em) => {
+      const now = new Date()
+      const expired = await em
+        .createQueryBuilder(LoyaltyLedgerEntity, 'l')
+        .where('l.tenant_id = :tenantId', { tenantId })
+        .andWhere('l.remaining_points > 0')
+        .andWhere('l.expires_at IS NOT NULL AND l.expires_at <= :now', { now })
+        .setLock('pessimistic_write')
+        .getMany()
+
+      let pointsExpired = 0
+      for (const batch of expired) {
+        const drain = batch.remainingPoints
+        if (drain <= 0) continue
+
+        // Lock the user and adjust their balance down by what's actually
+        // still available (never below zero).
+        const user = await em.findOne(UserEntity, {
+          where: { id: batch.customerId, tenantId },
+          lock: { mode: 'pessimistic_write' },
+        })
+        if (!user) continue
+        const reduce = Math.min(drain, user.loyaltyPointsBalance || 0)
+        user.loyaltyPointsBalance = (user.loyaltyPointsBalance || 0) - reduce
+        await em.save(UserEntity, user)
+
+        batch.remainingPoints = 0
+        await em.save(LoyaltyLedgerEntity, batch)
+
+        const ledger = em.create(LoyaltyLedgerEntity, {
+          customerId: batch.customerId,
+          type: 'EXPIRED' as LoyaltyTransactionType,
+          points: -reduce,
+          balanceAfter: user.loyaltyPointsBalance,
+          referenceType: 'EXPIRY',
+          referenceId: batch.id,
+          note: `Auto-expired ${reduce} pts from earn dated ${batch.createdAt?.toISOString?.() ?? batch.createdAt}`,
+          tenantId,
+          remainingPoints: 0,
+        })
+        try {
+          await em.save(LoyaltyLedgerEntity, ledger)
+          pointsExpired += reduce
+        } catch (e: any) {
+          if (e?.code !== '23505') throw e
+          // Already expired by a concurrent run — safe to skip.
+        }
+      }
+      return { batchesExpired: expired.length, pointsExpired }
+    })
+  }
+
+  /**
+   * Outstanding loyalty liability per tenant — sum of unredeemed,
+   * unexpired remaining_points. Used by the finance/marketing dashboards
+   * to surface deferred-revenue exposure.
+   */
+  async getLiability(
+    tenantId: string,
+  ): Promise<{ outstandingPoints: number; customers: number }> {
+    const row = await this.dataSource
+      .createQueryBuilder(LoyaltyLedgerEntity, 'l')
+      .select('COALESCE(SUM(l.remaining_points), 0)', 'pts')
+      .addSelect('COUNT(DISTINCT l.customer_id)', 'customers')
+      .where('l.tenant_id = :tenantId', { tenantId })
+      .andWhere('l.remaining_points > 0')
+      .andWhere('(l.expires_at IS NULL OR l.expires_at > NOW())')
+      .getRawOne<{ pts: string; customers: string }>()
+    return {
+      outstandingPoints: Number(row?.pts ?? 0),
+      customers: Number(row?.customers ?? 0),
+    }
   }
 
   /**
@@ -268,6 +437,10 @@ export class LoyaltyService {
         note += ` + Spend bonus of ${bonusPoints} pts`
       }
 
+      const expiresAt = config.pointsExpireAfterDays
+        ? new Date(Date.now() + config.pointsExpireAfterDays * 24 * 60 * 60 * 1000)
+        : null
+
       await this.creditPoints(
         {
           customerId,
@@ -276,6 +449,7 @@ export class LoyaltyService {
           referenceType: 'ORDER',
           referenceId: resolvedOrder.id,
           note,
+          expiresAt,
         },
         ctx,
         em,

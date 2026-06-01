@@ -204,4 +204,50 @@ export class CampaignService {
 
     return { data, total, page, limit }
   }
+
+  /**
+   * KPI rollup for the admin UI. Hits the campaign row for counters and
+   * derives open/click rates from the SENT denominator (an OPENED row also
+   * counts as SENT in our model so this is delivery-relative).
+   */
+  async getKpis(
+    id: string,
+    ctx: RequestContextDto,
+  ): Promise<{
+    campaignId: string
+    totalAudience: number
+    sent: number
+    failed: number
+    opened: number
+    clicked: number
+    deliveryRate: number
+    openRate: number
+    clickRate: number
+  }> {
+    const campaign = await this.findOne(id, ctx)
+    const { opened, clicked } = await this.logRepository.getEngagementCounts(id)
+    const sent = campaign.sentCount ?? 0
+    const failed = campaign.failedCount ?? 0
+    const audience = campaign.totalAudience ?? 0
+    const rate = (num: number, den: number) => (den > 0 ? Number(((num / den) * 100).toFixed(2)) : 0)
+    return {
+      campaignId: id,
+      totalAudience: audience,
+      sent,
+      failed,
+      opened,
+      clicked,
+      deliveryRate: rate(sent, audience),
+      openRate: rate(opened, sent),
+      clickRate: rate(clicked, sent),
+    }
+  }
+
+  async recordOpen(campaignId: string, recipientKey: string): Promise<void> {
+    await this.logRepository.markOpened(campaignId, recipientKey)
+  }
+
+  async recordClick(campaignId: string, recipientKey: string): Promise<void> {
+    await this.logRepository.markClicked(campaignId, recipientKey)
+  }
 }

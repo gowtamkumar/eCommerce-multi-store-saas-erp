@@ -2,6 +2,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { EntityManager } from 'typeorm'
 import { CreateCouponDto } from '../dto/create-coupon.dto'
 import { UpdateCouponDto } from '../dto/update-coupon.dto'
 import { CouponEntity } from '../entities/coupon.entity'
@@ -83,6 +84,18 @@ export class CouponService {
     return coupon
   }
 
+  /**
+   * Fresh, non-cached coupon-by-code read. Use this in the validate /
+   * checkout flow so the displayed `usedCount` reflects what's actually in
+   * the database — the cached version can lag by up to 10 minutes and was
+   * the root cause of the over-redeem bug.
+   */
+  async findByCodeFresh(code: string, ctx: RequestContextDto): Promise<CouponEntity> {
+    const coupon = await this.couponRepository.findByCode(code, ctx.tenantId)
+    if (!coupon) throw new NotFoundException('Coupon not found')
+    return coupon
+  }
+
   async updateCoupon(
     id: string,
     updateCouponDto: UpdateCouponDto,
@@ -134,7 +147,9 @@ export class CouponService {
     this.logger.log(`${this.validateCoupon.name} Service Called`)
     const tenantId = ctx.tenantId
     try {
-      const coupon = await this.findByCodeCoupon(code, ctx)
+      // Always hit the DB for validation — `usedCount` is the gate that
+      // decides over-redemption and the cached copy can be stale.
+      const coupon = await this.findByCodeFresh(code, ctx)
 
       if (!coupon.isActive) throw new BadRequestException('Coupon is inactive')
       if (coupon.startDate && new Date() < coupon.startDate)
@@ -174,5 +189,33 @@ export class CouponService {
       this.cacheService.delCache(`coupons:code:${coupon.code}`, tenantId),
       this.cacheService.delCache(`coupons:id:${id}`, tenantId),
     ])
+  }
+
+  /**
+   * Race-free version of `incrementUsage` — must be called inside the
+   * order-creation transaction. Returns the reserved coupon on success
+   * or throws BadRequestException if the slot is no longer available
+   * (e.g. limit reached, deactivated, expired between validate and reserve).
+   */
+  async reserveUsage(
+    id: string,
+    ctx: RequestContextDto,
+    manager: EntityManager,
+  ): Promise<CouponEntity> {
+    const tenantId = ctx.tenantId
+    const ok = await this.couponRepository.tryReserveUsage(id, tenantId, manager)
+    if (!ok) {
+      throw new BadRequestException(
+        'Coupon is no longer available (usage limit reached or coupon expired)',
+      )
+    }
+    const coupon = await manager.getRepository(CouponEntity).findOne({ where: { id, tenantId } })
+    if (!coupon) throw new BadRequestException('Coupon not found after reservation')
+    // Schedule cache invalidation so subsequent /validate hits see fresh data.
+    Promise.all([
+      this.cacheService.delCache(`coupons:code:${coupon.code}`, tenantId),
+      this.cacheService.delCache(`coupons:id:${id}`, tenantId),
+    ]).catch((err) => this.logger.warn(`coupon cache invalidation failed: ${err?.message}`))
+    return coupon
   }
 }

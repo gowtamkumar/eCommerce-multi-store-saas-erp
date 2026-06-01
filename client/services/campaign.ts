@@ -58,3 +58,20 @@ export const deleteCampaign = async (id: string) => {
 export const fetchCampaignLogs = async (id: string, page: number = 1, limit: number = 10) => {
     return fetchAPI(`/campaigns/${id}/logs?page=${page}&limit=${limit}`);
 };
+
+export interface CampaignKpis {
+    campaignId: string;
+    totalAudience: number;
+    sent: number;
+    failed: number;
+    opened: number;
+    clicked: number;
+    deliveryRate: number;
+    openRate: number;
+    clickRate: number;
+}
+
+export const fetchCampaignKpis = async (id: string): Promise<CampaignKpis | null> => {
+    const res = await fetchAPI(`/campaigns/${id}/kpis`);
+    return res?.success ? res.data : null;
+};

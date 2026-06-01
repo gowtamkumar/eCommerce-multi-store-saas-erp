@@ -69,4 +69,10 @@ export class UpdateLoyaltyConfigDto {
   @Min(0)
   @Transform(({ value }) => Number(value))
   refereeMinPurchase?: number
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Transform(({ value }) => (value === null ? null : Math.round(Number(value))))
+  pointsExpireAfterDays?: number | null
 }

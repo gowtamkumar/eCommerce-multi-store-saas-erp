@@ -9,24 +9,33 @@ export class LoyaltySchedulerService implements OnModuleInit {
   constructor(@InjectQueue('loyalty') private readonly loyaltyQueue: Queue) {}
 
   async onModuleInit() {
-    this.logger.log('Initializing Loyalty Tiers Assessment Repeatable Scheduler...')
+    this.logger.log('Initializing Loyalty repeatable schedulers...')
     try {
-      // Clean up previous jobs with the same name if any config changed, or simply add the repeatable job
-      // We run it every night at midnight: cron '0 0 * * *'
-      // For local testing & robustness, we use a daily cron.
+      // Tier reassessment — midnight daily.
       await this.loyaltyQueue.add(
         'assess-tiers',
         {},
         {
-          repeat: {
-            pattern: '0 0 * * *', // Midnight daily
-          },
+          repeat: { pattern: '0 0 * * *' },
           jobId: 'assess-tiers-repeatable',
         },
       )
-      this.logger.log('Successfully registered repeatable job "assess-tiers" (0 0 * * *)')
+      this.logger.log('Registered repeatable "assess-tiers" (0 0 * * *)')
+
+      // Points expiry sweep — 03:00 daily so it doesn't collide with the
+      // tier job. Idempotent by virtue of the partial unique index on
+      // (tenant, ref_type='EXPIRY', ref_id=batchId).
+      await this.loyaltyQueue.add(
+        'expire-points',
+        {},
+        {
+          repeat: { pattern: '0 3 * * *' },
+          jobId: 'expire-points-repeatable',
+        },
+      )
+      this.logger.log('Registered repeatable "expire-points" (0 3 * * *)')
     } catch (err) {
-      this.logger.error('Failed to schedule repeatable job "assess-tiers":', err)
+      this.logger.error('Failed to schedule loyalty repeatable jobs:', err)
     }
   }
 }

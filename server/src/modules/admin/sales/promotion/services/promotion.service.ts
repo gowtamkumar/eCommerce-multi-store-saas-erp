@@ -127,6 +127,20 @@ export class PromotionService {
     this.logger.log(`${this.updatePromotion.name} Service Called`)
     const tenantId = ctx.tenantId
     const promotion = await this.findOne(id, ctx)
+
+    // Slug renames need the same conflict check as `createPromotion`,
+    // otherwise the composite tenant-scoped unique index throws a raw
+    // 23505 instead of a friendly 409.
+    if (updatePromotionDto.slug && updatePromotionDto.slug !== promotion.slug) {
+      const slugTaken = await this.promotionRepository.findBySlug(
+        updatePromotionDto.slug,
+        tenantId,
+      )
+      if (slugTaken && slugTaken.id !== id) {
+        throw new ConflictException('Promotion with this slug already exists')
+      }
+    }
+
     const updated = await this.promotionRepository.updateAndSave(promotion, updatePromotionDto)
     // Invalidate all affected cache keys atomically
     await Promise.all([

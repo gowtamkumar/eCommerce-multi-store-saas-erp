@@ -12,12 +12,29 @@ export class SubscriberRepository {
   ) {}
 
   async findByEmail(email: string, tenantId: string): Promise<SubscriberEntity | null> {
-    return this.repo.findOne({ where: { email, tenantId } })
+    return this.repo.findOne({ where: { email: email.trim().toLowerCase(), tenantId } })
+  }
+
+  async findByConfirmationToken(token: string): Promise<SubscriberEntity | null> {
+    return this.repo.findOne({ where: { confirmationToken: token } })
+  }
+
+  async findByUnsubscribeToken(token: string): Promise<SubscriberEntity | null> {
+    return this.repo.findOne({ where: { unsubscribeToken: token } })
+  }
+
+  async save(entity: SubscriberEntity): Promise<SubscriberEntity> {
+    return this.repo.save(entity)
+  }
+
+  async remove(entity: SubscriberEntity): Promise<void> {
+    await this.repo.remove(entity)
   }
 
   async createAndSave(dto: any, ctx: RequestContextDto): Promise<SubscriberEntity> {
     const subscriber = this.repo.create({
       ...dto,
+      email: typeof dto.email === 'string' ? dto.email.trim().toLowerCase() : dto.email,
       tenantId: ctx.tenantId,
       userId: ctx.userId,
     } as SubscriberEntity)

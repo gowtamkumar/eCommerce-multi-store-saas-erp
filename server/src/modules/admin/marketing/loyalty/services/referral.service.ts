@@ -53,30 +53,59 @@ export class ReferralService {
 
   /**
    * Links a new user to their referrer by verifying the provided referral code.
+   *
+   * First-attribution wins: the UPDATE only fires when `referred_by_id`
+   * is still NULL. A second referral submission for an already-attributed
+   * user is silently ignored (the original referrer keeps the credit).
    */
-  async linkReferral(refereeId: string, referralCode: string, tenantId: string, manager?: EntityManager): Promise<void> {
+  async linkReferral(
+    refereeId: string,
+    referralCode: string,
+    tenantId: string,
+    manager?: EntityManager,
+    source?: string,
+  ): Promise<{ attributed: boolean; alreadyAttributed?: boolean }> {
     const em = manager || this.dataSource.manager
-    if (!referralCode) return
+    if (!referralCode) return { attributed: false }
 
-    // Find referrer
     const referrer = await em.findOne(UserEntity, { where: { referralCode, tenantId } })
     if (!referrer) {
       this.logger.warn(`Referral code "${referralCode}" not found for tenant ${tenantId}`)
-      return
+      return { attributed: false }
     }
 
-    // Prevent self-referral
     if (referrer.id === refereeId) {
       throw new BadRequestException('You cannot refer yourself')
     }
 
-    // Link referee
-    const referee = await em.findOne(UserEntity, { where: { id: refereeId, tenantId } })
-    if (referee) {
-      referee.referredById = referrer.id
-      await em.save(UserEntity, referee)
-      this.logger.log(`Linked referee ${refereeId} to referrer ${referrer.id}`)
+    // Atomic first-wins attribution. Adds WHERE referred_by_id IS NULL so a
+    // late referral cannot overwrite an existing one.
+    const result = await em
+      .createQueryBuilder()
+      .update(UserEntity)
+      .set({
+        referredById: referrer.id,
+        referredAt: () => 'NOW()',
+        referralSource: source ?? null,
+      })
+      .where('id = :refereeId', { refereeId })
+      .andWhere('tenant_id = :tenantId', { tenantId })
+      .andWhere('referred_by_id IS NULL')
+      .execute()
+
+    if ((result.affected ?? 0) === 0) {
+      const existing = await em.findOne(UserEntity, {
+        where: { id: refereeId, tenantId },
+        select: ['id', 'referredById'],
+      })
+      this.logger.log(
+        `Referral attempt rejected for ${refereeId}: already attributed to ${existing?.referredById ?? 'n/a'}`,
+      )
+      return { attributed: false, alreadyAttributed: true }
     }
+
+    this.logger.log(`Linked referee ${refereeId} to referrer ${referrer.id} (source=${source ?? 'n/a'})`)
+    return { attributed: true }
   }
 
   /**

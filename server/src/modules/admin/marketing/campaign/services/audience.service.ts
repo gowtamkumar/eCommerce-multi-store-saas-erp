@@ -4,11 +4,19 @@ import { Repository } from 'typeorm'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { SubscriberEntity } from '@/modules/admin/customer/subscriber/entities/subscriber.entity'
 import { LeadEntity } from '@/modules/admin/customer/lead/entities/lead.entity'
+import { CampaignType } from '../enums/campaign-type.enum'
 
 export interface AudienceOptions {
   targetUsers?: boolean
   targetSubscribers?: boolean
   targetLeads?: boolean
+  /**
+   * When set, restrict audience to members that can actually be reached on
+   * this channel (have an email for EMAIL, a phone for SMS, a userId for
+   * PUSH). Avoids queueing thousands of jobs that will all fail with
+   * `missing recipient info`.
+   */
+  channel?: CampaignType
 }
 
 export interface AudienceMember {
@@ -107,8 +115,35 @@ export class AudienceService {
       })
     }
 
-    const audience = Array.from(membersMap.values())
+    let audience = Array.from(membersMap.values())
+
+    // Channel-aware filtering: drop members who can't be reached on the
+    // requested channel before we queue any jobs.
+    if (options.channel) {
+      const before = audience.length
+      audience = audience.filter((m) => this.canReceiveOnChannel(m, options.channel!))
+      const dropped = before - audience.length
+      if (dropped > 0) {
+        this.logger.log(`Filtered ${dropped} members lacking ${options.channel} contact info`)
+      }
+    }
+
     this.logger.log(`Total unique audience members found: ${audience.length}`)
     return audience
+  }
+
+  private canReceiveOnChannel(m: AudienceMember, channel: CampaignType): boolean {
+    switch (channel) {
+      case CampaignType.EMAIL:
+        return !!m.email
+      case CampaignType.SMS:
+        return !!m.phone
+      case CampaignType.PUSH:
+        // PushService.sendToUser needs a userId — only `user`-sourced
+        // members have a device token registered in our identity tables.
+        return m.source === 'user' && !!(m.pushToken || m.fcmToken)
+      default:
+        return true
+    }
   }
 }

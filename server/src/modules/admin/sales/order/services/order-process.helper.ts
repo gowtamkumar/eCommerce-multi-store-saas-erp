@@ -1,22 +1,22 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
-import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
-import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
-import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
-import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
+import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { DiscountType } from '@/common/enums/discount-type.enum'
+import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
+import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { DiscountStrategyFactory } from '@/common/strategies/discount/Discount-strategy.factory'
 import { ItemPricingStrategyFactory } from '@/common/strategies/pricing/item-pricing-strategy.factory'
-import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
-import { InventoryTransactionReferenceType } from '@/common/enums/inventory-transaction-reference-type.enum'
 import { ShippingStrategyFactory } from '@/common/strategies/shipping/shipping-strategy.factory'
+import { PricingService } from '@/modules/admin/catalog/pricing/pricing.service'
+import { ProductEntity } from '@/modules/admin/catalog/product/entities/product.entity'
+import { ProductVariantEntity } from '@/modules/admin/catalog/product/entities/variant.entity'
 import { InventoryLedgerService } from '@/modules/admin/operations/logistics/inventory-transaction/inventory-ledger.service'
 import { StockReservationService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.service'
 import { CouponService } from '@/modules/admin/sales/coupon/services/coupon.service'
-import { EntityManager } from 'typeorm'
+import { CreateOrderDto } from '@/modules/admin/sales/order/dto/create-order.dto'
+import { OrderItemEntity } from '@/modules/admin/sales/order/entities/order-item.entity'
+import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { PricingService } from '@/modules/admin/catalog/pricing/pricing.service'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { EntityManager } from 'typeorm'
 
 @Injectable()
 export class OrderProcessHelper {
@@ -40,7 +40,11 @@ export class OrderProcessHelper {
     ctx: RequestContextDto,
     manager: EntityManager,
     priceBookCode?: string | null,
-  ): Promise<{ orderItem: OrderItemEntity; ledgerEntryId: string | null; reservationId: string | null }> {
+  ): Promise<{
+    orderItem: OrderItemEntity
+    ledgerEntryId: string | null
+    reservationId: string | null
+  }> {
     const { productId, variantId, quantity, pricing: itemPricingDto } = itemDto
     const tenantId = ctx.tenantId
 
@@ -162,46 +166,58 @@ export class OrderProcessHelper {
         productId: product.id,
         variantId: variant?.id ?? null,
         warehouseId: null, // warehouseId not yet known at order creation; set during fulfillment
-        orderId: null,     // backfilled after order.save() — same pattern as ledgerEntry
+        orderId: null, // backfilled after order.save() — same pattern as ledgerEntry
         reservedQty: quantity,
       },
       ctx,
       manager,
     )
 
-    return { orderItem: buildOrderItem(), ledgerEntryId: ledgerEntry.id, reservationId: reservation.id }
+    return {
+      orderItem: buildOrderItem(),
+      ledgerEntryId: ledgerEntry.id,
+      reservationId: reservation.id,
+    }
   }
 
   /**
    * Validates and applies a coupon to the order.
+   *
+   * Reservation must run inside the order's transaction so the counter
+   * rolls back automatically if the order itself fails. The conditional
+   * UPDATE in `reserveUsage` closes the validate-then-increment race that
+   * previously let coupons go over `usage_limit` under concurrent checkout.
    */
   async applyCoupon(
     order: OrderEntity,
     preCouponTotal: number,
     couponCode: string | undefined,
     ctx: RequestContextDto,
+    manager: EntityManager,
   ): Promise<{ couponDiscountAmount: number; isFreeShipping: boolean }> {
     let couponDiscountAmount = 0
     let isFreeShipping = false
-    const tenantId = ctx.tenantId
 
-    if (couponCode) {
-      try {
-        const validation = await this.couponService.validateCoupon(couponCode, preCouponTotal, ctx)
-        if (validation.valid) {
-          couponDiscountAmount = validation.discountAmount
-          order.appliedCoupon = couponCode
-          order.couponDiscountAmount = couponDiscountAmount
+    if (!couponCode) return { couponDiscountAmount, isFreeShipping }
 
-          if (validation.coupon.discountType === DiscountType.FREE_SHIPPING) {
-            isFreeShipping = true
-          }
+    try {
+      const validation = await this.couponService.validateCoupon(couponCode, preCouponTotal, ctx)
+      if (!validation.valid) return { couponDiscountAmount, isFreeShipping }
 
-          await this.couponService.incrementUsage(validation.coupon.id, ctx)
-        }
-      } catch (error) {
-        this.logger.warn(`Coupon validation failed for code: ${couponCode}`, error.message)
+      // Atomically claim a usage slot. Throws if the slot is gone.
+      await this.couponService.reserveUsage(validation.coupon.id, ctx, manager)
+
+      couponDiscountAmount = validation.discountAmount
+      order.appliedCoupon = couponCode
+      order.couponDiscountAmount = couponDiscountAmount
+      if (validation.coupon.discountType === DiscountType.FREE_SHIPPING) {
+        isFreeShipping = true
       }
+    } catch (error) {
+      // Concurrent over-redeem or stale validate — surface to the caller so
+      // checkout fails cleanly instead of silently dropping the discount.
+      if (error instanceof BadRequestException) throw error
+      this.logger.warn(`Coupon validation failed for code: ${couponCode}`, error?.message)
     }
 
     return { couponDiscountAmount, isFreeShipping }

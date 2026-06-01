@@ -9,6 +9,7 @@ import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { LoyaltyService } from '../services/loyalty.service'
 import { UpdateLoyaltyConfigDto } from '../dto/update-loyalty-config.dto'
 import { ManualPointsAdjustmentDto } from '../dto/manual-points-adjustment.dto'
+import { LoyaltyRuleDto } from '../dto/loyalty-rule.dto'
 import { LoyaltyTransactionType } from '@/common/enums/loyalty-transaction-type.enum'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { DataSource } from 'typeorm'
@@ -201,10 +202,10 @@ export class LoyaltyController {
   @UseGuards(SubscriptionGuard)
   @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async createLoyaltyRule(
-    @Body() body: any,
+    @Body() body: LoyaltyRuleDto,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.loyaltyService.createRule(body, ctx.tenantId)
+    const data = await this.loyaltyService.createRule(body as any, ctx.tenantId)
     return {
       success: true,
       statusCode: 201,
@@ -218,14 +219,36 @@ export class LoyaltyController {
   @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
   async updateLoyaltyRule(
     @Param('id') id: string,
-    @Body() body: any,
+    @Body() body: LoyaltyRuleDto,
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    const data = await this.loyaltyService.updateRule(id, body, ctx.tenantId)
+    const data = await this.loyaltyService.updateRule(id, body as any, ctx.tenantId)
     return {
       success: true,
       statusCode: 200,
       message: 'Loyalty rule updated successfully',
+      data,
+    }
+  }
+
+  /**
+   * Admin: outstanding loyalty liability for the current tenant.
+   *
+   * Useful for finance dashboards — total unredeemed unexpired points and
+   * the number of customers holding them. Pairs with the daily expiry sweep
+   * so the liability decreases as expired batches roll off.
+   */
+  @Get('marketing/loyalty/liability')
+  @UseGuards(SubscriptionGuard)
+  @RequirePermissions(SystemPermissions.MARKETING_MANAGE)
+  async getLiability(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<{ outstandingPoints: number; customers: number }>> {
+    const data = await this.loyaltyService.getLiability(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Loyalty liability retrieved successfully',
       data,
     }
   }

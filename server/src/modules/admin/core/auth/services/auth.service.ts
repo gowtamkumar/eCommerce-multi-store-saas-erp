@@ -91,6 +91,8 @@ export class AuthService {
           user.id,
           registerCredentialDto.referralCode,
           tenantId,
+          undefined,
+          'signup',
         )
       } catch (e) {
         this.logger.error(`Failed to link referral code: ${e.message}`)

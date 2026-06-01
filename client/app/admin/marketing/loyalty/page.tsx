@@ -12,11 +12,19 @@ import {
   createLoyaltyRule,
   updateLoyaltyRule,
   deleteLoyaltyRule,
-  LoyaltyRule
+  LoyaltyRule,
+  getLoyaltyLiability,
+  LoyaltyLiability
 } from "@/services/loyalty";
-import { ArrowDownRight, ArrowUpRight, RefreshCw, Save, Users, Plus, Trash2, Edit2, Calendar, X, AlertTriangle, Award } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, RefreshCw, Save, Users, Plus, Trash2, Edit2, Calendar, X, Award } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+
+type LoyaltyRuleType = "CATEGORY_MULTIPLIER" | "MIN_SPEND_BONUS" | "WEEKEND_MULTIPLIER";
+
+function getErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
 
 export default function AdminLoyaltyPage() {
   const [activeSubTab, setActiveSubTab] = useState<"rules" | "adjust" | "dynamic">("rules");
@@ -24,6 +32,7 @@ export default function AdminLoyaltyPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
+  const [liability, setLiability] = useState<LoyaltyLiability | null>(null);
 
   // Dynamic rules states
   const [rules, setRules] = useState<LoyaltyRule[]>([]);
@@ -33,7 +42,7 @@ export default function AdminLoyaltyPage() {
 
   // Form states for rule
   const [ruleName, setRuleName] = useState("");
-  const [ruleType, setRuleType] = useState<"CATEGORY_MULTIPLIER" | "MIN_SPEND_BONUS" | "WEEKEND_MULTIPLIER">("CATEGORY_MULTIPLIER");
+  const [ruleType, setRuleType] = useState<LoyaltyRuleType>("CATEGORY_MULTIPLIER");
   const [ruleValue, setRuleValue] = useState<number>(2);
   const [ruleCategoryId, setRuleCategoryId] = useState("");
   const [ruleMinSpend, setRuleMinSpend] = useState<number>(100);
@@ -61,18 +70,18 @@ export default function AdminLoyaltyPage() {
     }
   }, [activeSubTab]);
 
-  const loadRules = async () => {
+  async function loadRules() {
     setLoadingRules(true);
     try {
       const data = await getLoyaltyRules();
       setRules(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "Failed to load dynamic rules");
+      toast.error(getErrorMessage(err, "Failed to load dynamic rules"));
     } finally {
       setLoadingRules(false);
     }
-  };
+  }
 
   const handleDeleteRule = async (id: string) => {
     if (!confirm("Are you sure you want to delete this rule?")) return;
@@ -80,9 +89,9 @@ export default function AdminLoyaltyPage() {
       await deleteLoyaltyRule(id);
       toast.success("Loyalty rule deleted successfully");
       loadRules();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "Failed to delete rule");
+      toast.error(getErrorMessage(err, "Failed to delete rule"));
     }
   };
 
@@ -118,7 +127,7 @@ export default function AdminLoyaltyPage() {
     }
     setSubmittingRule(true);
 
-    const conditions: Record<string, any> = {};
+    const conditions: Record<string, unknown> = {};
     if (ruleType === "CATEGORY_MULTIPLIER") {
       conditions.categoryId = ruleCategoryId.trim();
     } else if (ruleType === "MIN_SPEND_BONUS") {
@@ -145,27 +154,31 @@ export default function AdminLoyaltyPage() {
       }
       setShowRuleModal(false);
       loadRules();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "Failed to save loyalty rule");
+      toast.error(getErrorMessage(err, "Failed to save loyalty rule"));
     } finally {
       setSubmittingRule(false);
     }
   };
 
 
-  const loadConfig = async () => {
+  async function loadConfig() {
     setLoading(true);
     try {
-      const data = await getLoyaltyConfig();
+      const [data, liabilityData] = await Promise.all([
+        getLoyaltyConfig(),
+        getLoyaltyLiability().catch(() => null),
+      ]);
       setConfig(data);
-    } catch (err: any) {
+      setLiability(liabilityData);
+    } catch (err: unknown) {
       console.error(err);
-      setMessage({ text: err.message || "Failed to load loyalty settings", type: "error" });
+      setMessage({ text: getErrorMessage(err, "Failed to load loyalty settings"), type: "error" });
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,9 +189,9 @@ export default function AdminLoyaltyPage() {
       const updated = await updateLoyaltyConfig(config);
       setConfig(updated);
       setMessage({ text: "Loyalty program settings updated successfully!", type: "success" });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setMessage({ text: err.message || "Failed to save settings", type: "error" });
+      setMessage({ text: getErrorMessage(err, "Failed to save settings"), type: "error" });
     } finally {
       setSaving(false);
     }
@@ -191,7 +204,7 @@ export default function AdminLoyaltyPage() {
     try {
       const history = await getCustomerLoyaltyHistory(customerId.trim());
       setCustomerHistory(history);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setAdjustMessage({ text: "Failed to fetch ledger for this customer ID. Verify it is correct.", type: "error" });
       setCustomerHistory([]);
@@ -228,9 +241,9 @@ export default function AdminLoyaltyPage() {
       // Reload history to verify balance changes
       const history = await getCustomerLoyaltyHistory(customerId.trim());
       setCustomerHistory(history);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setAdjustMessage({ text: err.message || "Adjustment failed", type: "error" });
+      setAdjustMessage({ text: getErrorMessage(err, "Adjustment failed"), type: "error" });
     } finally {
       setLoadingHistory(false);
     }
@@ -241,7 +254,7 @@ export default function AdminLoyaltyPage() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase tracking-wider text-2xl">
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-wider">
             Loyalty & Referrals Engine
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
@@ -344,6 +357,28 @@ export default function AdminLoyaltyPage() {
                         min="1"
                       />
                     </div>
+                    <div>
+                      <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Points Expire After Days</label>
+                      <input
+                        type="number"
+                        value={config.pointsExpireAfterDays ?? ""}
+                        placeholder="Never"
+                        onChange={(e) => setConfig({ ...config, pointsExpireAfterDays: e.target.value ? Number(e.target.value) : null })}
+                        className="w-full mt-2 px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-750 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-slate-950 dark:text-white"
+                        min="1"
+                      />
+                      <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Blank means points never expire.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="rounded-2xl bg-brand-50 dark:bg-brand-950/20 p-4 border border-brand-100 dark:border-brand-900/50">
+                      <p className="text-[10px] font-black text-brand-500 uppercase tracking-widest">Outstanding Liability</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white">{(liability?.outstandingPoints ?? 0).toLocaleString()}</p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 dark:bg-slate-950 p-4 border border-slate-100 dark:border-slate-800">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Customers Holding Points</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white">{(liability?.customers ?? 0).toLocaleString()}</p>
+                    </div>
                   </div>
                 </div>
 
@@ -357,7 +392,7 @@ export default function AdminLoyaltyPage() {
                       <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Reward Channel</label>
                       <select
                         value={config.referralRewardType}
-                        onChange={(e: any) => setConfig({ ...config, referralRewardType: e.target.value })}
+                        onChange={(e) => setConfig({ ...config, referralRewardType: e.target.value as "WALLET" | "POINTS" })}
                         className="w-full mt-2 px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-750 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-slate-950 dark:text-white"
                       >
                         <option value="POINTS">Loyalty Points</option>
@@ -589,11 +624,11 @@ export default function AdminLoyaltyPage() {
                     <Users className="w-10 h-10 text-slate-400 mx-auto" />
                     <h4 className="text-sm font-black text-slate-700 dark:text-slate-300">No Ledger Retrieved</h4>
                     <p className="text-xs text-slate-450 max-w-sm mx-auto leading-relaxed">
-                      Input a valid customer ID in the balance adjustment tool and click "Find" or perform adjustments to view their immutable transaction logs.
+                      Input a valid customer ID in the balance adjustment tool and click &quot;Find&quot; or perform adjustments to view their immutable transaction logs.
                     </p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto rounded-[1.5rem] border border-slate-150 dark:border-slate-800 bg-white dark:bg-slate-950">
+                  <div className="overflow-x-auto rounded-3xl border border-slate-150 dark:border-slate-800 bg-white dark:bg-slate-950">
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-900/50 text-[9px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100 dark:border-slate-800">
@@ -705,7 +740,7 @@ export default function AdminLoyaltyPage() {
                     return (
                       <div
                         key={rule.id}
-                        className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-200/50 dark:border-slate-850 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
+                        className="bg-white dark:bg-slate-900 rounded-4xl p-6 border border-slate-200/50 dark:border-slate-850 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
                       >
                         <div className="space-y-4">
                           <div className="flex justify-between items-start">
@@ -793,7 +828,7 @@ export default function AdminLoyaltyPage() {
 
       {/* Rule CRUD Modal */}
       {showRuleModal && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-70 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowRuleModal(false)} />
           <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
@@ -833,7 +868,7 @@ export default function AdminLoyaltyPage() {
                 <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Rule Type</label>
                 <select
                   value={ruleType}
-                  onChange={(e) => setRuleType(e.target.value as any)}
+                  onChange={(e) => setRuleType(e.target.value as LoyaltyRuleType)}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-sm font-semibold"
                 >
                   <option value="CATEGORY_MULTIPLIER">Category Multiplier</option>

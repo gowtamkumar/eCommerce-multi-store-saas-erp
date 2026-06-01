@@ -6,6 +6,7 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
 import { SubscriptionGuard } from '@/common/guards/subscription.guard'
 import { RequireFeature } from '@/common/decorators/require-feature.decorator'
+import { Public } from '@/common/decorators/public.decorator'
 import {
   Body,
   Controller,
@@ -81,10 +82,9 @@ export class PromotionController {
     }
   }
 
-  // ─── Public endpoint (no auth) — used by storefront /offers page ───
+  // ─── Public endpoints (no auth, no admin permissions) — storefront ───
+  @Public()
   @Get('offers')
-  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
-  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
   async getOfferProducts(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<any>> {
@@ -98,9 +98,8 @@ export class PromotionController {
     }
   }
 
+  @Public()
   @Get('slug/:slug')
-  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
-  @RequirePermissions(SystemPermissions.PROMOTIONS_MANAGE)
   async getPromotionBySlug(
     @Param('slug') slug: string,
     @RequestContext() ctx: RequestContextDto,

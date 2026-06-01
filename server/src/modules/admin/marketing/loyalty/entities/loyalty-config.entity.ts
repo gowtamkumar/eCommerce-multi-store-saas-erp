@@ -45,6 +45,13 @@ export class LoyaltyConfigEntity extends BaseEntity {
   @Column({ type: 'decimal', name: 'referee_min_purchase', precision: 10, scale: 2, default: 20.0 })
   refereeMinPurchase: number // Minimum spent on referee's first purchase to qualify referrer's reward
 
+  /**
+   * Points expire this many days after they're earned (NULL = never).
+   * Drives both `creditPoints({expiresAt})` and the daily expiry sweep.
+   */
+  @Column({ type: 'integer', name: 'points_expire_after_days', nullable: true })
+  pointsExpireAfterDays: number | null
+
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string
 

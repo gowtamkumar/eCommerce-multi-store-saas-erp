@@ -7,14 +7,17 @@ import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 
 /** Optimizes the hot active-promotions query used by the storefront */
 @Index(['tenantId', 'isActive', 'startDate', 'endDate'])
-/** Optimizes slug-based public page lookups */
-@Index(['tenantId', 'slug'])
+/** Slug uniqueness must be scoped to tenant — see migration MarketingMarketingHardening */
+@Index('UQ_promotions_tenant_slug', ['tenantId', 'slug'], { unique: true })
 @Entity('promotions')
 export class PromotionEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   name: string
 
-  @Column({ unique: true })
+  // `unique: true` here would create a global-unique index that conflicts
+  // with the tenant-scoped composite above; we keep the column non-unique
+  // and rely on the composite for the real uniqueness contract.
+  @Column()
   slug: string
 
   @Column({ type: 'text', nullable: true })

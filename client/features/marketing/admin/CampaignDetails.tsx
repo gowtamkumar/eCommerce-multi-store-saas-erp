@@ -1,5 +1,5 @@
 'use client';
-import { fetchCampaignById, fetchCampaignLogs } from '@/services/campaign';
+import { CampaignKpis, fetchCampaignById, fetchCampaignKpis, fetchCampaignLogs } from '@/services/campaign';
 import dayjs from 'dayjs';
 import { motion } from 'framer-motion';
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Clock, Info, Loader2, Mail, Users, X } from 'lucide-react';
@@ -18,6 +18,7 @@ export default function CampaignDetails({ campaign: initialCampaign, onClose }: 
     const [limit] = useState(10);
     const [total, setTotal] = useState(0);
     const [loadingLogs, setLoadingLogs] = useState(false);
+    const [kpis, setKpis] = useState<CampaignKpis | null>(null);
 
     const message = currentCampaign.messages?.[0];
 
@@ -39,6 +40,23 @@ export default function CampaignDetails({ campaign: initialCampaign, onClose }: 
         }, 3000);
 
         return () => clearInterval(interval);
+    }, [currentCampaign.id, currentCampaign.status]);
+
+    useEffect(() => {
+        const loadKpis = async () => {
+            try {
+                const data = await fetchCampaignKpis(currentCampaign.id);
+                if (data) setKpis(data);
+            } catch (error) {
+                console.error('Failed to load campaign KPIs', error);
+            }
+        };
+
+        loadKpis();
+        const interval = currentCampaign.status === CampaignStatus.RUNNING ? setInterval(loadKpis, 5000) : null;
+        return () => {
+            if (interval) clearInterval(interval);
+        };
     }, [currentCampaign.id, currentCampaign.status]);
 
     // Fetch logs (refetched on page change or if campaign ID changes)
@@ -75,7 +93,7 @@ export default function CampaignDetails({ campaign: initialCampaign, onClose }: 
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -116,9 +134,9 @@ export default function CampaignDetails({ campaign: initialCampaign, onClose }: 
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         {[
                             { label: 'Total Audience', value: currentCampaign.totalAudience, icon: Users, color: 'text-brand-600' },
-                            { label: 'Successfully Sent', value: currentCampaign.sentCount, icon: CheckCircle2, color: 'text-emerald-600' },
-                            { label: 'Failed Delivery', value: currentCampaign.failedCount, icon: AlertCircle, color: 'text-rose-600' },
-                            { label: 'Target Groups', value: [currentCampaign.targetUsers && 'Users', currentCampaign.targetSubscribers && 'Subscribers', currentCampaign.targetLeads && 'Leads'].filter(Boolean).length, icon: Info, color: 'text-blue-600' },
+                            { label: 'Delivery Rate', value: `${kpis?.deliveryRate ?? 0}%`, icon: CheckCircle2, color: 'text-emerald-600' },
+                            { label: 'Open Rate', value: `${kpis?.openRate ?? 0}%`, icon: Mail, color: 'text-blue-600' },
+                            { label: 'Click Rate', value: `${kpis?.clickRate ?? 0}%`, icon: Info, color: 'text-amber-600' },
                         ].map((stat, i) => (
                             <div key={i} className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-800">
                                 <div className="flex items-center gap-3 mb-2">
@@ -130,10 +148,24 @@ export default function CampaignDetails({ campaign: initialCampaign, onClose }: 
                         ))}
                     </div>
 
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {[
+                            ['Sent', kpis?.sent ?? currentCampaign.sentCount],
+                            ['Failed', kpis?.failed ?? currentCampaign.failedCount],
+                            ['Opened', kpis?.opened ?? 0],
+                            ['Clicked', kpis?.clicked ?? 0],
+                        ].map(([label, value]) => (
+                            <div key={label} className="px-5 py-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+                                <p className="text-xl font-black text-slate-900 dark:text-white">{value}</p>
+                            </div>
+                        ))}
+                    </div>
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Content Preview */}
                         <div className="lg:col-span-2 space-y-6">
-                            <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+                            <div className="bg-white dark:bg-slate-800 rounded-4xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
                                 <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                     <h3 className="font-black text-xs uppercase tracking-widest text-slate-600 dark:text-slate-400 flex items-center gap-2">
                                         <Mail className="w-4 h-4" /> Content Preview
@@ -197,7 +229,7 @@ export default function CampaignDetails({ campaign: initialCampaign, onClose }: 
                         {/* Audience & Schedule Details */}
                         <div className="space-y-6">
                             {/* Targeting */}
-                            <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6">
+                            <div className="bg-white dark:bg-slate-800 p-8 rounded-4xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-6">
                                 <h3 className="font-black text-xs uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                     <Users className="w-4 h-4" /> Audience Targeting
                                 </h3>
@@ -216,7 +248,7 @@ export default function CampaignDetails({ campaign: initialCampaign, onClose }: 
                             </div>
 
                             {/* Schedule */}
-                            <div className="bg-slate-900 text-white p-8 rounded-[2rem] space-y-6">
+                            <div className="bg-slate-900 text-white p-8 rounded-4xl space-y-6">
                                 <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
                                     <Clock className="w-4 h-4" /> Timeframe & History
                                 </h3>
@@ -240,7 +272,7 @@ export default function CampaignDetails({ campaign: initialCampaign, onClose }: 
                     </div>
 
                     {/* Delivery Logs Section */}
-                    <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+                    <div className="bg-white dark:bg-slate-800 rounded-4xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
                         <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                             <h3 className="font-black text-xs uppercase tracking-widest text-slate-600 dark:text-slate-400 flex items-center gap-2">
                                 <Clock className="w-4 h-4" /> Delivery Logs ({total})
@@ -275,8 +307,8 @@ export default function CampaignDetails({ campaign: initialCampaign, onClose }: 
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-4">
-                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${log.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600' :
-                                                        log.status === 'FAILED' ? 'bg-rose-100 text-rose-600' :
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${['sent', 'opened', 'clicked'].includes(log.status) ? 'bg-emerald-100 text-emerald-600' :
+                                                        log.status === 'failed' ? 'bg-rose-100 text-rose-600' :
                                                             'bg-slate-100 text-slate-600'
                                                         }`}>
                                                         {log.status}

@@ -132,6 +132,14 @@ export class UserEntity {
   @JoinColumn({ name: 'referred_by_id' })
   referredBy: UserEntity | null
 
+  /** When the referral attribution was first set. NULL when no referrer. */
+  @Column({ type: 'timestamp', name: 'referred_at', nullable: true })
+  referredAt: Date | null
+
+  /** Free-form audit channel (campaign, landing page, social, etc.). */
+  @Column({ type: 'varchar', length: 100, name: 'referral_source', nullable: true })
+  referralSource: string | null
+
   @Column({ type: 'integer', name: 'loyalty_points_balance', default: 0 })
   loyaltyPointsBalance: number
 

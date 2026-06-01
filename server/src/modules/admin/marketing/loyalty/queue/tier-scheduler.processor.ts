@@ -6,6 +6,7 @@ import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { LoyaltyConfigEntity } from '../entities/loyalty-config.entity'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { LoyaltyService } from '../services/loyalty.service'
 
 @Processor('loyalty')
 export class TierSchedulerProcessor extends WorkerHost {
@@ -14,6 +15,7 @@ export class TierSchedulerProcessor extends WorkerHost {
   constructor(
     private readonly dataSource: DataSource,
     private readonly notificationService: NotificationService,
+    private readonly loyaltyService: LoyaltyService,
   ) {
     super()
   }
@@ -21,11 +23,45 @@ export class TierSchedulerProcessor extends WorkerHost {
   async process(job: Job<any, any, string>): Promise<any> {
     this.logger.log(`Processing loyalty job ${job.id} (Name: ${job.name})`)
 
-    if (job.name === 'assess-tiers') {
-      await this.runTiersAssessment()
-    } else {
-      this.logger.warn(`Unknown job name: ${job.name}`)
+    switch (job.name) {
+      case 'assess-tiers':
+        await this.runTiersAssessment()
+        break
+      case 'expire-points':
+        await this.runPointsExpiration()
+        break
+      default:
+        this.logger.warn(`Unknown job name: ${job.name}`)
     }
+  }
+
+  /**
+   * Sweep across tenants and retire any earn batches whose `expires_at`
+   * has passed. Per-tenant transaction inside the service keeps each tenant
+   * isolated from any failure in another.
+   */
+  private async runPointsExpiration(): Promise<void> {
+    const configs = await this.dataSource.manager.find(LoyaltyConfigEntity)
+    let totalBatches = 0
+    let totalPoints = 0
+    for (const config of configs) {
+      if (!config.isEnabled || !config.pointsExpireAfterDays) continue
+      try {
+        const { batchesExpired, pointsExpired } = await this.loyaltyService.expirePoints(
+          config.tenantId,
+        )
+        totalBatches += batchesExpired
+        totalPoints += pointsExpired
+        if (batchesExpired) {
+          this.logger.log(
+            `tenant=${config.tenantId} expired batches=${batchesExpired} points=${pointsExpired}`,
+          )
+        }
+      } catch (e: any) {
+        this.logger.error(`Expiry sweep failed for tenant ${config.tenantId}: ${e.message}`)
+      }
+    }
+    this.logger.log(`Points expiry sweep done: batches=${totalBatches} pts=${totalPoints}`)
   }
 
   /**

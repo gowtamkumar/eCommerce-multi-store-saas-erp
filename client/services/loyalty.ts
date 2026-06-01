@@ -25,6 +25,7 @@ export interface LoyaltyConfig {
   referralRewardType: "WALLET" | "POINTS";
   referralRewardAmount: number;
   refereeMinPurchase: number;
+  pointsExpireAfterDays?: number | null;
 }
 
 export interface MyLoyaltySummary {
@@ -71,6 +72,22 @@ export async function updateLoyaltyConfig(dto: Partial<LoyaltyConfig>): Promise<
   });
   if (!res.success) {
     throw new Error(res.message || "Failed to update loyalty config");
+  }
+  return res.data;
+}
+
+export interface LoyaltyLiability {
+  outstandingPoints: number;
+  customers: number;
+}
+
+/**
+ * Admin: Fetch outstanding unexpired loyalty point liability.
+ */
+export async function getLoyaltyLiability(): Promise<LoyaltyLiability> {
+  const res = await fetchAPI(`/marketing/loyalty/liability`);
+  if (!res.success) {
+    throw new Error(res.message || "Failed to fetch loyalty liability");
   }
   return res.data;
 }
