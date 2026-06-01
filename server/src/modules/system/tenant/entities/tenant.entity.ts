@@ -29,6 +29,9 @@ export class TenantEntity extends BaseEntity {
   @Column({ name: 'custom_domain_verified_at', type: 'timestamptz', nullable: true })
   customDomainVerifiedAt: Date
 
+  @Column({ name: 'custom_domain_verification_token', type: 'varchar', length: 64, nullable: true })
+  customDomainVerificationToken: string | null
+
   @Column({
     type: 'enum',
     enum: TenantStatus,

@@ -152,7 +152,7 @@ export class UserController {
     @Param('memberId', ParseUUIDPipe) memberId: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.removeTeamMember.name} Controller Called`)
-    const data = await this.userService.deleteUser(memberId)
+    const data = await this.userService.deleteUser(memberId, ctx)
     return { success: true, statusCode: 200, message: 'Team member removed', data: null }
   }
 
@@ -164,7 +164,7 @@ export class UserController {
   ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.getUser.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called getUser.`)
-    const user = await this.userService.getUser(id)
+    const user = await this.userService.findOneUser(id, ctx)
 
     return {
       success: true,
@@ -206,7 +206,7 @@ export class UserController {
     delete updateUserDto.role
     delete updateUserDto.status
 
-    const user = await this.userService.updateUser(ctx.userId, updateUserDto)
+    const user = await this.userService.updateUser(ctx.userId, updateUserDto, ctx)
 
     return {
       success: true,
@@ -224,7 +224,7 @@ export class UserController {
   ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.updateProfilePassword.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username}" called updateProfilePassword.`)
-    const user = await this.userService.updatePassword(ctx.userId, updatePasswordDto)
+    const user = await this.userService.updatePassword(ctx.userId, updatePasswordDto, ctx)
 
     return {
       success: true,
@@ -244,7 +244,7 @@ export class UserController {
   ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.updateUser.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateUser.`)
-    const user = await this.userService.updateUser(id, updateUserDto)
+    const user = await this.userService.updateUser(id, updateUserDto, ctx)
 
     return {
       success: true,
@@ -264,7 +264,7 @@ export class UserController {
   ): Promise<BaseApiSuccessResponse<UserResponseDto>> {
     this.logger.log(`${this.updatePassword.name} Controller Called`)
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updatePassword.`)
-    const user = await this.userService.updatePassword(userId, updatePasswordDto)
+    const user = await this.userService.updatePassword(userId, updatePasswordDto, ctx)
 
     return {
       success: true,
@@ -278,10 +278,11 @@ export class UserController {
   @RequirePermissions(SystemPermissions.USERS_WRITE)
   @Audit({ entity: 'User', action: 'DELETE' })
   async deleteUser(
+    @RequestContext() ctx: RequestContextDto,
     @Param('id', ParseUUIDPipe) userId: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.log(`${this.deleteUser.name} Controller Called`)
-    const user = await this.userService.deleteUser(userId)
+    const user = await this.userService.deleteUser(userId, ctx)
 
     return {
       success: true,

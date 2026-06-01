@@ -31,6 +31,7 @@ export default function ManageAccessModal({
 
     // Form states - Role
     const [selectedRole, setSelectedRole] = useState('');
+    const [selectedScopeType, setSelectedScopeType] = useState<RoleScopeType>(RoleScopeType.GLOBAL);
     const [selectedScopeId, setSelectedScopeId] = useState('');
 
     // Form states - Override
@@ -98,10 +99,12 @@ export default function ManageAccessModal({
         setError('');
         try {
             const { fetchAPI } = await import('@/services/api');
-            const payload: any = { roleId: selectedRole };
+            const payload: any = { 
+                roleId: selectedRole,
+                scopeType: selectedScopeType,
+            };
             
-            const role = availableRoles.find(r => r.id === selectedRole);
-            if (role && role.scopeType !== RoleScopeType.GLOBAL) {
+            if (selectedScopeType !== RoleScopeType.GLOBAL) {
                 if (!selectedScopeId) {
                     setError('Please select a scope target (Branch/Warehouse).');
                     setSubmitting(false);
@@ -115,6 +118,7 @@ export default function ManageAccessModal({
                 body: JSON.stringify(payload),
             });
             setSelectedRole('');
+            setSelectedScopeType(RoleScopeType.GLOBAL);
             setSelectedScopeId('');
             onUpdated();
             fetchData();
@@ -133,7 +137,7 @@ export default function ManageAccessModal({
         try {
             const { fetchAPI } = await import('@/services/api');
             const payload = {
-                permissionCode: selectedPermission,
+                permissionSlug: selectedPermission,
                 effect: overrideEffect,
                 reason: overrideReason,
                 expiresAt: overrideExpiresAt ? new Date(overrideExpiresAt).toISOString() : null,
@@ -178,8 +182,6 @@ export default function ManageAccessModal({
             setError(err.message || 'Failed to remove override.');
         }
     };
-
-    const selectedRoleData = availableRoles.find(r => r.id === selectedRole);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -252,7 +254,7 @@ export default function ManageAccessModal({
                                                             </div>
                                                             <div className="mt-1 flex items-center gap-2">
                                                                 <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">
-                                                                    {assignment.role?.scopeType || 'GLOBAL'}
+                                                                    {assignment.scopeType || 'GLOBAL'}
                                                                 </span>
                                                                 {assignment.scopeId && (
                                                                     <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
@@ -276,39 +278,56 @@ export default function ManageAccessModal({
                                             <Plus className="w-3.5 h-3.5" /> Assign New Role
                                         </h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <label className="text-xs font-bold text-slate-500">Select Role</label>
-                                                <select
-                                                    value={selectedRole}
-                                                    onChange={e => setSelectedRole(e.target.value)}
-                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                                                    required
-                                                >
-                                                    <option value="">-- Choose Role --</option>
-                                                    {availableRoles.map(r => (
-                                                        <option key={r.id} value={r.id}>{r.name} ({r.scopeType})</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            
-                                            {selectedRoleData && selectedRoleData.scopeType !== RoleScopeType.GLOBAL && (
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-bold text-slate-500">Select Target {selectedRoleData.scopeType === RoleScopeType.BRANCH ? 'Branch' : 'Warehouse'}</label>
-                                                    <select
-                                                        value={selectedScopeId}
-                                                        onChange={e => setSelectedScopeId(e.target.value)}
-                                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                                                        required
-                                                    >
-                                                        <option value="">-- Choose Location --</option>
-                                                        {selectedRoleData.scopeType === RoleScopeType.BRANCH 
-                                                            ? branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)
-                                                            : warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)
-                                                        }
-                                                    </select>
-                                                </div>
-                                            )}
-                                        </div>
+                                                                            <div className="space-y-2">
+                                                                                <label className="text-xs font-bold text-slate-500">Select Role</label>
+                                                                                <select
+                                                                                    value={selectedRole}
+                                                                                    onChange={e => setSelectedRole(e.target.value)}
+                                                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                                                                    required
+                                                                                >
+                                                                                    <option value="">-- Choose Role --</option>
+                                                                                    {availableRoles.map(r => (
+                                                                                        <option key={r.id} value={r.id}>{r.name}</option>
+                                                                                    ))}
+                                                                                </select>
+                                                                            </div>
+
+                                                                            <div className="space-y-2">
+                                                                                <label className="text-xs font-bold text-slate-500">Scope Type</label>
+                                                                                <select
+                                                                                    value={selectedScopeType}
+                                                                                    onChange={e => {
+                                                                                        setSelectedScopeType(e.target.value as RoleScopeType);
+                                                                                        setSelectedScopeId('');
+                                                                                    }}
+                                                                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                                                                    required
+                                                                                >
+                                                                                    <option value={RoleScopeType.GLOBAL}>Global (All Locations)</option>
+                                                                                    <option value={RoleScopeType.BRANCH}>Branch Specific</option>
+                                                                                    <option value={RoleScopeType.WAREHOUSE}>Warehouse Specific</option>
+                                                                                </select>
+                                                                            </div>
+                                                                            
+                                                                            {selectedScopeType !== RoleScopeType.GLOBAL && (
+                                                                                <div className="space-y-2 col-span-1 md:col-span-2">
+                                                                                    <label className="text-xs font-bold text-slate-500">Select Target {selectedScopeType === RoleScopeType.BRANCH ? 'Branch' : 'Warehouse'}</label>
+                                                                                    <select
+                                                                                        value={selectedScopeId}
+                                                                                        onChange={e => setSelectedScopeId(e.target.value)}
+                                                                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                                                                        required
+                                                                                    >
+                                                                                        <option value="">-- Choose Location --</option>
+                                                                                        {selectedScopeType === RoleScopeType.BRANCH 
+                                                                                            ? branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)
+                                                                                            : warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)
+                                                                                        }
+                                                                                    </select>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                         <div className="flex justify-end">
                                             <button
                                                 type="submit"
@@ -341,8 +360,8 @@ export default function ManageAccessModal({
                                                                 ) : (
                                                                     <ShieldBan className="w-4 h-4 text-rose-600" />
                                                                 )}
-                                                                <span className="font-bold text-slate-900 dark:text-white text-sm">{override.permission?.name || override.permissionCode}</span>
-                                                                <code className="text-[10px] text-slate-400">{override.permissionCode}</code>
+                                                                <span className="font-bold text-slate-900 dark:text-white text-sm">{override.permission?.name || override.permissionSlug}</span>
+                                                                <code className="text-[10px] text-slate-400">{override.permissionSlug}</code>
                                                             </div>
                                                             <div className="mt-2 text-[11px] text-slate-500 font-medium">
                                                                 Reason: {override.reason}

@@ -1,16 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsEmail,
   IsObject,
   IsOptional,
   IsString,
+  Matches,
   ValidateNested,
 } from 'class-validator'
 import { CurrenciesDto } from './currencies.dto'
 import { FooterSettingsDto } from './footerSection.dto'
+import { LabelSettingsDto } from './label-settings.dto'
 import { MarketingDto } from './marketing.dto'
 import { NavbarSettingsDto } from './navbarLink.dto'
 import { PathaoCourierDto } from './pathaoCourier.dto'
@@ -24,6 +27,8 @@ import { ProductsPageSettingsDto } from './products-page.dto'
 import { SingleProductPageSettingsDto } from './single-product-page.dto'
 import { OffersPageSettingsDto } from './offers-page.dto'
 import { SmsDto } from './sms.dto'
+
+const ISO_4217_RE = /^[A-Z]{3}$/
 
 export class UpdateSiteSettingsDto {
   @IsString()
@@ -65,8 +70,9 @@ export class UpdateSiteSettingsDto {
   @IsOptional()
   address?: string
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, example: 'BDT' })
   @IsString()
+  @Matches(ISO_4217_RE, { message: 'currency must be a 3-letter ISO-4217 code' })
   @IsOptional()
   currency?: string
 
@@ -75,8 +81,11 @@ export class UpdateSiteSettingsDto {
   @IsOptional()
   currencySymbol?: string
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, type: [CurrenciesDto] })
   @IsArray()
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => CurrenciesDto)
   @IsOptional()
   supportedCurrencies?: CurrenciesDto[]
 
@@ -87,11 +96,15 @@ export class UpdateSiteSettingsDto {
 
   @ApiProperty({ required: false })
   @IsObject()
+  @ValidateNested()
+  @Type(() => SocialLinkDto)
   @IsOptional()
   socialLinks?: SocialLinkDto
 
   @ApiProperty({ required: false })
   @IsObject()
+  @ValidateNested()
+  @Type(() => MarketingDto)
   @IsOptional()
   marketing?: MarketingDto
 
@@ -171,4 +184,11 @@ export class UpdateSiteSettingsDto {
   @IsString()
   @IsOptional()
   robotsTxt?: string
+
+  @ApiProperty({ required: false, type: LabelSettingsDto })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => LabelSettingsDto)
+  labelSettings?: LabelSettingsDto
 }

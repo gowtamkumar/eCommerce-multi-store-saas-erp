@@ -79,6 +79,9 @@ export class SiteSettingsResponseDto {
   robotsTxt: string
 
   @Expose()
+  labelSettings: any
+
+  @Expose()
   tenantId: string
 
   @Expose()

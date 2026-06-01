@@ -6,7 +6,11 @@ import {
   PaymentStrategy,
   PaymentStrategyOptions,
   PaymentCallbackResult,
+  PaymentVerificationParams,
+  PaymentVerificationResult,
 } from './payment-strategy.interface'
+
+const SSLCOMMERZ_VALID_STATUSES = new Set(['VALID', 'VALIDATED'])
 
 export class SslCommerzPaymentStrategy implements PaymentStrategy {
   private readonly logger = new Logger(SslCommerzPaymentStrategy.name)
@@ -104,14 +108,113 @@ export class SslCommerzPaymentStrategy implements PaymentStrategy {
     }
   }
 
+  /**
+   * SHAPE-ONLY check on the callback payload. This is intentionally narrow:
+   * it does NOT confer trust — it only tells the caller "the payload looks
+   * like an SSLCommerz success body". Authoritative trust comes from
+   * {@link verifyTransaction} which hits the validator API server-to-server.
+   */
   async validateCallback(response: any, query?: any): Promise<PaymentCallbackResult> {
+    const status = String(response?.status ?? '').toUpperCase()
+    const tranId = response?.tran_id ?? query?.tran_id
+
     return {
-      success:
-        response.status === 'VALID' || response.status === 'AUTHENTICATED' || !!query?.tran_id,
-      transactionId: response.tran_id || query?.tran_id,
+      success: SSLCOMMERZ_VALID_STATUSES.has(status),
+      transactionId: tranId,
       gatewayResponse: response,
-      methodName: response.card_type || 'SSLCommerz',
+      methodName: response?.card_type || 'SSLCommerz',
     }
+  }
+
+  /**
+   * Server-to-server validation against SSLCommerz' validator API. The caller
+   * is responsible for supplying the merchant credentials we initiated with
+   * (platform creds for subscriptions, tenant creds for order payments).
+   * We additionally re-check tran_id, currency and amount against the values
+   * we recorded at initiation — this is what makes the flow safe against a
+   * forged `tran_id` arriving at our callback endpoints.
+   */
+  async verifyTransaction(params: PaymentVerificationParams): Promise<PaymentVerificationResult> {
+    const {
+      valId,
+      transactionId,
+      storeId,
+      storePassword,
+      isSandbox,
+      expectedAmount,
+      expectedCurrency,
+      amountToleranceMinor = 1,
+    } = params
+
+    if (!valId) {
+      return { success: false, gatewayResponse: null, reason: 'Missing val_id' }
+    }
+    if (!storeId || !storePassword) {
+      this.logger.error('SSLCommerz verification skipped — credentials missing')
+      return { success: false, gatewayResponse: null, reason: 'Gateway not configured' }
+    }
+
+    const baseUrl = isSandbox
+      ? 'https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php'
+      : 'https://securepay.sslcommerz.com/validator/api/validationserverAPI.php'
+
+    const url = new URL(baseUrl)
+    url.searchParams.set('val_id', valId)
+    url.searchParams.set('store_id', storeId)
+    url.searchParams.set('store_passwd', storePassword)
+    url.searchParams.set('v', '1')
+    url.searchParams.set('format', 'json')
+
+    let payload: any
+    try {
+      const res = await fetch(url.toString(), { method: 'GET' })
+      payload = await res.json()
+    } catch (err) {
+      this.logger.error('SSLCommerz validator API error', err as Error)
+      return { success: false, gatewayResponse: null, reason: 'Validator API unreachable' }
+    }
+
+    const status = String(payload?.status ?? '').toUpperCase()
+    if (!SSLCOMMERZ_VALID_STATUSES.has(status)) {
+      this.logger.warn(
+        `SSLCommerz validator rejected val_id=${valId} tran_id=${transactionId} status=${status}`,
+      )
+      return { success: false, gatewayResponse: payload, reason: `Gateway status: ${status}` }
+    }
+
+    // Defence-in-depth: confirm the validator's tran_id, amount, and currency
+    // match what we recorded at initiation. This prevents a successful
+    // small-amount transaction in one tenant being replayed against a larger
+    // invoice in another tenant.
+    const gatewayTranId = String(payload?.tran_id ?? '')
+    if (gatewayTranId && gatewayTranId !== transactionId) {
+      this.logger.warn(
+        `SSLCommerz tran_id mismatch: expected=${transactionId} gateway=${gatewayTranId}`,
+      )
+      return { success: false, gatewayResponse: payload, reason: 'tran_id mismatch' }
+    }
+
+    const gatewayCurrency = String(payload?.currency ?? '').toUpperCase()
+    if (gatewayCurrency && gatewayCurrency !== expectedCurrency.toUpperCase()) {
+      this.logger.warn(
+        `SSLCommerz currency mismatch: expected=${expectedCurrency} gateway=${gatewayCurrency}`,
+      )
+      return { success: false, gatewayResponse: payload, reason: 'currency mismatch' }
+    }
+
+    const gatewayAmount = Number(payload?.amount ?? payload?.currency_amount ?? NaN)
+    if (Number.isFinite(gatewayAmount)) {
+      const expectedMinor = Math.round(expectedAmount * 100)
+      const gatewayMinor = Math.round(gatewayAmount * 100)
+      if (Math.abs(gatewayMinor - expectedMinor) > amountToleranceMinor) {
+        this.logger.warn(
+          `SSLCommerz amount mismatch: expected=${expectedAmount} gateway=${gatewayAmount}`,
+        )
+        return { success: false, gatewayResponse: payload, reason: 'amount mismatch' }
+      }
+    }
+
+    return { success: true, gatewayResponse: payload }
   }
 
   getRedirectUrl(response: any, appUrl: string): string {

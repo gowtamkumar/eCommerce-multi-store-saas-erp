@@ -7,6 +7,7 @@ import { PERMISSIONS_KEY } from '../decorators/permissions.decorator'
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
 import { UserRole } from '../enums/user/user-role.enum'
 import { PermissionResolutionService } from '../services/permission-resolution.service'
+import { AuditLogService } from '@/modules/system/audit-log/audit-log.service'
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -15,6 +16,7 @@ export class PermissionsGuard implements CanActivate {
     private readonly userService: UserService,
     private readonly configService: ConfigService,
     private readonly resolutionService: PermissionResolutionService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -57,11 +59,11 @@ export class PermissionsGuard implements CanActivate {
     if (!user) return false
 
     const userRole = user.role || ''
-    const isGlobalAdmin = [UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(
-      userRole.toLowerCase() as UserRole,
-    )
+    const isGlobalAdmin = userRole.toLowerCase() === UserRole.SUPER_ADMIN
 
-    // 1. Platform admins bypass all dynamic permission checks
+    // 1. Platform admins bypass all dynamic permission checks.
+    // Tenant admins are intentionally resolved through RBAC so custom roles and
+    // explicit DENY overrides still apply.
     if (isGlobalAdmin) return true
 
     const tenantId = user.tenantId
@@ -73,6 +75,13 @@ export class PermissionsGuard implements CanActivate {
     for (const perm of requiredPermissions) {
       const allowed = await this.resolutionService.resolvePermission(user.id, tenantId, perm)
       if (!allowed) {
+        // Log the failed access attempt
+        await this.auditLogService.logPermissionCheckFailed(
+          tenantId,
+          user.id,
+          perm,
+          `Access denied to route: ${request.method} ${request.url}`,
+        )
         throw new ForbiddenException(
           `Access Denied: You do not have the required permission (${perm}) to perform this action.`,
         )

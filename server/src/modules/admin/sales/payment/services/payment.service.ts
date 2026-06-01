@@ -73,11 +73,45 @@ export class PaymentService {
   async handleSuccessPayment(tran_id: string, gatewayResponse: any): Promise<{ success: boolean }> {
     this.logger.log(`${this.handleSuccessPayment.name} Service Called`)
     const { strategy, order } = await this.getStrategyByTransactionId(tran_id)
-    const validation = await strategy.validateCallback(gatewayResponse)
 
-    if (!validation.success) {
-      this.logger.warn(`Payment validation failed for tran_id: ${tran_id}`)
-      return { success: false }
+    // Idempotency: never re-mark a paid order as paid (or attempt validation
+    // again) — the callback can fire multiple times legitimately.
+    if (order.paymentStatus === PaymentStatus.PAID) {
+      return { success: true }
+    }
+
+    let verifiedGatewayResponse: any = gatewayResponse
+
+    if (typeof strategy.verifyTransaction === 'function') {
+      // Per-tenant gateway: load tenant payment credentials.
+      const settings = await this.settingsService.findByTenantSettings({
+        tenantId: order.tenantId,
+      } as RequestContextDto)
+      const verification = await strategy.verifyTransaction({
+        valId:
+          gatewayResponse?.val_id ?? gatewayResponse?.value_id ?? gatewayResponse?.['VAL_ID'],
+        transactionId: tran_id,
+        storeId: (settings as any)?.payment?.sslCommerzStoreId,
+        storePassword: (settings as any)?.payment?.sslCommerzStorePassword,
+        isSandbox: !!(settings as any)?.payment?.sslCommerzIsSandbox,
+        expectedAmount: Number(order.totalAmount) / (Number(order.currencyRate) || 1),
+        expectedCurrency: order.currency || 'BDT',
+      })
+
+      if (!verification.success) {
+        this.logger.warn(
+          `Payment verification failed for tran_id=${tran_id} reason=${verification.reason}`,
+        )
+        return { success: false }
+      }
+      verifiedGatewayResponse = verification.gatewayResponse ?? gatewayResponse
+    } else {
+      const validation = await strategy.validateCallback(gatewayResponse)
+      if (!validation.success) {
+        this.logger.warn(`Payment validation failed for tran_id: ${tran_id}`)
+        return { success: false }
+      }
+      verifiedGatewayResponse = validation.gatewayResponse
     }
 
     order.paymentStatus = PaymentStatus.PAID
@@ -93,7 +127,7 @@ export class PaymentService {
         currency: order.currency,
         method: order.paymentMethod || PaymentMethod.SSLCOMMERZ,
         status: PaymentStatus.COMPLETED,
-        gatewayResponse: validation.gatewayResponse,
+        gatewayResponse: verifiedGatewayResponse,
       },
       { tenantId: order.tenantId, userId: order.userId } as RequestContextDto,
     )

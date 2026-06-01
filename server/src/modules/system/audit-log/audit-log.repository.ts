@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Between, FindOptionsWhere, Repository } from 'typeorm'
+import { Between, FindOptionsWhere, Repository, ILike } from 'typeorm'
 import { AuditLogEntity } from './entities/audit-log.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 
@@ -15,7 +15,7 @@ export class AuditLogRepository {
     const entry = this.repo.create({
       ...data,
       tenantId: ctx.tenantId,
-      actorId: ctx.userId || data.userId || null,
+      actorId: data.actorId ?? data.userId ?? ctx.userId ?? null,
       branchId: ctx.branchId || data.branchId || null,
       warehouseId: ctx.warehouseId || data.warehouseId || null,
     })
@@ -37,14 +37,23 @@ export class AuditLogRepository {
       to?: string
     },
   ): Promise<[AuditLogEntity[], number]> {
-    const { page, limit, userId, branchId, warehouseId, action, entity, entityId, from, to } = filters
+    const { page, limit, userId, branchId, warehouseId, action, entity, entityId, from, to } =
+      filters
     const where: FindOptionsWhere<AuditLogEntity> = {}
 
     if (tenantId) {
       where.tenantId = tenantId
     }
 
-    if (userId) where.actorId = userId
+    if (userId) {
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)
+      if (isUuid) {
+        where.actorId = userId
+      } else {
+        where.actorName = ILike(`%${userId}%`)
+      }
+    }
     if (branchId) where.branchId = branchId
     if (warehouseId) where.warehouseId = warehouseId
     if (action) where.action = action

@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -8,11 +9,25 @@ import { RequirePermissions } from '@/common/decorators/permissions.decorator'
 import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import { Public } from '@/common/decorators/public.decorator'
 import { Body, Controller, Get, Logger, Put, UseGuards } from '@nestjs/common'
+import { plainToInstance } from 'class-transformer'
 import { UpdateSiteSettingsDto } from './dto/settings.dto'
 import { SiteSettingsResponseDto } from './dto/site-settings-response.dto'
 import { SettingsService } from './settings.service'
 import { CacheService } from '../operations/infra/cache/cache.service'
 import { Post, HttpCode } from '@nestjs/common'
+
+/**
+ * Convert a raw SiteSettingsEntity (which has SMTP creds, payment API keys, …)
+ * into the safe response shape we ship over the wire. excludeExtraneousValues
+ * is the linchpin — anything that isn't explicitly @Expose()-ed in the
+ * response DTO is dropped, so a new sensitive column added to the entity in
+ * the future can't accidentally leak.
+ */
+function toSafeSettings<T extends object>(settings: T): SiteSettingsResponseDto {
+  return plainToInstance(SiteSettingsResponseDto, settings, {
+    excludeExtraneousValues: true,
+  })
+}
 
 @UseGuards(SubscriptionGuard)
 @RequireFeature('settings')
@@ -36,7 +51,7 @@ export class SettingsController {
       success: true,
       statusCode: 200,
       message: 'Settings retrieved successfully',
-      data: settings as any,
+      data: toSafeSettings(settings),
     }
   }
 
@@ -44,24 +59,21 @@ export class SettingsController {
   @Public()
   async getPublicSettings(
     @RequestContext() ctx: RequestContextDto,
-  ): Promise<BaseApiSuccessResponse<any>> {
+  ): Promise<BaseApiSuccessResponse<SiteSettingsResponseDto>> {
     this.logger.verbose(`System called getPublicSettings.`)
     const settings = await this.settingsService.findByTenantSettings(ctx)
-
-    // Strip sensitive fields explicitly
-    const { smtp, payment, pathaoCourier, steadfastCourier, sms, ...publicSettings } = settings
-
     return {
       success: true,
       statusCode: 200,
       message: 'Settings retrieved successfully',
-      data: publicSettings,
+      data: toSafeSettings(settings),
     }
   }
 
   @Put()
   @UseGuards(JwtAuthGuard)
   @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
+  @Audit({ entity: 'SiteSettings', action: 'UPDATE' })
   async updateSettings(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: UpdateSiteSettingsDto,
@@ -72,7 +84,7 @@ export class SettingsController {
       success: true,
       statusCode: 200,
       message: 'Settings updated successfully',
-      data: settings as any,
+      data: toSafeSettings(settings),
     }
   }
 

@@ -1,5 +1,7 @@
 import { RoleEntity } from '@/modules/admin/core/user/entities/role.entity'
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
+import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities/user-permission-override.entity'
+import { OverrideEffect } from '@/common/enums/override-effect.enum'
 import { CacheService } from '@/modules/admin/operations/infra/cache/cache.service'
 import { TenantFeatureEntity } from '@/modules/system/tenant/entities/tenant-feature.entity'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
@@ -48,6 +50,9 @@ export class PermissionResolutionService {
 
     @InjectRepository(TenantFeatureEntity)
     private readonly tenantFeatureRepo: Repository<TenantFeatureEntity>,
+
+    @InjectRepository(UserPermissionOverrideEntity)
+    private readonly overrideRepo: Repository<UserPermissionOverrideEntity>,
 
     private readonly cacheService: CacheService,
   ) {}
@@ -100,6 +105,23 @@ export class PermissionResolutionService {
     if (!featureEnabled) {
       this.logger.debug(`[DENY] Feature "${featureSlug}" not enabled for tenant ${tenantId}`)
       return false
+    }
+
+    // ── Step 1.5: Check User-Specific Permission Overrides ───────────
+    const now = new Date()
+    const override = await this.overrideRepo.findOne({
+      where: { userId, tenantId, permissionSlug: permSlug },
+    })
+
+    if (override && (!override.expiresAt || new Date(override.expiresAt) > now)) {
+      if (override.effect === OverrideEffect.DENY) {
+        this.logger.debug(`[DENY-OVERRIDE] user=${userId} perm=${permSlug} tenant=${tenantId}`)
+        return false
+      }
+      if (override.effect === OverrideEffect.ALLOW) {
+        this.logger.debug(`[ALLOW-OVERRIDE] user=${userId} perm=${permSlug} tenant=${tenantId}`)
+        return true
+      }
     }
 
     // ── Step 2 + 3: Does a role grant this permission? ────────────────
@@ -159,8 +181,28 @@ export class PermissionResolutionService {
     // ── Build permissions list ────────────────────────────────────────
     const effectivePermissions = await this.getEffectivePermissions(userId, tenantId)
 
+    // Fetch active user-specific permission overrides
+    const now = new Date()
+    const userOverrides = await this.overrideRepo.find({
+      where: { userId, tenantId },
+    })
+    const activeUserOverrides = userOverrides.filter(
+      (o) => !o.expiresAt || new Date(o.expiresAt) > now,
+    )
+
+    const permSet = new Set(effectivePermissions)
+
+    // Apply overrides: ALLOW overrides add permissions, DENY overrides remove them
+    for (const override of activeUserOverrides) {
+      if (override.effect === OverrideEffect.ALLOW) {
+        permSet.add(override.permissionSlug)
+      } else if (override.effect === OverrideEffect.DENY) {
+        permSet.delete(override.permissionSlug)
+      }
+    }
+
     // Only include permissions whose feature is enabled for this tenant
-    const permissions = Array.from(effectivePermissions).filter((p) => {
+    const permissions = Array.from(permSet).filter((p) => {
       const feat = p.split(':')[0]
       return featuresEnabledSet.has(feat)
     })

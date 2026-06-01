@@ -4,6 +4,7 @@ import {
   CurrenciesDto,
   FinanceConfigDto,
   FooterSettingsDto,
+  LabelSettingsDto,
   MarketingDto,
   NavbarSettingsDto,
   PathaoCourierDto,
@@ -103,6 +104,9 @@ export class SiteSettingsEntity extends BaseEntity {
 
   @Column({ type: 'text', name: 'robots_txt', nullable: true })
   robotsTxt?: string
+
+  @Column({ type: 'jsonb', name: 'label_settings', nullable: true })
+  labelSettings?: LabelSettingsDto
 
   @Column({ type: 'uuid', name: 'tenant_id', unique: true })
   tenantId: string

@@ -9,6 +9,7 @@ import { PermissionEntity } from './entities/permission.entity'
 import { RoleEntity } from './entities/role.entity'
 import { StaffInvitationEntity } from './entities/staff-invitation.entity'
 import { UserEntity } from './entities/user.entity'
+import { UserRoleAssignmentEntity } from './entities/user-role-assignment.entity'
 import { StaffInvitationRepository } from './repositories/staff-invitation.repository'
 import { UserRepository } from './repositories/user.repository'
 import { StaffInvitationService } from './services/staff-invitation.service'
@@ -16,7 +17,13 @@ import { UserService } from './services/user.service'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, StaffInvitationEntity, RoleEntity, PermissionEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      StaffInvitationEntity,
+      RoleEntity,
+      PermissionEntity,
+      UserRoleAssignmentEntity,
+    ]),
     MailModule,
     CacheModule,
     NotificationModule,

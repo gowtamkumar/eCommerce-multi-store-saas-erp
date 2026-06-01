@@ -4,6 +4,7 @@ import { CreateAuditLogDto } from './dto/create-audit-log.dto'
 import { QueryAuditLogDto } from './dto/query-audit-log.dto'
 import { AuditLogEntity } from './entities/audit-log.entity'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { sanitizeAuditValue } from './audit-log-sanitizer.util'
 
 @Injectable()
 export class AuditLogService {
@@ -30,8 +31,8 @@ export class AuditLogService {
         action: dto.action,
         entity: dto.entity,
         entityId: dto.entityId,
-        oldValue: dto.oldValue,
-        newValue: dto.newValue,
+        oldValue: sanitizeAuditValue(dto.oldValue),
+        newValue: sanitizeAuditValue(dto.newValue),
         ipAddress: dto.ipAddress ?? ipAddress,
         userAgent: dto.userAgent ?? userAgent,
       } as any)
@@ -80,7 +81,16 @@ export class AuditLogService {
     roleId: string,
     roleName: string,
   ): Promise<void> {
-    await this.safeLog(tenantId, actorId, actorName, 'ROLE_DELETED', 'Role', roleId, { name: roleName }, null)
+    await this.safeLog(
+      tenantId,
+      actorId,
+      actorName,
+      'ROLE_DELETED',
+      'Role',
+      roleId,
+      { name: roleName },
+      null,
+    )
   }
 
   /** Fired when a role is assigned to a user */
@@ -203,12 +213,12 @@ export class AuditLogService {
     query: QueryAuditLogDto,
   ): Promise<{ data: AuditLogEntity[]; meta: any }> {
     this.logger.log(`${this.findAllAuditLogs.name} Service Called`)
-    
+
     // Scoping check: If super_admin or admin role, allow querying by any tenantId (or all if omitted).
     // Otherwise, strictly force tenantId to be the user's tenantId.
     const userRole = ctx.user?.role || ''
-    const isGlobalAdmin = ['admin', 'super_admin'].includes(userRole.toLowerCase())
-    
+    const isGlobalAdmin = userRole.toLowerCase() === 'super_admin'
+
     let targetTenantId: string | null = ctx.tenantId
     if (isGlobalAdmin) {
       targetTenantId = query.tenantId ?? null
@@ -243,8 +253,8 @@ export class AuditLogService {
   async findOneAuditLog(id: string, ctx: RequestContextDto): Promise<AuditLogEntity | null> {
     this.logger.log(`${this.findOneAuditLog.name} Service Called`)
     const userRole = ctx.user?.role || ''
-    const isGlobalAdmin = ['admin', 'super_admin'].includes(userRole.toLowerCase())
-    
+    const isGlobalAdmin = userRole.toLowerCase() === 'super_admin'
+
     const targetTenantId = isGlobalAdmin ? null : ctx.tenantId
     return await this.auditLogRepository.findById(id, targetTenantId)
   }
@@ -281,16 +291,19 @@ export class AuditLogService {
     newValue: Record<string, any> | null,
   ): Promise<void> {
     try {
-      await this.auditLogRepository.createAndSave({ tenantId } as RequestContextDto, {
-        userId: actorId,
-        actorId,
-        actorName,
-        action,
-        entity,
-        entityId,
-        oldValue,
-        newValue,
-      } as any)
+      await this.auditLogRepository.createAndSave(
+        { tenantId } as RequestContextDto,
+        {
+          userId: actorId,
+          actorId,
+          actorName,
+          action,
+          entity,
+          entityId,
+          oldValue: sanitizeAuditValue(oldValue),
+          newValue: sanitizeAuditValue(newValue),
+        } as any,
+      )
     } catch (err) {
       console.error('[AuditLog] Failed to write permission audit log:', err?.message)
     }

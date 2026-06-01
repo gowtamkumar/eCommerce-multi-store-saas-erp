@@ -11,6 +11,10 @@ import { UserEntity } from '../entities/user.entity'
 import { StaffInvitationRepository } from '../repositories/staff-invitation.repository'
 import { UserRepository } from '../repositories/user.repository'
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { UserRoleAssignmentEntity } from '../entities/user-role-assignment.entity'
+import { RoleScopeType } from '@/common/enums/role-scope-type.enum'
 
 @Injectable()
 export class StaffInvitationService {
@@ -22,6 +26,8 @@ export class StaffInvitationService {
     private readonly mailService: MailService,
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
+    @InjectRepository(UserRoleAssignmentEntity)
+    private readonly assignmentRepo: Repository<UserRoleAssignmentEntity>,
   ) { }
 
   async inviteStaff(
@@ -127,6 +133,25 @@ export class StaffInvitationService {
       },
       { tenantId: invitation.tenantId, userId: 'system' } as RequestContextDto,
     )
+
+    // Create dynamic user role assignment if a dynamic role ID is linked to the invitation
+    if (invitation.roleId) {
+      const scopeType = invitation.branchId
+        ? RoleScopeType.BRANCH
+        : invitation.warehouseId
+        ? RoleScopeType.WAREHOUSE
+        : RoleScopeType.GLOBAL
+
+      const assignment = this.assignmentRepo.create({
+        userId: user.id,
+        roleId: invitation.roleId,
+        tenantId: invitation.tenantId,
+        scopeType,
+        scopeId: invitation.branchId || invitation.warehouseId || null,
+        assignedBy: invitation.invitedBy || 'system',
+      })
+      await this.assignmentRepo.save(assignment)
+    }
 
     await this.invitationRepo.updateAndSave(invitation, { status: InvitationStatus.Accepted })
     await this.cacheService.delCache('team:members', invitation.tenantId)

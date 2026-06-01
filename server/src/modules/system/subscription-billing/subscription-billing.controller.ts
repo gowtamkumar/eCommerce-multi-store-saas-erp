@@ -1,3 +1,4 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { PublicDuringExpiration } from '@/common/decorators/public-during-expiration.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
@@ -5,8 +6,6 @@ import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
 import { Body, Controller, Get, Logger, Post, Query, Res, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
-import { SubscriptionGuard } from '@/common/guards/subscription.guard'
-import { RequireFeature } from '@/common/decorators/require-feature.decorator'
 import { ConfigService } from '@nestjs/config'
 import { Response } from 'express'
 import { Public } from '../../../common/decorators/public.decorator'
@@ -73,6 +72,7 @@ export class SubscriptionBillingController {
   @UseGuards(JwtAuthGuard)
   @Post('initiate')
   @PublicDuringExpiration()
+  @Audit({ entity: 'SubscriptionInvoice', action: 'INITIATE_PAYMENT' })
   async initiatePayment(
     @RequestContext() ctx: RequestContextDto,
     @Body('planId') planId: string,
@@ -97,6 +97,7 @@ export class SubscriptionBillingController {
   @Public()
   @PublicDuringExpiration()
   @Post('complete/success')
+  @Audit({ entity: 'SubscriptionInvoice', action: 'COMPLETE_SUCCESS' })
   async completePaymentSuccess(
     @Query('tran_id') tran_id: string,
     @Body() body: any,
@@ -125,6 +126,7 @@ export class SubscriptionBillingController {
   @Public()
   @PublicDuringExpiration()
   @Post('complete/fail')
+  @Audit({ entity: 'SubscriptionInvoice', action: 'COMPLETE_FAIL' })
   async completePaymentFail(
     @Query('tran_id') tran_id: string,
     @Body() body: any,
@@ -156,6 +158,7 @@ export class SubscriptionBillingController {
   @Public()
   @PublicDuringExpiration()
   @Post('complete/cancel')
+  @Audit({ entity: 'SubscriptionInvoice', action: 'COMPLETE_CANCEL' })
   async completePaymentCancel(
     @Query('tran_id') tran_id: string,
     @Body() body: any,
@@ -186,10 +189,18 @@ export class SubscriptionBillingController {
 
   @Public()
   @Post('ipn')
+  @Audit({ entity: 'SubscriptionInvoice', action: 'IPN' })
   async ipn(@Body() body: any) {
-    const { tran_id, status } = body
-    if (status === 'VALID' || status === 'AUTHENTICATED') {
-      await this.billingService.handleSuccessPayment(tran_id, body)
+    // IPN payloads are untrusted: the service performs a server-to-server
+    // validator call before crediting the subscription, so we forward
+    // unconditionally and let verifyTransaction reject anything bogus.
+    const { tran_id } = body ?? {}
+    if (typeof tran_id === 'string' && tran_id.length > 0) {
+      try {
+        await this.billingService.handleSuccessPayment(tran_id, body)
+      } catch (err: any) {
+        this.logger.warn(`IPN handling failed for tran_id=${tran_id}: ${err?.message}`)
+      }
     }
     return { received: true }
   }

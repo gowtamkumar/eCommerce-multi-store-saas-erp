@@ -186,7 +186,7 @@ export default function RolesPermissionsPage() {
                                                     </span>
                                                 )}
                                                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 font-medium capitalize">
-                                                    {role.scopeType.toLowerCase()}
+                                                    {role.scopeType?.toLowerCase()}
                                                 </span>
                                             </h3>
                                         </div>

@@ -2,6 +2,8 @@ import { RequestContext } from '@/common/decorators/request-context.decorator'
 import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
 import {
   Body,
   Controller,
@@ -30,24 +32,24 @@ export class AuditLogController {
 
   /**
    * POST /audit-logs
-   * Manually record an audit event (e.g. from client or other services).
+   * Manually record an audit event. Restricted to settings managers so untrusted
+   * users cannot forge or spam the security evidence trail.
    */
   @Post()
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   async createAuditLog(
     @RequestContext() ctx: RequestContextDto,
     @Body() dto: CreateAuditLogDto,
     @Req() req: Request,
   ): Promise<BaseApiSuccessResponse<{ success: boolean }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called createAuditLog.`)
-    // Auto-fill userId from the JWT if not provided in body
-    if (!dto.userId && ctx.user?.id) {
-      dto.userId = ctx.userId
-    }
+    // Never trust caller-supplied actors; the JWT is the source of truth.
+    dto.userId = ctx.userId
 
     const ipAddress =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress
 
-    const userAgent = req.headers['ctx.user-agent']
+    const userAgent = req.headers['user-agent']
 
     await this.auditLogService.log(ctx, dto, ipAddress as string, userAgent as string)
     return {
@@ -63,6 +65,7 @@ export class AuditLogController {
    * Paginated & filtered list of audit logs for the tenant.
    */
   @Get()
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   async findAllAuditLogs(
     @RequestContext() ctx: RequestContextDto,
     @Query() query: QueryAuditLogDto,
@@ -82,6 +85,7 @@ export class AuditLogController {
    * Single audit log entry.
    */
   @Get(':id')
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   async findOneAuditLog(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -101,6 +105,7 @@ export class AuditLogController {
    * Delete logs older than N days (data-retention / compliance).
    */
   @Delete('retention/:days')
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   async purgeOldLogs(
     @RequestContext() ctx: RequestContextDto,
     @Param('days', ParseIntPipe) days: number,

@@ -15,8 +15,11 @@ import { SubscriptionPlanEntity } from '../subscription-plan/entities/subscripti
 import { CurrentSubscriptionResponseDto } from './dto/current-subscription-response.dto'
 import { SubscriptionInvoiceEntity } from './entities/subscription-invoice.entity'
 import { SubscriptionInvoiceRepository } from './subscription-invoice.repository'
+import { buildAllowedBillingOrigins, resolveSafeBillingUrl } from './billing-origin.util'
 
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+
+const DEFAULT_PLATFORM_CURRENCY = 'BDT'
 
 @Injectable()
 export class SubscriptionBillingService {
@@ -131,7 +134,16 @@ export class SubscriptionBillingService {
       amount = Number(plan.monthlyPrice || 0) * 12
     }
 
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('Plan is not priced for the requested billing cycle')
+    }
+
     this.logger.log(`Subscription initiation: ${cycle} calculation Result: ${amount}`)
+
+    // Plan currency is authoritative. We persist it on the invoice so the
+    // success-callback verification can re-check that the gateway charged us
+    // in the currency we asked for.
+    const currency = (plan.currency || DEFAULT_PLATFORM_CURRENCY).toUpperCase()
 
     const invoiceNumber = `INV-${Date.now()}`
     const record = await this.planRecordRepository.createAndSave(
@@ -141,13 +153,24 @@ export class SubscriptionBillingService {
         subscriptionPlanId: planId,
         amount,
         billingCycle: cycle,
-        currency: 'BDT',
+        currency,
         status: PaymentStatus.PENDING,
         transactionId,
         billingDate: new Date(),
       },
       ctx,
     )
+
+    // Restrict frontendUrl to origins we recognise for this tenant —
+    // otherwise an attacker could send users to a phishing host after a real
+    // successful payment.
+    const platformFrontend = this.configService.get<string>('FRONTEND_URL') || ''
+    const allowedOrigins = buildAllowedBillingOrigins(tenant, {
+      frontendUrl: platformFrontend,
+      platformHost: this.configService.get<string>('PLATFORM_HOST'),
+      nodeEnv: this.configService.get<string>('NODE_ENV'),
+    })
+    const safeFrontendUrl = resolveSafeBillingUrl(frontendUrl, platformFrontend, allowedOrigins)
 
     // Actual SSLCommerz Integration
     const strategy = new SslCommerzPaymentStrategy()
@@ -156,28 +179,37 @@ export class SubscriptionBillingService {
       id: record.id,
       transactionId: transactionId,
       totalAmount: amount,
-      currency: 'BDT',
+      currency,
       customerName: tenant.user?.name || tenant.storeName || 'Store Owner',
       customerEmail: tenant.user?.email || 'billing@omnicart.com',
       address: tenant.user?.address || 'Dhaka, Bangladesh',
       customerPhone: tenant.user?.phone || '01700000000',
-      items: [{ product: { name: `OmniCart Subscription: ${plan.name} Plan` } }],
+      items: [{ product: { name: `Subscription: ${plan.name} Plan` } }],
     } as any as OrderEntity
+
+    const platformStoreId = this.configService.get<string>('SUPER_ADMIN_STORE_ID')
+    const platformStorePass = this.configService.get<string>('SUPER_ADMIN_STORE_PASS')
+    const platformIsSandbox =
+      String(this.configService.get('SSLCOMMERZ_LIVE') ?? 'false').toLowerCase() !== 'true'
+
+    if (!platformStoreId || !platformStorePass) {
+      throw new BadRequestException('Platform billing gateway is not configured')
+    }
 
     const mockSettings = {
       payment: {
-        sslCommerzStoreId: this.configService.get('SUPER_ADMIN_STORE_ID'),
-        sslCommerzStorePassword: this.configService.get('SUPER_ADMIN_STORE_PASS'),
-        sslCommerzIsSandbox: true,
+        sslCommerzStoreId: platformStoreId,
+        sslCommerzStorePassword: platformStorePass,
+        sslCommerzIsSandbox: platformIsSandbox,
       },
     } as any as SiteSettingsEntity
 
-    const callbackUrl = `${frontendUrl}/billing`
+    const callbackUrl = `${safeFrontendUrl}/billing`
 
     const result = await strategy.initiate(mockOrder, mockSettings, {
       callbackUrl,
       tenantId: tenant.id,
-      frontendUrl,
+      frontendUrl: safeFrontendUrl,
     })
 
     if (result.success) {
@@ -199,22 +231,51 @@ export class SubscriptionBillingService {
     gatewayResponse: any = {},
   ): Promise<SubscriptionInvoiceEntity | { success: boolean }> {
     this.logger.log(`Handling success subscription payment for transaction: ${transactionId}`)
+
+    if (!transactionId) {
+      throw new BadRequestException('Missing transaction id')
+    }
+
     const record = await this.planRecordRepository.findByTransactionId(transactionId)
 
     if (!record) throw new NotFoundException('Subscription record not found')
+    // Idempotency: once an invoice is COMPLETED we never re-grant subscription
+    // entitlements even if the callback fires again.
     if (record.status === PaymentStatus.COMPLETED) return record
 
     const strategy = new SslCommerzPaymentStrategy()
-    const validation = await strategy.validateCallback(gatewayResponse, { tran_id: transactionId })
+    const platformStoreId = this.configService.get<string>('SUPER_ADMIN_STORE_ID')
+    const platformStorePass = this.configService.get<string>('SUPER_ADMIN_STORE_PASS')
+    const platformIsSandbox =
+      String(this.configService.get('SSLCOMMERZ_LIVE') ?? 'false').toLowerCase() !== 'true'
 
-    if (!validation.success) {
-      this.logger.warn(`Subscription payment validation failed for tran_id: ${transactionId}`)
-      return this.handleFailPayment(transactionId, gatewayResponse)
+    const valId =
+      gatewayResponse?.val_id ?? gatewayResponse?.value_id ?? gatewayResponse?.['VAL_ID']
+
+    const verification = await strategy.verifyTransaction({
+      valId,
+      transactionId,
+      storeId: platformStoreId,
+      storePassword: platformStorePass,
+      isSandbox: platformIsSandbox,
+      expectedAmount: Number(record.amount),
+      expectedCurrency: record.currency,
+    })
+
+    if (!verification.success) {
+      this.logger.warn(
+        `Subscription payment verification failed for tran_id=${transactionId} reason=${verification.reason}`,
+      )
+      return this.handleFailPayment(transactionId, {
+        ...gatewayResponse,
+        verification: verification.gatewayResponse,
+        failureReason: verification.reason,
+      })
     }
 
     await this.planRecordRepository.updateAndSave(record, {
       status: PaymentStatus.COMPLETED,
-      gatewayResponse,
+      gatewayResponse: verification.gatewayResponse ?? gatewayResponse,
     })
 
     const tenant = await this.tenantRepository.findById(record.tenantId)
@@ -255,7 +316,7 @@ export class SubscriptionBillingService {
       try {
         await this.notificationService.createNotification({
           title: 'Subscription Purchase',
-          message: `Tenant '${tenant.storeName}' purchased/renewed the ${plan.name} plan for BDT ${record.amount}.`,
+          message: `Tenant '${tenant.storeName}' purchased/renewed the ${plan.name} plan for ${record.currency} ${record.amount}.`,
           type: 'SUCCESS',
           link: `/admin/system/tenants/${tenant.id}`,
           userId: null as any,
@@ -284,7 +345,7 @@ export class SubscriptionBillingService {
       try {
         await this.notificationService.createNotification({
           title: 'Billing Payment Failed',
-          message: `Subscription payment of BDT ${record.amount} failed for Tenant ID: ${record.tenantId}.`,
+          message: `Subscription payment of ${record.currency} ${record.amount} failed for Tenant ID: ${record.tenantId}.`,
           type: 'DANGER',
           link: `/admin/system/billing/invoices/${record.id}`,
           userId: null as any,

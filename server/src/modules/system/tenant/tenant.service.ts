@@ -10,10 +10,22 @@ import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { SettingsService } from '@/modules/admin/settings/settings.service'
 import { SubscriptionPlanService } from '@/modules/system/subscription-plan/subscription-plan.service'
 import { RoleManagementService } from '@/modules/admin/core/rbac/role-management.service'
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common'
 import * as bcrypt from 'bcrypt'
 import * as crypto from 'crypto'
 import { DataSource } from 'typeorm'
+import {
+  InvalidCustomDomainError,
+  generateVerificationToken,
+  normalizeCustomDomain,
+  verifyDomainOwnership,
+} from './custom-domain.util'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantOverviewResponseDto } from './dto/tenant-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
@@ -35,6 +47,13 @@ export interface CreateTenantResponseDto {
     username: string
     email: string
   }
+}
+
+export interface VerificationInstructions {
+  recordType: 'TXT'
+  recordHost: string
+  recordValue: string
+  ttlHint: number
 }
 
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
@@ -278,7 +297,10 @@ export class TenantService {
     if (cached) return cached
 
     const tenant = await this.tenantRepository.findByCustomDomain(customDomain)
-    if (tenant) {
+    // Only cache ACTIVE attachments — otherwise a tenant could DOS another
+    // tenant's hostname by claiming it and poisoning the cache before
+    // verification completes.
+    if (tenant && tenant.customDomainStatus === CustomDomainStatus.ACTIVE) {
       await this.cacheService.setCache(cacheKey, tenant, 3600)
     }
     return tenant
@@ -289,6 +311,13 @@ export class TenantService {
 
     if (customDomain) {
       tenant = await this.findByCustomDomain(customDomain)
+      // Defense-in-depth: never serve a tenant by a not-yet-verified custom
+      // domain. Without this, an attacker who reserved a domain on someone
+      // else's account could be served their storefront once their DNS
+      // accidentally pointed here.
+      if (tenant && tenant.customDomainStatus !== CustomDomainStatus.ACTIVE) {
+        tenant = null
+      }
     }
 
     // Fallback to subdomain check if custom domain is not found or not provided
@@ -302,24 +331,115 @@ export class TenantService {
     return tenant
   }
 
-  async updateCustomDomain(id: string, customDomain: string): Promise<TenantEntity> {
+  /**
+   * Step 1 of the custom-domain flow: the tenant tells us which hostname they
+   * intend to point at us. We:
+   *   - normalise the hostname
+   *   - ensure no other tenant already claims it
+   *   - reset status to PENDING
+   *   - issue a fresh verification token
+   * The frontend then displays the TXT record we expect at
+   * `_omnicart-verify.<domain>` and the tenant proves ownership via DNS.
+   */
+  async requestCustomDomain(
+    id: string,
+    customDomainInput: string,
+  ): Promise<TenantEntity & { verificationInstructions: VerificationInstructions }> {
+    let normalized: string
+    try {
+      normalized = normalizeCustomDomain(customDomainInput)
+    } catch (err: any) {
+      if (err instanceof InvalidCustomDomainError) {
+        throw new BadRequestException(err.message)
+      }
+      throw err
+    }
+
     const tenant = await this.findOneTenants(id)
+
+    // Block claims of a domain owned by someone else.
+    const existing = await this.tenantRepository.findByCustomDomain(normalized)
+    if (existing && existing.id !== id) {
+      throw new ConflictException('Custom domain is already attached to another store')
+    }
+
+    const verificationToken = generateVerificationToken()
+
     const updated = await this.tenantRepository.updateAndSave(tenant, {
-      customDomain,
+      customDomain: normalized,
       customDomainStatus: CustomDomainStatus.PENDING,
       customDomainVerifiedAt: null,
+      customDomainVerificationToken: verificationToken,
     })
-    await this.invalidateTenantCache(id, tenant.subdomain, customDomain)
-    return updated
+    await this.invalidateTenantCache(id, tenant.subdomain, normalized)
+    if (tenant.customDomain && tenant.customDomain !== normalized) {
+      await this.invalidateTenantCache(id, tenant.subdomain, tenant.customDomain)
+    }
+
+    const instructions: VerificationInstructions = {
+      recordType: 'TXT',
+      recordHost: `_omnicart-verify.${normalized}`,
+      recordValue: verificationToken,
+      ttlHint: 300,
+    }
+
+    return Object.assign(updated, { verificationInstructions: instructions })
   }
 
+  /**
+   * Step 2 of the custom-domain flow: we resolve the TXT record at
+   * `_omnicart-verify.<domain>` and compare it against the token we issued.
+   * Only on an exact match do we flip the status to ACTIVE. Anything else
+   * (NXDOMAIN, mismatch, missing token) returns an actionable error and
+   * leaves the row PENDING so the user can retry.
+   */
   async verifyCustomDomain(id: string): Promise<TenantEntity> {
     const tenant = await this.findOneTenants(id)
+    if (!tenant.customDomain) {
+      throw new BadRequestException('No custom domain configured to verify')
+    }
+    if (!tenant.customDomainVerificationToken) {
+      throw new BadRequestException(
+        'Verification token missing — request a new custom domain assignment first',
+      )
+    }
+
+    const result = await verifyDomainOwnership(
+      tenant.customDomain,
+      tenant.customDomainVerificationToken,
+    )
+
+    if (!result.verified) {
+      this.logger.warn(
+        `Custom domain TXT verification failed tenant=${id} domain=${tenant.customDomain} reason=${result.error ?? 'mismatch'}`,
+      )
+      throw new BadRequestException(
+        result.error
+          ? `Verification failed: ${result.error}`
+          : 'TXT record did not match expected verification token',
+      )
+    }
+
     const updated = await this.tenantRepository.updateAndSave(tenant, {
       customDomainStatus: CustomDomainStatus.ACTIVE,
       customDomainVerifiedAt: new Date(),
+      // Burn the token so it can't be reused after a domain detach/attach cycle.
+      customDomainVerificationToken: null,
     })
     await this.invalidateTenantCache(id, tenant.subdomain, tenant.customDomain)
+    return updated
+  }
+
+  async detachCustomDomain(id: string): Promise<TenantEntity> {
+    const tenant = await this.findOneTenants(id)
+    const oldDomain = tenant.customDomain
+    const updated = await this.tenantRepository.updateAndSave(tenant, {
+      customDomain: null,
+      customDomainStatus: CustomDomainStatus.PENDING,
+      customDomainVerifiedAt: null,
+      customDomainVerificationToken: null,
+    } as any)
+    await this.invalidateTenantCache(id, tenant.subdomain, oldDomain)
     return updated
   }
 

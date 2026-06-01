@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core'
 import { Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
 import { AuditLogService } from 'src/modules/system/audit-log/audit-log.service'
+import { sanitizeAuditValue } from 'src/modules/system/audit-log/audit-log-sanitizer.util'
 import { AUDIT_METADATA_KEY, AuditOptions } from '../decorators/audit.decorator'
 
 @Injectable()
@@ -33,7 +34,8 @@ export class AuditLogInterceptor implements NestInterceptor {
     // Extract tenant ID, branch ID, and warehouse ID
     const tenantId = request.tenantId || headers['x-tenant-id']
     const branchId = request.branchId || headers['x-branch-id'] || request.body?.branchId || null
-    const warehouseId = request.warehouseId || headers['x-warehouse-id'] || request.body?.warehouseId || null
+    const warehouseId =
+      request.warehouseId || headers['x-warehouse-id'] || request.body?.warehouseId || null
 
     return next.handle().pipe(
       tap(async () => {
@@ -48,9 +50,8 @@ export class AuditLogInterceptor implements NestInterceptor {
           entityId: request.params?.id || request.body?.id,
           branchId,
           warehouseId,
-          // For now, we log the request body as newValue for mutations
-          // In a more complex setup, we could compare old and new state
-          newValue: method !== 'DELETE' ? request.body : null,
+          // Audit payloads must never persist credentials or secrets.
+          newValue: method !== 'DELETE' ? sanitizeAuditValue(request.body) : null,
           ipAddress: ip,
           userAgent: headers['user-agent'],
         }

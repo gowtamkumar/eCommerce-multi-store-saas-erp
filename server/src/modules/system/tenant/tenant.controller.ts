@@ -1,11 +1,26 @@
+import { Audit } from '@/common/decorators/audit.decorator'
 import { RequestContext } from '@/common/decorators/request-context.decorator'
+import { RequirePermissions } from '@/common/decorators/permissions.decorator'
+import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
-import { Body, Controller, Get, Logger, Post, Patch, Query } from '@nestjs/common'
+import { SystemPermissions } from '@/common/enums/user/permissions.enum'
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantLookupDto } from './dto/tenant-lookup.dto'
-import { CreateTenantResponseDto, TenantService } from './tenant.service'
-import { BaseApiSuccessResponse } from '@/common/dto/base-api-response.dto'
+import { UpdateCustomDomainDto } from './dto/update-custom-domain.dto'
 import { TenantResponseDto } from './dto/tenant-response.dto'
+import { CreateTenantResponseDto, TenantService } from './tenant.service'
 
 @Controller('tenants')
 export class TenantController {
@@ -63,22 +78,35 @@ export class TenantController {
     }
   }
 
+  // ───────────────────────────── Custom domain management ─────────────────
+  // All custom-domain endpoints are tenant-scoped and require an explicit
+  // SETTINGS_MANAGE permission. Anything that mutates the tenant's domain is
+  // audited and never auto-marks the domain as ACTIVE — that only happens
+  // after a successful TXT verification.
+
+  @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   @Patch('custom-domain')
+  @Audit({ entity: 'Tenant', action: 'CUSTOM_DOMAIN_REQUEST' })
   async updateCustomDomain(
     @RequestContext() ctx: RequestContextDto,
-    @Body() body: { customDomain: string },
-  ): Promise<BaseApiSuccessResponse<TenantResponseDto>> {
+    @Body() body: UpdateCustomDomainDto,
+  ): Promise<BaseApiSuccessResponse<TenantResponseDto & { verificationInstructions: any }>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called updateCustomDomain.`)
-    const tenant = await this.tenantService.updateCustomDomain(ctx.tenantId, body.customDomain)
+    const result = await this.tenantService.requestCustomDomain(ctx.tenantId, body.customDomain)
     return {
       success: true,
       statusCode: 200,
-      message: 'Custom domain updated successfully',
-      data: tenant as any,
+      message:
+        'Custom domain saved. Add the supplied DNS TXT record then call /tenants/custom-domain/verify.',
+      data: result as any,
     }
   }
 
+  @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
   @Post('custom-domain/verify')
+  @Audit({ entity: 'Tenant', action: 'CUSTOM_DOMAIN_VERIFY' })
   async verifyCustomDomain(
     @RequestContext() ctx: RequestContextDto,
   ): Promise<BaseApiSuccessResponse<TenantResponseDto>> {
@@ -88,6 +116,23 @@ export class TenantController {
       success: true,
       statusCode: 200,
       message: 'Custom domain verified successfully',
+      data: tenant as any,
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RequirePermissions(SystemPermissions.SETTINGS_MANAGE)
+  @Delete('custom-domain')
+  @Audit({ entity: 'Tenant', action: 'CUSTOM_DOMAIN_DETACH' })
+  async detachCustomDomain(
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<TenantResponseDto>> {
+    this.logger.verbose(`User "${ctx.user?.username || 'System'}" called detachCustomDomain.`)
+    const tenant = await this.tenantService.detachCustomDomain(ctx.tenantId)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Custom domain removed',
       data: tenant as any,
     }
   }
