@@ -18,7 +18,6 @@ export class FulfillmentController {
 
   @Get()
   @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
-  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async findAll(
     @RequestContext() ctx: RequestContextDto,
     @Query('status') status?: string,
@@ -33,7 +32,6 @@ export class FulfillmentController {
   }
 
   @Get(':id')
-  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async findOne(
     @RequestContext() ctx: RequestContextDto,
@@ -50,7 +48,6 @@ export class FulfillmentController {
 
   @Post(':id/start')
   @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
-  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async startPicking(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
@@ -66,16 +63,13 @@ export class FulfillmentController {
 
   @Post(':id/pick')
   @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
-  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async pickItems(
     @RequestContext() ctx: RequestContextDto,
     @Param('id') id: string,
     @Body() dto: PickItemsDto,
   ): Promise<BaseApiSuccessResponse<any>> {
-    for (const item of dto.items) {
-      await this.service.pickItem(id, item.itemId, item.quantity, item.binId, ctx)
-    }
-    const result = await this.service.getTask(id, ctx)
+    // Service runs the whole batch in a single DB transaction.
+    const result = await this.service.pickItemsBatch(id, dto.items, ctx)
     return {
       success: true,
       statusCode: 200,
@@ -85,7 +79,6 @@ export class FulfillmentController {
   }
 
   @Post(':id/pack')
-  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async completePacking(
     @RequestContext() ctx: RequestContextDto,
@@ -101,7 +94,6 @@ export class FulfillmentController {
   }
 
   @Post(':id/ship')
-  @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   @RequirePermissions(SystemPermissions.FULFILLMENT_MANAGE)
   async shipOrder(
     @RequestContext() ctx: RequestContextDto,

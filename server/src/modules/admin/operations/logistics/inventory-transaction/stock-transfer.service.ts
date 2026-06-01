@@ -78,22 +78,43 @@ export class StockTransferService {
 
   async findAll(
     ctx: RequestContextDto,
-    paginationDto: PaginationDto,
-  ): Promise<{ items: StockTransferEntity[]; total: number; page: number; limit: number }> {
-    const { page = 1, limit = 20 } = paginationDto
-    const [items, total] = await this.repo.findAndCount({
-      where: { tenantId: ctx.tenantId },
-      relations: ['sourceWarehouse', 'destinationWarehouse', 'user'],
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    })
+    paginationDto: PaginationDto & { status?: StockTransferStatus; q?: string },
+  ): Promise<{
+    items: StockTransferEntity[]
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }> {
+    const { page = 1, limit = 20, status, q } = paginationDto
+
+    const qb = this.repo
+      .createQueryBuilder('t')
+      .leftJoinAndSelect('t.sourceWarehouse', 'sourceWarehouse')
+      .leftJoinAndSelect('t.destinationWarehouse', 'destinationWarehouse')
+      .leftJoinAndSelect('t.user', 'user')
+      .where('t.tenantId = :tenantId', { tenantId: ctx.tenantId })
+      .orderBy('t.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    if (status) {
+      qb.andWhere('t.status = :status', { status })
+    }
+    if (q) {
+      qb.andWhere('(LOWER(t.transferNumber) LIKE :q OR LOWER(t.remarks) LIKE :q)', {
+        q: `%${q.toLowerCase()}%`,
+      })
+    }
+
+    const [items, total] = await qb.getManyAndCount()
 
     return {
       items,
       total,
       page,
       limit,
+      totalPages: Math.ceil(total / limit),
     }
   }
 
@@ -145,20 +166,42 @@ export class StockTransferService {
         throw new BadRequestException('At least one item line must be provided')
       }
 
-      // Delete existing items and recreate
-      await this.itemRepo.delete({ transferId: transfer.id })
+      // Diff-based update: only touch rows that actually changed.
+      // Keeps stable IDs so any downstream reference (ledger, fulfillment) survives.
+      const existingItems = await this.itemRepo.find({ where: { transferId: transfer.id } })
+      const existingById = new Map(existingItems.map((it) => [it.id, it]))
+      const incomingIds = new Set<string>()
 
-      const newItems = dto.items.map((line) => {
-        return this.itemRepo.create({
-          transferId: transfer.id,
-          productId: line.productId,
-          variantId: line.variantId || null,
-          quantityRequested: line.quantityRequested,
-          quantityReceived: 0,
-        })
-      })
+      for (const line of dto.items) {
+        const incomingId = (line as any).id as string | undefined
+        if (incomingId && existingById.has(incomingId)) {
+          // Update existing line in place.
+          const row = existingById.get(incomingId)!
+          row.productId = line.productId
+          row.variantId = line.variantId || null
+          row.quantityRequested = line.quantityRequested
+          await this.itemRepo.save(row)
+          incomingIds.add(incomingId)
+        } else {
+          // Insert new line.
+          const created = await this.itemRepo.save(
+            this.itemRepo.create({
+              transferId: transfer.id,
+              productId: line.productId,
+              variantId: line.variantId || null,
+              quantityRequested: line.quantityRequested,
+              quantityReceived: 0,
+            }),
+          )
+          incomingIds.add(created.id)
+        }
+      }
 
-      transfer.items = await this.itemRepo.save(newItems)
+      // Soft-delete the items that the caller removed.
+      const removed = existingItems.filter((it) => !incomingIds.has(it.id))
+      if (removed.length > 0) {
+        await this.itemRepo.softRemove(removed)
+      }
     }
 
     return this.findOne(id, ctx)

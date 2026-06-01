@@ -52,14 +52,38 @@ export class FulfillmentService {
       return null
     }
 
-    // Try to find a default warehouse for the tenant
-    let warehouseId = null
+    // Route to the best warehouse. Heuristic order:
+    //   1. If the request context already specifies a warehouseId (e.g. POS), use it.
+    //   2. Pick the active warehouse that holds enough live stock for the entire
+    //      order. Prefer the one with the highest minimum-coverage across items.
+    //   3. Fall back to the first active warehouse.
     const warehouses = await this.dataSource.getRepository(WarehouseEntity).find({
       where: { tenantId: ctx.tenantId, isActive: true },
-      take: 1,
     })
-    if (warehouses.length > 0) {
-      warehouseId = warehouses[0].id
+
+    let warehouseId: string | null = (ctx as any).warehouseId || null
+
+    if (!warehouseId && warehouses.length > 0) {
+      let bestId: string | null = null
+      let bestScore = -Infinity
+      for (const wh of warehouses) {
+        // Score = lowest coverage ratio across items in this warehouse.
+        // 1.0 means the warehouse can fully cover every line.
+        let minRatio = Infinity
+        for (const item of physicalItems) {
+          const live = await this.inventoryService
+            .getLiveStock(item.productId, item.variantId || null, ctx.tenantId, wh.id)
+            .catch(() => 0)
+          const needed = Number(item.quantity)
+          const ratio = needed > 0 ? Number(live) / needed : 1
+          if (ratio < minRatio) minRatio = ratio
+        }
+        if (minRatio > bestScore) {
+          bestScore = minRatio
+          bestId = wh.id
+        }
+      }
+      warehouseId = bestId ?? warehouses[0].id
     }
 
     const task = await this.repository.createTask({
@@ -125,6 +149,68 @@ export class FulfillmentService {
           ? FulfillmentItemStatus.PICKED
           : FulfillmentItemStatus.PENDING,
     })
+  }
+
+  /**
+   * Batch pick: validates the entire payload first, then applies every update
+   * inside a single DB transaction. If any line fails (over-pick, missing item),
+   * no row is mutated — eliminating the partial-state bug from the per-item loop.
+   */
+  async pickItemsBatch(
+    taskId: string,
+    lines: { itemId: string; quantity: number; binId?: string }[],
+    ctx: RequestContextDto,
+  ): Promise<FulfillmentTaskEntity> {
+    const task = await this.repository.findTaskById(taskId, ctx.tenantId)
+    if (!task) throw new NotFoundException('Fulfillment task not found')
+
+    // Pre-validate the whole batch up-front.
+    const itemById = new Map(task.items.map((it) => [it.id, it]))
+    const intent: Array<{
+      itemId: string
+      pickedQuantity: number
+      binId?: string
+      status: FulfillmentItemStatus
+    }> = []
+
+    for (const line of lines) {
+      const item = itemById.get(line.itemId)
+      if (!item) throw new NotFoundException(`Fulfillment item ${line.itemId} not found`)
+
+      const newPickedQty = Number(item.pickedQuantity) + line.quantity
+      if (newPickedQty > item.quantity) {
+        throw new BadRequestException(
+          `Picked quantity (${newPickedQty}) exceeds ordered quantity (${item.quantity}) for item ${item.id}`,
+        )
+      }
+
+      intent.push({
+        itemId: line.itemId,
+        pickedQuantity: newPickedQty,
+        binId: line.binId,
+        status:
+          newPickedQty === item.quantity
+            ? FulfillmentItemStatus.PICKED
+            : FulfillmentItemStatus.PENDING,
+      })
+    }
+
+    // Single transaction — all or nothing.
+    await this.dataSource.transaction(async (manager) => {
+      for (const u of intent) {
+        await manager.update(
+          'fulfillment_items',
+          { id: u.itemId },
+          {
+            picked_quantity: u.pickedQuantity,
+            bin_id: u.binId ?? null,
+            status: u.status,
+          } as any,
+        )
+      }
+    })
+
+    return (await this.repository.findTaskById(taskId, ctx.tenantId))!
   }
 
   async completePacking(taskId: string, ctx: RequestContextDto): Promise<FulfillmentTaskEntity> {

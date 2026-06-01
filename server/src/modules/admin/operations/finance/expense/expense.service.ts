@@ -16,6 +16,9 @@ interface FindAllOptions {
 }
 
 import { NotificationService } from '@/modules/admin/operations/infra/notification/notification.service'
+import { SettingsService } from '@/modules/admin/settings/settings.service'
+
+const DEFAULT_HIGH_EXPENSE_THRESHOLD = 1000
 
 @Injectable()
 export class ExpenseService {
@@ -25,7 +28,19 @@ export class ExpenseService {
     private readonly expenseRepository: ExpenseRepository,
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
+    private readonly settingsService: SettingsService,
   ) {}
+
+  private async getHighExpenseThreshold(ctx: RequestContextDto): Promise<number> {
+    try {
+      const settings = await this.settingsService.findByTenantSettings(ctx)
+      const configured = settings?.financeConfig?.highExpenseNotifyThreshold
+      if (configured && configured > 0) return Number(configured)
+    } catch (err: any) {
+      this.logger.warn(`Could not resolve tenant finance config: ${err.message}`)
+    }
+    return DEFAULT_HIGH_EXPENSE_THRESHOLD
+  }
 
   async createExpense(
     createExpenseDto: CreateExpenseDto,
@@ -34,20 +49,20 @@ export class ExpenseService {
     this.logger.log(`${this.createExpense.name} Service Called`)
     const tenantId = ctx.tenantId
     const result = await this.expenseRepository.createAndSave(createExpenseDto, ctx)
-    
-    // Trigger High Expense Warning
+
+    // Trigger High Expense Warning (threshold is tenant-configurable).
     try {
-      const EXPENSE_THRESHOLD = 1000;
-      if (createExpenseDto.amount > EXPENSE_THRESHOLD) {
+      const threshold = await this.getHighExpenseThreshold(ctx)
+      if (Number(createExpenseDto.amount) > threshold) {
         await this.notificationService.createNotification({
           title: 'High Expense Recorded',
-          message: `A new expense "${createExpenseDto.title}" for ${createExpenseDto.amount} requires review.`,
+          message: `A new expense "${createExpenseDto.title}" for ${createExpenseDto.amount} (threshold ${threshold}) requires review.`,
           type: 'WARNING',
           link: '/admin/finance/expenses',
           userId: null as any, // Tenant-wide admin notification
         }, tenantId);
       }
-    } catch (e) {
+    } catch (e: any) {
       this.logger.error(`Failed to trigger high expense notification: ${e.message}`)
     }
 
@@ -159,6 +174,38 @@ export class ExpenseService {
       this.cacheService.delCacheByPattern('cashflow*', tenantId),
       this.cacheService.delCacheByPattern('finance:summary*', tenantId),
     ])
+    return result
+  }
+
+  async approveExpense(id: string, ctx: RequestContextDto): Promise<ExpenseEntity> {
+    const expense = await this.expenseRepository.findByIdAndTenant(id, ctx.tenantId)
+    if (!expense) throw new NotFoundException('Expense not found')
+
+    const result = await this.expenseRepository.updateAndSave(expense, {
+      status: 'APPROVED',
+      approvedByUserId: ctx.userId,
+      approvedAt: new Date(),
+      rejectionReason: null,
+    } as any)
+
+    await this.cacheService.delCacheByPattern('expenses:list*', ctx.tenantId)
+    await this.cacheService.delCache(`expenses:id:${id}`, ctx.tenantId)
+    return result
+  }
+
+  async rejectExpense(id: string, reason: string, ctx: RequestContextDto): Promise<ExpenseEntity> {
+    const expense = await this.expenseRepository.findByIdAndTenant(id, ctx.tenantId)
+    if (!expense) throw new NotFoundException('Expense not found')
+
+    const result = await this.expenseRepository.updateAndSave(expense, {
+      status: 'REJECTED',
+      approvedByUserId: ctx.userId,
+      approvedAt: new Date(),
+      rejectionReason: reason,
+    } as any)
+
+    await this.cacheService.delCacheByPattern('expenses:list*', ctx.tenantId)
+    await this.cacheService.delCache(`expenses:id:${id}`, ctx.tenantId)
     return result
   }
 

@@ -32,7 +32,16 @@ async function bootstrap() {
 
   app.use(compression())
   app.use(cookieParser())
-  app.use(json({ limit: '20mb' }))
+  // Capture the raw request body alongside the parsed JSON so webhook handlers
+  // can verify HMAC signatures against the exact bytes the courier signed.
+  app.use(
+    json({
+      limit: '20mb',
+      verify: (req: any, _res, buf) => {
+        if (buf && buf.length) req.rawBody = Buffer.from(buf)
+      },
+    }),
+  )
 
   SwaggerConfig(app)
 

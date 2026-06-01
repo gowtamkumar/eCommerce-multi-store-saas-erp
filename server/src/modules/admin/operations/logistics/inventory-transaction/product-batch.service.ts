@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, IsNull, MoreThan, LessThanOrEqual, EntityManager } from 'typeorm'
+import { createHash } from 'crypto'
+import { Repository, IsNull, MoreThan, LessThanOrEqual, EntityManager, DataSource } from 'typeorm'
 import { ProductBatchEntity } from './entities/product-batch.entity'
 import { BatchStatus } from '@/common/enums/batch-status.enum'
 import { CreateProductBatchDto } from './dto/create-product-batch.dto'
@@ -19,6 +20,7 @@ export class ProductBatchService {
     @InjectRepository(ProductBatchEntity)
     private readonly repo: Repository<ProductBatchEntity>,
     private readonly ledgerService: InventoryLedgerService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(dto: CreateProductBatchDto, ctx: RequestContextDto): Promise<ProductBatchEntity> {
@@ -44,7 +46,7 @@ export class ProductBatchService {
           variantId: dto.variantId,
           type: InventoryTransactionType.INITIAL_BALANCE,
           quantity: dto.initialQuantity,
-          referenceType: InventoryTransactionReferenceType.CYCLE_COUNT, // Fallback reference type
+          referenceType: InventoryTransactionReferenceType.BATCH_INTAKE,
           referenceId: `BATCH-${savedBatch.batchNumber}`,
           batchId: savedBatch.id,
           remarks: `Initial stock for batch ${savedBatch.batchNumber}`,
@@ -144,6 +146,11 @@ export class ProductBatchService {
   /**
    * FEFO (First Expired, First Out) stock allocation logic.
    * Decrements currentQuantity of active batches chronologically.
+   *
+   * Concurrency safety:
+   *   1. Acquires a transaction-scoped advisory lock on (tenant, product, variant)
+   *      so two concurrent shipments can't both read the same `currentQuantity`.
+   *   2. Reads candidate batches with `pessimistic_write` to row-lock them.
    */
   async allocateFEFOStock(
     tenantId: string,
@@ -152,11 +159,20 @@ export class ProductBatchService {
     quantityRequested: number,
     manager: EntityManager,
   ): Promise<{ batchId: string; quantity: number }[]> {
+    // Acquire FEFO lock (separate namespace from inventory_ledger).
+    const composite = `fefo:${tenantId}:${productId}:${variantId ?? 'null'}`
+    const hash = createHash('sha256').update(composite).digest()
+    const lockId = hash.readBigInt64BE(0).toString()
+    await manager.query('SELECT pg_advisory_xact_lock($1::bigint)', [lockId])
+
     const repo = manager.getRepository(ProductBatchEntity)
 
-    // Query active, non-expired batches with stock, sorted by expiry date ascending
+    // Query active, non-expired batches with stock, sorted by expiry date ascending.
+    // pessimistic_write blocks other transactions from picking the same rows until
+    // this transaction commits.
     const query = repo
       .createQueryBuilder('b')
+      .setLock('pessimistic_write')
       .where('b.tenantId = :tenantId', { tenantId })
       .andWhere('b.productId = :productId', { productId })
       .andWhere('b.status = :status', { status: BatchStatus.ACTIVE })
@@ -196,18 +212,60 @@ export class ProductBatchService {
   }
 
   /**
-   * Run nightly via cron or manually to mark expired batches
+   * Marks expired batches and writes off any positive residual stock as a
+   * DAMAGE ledger entry so the inventory ledger stays consistent with the
+   * batch reality.
+   *
+   * Called by a BullMQ repeatable job (see InventoryLedgerModule) and also
+   * exposed manually via the controller.
    */
   async markExpiredBatches(tenantId: string): Promise<number> {
-    const result = await this.repo
-      .createQueryBuilder()
-      .update(ProductBatchEntity)
-      .set({ status: BatchStatus.EXPIRED })
-      .where('tenantId = :tenantId', { tenantId })
-      .andWhere('expiryDate < :now', { now: new Date() })
-      .andWhere('status = :activeStatus', { activeStatus: BatchStatus.ACTIVE })
-      .execute()
+    // Find expired-but-still-active batches, locking them so we don't double-process.
+    return this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(ProductBatchEntity)
+      const expired = await repo
+        .createQueryBuilder('b')
+        .setLock('pessimistic_write')
+        .where('b.tenantId = :tenantId', { tenantId })
+        .andWhere('b.expiryDate < :now', { now: new Date() })
+        .andWhere('b.status = :activeStatus', { activeStatus: BatchStatus.ACTIVE })
+        .getMany()
 
-    return result.affected || 0
+      if (expired.length === 0) return 0
+
+      for (const batch of expired) {
+        const residual = Number(batch.currentQuantity)
+
+        // Auto write-off residual quantity to keep ledger consistent.
+        if (residual > 0) {
+          try {
+            await this.ledgerService.createLedgerEntry(
+              {
+                productId: batch.productId,
+                variantId: batch.variantId || undefined,
+                quantity: residual,
+                type: InventoryTransactionType.DAMAGE,
+                referenceType: InventoryTransactionReferenceType.BATCH_EXPIRY_WRITEOFF,
+                referenceId: `BATCH-EXPIRY-${batch.batchNumber}`,
+                batchId: batch.id,
+                remarks: `Auto write-off of expired batch ${batch.batchNumber} (${residual} units)`,
+              },
+              { tenantId, userId: 'system', user: { id: 'system', role: 'SYSTEM' } as any },
+              manager,
+            )
+          } catch (err: any) {
+            this.logger.warn(
+              `Auto write-off for expired batch ${batch.batchNumber} failed: ${err.message}`,
+            )
+          }
+        }
+
+        batch.status = BatchStatus.EXPIRED
+        batch.currentQuantity = 0
+        await repo.save(batch)
+      }
+
+      return expired.length
+    })
   }
 }

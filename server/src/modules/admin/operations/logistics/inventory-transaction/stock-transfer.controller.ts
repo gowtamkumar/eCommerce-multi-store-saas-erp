@@ -12,6 +12,7 @@ import { StockTransferService } from './stock-transfer.service'
 import { CreateStockTransferDocDto } from './dto/create-stock-transfer-doc.dto'
 import { UpdateStockTransferDocDto } from './dto/update-stock-transfer-doc.dto'
 import { ReceiveStockTransferDto } from './dto/receive-stock-transfer.dto'
+import { StockTransferStatus } from '@/common/enums/stock-transfer-status.enum'
 
 @UseGuards(JwtAuthGuard, SubscriptionGuard)
 @RequireFeature('inventory')
@@ -42,9 +43,11 @@ export class StockTransferController {
   async findAll(
     @RequestContext() ctx: RequestContextDto,
     @Query() pagination: PaginationDto,
+    @Query('status') status?: StockTransferStatus,
+    @Query('q') q?: string,
   ): Promise<BaseApiSuccessResponse<any>> {
     this.logger.verbose(`User "${ctx.user?.username || 'System'}" called findAll stock transfer docs.`)
-    const data = await this.service.findAll(ctx, pagination)
+    const data = await this.service.findAll(ctx, { ...pagination, status, q })
     return {
       success: true,
       statusCode: 200,

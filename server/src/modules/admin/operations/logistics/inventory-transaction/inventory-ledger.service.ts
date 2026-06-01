@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common'
+import { DataSource } from 'typeorm'
 import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { CreateInventoryTransactionDto } from '@/modules/admin/operations/logistics/inventory-transaction/dto/create-inventory-transaction.dto'
 import { InventoryLedgerRepository } from './inventory-ledger.repository'
@@ -25,6 +26,7 @@ export class InventoryLedgerService {
     private readonly cogsService: CogsService,
     private readonly accountingIntegration: AccountingIntegrationService,
     private readonly notificationService: NotificationService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -70,6 +72,17 @@ export class InventoryLedgerService {
 
     // Use transaction manager if provided
     const internalExecute = async (em: any) => {
+      // 0. Acquire transaction-scoped advisory lock so concurrent writers on the
+      //    same (tenant, product, variant, warehouse) tuple serialize. This closes
+      //    the read-modify-write race in steps 1–4 below.
+      await this.repository.acquireStockLock(
+        em,
+        tenantId,
+        dto.productId,
+        dto.variantId || null,
+        dto.warehouseId || null,
+      )
+
       // 1. Get current balance from ledger
       const currentBalance = await this.repository.getLatestBalanceAfter(
         dto.productId,
@@ -144,7 +157,11 @@ export class InventoryLedgerService {
       return ledgerEntry
     }
 
-    const transaction = manager ? await internalExecute(manager) : await internalExecute(null)
+    // Advisory locks are transaction-scoped, so we must run inside one.
+    // If the caller supplied a manager they already opened a transaction; reuse it.
+    const transaction = manager
+      ? await internalExecute(manager)
+      : await this.dataSource.transaction((em) => internalExecute(em))
 
     // Invalidate inventory caches
     await Promise.all([
@@ -405,6 +422,11 @@ export class InventoryLedgerService {
   /**
    * Processes a physical stock count. Each line compares the counted qty
    * against the live ledger balance and fires an ADJUSTMENT entry for the delta.
+   *
+   * The entire batch runs in a single DB transaction so a partial failure
+   * leaves NO half-reconciled state. Within the transaction each line
+   * acquires its own advisory lock (via createLedgerEntry) so other writers
+   * are serialized but the count itself is atomic.
    */
   async createCycleCount(
     dto: {
@@ -421,37 +443,43 @@ export class InventoryLedgerService {
   ): Promise<{ processed: number; adjustments: InventoryLedgerEntity[] }> {
     this.logger.log(`${this.createCycleCount.name} Service Called`)
 
-    const adjustments: InventoryLedgerEntity[] = []
+    return this.dataSource.transaction(async (manager) => {
+      const adjustments: InventoryLedgerEntity[] = []
 
-    for (const line of dto.lines) {
-      const liveStock = await this.repository.getLiveStock(
-        line.productId,
-        line.variantId || null,
-        ctx.tenantId,
-        dto.warehouseId,
-      )
-
-      const delta = Number(line.countedQty) - Number(liveStock)
-
-      if (delta !== 0) {
-        const entry = await this.createLedgerEntry(
-          {
-            productId: line.productId,
-            variantId: line.variantId,
-            warehouseId: dto.warehouseId,
-            type: InventoryTransactionType.ADJUSTMENT,
-            quantity: delta, // positive = stock-in, negative = stock-out
-            referenceType: InventoryTransactionReferenceType.CYCLE_COUNT,
-            referenceId: dto.countRef,
-            remarks: line.remarks || `Cycle count ${dto.countRef}: system ${liveStock} → counted ${line.countedQty}`,
-          },
-          ctx,
+      for (const line of dto.lines) {
+        const liveStock = await this.repository.getLiveStock(
+          line.productId,
+          line.variantId || null,
+          ctx.tenantId,
+          dto.warehouseId,
+          manager,
         )
-        adjustments.push(entry)
-      }
-    }
 
-    return { processed: dto.lines.length, adjustments }
+        const delta = Number(line.countedQty) - Number(liveStock)
+
+        if (delta !== 0) {
+          const entry = await this.createLedgerEntry(
+            {
+              productId: line.productId,
+              variantId: line.variantId,
+              warehouseId: dto.warehouseId,
+              type: InventoryTransactionType.ADJUSTMENT,
+              quantity: delta, // positive = stock-in, negative = stock-out
+              referenceType: InventoryTransactionReferenceType.CYCLE_COUNT,
+              referenceId: dto.countRef,
+              remarks:
+                line.remarks ||
+                `Cycle count ${dto.countRef}: system ${liveStock} → counted ${line.countedQty}`,
+            },
+            ctx,
+            manager,
+          )
+          adjustments.push(entry)
+        }
+      }
+
+      return { processed: dto.lines.length, adjustments }
+    })
   }
 
   async getGlobalLiveStock(

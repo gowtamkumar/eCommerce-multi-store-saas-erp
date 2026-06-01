@@ -36,6 +36,18 @@ export class StockReservationSchedulerService implements OnModuleInit {
         },
       )
       this.logger.log('Successfully registered repeatable job "process-accounting-outbox" (* * * * *)')
+
+      // Sweep expired product batches and write off residual stock once a day.
+      // Runs at 02:00 server time — outside business hours.
+      await this.orderQueue.add(
+        'sweep-expired-batches',
+        {},
+        {
+          repeat: { pattern: '0 2 * * *' },
+          jobId: 'sweep-expired-batches-repeatable',
+        },
+      )
+      this.logger.log('Successfully registered repeatable job "sweep-expired-batches" (0 2 * * *)')
     } catch (err) {
       this.logger.error('Failed to schedule repeatable jobs:', err)
     }

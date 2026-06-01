@@ -1,9 +1,10 @@
+import { RequestContextDto } from '@/common/dto/request-context.dto'
+import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { createHash } from 'crypto'
+import { EntityManager, Repository } from 'typeorm'
 import { InventoryLedgerEntity } from './entities/inventory-ledger.entity'
-import { InventoryTransactionType } from '@/common/enums/inventory-transaction-type.enum'
-import { RequestContextDto } from '@/common/dto/request-context.dto'
 
 @Injectable()
 export class InventoryLedgerRepository {
@@ -11,6 +12,30 @@ export class InventoryLedgerRepository {
     @InjectRepository(InventoryLedgerEntity)
     private readonly repo: Repository<InventoryLedgerEntity>,
   ) {}
+
+  /**
+   * Acquires a Postgres transaction-scoped advisory lock keyed by
+   * (tenant, product, variant, warehouse). All writers serialize on this key
+   * for the duration of the surrounding transaction — eliminates the
+   * read-modify-write race in `createLedgerEntry` and any FEFO allocation
+   * that calls into it.
+   *
+   * pg_advisory_xact_lock takes a single bigint, so we hash the composite
+   * key into a stable signed 64-bit integer.
+   */
+  async acquireStockLock(
+    manager: EntityManager,
+    tenantId: string,
+    productId: string,
+    variantId: string | null,
+    warehouseId: string | null,
+  ): Promise<void> {
+    const composite = `inv:${tenantId}:${productId}:${variantId ?? 'null'}:${warehouseId ?? 'null'}`
+    const hash = createHash('sha256').update(composite).digest()
+    // Take first 8 bytes, interpret as signed int64 (Postgres bigint domain).
+    const lockId = hash.readBigInt64BE(0).toString()
+    await manager.query('SELECT pg_advisory_xact_lock($1::bigint)', [lockId])
+  }
 
   async findByTenant(
     tenantId: string,
@@ -95,10 +120,7 @@ export class InventoryLedgerRepository {
       qb.andWhere('ledger.warehouseId = :warehouseId', { warehouseId })
     }
 
-    return await qb
-      .groupBy('ledger.productId')
-      .addGroupBy('ledger.variantId')
-      .getRawMany()
+    return await qb.groupBy('ledger.productId').addGroupBy('ledger.variantId').getRawMany()
   }
   async getLiveStock(
     productId: string,

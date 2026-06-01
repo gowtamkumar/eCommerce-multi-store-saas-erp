@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ClipboardList,
@@ -13,6 +13,8 @@ import {
     CheckCircle2,
     BarChart3,
     AlertTriangle,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { fetchAPI } from '@/services/api';
 import toast from 'react-hot-toast';
@@ -27,9 +29,11 @@ interface CountLine {
     delta: number | null;
 }
 
+const PICKER_PAGE_SIZE = 20;
+const PICKER_DEBOUNCE_MS = 300;
+
 export default function CycleCount() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
-    const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState<{ processed: number; adjustments: number } | null>(null);
@@ -38,31 +42,93 @@ export default function CycleCount() {
     const [countRef, setCountRef] = useState(`COUNT-${Date.now().toString().slice(-6)}`);
     const [lines, setLines] = useState<CountLine[]>([]);
 
-    // Product picker
+    // Product picker — server-side search + pagination
     const [pickerOpen, setPickerOpen] = useState(false);
     const [pickerSearch, setPickerSearch] = useState('');
+    const [pickerProducts, setPickerProducts] = useState<any[]>([]);
+    const [pickerLoading, setPickerLoading] = useState(false);
+    const [pickerPage, setPickerPage] = useState(1);
+    const [pickerTotalPages, setPickerTotalPages] = useState(1);
+    const [pickerTotal, setPickerTotal] = useState(0);
+    // Track in-flight requests so a slow response can't overwrite a newer one
+    const pickerReqIdRef = useRef(0);
+    const pickerDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
-        loadData();
+        (async () => {
+            setLoading(true);
+            try {
+                const wRes = await fetchAPI('/system/warehouses');
+                if (wRes.success) {
+                    setWarehouses(wRes.data || []);
+                    if ((wRes.data || []).length > 0) setWarehouseId(wRes.data[0].id);
+                }
+            } catch {
+                toast.error('Failed to load warehouses');
+            } finally {
+                setLoading(false);
+            }
+        })();
     }, []);
 
-    const loadData = async () => {
-        setLoading(true);
+    const fetchPickerPage = useCallback(async (page: number, q: string) => {
+        const reqId = ++pickerReqIdRef.current;
+        setPickerLoading(true);
         try {
-            const [wRes, pRes] = await Promise.all([
-                fetchAPI('/system/warehouses'),
-                fetchAPI('/products?limit=200&status=active'),
-            ]);
-            if (wRes.success) {
-                setWarehouses(wRes.data || []);
-                if ((wRes.data || []).length > 0) setWarehouseId(wRes.data[0].id);
+            const params = new URLSearchParams({
+                page: String(page),
+                limit: String(PICKER_PAGE_SIZE),
+                status: 'active',
+            });
+            if (q.trim()) params.set('q', q.trim());
+            const res = await fetchAPI(`/products?${params.toString()}`);
+            // Drop the response if a newer request has started.
+            if (reqId !== pickerReqIdRef.current) return;
+            if (res?.success) {
+                setPickerProducts(res.data?.products || res.data || []);
+                setPickerTotalPages(res.data?.totalPages ?? 1);
+                setPickerTotal(res.data?.total ?? 0);
+            } else {
+                setPickerProducts([]);
+                setPickerTotalPages(1);
+                setPickerTotal(0);
             }
-            if (pRes.success) setProducts(pRes.data?.products || pRes.data || []);
         } catch {
-            toast.error('Failed to load data');
+            if (reqId === pickerReqIdRef.current) {
+                setPickerProducts([]);
+                toast.error('Product search failed');
+            }
         } finally {
-            setLoading(false);
+            if (reqId === pickerReqIdRef.current) setPickerLoading(false);
         }
+    }, []);
+
+    // Debounced search: each keystroke restarts a 300 ms timer; only the
+    // final query actually hits the server.
+    useEffect(() => {
+        if (!pickerOpen) return;
+        if (pickerDebounceRef.current) clearTimeout(pickerDebounceRef.current);
+        pickerDebounceRef.current = setTimeout(() => {
+            setPickerPage(1);
+            fetchPickerPage(1, pickerSearch);
+        }, PICKER_DEBOUNCE_MS);
+        return () => {
+            if (pickerDebounceRef.current) clearTimeout(pickerDebounceRef.current);
+        };
+    }, [pickerSearch, pickerOpen, fetchPickerPage]);
+
+    // Reload when paging (no debounce needed).
+    useEffect(() => {
+        if (!pickerOpen) return;
+        fetchPickerPage(pickerPage, pickerSearch);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pickerPage]);
+
+    const openPicker = () => {
+        setPickerSearch('');
+        setPickerPage(1);
+        setPickerOpen(true);
+        fetchPickerPage(1, '');
     };
 
     const getProductStockSummary = async (productId: string, variantId?: string): Promise<number> => {
@@ -108,7 +174,6 @@ export default function CycleCount() {
 
         setLines(prev => [...prev, newLine]);
         setPickerOpen(false);
-        setPickerSearch('');
 
         // Fetch live stock async
         const live = await getProductStockSummary(product.id, variant?.id);
@@ -168,11 +233,6 @@ export default function CycleCount() {
             setSubmitting(false);
         }
     };
-
-    const filteredProducts = products.filter(p =>
-        p.name?.toLowerCase().includes(pickerSearch.toLowerCase()) ||
-        p.slug?.toLowerCase().includes(pickerSearch.toLowerCase())
-    );
 
     const hasDifferences = lines.some(l => l.delta !== null && l.delta !== 0);
 
@@ -263,7 +323,7 @@ export default function CycleCount() {
                         </h4>
                         <button
                             type="button"
-                            onClick={() => setPickerOpen(true)}
+                            onClick={openPicker}
                             className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-brand-500/20"
                         >
                             <Plus className="w-3.5 h-3.5" />
@@ -415,27 +475,43 @@ export default function CycleCount() {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 w-full max-w-lg shadow-2xl border border-slate-100 dark:border-slate-800"
+                            className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 w-full max-w-lg shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col max-h-[85vh]"
                         >
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center justify-between mb-4 shrink-0">
                                 <h4 className="text-lg font-bold text-slate-900 dark:text-white">Add Product to Count</h4>
                                 <button onClick={() => setPickerOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-500">
                                     ✕
                                 </button>
                             </div>
-                            <div className="relative mb-4">
+                            <div className="relative mb-4 shrink-0">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                 <input
                                     type="text"
                                     value={pickerSearch}
                                     onChange={e => setPickerSearch(e.target.value)}
                                     autoFocus
-                                    placeholder="Search products..."
-                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500 transition-all text-sm outline-none"
+                                    placeholder="Search by name, SKU, or barcode…"
+                                    className="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl focus:ring-2 focus:ring-brand-500 transition-all text-sm outline-none"
                                 />
+                                {pickerLoading && (
+                                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-brand-500" />
+                                )}
                             </div>
-                            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                                {filteredProducts.map(p => (
+
+                            <div className="space-y-2 overflow-y-auto pr-1 flex-1 min-h-[12rem]">
+                                {pickerLoading && pickerProducts.length === 0 && (
+                                    <div className="flex items-center justify-center py-12">
+                                        <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
+                                    </div>
+                                )}
+
+                                {!pickerLoading && pickerProducts.length === 0 && (
+                                    <p className="text-center text-slate-400 py-10 text-sm">
+                                        {pickerSearch ? 'No products match your search.' : 'No active products available.'}
+                                    </p>
+                                )}
+
+                                {pickerProducts.map(p => (
                                     <div key={p.id}>
                                         {(!p.variants || p.variants.length === 0) ? (
                                             <button
@@ -443,12 +519,14 @@ export default function CycleCount() {
                                                 onClick={() => addLine(p)}
                                                 className="w-full flex items-center gap-3 p-3 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-2xl transition-all text-left"
                                             >
-                                                <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0">
+                                                <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0">
                                                     {p.images?.[0] && <img src={p.images[0]} alt="" className="w-full h-full object-cover" />}
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{p.name}</p>
-                                                    <p className="text-[10px] text-slate-400">Stock: {p.stock}</p>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{p.name}</p>
+                                                    <p className="text-[10px] text-slate-400">
+                                                        {p.sku ? `SKU: ${p.sku} · ` : ''}Stock: {p.stock ?? 0}
+                                                    </p>
                                                 </div>
                                             </button>
                                         ) : (
@@ -461,9 +539,9 @@ export default function CycleCount() {
                                                         onClick={() => addLine(p, v)}
                                                         className="w-full flex items-center gap-3 px-4 py-2 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-xl transition-all text-left ml-2"
                                                     >
-                                                        <CheckCircle2 className="w-3.5 h-3.5 text-brand-400 flex-shrink-0" />
+                                                        <CheckCircle2 className="w-3.5 h-3.5 text-brand-400 shrink-0" />
                                                         <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                                                            {Object.entries(v.combination || {}).map(([k, val]) => `${k}: ${val}`).join(' / ')} — Stock: {v.stock}
+                                                            {Object.entries(v.combination || {}).map(([k, val]) => `${k}: ${val}`).join(' / ')} — Stock: {v.stock ?? 0}
                                                         </p>
                                                     </button>
                                                 ))}
@@ -471,10 +549,34 @@ export default function CycleCount() {
                                         )}
                                     </div>
                                 ))}
-                                {filteredProducts.length === 0 && (
-                                    <p className="text-center text-slate-400 py-6 text-sm">No products match your search.</p>
-                                )}
                             </div>
+
+                            {/* Pagination */}
+                            {pickerTotalPages > 1 && (
+                                <div className="flex items-center justify-between gap-3 pt-4 mt-2 border-t border-slate-100 dark:border-slate-800 shrink-0">
+                                    <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">
+                                        Page {pickerPage} / {pickerTotalPages} · {pickerTotal.toLocaleString()} result{pickerTotal === 1 ? '' : 's'}
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPickerPage(p => Math.max(1, p - 1))}
+                                            disabled={pickerPage <= 1 || pickerLoading}
+                                            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPickerPage(p => Math.min(pickerTotalPages, p + 1))}
+                                            disabled={pickerPage >= pickerTotalPages || pickerLoading}
+                                            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </motion.div>
                     </div>
                 )}

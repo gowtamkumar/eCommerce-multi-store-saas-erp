@@ -2,22 +2,49 @@
 
 import { fetchAPI } from '@/services/api';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, DollarSign, FileText, Hash, Receipt, Save, Tag, X } from 'lucide-react';
+import {
+    Calendar,
+    DollarSign,
+    FileText,
+    Hash,
+    Link2,
+    Receipt,
+    Repeat,
+    Save,
+    Tag,
+    X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { EXPENSE_CATEGORIES, type ExpenseFormProps } from '../types';
 
+const RECURRENCE_OPTIONS = [
+    { value: 'NONE', label: 'One-time' },
+    { value: 'DAILY', label: 'Daily' },
+    { value: 'WEEKLY', label: 'Weekly' },
+    { value: 'MONTHLY', label: 'Monthly' },
+    { value: 'QUARTERLY', label: 'Quarterly' },
+    { value: 'YEARLY', label: 'Yearly' },
+];
 
+const STATUS_OPTIONS = [
+    { value: 'DRAFT', label: 'Draft' },
+    { value: 'PENDING_APPROVAL', label: 'Pending approval' },
+    { value: 'APPROVED', label: 'Approved' },
+];
 
 export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }: ExpenseFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
         amount: '',
-        category: 'other',
+        category: 'OTHER',
         expenseDate: new Date().toISOString().split('T')[0],
         referenceNumber: '',
-        description: ''
+        description: '',
+        attachmentUrl: '',
+        recurrence: 'NONE',
+        status: 'APPROVED',
     });
 
     useEffect(() => {
@@ -28,7 +55,10 @@ export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }:
                 category: initialData.category,
                 expenseDate: initialData.expenseDate.split('T')[0],
                 referenceNumber: initialData.referenceNumber || '',
-                description: initialData.description || ''
+                description: initialData.description || '',
+                attachmentUrl: (initialData as any).attachmentUrl || '',
+                recurrence: (initialData as any).recurrence || 'NONE',
+                status: (initialData as any).status || 'APPROVED',
             });
         } else {
             setFormData({
@@ -37,7 +67,10 @@ export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }:
                 category: 'OTHER',
                 expenseDate: new Date().toISOString().split('T')[0],
                 referenceNumber: '',
-                description: ''
+                description: '',
+                attachmentUrl: '',
+                recurrence: 'NONE',
+                status: 'APPROVED',
             });
         }
     }, [initialData, isOpen]);
@@ -46,10 +79,11 @@ export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }:
         e.preventDefault();
         setIsSubmitting(true);
 
-        const payload = {
+        const payload: Record<string, any> = {
             ...formData,
-            amount: parseFloat(formData.amount)
+            amount: parseFloat(formData.amount),
         };
+        if (!payload.attachmentUrl) delete payload.attachmentUrl;
 
         try {
             const url = initialData ? `/expenses/${initialData.id}` : '/expenses';
@@ -179,6 +213,54 @@ export default function ExpenseForm({ isOpen, onClose, onSuccess, initialData }:
                                             placeholder="Optional"
                                         />
                                     </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Receipt / Attachment URL</label>
+                                    <div className="relative">
+                                        <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <input
+                                            type="url"
+                                            value={formData.attachmentUrl}
+                                            onChange={(e) => setFormData({ ...formData, attachmentUrl: e.target.value })}
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
+                                            placeholder="https://… (paste a receipt link)"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Recurrence</label>
+                                    <div className="relative">
+                                        <Repeat className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <select
+                                            value={formData.recurrence}
+                                            onChange={(e) => setFormData({ ...formData, recurrence: e.target.value })}
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all appearance-none"
+                                        >
+                                            {RECURRENCE_OPTIONS.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Workflow status</label>
+                                    <select
+                                        value={formData.status}
+                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all appearance-none"
+                                    >
+                                        {STATUS_OPTIONS.map(opt => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                    </select>
+                                    <p className="text-[11px] text-slate-400">
+                                        Set to <strong>Pending approval</strong> for expenses above your tenant&apos;s configured threshold.
+                                    </p>
                                 </div>
                             </div>
 

@@ -39,15 +39,38 @@ export default function MarketingReportDashboard() {
     const [campaignSearch, setCampaignSearch] = useState('');
     const [couponSearch, setCouponSearch] = useState('');
 
+    // Server caps `limit` at 100 — walk pages until we have everything (capped at
+    // 10k orders / 100 pages so a runaway tenant doesn't freeze the page).
+    const fetchAllOrders = async (): Promise<any[]> => {
+        const PAGE_SIZE = 100;
+        const PAGE_HARD_CAP = 100;
+        const collected: any[] = [];
+        let page = 1;
+        let totalPages = 1;
+        do {
+            try {
+                const res = await fetchAPI(`/orders?page=${page}&limit=${PAGE_SIZE}`);
+                if (!res?.success) break;
+                const chunk = res.data?.orders || res.data || [];
+                collected.push(...chunk);
+                totalPages = res.data?.totalPages ?? 1;
+            } catch {
+                break;
+            }
+            page += 1;
+        } while (page <= totalPages && page <= PAGE_HARD_CAP);
+        return collected;
+    };
+
     // Fetch unified marketing statistics
     const loadMarketingData = async () => {
         setLoading(true);
         try {
             const [
-                campaignsRes, 
-                couponsRes, 
-                subscribersRes, 
-                ordersRes,
+                campaignsRes,
+                couponsRes,
+                subscribersRes,
+                orders,
                 loyaltyConfigRes,
                 loyaltyRulesRes,
                 customersRes
@@ -55,7 +78,7 @@ export default function MarketingReportDashboard() {
                 fetchAPI('/campaigns').catch(() => ({ success: false, data: [] })),
                 fetchAPI('/coupons').catch(() => ({ success: false, data: { coupons: [] } })),
                 fetchAPI('/subscribers?limit=1').catch(() => ({ success: false, meta: { total: 0 } })),
-                fetchAPI('/orders?limit=1000').catch(() => ({ success: false, data: { orders: [] } })),
+                fetchAllOrders().catch(() => [] as any[]),
                 fetchAPI('/marketing/loyalty/config').catch(() => ({ success: false, data: null })),
                 fetchAPI('/marketing/loyalty/rules').catch(() => ({ success: false, data: [] })),
                 fetchAPI('/customer?limit=100').catch(() => ({ success: false, data: { items: [] } }))
@@ -70,9 +93,7 @@ export default function MarketingReportDashboard() {
             if (subscribersRes.success) {
                 setSubscribersCount(subscribersRes.meta?.total || subscribersRes.total || 0);
             }
-            if (ordersRes.success) {
-                setOrders(ordersRes.data?.orders || ordersRes.data || []);
-            }
+            setOrders(orders);
             if (loyaltyConfigRes.success) {
                 setLoyaltyConfig(loyaltyConfigRes.data);
             }

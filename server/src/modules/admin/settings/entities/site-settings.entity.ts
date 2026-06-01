@@ -2,6 +2,7 @@ import { BaseEntity } from '@/common/base-entity/BaseEntity'
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
 import {
   CurrenciesDto,
+  FinanceConfigDto,
   FooterSettingsDto,
   MarketingDto,
   NavbarSettingsDto,
@@ -78,6 +79,9 @@ export class SiteSettingsEntity extends BaseEntity {
 
   @Column({ type: 'jsonb', name: 'shipping_config', nullable: true })
   shippingConfig?: ShippingConfigDto
+
+  @Column({ type: 'jsonb', name: 'finance_config', nullable: true })
+  financeConfig?: FinanceConfigDto
 
   @Column({ type: 'jsonb', name: 'navbar', nullable: true })
   navbar?: NavbarSettingsDto

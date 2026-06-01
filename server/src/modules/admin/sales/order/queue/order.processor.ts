@@ -1,6 +1,8 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq'
+import { InjectDataSource } from '@nestjs/typeorm'
 import { Job } from 'bullmq'
 import { Logger } from '@nestjs/common'
+import { DataSource } from 'typeorm'
 import { InvoiceService } from '@/modules/admin/operations/finance/invoice/invoice.service'
 import { MailService } from '@/modules/admin/operations/infra/mail/mail.service'
 import { SmsService } from '@/modules/admin/operations/infra/sms/sms.service'
@@ -10,6 +12,8 @@ import { InvoiceStatus } from '@/common/enums/invoice-status.enum'
 import { OrderService } from '../services/order.service'
 import { StockReservationService } from '@/modules/admin/operations/logistics/inventory-transaction/stock-reservation.service'
 import { AccountingOutboxService } from '@/modules/admin/operations/finance/accounting/services/accounting-outbox.service'
+import { ProductBatchService } from '@/modules/admin/operations/logistics/inventory-transaction/product-batch.service'
+import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
 
 @Processor('order')
 export class OrderProcessor extends WorkerHost {
@@ -24,6 +28,8 @@ export class OrderProcessor extends WorkerHost {
     private readonly orderService: OrderService,
     private readonly stockReservationService: StockReservationService,
     private readonly accountingOutboxService: AccountingOutboxService,
+    private readonly productBatchService: ProductBatchService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {
     super()
   }
@@ -44,6 +50,8 @@ export class OrderProcessor extends WorkerHost {
           this.logger.log('Starting execution of accounting outbox pending transactions sweep...')
           await this.accountingOutboxService.processPending()
           return { success: true }
+        case 'sweep-expired-batches':
+          return await this.handleSweepExpiredBatches()
         default:
           this.logger.warn(`Unknown job name: ${job.name}`)
       }
@@ -51,6 +59,33 @@ export class OrderProcessor extends WorkerHost {
       this.logger.error(`Failed to process job ${job.id}: ${error.message}`, error.stack)
       throw error
     }
+  }
+
+  /**
+   * Sweeps expired batches across every tenant and writes off any residual stock.
+   * The actual transactional work runs inside ProductBatchService.markExpiredBatches.
+   */
+  async handleSweepExpiredBatches() {
+    this.logger.log('Starting daily sweep of expired product batches...')
+    const tenantRepo = this.dataSource.getRepository(TenantEntity)
+    const tenants = await tenantRepo.find({ select: ['id'] })
+    let totalAffected = 0
+    for (const tenant of tenants) {
+      try {
+        const affected = await this.productBatchService.markExpiredBatches(tenant.id)
+        if (affected > 0) {
+          this.logger.log(`Tenant ${tenant.id}: marked ${affected} expired batch(es)`)
+        }
+        totalAffected += affected
+      } catch (err: any) {
+        this.logger.error(
+          `Tenant ${tenant.id}: expired-batch sweep failed: ${err.message}`,
+          err.stack,
+        )
+      }
+    }
+    this.logger.log(`Daily batch sweep finished. Total batches expired: ${totalAffected}`)
+    return { totalAffected }
   }
 
   async handleCreateInvoice(data: any) {

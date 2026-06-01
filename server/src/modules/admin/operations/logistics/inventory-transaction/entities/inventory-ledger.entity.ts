@@ -16,6 +16,12 @@ import { WarehouseBinEntity } from '@/modules/system/organization/entities/wareh
 @Entity('inventory_ledger')
 @Index(['tenantId', 'createdAt'])
 @Index(['productId', 'warehouseId', 'createdAt'])
+/**
+ * Variant-aware composite index — speeds up `getLatestBalanceAfter` and
+ * `getLiveStock` which filter on (tenantId, productId, variantId, warehouseId)
+ * and order by createdAt DESC.
+ */
+@Index(['tenantId', 'productId', 'variantId', 'warehouseId', 'createdAt'])
 export class InventoryLedgerEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'product_id' })
   @Index()

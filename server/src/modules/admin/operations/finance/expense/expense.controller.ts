@@ -106,6 +106,37 @@ export class ExpenseController {
     }
   }
 
+  @Post(':id/approve')
+  @RequirePermissions(SystemPermissions.FINANCE_EXPENSE_WRITE)
+  async approveExpense(
+    @Param('id') id: string,
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<ExpenseResponseDto>> {
+    const result = await this.expenseService.approveExpense(id, ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Expense approved',
+      data: result,
+    }
+  }
+
+  @Post(':id/reject')
+  @RequirePermissions(SystemPermissions.FINANCE_EXPENSE_WRITE)
+  async rejectExpense(
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+    @RequestContext() ctx: RequestContextDto,
+  ): Promise<BaseApiSuccessResponse<ExpenseResponseDto>> {
+    const result = await this.expenseService.rejectExpense(id, body?.reason || '', ctx)
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Expense rejected',
+      data: result,
+    }
+  }
+
   @Delete(':id')
   @RequirePermissions(SystemPermissions.FINANCE_EXPENSE_WRITE)
   async removeExpense(

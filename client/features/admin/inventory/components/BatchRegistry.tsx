@@ -140,6 +140,9 @@ export default function BatchRegistry() {
         <div>
           <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Batch & Expiry Management</h2>
           <p className="text-xs text-slate-500 font-medium mt-1">Track product batches, manufacture/expiration dates, and FEFO stock allocations.</p>
+          <p className="text-[10px] text-slate-400 font-medium mt-1 uppercase tracking-widest">
+            ⓘ Auto-sweep runs daily at 02:00; expired batches are written off as DAMAGE entries automatically.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <button

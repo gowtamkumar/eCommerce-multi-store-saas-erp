@@ -1,28 +1,24 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { fetchAPI } from '@/services/api';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
     ArrowLeftRight,
-    Loader2,
-    Plus,
-    Trash2,
-    Search,
-    Warehouse,
-    Package,
-    ChevronRight,
-    CheckCircle2,
-    AlertCircle,
-    Eye,
-    Truck,
     Calendar,
+    CheckCircle2,
+    ChevronRight,
+    Eye,
     FileText,
-    X,
-    TrendingUp,
-    AlertTriangle,
-    RotateCcw
+    Loader2,
+    Package,
+    Plus,
+    Search,
+    Trash2,
+    Truck,
+    Warehouse,
+    X
 } from 'lucide-react';
-import { fetchAPI } from '@/services/api';
+import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 interface TransferLine {
@@ -96,7 +92,7 @@ export default function StockTransfer() {
         if (activeTab === 'LIST') {
             loadTransfers();
         }
-    }, [activeTab, currentPage, statusFilter]);
+    }, [activeTab, currentPage, statusFilter, searchQuery]);
 
     const loadBaseData = async () => {
         setLoading(true);
@@ -116,7 +112,12 @@ export default function StockTransfer() {
 
     const loadTransfers = async () => {
         try {
-            const res = await fetchAPI(`/stock-transfers?page=${currentPage}&limit=10`);
+            const params = new URLSearchParams();
+            params.set('page', String(currentPage));
+            params.set('limit', '10');
+            if (statusFilter) params.set('status', statusFilter);
+            if (searchQuery.trim()) params.set('q', searchQuery.trim());
+            const res = await fetchAPI(`/stock-transfers?${params.toString()}`);
             if (res.success) {
                 setTransfers(res.data?.items || []);
                 setTotalTransfers(res.data?.total || 0);
@@ -317,21 +318,19 @@ export default function StockTransfer() {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setActiveTab('LIST')}
-                        className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all ${
-                            activeTab === 'LIST'
+                        className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all ${activeTab === 'LIST'
                                 ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-md'
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                        }`}
+                            }`}
                     >
                         Transfers Registry
                     </button>
                     <button
                         onClick={() => setActiveTab('NEW')}
-                        className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 ${
-                            activeTab === 'NEW'
+                        className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 ${activeTab === 'NEW'
                                 ? 'bg-brand-600 text-white shadow-md'
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                        }`}
+                            }`}
                     >
                         <Plus className="w-3.5 h-3.5" />
                         Create Transfer
@@ -355,10 +354,22 @@ export default function StockTransfer() {
                                 type="text"
                                 placeholder="Search by transfer number or remarks..."
                                 value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
+                                onChange={e => { setCurrentPage(1); setSearchQuery(e.target.value); }}
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-sm focus:ring-2 focus:ring-brand-500 outline-none"
                             />
                         </div>
+                        <select
+                            value={statusFilter}
+                            onChange={e => { setCurrentPage(1); setStatusFilter(e.target.value); }}
+                            className="md:w-48 px-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-brand-500 outline-none"
+                        >
+                            <option value="">All statuses</option>
+                            <option value="DRAFT">Draft</option>
+                            <option value="APPROVED">Approved</option>
+                            <option value="IN_TRANSIT">In transit</option>
+                            <option value="RECEIVED">Received</option>
+                            <option value="CANCELLED">Cancelled</option>
+                        </select>
                     </div>
 
                     {/* Table List */}
