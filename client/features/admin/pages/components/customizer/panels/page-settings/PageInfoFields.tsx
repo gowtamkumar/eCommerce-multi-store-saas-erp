@@ -1,5 +1,6 @@
 import type { PageData } from '@/types/customizer';
-import { Layout } from 'lucide-react';
+import { Layout, RotateCw } from 'lucide-react';
+import { generateSlugFromTitle } from '@/lib/page-url';
 import DebouncedInput from '../DebouncedInput';
 import SectionHeading from './SectionHeading';
 
@@ -17,6 +18,9 @@ const INPUT_CLASS =
  * the parent confirms before flipping it on — we just emit the change.
  */
 export default function PageInfoFields({ data, onChange }: PageInfoFieldsProps) {
+  const generatedSlug = generateSlugFromTitle(data.title || '');
+  const isOutOfSync = !data.isHomePage && data.slug !== generatedSlug && !!data.title;
+
   return (
     <section className="space-y-4">
       <SectionHeading icon={Layout} label="Page Information" />
@@ -74,11 +78,21 @@ export default function PageInfoFields({ data, onChange }: PageInfoFieldsProps) 
               value={data.slug}
               onChange={(val) => onChange('slug', val)}
               disabled={data.isHomePage}
-              className={`w-full pl-6 pr-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all ${
+              className={`w-full pl-6 ${isOutOfSync ? 'pr-9' : 'pr-3'} py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-500 outline-none transition-all ${
                 data.isHomePage ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               placeholder="page-slug"
             />
+            {isOutOfSync && (
+              <button
+                type="button"
+                onClick={() => onChange('slug', generatedSlug)}
+                title="Sync with Page Title"
+                className="absolute right-2 top-2 p-1 text-slate-400 hover:text-brand-500 transition-colors rounded hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                <RotateCw className="w-3.5 h-3.5 animate-in fade-in zoom-in-50 duration-200" />
+              </button>
+            )}
           </div>
           {data.isHomePage && (
             <p className="text-[9px] text-brand-600 font-bold uppercase tracking-tight">

@@ -1,5 +1,6 @@
 import type { PageData } from '@/types/customizer';
 import React, { useCallback } from 'react';
+import { generateSlugFromTitle } from '@/lib/page-url';
 import A11yIssuesCard from './page-settings/A11yIssuesCard';
 import PageInfoFields from './page-settings/PageInfoFields';
 import ReusableBlockButton from './page-settings/ReusableBlockButton';
@@ -36,6 +37,16 @@ const PageSettings = React.memo(({ data, onUpdate, pageId, onSaveTemplate }: Pag
         if (!confirmed) return;
         updated.slug = '';
       }
+
+      // Auto-generate slug from title if title is changed and slug is in sync or empty
+      if (key === 'title' && typeof value === 'string' && !data.isHomePage) {
+        const generatedOld = generateSlugFromTitle(data.title || '');
+        const currentSlug = data.slug || '';
+        if (currentSlug === '' || currentSlug === generatedOld) {
+          updated.slug = generateSlugFromTitle(value);
+        }
+      }
+
       onUpdate(updated);
     },
     [data, onUpdate],

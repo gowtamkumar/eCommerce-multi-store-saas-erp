@@ -171,6 +171,14 @@ export default function CustomizerEditor({ pageId, initialData, themeTokens }: C
   const closeContextMenu = useCallback(() => setContextMenu(null), []);
   const clearSelection = useCallback(() => setSelectedSectionId(null), []);
 
+  const handleSaveTemplate = useCallback(() => {
+    setSaveTemplateModal({
+      isOpen: true,
+      sections: data.content.sections,
+      defaultName: data.title || 'My Template',
+    });
+  }, [data.content.sections, data.title]);
+
   useEditorShortcuts({
     selectedId: selectedSectionId,
     showInserter,
@@ -274,13 +282,7 @@ export default function CustomizerEditor({ pageId, initialData, themeTokens }: C
                   data={data}
                   onUpdate={setData}
                   pageId={pageId}
-                  onSaveTemplate={useCallback(() => {
-                    setSaveTemplateModal({
-                      isOpen: true,
-                      sections: data.content.sections,
-                      defaultName: data.title || 'My Template',
-                    });
-                  }, [data.content.sections, data.title])}
+                  onSaveTemplate={handleSaveTemplate}
                 />
               )}
             </div>

@@ -37,10 +37,17 @@ export class PageService {
 
     if (dto.isHomePage === true) {
       prepared.slug = ''
-    } else if (dto.slug !== undefined) {
-      prepared.slug = normalizePageSlug(dto.slug, false)
-    } else if (!isPartialUpdate) {
-      prepared.slug = normalizePageSlug(dto.slug, false)
+    } else {
+      const hasSlug = dto.slug !== undefined && dto.slug !== null && dto.slug.trim() !== '';
+      if (hasSlug) {
+        prepared.slug = normalizePageSlug(dto.slug, false)
+      } else if (dto.slug === '' || dto.slug === null) {
+        // Explicitly cleared or empty slug -> auto-generate from title
+        prepared.slug = dto.title ? normalizePageSlug(dto.title, false) : ''
+      } else if (!isPartialUpdate) {
+        // Creation, slug is undefined -> auto-generate from title
+        prepared.slug = dto.title ? normalizePageSlug(dto.title, false) : ''
+      }
     }
 
     if (dto.sections !== undefined) {

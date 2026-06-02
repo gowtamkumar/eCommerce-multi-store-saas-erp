@@ -19,10 +19,11 @@ export class CreatePageDto {
   @MaxLength(255)
   title: string
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsString()
+  @IsOptional()
   @MaxLength(255)
-  slug: string
+  slug?: string
 
   @ApiProperty({ required: false, default: false })
   @IsBoolean()
