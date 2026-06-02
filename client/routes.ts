@@ -740,6 +740,19 @@ const FEATURE_DISPLAY_MAP: Record<string, { label: string; icon: any }> = {
   logistics: { label: "Shipping & Logistics", icon: Truck },
   branding: { label: "Whitelabel Branding", icon: Award },
   content: { label: "CMS Content Manager", icon: BookOpen },
+  // Settings-level features
+  currencies: { label: "Multi-Currency Settings", icon: Wallet },
+  trust_safety: { label: "Trust Badges & Labels", icon: ShieldCheck },
+  seo: { label: "SEO & Analytics", icon: TrendingUp },
+  organization: { label: "Multi-Branch & Warehouse", icon: Building2 },
+  email: { label: "Custom SMTP Configuration", icon: Mail },
+  sms: { label: "SMS Gateway Integration", icon: MessageSquare },
+  payment_settings: { label: "Payment Gateways", icon: CreditCard },
+  courier: { label: "Courier Integration Rules", icon: Truck },
+  // UI-level features
+  product_list_ui: { label: "Product Listing UI Customizer", icon: Layout },
+  product_detail_ui: { label: "Product Detail UI Customizer", icon: Layout },
+  offers_page_ui: { label: "Offers Page UI Customizer", icon: Tag },
   // Legacy & specific aliases
   staff_accounts: { label: "Staff Accounts", icon: Users },
   unlimited_products: { label: "Unlimited Products", icon: Package },

@@ -31,6 +31,11 @@ import si from 'systeminformation'
 import { SubscriptionPlanService } from '../subscription-plan/subscription-plan.service'
 import { TrafficService } from './traffic.service'
 
+function sanitizeLog(input: string | undefined | null): string {
+  if (!input) return ''
+  return input.replace(/[\r\n]/g, '_')
+}
+
 @Controller('super-admin')
 export class SuperAdminController {
   private readonly logger = new Logger(SuperAdminController.name)
@@ -45,7 +50,7 @@ export class SuperAdminController {
     private readonly planService: SubscriptionPlanService,
     private readonly cacheService: CacheService,
     private readonly authService: AuthService,
-  ) {}
+  ) { }
 
   @Post('/setup')
   async setup(
@@ -80,7 +85,7 @@ export class SuperAdminController {
         price: 0,
         monthlyPrice: 0,
         yearlyPrice: 0,
-        features: ['pos', 'catalog', 'content', 'settings'],
+        features: ['pos', 'catalog', 'content', 'settings', 'payment_settings', 'courier'],
         isActive: true,
         isPopular: false,
         trialPeriodDays: 14,
@@ -99,7 +104,27 @@ export class SuperAdminController {
         price: 29,
         monthlyPrice: 29,
         yearlyPrice: 290,
-        features: ['pos', 'catalog', 'orders', 'marketing', 'content', 'settings'],
+        features: [
+          'pos',
+          'catalog',
+          'content',
+          'settings',
+          'payment_settings',
+          'courier',
+          'orders',
+          'marketing',
+          'seo',
+          'trust_safety',
+          'email',
+          'sms',
+          'currencies',
+          'custom_domain',
+          'header',
+          'footer',
+          'product_list_ui',
+          'product_detail_ui',
+          'offers_page_ui',
+        ],
         isActive: true,
         isPopular: true,
         trialPeriodDays: 14,
@@ -121,14 +146,28 @@ export class SuperAdminController {
         features: [
           'pos',
           'catalog',
+          'content',
+          'settings',
+          'payment_settings',
+          'courier',
           'orders',
           'marketing',
+          'seo',
+          'trust_safety',
+          'email',
+          'sms',
+          'currencies',
+          'custom_domain',
+          'header',
+          'footer',
+          'product_list_ui',
+          'product_detail_ui',
+          'offers_page_ui',
+          'organization',
           'finance',
           'hrm',
           'reports',
           'logistics',
-          'settings',
-          'content',
           'branding',
         ],
         isActive: true,
@@ -327,7 +366,7 @@ export class SuperAdminController {
         data,
       }
     } catch (error) {
-      this.logger.error(`[SuperAdmin] Error fetching detailed analytics for tenant ${id}:`, error)
+      this.logger.error(`[SuperAdmin] Error fetching detailed analytics for tenant ${sanitizeLog(id)}:`, error)
       throw error
     }
   }
@@ -436,7 +475,7 @@ export class SuperAdminController {
   @HttpCode(200)
   async clearCacheAll(@Query('tenantId') tenantId?: string): Promise<BaseApiSuccessResponse<null>> {
     this.logger.verbose(
-      `Super Admin called clearCacheAll${tenantId ? ` for tenant ${tenantId}` : ''}.`,
+      `Super Admin called clearCacheAll${tenantId ? ` for tenant ${sanitizeLog(tenantId)}` : ''}.`,
     )
     if (tenantId) {
       await this.cacheService.clearTenantCache(tenantId)
@@ -460,7 +499,7 @@ export class SuperAdminController {
   async impersonate(
     @Param('userId') userId: string,
   ): Promise<BaseApiSuccessResponse<{ impersonateToken: string; redirectUrl: string }>> {
-    this.logger.log(`Super Admin initiating impersonation for user ${userId}`)
+    this.logger.log(`Super Admin initiating impersonation for user ${sanitizeLog(userId)}`)
 
     // 1. Find user
     const user = await this.userService.getUser(userId)
@@ -472,9 +511,16 @@ export class SuperAdminController {
     const impersonateToken = await this.authService.createImpersonateToken(user.id)
 
     // 3. Construct redirect URL
-    let redirectUrl = `http://localhost:3000/login?impersonateToken=${impersonateToken}`
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
+    let redirectUrl = `${frontendUrl}/login?impersonateToken=${impersonateToken}`
     if (user.tenant?.subdomain) {
-      redirectUrl = `http://${user.tenant.subdomain}.localhost:3000/login?impersonateToken=${impersonateToken}`
+      try {
+        const url = new URL(frontendUrl)
+        url.hostname = `${user.tenant.subdomain}.${url.hostname}`
+        redirectUrl = `${url.origin}/login?impersonateToken=${impersonateToken}`
+      } catch (e) {
+        redirectUrl = `http://${user.tenant.subdomain}.localhost:3000/login?impersonateToken=${impersonateToken}`
+      }
     }
 
     return {
