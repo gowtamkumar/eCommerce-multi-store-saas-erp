@@ -3,6 +3,7 @@ import { TenantService } from './tenant.service'
 import { TenantRepository } from './tenant.repository'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { TenantFeatureEntity } from './entities/tenant-feature.entity'
+import { TenantSubscriptionEntity } from './entities/tenant-subscription.entity'
 import { UserRoleAssignmentEntity } from '@/modules/admin/core/user/entities/user-role-assignment.entity'
 import { UserRepository } from '@/modules/admin/core/user/repositories/user.repository'
 import { SubscriptionPlanService } from '@/modules/system/subscription-plan/subscription-plan.service'
@@ -39,6 +40,12 @@ describe('TenantService', () => {
           ]),
           create: jest.fn().mockImplementation((dto) => dto),
           save: jest.fn().mockResolvedValue([]),
+        }
+      }
+      if (entity === TenantSubscriptionEntity) {
+        return {
+          create: jest.fn().mockImplementation((dto) => dto),
+          save: jest.fn().mockImplementation((t) => Promise.resolve(t)),
         }
       }
     }),
@@ -91,11 +98,10 @@ describe('TenantService', () => {
 
   describe('updateTenantPlan', () => {
     it('should throw NotFoundException if new plan is not found', async () => {
-      const mockTenant = {
-        id: 'tenant-1',
-        subdomain: 'sub',
-        domains: [],
-      } as TenantEntity
+      const mockTenant = new TenantEntity()
+      mockTenant.id = 'tenant-1'
+      mockTenant.subdomain = 'sub'
+      mockTenant.domains = []
       jest.spyOn(service, 'findOneTenants').mockResolvedValue(mockTenant)
       subscriptionPlanService.findOneSubscriptionPlan.mockResolvedValue(null)
 
@@ -105,12 +111,10 @@ describe('TenantService', () => {
     })
 
     it('should update plan, sync features, and invalidate caches inside transaction', async () => {
-      const mockTenant = {
-        id: 'tenant-1',
-        subdomain: 'sub',
-        domains: [],
-        subscriptionPlanId: 'plan-1',
-      } as TenantEntity
+      const mockTenant = new TenantEntity()
+      mockTenant.id = 'tenant-1'
+      mockTenant.subdomain = 'sub'
+      mockTenant.domains = []
       const mockPlan = {
         id: 'plan-2',
         name: 'Pro Seller',

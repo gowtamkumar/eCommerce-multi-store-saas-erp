@@ -76,7 +76,7 @@ export class PermissionResolutionService {
 
     const tenant = await this.tenantRepo.findOne({
       where: { id: tenantId },
-      relations: ['subscriptionPlan'],
+      relations: ['activeSubscription', 'activeSubscription.subscriptionPlan'],
     })
 
     if (!tenant) return false
@@ -153,7 +153,7 @@ export class PermissionResolutionService {
     // ── Build enabled features list ───────────────────────────────────
     const tenant = await this.tenantRepo.findOne({
       where: { id: tenantId },
-      relations: ['subscriptionPlan'],
+      relations: ['activeSubscription', 'activeSubscription.subscriptionPlan'],
     })
     const planFeatures: string[] = tenant?.subscriptionPlan?.features ?? []
 

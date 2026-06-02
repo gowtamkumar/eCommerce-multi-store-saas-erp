@@ -9,7 +9,10 @@ import { OrderEntity } from '@/modules/admin/sales/order/entities/order.entity'
 import { SiteSettingsEntity } from '@/modules/admin/settings/entities/site-settings.entity'
 import { SubscriptionPlanRepository } from '@/modules/system/subscription-plan/subscription-plan.repository'
 import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
+import { TenantSubscriptionEntity } from '@/modules/system/tenant/entities/tenant-subscription.entity'
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { ConfigService } from '@nestjs/config'
 import { SubscriptionPlanEntity } from '../subscription-plan/entities/subscription-plan.entity'
 import { CurrentSubscriptionResponseDto } from './dto/current-subscription-response.dto'
@@ -32,6 +35,8 @@ export class SubscriptionBillingService {
     private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
     private readonly notificationService: NotificationService,
+    @InjectRepository(TenantSubscriptionEntity)
+    private readonly subscriptionRepo: Repository<TenantSubscriptionEntity>,
   ) {}
 
   async getCurrentSubscription(tenantId: string): Promise<CurrentSubscriptionResponseDto> {
@@ -285,7 +290,7 @@ export class SubscriptionBillingService {
       gatewayResponse: verification.gatewayResponse ?? gatewayResponse,
     })
 
-    const tenant = await this.tenantRepository.findById(record.tenantId)
+    const tenant = await this.tenantRepository.findByIdWithRelations(record.tenantId)
     const plan = await this.planRepository.findById(record.subscriptionPlanId)
 
     if (tenant && plan) {
@@ -303,12 +308,19 @@ export class SubscriptionBillingService {
         newEndsAt.setMonth(newEndsAt.getMonth() + 1)
       }
 
-      await this.tenantRepository.updateAndSave(tenant, {
-        subscriptionStartsAt: isCurrentlyActive ? tenant.subscriptionStartsAt : currentDate,
-        subscriptionEndsAt: newEndsAt,
+      const sub = this.subscriptionRepo.create({
+        tenantId: tenant.id,
         subscriptionPlanId: record.subscriptionPlanId,
-        subscriptionStatus: SubscriptionStatus.ACTIVE,
-        subscriptionBillingCycle: record.billingCycle,
+        status: SubscriptionStatus.ACTIVE,
+        billingCycle: record.billingCycle,
+        startsAt: (isCurrentlyActive && tenant.subscriptionStartsAt) ? tenant.subscriptionStartsAt : currentDate,
+        endsAt: newEndsAt,
+      })
+      const savedSub = await this.subscriptionRepo.save(sub)
+
+      await this.tenantRepository.updateAndSave(tenant, {
+        activeSubscriptionId: savedSub.id,
+        activeSubscription: savedSub,
         status: TenantStatus.ACTIVE,
       })
 

@@ -84,6 +84,8 @@ import { SubscriptionPlanRepository } from '@/modules/system/subscription-plan/s
 import { TenantTrafficEntity } from '@/modules/system/super-admin/entities/tenant-traffic.entity'
 import { TrafficRepository } from '@/modules/system/super-admin/traffic.repository'
 import { TenantEntity } from '@/modules/system/tenant/entities/tenant.entity'
+import { TenantDomainEntity } from '@/modules/system/tenant/entities/tenant-domain.entity'
+import { TenantSubscriptionEntity } from '@/modules/system/tenant/entities/tenant-subscription.entity'
 import { TenantRepository } from '@/modules/system/tenant/tenant.repository'
 import { WishlistRepository } from '@/modules/store/wishlist/wishlist.repository'
 import { WishlistEntity } from '@/modules/store/wishlist/entities/wishlist.entity'
@@ -100,6 +102,8 @@ import { UserPermissionOverrideEntity } from '@/modules/admin/core/user/entities
   imports: [
     TypeOrmModule.forFeature([
       TenantEntity,
+      TenantDomainEntity,
+      TenantSubscriptionEntity,
       SiteSettingsEntity,
       FileEntity,
       OrderEntity,

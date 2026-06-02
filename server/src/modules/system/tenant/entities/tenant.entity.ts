@@ -4,6 +4,7 @@ import { SubscriptionStatus } from '@/common/enums/subscription/subscription-sta
 import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 import { TenantDomainEntity } from './tenant-domain.entity'
+import { TenantSubscriptionEntity } from './tenant-subscription.entity'
 import { UserEntity } from '@/modules/admin/core/user/entities/user.entity'
 import { SubscriptionPlanEntity } from '@/modules/system/subscription-plan/entities/subscription-plan.entity'
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm'
@@ -29,38 +30,44 @@ export class TenantEntity extends BaseEntity {
   @Column({ name: 'ssl_enabled', default: false })
   sslEnabled: boolean
 
-  @Column({ name: 'subscription_plan_id', nullable: true })
-  subscriptionPlanId: string
+  @Column({ name: 'active_subscription_id', type: 'uuid', nullable: true })
+  activeSubscriptionId: string | null
 
-  @ManyToOne(() => SubscriptionPlanEntity, (plan) => plan.tenants)
-  @JoinColumn({ name: 'subscription_plan_id' })
-  subscriptionPlan: SubscriptionPlanEntity
+  @ManyToOne(() => TenantSubscriptionEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'active_subscription_id' })
+  activeSubscription: TenantSubscriptionEntity
 
-  @Column({
-    name: 'subscription_billing_cycle',
-    type: 'enum',
-    enum: SubscriptionBillingCycle,
-    default: SubscriptionBillingCycle.MONTHLY,
-  })
-  subscriptionBillingCycle: SubscriptionBillingCycle
-
-  @Column({
-    name: 'subscription_status',
-    type: 'enum',
-    enum: SubscriptionStatus,
-    default: SubscriptionStatus.ACTIVE,
-  })
-  subscriptionStatus: SubscriptionStatus
-
-  @Column({ name: 'subscription_starts_at', type: 'timestamptz', nullable: true })
-  subscriptionStartsAt: Date
-
-  @Column({ name: 'subscription_ends_at', type: 'timestamptz', nullable: true })
-  subscriptionEndsAt: Date
+  @OneToMany(() => TenantSubscriptionEntity, (sub) => sub.tenant)
+  subscriptions: TenantSubscriptionEntity[]
 
   @ManyToOne(() => UserEntity, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
+
+
+  get subscriptionPlan(): SubscriptionPlanEntity | null {
+    return this.activeSubscription?.subscriptionPlan || null
+  }
+
+  get subscriptionPlanId(): string | null {
+    return this.activeSubscription?.subscriptionPlanId || null
+  }
+
+  get subscriptionStatus(): SubscriptionStatus | null {
+    return this.activeSubscription?.status || null
+  }
+
+  get subscriptionBillingCycle(): SubscriptionBillingCycle | null {
+    return this.activeSubscription?.billingCycle || null
+  }
+
+  get subscriptionStartsAt(): Date | null {
+    return this.activeSubscription?.startsAt || null
+  }
+
+  get subscriptionEndsAt(): Date | null {
+    return this.activeSubscription?.endsAt || null
+  }
 
   get primaryCustomDomain(): string | null {
     if (!this.domains) return null
@@ -71,7 +78,21 @@ export class TenantEntity extends BaseEntity {
   }
 
   get isExpired(): boolean {
-    if (!this.subscriptionEndsAt) return false
-    return new Date() > new Date(this.subscriptionEndsAt)
+    if (!this.activeSubscription || !this.activeSubscription.endsAt) return false
+    return new Date() > new Date(this.activeSubscription.endsAt)
+  }
+
+  toJSON() {
+    return {
+      ...Object.assign({}, this),
+      subscriptionPlanId: this.subscriptionPlanId,
+      subscriptionPlan: this.subscriptionPlan,
+      subscriptionStatus: this.subscriptionStatus,
+      subscriptionBillingCycle: this.subscriptionBillingCycle,
+      subscriptionStartsAt: this.subscriptionStartsAt,
+      subscriptionEndsAt: this.subscriptionEndsAt,
+      primaryCustomDomain: this.primaryCustomDomain,
+      isExpired: this.isExpired,
+    }
   }
 }

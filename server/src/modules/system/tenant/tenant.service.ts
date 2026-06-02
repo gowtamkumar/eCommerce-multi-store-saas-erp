@@ -31,6 +31,7 @@ import { TenantOverviewResponseDto } from './dto/tenant-response.dto'
 import { RequestContextDto } from '@/common/dto/request-context.dto'
 import { TenantEntity } from './entities/tenant.entity'
 import { TenantDomainEntity } from './entities/tenant-domain.entity'
+import { TenantSubscriptionEntity } from './entities/tenant-subscription.entity'
 import { TenantFeatureEntity } from './entities/tenant-feature.entity'
 import { TenantRepository } from './tenant.repository'
 import { AccountEntity } from '@/modules/admin/operations/finance/accounting/entities/account.entity'
@@ -125,13 +126,25 @@ export class TenantService {
       const tenant = tenantRepo.create({
         storeName,
         subdomain,
-        subscriptionStatus: SubscriptionStatus.TRIAL,
-        subscriptionBillingCycle: billingCycle,
-        subscriptionStartsAt: now,
-        subscriptionEndsAt: trialEndsAt,
-        subscriptionPlan,
       })
       const savedTenant = await tenantRepo.save(tenant)
+
+      // Create initial trial subscription
+      const subRepo = manager.getRepository(TenantSubscriptionEntity)
+      const sub = subRepo.create({
+        tenantId: savedTenant.id,
+        subscriptionPlanId: subscriptionPlan ? subscriptionPlan.id : null,
+        status: SubscriptionStatus.TRIAL,
+        billingCycle: billingCycle,
+        startsAt: now,
+        endsAt: trialEndsAt,
+      })
+      const savedSub = await subRepo.save(sub)
+
+      // Associate with tenant
+      savedTenant.activeSubscriptionId = savedSub.id
+      savedTenant.activeSubscription = savedSub
+      await tenantRepo.save(savedTenant)
 
       // Create default Main Branch
       const branchRepo = manager.getRepository(BranchEntity)
@@ -305,7 +318,7 @@ export class TenantService {
 
     const domainRecord = await this.dataSource.getRepository(TenantDomainEntity).findOne({
       where: { hostname: customDomain },
-      relations: ['tenant', 'tenant.subscriptionPlan'],
+      relations: ['tenant', 'tenant.activeSubscription', 'tenant.activeSubscription.subscriptionPlan'],
     })
 
     if (domainRecord && domainRecord.status === CustomDomainStatus.ACTIVE) {
@@ -592,10 +605,33 @@ export class TenantService {
 
     return await this.dataSource.transaction(async (manager) => {
       const tenantRepo = manager.getRepository(TenantEntity)
+      const subRepo = manager.getRepository(TenantSubscriptionEntity)
 
-      // 1. Update the tenant's plan relation
-      tenant.subscriptionPlanId = planId
-      tenant.subscriptionPlan = newPlan
+      const now = new Date()
+      // If current active subscription is still active, extend from endsAt, otherwise from now
+      const isCurrentlyActive = tenant.activeSubscription?.endsAt && tenant.activeSubscription.endsAt > now
+      const baseDate = isCurrentlyActive ? tenant.activeSubscription.endsAt : now
+      const endsAt = new Date(baseDate)
+
+      const billingCycle = tenant.activeSubscription?.billingCycle || SubscriptionBillingCycle.MONTHLY
+      if (billingCycle === SubscriptionBillingCycle.YEARLY) {
+        endsAt.setFullYear(endsAt.getFullYear() + 1)
+      } else {
+        endsAt.setMonth(endsAt.getMonth() + 1)
+      }
+
+      const sub = subRepo.create({
+        tenantId: id,
+        subscriptionPlanId: planId,
+        status: SubscriptionStatus.ACTIVE,
+        billingCycle: billingCycle,
+        startsAt: isCurrentlyActive ? tenant.activeSubscription.startsAt : now,
+        endsAt,
+      })
+      const savedSub = await subRepo.save(sub)
+
+      tenant.activeSubscriptionId = savedSub.id
+      tenant.activeSubscription = savedSub
       const updatedTenant = await tenantRepo.save(tenant)
 
       // 2. Clear tenant cache

@@ -47,7 +47,7 @@ export class SettingsService {
           }
         }
 
-        const tenant = await this.tenantRepository.findById(tenantId)
+        const tenant = await this.tenantRepository.findByIdWithRelations(tenantId)
         let effectiveStatus = tenant?.status
 
         // Check if subscription has logically expired
