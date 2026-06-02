@@ -81,18 +81,4 @@ export class TenantEntity extends BaseEntity {
     if (!this.activeSubscription || !this.activeSubscription.endsAt) return false
     return new Date() > new Date(this.activeSubscription.endsAt)
   }
-
-  toJSON() {
-    return {
-      ...Object.assign({}, this),
-      subscriptionPlanId: this.subscriptionPlanId,
-      subscriptionPlan: this.subscriptionPlan,
-      subscriptionStatus: this.subscriptionStatus,
-      subscriptionBillingCycle: this.subscriptionBillingCycle,
-      subscriptionStartsAt: this.subscriptionStartsAt,
-      subscriptionEndsAt: this.subscriptionEndsAt,
-      primaryCustomDomain: this.primaryCustomDomain,
-      isExpired: this.isExpired,
-    }
-  }
 }

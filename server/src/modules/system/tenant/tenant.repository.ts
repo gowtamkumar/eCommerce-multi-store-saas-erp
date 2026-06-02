@@ -44,7 +44,12 @@ export class TenantRepository {
   async findByCustomDomain(customDomain: string): Promise<TenantEntity | null> {
     const domainRecord = await this.repo.manager.getRepository(TenantDomainEntity).findOne({
       where: { hostname: customDomain },
-      relations: ['tenant', 'tenant.activeSubscription', 'tenant.activeSubscription.subscriptionPlan'],
+      relations: [
+        'tenant',
+        'tenant.domains',
+        'tenant.activeSubscription',
+        'tenant.activeSubscription.subscriptionPlan',
+      ],
     })
     return domainRecord ? domainRecord.tenant : null
   }
@@ -52,7 +57,7 @@ export class TenantRepository {
   async findAllSorted(): Promise<TenantEntity[]> {
     return await this.repo.find({
       order: { createdAt: 'DESC' },
-      relations: ['activeSubscription', 'activeSubscription.subscriptionPlan'],
+      relations: ['activeSubscription', 'activeSubscription.subscriptionPlan', 'domains'],
     })
   }
 

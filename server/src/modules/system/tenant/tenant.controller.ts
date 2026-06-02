@@ -19,12 +19,27 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
+import { plainToInstance } from 'class-transformer'
 import { CustomDomainStatus } from '@/common/enums/tenant/custom-domain-status'
 import { CreateTenantDto } from './dto/create-tenant.dto'
 import { TenantLookupDto } from './dto/tenant-lookup.dto'
 import { UpdateCustomDomainDto } from './dto/update-custom-domain.dto'
 import { TenantResponseDto } from './dto/tenant-response.dto'
+import { TenantEntity } from './entities/tenant.entity'
 import { CreateTenantResponseDto, TenantService } from './tenant.service'
+
+/**
+ * Convert a raw TenantEntity (which can carry internal/sensitive columns and
+ * unloaded relations) into the safe response shape we ship over the wire.
+ * `excludeExtraneousValues: true` ensures only `@Expose()`-ed fields on
+ * TenantResponseDto are emitted, so a new sensitive column added to the
+ * entity in the future cannot accidentally leak.
+ */
+function toTenantResponse(tenant: TenantEntity): TenantResponseDto {
+  return plainToInstance(TenantResponseDto, tenant, {
+    excludeExtraneousValues: true,
+  })
+}
 
 @Controller('tenants')
 export class TenantController {
@@ -55,7 +70,7 @@ export class TenantController {
         success: true,
         statusCode: 200,
         message: 'Tenant lookup successful',
-        data: findDomain as any,
+        data: toTenantResponse(findDomain),
       }
     }
 
@@ -64,7 +79,7 @@ export class TenantController {
       success: true,
       statusCode: 200,
       message: 'Tenants retrieved successfully',
-      data: tenants as any,
+      data: tenants.map(toTenantResponse),
     }
   }
 
@@ -92,7 +107,7 @@ export class TenantController {
       success: true,
       statusCode: 200,
       message: 'Tenant info retrieved successfully',
-      data: tenant as any,
+      data: toTenantResponse(tenant),
     }
   }
 
@@ -117,7 +132,10 @@ export class TenantController {
       statusCode: 200,
       message:
         'Custom domain saved. Add the supplied DNS TXT record then call /tenants/custom-domain/verify.',
-      data: result as any,
+      data: {
+        ...toTenantResponse(result),
+        verificationInstructions: result.verificationInstructions,
+      },
     }
   }
 
@@ -135,7 +153,7 @@ export class TenantController {
       success: true,
       statusCode: 200,
       message: 'Custom domain verified successfully',
-      data: tenant as any,
+      data: toTenantResponse(tenant),
     }
   }
 
@@ -153,7 +171,7 @@ export class TenantController {
       success: true,
       statusCode: 200,
       message: 'Custom domain removed',
-      data: tenant as any,
+      data: toTenantResponse(tenant),
     }
   }
 
@@ -171,7 +189,7 @@ export class TenantController {
       success: true,
       statusCode: 200,
       message: 'Primary custom domain set successfully',
-      data: tenant as any,
+      data: toTenantResponse(tenant),
     }
   }
 }

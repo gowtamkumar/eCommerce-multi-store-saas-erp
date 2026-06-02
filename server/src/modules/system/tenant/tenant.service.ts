@@ -77,6 +77,14 @@ export class TenantService {
     private readonly notificationService: NotificationService,
   ) {}
 
+  private hydrateTenant(tenant: TenantEntity | null): TenantEntity | null {
+    return tenant ? Object.assign(new TenantEntity(), tenant) : null
+  }
+
+  private hydrateTenants(tenants: TenantEntity[]): TenantEntity[] {
+    return tenants.map((tenant) => Object.assign(new TenantEntity(), tenant))
+  }
+
   /**
    * Creates a new tenant with associated admin user and initial settings.
    * Uses a transaction to ensure atomicity.
@@ -278,7 +286,7 @@ export class TenantService {
   async findAllTenants(): Promise<TenantEntity[]> {
     const cacheKey = `${this.CACHE_PREFIX}all`
     const cached = await this.cacheService.getCache<TenantEntity[]>(cacheKey)
-    if (cached) return cached
+    if (cached) return this.hydrateTenants(cached)
 
     const tenants = await this.tenantRepository.findAllSorted()
     await this.cacheService.setCache(cacheKey, tenants, 3600) // Cache for 1 hour
@@ -288,7 +296,8 @@ export class TenantService {
   async findOneTenants(id: string): Promise<TenantEntity> {
     const cacheKey = `${this.CACHE_PREFIX}id:${id}`
     const cached = await this.cacheService.getCache<TenantEntity>(cacheKey)
-    if (cached) return cached
+    const hydratedCached = this.hydrateTenant(cached)
+    if (hydratedCached) return hydratedCached
 
     const tenant = await this.tenantRepository.findByIdWithRelations(id)
     if (!tenant) {
@@ -302,7 +311,8 @@ export class TenantService {
   async findBySubdomain(subdomain: string): Promise<TenantEntity | null> {
     const cacheKey = `${this.CACHE_PREFIX}subdomain:${subdomain}`
     const cached = await this.cacheService.getCache<TenantEntity>(cacheKey)
-    if (cached) return cached
+    const hydratedCached = this.hydrateTenant(cached)
+    if (hydratedCached) return hydratedCached
 
     const tenant = await this.tenantRepository.findBySubdomain(subdomain)
     if (tenant) {
@@ -314,11 +324,17 @@ export class TenantService {
   async findByCustomDomain(customDomain: string): Promise<TenantEntity | null> {
     const cacheKey = `${this.CACHE_PREFIX}customdomain:${customDomain}`
     const cached = await this.cacheService.getCache<TenantEntity>(cacheKey)
-    if (cached) return cached
+    const hydratedCached = this.hydrateTenant(cached)
+    if (hydratedCached) return hydratedCached
 
     const domainRecord = await this.dataSource.getRepository(TenantDomainEntity).findOne({
       where: { hostname: customDomain },
-      relations: ['tenant', 'tenant.activeSubscription', 'tenant.activeSubscription.subscriptionPlan'],
+      relations: [
+        'tenant',
+        'tenant.domains',
+        'tenant.activeSubscription',
+        'tenant.activeSubscription.subscriptionPlan',
+      ],
     })
 
     if (domainRecord && domainRecord.status === CustomDomainStatus.ACTIVE) {

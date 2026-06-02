@@ -1,8 +1,9 @@
-import { Expose } from 'class-transformer'
+import { Expose, Type } from 'class-transformer'
 import { TenantStatus } from '@/common/enums/tenant/tenant-status.enum'
 import { TenantDomainResponseDto } from './tenant-domain-response.dto'
 import { SubscriptionStatus } from '@/common/enums/subscription/subscription-status.enum'
 import { SubscriptionBillingCycle } from '@/common/enums/subscription/billing-cycle.enum'
+import { SubscriptionPlanResponseDto } from '@/modules/system/subscription-plan/dto/subscription-plan-response.dto'
 
 export class TenantResponseDto {
   @Expose()
@@ -15,6 +16,7 @@ export class TenantResponseDto {
   subdomain: string
 
   @Expose()
+  @Type(() => TenantDomainResponseDto)
   domains: TenantDomainResponseDto[]
 
   @Expose()
@@ -27,10 +29,14 @@ export class TenantResponseDto {
   subscriptionPlanId: string | null
 
   @Expose()
-  subscriptionBillingCycle: SubscriptionBillingCycle
+  @Type(() => SubscriptionPlanResponseDto)
+  subscriptionPlan: SubscriptionPlanResponseDto | null
 
   @Expose()
-  subscriptionStatus: SubscriptionStatus
+  subscriptionStatus: SubscriptionStatus | null
+
+  @Expose()
+  subscriptionBillingCycle: SubscriptionBillingCycle | null
 
   @Expose()
   subscriptionStartsAt: Date | null
@@ -39,10 +45,13 @@ export class TenantResponseDto {
   subscriptionEndsAt: Date | null
 
   @Expose()
-  userId?: string | null
+  primaryCustomDomain: string | null
 
   @Expose()
   isExpired: boolean
+
+  @Expose()
+  userId?: string | null
 
   @Expose()
   createdAt: Date
